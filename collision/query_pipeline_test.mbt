@@ -168,3 +168,56 @@ test "query pipeline intersect_point" {
   inspect(results.length() == 1, content="true")
   inspect(ColliderHandle::equals(results[0], ch1), content="true")
 }
+
+///|
+test "query pipeline cast_ray respects cuboid rotation" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
+    .build(),
+  )
+  let cuboid = ColliderBuilder::cuboid(2.0F, 0.5F).build()
+  let handle = colliders.insert_with_parent(cuboid, body, bodies)
+  let broad_phase = BroadPhaseBvh::new()
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    // Rotated cuboid has world half-extent 0.5 along x, so it hits at x = -0.5.
+    inspect(@core.abs(hit.1 - 9.5F) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline intersect_point respects cuboid rotation" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    ColliderBuilder::cuboid(2.0F, 0.5F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let broad_phase = BroadPhaseBvh::new()
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  // This point is inside the AABB of the cuboid but outside the rotated cuboid itself.
+  let results = query_pipeline.intersect_point(@core.Vec2::new(1.2F, 0.0F))
+  inspect(results.length() == 0, content="true")
+}

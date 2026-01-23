@@ -91,28 +91,63 @@ fn separation_ball_ball(
 }
 
 ///|
+fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
+  @core.Vec2::new(v.x * s, v.y * s)
+}
+
+///|
+fn cuboid_axes(rotation : @core.Real) -> (@core.Vec2, @core.Vec2) {
+  let rot = @core.Rot2::from_angle(rotation)
+  (@core.Vec2::new(rot.cos, rot.sin), @core.Vec2::new(-rot.sin, rot.cos))
+}
+
+///|
+fn projection_radius(
+  axis : @core.Vec2,
+  cuboid_axis_x : @core.Vec2,
+  cuboid_axis_y : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> @core.Real {
+  @core.abs(axis.dot(cuboid_axis_x)) * half_width +
+  @core.abs(axis.dot(cuboid_axis_y)) * half_height
+}
+
+///|
 fn separation_cuboid_cuboid(
   pos1 : @core.Vec2,
+  rot1 : @core.Real,
   hw1 : @core.Real,
   hh1 : @core.Real,
   pos2 : @core.Vec2,
+  rot2 : @core.Real,
   hw2 : @core.Real,
   hh2 : @core.Real,
 ) -> @core.Vec2? {
-  let dx = pos1.x - pos2.x
-  let dy = pos1.y - pos2.y
-  let overlap_x = hw1 + hw2 - @core.abs(dx)
-  let overlap_y = hh1 + hh2 - @core.abs(dy)
-  if overlap_x <= 0.0F || overlap_y <= 0.0F {
-    return None
+  let (ax1, ay1) = cuboid_axes(rot1)
+  let (ax2, ay2) = cuboid_axes(rot2)
+  let delta = pos1.sub(pos2)
+  let mut best_overlap = 0.0F
+  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_sign = 1.0F
+  let axes = [ax1, ay1, ax2, ay2]
+  for i in 0..<axes.length() {
+    let axis = axes[i]
+    let proj = delta.dot(axis)
+    let dist = @core.abs(proj)
+    let r1 = projection_radius(axis, ax1, ay1, hw1, hh1)
+    let r2 = projection_radius(axis, ax2, ay2, hw2, hh2)
+    let overlap = r1 + r2 - dist
+    if overlap <= 0.0F {
+      return None
+    }
+    if i == 0 || overlap < best_overlap {
+      best_overlap = overlap
+      best_axis = axis
+      best_sign = if proj < 0.0F { -1.0F } else { 1.0F }
+    }
   }
-  if overlap_x < overlap_y {
-    let sign = if dx < 0.0F { -1.0F } else { 1.0F }
-    Some(@core.Vec2::new(sign * overlap_x, 0.0F))
-  } else {
-    let sign = if dy < 0.0F { -1.0F } else { 1.0F }
-    Some(@core.Vec2::new(0.0F, sign * overlap_y))
-  }
+  Some(vec2_scale(best_axis, best_overlap * best_sign))
 }
 
 ///|
@@ -120,24 +155,39 @@ fn separation_ball_cuboid(
   ball_pos : @core.Vec2,
   radius : @core.Real,
   cuboid_pos : @core.Vec2,
+  cuboid_rot : @core.Real,
   half_width : @core.Real,
   half_height : @core.Real,
 ) -> @core.Vec2? {
-  let dx = clamp_value(ball_pos.x - cuboid_pos.x, -half_width, half_width)
-  let dy = clamp_value(ball_pos.y - cuboid_pos.y, -half_height, half_height)
-  let closest = @core.Vec2::new(cuboid_pos.x + dx, cuboid_pos.y + dy)
-  let delta = ball_pos.sub(closest)
-  let dist = delta.length()
+  let rot = @core.Rot2::from_angle(cuboid_rot)
+  let inv = rot.inverse()
+  let local_ball = inv.rotate_vec2(ball_pos.sub(cuboid_pos))
+  let clamped = @core.Vec2::new(
+    clamp_value(local_ball.x, -half_width, half_width),
+    clamp_value(local_ball.y, -half_height, half_height),
+  )
+  let local_delta = local_ball.sub(clamped)
+  let dist = local_delta.length()
   if dist > radius {
-    None
-  } else {
-    let dir = if dist <= 1.0e-6F {
-      @core.Vec2::new(1.0F, 0.0F)
-    } else {
-      delta.normalize()
-    }
+    return None
+  }
+  if dist > 1.0e-6F {
+    let dir_world = rot.rotate_vec2(local_delta.normalize())
     let depth = radius - dist
-    Some(@core.Vec2::new(dir.x * depth, dir.y * depth))
+    Some(vec2_scale(dir_world, depth))
+  } else {
+    // Circle center is inside (or extremely close to) the cuboid. Pick the closest face.
+    let dx = half_width - @core.abs(local_ball.x)
+    let dy = half_height - @core.abs(local_ball.y)
+    if dx < dy {
+      let sign = if local_ball.x < 0.0F { -1.0F } else { 1.0F }
+      let dir_world = rot.rotate_vec2(@core.Vec2::new(sign, 0.0F))
+      Some(vec2_scale(dir_world, radius + dx))
+    } else {
+      let sign = if local_ball.y < 0.0F { -1.0F } else { 1.0F }
+      let dir_world = rot.rotate_vec2(@core.Vec2::new(0.0F, sign))
+      Some(vec2_scale(dir_world, radius + dy))
+    }
   }
 }
 
@@ -145,18 +195,20 @@ fn separation_ball_cuboid(
 fn separation_vector(
   shape1 : @collision.Shape,
   pos1 : @core.Vec2,
+  rot1 : @core.Real,
   shape2 : @collision.Shape,
   pos2 : @core.Vec2,
+  rot2 : @core.Real,
 ) -> @core.Vec2? {
   match (shape1, shape2) {
     (@collision.Shape::Ball(r1), @collision.Shape::Ball(r2)) =>
       separation_ball_ball(pos1, r1, pos2, r2)
     (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
-      separation_cuboid_cuboid(pos1, hw1, hh1, pos2, hw2, hh2)
+      separation_cuboid_cuboid(pos1, rot1, hw1, hh1, pos2, rot2, hw2, hh2)
     (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
-      separation_ball_cuboid(pos1, r, pos2, hw, hh)
+      separation_ball_cuboid(pos1, r, pos2, rot2, hw, hh)
     (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
-      if separation_ball_cuboid(pos2, r, pos1, hw, hh) is Some(sep) {
+      if separation_ball_cuboid(pos2, r, pos1, rot1, hw, hh) is Some(sep) {
         Some(@core.Vec2::new(-sep.x, -sep.y))
       } else {
         None
@@ -187,8 +239,10 @@ fn resolve_contact(
     let separation = separation_vector(
       collider1.shape,
       pos1,
+      collider1.rotation(),
       collider2.shape,
       pos2,
+      collider2.rotation(),
     )
     if separation is None {
       return

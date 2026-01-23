@@ -1281,11 +1281,58 @@ fn clamp_value(
 }
 
 ///|
+fn cuboid_axes(rotation : @core.Real) -> (@core.Vec2, @core.Vec2) {
+  let rot = @core.Rot2::from_angle(rotation)
+  // rot.rotate_vec2((1, 0)) and rot.rotate_vec2((0, 1)) without allocating.
+  (@core.Vec2::new(rot.cos, rot.sin), @core.Vec2::new(-rot.sin, rot.cos))
+}
+
+///|
+fn projection_radius(
+  axis : @core.Vec2,
+  cuboid_axis_x : @core.Vec2,
+  cuboid_axis_y : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> @core.Real {
+  @core.abs(axis.dot(cuboid_axis_x)) * half_width +
+  @core.abs(axis.dot(cuboid_axis_y)) * half_height
+}
+
+///|
+fn cuboid_cuboid_intersect(
+  pos1 : @core.Vec2,
+  rot1 : @core.Real,
+  hw1 : @core.Real,
+  hh1 : @core.Real,
+  pos2 : @core.Vec2,
+  rot2 : @core.Real,
+  hw2 : @core.Real,
+  hh2 : @core.Real,
+) -> Bool {
+  let (ax1, ay1) = cuboid_axes(rot1)
+  let (ax2, ay2) = cuboid_axes(rot2)
+  let delta = pos1.sub(pos2)
+  let axes = [ax1, ay1, ax2, ay2]
+  for axis in axes {
+    let dist = @core.abs(delta.dot(axis))
+    let r1 = projection_radius(axis, ax1, ay1, hw1, hh1)
+    let r2 = projection_radius(axis, ax2, ay2, hw2, hh2)
+    if dist > r1 + r2 {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn shapes_intersect(
   shape1 : Shape,
   pos1 : @core.Vec2,
+  rot1 : @core.Real,
   shape2 : Shape,
   pos2 : @core.Vec2,
+  rot2 : @core.Real,
 ) -> Bool {
   match (shape1, shape2) {
     (Shape::Ball(r1), Shape::Ball(r2)) => {
@@ -1294,15 +1341,12 @@ fn shapes_intersect(
       let radius = r1 + r2
       dist2 <= radius * radius
     }
-    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) => {
-      let dx = @core.abs(pos2.x - pos1.x)
-      let dy = @core.abs(pos2.y - pos1.y)
-      dx <= hw1 + hw2 && dy <= hh1 + hh2
-    }
+    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+      cuboid_cuboid_intersect(pos1, rot1, hw1, hh1, pos2, rot2, hw2, hh2)
     (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
-      ball_cuboid_intersect(pos1, r, pos2, hw, hh)
+      ball_cuboid_intersect(pos1, r, pos2, rot2, hw, hh)
     (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
-      ball_cuboid_intersect(pos2, r, pos1, hw, hh)
+      ball_cuboid_intersect(pos2, r, pos1, rot1, hw, hh)
   }
 }
 
@@ -1311,14 +1355,18 @@ fn ball_cuboid_intersect(
   ball_pos : @core.Vec2,
   radius : @core.Real,
   cuboid_pos : @core.Vec2,
+  cuboid_rot : @core.Real,
   half_width : @core.Real,
   half_height : @core.Real,
 ) -> Bool {
-  let dx = clamp_value(ball_pos.x - cuboid_pos.x, -half_width, half_width)
-  let dy = clamp_value(ball_pos.y - cuboid_pos.y, -half_height, half_height)
-  let closest = @core.Vec2::new(cuboid_pos.x + dx, cuboid_pos.y + dy)
-  let delta = ball_pos.sub(closest)
-  delta.length_squared() <= radius * radius
+  let rot = @core.Rot2::from_angle(cuboid_rot)
+  let inv = rot.inverse()
+  let local_ball = inv.rotate_vec2(ball_pos.sub(cuboid_pos))
+  let clamped = @core.Vec2::new(
+    clamp_value(local_ball.x, -half_width, half_width),
+    clamp_value(local_ball.y, -half_height, half_height),
+  )
+  local_ball.sub(clamped).length_squared() <= radius * radius
 }
 
 ///|
@@ -1394,8 +1442,10 @@ pub fn NarrowPhase::update_with_pairs(
       let intersecting = shapes_intersect(
         collider1.shape,
         pos1,
+        collider1.world_rotation,
         collider2.shape,
         pos2,
+        collider2.world_rotation,
       )
       if intersecting {
         if collider1.sensor || collider2.sensor {

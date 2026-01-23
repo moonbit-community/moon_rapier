@@ -340,3 +340,52 @@ test "rigid body removal snapshot handle determinism" {
   inspect(@dynamics.RigidBodyHandle::equals(h3a, h3b), content="true")
   colliders |> ignore
 }
+
+///|
+test "rotated cuboid does not generate false contacts" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let islands = @dynamics.IslandManager::new()
+  let cuboid_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
+    .build(),
+  )
+  let cuboid_collider = @collision.ColliderBuilder::cuboid(2.0F, 0.5F).build()
+  colliders.insert_with_parent(cuboid_collider, cuboid_body, bodies) |> ignore
+  let ball_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(1.2F, 0.0F))
+    .build(),
+  )
+  let ball_collider = @collision.ColliderBuilder::ball(0.4F).build()
+  colliders.insert_with_parent(ball_collider, ball_body, bodies) |> ignore
+  pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    (),
+    (),
+  )
+  inspect(narrow_phase.contacts.length() == 0, content="true")
+  if bodies.get(ball_body) is Some(body) {
+    let tol = 1.0e-5F
+    let pos = body.translation()
+    inspect(@core.abs(pos.x - 1.2F) < tol, content="true")
+    inspect(@core.abs(pos.y) < tol, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

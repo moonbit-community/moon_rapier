@@ -248,6 +248,33 @@ fn ray_intersect_cuboid(
 }
 
 ///|
+fn ray_intersect_cuboid_oriented(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> @core.Real? {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_ray = Ray::new(
+    inv.rotate_vec2(ray.origin.sub(center)),
+    inv.rotate_vec2(ray.dir),
+  )
+  // Rotation does not affect the time-of-impact parameter, only the frame.
+  ray_intersect_cuboid(
+    local_ray,
+    @core.Vec2::zero(),
+    half_width,
+    half_height,
+    max_toi,
+    solid,
+  )
+}
+
+///|
 pub fn QueryPipeline::cast_ray(
   self : QueryPipeline,
   ray : Ray,
@@ -263,11 +290,12 @@ pub fn QueryPipeline::cast_ray(
         continue
       }
       let pos = collider.world_translation
+      let rot = collider.world_rotation
       let toi = match collider.shape {
         Shape::Ball(radius) =>
           ray_intersect_ball(ray, pos, radius, max_dist, solid)
         Shape::Cuboid(hw, hh) =>
-          ray_intersect_cuboid(ray, pos, hw, hh, max_dist, solid)
+          ray_intersect_cuboid_oriented(ray, pos, rot, hw, hh, max_dist, solid)
       }
       if toi is Some(hit) {
         if best is Some(current) {
@@ -287,12 +315,17 @@ pub fn QueryPipeline::cast_ray(
 fn point_in_shape(
   shape : Shape,
   center : @core.Vec2,
+  rotation : @core.Real,
   point : @core.Vec2,
 ) -> Bool {
   match shape {
     Shape::Ball(radius) => point.sub(center).length_squared() <= radius * radius
-    Shape::Cuboid(hw, hh) =>
-      @core.abs(point.x - center.x) <= hw && @core.abs(point.y - center.y) <= hh
+    Shape::Cuboid(hw, hh) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let inv = rot.inverse()
+      let local_point = inv.rotate_vec2(point.sub(center))
+      @core.abs(local_point.x) <= hw && @core.abs(local_point.y) <= hh
+    }
   }
 }
 
@@ -308,7 +341,12 @@ pub fn QueryPipeline::intersect_point(
       if !query_filter_test(self.filter, self.bodies, handle, collider) {
         continue
       }
-      if point_in_shape(collider.shape, collider.world_translation, point) {
+      if point_in_shape(
+          collider.shape,
+          collider.world_translation,
+          collider.world_rotation,
+          point,
+        ) {
         result.push(handle)
       }
     }
