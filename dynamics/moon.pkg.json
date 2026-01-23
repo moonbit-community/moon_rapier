@@ -1,0 +1,10 @@
+{
+  "import": [
+    "Milky2018/moon_rapier/core",
+    "moonbitlang/core/strconv"
+  ],
+  "test-import": [
+    "Milky2018/moon_rapier/core",
+    "Milky2018/moon_rapier/collision"
+  ]
+}
