@@ -210,8 +210,161 @@ fn min_real(a : @core.Real, b : @core.Real) -> @core.Real {
 }
 
 ///|
+fn max_real(a : @core.Real, b : @core.Real) -> @core.Real {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn clamp_value(
+  value : @core.Real,
+  min_value : @core.Real,
+  max_value : @core.Real,
+) -> @core.Real {
+  max_real(min_value, min_real(max_value, value))
+}
+
+///|
 fn is_wall_normal(normal : @core.Vec2, cos_max_slope : @core.Real) -> Bool {
   @core.abs(normal.x) >= 0.5F && @core.abs(normal.y) <= cos_max_slope
+}
+
+///|
+fn compute_shape_aabb(
+  shape_pos : @core.Isometry2,
+  shape : @collision.Shape,
+  prediction : @core.Real,
+) -> @core.Aabb {
+  let pd = if prediction < 0.0F { 0.0F } else { prediction }
+  match shape {
+    @collision.Shape::Ball(radius) => {
+      let r = radius + pd
+      let c = shape_pos.translation
+      @core.Aabb::new(
+        @core.Vec2::new(c.x - r, c.y - r),
+        @core.Vec2::new(c.x + r, c.y + r),
+      )
+    }
+    @collision.Shape::Cuboid(half_width, half_height) => {
+      let rot = shape_pos.rotation
+      let abs_cos = @core.abs(rot.cos)
+      let abs_sin = @core.abs(rot.sin)
+      let hw = abs_cos * half_width + abs_sin * half_height + pd
+      let hh = abs_sin * half_width + abs_cos * half_height + pd
+      let c = shape_pos.translation
+      @core.Aabb::new(
+        @core.Vec2::new(c.x - hw, c.y - hh),
+        @core.Vec2::new(c.x + hw, c.y + hh),
+      )
+    }
+  }
+}
+
+///|
+
+///|
+fn contact_ball_ball(
+  center1 : @core.Vec2,
+  radius1 : @core.Real,
+  center2 : @core.Vec2,
+  radius2 : @core.Real,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let delta = center1.sub(center2)
+  let dist = delta.length()
+  let normal = if dist <= 1.0e-6F {
+    @core.Vec2::new(0.0F, 1.0F)
+  } else {
+    vec2_scale(delta, 1.0F / dist)
+  }
+  let point2 = center2.add(vec2_scale(normal, radius2))
+  (dist - (radius1 + radius2), normal, point2)
+}
+
+///|
+fn contact_ball_cuboid(
+  center : @core.Vec2,
+  radius : @core.Real,
+  cuboid_center : @core.Vec2,
+  cuboid_rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let rot = @core.Rot2::from_angle(cuboid_rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(center.sub(cuboid_center))
+  let clamped = @core.Vec2::new(
+    clamp_value(local_point.x, -half_width, half_width),
+    clamp_value(local_point.y, -half_height, half_height),
+  )
+  let delta_local = local_point.sub(clamped)
+  let dist = delta_local.length()
+  let normal_local = if dist <= 1.0e-6F {
+    let dx = half_width - @core.abs(local_point.x)
+    let dy = half_height - @core.abs(local_point.y)
+    if dx < dy {
+      let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(sign, 0.0F)
+    } else {
+      let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(0.0F, sign)
+    }
+  } else {
+    vec2_scale(delta_local, 1.0F / dist)
+  }
+  let normal = rot.rotate_vec2(normal_local)
+  let point2 = cuboid_center.add(rot.rotate_vec2(clamped))
+  (dist - radius, normal, point2)
+}
+
+///|
+fn detect_ground_contact(
+  query : @collision.QueryPipeline,
+  shape : @collision.Shape,
+  position : @core.Isometry2,
+  cos_max_slope : @core.Real,
+) -> (@collision.ColliderHandle, @core.Vec2, @core.Vec2)? {
+  let prediction = 0.06F
+  let aabb = compute_shape_aabb(position, shape, prediction)
+  let mut best : (@collision.ColliderHandle, @core.Vec2, @core.Vec2, @core.Real)? = None
+  for handle in query.intersect_aabb_conservative(aabb) {
+    if query.collider(handle) is Some(co) {
+      let (dist_to_surface, normal, point2) = if shape
+        is @collision.Shape::Ball(r) {
+        match co.shape {
+          @collision.Shape::Ball(r2) =>
+            contact_ball_ball(position.translation, r, co.world_translation, r2)
+          @collision.Shape::Cuboid(hw, hh) =>
+            contact_ball_cuboid(
+              position.translation,
+              r,
+              co.world_translation,
+              co.world_rotation,
+              hw,
+              hh,
+            )
+        }
+      } else {
+        continue
+      }
+      if dist_to_surface <= prediction && normal.y >= cos_max_slope {
+        if best is Some(current) {
+          if dist_to_surface < current.3 {
+            best = Some((handle, normal, point2, dist_to_surface))
+          }
+        } else {
+          best = Some((handle, normal, point2, dist_to_surface))
+        }
+      }
+    }
+  }
+  if best is Some(hit) {
+    Some((hit.0, hit.1, hit.2))
+  } else {
+    None
+  }
 }
 
 ///|
@@ -309,12 +462,30 @@ fn detect_grounded(
   position : @core.Isometry2,
   max_slope_climb_angle : @core.Real,
 ) -> Bool {
-  let down = @core.Vec2::new(0.0F, -1.0F)
-  let options = @collision.ShapeCastOptions::new(0.06F, true)
-  if query.cast_shape(position, down, shape, options) is Some(hit) {
-    hit.1.normal().y >= cos_real(max_slope_climb_angle)
+  let cos_max_slope = cos_real(max_slope_climb_angle)
+  detect_ground_contact(query, shape, position, cos_max_slope) is Some(_)
+}
+
+///|
+fn grounded_info(
+  query : @collision.QueryPipeline,
+  shape : @collision.Shape,
+  position : @core.Isometry2,
+  max_slope_climb_angle : @core.Real,
+) -> (Bool, @core.Vec2) {
+  let cos_max_slope = cos_real(max_slope_climb_angle)
+  if detect_ground_contact(query, shape, position, cos_max_slope) is Some(hit) {
+    let handle = hit.0
+    if query.collider(handle) is Some(co) &&
+      co.parent is Some(parent) &&
+      query.rigid_body(parent) is Some(body) &&
+      body.is_kinematic() {
+      (true, body.linvel())
+    } else {
+      (true, @core.Vec2::zero())
+    }
   } else {
-    false
+    (false, @core.Vec2::zero())
   }
 }
 
@@ -328,16 +499,16 @@ pub fn KinematicCharacterController::move_shape(
   translation : @core.Vec2,
   handle_collision : (CharacterCollision) -> Unit,
 ) -> EffectiveMovement {
-  dt |> ignore
   let up = @core.Vec2::new(0.0F, 1.0F)
   let skin = 1.0e-3F
   let cos_max_slope = cos_real(self.max_slope_climb_angle)
-  let grounded_at_start = detect_grounded(
-    query,
-    shape,
-    position,
-    self.max_slope_climb_angle,
-  )
+  let grounded_at_start = grounded_info(
+      query,
+      shape,
+      position,
+      self.max_slope_climb_angle,
+    ).0
+  let dt_value = if dt < 0.0F { 0.0F } else { dt }
   let mut result_translation = @core.Vec2::zero()
   let mut remaining = translation
   let mut grounded = false
@@ -416,12 +587,7 @@ pub fn KinematicCharacterController::move_shape(
       )
   }
   if iters == 0 {
-    grounded = detect_grounded(
-      query,
-      shape,
-      position,
-      self.max_slope_climb_angle,
-    )
+    grounded = grounded_info(query, shape, position, self.max_slope_climb_angle).0
   }
   if grounded_at_start && !grounded && self.snap_to_ground is Some(snap_length) {
     let (_, up_extent) = compute_dims(shape)
@@ -440,6 +606,22 @@ pub fn KinematicCharacterController::move_shape(
         grounded = true
       }
     }
+  }
+  let final_pos = @core.Isometry2::new(
+    position.translation.add(result_translation),
+    position.rotation,
+  )
+  let end_info = grounded_info(
+    query,
+    shape,
+    final_pos,
+    self.max_slope_climb_angle,
+  )
+  grounded = end_info.0
+  if grounded {
+    result_translation = result_translation.add(
+      vec2_scale(end_info.1, dt_value),
+    )
   }
   { translation: result_translation, grounded }
 }

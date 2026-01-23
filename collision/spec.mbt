@@ -1101,6 +1101,24 @@ pub fn QueryPipeline::cast_shape(
 
 ///|
 #declaration_only
+pub fn QueryPipeline::collider(
+  self : QueryPipeline,
+  handle : ColliderHandle,
+) -> Collider? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::rigid_body(
+  self : QueryPipeline,
+  handle : @dynamics.RigidBodyHandle,
+) -> @dynamics.RigidBody? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
   point : @core.Vec2,

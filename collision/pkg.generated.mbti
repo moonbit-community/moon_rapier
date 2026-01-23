@@ -248,10 +248,12 @@ pub struct QueryPipeline {
 pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
 pub fn QueryPipeline::cast_shape(Self, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
+pub fn QueryPipeline::collider(Self, ColliderHandle) -> Collider?
 pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
 pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
+pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
 
 pub struct Ray {
   origin : @core.Vec2

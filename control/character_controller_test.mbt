@@ -211,6 +211,41 @@ test "character controller collision event includes hit info" {
 }
 
 ///|
+test "character controller follows kinematic platform velocity" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let platform_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_velocity_based()
+    .linvel(@core.Vec2::new(1.0F, 0.0F))
+    .build(),
+  )
+  let platform = @collision.ColliderBuilder::cuboid(10.0F, 0.5F)
+    .translation(@core.Vec2::new(0.0F, -0.5F))
+    .build()
+  colliders.insert_with_parent(platform, platform_body, bodies) |> ignore
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let controller = KinematicCharacterController::new()
+  let shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.5F))
+  let movement = controller.move_shape(
+    1.0F,
+    query_pipeline,
+    shape,
+    start_pos,
+    @core.Vec2::zero(),
+    fn(_collision) {  },
+  )
+  inspect(movement.is_grounded() == true, content="true")
+  inspect(@core.abs(movement.translation().x - 1.0F) < 1.0e-3F, content="true")
+}
+
+///|
 test "character controller autostep moves past obstacle" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()

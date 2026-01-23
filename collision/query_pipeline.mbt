@@ -922,6 +922,22 @@ pub fn QueryPipeline::cast_shape(
 }
 
 ///|
+pub fn QueryPipeline::collider(
+  self : QueryPipeline,
+  handle : ColliderHandle,
+) -> Collider? {
+  self.colliders.get(handle)
+}
+
+///|
+pub fn QueryPipeline::rigid_body(
+  self : QueryPipeline,
+  handle : @dynamics.RigidBodyHandle,
+) -> @dynamics.RigidBody? {
+  self.bodies.get(handle)
+}
+
+///|
 fn point_in_shape(
   shape : Shape,
   center : @core.Vec2,
