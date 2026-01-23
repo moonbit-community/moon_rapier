@@ -1531,6 +1531,246 @@ fn aabb_intersects(left : Aabb, right : Aabb) -> Bool {
 }
 
 ///|
+fn aabb_union(left : Aabb, right : Aabb) -> Aabb {
+  Aabb::{
+    min: @core.Vec2::new(
+      min_value(left.min.x, right.min.x),
+      min_value(left.min.y, right.min.y),
+    ),
+    max: @core.Vec2::new(
+      max_value(left.max.x, right.max.x),
+      max_value(left.max.y, right.max.y),
+    ),
+  }
+}
+
+///|
+fn aabb_center(aabb : Aabb) -> @core.Vec2 {
+  @core.Vec2::new(
+    0.5F * (aabb.min.x + aabb.max.x),
+    0.5F * (aabb.min.y + aabb.max.y),
+  )
+}
+
+///|
+priv struct BvhLeaf {
+  handle : ColliderHandle
+  aabb : Aabb
+  center : @core.Vec2
+}
+
+///|
+priv struct BvhNode {
+  aabb : Aabb
+  left : Int?
+  right : Int?
+  leaf : ColliderHandle?
+}
+
+///|
+fn swap_leaves(leaves : Array[BvhLeaf], i : Int, j : Int) -> Unit {
+  if i == j {
+    return
+  }
+  let tmp = leaves[i]
+  leaves[i] = leaves[j]
+  leaves[j] = tmp
+}
+
+///|
+fn leaf_key(leaf : BvhLeaf, axis_x : Bool) -> @core.Real {
+  if axis_x {
+    leaf.center.x
+  } else {
+    leaf.center.y
+  }
+}
+
+///|
+fn quicksort_leaves(
+  leaves : Array[BvhLeaf],
+  start : Int,
+  end : Int,
+  axis_x : Bool,
+) -> Unit {
+  if end - start <= 1 {
+    return
+  }
+  let pivot = leaf_key(leaves[(start + end) / 2], axis_x)
+  let mut i = start
+  let mut j = end - 1
+  while i <= j {
+    while leaf_key(leaves[i], axis_x) < pivot {
+      i = i + 1
+    }
+    while leaf_key(leaves[j], axis_x) > pivot {
+      j = j - 1
+    }
+    if i <= j {
+      swap_leaves(leaves, i, j)
+      i = i + 1
+      j = j - 1
+    }
+  }
+  if start < j + 1 {
+    quicksort_leaves(leaves, start, j + 1, axis_x)
+  }
+  if i < end {
+    quicksort_leaves(leaves, i, end, axis_x)
+  }
+}
+
+///|
+fn build_bvh(
+  nodes : Array[BvhNode],
+  leaves : Array[BvhLeaf],
+  start : Int,
+  end : Int,
+) -> Int {
+  let count = end - start
+  if count == 1 {
+    let leaf = leaves[start]
+    let index = nodes.length()
+    nodes.push(BvhNode::{
+      aabb: leaf.aabb,
+      left: None,
+      right: None,
+      leaf: Some(leaf.handle),
+    })
+    return index
+  }
+
+  // Choose split axis based on the spread of centers.
+  let mut min_x = leaves[start].center.x
+  let mut max_x = min_x
+  let mut min_y = leaves[start].center.y
+  let mut max_y = min_y
+  for i in (start + 1)..<end {
+    let c = leaves[i].center
+    min_x = min_value(min_x, c.x)
+    max_x = max_value(max_x, c.x)
+    min_y = min_value(min_y, c.y)
+    max_y = max_value(max_y, c.y)
+  }
+  let axis_x = max_x - min_x >= max_y - min_y
+  quicksort_leaves(leaves, start, end, axis_x)
+  let mid = start + count / 2
+  let left = build_bvh(nodes, leaves, start, mid)
+  let right = build_bvh(nodes, leaves, mid, end)
+  let node_aabb = aabb_union(nodes[left].aabb, nodes[right].aabb)
+  let index = nodes.length()
+  nodes.push(BvhNode::{
+    aabb: node_aabb,
+    left: Some(left),
+    right: Some(right),
+    leaf: None,
+  })
+  index
+}
+
+///|
+fn handle_less(left : ColliderHandle, right : ColliderHandle) -> Bool {
+  if left.id < right.id {
+    true
+  } else if left.id > right.id {
+    false
+  } else {
+    left.generation < right.generation
+  }
+}
+
+///|
+fn sorted_pair(
+  a : ColliderHandle,
+  b : ColliderHandle,
+) -> (ColliderHandle, ColliderHandle) {
+  if handle_less(a, b) {
+    (a, b)
+  } else {
+    (b, a)
+  }
+}
+
+///|
+fn pair_less(
+  left : (ColliderHandle, ColliderHandle),
+  right : (ColliderHandle, ColliderHandle),
+) -> Bool {
+  if handle_less(left.0, right.0) {
+    return true
+  }
+  if handle_less(right.0, left.0) {
+    return false
+  }
+  handle_less(left.1, right.1)
+}
+
+///|
+fn sort_pairs(pairs : Array[(ColliderHandle, ColliderHandle)]) -> Unit {
+  for i in 1..<pairs.length() {
+    let key = pairs[i]
+    let mut j = i
+    while j > 0 && pair_less(key, pairs[j - 1]) {
+      pairs[j] = pairs[j - 1]
+      j = j - 1
+    }
+    pairs[j] = key
+  }
+}
+
+///|
+fn collect_bvh_pairs(
+  nodes : Array[BvhNode],
+  a : Int,
+  b : Int,
+  out : Array[(ColliderHandle, ColliderHandle)],
+) -> Unit {
+  let node_a = nodes[a]
+  let node_b = nodes[b]
+  if !aabb_intersects(node_a.aabb, node_b.aabb) {
+    return
+  }
+  if node_a.leaf is Some(handle_a) && node_b.leaf is Some(handle_b) {
+    if ColliderHandle::equals(handle_a, handle_b) {
+      return
+    }
+    out.push(sorted_pair(handle_a, handle_b))
+    return
+  }
+  if a == b {
+    if node_a.left is Some(left) && node_a.right is Some(right) {
+      collect_bvh_pairs(nodes, left, left, out)
+      collect_bvh_pairs(nodes, left, right, out)
+      collect_bvh_pairs(nodes, right, right, out)
+    }
+    return
+  }
+  if node_a.leaf is Some(_) {
+    if node_b.left is Some(left) && node_b.right is Some(right) {
+      collect_bvh_pairs(nodes, a, left, out)
+      collect_bvh_pairs(nodes, a, right, out)
+    }
+    return
+  }
+  if node_b.leaf is Some(_) {
+    if node_a.left is Some(left) && node_a.right is Some(right) {
+      collect_bvh_pairs(nodes, left, b, out)
+      collect_bvh_pairs(nodes, right, b, out)
+    }
+    return
+  }
+  if node_a.left is Some(al) &&
+    node_a.right is Some(ar) &&
+    node_b.left is Some(bl) &&
+    node_b.right is Some(br) {
+    collect_bvh_pairs(nodes, al, bl, out)
+    collect_bvh_pairs(nodes, al, br, out)
+    collect_bvh_pairs(nodes, ar, bl, out)
+    collect_bvh_pairs(nodes, ar, br, out)
+  }
+}
+
+///|
 fn compute_shape_aabb(
   shape : Shape,
   center : @core.Vec2,
@@ -1591,34 +1831,26 @@ pub fn BroadPhaseBvh::update(
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
   self.pairs.clear()
-  let aabbs : Array[Aabb?] = []
+  let leaves : Array[BvhLeaf] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      aabbs.push(
-        Some(
-          compute_shape_aabb(
-            collider.shape,
-            collider.world_translation,
-            collider.world_rotation,
-            prediction_distance,
-          ),
-        ),
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let aabb = compute_shape_aabb(
+        collider.shape,
+        collider.world_translation,
+        collider.world_rotation,
+        prediction_distance,
       )
-    } else {
-      aabbs.push(None)
+      leaves.push(BvhLeaf::{ handle, aabb, center: aabb_center(aabb) })
     }
   }
-  for i in 0..<aabbs.length() {
-    if aabbs[i] is Some(aabb1) {
-      let handle1 = ColliderHandle::new(i, colliders.generations[i])
-      for j in (i + 1)..<aabbs.length() {
-        if aabbs[j] is Some(aabb2) && aabb_intersects(aabb1, aabb2) {
-          let handle2 = ColliderHandle::new(j, colliders.generations[j])
-          self.pairs.push((handle1, handle2))
-        }
-      }
-    }
+  if leaves.length() <= 1 {
+    return
   }
+  let nodes : Array[BvhNode] = []
+  let root = build_bvh(nodes, leaves, 0, leaves.length())
+  collect_bvh_pairs(nodes, root, root, self.pairs)
+  sort_pairs(self.pairs)
 }
 
 ///|
