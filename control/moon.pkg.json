@@ -1,7 +1,8 @@
 {
   "import": [
     "Milky2018/moon_rapier/core",
-    "Milky2018/moon_rapier/collision"
+    "Milky2018/moon_rapier/collision",
+    "moonbitlang/core/math"
   ],
   "test-import": [
     "Milky2018/moon_rapier/collision",

@@ -18,6 +18,7 @@ pub(all) enum CharacterLength {
   Relative(Float)
   Absolute(Float)
 }
+pub fn CharacterLength::absolute(Float) -> Self
 pub fn CharacterLength::relative(Float) -> Self
 
 pub struct EffectiveMovement {

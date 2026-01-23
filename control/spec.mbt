@@ -26,6 +26,12 @@ pub fn CharacterLength::relative(value : @core.Real) -> CharacterLength {
 
 ///|
 #declaration_only
+pub fn CharacterLength::absolute(value : @core.Real) -> CharacterLength {
+  ...
+}
+
+///|
+#declaration_only
 pub type CharacterCollision
 
 ///|

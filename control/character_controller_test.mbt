@@ -136,6 +136,40 @@ test "character controller climb" {
 }
 
 ///|
+test "character controller slides along wall" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let wall_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let wall = @collision.ColliderBuilder::cuboid(0.5F, 10.0F).build()
+  colliders.insert_with_parent(wall, wall_body, bodies) |> ignore
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let controller = KinematicCharacterController::new()
+  let shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(-2.0F, 0.0F),
+  )
+  let desired = @core.Vec2::new(2.0F, 1.0F)
+  let movement = controller.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    desired,
+    fn(_collision) {  },
+  )
+  let applied = movement.translation()
+  inspect(@core.abs(applied.x - 1.0F) < 1.0e-2F, content="true")
+  inspect(@core.abs(applied.y - 1.0F) < 1.0e-2F, content="true")
+  inspect(movement.is_grounded() == false, content="true")
+}
+
+///|
 /// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) adapted for 2D.
 test "character controller ground detection" {
   let colliders = @collision.ColliderSet::new()
