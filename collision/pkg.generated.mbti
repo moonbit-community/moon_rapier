@@ -208,12 +208,29 @@ pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
   excluded_collider : ColliderHandle?
   mut groups : @dynamics.InteractionGroups?
+  mut flags : QueryFilterFlags
 }
 pub fn QueryFilter::exclude_collider(Self, ColliderHandle) -> Self
+pub fn QueryFilter::exclude_dynamic(Self) -> Self
+pub fn QueryFilter::exclude_fixed(Self) -> Self
+pub fn QueryFilter::exclude_kinematic(Self) -> Self
 pub fn QueryFilter::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
+pub fn QueryFilter::exclude_sensors(Self) -> Self
+pub fn QueryFilter::exclude_solids(Self) -> Self
 pub fn QueryFilter::groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn QueryFilter::groups_filter(Self) -> @dynamics.InteractionGroups?
 pub fn QueryFilter::new() -> Self
+pub fn QueryFilter::only_dynamic() -> Self
+pub fn QueryFilter::only_fixed() -> Self
+pub fn QueryFilter::only_kinematic() -> Self
+
+pub struct QueryFilterFlags {
+  mut bits : Int
+}
+pub fn QueryFilterFlags::contains(Self, Int) -> Bool
+pub fn QueryFilterFlags::empty() -> Self
+pub fn QueryFilterFlags::insert(Self, Int) -> Self
+pub fn QueryFilterFlags::new(Int) -> Self
 
 pub struct QueryPipeline {
   filter : QueryFilter

@@ -18,15 +18,77 @@ pub fn Ray::new(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
 }
 
 ///|
+const QUERY_FILTER_EXCLUDE_FIXED : Int = 1 << 0
+
+///|
+const QUERY_FILTER_EXCLUDE_KINEMATIC : Int = 1 << 1
+
+///|
+const QUERY_FILTER_EXCLUDE_DYNAMIC : Int = 1 << 2
+
+///|
+const QUERY_FILTER_EXCLUDE_SENSORS : Int = 1 << 3
+
+///|
+const QUERY_FILTER_EXCLUDE_SOLIDS : Int = 1 << 4
+
+///|
+const QUERY_FILTER_ONLY_DYNAMIC : Int = QUERY_FILTER_EXCLUDE_FIXED |
+  QUERY_FILTER_EXCLUDE_KINEMATIC
+
+///|
+const QUERY_FILTER_ONLY_KINEMATIC : Int = QUERY_FILTER_EXCLUDE_DYNAMIC |
+  QUERY_FILTER_EXCLUDE_FIXED
+
+///|
+const QUERY_FILTER_ONLY_FIXED : Int = QUERY_FILTER_EXCLUDE_DYNAMIC |
+  QUERY_FILTER_EXCLUDE_KINEMATIC
+
+///|
+pub struct QueryFilterFlags {
+  mut bits : Int
+}
+
+///|
+pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
+  { bits, }
+}
+
+///|
+pub fn QueryFilterFlags::empty() -> QueryFilterFlags {
+  QueryFilterFlags::new(0)
+}
+
+///|
+pub fn QueryFilterFlags::contains(self : QueryFilterFlags, bits : Int) -> Bool {
+  (self.bits & bits) == bits
+}
+
+///|
+pub fn QueryFilterFlags::insert(
+  self : QueryFilterFlags,
+  bits : Int,
+) -> QueryFilterFlags {
+  self.bits = self.bits | bits
+  self
+}
+
+///|
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
   excluded_collider : ColliderHandle?
   mut groups : @dynamics.InteractionGroups?
+  mut flags : QueryFilterFlags
 }
 
 ///|
 pub fn QueryFilter::new() -> QueryFilter {
-  { excluded_body: None, excluded_collider: None, groups: None }
+  {
+    excluded_body: None,
+    excluded_collider: None,
+    groups: None,
+    flags: QueryFilterFlags::empty(),
+  }
 }
 
 ///|
@@ -39,6 +101,7 @@ pub fn QueryFilter::exclude_rigid_body(
     excluded_body: Some(handle),
     excluded_collider: self.excluded_collider,
     groups: self.groups,
+    flags: self.flags,
   }
 }
 
@@ -52,6 +115,7 @@ pub fn QueryFilter::exclude_collider(
     excluded_body: self.excluded_body,
     excluded_collider: Some(handle),
     groups: self.groups,
+    flags: self.flags,
   }
 }
 
@@ -61,6 +125,57 @@ pub fn QueryFilter::groups(
   groups : @dynamics.InteractionGroups,
 ) -> QueryFilter {
   self.groups = Some(groups)
+  self
+}
+
+///|
+pub fn QueryFilter::exclude_fixed(self : QueryFilter) -> QueryFilter {
+  self.flags = self.flags.insert(QUERY_FILTER_EXCLUDE_FIXED)
+  self
+}
+
+///|
+pub fn QueryFilter::exclude_kinematic(self : QueryFilter) -> QueryFilter {
+  self.flags = self.flags.insert(QUERY_FILTER_EXCLUDE_KINEMATIC)
+  self
+}
+
+///|
+pub fn QueryFilter::exclude_dynamic(self : QueryFilter) -> QueryFilter {
+  self.flags = self.flags.insert(QUERY_FILTER_EXCLUDE_DYNAMIC)
+  self
+}
+
+///|
+pub fn QueryFilter::only_dynamic() -> QueryFilter {
+  let filter = QueryFilter::new()
+  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_DYNAMIC)
+  filter
+}
+
+///|
+pub fn QueryFilter::only_kinematic() -> QueryFilter {
+  let filter = QueryFilter::new()
+  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_KINEMATIC)
+  filter
+}
+
+///|
+pub fn QueryFilter::only_fixed() -> QueryFilter {
+  let filter = QueryFilter::new()
+  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_FIXED)
+  filter
+}
+
+///|
+pub fn QueryFilter::exclude_sensors(self : QueryFilter) -> QueryFilter {
+  self.flags = self.flags.insert(QUERY_FILTER_EXCLUDE_SENSORS)
+  self
+}
+
+///|
+pub fn QueryFilter::exclude_solids(self : QueryFilter) -> QueryFilter {
+  self.flags = self.flags.insert(QUERY_FILTER_EXCLUDE_SOLIDS)
   self
 }
 
@@ -78,7 +193,6 @@ fn query_filter_test(
   handle : ColliderHandle,
   collider : Collider,
 ) -> Bool {
-  bodies |> ignore
   if filter.excluded_collider is Some(excluded) &&
     ColliderHandle::equals(excluded, handle) {
     return false
@@ -90,7 +204,37 @@ fn query_filter_test(
     }
   }
   if filter.groups is Some(groups) {
-    return collider.collision_groups().test_groups(groups)
+    if !collider.collision_groups().test_groups(groups) {
+      return false
+    }
+  }
+  if filter.flags.contains(QUERY_FILTER_EXCLUDE_SENSORS) && collider.is_sensor() {
+    return false
+  }
+  if filter.flags.contains(QUERY_FILTER_EXCLUDE_SOLIDS) && !collider.is_sensor() {
+    return false
+  }
+  if filter.flags.contains(QUERY_FILTER_EXCLUDE_FIXED) {
+    if collider.parent is None {
+      return false
+    }
+  }
+  if collider.parent is Some(parent) {
+    if bodies.get(parent) is Some(body) {
+      let body_type = body.body_type()
+      if filter.flags.contains(QUERY_FILTER_EXCLUDE_FIXED) &&
+        body_type.is_fixed() {
+        return false
+      }
+      if filter.flags.contains(QUERY_FILTER_EXCLUDE_KINEMATIC) &&
+        body_type.is_kinematic() {
+        return false
+      }
+      if filter.flags.contains(QUERY_FILTER_EXCLUDE_DYNAMIC) &&
+        body_type.is_dynamic() {
+        return false
+      }
+    }
   }
   true
 }

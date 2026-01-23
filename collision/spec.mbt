@@ -845,6 +845,37 @@ pub type QueryPipeline
 pub type QueryFilter
 
 ///|
+#declaration_only
+pub type QueryFilterFlags
+
+///|
+#declaration_only
+pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilterFlags::empty() -> QueryFilterFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilterFlags::contains(self : QueryFilterFlags, bits : Int) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilterFlags::insert(
+  self : QueryFilterFlags,
+  bits : Int,
+) -> QueryFilterFlags {
+  ...
+}
+
+///|
 pub struct Ray {
   origin : @core.Vec2
   dir : @core.Vec2
@@ -886,6 +917,54 @@ pub fn QueryFilter::groups(
   self : QueryFilter,
   groups : @dynamics.InteractionGroups,
 ) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_fixed(self : QueryFilter) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_kinematic(self : QueryFilter) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_dynamic(self : QueryFilter) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::only_dynamic() -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::only_kinematic() -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::only_fixed() -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_sensors(self : QueryFilter) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_solids(self : QueryFilter) -> QueryFilter {
   ...
 }
 
