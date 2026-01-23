@@ -1205,12 +1205,11 @@ pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
 pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
-  dispatcher : @query.QueryDispatcher
 }
 
 ///|
 pub fn NarrowPhase::new() -> NarrowPhase {
-  { intersections: [], contacts: [], dispatcher: @query.QueryDispatcher::new() }
+  { intersections: [], contacts: [] }
 }
 
 ///|
@@ -1465,13 +1464,6 @@ pub fn NarrowPhase::intersection_pair(
 }
 
 ///|
-pub fn NarrowPhase::query_dispatcher(
-  self : NarrowPhase,
-) -> @query.QueryDispatcher {
-  self.dispatcher
-}
-
-///|
 priv struct Aabb {
   min : @core.Vec2
   max : @core.Vec2
@@ -1524,15 +1516,12 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
 ///|
 pub fn BroadPhaseBvh::as_query_pipeline(
   self : BroadPhaseBvh,
-  dispatcher : @query.QueryDispatcher,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
-  filter : @query.QueryFilter,
-) -> @query.QueryPipeline {
+  filter : QueryFilter,
+) -> QueryPipeline {
   self |> ignore
-  bodies |> ignore
-  colliders |> ignore
-  @query.QueryPipeline::new(filter, dispatcher)
+  QueryPipeline::new(filter, bodies, colliders)
 }
 
 ///|

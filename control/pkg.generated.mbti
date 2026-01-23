@@ -4,7 +4,6 @@ package "Milky2018/moon_rapier/control"
 import {
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/core",
-  "Milky2018/moon_rapier/query",
 }
 
 // Values
@@ -32,7 +31,7 @@ pub struct KinematicCharacterController {
   max_slope_climb_angle : Float
   snap_to_ground : CharacterLength?
 }
-pub fn KinematicCharacterController::move_shape(Self, Float, @query.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
+pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self

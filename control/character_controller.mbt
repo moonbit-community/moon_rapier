@@ -67,7 +67,7 @@ pub fn KinematicCharacterController::with_snap_to_ground(
 pub fn KinematicCharacterController::move_shape(
   self : KinematicCharacterController,
   dt : @core.Real,
-  query : @query.QueryPipeline,
+  query : @collision.QueryPipeline,
   shape : @collision.Shape,
   position : @core.Isometry2,
   translation : @core.Vec2,

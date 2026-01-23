@@ -94,12 +94,9 @@ test "character controller climb" {
       handle : @dynamics.RigidBodyHandle,
     ) -> Bool {
       if bodies.get(handle) is Some(character_body) {
-        let filter = @query.QueryFilter::new().exclude_rigid_body(handle)
+        let filter = @collision.QueryFilter::new().exclude_rigid_body(handle)
         let query_pipeline = broad_phase.as_query_pipeline(
-          narrow_phase.query_dispatcher(),
-          bodies,
-          colliders,
-          filter,
+          bodies, colliders, filter,
         )
         let effective_movement = controller.move_shape(
           integration_parameters.dt,
@@ -204,12 +201,9 @@ test "character controller ground detection" {
       handle : @dynamics.RigidBodyHandle,
     ) -> Bool {
       if bodies.get(handle) is Some(character_body) {
-        let filter = @query.QueryFilter::new().exclude_rigid_body(handle)
+        let filter = @collision.QueryFilter::new().exclude_rigid_body(handle)
         let query_pipeline = broad_phase.as_query_pipeline(
-          narrow_phase.query_dispatcher(),
-          bodies,
-          colliders,
-          filter,
+          bodies, colliders, filter,
         )
         let effective_movement = controller.move_shape(
           integration_parameters.dt,

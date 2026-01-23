@@ -4,7 +4,6 @@ package "Milky2018/moon_rapier/collision"
 import {
   "Milky2018/moon_rapier/core",
   "Milky2018/moon_rapier/dynamics",
-  "Milky2018/moon_rapier/query",
 }
 
 // Values
@@ -40,7 +39,7 @@ pub fn ActiveHooks::modify_solver_contacts() -> Self
 pub struct BroadPhaseBvh {
   pairs : Array[(ColliderHandle, ColliderHandle)]
 }
-pub fn BroadPhaseBvh::as_query_pipeline(Self, @query.QueryDispatcher, @dynamics.RigidBodySet, ColliderSet, @query.QueryFilter) -> @query.QueryPipeline
+pub fn BroadPhaseBvh::as_query_pipeline(Self, @dynamics.RigidBodySet, ColliderSet, QueryFilter) -> QueryPipeline
 pub fn BroadPhaseBvh::new() -> Self
 pub fn BroadPhaseBvh::pairs(Self) -> Array[(ColliderHandle, ColliderHandle)]
 pub fn BroadPhaseBvh::update(Self, Float, @dynamics.RigidBodySet, ColliderSet) -> Unit
@@ -196,16 +195,40 @@ pub struct IntersectionPair {
 pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
-  dispatcher : @query.QueryDispatcher
 }
 pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
 pub fn NarrowPhase::contact_pairs_with(Self, ColliderHandle) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
 pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> IntersectionPair?
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self
-pub fn NarrowPhase::query_dispatcher(Self) -> @query.QueryDispatcher
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)]) -> Unit
+
+pub struct QueryFilter {
+  excluded_body : @dynamics.RigidBodyHandle?
+  excluded_collider : ColliderHandle?
+  mut groups : @dynamics.InteractionGroups?
+}
+pub fn QueryFilter::exclude_collider(Self, ColliderHandle) -> Self
+pub fn QueryFilter::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
+pub fn QueryFilter::groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn QueryFilter::groups_filter(Self) -> @dynamics.InteractionGroups?
+pub fn QueryFilter::new() -> Self
+
+pub struct QueryPipeline {
+  filter : QueryFilter
+  bodies : @dynamics.RigidBodySet
+  colliders : ColliderSet
+}
+pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
+pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
+pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
+
+pub struct Ray {
+  origin : @core.Vec2
+  dir : @core.Vec2
+}
+pub fn Ray::new(@core.Vec2, @core.Vec2) -> Self
 
 pub(all) enum Shape {
   Ball(Float)

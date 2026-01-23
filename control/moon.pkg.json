@@ -1,12 +1,11 @@
 {
   "import": [
     "Milky2018/moon_rapier/core",
-    "Milky2018/moon_rapier/collision",
-    "Milky2018/moon_rapier/query"
+    "Milky2018/moon_rapier/collision"
   ],
   "test-import": [
     "Milky2018/moon_rapier/collision",
     "Milky2018/moon_rapier/dynamics",
-    "Milky2018/moon_rapier/pipeline",
+    "Milky2018/moon_rapier/pipeline"
   ]
 }

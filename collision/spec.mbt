@@ -798,14 +798,6 @@ pub fn NarrowPhase::update_with_pairs(
 
 ///|
 #declaration_only
-pub fn NarrowPhase::query_dispatcher(
-  self : NarrowPhase,
-) -> @query.QueryDispatcher {
-  ...
-}
-
-///|
-#declaration_only
 pub type BroadPhaseBvh
 
 ///|
@@ -818,11 +810,10 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
 #declaration_only
 pub fn BroadPhaseBvh::as_query_pipeline(
   self : BroadPhaseBvh,
-  dispatcher : @query.QueryDispatcher,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
-  filter : @query.QueryFilter,
-) -> @query.QueryPipeline {
+  filter : QueryFilter,
+) -> QueryPipeline {
   ...
 }
 
@@ -842,5 +833,96 @@ pub fn BroadPhaseBvh::update(
 pub fn BroadPhaseBvh::pairs(
   self : BroadPhaseBvh,
 ) -> Array[(ColliderHandle, ColliderHandle)] {
+  ...
+}
+
+///|
+#declaration_only
+pub type QueryPipeline
+
+///|
+#declaration_only
+pub type QueryFilter
+
+///|
+pub struct Ray {
+  origin : @core.Vec2
+  dir : @core.Vec2
+}
+
+///|
+#declaration_only
+pub fn Ray::new(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::new() -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_rigid_body(
+  self : QueryFilter,
+  handle : @dynamics.RigidBodyHandle,
+) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::exclude_collider(
+  self : QueryFilter,
+  handle : ColliderHandle,
+) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::groups(
+  self : QueryFilter,
+  groups : @dynamics.InteractionGroups,
+) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter::groups_filter(
+  self : QueryFilter,
+) -> @dynamics.InteractionGroups? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::new(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> QueryPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::cast_ray(
+  self : QueryPipeline,
+  ray : Ray,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, @core.Real)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::intersect_point(
+  self : QueryPipeline,
+  point : @core.Vec2,
+) -> Array[ColliderHandle] {
   ...
 }
