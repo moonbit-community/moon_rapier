@@ -176,6 +176,12 @@ fn resolve_contact(
     if collider1.sensor || collider2.sensor {
       return
     }
+    // Match Rapier behavior: solver groups only affect force/impulse computation.
+    // In this simplified pipeline, contact "resolution" is the only force we apply,
+    // so we skip it when solver groups don't match.
+    if !collider1.solver_groups().test_groups(collider2.solver_groups()) {
+      return
+    }
     let pos1 = collider1.translation()
     let pos2 = collider2.translation()
     let separation = separation_vector(

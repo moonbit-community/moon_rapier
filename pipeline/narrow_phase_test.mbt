@@ -228,3 +228,110 @@ test "collider set parent no self intersection" {
     inspect(pair.manifold_count() == 1, content="true")
   }
 }
+
+///|
+/// Ported from rapier narrow-phase collision filtering (collision groups).
+test "narrow phase collision groups filtering" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let body1 = @dynamics.RigidBodyBuilder::dynamic().build()
+  let body2 = @dynamics.RigidBodyBuilder::dynamic().build()
+  let body1_handle = rigid_body_set.insert(body1)
+  let body2_handle = rigid_body_set.insert(body2)
+  let groups1 = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_1(),
+    @dynamics.Group::group_1(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let groups2 = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_2(),
+    @dynamics.Group::group_2(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let collider1 = @collision.ColliderBuilder::ball(0.5F)
+    .collision_groups(groups1)
+    .build()
+  let collider2 = @collision.ColliderBuilder::ball(0.5F)
+    .collision_groups(groups2)
+    .build()
+  let collider1_handle = collider_set.insert_with_parent(
+    collider1, body1_handle, rigid_body_set,
+  )
+  let collider2_handle = collider_set.insert_with_parent(
+    collider2, body2_handle, rigid_body_set,
+  )
+  let physics_pipeline = PhysicsPipeline::new()
+  let island_manager = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
+  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  physics_pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    island_manager,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    impulse_joint_set,
+    multibody_joint_set,
+    ccd_solver,
+    (),
+    (),
+  )
+  inspect(
+    narrow_phase.contact_pair(collider1_handle, collider2_handle) is None,
+    content="true",
+  )
+  inspect(
+    narrow_phase.intersection_pair(collider1_handle, collider2_handle) is None,
+    content="true",
+  )
+}
+
+///|
+/// Ported from rapier narrow-phase collision filtering (active collision types).
+test "narrow phase active collision types filtering" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let fixed = @dynamics.RigidBodyBuilder::fixed().build()
+  let kinematic = @dynamics.RigidBodyBuilder::kinematic_position_based().build()
+  let fixed_handle = rigid_body_set.insert(fixed)
+  let kinematic_handle = rigid_body_set.insert(kinematic)
+  let collider_fixed = @collision.ColliderBuilder::ball(0.5F).build()
+  let collider_kinematic = @collision.ColliderBuilder::ball(0.5F).build()
+  let collider_fixed_handle = collider_set.insert_with_parent(
+    collider_fixed, fixed_handle, rigid_body_set,
+  )
+  let collider_kinematic_handle = collider_set.insert_with_parent(
+    collider_kinematic, kinematic_handle, rigid_body_set,
+  )
+  let physics_pipeline = PhysicsPipeline::new()
+  let island_manager = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
+  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  physics_pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    island_manager,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    impulse_joint_set,
+    multibody_joint_set,
+    ccd_solver,
+    (),
+    (),
+  )
+  inspect(
+    narrow_phase.contact_pair(collider_fixed_handle, collider_kinematic_handle)
+    is None,
+    content="true",
+  )
+}

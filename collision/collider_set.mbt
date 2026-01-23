@@ -1343,6 +1343,29 @@ pub fn NarrowPhase::update(
           if is_same_parent(collider1, collider2) {
             continue
           }
+          let mut rb_type1 = @dynamics.RigidBodyType::Fixed
+          let mut rb_type2 = @dynamics.RigidBodyType::Fixed
+          if collider1.parent is Some(parent1) {
+            if bodies.get(parent1) is Some(body1) {
+              rb_type1 = body1.body_type()
+            }
+          }
+          if collider2.parent is Some(parent2) {
+            if bodies.get(parent2) is Some(body2) {
+              rb_type2 = body2.body_type()
+            }
+          }
+          if !collider1.active_collision_types.test_body_types(
+              rb_type1, rb_type2,
+            ) &&
+            !collider2.active_collision_types.test_body_types(
+              rb_type1, rb_type2,
+            ) {
+            continue
+          }
+          if !collider1.collision_groups.test_groups(collider2.collision_groups) {
+            continue
+          }
           let pos1 = collider1.world_translation
           let pos2 = collider2.world_translation
           let intersecting = shapes_intersect(
