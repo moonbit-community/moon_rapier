@@ -211,6 +211,62 @@ test "character controller collision event includes hit info" {
 }
 
 ///|
+test "character controller autostep moves past obstacle" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let ground_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -0.5F))
+    .build(),
+  )
+  let ground = @collision.ColliderBuilder::cuboid(50.0F, 0.5F).build()
+  colliders.insert_with_parent(ground, ground_body, bodies) |> ignore
+  let obstacle = @collision.ColliderBuilder::cuboid(0.5F, 0.2F)
+    .translation(@core.Vec2::new(0.0F, 0.2F))
+    .build()
+  colliders.insert(obstacle) |> ignore
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(-2.0F, 0.5F),
+  )
+  let desired = @core.Vec2::new(4.0F, 0.0F)
+  let controller_no_step = KinematicCharacterController::new()
+  let no_step = controller_no_step.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    desired,
+    fn(_collision) {  },
+  )
+  inspect(no_step.translation().x < 2.0F, content="true")
+  let controller_step = KinematicCharacterController::new().with_autostep(
+    Some(
+      CharacterAutostep::new(
+        CharacterLength::absolute(0.6F),
+        CharacterLength::absolute(2.2F),
+      ),
+    ),
+  )
+  let stepped = controller_step.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    desired,
+    fn(_collision) {  },
+  )
+  inspect(stepped.translation().x > 3.5F, content="true")
+}
+
+///|
 /// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) adapted for 2D.
 test "character controller ground detection" {
   let colliders = @collision.ColliderSet::new()

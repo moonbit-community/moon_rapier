@@ -92,6 +92,35 @@ pub fn EffectiveMovement::is_grounded(self : EffectiveMovement) -> Bool {
 
 ///|
 #declaration_only
+pub type CharacterAutostep
+
+///|
+#declaration_only
+pub fn CharacterAutostep::new(
+  max_height : CharacterLength,
+  min_width : CharacterLength,
+) -> CharacterAutostep {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterAutostep::max_height(
+  self : CharacterAutostep,
+) -> CharacterLength {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterAutostep::min_width(
+  self : CharacterAutostep,
+) -> CharacterLength {
+  ...
+}
+
+///|
+#declaration_only
 pub type KinematicCharacterController
 
 ///|
@@ -114,6 +143,15 @@ pub fn KinematicCharacterController::with_max_slope_climb_angle(
 pub fn KinematicCharacterController::with_snap_to_ground(
   self : KinematicCharacterController,
   snap : CharacterLength?,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::with_autostep(
+  self : KinematicCharacterController,
+  autostep : CharacterAutostep?,
 ) -> KinematicCharacterController {
   ...
 }
