@@ -1326,8 +1326,7 @@ pub fn NarrowPhase::update(
   colliders : ColliderSet,
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
-  let intersections : Array[IntersectionPair] = []
-  let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  let pairs : Array[(ColliderHandle, ColliderHandle)] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider1) {
       if !collider1.is_enabled() {
@@ -1340,52 +1339,72 @@ pub fn NarrowPhase::update(
             continue
           }
           let handle2 = ColliderHandle::new(j, colliders.generations[j])
-          if is_same_parent(collider1, collider2) {
-            continue
-          }
-          let mut rb_type1 = @dynamics.RigidBodyType::Fixed
-          let mut rb_type2 = @dynamics.RigidBodyType::Fixed
-          if collider1.parent is Some(parent1) {
-            if bodies.get(parent1) is Some(body1) {
-              rb_type1 = body1.body_type()
-            }
-          }
-          if collider2.parent is Some(parent2) {
-            if bodies.get(parent2) is Some(body2) {
-              rb_type2 = body2.body_type()
-            }
-          }
-          if !collider1.active_collision_types.test_body_types(
-              rb_type1, rb_type2,
-            ) &&
-            !collider2.active_collision_types.test_body_types(
-              rb_type1, rb_type2,
-            ) {
-            continue
-          }
-          if !collider1.collision_groups.test_groups(collider2.collision_groups) {
-            continue
-          }
-          let pos1 = collider1.world_translation
-          let pos2 = collider2.world_translation
-          let intersecting = shapes_intersect(
-            collider1.shape,
-            pos1,
-            collider2.shape,
-            pos2,
-          )
-          if intersecting {
-            if collider1.sensor || collider2.sensor {
-              intersections.push(IntersectionPair::{
-                collider1: handle1,
-                collider2: handle2,
-                intersecting,
-              })
-            } else {
-              let contact = ContactPair::{ manifold_count: 1 }
-              contacts.push((handle1, handle2, contact))
-            }
-          }
+          pairs.push((handle1, handle2))
+        }
+      }
+    }
+  }
+  self.update_with_pairs(bodies, colliders, pairs)
+}
+
+///|
+pub fn NarrowPhase::update_with_pairs(
+  self : NarrowPhase,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  pairs : Array[(ColliderHandle, ColliderHandle)],
+) -> Unit {
+  let intersections : Array[IntersectionPair] = []
+  let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let handle1 = pair.0
+    let handle2 = pair.1
+    if colliders.get(handle1) is Some(collider1) &&
+      colliders.get(handle2) is Some(collider2) {
+      if !collider1.is_enabled() || !collider2.is_enabled() {
+        continue
+      }
+      if is_same_parent(collider1, collider2) {
+        continue
+      }
+      let mut rb_type1 = @dynamics.RigidBodyType::Fixed
+      let mut rb_type2 = @dynamics.RigidBodyType::Fixed
+      if collider1.parent is Some(parent1) {
+        if bodies.get(parent1) is Some(body1) {
+          rb_type1 = body1.body_type()
+        }
+      }
+      if collider2.parent is Some(parent2) {
+        if bodies.get(parent2) is Some(body2) {
+          rb_type2 = body2.body_type()
+        }
+      }
+      if !collider1.active_collision_types.test_body_types(rb_type1, rb_type2) &&
+        !collider2.active_collision_types.test_body_types(rb_type1, rb_type2) {
+        continue
+      }
+      if !collider1.collision_groups.test_groups(collider2.collision_groups) {
+        continue
+      }
+      let pos1 = collider1.world_translation
+      let pos2 = collider2.world_translation
+      let intersecting = shapes_intersect(
+        collider1.shape,
+        pos1,
+        collider2.shape,
+        pos2,
+      )
+      if intersecting {
+        if collider1.sensor || collider2.sensor {
+          intersections.push(IntersectionPair::{
+            collider1: handle1,
+            collider2: handle2,
+            intersecting,
+          })
+        } else {
+          let contact = ContactPair::{ manifold_count: 1 }
+          contacts.push((handle1, handle2, contact))
         }
       }
     }
@@ -1453,11 +1472,53 @@ pub fn NarrowPhase::query_dispatcher(
 }
 
 ///|
-pub struct BroadPhaseBvh {}
+priv struct Aabb {
+  min : @core.Vec2
+  max : @core.Vec2
+}
+
+///|
+fn aabb_intersects(left : Aabb, right : Aabb) -> Bool {
+  !(left.max.x < right.min.x ||
+  left.min.x > right.max.x ||
+  left.max.y < right.min.y ||
+  left.min.y > right.max.y)
+}
+
+///|
+fn compute_shape_aabb(
+  shape : Shape,
+  center : @core.Vec2,
+  prediction_distance : @core.Real,
+) -> Aabb {
+  let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
+  match shape {
+    Shape::Ball(radius) => {
+      let r = radius + pd
+      Aabb::{
+        min: @core.Vec2::new(center.x - r, center.y - r),
+        max: @core.Vec2::new(center.x + r, center.y + r),
+      }
+    }
+    Shape::Cuboid(half_width, half_height) => {
+      let hw = half_width + pd
+      let hh = half_height + pd
+      Aabb::{
+        min: @core.Vec2::new(center.x - hw, center.y - hh),
+        max: @core.Vec2::new(center.x + hw, center.y + hh),
+      }
+    }
+  }
+}
+
+///|
+pub struct BroadPhaseBvh {
+  pairs : Array[(ColliderHandle, ColliderHandle)]
+}
 
 ///|
 pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
-  BroadPhaseBvh::{  }
+  { pairs: [] }
 }
 
 ///|
@@ -1472,4 +1533,49 @@ pub fn BroadPhaseBvh::as_query_pipeline(
   bodies |> ignore
   colliders |> ignore
   @query.QueryPipeline::new(filter, dispatcher)
+}
+
+///|
+pub fn BroadPhaseBvh::update(
+  self : BroadPhaseBvh,
+  prediction_distance : @core.Real,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  colliders.sync_with_bodies(bodies)
+  self.pairs.clear()
+  let aabbs : Array[Aabb?] = []
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      aabbs.push(
+        Some(
+          compute_shape_aabb(
+            collider.shape,
+            collider.world_translation,
+            prediction_distance,
+          ),
+        ),
+      )
+    } else {
+      aabbs.push(None)
+    }
+  }
+  for i in 0..<aabbs.length() {
+    if aabbs[i] is Some(aabb1) {
+      let handle1 = ColliderHandle::new(i, colliders.generations[i])
+      for j in (i + 1)..<aabbs.length() {
+        if aabbs[j] is Some(aabb2) && aabb_intersects(aabb1, aabb2) {
+          let handle2 = ColliderHandle::new(j, colliders.generations[j])
+          self.pairs.push((handle1, handle2))
+        }
+      }
+    }
+  }
+}
+
+///|
+pub fn BroadPhaseBvh::pairs(
+  self : BroadPhaseBvh,
+) -> Array[(ColliderHandle, ColliderHandle)] {
+  self.pairs
 }

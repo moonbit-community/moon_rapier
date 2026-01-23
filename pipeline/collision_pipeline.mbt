@@ -33,10 +33,9 @@ pub fn CollisionPipeline::step(
   event_handler : Unit,
 ) -> Unit {
   self |> ignore
-  prediction_distance |> ignore
   islands |> ignore
-  broad_phase |> ignore
   physics_hooks |> ignore
   event_handler |> ignore
-  narrow_phase.update(bodies, colliders)
+  broad_phase.update(prediction_distance, bodies, colliders)
+  narrow_phase.update_with_pairs(bodies, colliders, broad_phase.pairs())
 }

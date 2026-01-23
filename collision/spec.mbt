@@ -787,6 +787,17 @@ pub fn NarrowPhase::update(
 
 ///|
 #declaration_only
+pub fn NarrowPhase::update_with_pairs(
+  self : NarrowPhase,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  pairs : Array[(ColliderHandle, ColliderHandle)],
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn NarrowPhase::query_dispatcher(
   self : NarrowPhase,
 ) -> @query.QueryDispatcher {
@@ -812,5 +823,24 @@ pub fn BroadPhaseBvh::as_query_pipeline(
   colliders : ColliderSet,
   filter : @query.QueryFilter,
 ) -> @query.QueryPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn BroadPhaseBvh::update(
+  self : BroadPhaseBvh,
+  prediction_distance : @core.Real,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn BroadPhaseBvh::pairs(
+  self : BroadPhaseBvh,
+) -> Array[(ColliderHandle, ColliderHandle)] {
   ...
 }

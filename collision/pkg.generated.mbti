@@ -38,9 +38,12 @@ pub fn ActiveHooks::insert(Self, Self) -> Self
 pub fn ActiveHooks::modify_solver_contacts() -> Self
 
 pub struct BroadPhaseBvh {
+  pairs : Array[(ColliderHandle, ColliderHandle)]
 }
 pub fn BroadPhaseBvh::as_query_pipeline(Self, @query.QueryDispatcher, @dynamics.RigidBodySet, ColliderSet, @query.QueryFilter) -> @query.QueryPipeline
 pub fn BroadPhaseBvh::new() -> Self
+pub fn BroadPhaseBvh::pairs(Self) -> Array[(ColliderHandle, ColliderHandle)]
+pub fn BroadPhaseBvh::update(Self, Float, @dynamics.RigidBodySet, ColliderSet) -> Unit
 
 pub struct Collider {
   mut shape : Shape
@@ -202,6 +205,7 @@ pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[Inter
 pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::query_dispatcher(Self) -> @query.QueryDispatcher
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
+pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)]) -> Unit
 
 pub(all) enum Shape {
   Ball(Float)
