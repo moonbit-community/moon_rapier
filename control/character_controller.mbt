@@ -34,7 +34,48 @@ fn character_length_eval(
 }
 
 ///|
-pub struct CharacterCollision {}
+pub struct CharacterCollision {
+  handle : @collision.ColliderHandle
+  hit : @collision.ShapeCastHit
+  translation_applied : @core.Vec2
+  translation_remaining : @core.Vec2
+  character_pos : @core.Isometry2
+}
+
+///|
+pub fn CharacterCollision::handle(
+  self : CharacterCollision,
+) -> @collision.ColliderHandle {
+  self.handle
+}
+
+///|
+pub fn CharacterCollision::hit(
+  self : CharacterCollision,
+) -> @collision.ShapeCastHit {
+  self.hit
+}
+
+///|
+pub fn CharacterCollision::translation_applied(
+  self : CharacterCollision,
+) -> @core.Vec2 {
+  self.translation_applied
+}
+
+///|
+pub fn CharacterCollision::translation_remaining(
+  self : CharacterCollision,
+) -> @core.Vec2 {
+  self.translation_remaining
+}
+
+///|
+pub fn CharacterCollision::character_pos(
+  self : CharacterCollision,
+) -> @core.Isometry2 {
+  self.character_pos
+}
 
 ///|
 pub struct EffectiveMovement {
@@ -168,7 +209,17 @@ pub fn KinematicCharacterController::move_shape(
       let applied = vec2_scale(dir, allowed_dist)
       result_translation = result_translation.add(applied)
       remaining = remaining.sub(applied)
-      handle_collision(CharacterCollision::{  })
+      let event_pos = @core.Isometry2::new(
+        position.translation.add(result_translation),
+        position.rotation,
+      )
+      handle_collision(CharacterCollision::{
+        handle: hit.0,
+        hit: hit.1,
+        translation_applied: result_translation,
+        translation_remaining: remaining,
+        character_pos: event_pos,
+      })
       let normal = hit.1.normal()
       if normal.y >= cos_max_slope {
         grounded = true

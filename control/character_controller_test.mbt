@@ -170,6 +170,47 @@ test "character controller slides along wall" {
 }
 
 ///|
+test "character controller collision event includes hit info" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let wall_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let wall = @collision.ColliderBuilder::cuboid(0.5F, 10.0F).build()
+  let wall_handle = colliders.insert_with_parent(wall, wall_body, bodies)
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let collisions : Array[CharacterCollision] = []
+  let controller = KinematicCharacterController::new()
+  let shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(-2.0F, 0.0F),
+  )
+  let movement = controller.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    @core.Vec2::new(2.0F, 0.0F),
+    fn(collision) { collisions.push(collision) },
+  )
+  inspect(movement.is_grounded() == false, content="true")
+  inspect(collisions.length() >= 1, content="true")
+  inspect(
+    @collision.ColliderHandle::equals(collisions[0].handle(), wall_handle),
+    content="true",
+  )
+  let n = collisions[0].hit().normal()
+  inspect(@core.abs(n.x + 1.0F) < 1.0e-3F, content="true")
+  inspect(@core.abs(n.y) < 1.0e-3F, content="true")
+  let applied = collisions[0].translation_applied()
+  inspect(@core.abs(applied.x - 1.0F) < 1.0e-2F, content="true")
+}
+
+///|
 /// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) adapted for 2D.
 test "character controller ground detection" {
   let colliders = @collision.ColliderSet::new()

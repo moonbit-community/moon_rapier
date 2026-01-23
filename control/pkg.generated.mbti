@@ -12,7 +12,17 @@ import {
 
 // Types and methods
 pub struct CharacterCollision {
+  handle : @collision.ColliderHandle
+  hit : @collision.ShapeCastHit
+  translation_applied : @core.Vec2
+  translation_remaining : @core.Vec2
+  character_pos : @core.Isometry2
 }
+pub fn CharacterCollision::character_pos(Self) -> @core.Isometry2
+pub fn CharacterCollision::handle(Self) -> @collision.ColliderHandle
+pub fn CharacterCollision::hit(Self) -> @collision.ShapeCastHit
+pub fn CharacterCollision::translation_applied(Self) -> @core.Vec2
+pub fn CharacterCollision::translation_remaining(Self) -> @core.Vec2
 
 pub(all) enum CharacterLength {
   Relative(Float)

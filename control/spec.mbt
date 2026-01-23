@@ -36,6 +36,46 @@ pub type CharacterCollision
 
 ///|
 #declaration_only
+pub fn CharacterCollision::handle(
+  self : CharacterCollision,
+) -> @collision.ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision::hit(
+  self : CharacterCollision,
+) -> @collision.ShapeCastHit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision::translation_applied(
+  self : CharacterCollision,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision::translation_remaining(
+  self : CharacterCollision,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision::character_pos(
+  self : CharacterCollision,
+) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
 pub type EffectiveMovement
 
 ///|
