@@ -320,6 +320,198 @@ fn contact_ball_cuboid(
 }
 
 ///|
+fn contact_cuboid_ball(
+  cuboid_center : @core.Vec2,
+  cuboid_rot : @core.Rot2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  ball_center : @core.Vec2,
+  ball_radius : @core.Real,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let inv = cuboid_rot.inverse()
+  let local_point = inv.rotate_vec2(ball_center.sub(cuboid_center))
+  let inside = @core.abs(local_point.x) <= half_width &&
+    @core.abs(local_point.y) <= half_height
+  if inside {
+    // When the ball center is inside the cuboid, treat this as a penetration.
+    // For grounded prediction we mostly care about the direction (up).
+    let dx = half_width - @core.abs(local_point.x)
+    let dy = half_height - @core.abs(local_point.y)
+    let (normal_local, _surface_local) = if dx < dy {
+      let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
+      (
+        @core.Vec2::new(sign, 0.0F),
+        @core.Vec2::new(sign * half_width, local_point.y),
+      )
+    } else {
+      let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
+      (
+        @core.Vec2::new(0.0F, sign),
+        @core.Vec2::new(local_point.x, sign * half_height),
+      )
+    }
+    let normal = cuboid_rot.rotate_vec2(normal_local)
+    let point2 = ball_center.add(vec2_scale(normal, ball_radius))
+    (-ball_radius, normal, point2)
+  } else {
+    let clamped = @core.Vec2::new(
+      clamp_value(local_point.x, -half_width, half_width),
+      clamp_value(local_point.y, -half_height, half_height),
+    )
+    let cuboid_point = cuboid_center.add(cuboid_rot.rotate_vec2(clamped))
+    let delta = cuboid_point.sub(ball_center)
+    let dist = delta.length()
+    let normal = if dist <= 1.0e-6F {
+      @core.Vec2::new(0.0F, 1.0F)
+    } else {
+      vec2_scale(delta, 1.0F / dist)
+    }
+    let point2 = ball_center.add(vec2_scale(normal, ball_radius))
+    (dist - ball_radius, normal, point2)
+  }
+}
+
+///|
+fn cuboid_support_point(
+  center : @core.Vec2,
+  rot : @core.Rot2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  dir : @core.Vec2,
+) -> @core.Vec2 {
+  let inv = rot.inverse()
+  let local_dir = inv.rotate_vec2(dir)
+  let x = if local_dir.x < 0.0F { -half_width } else { half_width }
+  let y = if local_dir.y < 0.0F { -half_height } else { half_height }
+  center.add(rot.rotate_vec2(@core.Vec2::new(x, y)))
+}
+
+///|
+fn cuboid_vertices(
+  center : @core.Vec2,
+  rot : @core.Rot2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> Array[@core.Vec2] {
+  [
+    center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, -half_height))),
+    center.add(rot.rotate_vec2(@core.Vec2::new(half_width, -half_height))),
+    center.add(rot.rotate_vec2(@core.Vec2::new(half_width, half_height))),
+    center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, half_height))),
+  ]
+}
+
+///|
+fn closest_point_on_segment(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  p : @core.Vec2,
+) -> @core.Vec2 {
+  let ab = b.sub(a)
+  let denom = ab.dot(ab)
+  if denom <= 1.0e-12F {
+    a
+  } else {
+    let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+    a.add(vec2_scale(ab, t))
+  }
+}
+
+///|
+fn contact_cuboid_cuboid(
+  center1 : @core.Vec2,
+  rot1 : @core.Rot2,
+  half_width1 : @core.Real,
+  half_height1 : @core.Real,
+  center2 : @core.Vec2,
+  rot2 : @core.Rot2,
+  half_width2 : @core.Real,
+  half_height2 : @core.Real,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let ux1 = rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
+  let uy1 = rot1.rotate_vec2(@core.Vec2::new(0.0F, 1.0F))
+  let ux2 = rot2.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
+  let uy2 = rot2.rotate_vec2(@core.Vec2::new(0.0F, 1.0F))
+  let delta_c = center1.sub(center2)
+
+  // SAT overlap check (2D rectangles: axes = face normals of both cuboids).
+  let axes : Array[@core.Vec2] = [ux1, uy1, ux2, uy2]
+  let mut separated = false
+  let mut min_overlap = 1.0e30F
+  let mut min_axis = @core.Vec2::new(0.0F, 1.0F)
+  for axis in axes {
+    let d = @core.abs(delta_c.dot(axis))
+    let r1 = half_width1 * @core.abs(axis.dot(ux1)) +
+      half_height1 * @core.abs(axis.dot(uy1))
+    let r2 = half_width2 * @core.abs(axis.dot(ux2)) +
+      half_height2 * @core.abs(axis.dot(uy2))
+    let overlap = r1 + r2 - d
+    if overlap <= 0.0F {
+      separated = true
+      break
+    }
+    if overlap < min_overlap {
+      min_overlap = overlap
+      let s = if delta_c.dot(axis) < 0.0F { -1.0F } else { 1.0F }
+      min_axis = vec2_scale(axis, s)
+    }
+  }
+  if !separated {
+    let normal = min_axis
+    let point2 = cuboid_support_point(
+      center2, rot2, half_width2, half_height2, normal,
+    )
+    (-min_overlap, normal, point2)
+  } else {
+    // Compute the closest feature pair between the two cuboids.
+    let vs1 = cuboid_vertices(center1, rot1, half_width1, half_height1)
+    let vs2 = cuboid_vertices(center2, rot2, half_width2, half_height2)
+    let mut best_dist2 = 1.0e30F
+    let mut best_normal = @core.Vec2::new(0.0F, 1.0F)
+    let mut best_point2 = center2
+    for v in vs1 {
+      for i in 0..<4 {
+        let a = vs2[i]
+        let b = vs2[(i + 1) % 4]
+        let q = closest_point_on_segment(a, b, v)
+        let d = v.sub(q)
+        let dist2 = d.dot(d)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          let dist = Float::sqrt(dist2)
+          best_normal = if dist <= 1.0e-6F {
+            @core.Vec2::new(0.0F, 1.0F)
+          } else {
+            vec2_scale(d, 1.0F / dist)
+          }
+          best_point2 = q
+        }
+      }
+    }
+    for v in vs2 {
+      for i in 0..<4 {
+        let a = vs1[i]
+        let b = vs1[(i + 1) % 4]
+        let q = closest_point_on_segment(a, b, v)
+        let d = q.sub(v)
+        let dist2 = d.dot(d)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          let dist = Float::sqrt(dist2)
+          best_normal = if dist <= 1.0e-6F {
+            @core.Vec2::new(0.0F, 1.0F)
+          } else {
+            vec2_scale(d, 1.0F / dist)
+          }
+          best_point2 = v
+        }
+      }
+    }
+    (Float::sqrt(best_dist2), best_normal, best_point2)
+  }
+}
+
+///|
 fn detect_ground_contact(
   query : @collision.QueryPipeline,
   shape : @collision.Shape,
@@ -331,23 +523,38 @@ fn detect_ground_contact(
   let mut best : (@collision.ColliderHandle, @core.Vec2, @core.Vec2, @core.Real)? = None
   for handle in query.intersect_aabb_conservative(aabb) {
     if query.collider(handle) is Some(co) {
-      let (dist_to_surface, normal, point2) = if shape
-        is @collision.Shape::Ball(r) {
-        match co.shape {
-          @collision.Shape::Ball(r2) =>
-            contact_ball_ball(position.translation, r, co.world_translation, r2)
-          @collision.Shape::Cuboid(hw, hh) =>
-            contact_ball_cuboid(
-              position.translation,
-              r,
-              co.world_translation,
-              co.world_rotation,
-              hw,
-              hh,
-            )
-        }
-      } else {
-        continue
+      let (dist_to_surface, normal, point2) = match (shape, co.shape) {
+        (@collision.Shape::Ball(r1), @collision.Shape::Ball(r2)) =>
+          contact_ball_ball(position.translation, r1, co.world_translation, r2)
+        (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
+          contact_ball_cuboid(
+            position.translation,
+            r,
+            co.world_translation,
+            co.world_rotation,
+            hw,
+            hh,
+          )
+        (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
+          contact_cuboid_ball(
+            position.translation,
+            position.rotation,
+            hw,
+            hh,
+            co.world_translation,
+            r,
+          )
+        (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
+          contact_cuboid_cuboid(
+            position.translation,
+            position.rotation,
+            hw1,
+            hh1,
+            co.world_translation,
+            @core.Rot2::from_angle(co.world_rotation),
+            hw2,
+            hh2,
+          )
       }
       if dist_to_surface <= prediction && normal.y >= cos_max_slope {
         if best is Some(current) {

@@ -403,3 +403,34 @@ test "character controller ground detection" {
     )
   }
 }
+
+///|
+test "character controller grounded on rotated cuboid (cuboid character)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let angle = 0.3F
+  let ground = @collision.ColliderBuilder::cuboid(5.0F, 0.2F)
+    .translation(@core.Vec2::new(0.0F, -1.5F))
+    .rotation(angle)
+    .build()
+  colliders.insert(ground) |> ignore
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let controller = KinematicCharacterController::new()
+  let shape = @collision.Shape::Cuboid(0.5F, 0.5F)
+  let start_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 2.0F))
+  let movement = controller.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    @core.Vec2::new(0.0F, -4.0F),
+    fn(_collision) {  },
+  )
+  inspect(movement.is_grounded() == true, content="true")
+}
