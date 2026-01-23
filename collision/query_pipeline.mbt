@@ -244,6 +244,41 @@ pub struct QueryPipeline {
   filter : QueryFilter
   bodies : @dynamics.RigidBodySet
   colliders : ColliderSet
+  // Cached AABBs at the time this pipeline is created. This matches Rapier's
+  // "conservative" AABB queries which do not recompute the latest collider AABB.
+  aabbs : Array[@core.Aabb?]
+}
+
+///|
+pub struct RayIntersection {
+  toi : @core.Real
+  normal : @core.Vec2
+}
+
+///|
+pub fn RayIntersection::toi(self : RayIntersection) -> @core.Real {
+  self.toi
+}
+
+///|
+pub fn RayIntersection::normal(self : RayIntersection) -> @core.Vec2 {
+  self.normal
+}
+
+///|
+pub struct PointProjection {
+  point : @core.Vec2
+  is_inside : Bool
+}
+
+///|
+pub fn PointProjection::point(self : PointProjection) -> @core.Vec2 {
+  self.point
+}
+
+///|
+pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
+  self.is_inside
 }
 
 ///|
@@ -252,7 +287,15 @@ pub fn QueryPipeline::new(
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
 ) -> QueryPipeline {
-  { filter, bodies, colliders }
+  let aabbs : Array[@core.Aabb?] = []
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      aabbs.push(Some(compute_collider_aabb(collider)))
+    } else {
+      aabbs.push(None)
+    }
+  }
+  { filter, bodies, colliders, aabbs }
 }
 
 ///|
@@ -265,6 +308,26 @@ fn sqrt_real(value : @core.Real) -> @core.Real {
       x = 0.5F * (x + value / x)
     }
     x
+  }
+}
+
+///|
+fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
+  @core.Vec2::new(v.x * s, v.y * s)
+}
+
+///|
+fn ray_point(ray : Ray, toi : @core.Real) -> @core.Vec2 {
+  ray.origin.add(vec2_scale(ray.dir, toi))
+}
+
+///|
+fn normalize_or_fallback(v : @core.Vec2, fallback : @core.Vec2) -> @core.Vec2 {
+  let len2 = v.dot(v)
+  if len2 <= 1.0e-12F {
+    fallback
+  } else {
+    v.normalize()
   }
 }
 
@@ -314,20 +377,53 @@ fn ray_intersect_ball(
 }
 
 ///|
-fn ray_intersect_cuboid(
+fn ray_intersect_ball_and_get_normal(
   ray : Ray,
   center : @core.Vec2,
+  radius : @core.Real,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  let d = ray.dir
+  let m = ray.origin.sub(center)
+  let a = d.dot(d)
+  if a <= 1.0e-12F {
+    return None
+  }
+  let c = m.dot(m) - radius * radius
+  let inside = c <= 0.0F
+  if ray_intersect_ball(ray, center, radius, max_toi, solid) is Some(hit) {
+    let normal = if hit <= 1.0e-12F && inside && solid {
+      normalize_or_fallback(
+        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+        @core.Vec2::new(1.0F, 0.0F),
+      )
+    } else {
+      let p = ray_point(ray, hit)
+      normalize_or_fallback(p.sub(center), @core.Vec2::new(1.0F, 0.0F))
+    }
+    Some(RayIntersection::{ toi: hit, normal })
+  } else {
+    None
+  }
+}
+
+///|
+fn ray_intersect_cuboid_local_and_get_normal(
+  ray : Ray,
   half_width : @core.Real,
   half_height : @core.Real,
   max_toi : @core.Real,
   solid : Bool,
-) -> @core.Real? {
-  let min_x = center.x - half_width
-  let max_x = center.x + half_width
-  let min_y = center.y - half_height
-  let max_y = center.y + half_height
+) -> RayIntersection? {
+  let min_x = -half_width
+  let max_x = half_width
+  let min_y = -half_height
+  let max_y = half_height
   let mut tmin = 0.0F
   let mut tmax = max_toi
+  let mut enter_normal = @core.Vec2::new(0.0F, 0.0F)
+  let mut exit_normal = @core.Vec2::new(0.0F, 0.0F)
   if @core.abs(ray.dir.x) <= 1.0e-12F {
     if ray.origin.x < min_x || ray.origin.x > max_x {
       return None
@@ -336,16 +432,28 @@ fn ray_intersect_cuboid(
     let inv = 1.0F / ray.dir.x
     let mut t1 = (min_x - ray.origin.x) * inv
     let mut t2 = (max_x - ray.origin.x) * inv
+    let near_normal = if ray.dir.x > 0.0F {
+      @core.Vec2::new(-1.0F, 0.0F)
+    } else {
+      @core.Vec2::new(1.0F, 0.0F)
+    }
+    let far_normal = @core.Vec2::new(-near_normal.x, -near_normal.y)
+    let mut axis_enter = near_normal
+    let mut axis_exit = far_normal
     if t1 > t2 {
       let tmp = t1
       t1 = t2
       t2 = tmp
+      axis_enter = far_normal
+      axis_exit = near_normal
     }
     if t1 > tmin {
       tmin = t1
+      enter_normal = axis_enter
     }
     if t2 < tmax {
       tmax = t2
+      exit_normal = axis_exit
     }
     if tmax < tmin {
       return None
@@ -359,40 +467,54 @@ fn ray_intersect_cuboid(
     let inv = 1.0F / ray.dir.y
     let mut t1 = (min_y - ray.origin.y) * inv
     let mut t2 = (max_y - ray.origin.y) * inv
+    let near_normal = if ray.dir.y > 0.0F {
+      @core.Vec2::new(0.0F, -1.0F)
+    } else {
+      @core.Vec2::new(0.0F, 1.0F)
+    }
+    let far_normal = @core.Vec2::new(-near_normal.x, -near_normal.y)
+    let mut axis_enter = near_normal
+    let mut axis_exit = far_normal
     if t1 > t2 {
       let tmp = t1
       t1 = t2
       t2 = tmp
+      axis_enter = far_normal
+      axis_exit = near_normal
     }
     if t1 > tmin {
       tmin = t1
+      enter_normal = axis_enter
     }
     if t2 < tmax {
       tmax = t2
+      exit_normal = axis_exit
     }
     if tmax < tmin {
       return None
     }
   }
-
-  // For solid queries, a ray starting inside hits at toi = 0.
   if tmin <= 0.0F && tmax >= 0.0F {
     if solid {
-      Some(0.0F)
+      let normal = normalize_or_fallback(
+        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+        @core.Vec2::new(1.0F, 0.0F),
+      )
+      Some(RayIntersection::{ toi: 0.0F, normal })
     } else if tmax <= max_toi {
-      Some(tmax)
+      Some(RayIntersection::{ toi: tmax, normal: exit_normal })
     } else {
       None
     }
   } else if tmin >= 0.0F && tmin <= max_toi {
-    Some(tmin)
+    Some(RayIntersection::{ toi: tmin, normal: enter_normal })
   } else {
     None
   }
 }
 
 ///|
-fn ray_intersect_cuboid_oriented(
+fn ray_intersect_cuboid_oriented_and_get_normal(
   ray : Ray,
   center : @core.Vec2,
   rotation : @core.Real,
@@ -400,22 +522,21 @@ fn ray_intersect_cuboid_oriented(
   half_height : @core.Real,
   max_toi : @core.Real,
   solid : Bool,
-) -> @core.Real? {
+) -> RayIntersection? {
   let rot = @core.Rot2::from_angle(rotation)
   let inv = rot.inverse()
   let local_ray = Ray::new(
     inv.rotate_vec2(ray.origin.sub(center)),
     inv.rotate_vec2(ray.dir),
   )
-  // Rotation does not affect the time-of-impact parameter, only the frame.
-  ray_intersect_cuboid(
-    local_ray,
-    @core.Vec2::zero(),
-    half_width,
-    half_height,
-    max_toi,
-    solid,
-  )
+  if ray_intersect_cuboid_local_and_get_normal(
+      local_ray, half_width, half_height, max_toi, solid,
+    )
+    is Some(hit) {
+    Some(RayIntersection::{ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+  } else {
+    None
+  }
 }
 
 ///|
@@ -425,8 +546,22 @@ pub fn QueryPipeline::cast_ray(
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, @core.Real)? {
+  if self.cast_ray_and_get_normal(ray, max_toi, solid) is Some(hit) {
+    Some((hit.0, hit.1.toi))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn QueryPipeline::cast_ray_and_get_normal(
+  self : QueryPipeline,
+  ray : Ray,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, RayIntersection)? {
   let max_dist = if max_toi < 0.0F { 0.0F } else { max_toi }
-  let mut best : (ColliderHandle, @core.Real)? = None
+  let mut best : (ColliderHandle, RayIntersection)? = None
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
@@ -435,19 +570,21 @@ pub fn QueryPipeline::cast_ray(
       }
       let pos = collider.world_translation
       let rot = collider.world_rotation
-      let toi = match collider.shape {
+      let hit = match collider.shape {
         Shape::Ball(radius) =>
-          ray_intersect_ball(ray, pos, radius, max_dist, solid)
+          ray_intersect_ball_and_get_normal(ray, pos, radius, max_dist, solid)
         Shape::Cuboid(hw, hh) =>
-          ray_intersect_cuboid_oriented(ray, pos, rot, hw, hh, max_dist, solid)
+          ray_intersect_cuboid_oriented_and_get_normal(
+            ray, pos, rot, hw, hh, max_dist, solid,
+          )
       }
-      if toi is Some(hit) {
+      if hit is Some(intersection) {
         if best is Some(current) {
-          if hit < current.1 {
-            best = Some((handle, hit))
+          if intersection.toi < current.1.toi {
+            best = Some((handle, intersection))
           }
         } else {
-          best = Some((handle, hit))
+          best = Some((handle, intersection))
         }
       }
     }
@@ -470,6 +607,169 @@ fn point_in_shape(
       let local_point = inv.rotate_vec2(point.sub(center))
       @core.abs(local_point.x) <= hw && @core.abs(local_point.y) <= hh
     }
+  }
+}
+
+///|
+fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
+  match collider.shape {
+    Shape::Ball(radius) => {
+      let c = collider.world_translation
+      @core.Aabb::new(
+        @core.Vec2::new(c.x - radius, c.y - radius),
+        @core.Vec2::new(c.x + radius, c.y + radius),
+      )
+    }
+    Shape::Cuboid(half_width, half_height) => {
+      let rot = @core.Rot2::from_angle(collider.world_rotation)
+      let abs_cos = @core.abs(rot.cos)
+      let abs_sin = @core.abs(rot.sin)
+      let hw = abs_cos * half_width + abs_sin * half_height
+      let hh = abs_sin * half_width + abs_cos * half_height
+      let c = collider.world_translation
+      @core.Aabb::new(
+        @core.Vec2::new(c.x - hw, c.y - hh),
+        @core.Vec2::new(c.x + hw, c.y + hh),
+      )
+    }
+  }
+}
+
+///|
+pub fn QueryPipeline::intersect_aabb_conservative(
+  self : QueryPipeline,
+  aabb : @core.Aabb,
+) -> Array[ColliderHandle] {
+  let result : Array[ColliderHandle] = []
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      // Use the cached AABB from pipeline creation time (Rapier parity).
+      if i < self.aabbs.length() &&
+        self.aabbs[i] is Some(co_aabb) &&
+        co_aabb.intersects(aabb) {
+        result.push(handle)
+      }
+    }
+  }
+  result
+}
+
+///|
+fn project_point_on_ball(
+  center : @core.Vec2,
+  radius : @core.Real,
+  point : @core.Vec2,
+  solid : Bool,
+) -> PointProjection {
+  let v = point.sub(center)
+  let dist2 = v.dot(v)
+  let inside = dist2 <= radius * radius
+  if inside && solid {
+    PointProjection::{ point, is_inside: true }
+  } else if dist2 <= 1.0e-12F {
+    PointProjection::{
+      point: center.add(@core.Vec2::new(radius, 0.0F)),
+      is_inside: inside,
+    }
+  } else {
+    let dir = v.normalize()
+    PointProjection::{
+      point: center.add(vec2_scale(dir, radius)),
+      is_inside: inside,
+    }
+  }
+}
+
+///|
+fn project_point_on_cuboid_oriented(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  point : @core.Vec2,
+  solid : Bool,
+) -> PointProjection {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(point.sub(center))
+  let inside = @core.abs(local_point.x) <= half_width &&
+    @core.abs(local_point.y) <= half_height
+  if inside && solid {
+    return PointProjection::{ point, is_inside: true }
+  }
+  let projected_local = if inside {
+    let dx = half_width - @core.abs(local_point.x)
+    let dy = half_height - @core.abs(local_point.y)
+    if dx < dy {
+      let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(sign * half_width, local_point.y)
+    } else {
+      let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(local_point.x, sign * half_height)
+    }
+  } else {
+    @core.Vec2::new(
+      clamp_value(local_point.x, -half_width, half_width),
+      clamp_value(local_point.y, -half_height, half_height),
+    )
+  }
+  let projected = center.add(rot.rotate_vec2(projected_local))
+  PointProjection::{ point: projected, is_inside: inside }
+}
+
+///|
+pub fn QueryPipeline::project_point(
+  self : QueryPipeline,
+  point : @core.Vec2,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, PointProjection)? {
+  // Rapier keeps this parameter for API consistency, but doesn't use it.
+  max_dist |> ignore
+  let mut best : (ColliderHandle, PointProjection, @core.Real)? = None
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      let projection = match collider.shape {
+        Shape::Ball(radius) =>
+          project_point_on_ball(
+            collider.world_translation,
+            radius,
+            point,
+            solid,
+          )
+        Shape::Cuboid(hw, hh) =>
+          project_point_on_cuboid_oriented(
+            collider.world_translation,
+            collider.world_rotation,
+            hw,
+            hh,
+            point,
+            solid,
+          )
+      }
+      let delta = point.sub(projection.point)
+      let dist2 = delta.dot(delta)
+      if best is Some(current) {
+        if dist2 < current.2 {
+          best = Some((handle, projection, dist2))
+        }
+      } else {
+        best = Some((handle, projection, dist2))
+      }
+    }
+  }
+  if best is Some(hit) {
+    Some((hit.0, hit.1))
+  } else {
+    None
   }
 }
 

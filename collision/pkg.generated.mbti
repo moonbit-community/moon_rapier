@@ -204,6 +204,13 @@ pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)]) -> Unit
 
+pub struct PointProjection {
+  point : @core.Vec2
+  is_inside : Bool
+}
+pub fn PointProjection::is_inside(Self) -> Bool
+pub fn PointProjection::point(Self) -> @core.Vec2
+
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
   excluded_collider : ColliderHandle?
@@ -236,16 +243,27 @@ pub struct QueryPipeline {
   filter : QueryFilter
   bodies : @dynamics.RigidBodySet
   colliders : ColliderSet
+  aabbs : Array[@core.Aabb?]
 }
 pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
+pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
+pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
+pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
 
 pub struct Ray {
   origin : @core.Vec2
   dir : @core.Vec2
 }
 pub fn Ray::new(@core.Vec2, @core.Vec2) -> Self
+
+pub struct RayIntersection {
+  toi : Float
+  normal : @core.Vec2
+}
+pub fn RayIntersection::normal(Self) -> @core.Vec2
+pub fn RayIntersection::toi(Self) -> Float
 
 pub(all) enum Shape {
   Ball(Float)

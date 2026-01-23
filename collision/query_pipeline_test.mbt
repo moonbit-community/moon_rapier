@@ -78,6 +78,68 @@ test "query pipeline cast_ray solid vs hollow" {
 }
 
 ///|
+test "query pipeline cast_ray_and_get_normal returns toi and outward normal" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let ball = ColliderBuilder::ball(1.0F).build()
+  let handle = colliders.insert_with_parent(ball, body, bodies)
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true) is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.toi() - 9.0F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x + 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(n.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(0.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true)
+    is Some(hit_solid) {
+    inspect(@core.abs(hit_solid.1.toi()) < 1.0e-6F, content="true")
+    let n = hit_solid.1.normal()
+    // For a solid ray cast starting inside, Rapier returns a normal opposing the ray direction.
+    inspect(@core.abs(n.x + 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(n.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, false)
+    is Some(hit_hollow) {
+    inspect(@core.abs(hit_hollow.1.toi() - 1.0F) < 1.0e-4F, content="true")
+    let n = hit_hollow.1.normal()
+    inspect(@core.abs(n.x - 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(n.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline filter exclude rigid body" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
@@ -170,6 +232,52 @@ test "query pipeline intersect_point" {
 }
 
 ///|
+test "query pipeline project_point ignores max_dist and matches solid semantics" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+
+  // Outside point; max_dist is ignored.
+  if query_pipeline.project_point(@core.Vec2::new(2.0F, 0.0F), 0.01F, true)
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(hit.1.point().y) < 1.0e-4F, content="true")
+    inspect(hit.1.is_inside() == false, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Inside point with solid=true projects to itself.
+  if query_pipeline.project_point(@core.Vec2::new(0.2F, 0.0F), 0.01F, true)
+    is Some(hit) {
+    inspect(@core.abs(hit.1.point().x - 0.2F) < 1.0e-4F, content="true")
+    inspect(hit.1.is_inside() == true, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Inside point with solid=false projects to the boundary.
+  if query_pipeline.project_point(@core.Vec2::new(0.2F, 0.0F), 0.01F, false)
+    is Some(hit) {
+    inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
+    inspect(hit.1.is_inside() == true, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline cast_ray respects cuboid rotation" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
@@ -194,6 +302,52 @@ test "query pipeline cast_ray respects cuboid rotation" {
   } else {
     inspect(false, content="true")
   }
+}
+
+///|
+test "query pipeline intersect_aabb_conservative uses cached aabbs" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(10.0F, 0.0F))
+    .build(),
+  )
+  let h1 = colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body1,
+    bodies,
+  )
+  colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body2,
+    bodies,
+  )
+  |> ignore
+  let broad_phase = BroadPhaseBvh::new()
+  let pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let query = @core.Aabb::new(
+    @core.Vec2::new(-2.0F, -2.0F),
+    @core.Vec2::new(2.0F, 2.0F),
+  )
+  let results = pipeline.intersect_aabb_conservative(query)
+  inspect(results.length() == 1, content="true")
+  inspect(ColliderHandle::equals(results[0], h1), content="true")
+
+  // Move the collider far away without recreating the pipeline. Conservative AABB queries
+  // must still use the cached AABBs from the pipeline's creation.
+  if bodies.get_mut(body1) is Some(b) {
+    b.set_translation(@core.Vec2::new(100.0F, 0.0F), true) |> ignore
+  }
+  broad_phase.update(0.0F, bodies, pipeline.colliders)
+  let results_after = pipeline.intersect_aabb_conservative(query)
+  inspect(results_after.length() == 1, content="true")
+  inspect(ColliderHandle::equals(results_after[0], h1), content="true")
 }
 
 ///|

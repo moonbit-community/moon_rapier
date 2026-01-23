@@ -267,6 +267,14 @@ pub fn Aabb::contains_point(self : Aabb, point : Vec2) -> Bool {
 }
 
 ///|
+pub fn Aabb::intersects(self : Aabb, other : Aabb) -> Bool {
+  !(self.maxs.x < other.mins.x ||
+  self.mins.x > other.maxs.x ||
+  self.maxs.y < other.mins.y ||
+  self.mins.y > other.maxs.y)
+}
+
+///|
 pub struct MassProperties {
   mass : Real
   inv_mass : Real

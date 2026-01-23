@@ -20,6 +20,7 @@ pub struct Aabb {
 pub fn Aabb::combine(Self, Self) -> Self
 pub fn Aabb::contains_point(Self, Vec2) -> Bool
 pub fn Aabb::from_points(Vec2, Vec2) -> Self
+pub fn Aabb::intersects(Self, Self) -> Bool
 pub fn Aabb::new(Vec2, Vec2) -> Self
 
 pub struct Isometry2 {

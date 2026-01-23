@@ -842,6 +842,38 @@ pub type QueryPipeline
 
 ///|
 #declaration_only
+pub type RayIntersection
+
+///|
+#declaration_only
+pub fn RayIntersection::toi(self : RayIntersection) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RayIntersection::normal(self : RayIntersection) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub type PointProjection
+
+///|
+#declaration_only
+pub fn PointProjection::point(self : PointProjection) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub type QueryFilter
 
 ///|
@@ -994,6 +1026,37 @@ pub fn QueryPipeline::cast_ray(
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, @core.Real)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::cast_ray_and_get_normal(
+  self : QueryPipeline,
+  ray : Ray,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, RayIntersection)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::project_point(
+  self : QueryPipeline,
+  point : @core.Vec2,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, PointProjection)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::intersect_aabb_conservative(
+  self : QueryPipeline,
+  aabb : @core.Aabb,
+) -> Array[ColliderHandle] {
   ...
 }
 
