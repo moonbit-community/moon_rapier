@@ -247,6 +247,7 @@ pub struct QueryPipeline {
 }
 pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
+pub fn QueryPipeline::cast_shape(Self, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
 pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
@@ -269,6 +270,23 @@ pub(all) enum Shape {
   Ball(Float)
   Cuboid(Float, Float)
 }
+
+pub struct ShapeCastHit {
+  toi : Float
+  point : @core.Vec2
+  normal : @core.Vec2
+}
+pub fn ShapeCastHit::normal(Self) -> @core.Vec2
+pub fn ShapeCastHit::point(Self) -> @core.Vec2
+pub fn ShapeCastHit::toi(Self) -> Float
+
+pub struct ShapeCastOptions {
+  max_toi : Float
+  stop_at_penetration : Bool
+}
+pub fn ShapeCastOptions::max_toi(Self) -> Float
+pub fn ShapeCastOptions::new(Float, Bool) -> Self
+pub fn ShapeCastOptions::stop_at_penetration(Self) -> Bool
 
 // Type aliases
 

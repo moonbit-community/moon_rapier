@@ -282,6 +282,52 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 }
 
 ///|
+pub struct ShapeCastOptions {
+  max_toi : @core.Real
+  stop_at_penetration : Bool
+}
+
+///|
+pub fn ShapeCastOptions::new(
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastOptions {
+  { max_toi, stop_at_penetration }
+}
+
+///|
+pub fn ShapeCastOptions::max_toi(self : ShapeCastOptions) -> @core.Real {
+  self.max_toi
+}
+
+///|
+pub fn ShapeCastOptions::stop_at_penetration(self : ShapeCastOptions) -> Bool {
+  self.stop_at_penetration
+}
+
+///|
+pub struct ShapeCastHit {
+  toi : @core.Real
+  point : @core.Vec2
+  normal : @core.Vec2
+}
+
+///|
+pub fn ShapeCastHit::toi(self : ShapeCastHit) -> @core.Real {
+  self.toi
+}
+
+///|
+pub fn ShapeCastHit::point(self : ShapeCastHit) -> @core.Vec2 {
+  self.point
+}
+
+///|
+pub fn ShapeCastHit::normal(self : ShapeCastHit) -> @core.Vec2 {
+  self.normal
+}
+
+///|
 pub fn QueryPipeline::new(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
@@ -432,20 +478,15 @@ fn ray_intersect_cuboid_local_and_get_normal(
     let inv = 1.0F / ray.dir.x
     let mut t1 = (min_x - ray.origin.x) * inv
     let mut t2 = (max_x - ray.origin.x) * inv
-    let near_normal = if ray.dir.x > 0.0F {
-      @core.Vec2::new(-1.0F, 0.0F)
-    } else {
-      @core.Vec2::new(1.0F, 0.0F)
-    }
-    let far_normal = @core.Vec2::new(-near_normal.x, -near_normal.y)
-    let mut axis_enter = near_normal
-    let mut axis_exit = far_normal
+    let mut axis_enter = @core.Vec2::new(-1.0F, 0.0F)
+    let mut axis_exit = @core.Vec2::new(1.0F, 0.0F)
     if t1 > t2 {
       let tmp = t1
       t1 = t2
       t2 = tmp
-      axis_enter = far_normal
-      axis_exit = near_normal
+      let tmp_n = axis_enter
+      axis_enter = axis_exit
+      axis_exit = tmp_n
     }
     if t1 > tmin {
       tmin = t1
@@ -467,20 +508,15 @@ fn ray_intersect_cuboid_local_and_get_normal(
     let inv = 1.0F / ray.dir.y
     let mut t1 = (min_y - ray.origin.y) * inv
     let mut t2 = (max_y - ray.origin.y) * inv
-    let near_normal = if ray.dir.y > 0.0F {
-      @core.Vec2::new(0.0F, -1.0F)
-    } else {
-      @core.Vec2::new(0.0F, 1.0F)
-    }
-    let far_normal = @core.Vec2::new(-near_normal.x, -near_normal.y)
-    let mut axis_enter = near_normal
-    let mut axis_exit = far_normal
+    let mut axis_enter = @core.Vec2::new(0.0F, -1.0F)
+    let mut axis_exit = @core.Vec2::new(0.0F, 1.0F)
     if t1 > t2 {
       let tmp = t1
       t1 = t2
       t2 = tmp
-      axis_enter = far_normal
-      axis_exit = near_normal
+      let tmp_n = axis_enter
+      axis_enter = axis_exit
+      axis_exit = tmp_n
     }
     if t1 > tmin {
       tmin = t1
@@ -576,6 +612,299 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
         Shape::Cuboid(hw, hh) =>
           ray_intersect_cuboid_oriented_and_get_normal(
             ray, pos, rot, hw, hh, max_dist, solid,
+          )
+      }
+      if hit is Some(intersection) {
+        if best is Some(current) {
+          if intersection.toi < current.1.toi {
+            best = Some((handle, intersection))
+          }
+        } else {
+          best = Some((handle, intersection))
+        }
+      }
+    }
+  }
+  best
+}
+
+///|
+fn shape_cast_ball_ball(
+  start : @core.Vec2,
+  vel : @core.Vec2,
+  radius1 : @core.Real,
+  center2 : @core.Vec2,
+  radius2 : @core.Real,
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastHit? {
+  let r = radius1 + radius2
+  let m = start.sub(center2)
+  let a = vel.dot(vel)
+  let c = m.dot(m) - r * r
+  if c <= 0.0F && stop_at_penetration {
+    let normal = normalize_or_fallback(
+      @core.Vec2::new(-vel.x, -vel.y),
+      @core.Vec2::new(1.0F, 0.0F),
+    )
+    let point = center2.add(vec2_scale(normal, radius2))
+    return Some(ShapeCastHit::{ toi: 0.0F, point, normal })
+  }
+  if a <= 1.0e-12F {
+    return None
+  }
+  let b = m.dot(vel)
+  let disc = b * b - a * c
+  if disc < 0.0F {
+    return None
+  }
+  let root = sqrt_real(disc)
+  let mut t = (-b - root) / a
+  if t < 0.0F {
+    t = (-b + root) / a
+  }
+  if t < 0.0F || t > max_toi {
+    return None
+  }
+  let center1 = start.add(vec2_scale(vel, t))
+  let normal = normalize_or_fallback(
+    center1.sub(center2),
+    @core.Vec2::new(1.0F, 0.0F),
+  )
+  let point = center2.add(vec2_scale(normal, radius2))
+  Some(ShapeCastHit::{ toi: t, point, normal })
+}
+
+///|
+fn shape_cast_ball_cuboid(
+  start : @core.Vec2,
+  vel : @core.Vec2,
+  radius : @core.Real,
+  cuboid_center : @core.Vec2,
+  cuboid_rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastHit? {
+  let ray = Ray::new(start, vel)
+  let expanded_hw = half_width + radius
+  let expanded_hh = half_height + radius
+  if ray_intersect_cuboid_oriented_and_get_normal(
+      ray, cuboid_center, cuboid_rotation, expanded_hw, expanded_hh, max_toi, stop_at_penetration,
+    )
+    is Some(hit) {
+    let center = ray_point(ray, hit.toi)
+    let point = center.sub(vec2_scale(hit.normal, radius))
+    Some(ShapeCastHit::{ toi: hit.toi, point, normal: hit.normal })
+  } else {
+    None
+  }
+}
+
+///|
+fn shape_cast_support_point_cuboid(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  dir : @core.Vec2,
+) -> @core.Vec2 {
+  let (axis_x, axis_y) = cuboid_axes(rotation)
+  let sx = if dir.dot(axis_x) >= 0.0F { 1.0F } else { -1.0F }
+  let sy = if dir.dot(axis_y) >= 0.0F { 1.0F } else { -1.0F }
+  center
+  .add(vec2_scale(axis_x, sx * half_width))
+  .add(vec2_scale(axis_y, sy * half_height))
+}
+
+///|
+fn shape_cast_cuboid_ball(
+  cuboid_center : @core.Vec2,
+  cuboid_rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  vel : @core.Vec2,
+  ball_center : @core.Vec2,
+  ball_radius : @core.Real,
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastHit? {
+  let inv_vel = @core.Vec2::new(-vel.x, -vel.y)
+  if shape_cast_ball_cuboid(
+      ball_center, inv_vel, ball_radius, cuboid_center, cuboid_rotation, half_width,
+      half_height, max_toi, stop_at_penetration,
+    )
+    is Some(hit) {
+    let normal = @core.Vec2::new(-hit.normal.x, -hit.normal.y)
+    let point = ball_center.add(vec2_scale(normal, ball_radius))
+    Some(ShapeCastHit::{ toi: hit.toi, point, normal })
+  } else {
+    None
+  }
+}
+
+///|
+fn shape_cast_project_interval(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  axis : @core.Vec2,
+) -> (@core.Real, @core.Real) {
+  let (axis_x, axis_y) = cuboid_axes(rotation)
+  let c = center.dot(axis)
+  let r = @core.abs(axis.dot(axis_x)) * half_width +
+    @core.abs(axis.dot(axis_y)) * half_height
+  (c - r, c + r)
+}
+
+///|
+fn shape_cast_cuboid_cuboid(
+  center1 : @core.Vec2,
+  rotation1 : @core.Real,
+  half_width1 : @core.Real,
+  half_height1 : @core.Real,
+  vel : @core.Vec2,
+  center2 : @core.Vec2,
+  rotation2 : @core.Real,
+  half_width2 : @core.Real,
+  half_height2 : @core.Real,
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastHit? {
+  let (a_x, a_y) = cuboid_axes(rotation1)
+  let (b_x, b_y) = cuboid_axes(rotation2)
+  let axes = [a_x, a_y, b_x, b_y]
+  let mut best_entry = -1.0e30F
+  let mut best_exit = 1.0e30F
+  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_vel_axis = 0.0F
+  for axis in axes {
+    let (min1, max1) = shape_cast_project_interval(
+      center1, rotation1, half_width1, half_height1, axis,
+    )
+    let (min2, max2) = shape_cast_project_interval(
+      center2, rotation2, half_width2, half_height2, axis,
+    )
+    let vel_axis = vel.dot(axis)
+    if @core.abs(vel_axis) <= 1.0e-12F {
+      if max1 < min2 || min1 > max2 {
+        return None
+      }
+      continue
+    }
+    let t1 = (min2 - max1) / vel_axis
+    let t2 = (max2 - min1) / vel_axis
+    let entry = if t1 < t2 { t1 } else { t2 }
+    let exit = if t1 > t2 { t1 } else { t2 }
+    if entry > best_entry {
+      best_entry = entry
+      best_axis = axis
+      best_vel_axis = vel_axis
+    }
+    if exit < best_exit {
+      best_exit = exit
+    }
+    if best_entry > best_exit {
+      return None
+    }
+  }
+  if best_exit < 0.0F {
+    return None
+  }
+  let toi = if best_entry <= 0.0F {
+    if stop_at_penetration {
+      0.0F
+    } else {
+      0.0F
+    }
+  } else {
+    best_entry
+  }
+  if toi > max_toi {
+    return None
+  }
+  let normal = if best_vel_axis > 1.0e-12F {
+    @core.Vec2::new(-best_axis.x, -best_axis.y)
+  } else if best_vel_axis < -1.0e-12F {
+    best_axis
+  } else {
+    normalize_or_fallback(
+      @core.Vec2::new(-vel.x, -vel.y),
+      @core.Vec2::new(1.0F, 0.0F),
+    )
+  }
+  let point = shape_cast_support_point_cuboid(
+    center2, rotation2, half_width2, half_height2, normal,
+  )
+  Some(ShapeCastHit::{ toi, point, normal })
+}
+
+///|
+pub fn QueryPipeline::cast_shape(
+  self : QueryPipeline,
+  shape_pos : @core.Isometry2,
+  shape_vel : @core.Vec2,
+  shape : Shape,
+  options : ShapeCastOptions,
+) -> (ColliderHandle, ShapeCastHit)? {
+  let max_toi = if options.max_toi < 0.0F { 0.0F } else { options.max_toi }
+  let mut best : (ColliderHandle, ShapeCastHit)? = None
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      let hit = match (shape, collider.shape) {
+        (Shape::Ball(r1), Shape::Ball(r2)) =>
+          shape_cast_ball_ball(
+            shape_pos.translation,
+            shape_vel,
+            r1,
+            collider.world_translation,
+            r2,
+            max_toi,
+            options.stop_at_penetration,
+          )
+        (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+          shape_cast_ball_cuboid(
+            shape_pos.translation,
+            shape_vel,
+            r,
+            collider.world_translation,
+            collider.world_rotation,
+            hw,
+            hh,
+            max_toi,
+            options.stop_at_penetration,
+          )
+        (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+          shape_cast_cuboid_ball(
+            shape_pos.translation,
+            shape_pos.rotation.angle(),
+            hw,
+            hh,
+            shape_vel,
+            collider.world_translation,
+            r,
+            max_toi,
+            options.stop_at_penetration,
+          )
+        (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+          shape_cast_cuboid_cuboid(
+            shape_pos.translation,
+            shape_pos.rotation.angle(),
+            hw1,
+            hh1,
+            shape_vel,
+            collider.world_translation,
+            collider.world_rotation,
+            hw2,
+            hh2,
+            max_toi,
+            options.stop_at_penetration,
           )
       }
       if hit is Some(intersection) {

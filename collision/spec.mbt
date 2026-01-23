@@ -874,6 +874,53 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 
 ///|
 #declaration_only
+pub type ShapeCastOptions
+
+///|
+#declaration_only
+pub fn ShapeCastOptions::new(
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastOptions {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ShapeCastOptions::max_toi(self : ShapeCastOptions) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ShapeCastOptions::stop_at_penetration(self : ShapeCastOptions) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub type ShapeCastHit
+
+///|
+#declaration_only
+pub fn ShapeCastHit::toi(self : ShapeCastHit) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ShapeCastHit::point(self : ShapeCastHit) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ShapeCastHit::normal(self : ShapeCastHit) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
 pub type QueryFilter
 
 ///|
@@ -1037,6 +1084,18 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, RayIntersection)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::cast_shape(
+  self : QueryPipeline,
+  shape_pos : @core.Isometry2,
+  shape_vel : @core.Vec2,
+  shape : Shape,
+  options : ShapeCastOptions,
+) -> (ColliderHandle, ShapeCastHit)? {
   ...
 }
 
