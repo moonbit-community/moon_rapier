@@ -893,12 +893,15 @@ fn update_collider_world_pose(
 ) -> Collider {
   if collider.parent is Some(parent) {
     if bodies.get(parent) is Some(body) {
-      let body_translation = body.translation()
-      collider.world_translation = body_translation.add(
+      // Rapier semantics: world_position = body_position * local_position_wrt_parent.
+      let body_pos = body.position()
+      let local_pos = @core.Isometry2::new(
         collider.local_translation,
+        @core.Rot2::from_angle(collider.local_rotation),
       )
-      collider.world_rotation = body.rotation().angle() +
-        collider.local_rotation
+      let world_pos = body_pos.mul(local_pos)
+      collider.world_translation = world_pos.translation
+      collider.world_rotation = world_pos.rotation.angle()
       return collider
     }
   }
@@ -1481,6 +1484,7 @@ fn aabb_intersects(left : Aabb, right : Aabb) -> Bool {
 fn compute_shape_aabb(
   shape : Shape,
   center : @core.Vec2,
+  rotation : @core.Real,
   prediction_distance : @core.Real,
 ) -> Aabb {
   let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
@@ -1493,8 +1497,12 @@ fn compute_shape_aabb(
       }
     }
     Shape::Cuboid(half_width, half_height) => {
-      let hw = half_width + pd
-      let hh = half_height + pd
+      // Conservative AABB for an oriented rectangle.
+      let rot = @core.Rot2::from_angle(rotation)
+      let abs_cos = @core.abs(rot.cos)
+      let abs_sin = @core.abs(rot.sin)
+      let hw = abs_cos * half_width + abs_sin * half_height + pd
+      let hh = abs_sin * half_width + abs_cos * half_height + pd
       Aabb::{
         min: @core.Vec2::new(center.x - hw, center.y - hh),
         max: @core.Vec2::new(center.x + hw, center.y + hh),
@@ -1541,6 +1549,7 @@ pub fn BroadPhaseBvh::update(
           compute_shape_aabb(
             collider.shape,
             collider.world_translation,
+            collider.world_rotation,
             prediction_distance,
           ),
         ),

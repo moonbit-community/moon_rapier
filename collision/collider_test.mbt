@@ -285,3 +285,31 @@ test "collider parent offset setters" {
     inspect(false, content="true")
   }
 }
+
+///|
+/// Ported from rapier: collider world pose = body pose * local pose.
+test "collider world pose respects parent rotation" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let body = @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(1.0F, 2.0F))
+    .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
+    .build()
+  let body_handle = bodies.insert(body)
+  let colliders = ColliderSet::new()
+  let collider = ColliderBuilder::ball(0.5F)
+    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .rotation(0.25F)
+    .build()
+  let handle = colliders.insert_with_parent(collider, body_handle, bodies)
+  if colliders.get(handle) is Some(stored) {
+    let tol = 1.0e-5F
+    inspect(@core.abs(stored.translation().x - 1.0F) < tol, content="true")
+    inspect(@core.abs(stored.translation().y - 3.0F) < tol, content="true")
+    inspect(
+      @core.abs(stored.rotation() - (@core.pi() * 0.5F + 0.25F)) < tol,
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+}
