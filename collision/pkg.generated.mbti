@@ -254,6 +254,7 @@ pub fn QueryPipeline::cast_shape(Self, @core.Isometry2, @core.Vec2, Shape, Shape
 pub fn QueryPipeline::collider(Self, ColliderHandle) -> Collider?
 pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
+pub fn QueryPipeline::intersect_shape(Self, @core.Isometry2, Shape) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
 pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
 pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?

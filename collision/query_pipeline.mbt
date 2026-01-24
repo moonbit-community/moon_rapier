@@ -1806,6 +1806,113 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
 }
 
 ///|
+fn segment_world_endpoints_rot(
+  center : @core.Vec2,
+  rotation : @core.Rot2,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2) {
+  (center.add(rotation.rotate_vec2(a)), center.add(rotation.rotate_vec2(b)))
+}
+
+///|
+fn compute_query_shape_aabb(
+  shape_pos : @core.Isometry2,
+  shape : Shape,
+) -> @core.Aabb {
+  let center = shape_pos.translation
+  let rot = shape_pos.rotation
+  match shape {
+    Shape::Ball(radius) =>
+      @core.Aabb::new(
+        @core.Vec2::new(center.x - radius, center.y - radius),
+        @core.Vec2::new(center.x + radius, center.y + radius),
+      )
+    Shape::Cuboid(half_width, half_height) => {
+      let abs_cos = @core.abs(rot.cos)
+      let abs_sin = @core.abs(rot.sin)
+      let hw = abs_cos * half_width + abs_sin * half_height
+      let hh = abs_sin * half_width + abs_cos * half_height
+      @core.Aabb::new(
+        @core.Vec2::new(center.x - hw, center.y - hh),
+        @core.Vec2::new(center.x + hw, center.y + hh),
+      )
+    }
+    Shape::CapsuleX(half_height, radius) => {
+      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x - radius, min_y - radius),
+        @core.Vec2::new(max_x + radius, max_y + radius),
+      )
+    }
+    Shape::CapsuleY(half_height, radius) => {
+      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x - radius, min_y - radius),
+        @core.Vec2::new(max_x + radius, max_y + radius),
+      )
+    }
+    Shape::Segment(a, b) => {
+      let (wa, wb) = segment_world_endpoints_rot(center, rot, a, b)
+      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
+      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
+      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
+      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x, min_y),
+        @core.Vec2::new(max_x, max_y),
+      )
+    }
+  }
+}
+
+///|
+pub fn QueryPipeline::intersect_shape(
+  self : QueryPipeline,
+  shape_pos : @core.Isometry2,
+  shape : Shape,
+) -> Array[ColliderHandle] {
+  let shape_aabb = compute_query_shape_aabb(shape_pos, shape)
+  let results : Array[ColliderHandle] = []
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      if i < self.aabbs.length() && self.aabbs[i] is Some(co_aabb) {
+        if !co_aabb.intersects(shape_aabb) {
+          continue
+        }
+      }
+      if shapes_intersect(
+          shape,
+          shape_pos.translation,
+          shape_pos.rotation.angle(),
+          collider.shape,
+          collider.world_translation,
+          collider.world_rotation,
+        ) {
+        results.push(handle)
+      }
+    }
+  }
+  results
+}
+
+///|
 pub fn QueryPipeline::intersect_aabb_conservative(
   self : QueryPipeline,
   aabb : @core.Aabb,

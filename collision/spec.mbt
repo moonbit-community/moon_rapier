@@ -1161,6 +1161,16 @@ pub fn QueryPipeline::rigid_body(
 
 ///|
 #declaration_only
+pub fn QueryPipeline::intersect_shape(
+  self : QueryPipeline,
+  shape_pos : @core.Isometry2,
+  shape : Shape,
+) -> Array[ColliderHandle] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
   point : @core.Vec2,

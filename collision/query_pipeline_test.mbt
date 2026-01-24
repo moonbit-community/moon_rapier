@@ -928,3 +928,88 @@ test "query filter only_dynamic ignores fixed colliders" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "query pipeline intersect_shape ball intersects cuboid" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(1.4F, 0.0F))
+  let hits = query_pipeline.intersect_shape(shape_pos, Shape::Ball(0.5F))
+  if hits.length() == 1 {
+    inspect(ColliderHandle::equals(hits[0], handle), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline intersect_shape uses query rotation" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::cuboid(0.2F, 1.0F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::new(
+    @core.Vec2::new(1.1F, 0.0F),
+    @core.Rot2::from_angle(@core.pi() * 0.5F),
+  )
+  let hits = query_pipeline.intersect_shape(
+    shape_pos,
+    Shape::Cuboid(0.2F, 1.0F),
+  )
+  if hits.length() == 1 {
+    inspect(ColliderHandle::equals(hits[0], handle), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline intersect_shape respects exclude_sensors filter" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).sensor(true).build(),
+    body1,
+    bodies,
+  )
+  |> ignore
+  let solid = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    body2,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new().exclude_sensors(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.0F))
+  let hits = query_pipeline.intersect_shape(shape_pos, Shape::Ball(0.5F))
+  if hits.length() == 1 {
+    inspect(ColliderHandle::equals(hits[0], solid), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
