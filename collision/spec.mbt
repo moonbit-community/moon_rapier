@@ -920,7 +920,22 @@ pub fn ShapeCastOptions::max_toi(self : ShapeCastOptions) -> @core.Real {
 
 ///|
 #declaration_only
+pub fn ShapeCastOptions::target_distance(self : ShapeCastOptions) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ShapeCastOptions::stop_at_penetration(self : ShapeCastOptions) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ShapeCastOptions::with_target_distance(
+  self : ShapeCastOptions,
+  target_distance : @core.Real,
+) -> ShapeCastOptions {
   ...
 }
 

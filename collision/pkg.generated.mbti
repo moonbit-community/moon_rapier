@@ -290,11 +290,14 @@ pub fn ShapeCastHit::toi(Self) -> Float
 
 pub struct ShapeCastOptions {
   max_toi : Float
+  target_distance : Float
   stop_at_penetration : Bool
 }
 pub fn ShapeCastOptions::max_toi(Self) -> Float
 pub fn ShapeCastOptions::new(Float, Bool) -> Self
 pub fn ShapeCastOptions::stop_at_penetration(Self) -> Bool
+pub fn ShapeCastOptions::target_distance(Self) -> Float
+pub fn ShapeCastOptions::with_target_distance(Self, Float) -> Self
 
 // Type aliases
 

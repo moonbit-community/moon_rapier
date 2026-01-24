@@ -265,21 +265,6 @@ fn separation_vector(
     true
   }
 
-  fn cuboid_vertices(
-    center : @core.Vec2,
-    rotation : @core.Real,
-    half_width : @core.Real,
-    half_height : @core.Real,
-  ) -> Array[@core.Vec2] {
-    let (ax, ay) = cuboid_axes(rotation)
-    [
-      center.add(vec2_scale(ax, -half_width)).add(vec2_scale(ay, -half_height)),
-      center.add(vec2_scale(ax, half_width)).add(vec2_scale(ay, -half_height)),
-      center.add(vec2_scale(ax, half_width)).add(vec2_scale(ay, half_height)),
-      center.add(vec2_scale(ax, -half_width)).add(vec2_scale(ay, half_height)),
-    ]
-  }
-
   fn separation_ball_segment(
     ball_center : @core.Vec2,
     radius : @core.Real,
@@ -331,36 +316,104 @@ fn separation_vector(
     if !segment_aabb_intersect(la, lb, half_width, half_height) {
       return None
     }
-    let dir = sb.sub(sa)
-    let mut n = @core.Vec2::new(-dir.y, dir.x)
-    if n.length_squared() <= 1.0e-12F {
-      n = @core.Vec2::new(0.0F, 1.0F)
-    } else {
-      n = n.normalize()
+    fn project_cuboid(
+      center : @core.Vec2,
+      rot : @core.Real,
+      hw : @core.Real,
+      hh : @core.Real,
+      axis : @core.Vec2,
+    ) -> (@core.Real, @core.Real) {
+      let (ax, ay) = cuboid_axes(rot)
+      let c = center.dot(axis)
+      let r = @core.abs(axis.dot(ax)) * hw + @core.abs(axis.dot(ay)) * hh
+      (c - r, c + r)
     }
-    let verts = cuboid_vertices(
-      cuboid_center, cuboid_rot, half_width, half_height,
-    )
-    let mut min_d = 1.0e30F
-    let mut max_d = -1.0e30F
-    for v in verts {
-      let d = v.sub(sa).dot(n)
-      if d < min_d {
-        min_d = d
-      }
-      if d > max_d {
-        max_d = d
+
+    fn project_segment(
+      a : @core.Vec2,
+      b : @core.Vec2,
+      axis : @core.Vec2,
+    ) -> (@core.Real, @core.Real) {
+      let da = a.dot(axis)
+      let db = b.dot(axis)
+      if da < db {
+        (da, db)
+      } else {
+        (db, da)
       }
     }
-    // Move along +/-n until all vertices are on one side of the segment line.
+
+    fn support_point_cuboid_toward(
+      center : @core.Vec2,
+      rot : @core.Real,
+      hw : @core.Real,
+      hh : @core.Real,
+      dir : @core.Vec2,
+    ) -> @core.Vec2 {
+      let (ax, ay) = cuboid_axes(rot)
+      let sx = if dir.dot(ax) >= 0.0F { 1.0F } else { -1.0F }
+      let sy = if dir.dot(ay) >= 0.0F { 1.0F } else { -1.0F }
+      center.add(vec2_scale(ax, sx * hw)).add(vec2_scale(ay, sy * hh))
+    }
+
+    // SAT-style minimum translation vector (MTV) to separate the cuboid from the segment.
+    //
+    // Note: a segment is degenerate. Projecting it on its own normal produces a single point,
+    // yielding zero overlap even when the segment crosses the cuboid. For that axis we use the
+    // "point + normal" separation test (parry's segment_cuboid_find_local_separating_normal_oneway).
     let margin = 1.0e-6F
-    let shift_pos = -min_d + margin
-    let shift_neg = max_d + margin
-    if shift_pos < shift_neg {
-      Some(vec2_scale(n, shift_pos))
-    } else {
-      Some(vec2_scale(n, -shift_neg))
+    let mut best : @core.Vec2? = None
+    let mut best_len2 = 1.0e30F
+    let (cub_ax, cub_ay) = cuboid_axes(cuboid_rot)
+    let cub_axes = [cub_ax, cub_ay]
+    for i in 0..<cub_axes.length() {
+      let axis = cub_axes[i]
+      let (min1, max1) = project_cuboid(
+        cuboid_center, cuboid_rot, half_width, half_height, axis,
+      )
+      let (min2, max2) = project_segment(sa, sb, axis)
+      let overlap = min_value(max1, max2) - max_value(min1, min2)
+      if overlap <= 0.0F {
+        return None
+      }
+      let shift_pos = max2 + margin - min1
+      let shift_neg = min2 - margin - max1
+      let shift = if shift_pos < -shift_neg { shift_pos } else { shift_neg }
+      let cand = vec2_scale(axis, shift)
+      let l2 = cand.length_squared()
+      if l2 < best_len2 {
+        best_len2 = l2
+        best = Some(cand)
+      }
     }
+    let seg_dir = sb.sub(sa)
+    let seg_n_raw = @core.Vec2::new(-seg_dir.y, seg_dir.x)
+    if seg_n_raw.length_squared() > 1.0e-12F {
+      let seg_n = seg_n_raw.normalize()
+      let axis = if cuboid_center.sub(sa).dot(seg_n) >= 0.0F {
+        seg_n
+      } else {
+        @core.Vec2::new(-seg_n.x, -seg_n.y)
+      }
+      let support = support_point_cuboid_toward(
+        cuboid_center,
+        cuboid_rot,
+        half_width,
+        half_height,
+        @core.Vec2::new(-axis.x, -axis.y),
+      )
+      let separation = support.sub(sa).dot(axis)
+      if separation > 0.0F {
+        return None
+      }
+      let cand = vec2_scale(axis, -separation + margin)
+      let l2 = cand.length_squared()
+      if l2 < best_len2 {
+        best_len2 = l2
+        best = Some(cand)
+      }
+    }
+    best
   }
 
   fn separation_basic(

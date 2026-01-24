@@ -231,6 +231,117 @@ test "joint step delta time 0" {
 }
 
 ///|
+test "segment cuboid deep penetration resolves (no residual intersection)" {
+  fn segment_world_endpoints(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> (@core.Vec2, @core.Vec2) {
+    let rot = @core.Rot2::from_angle(rotation)
+    (center.add(rot.rotate_vec2(a)), center.add(rot.rotate_vec2(b)))
+  }
+
+  fn segment_aabb_intersect(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    hw : @core.Real,
+    hh : @core.Real,
+  ) -> Bool {
+    let mut t0 = 0.0F
+    let mut t1 = 1.0F
+    let d = b.sub(a)
+    let p = [-d.x, d.x, -d.y, d.y]
+    let q = [a.x + hw, hw - a.x, a.y + hh, hh - a.y]
+    for i in 0..<4 {
+      let pi = p[i]
+      let qi = q[i]
+      if @core.abs(pi) <= 1.0e-12F {
+        if qi < 0.0F {
+          return false
+        }
+      } else {
+        let r = qi / pi
+        if pi < 0.0F {
+          if r > t1 {
+            return false
+          }
+          if r > t0 {
+            t0 = r
+          }
+        } else {
+          if r < t0 {
+            return false
+          }
+          if r < t1 {
+            t1 = r
+          }
+        }
+      }
+    }
+    true
+  }
+
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let ccd = @dynamics.CCDSolver::new()
+  let fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let seg = @collision.ColliderBuilder::segment(
+    @core.Vec2::new(-2.0F, -2.0F),
+    @core.Vec2::new(2.0F, 2.0F),
+  ).build()
+  let seg_handle = colliders.insert_with_parent(seg, fixed, bodies)
+  let dyn_body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let cub = @collision.ColliderBuilder::cuboid(0.5F, 0.2F)
+    .rotation(0.3F)
+    .build()
+  let cub_handle = colliders.insert_with_parent(cub, dyn_body, bodies)
+
+  // Start with a deep intersection: both shapes overlap at the origin.
+  pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    ccd,
+    (),
+    (),
+  )
+  if colliders.get(seg_handle) is Some(seg_after) &&
+    colliders.get(cub_handle) is Some(cub_after) {
+    match (seg_after.shape(), cub_after.shape()) {
+      (@collision.Shape::Segment(a, b), @collision.Shape::Cuboid(hw, hh)) => {
+        let (sa, sb) = segment_world_endpoints(
+          seg_after.translation(),
+          seg_after.rotation(),
+          a,
+          b,
+        )
+        let rot = @core.Rot2::from_angle(cub_after.rotation())
+        let inv = rot.inverse()
+        let la = inv.rotate_vec2(sa.sub(cub_after.translation()))
+        let lb = inv.rotate_vec2(sb.sub(cub_after.translation()))
+        inspect(segment_aabb_intersect(la, lb, hw, hh) == false, content="true")
+      }
+      _ => inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (test_multi_sap_disable_body).
 test "multi sap disable body" {
   let rigid_body_set = @dynamics.RigidBodySet::new()

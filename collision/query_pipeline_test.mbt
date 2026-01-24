@@ -367,6 +367,166 @@ test "query pipeline cast_ray hits segment" {
 }
 
 ///|
+test "query pipeline cast_shape ball hits segment (core)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-1.0F, 0.0F),
+      @core.Vec2::new(1.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(0.0F, -10.0F),
+  )
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(100.0F, true)
+  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+    is Some(hit) {
+    inspect(@core.abs(hit.1.toi() - 9.5F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x) < 1.0e-4F, content="true")
+    inspect(n.y < -0.9F, content="true")
+    let p = hit.1.point()
+    inspect(@core.abs(p.x) < 1.0e-4F, content="true")
+    inspect(@core.abs(p.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline cast_shape ball hits segment endpoint (rounded caps)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-1.0F, 0.0F),
+      @core.Vec2::new(1.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.5F))
+  let vel = @core.Vec2::new(-1.0F, 0.0F)
+  let options = ShapeCastOptions::new(10.0F, true)
+  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+    is Some(hit) {
+    // The earliest contact is against the endpoint at (1, 0):
+    // distance((2 - t, 0.5), (1, 0)) = 1 => t = 1 - sqrt(0.75) = ~0.1339746.
+    inspect(@core.abs(hit.1.toi() - 0.1339746F) < 1.0e-3F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x - 0.8660254F) < 2.0e-2F, content="true")
+    inspect(@core.abs(n.y - 0.5F) < 2.0e-2F, content="true")
+    let p = hit.1.point()
+    inspect(@core.abs(p.x - 1.0F) < 1.0e-3F, content="true")
+    inspect(@core.abs(p.y) < 1.0e-3F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline cast_shape cuboid hits segment with target_distance" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-5.0F, 0.0F),
+      @core.Vec2::new(5.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(0.0F, -10.0F),
+  )
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
+  if query_pipeline.cast_shape(
+      shape_pos,
+      vel,
+      Shape::Cuboid(1.0F, 1.0F),
+      options,
+    )
+    is Some(hit) {
+    // From below, the cuboid is considered "impacting" once it is within target_distance
+    // of the segment line: toi = 10 - half_height - target_distance.
+    inspect(@core.abs(hit.1.toi() - 8.8F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x) < 1.0e-3F, content="true")
+    inspect(n.y < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline cast_shape capsule_y hits segment with target_distance" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-5.0F, 0.0F),
+      @core.Vec2::new(5.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(0.0F, -10.0F),
+  )
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
+  if query_pipeline.cast_shape(
+      shape_pos,
+      vel,
+      Shape::CapsuleY(1.0F, 0.5F),
+      options,
+    )
+    is Some(hit) {
+    // Capsule topmost is at center_y + half_height + radius. With target_distance:
+    // toi = 10 - half_height - radius - target_distance.
+    inspect(@core.abs(hit.1.toi() - 8.3F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x) < 1.0e-3F, content="true")
+    inspect(n.y < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline intersect_point" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
