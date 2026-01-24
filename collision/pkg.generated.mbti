@@ -132,6 +132,8 @@ pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
 pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::capsule_x(Float, Float) -> Self
+pub fn ColliderBuilder::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
@@ -271,6 +273,8 @@ pub fn RayIntersection::toi(Self) -> Float
 pub(all) enum Shape {
   Ball(Float)
   Cuboid(Float, Float)
+  CapsuleX(Float, Float)
+  CapsuleY(Float, Float)
 }
 
 pub struct ShapeCastHit {

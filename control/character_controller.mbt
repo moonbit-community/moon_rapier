@@ -197,6 +197,10 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
   match shape {
     @collision.Shape::Ball(r) => (r, r)
     @collision.Shape::Cuboid(hw, hh) => (hw, hh)
+    @collision.Shape::CapsuleX(half_height, radius) =>
+      (half_height + radius, radius)
+    @collision.Shape::CapsuleY(half_height, radius) =>
+      (radius, half_height + radius)
   }
 }
 
@@ -258,6 +262,36 @@ fn compute_shape_aabb(
       @core.Aabb::new(
         @core.Vec2::new(c.x - hw, c.y - hh),
         @core.Vec2::new(c.x + hw, c.y + hh),
+      )
+    }
+    @collision.Shape::CapsuleX(half_height, radius) => {
+      let rot = shape_pos.rotation
+      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let a = shape_pos.translation.add(offset)
+      let b = shape_pos.translation.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x - r, min_y - r),
+        @core.Vec2::new(max_x + r, max_y + r),
+      )
+    }
+    @collision.Shape::CapsuleY(half_height, radius) => {
+      let rot = shape_pos.rotation
+      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let a = shape_pos.translation.add(offset)
+      let b = shape_pos.translation.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x - r, min_y - r),
+        @core.Vec2::new(max_x + r, max_y + r),
       )
     }
   }
@@ -521,40 +555,138 @@ fn detect_ground_contact(
   let prediction = 0.06F
   let aabb = compute_shape_aabb(position, shape, prediction)
   let mut best : (@collision.ColliderHandle, @core.Vec2, @core.Vec2, @core.Real)? = None
+  fn character_components(
+    s : @collision.Shape,
+    pos : @core.Isometry2,
+  ) -> Array[(@collision.Shape, @core.Isometry2)] {
+    match s {
+      @collision.Shape::Ball(r) => [(@collision.Shape::Ball(r), pos)]
+      @collision.Shape::Cuboid(hw, hh) =>
+        [(@collision.Shape::Cuboid(hw, hh), pos)]
+      @collision.Shape::CapsuleX(half_height, radius) => {
+        let axis = @core.Vec2::new(1.0F, 0.0F)
+        let offset = pos.rotation.rotate_vec2(vec2_scale(axis, half_height))
+        let a = pos.translation.add(offset)
+        let b = pos.translation.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), @core.Isometry2::from_translation(a)),
+          (@collision.Shape::Ball(radius), @core.Isometry2::from_translation(b)),
+          (@collision.Shape::Cuboid(half_height, radius), pos),
+        ]
+      }
+      @collision.Shape::CapsuleY(half_height, radius) => {
+        let axis = @core.Vec2::new(0.0F, 1.0F)
+        let offset = pos.rotation.rotate_vec2(vec2_scale(axis, half_height))
+        let a = pos.translation.add(offset)
+        let b = pos.translation.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), @core.Isometry2::from_translation(a)),
+          (@collision.Shape::Ball(radius), @core.Isometry2::from_translation(b)),
+          (@collision.Shape::Cuboid(radius, half_height), pos),
+        ]
+      }
+    }
+  }
+
+  fn collider_components(
+    s : @collision.Shape,
+    center : @core.Vec2,
+    rotation : @core.Real,
+  ) -> Array[(@collision.Shape, @core.Vec2, @core.Real)] {
+    match s {
+      @collision.Shape::Ball(r) => [(@collision.Shape::Ball(r), center, 0.0F)]
+      @collision.Shape::Cuboid(hw, hh) =>
+        [(@collision.Shape::Cuboid(hw, hh), center, rotation)]
+      @collision.Shape::CapsuleX(half_height, radius) => {
+        let rot = @core.Rot2::from_angle(rotation)
+        let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+        let a = center.add(offset)
+        let b = center.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), a, 0.0F),
+          (@collision.Shape::Ball(radius), b, 0.0F),
+          (@collision.Shape::Cuboid(half_height, radius), center, rotation),
+        ]
+      }
+      @collision.Shape::CapsuleY(half_height, radius) => {
+        let rot = @core.Rot2::from_angle(rotation)
+        let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+        let a = center.add(offset)
+        let b = center.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), a, 0.0F),
+          (@collision.Shape::Ball(radius), b, 0.0F),
+          (@collision.Shape::Cuboid(radius, half_height), center, rotation),
+        ]
+      }
+    }
+  }
+
+  fn contact_basic(
+    char_shape : @collision.Shape,
+    char_pos : @core.Isometry2,
+    col_shape : @collision.Shape,
+    col_center : @core.Vec2,
+    col_rot : @core.Real,
+  ) -> (@core.Real, @core.Vec2, @core.Vec2) {
+    match (char_shape, col_shape) {
+      (@collision.Shape::Ball(r1), @collision.Shape::Ball(r2)) =>
+        contact_ball_ball(char_pos.translation, r1, col_center, r2)
+      (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
+        contact_ball_cuboid(
+          char_pos.translation,
+          r,
+          col_center,
+          col_rot,
+          hw,
+          hh,
+        )
+      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
+        contact_cuboid_ball(
+          char_pos.translation,
+          char_pos.rotation,
+          hw,
+          hh,
+          col_center,
+          r,
+        )
+      (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
+        contact_cuboid_cuboid(
+          char_pos.translation,
+          char_pos.rotation,
+          hw1,
+          hh1,
+          col_center,
+          @core.Rot2::from_angle(col_rot),
+          hw2,
+          hh2,
+        )
+      _ => (1.0e30F, @core.Vec2::new(0.0F, 1.0F), col_center)
+    }
+  }
+
   for handle in query.intersect_aabb_conservative(aabb) {
     if query.collider(handle) is Some(co) {
-      let (dist_to_surface, normal, point2) = match (shape, co.shape) {
-        (@collision.Shape::Ball(r1), @collision.Shape::Ball(r2)) =>
-          contact_ball_ball(position.translation, r1, co.world_translation, r2)
-        (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
-          contact_ball_cuboid(
-            position.translation,
-            r,
-            co.world_translation,
-            co.world_rotation,
-            hw,
-            hh,
-          )
-        (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
-          contact_cuboid_ball(
-            position.translation,
-            position.rotation,
-            hw,
-            hh,
-            co.world_translation,
-            r,
-          )
-        (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
-          contact_cuboid_cuboid(
-            position.translation,
-            position.rotation,
-            hw1,
-            hh1,
-            co.world_translation,
-            @core.Rot2::from_angle(co.world_rotation),
-            hw2,
-            hh2,
-          )
+      let chars = character_components(shape, position)
+      let cols = collider_components(
+        co.shape,
+        co.world_translation,
+        co.world_rotation,
+      )
+      let mut dist_to_surface = 1.0e30F
+      let mut normal = @core.Vec2::new(0.0F, 1.0F)
+      let mut point2 = co.world_translation
+      for i in 0..<chars.length() {
+        let c = chars[i]
+        for j in 0..<cols.length() {
+          let o = cols[j]
+          let (d, n, p2) = contact_basic(c.0, c.1, o.0, o.1, o.2)
+          if d < dist_to_surface {
+            dist_to_surface = d
+            normal = n
+            point2 = p2
+          }
+        }
       }
       if dist_to_surface <= prediction && normal.y >= cos_max_slope {
         if best is Some(current) {

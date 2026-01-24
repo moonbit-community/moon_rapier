@@ -200,19 +200,125 @@ fn separation_vector(
   pos2 : @core.Vec2,
   rot2 : @core.Real,
 ) -> @core.Vec2? {
-  match (shape1, shape2) {
-    (@collision.Shape::Ball(r1), @collision.Shape::Ball(r2)) =>
-      separation_ball_ball(pos1, r1, pos2, r2)
-    (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
-      separation_cuboid_cuboid(pos1, rot1, hw1, hh1, pos2, rot2, hw2, hh2)
-    (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
-      separation_ball_cuboid(pos1, r, pos2, rot2, hw, hh)
-    (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
-      if separation_ball_cuboid(pos2, r, pos1, rot1, hw, hh) is Some(sep) {
-        Some(@core.Vec2::new(-sep.x, -sep.y))
-      } else {
-        None
+  fn separation_basic(
+    s1 : @collision.Shape,
+    p1 : @core.Vec2,
+    r1 : @core.Real,
+    s2 : @collision.Shape,
+    p2 : @core.Vec2,
+    r2 : @core.Real,
+  ) -> @core.Vec2? {
+    match (s1, s2) {
+      (@collision.Shape::Ball(br1), @collision.Shape::Ball(br2)) =>
+        separation_ball_ball(p1, br1, p2, br2)
+      (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
+        separation_cuboid_cuboid(p1, r1, hw1, hh1, p2, r2, hw2, hh2)
+      (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
+        separation_ball_cuboid(p1, r, p2, r2, hw, hh)
+      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
+        if separation_ball_cuboid(p2, r, p1, r1, hw, hh) is Some(sep) {
+          Some(@core.Vec2::new(-sep.x, -sep.y))
+        } else {
+          None
+        }
+      _ => None
+    }
+  }
+
+  fn capsule_components(
+    s : @collision.Shape,
+    center : @core.Vec2,
+    rotation : @core.Real,
+  ) -> Array[(@collision.Shape, @core.Vec2, @core.Real)] {
+    match s {
+      @collision.Shape::CapsuleX(half_height, radius) => {
+        let rot = @core.Rot2::from_angle(rotation)
+        let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+        let a = center.add(offset)
+        let b = center.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), a, 0.0F),
+          (@collision.Shape::Ball(radius), b, 0.0F),
+          (@collision.Shape::Cuboid(half_height, radius), center, rotation),
+        ]
       }
+      @collision.Shape::CapsuleY(half_height, radius) => {
+        let rot = @core.Rot2::from_angle(rotation)
+        let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+        let a = center.add(offset)
+        let b = center.sub(offset)
+        [
+          (@collision.Shape::Ball(radius), a, 0.0F),
+          (@collision.Shape::Ball(radius), b, 0.0F),
+          (@collision.Shape::Cuboid(radius, half_height), center, rotation),
+        ]
+      }
+      _ => []
+    }
+  }
+
+  fn best_sep(a : @core.Vec2?, b : @core.Vec2?) -> @core.Vec2? {
+    if b is None {
+      return a
+    }
+    if a is None {
+      return b
+    }
+    let av = a.unwrap()
+    let bv = b.unwrap()
+    if bv.length_squared() > av.length_squared() {
+      b
+    } else {
+      a
+    }
+  }
+
+  match (shape1, shape2) {
+    (@collision.Shape::Ball(_), @collision.Shape::Ball(_))
+    | (@collision.Shape::Ball(_), @collision.Shape::Cuboid(_, _))
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Ball(_))
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Cuboid(_, _)) =>
+      separation_basic(shape1, pos1, rot1, shape2, pos2, rot2)
+    (@collision.Shape::Ball(_), @collision.Shape::CapsuleX(_, _))
+    | (@collision.Shape::Ball(_), @collision.Shape::CapsuleY(_, _))
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleX(_, _))
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleY(_, _)) => {
+      let comps2 = capsule_components(shape2, pos2, rot2)
+      let mut best : @core.Vec2? = None
+      for i in 0..<comps2.length() {
+        let c2 = comps2[i]
+        best = best_sep(
+          best,
+          separation_basic(shape1, pos1, rot1, c2.0, c2.1, c2.2),
+        )
+      }
+      best
+    }
+    (@collision.Shape::CapsuleX(_, _), _)
+    | (@collision.Shape::CapsuleY(_, _), _) => {
+      let comps1 = capsule_components(shape1, pos1, rot1)
+      let mut best : @core.Vec2? = None
+      for i in 0..<comps1.length() {
+        let c1 = comps1[i]
+        let cand = match shape2 {
+          @collision.Shape::CapsuleX(_, _) | @collision.Shape::CapsuleY(_, _) => {
+            let comps2 = capsule_components(shape2, pos2, rot2)
+            let mut best2 : @core.Vec2? = None
+            for j in 0..<comps2.length() {
+              let c2 = comps2[j]
+              best2 = best_sep(
+                best2,
+                separation_basic(c1.0, c1.1, c1.2, c2.0, c2.1, c2.2),
+              )
+            }
+            best2
+          }
+          _ => separation_basic(c1.0, c1.1, c1.2, shape2, pos2, rot2)
+        }
+        best = best_sep(best, cand)
+      }
+      best
+    }
   }
 }
 

@@ -120,6 +120,36 @@ fn compute_aabb_for_test(
         @core.Vec2::new(center.x + hw, center.y + hh),
       )
     }
+    Shape::CapsuleX(half_height, radius) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      (
+        @core.Vec2::new(min_x - r, min_y - r),
+        @core.Vec2::new(max_x + r, max_y + r),
+      )
+    }
+    Shape::CapsuleY(half_height, radius) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      (
+        @core.Vec2::new(min_x - r, min_y - r),
+        @core.Vec2::new(max_x + r, max_y + r),
+      )
+    }
   }
 }
 

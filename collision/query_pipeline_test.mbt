@@ -276,6 +276,70 @@ test "query pipeline filter collision groups" {
 }
 
 ///|
+test "query pipeline cast_ray hits capsule" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let capsule = ColliderBuilder::capsule_y(1.0F, 0.5F).build()
+  let handle = colliders.insert_with_parent(capsule, body, bodies)
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true) is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.toi() - 9.5F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x + 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(n.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline cast_shape capsule hits ball" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(-10.0F, 0.0F),
+  )
+  let vel = @core.Vec2::new(1.0F, 0.0F)
+  let options = ShapeCastOptions::new(100.0F, true)
+  if query_pipeline.cast_shape(
+      shape_pos,
+      vel,
+      Shape::CapsuleY(1.0F, 0.5F),
+      options,
+    )
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.toi() - 9.0F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x + 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(n.y) < 1.0e-4F, content="true")
+    let p = hit.1.point()
+    inspect(@core.abs(p.x + 0.5F) < 1.0e-4F, content="true")
+    inspect(@core.abs(p.y) < 1.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline intersect_point" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

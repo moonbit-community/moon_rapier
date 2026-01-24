@@ -231,6 +231,8 @@ pub fn ActiveHooks::insert(
 pub(all) enum Shape {
   Ball(@core.Real)
   Cuboid(@core.Real, @core.Real)
+  CapsuleX(@core.Real, @core.Real)
+  CapsuleY(@core.Real, @core.Real)
 }
 
 ///|
@@ -309,6 +311,58 @@ pub fn ColliderBuilder::cuboid(
 ) -> ColliderBuilder {
   {
     shape: Shape::Cuboid(half_width, half_height),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: None,
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder::capsule_x(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  {
+    shape: Shape::CapsuleX(half_height, radius),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: None,
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder::capsule_y(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  {
+    shape: Shape::CapsuleY(half_height, radius),
     translation: @core.Vec2::zero(),
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
@@ -1334,19 +1388,131 @@ fn shapes_intersect(
   pos2 : @core.Vec2,
   rot2 : @core.Real,
 ) -> Bool {
-  match (shape1, shape2) {
-    (Shape::Ball(r1), Shape::Ball(r2)) => {
-      let delta = pos2.sub(pos1)
-      let dist2 = delta.length_squared()
-      let radius = r1 + r2
-      dist2 <= radius * radius
+  fn shapes_intersect_basic(
+    s1 : Shape,
+    p1 : @core.Vec2,
+    r1 : @core.Real,
+    s2 : Shape,
+    p2 : @core.Vec2,
+    r2 : @core.Real,
+  ) -> Bool {
+    match (s1, s2) {
+      (Shape::Ball(br1), Shape::Ball(br2)) => {
+        let delta = p2.sub(p1)
+        let dist2 = delta.length_squared()
+        let radius = br1 + br2
+        dist2 <= radius * radius
+      }
+      (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+        cuboid_cuboid_intersect(p1, r1, hw1, hh1, p2, r2, hw2, hh2)
+      (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+        ball_cuboid_intersect(p1, r, p2, r2, hw, hh)
+      (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+        ball_cuboid_intersect(p2, r, p1, r1, hw, hh)
+      _ => false
     }
-    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
-      cuboid_cuboid_intersect(pos1, rot1, hw1, hh1, pos2, rot2, hw2, hh2)
-    (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
-      ball_cuboid_intersect(pos1, r, pos2, rot2, hw, hh)
-    (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
-      ball_cuboid_intersect(pos2, r, pos1, rot1, hw, hh)
+  }
+
+  fn capsule_components(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    axis : @core.Vec2,
+    half_height : @core.Real,
+    radius : @core.Real,
+    core_hw : @core.Real,
+    core_hh : @core.Real,
+  ) -> Array[(Shape, @core.Vec2, @core.Real)] {
+    let rot = @core.Rot2::from_angle(rotation)
+    let offset = rot.rotate_vec2(
+      @core.Vec2::new(axis.x * half_height, axis.y * half_height),
+    )
+    let a = center.add(offset)
+    let b = center.sub(offset)
+    [
+      (Shape::Ball(radius), a, 0.0F),
+      (Shape::Ball(radius), b, 0.0F),
+      (Shape::Cuboid(core_hw, core_hh), center, rotation),
+    ]
+  }
+
+  match (shape1, shape2) {
+    (Shape::Ball(_), Shape::Ball(_))
+    | (Shape::Ball(_), Shape::Cuboid(_, _))
+    | (Shape::Cuboid(_, _), Shape::Ball(_))
+    | (Shape::Cuboid(_, _), Shape::Cuboid(_, _)) =>
+      shapes_intersect_basic(shape1, pos1, rot1, shape2, pos2, rot2)
+    (Shape::CapsuleX(h, r), other) => {
+      let comps = capsule_components(
+        pos1,
+        rot1,
+        @core.Vec2::new(1.0F, 0.0F),
+        h,
+        r,
+        h,
+        r,
+      )
+      for i in 0..<comps.length() {
+        let c = comps[i]
+        if shapes_intersect_basic(c.0, c.1, c.2, other, pos2, rot2) {
+          return true
+        }
+      }
+      false
+    }
+    (Shape::CapsuleY(h, r), other) => {
+      let comps = capsule_components(
+        pos1,
+        rot1,
+        @core.Vec2::new(0.0F, 1.0F),
+        h,
+        r,
+        r,
+        h,
+      )
+      for i in 0..<comps.length() {
+        let c = comps[i]
+        if shapes_intersect_basic(c.0, c.1, c.2, other, pos2, rot2) {
+          return true
+        }
+      }
+      false
+    }
+    (other, Shape::CapsuleX(h, r)) => {
+      let comps = capsule_components(
+        pos2,
+        rot2,
+        @core.Vec2::new(1.0F, 0.0F),
+        h,
+        r,
+        h,
+        r,
+      )
+      for i in 0..<comps.length() {
+        let c = comps[i]
+        if shapes_intersect_basic(other, pos1, rot1, c.0, c.1, c.2) {
+          return true
+        }
+      }
+      false
+    }
+    (other, Shape::CapsuleY(h, r)) => {
+      let comps = capsule_components(
+        pos2,
+        rot2,
+        @core.Vec2::new(0.0F, 1.0F),
+        h,
+        r,
+        r,
+        h,
+      )
+      for i in 0..<comps.length() {
+        let c = comps[i]
+        if shapes_intersect_basic(other, pos1, rot1, c.0, c.1, c.2) {
+          return true
+        }
+      }
+      false
+    }
   }
 }
 
@@ -1796,6 +1962,36 @@ fn compute_shape_aabb(
       Aabb::{
         min: @core.Vec2::new(center.x - hw, center.y - hh),
         max: @core.Vec2::new(center.x + hw, center.y + hh),
+      }
+    }
+    Shape::CapsuleX(half_height, radius) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      Aabb::{
+        min: @core.Vec2::new(min_x - r, min_y - r),
+        max: @core.Vec2::new(max_x + r, max_y + r),
+      }
+    }
+    Shape::CapsuleY(half_height, radius) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let a = center.add(offset)
+      let b = center.sub(offset)
+      let r = radius + pd
+      let min_x = if a.x < b.x { a.x } else { b.x }
+      let max_x = if a.x > b.x { a.x } else { b.x }
+      let min_y = if a.y < b.y { a.y } else { b.y }
+      let max_y = if a.y > b.y { a.y } else { b.y }
+      Aabb::{
+        min: @core.Vec2::new(min_x - r, min_y - r),
+        max: @core.Vec2::new(max_x + r, max_y + r),
       }
     }
   }
