@@ -561,6 +561,109 @@ test "query pipeline cast_shape target_distance applies to non-segment shapes (b
 }
 
 ///|
+test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs ball)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  // Start overlapped (distance 0.5 < 2.0) and move further away.
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.5F))
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(10.0F, false)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+    is None,
+    content="true",
+  )
+  // With stop_at_penetration=true, we keep the toi=0 hit.
+  let options2 = ShapeCastOptions::new(10.0F, true)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options2)
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs cuboid)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  // Ball center starts inside expanded cuboid (hw+radius = 1.5) and moves outward (+x).
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(1.4F, 0.0F))
+  let vel = @core.Vec2::new(1.0F, 0.0F)
+  let options = ShapeCastOptions::new(10.0F, false)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+    is None,
+    content="true",
+  )
+  let options2 = ShapeCastOptions::new(10.0F, true)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options2)
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
+test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs segment)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-1.0F, 0.0F),
+      @core.Vec2::new(1.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  // Ball starts overlapping the segment and moves further away (upward).
+  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.2F))
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(10.0F, false)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+    is None,
+    content="true",
+  )
+  let options2 = ShapeCastOptions::new(10.0F, true)
+  inspect(
+    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options2)
+    is Some(_),
+    content="true",
+  )
+}
+
+///|
 test "query pipeline intersect_point" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

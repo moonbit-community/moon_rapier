@@ -990,15 +990,41 @@ pub fn KinematicCharacterController::move_shape(
 ) -> EffectiveMovement {
   let up = @core.Vec2::new(0.0F, 1.0F)
   let skin = 1.0e-3F
+  // Match Rapier's default normal-nudge factor to avoid accumulating visible drift.
+  let normal_nudge = 1.0e-4F
   let cos_max_slope = cos_real(self.max_slope_climb_angle)
+  let dt_value = if dt < 0.0F { 0.0F } else { dt }
+  let mut result_translation = @core.Vec2::zero()
+
+  // Approximate Rapier's "check_and_fix_penetrations": if we start penetrating, push out
+  // along the impact normal so subsequent casts don't get stuck at toi=0.
+  let mut fix_iters = 0
+  while fix_iters < 8 {
+    fix_iters = fix_iters + 1
+    let pos0 = @core.Isometry2::new(
+      position.translation.add(result_translation),
+      position.rotation,
+    )
+    let opts = @collision.ShapeCastOptions::new(0.0F, true)
+    if query.cast_shape(pos0, up, shape, opts) is Some(hit) {
+      if hit.1.toi() < 1.0e-5F {
+        result_translation = result_translation.add(
+          vec2_scale(hit.1.normal(), skin),
+        )
+        continue
+      }
+    }
+    break
+  }
   let grounded_at_start = grounded_info(
       query,
       shape,
-      position,
+      @core.Isometry2::new(
+        position.translation.add(result_translation),
+        position.rotation,
+      ),
       self.max_slope_climb_angle,
     ).0
-  let dt_value = if dt < 0.0F { 0.0F } else { dt }
-  let mut result_translation = @core.Vec2::zero()
   let mut remaining = translation
   let mut grounded = false
   let mut iters = 0
@@ -1013,10 +1039,12 @@ pub fn KinematicCharacterController::move_shape(
       position.translation.add(result_translation),
       position.rotation,
     )
-    let options = @collision.ShapeCastOptions::new(dist + skin, false)
+    let options = @collision.ShapeCastOptions::new(dist, false).with_target_distance(
+      skin,
+    )
     if query.cast_shape(current_pos, dir, shape, options) is Some(hit) {
       let toi = hit.1.toi()
-      let allowed_dist = if toi > skin { toi - skin } else { 0.0F }
+      let allowed_dist = toi
       let applied = vec2_scale(dir, allowed_dist)
       result_translation = result_translation.add(applied)
       remaining = remaining.sub(applied)
@@ -1058,7 +1086,9 @@ pub fn KinematicCharacterController::move_shape(
       }
 
       // Small nudge to avoid getting stuck on surfaces.
-      result_translation = result_translation.add(vec2_scale(normal, skin))
+      result_translation = result_translation.add(
+        vec2_scale(normal, normal_nudge),
+      )
     } else {
       result_translation = result_translation.add(remaining)
       remaining = @core.Vec2::zero()

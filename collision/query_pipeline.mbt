@@ -815,41 +815,29 @@ fn shape_cast_ball_ball(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastHit? {
-  let r = radius1 + radius2
-  let m = start.sub(center2)
-  let a = vel.dot(vel)
-  let c = m.dot(m) - r * r
-  if c <= 0.0F && stop_at_penetration {
+  let radius = radius1 + radius2
+  let ray = Ray::new(start, vel)
+  if ray_intersect_ball(ray, center2, radius, max_toi, true) is Some(toi) {
+    if toi > max_toi {
+      return None
+    }
+    let center1 = start.add(vec2_scale(vel, toi))
     let normal = normalize_or_fallback(
-      @core.Vec2::new(-vel.x, -vel.y),
-      @core.Vec2::new(1.0F, 0.0F),
+      center1.sub(center2),
+      normalize_or_fallback(
+        @core.Vec2::new(-vel.x, -vel.y),
+        @core.Vec2::new(1.0F, 0.0F),
+      ),
     )
+    // Match parry/rapier: discard initial penetration when we are separating.
+    if !stop_at_penetration && toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
+      return None
+    }
     let point = center2.add(vec2_scale(normal, radius2))
-    return Some(ShapeCastHit::{ toi: 0.0F, point, normal })
+    Some(ShapeCastHit::{ toi, point, normal })
+  } else {
+    None
   }
-  if a <= 1.0e-12F {
-    return None
-  }
-  let b = m.dot(vel)
-  let disc = b * b - a * c
-  if disc < 0.0F {
-    return None
-  }
-  let root = sqrt_real(disc)
-  let mut t = (-b - root) / a
-  if t < 0.0F {
-    t = (-b + root) / a
-  }
-  if t < 0.0F || t > max_toi {
-    return None
-  }
-  let center1 = start.add(vec2_scale(vel, t))
-  let normal = normalize_or_fallback(
-    center1.sub(center2),
-    @core.Vec2::new(1.0F, 0.0F),
-  )
-  let point = center2.add(vec2_scale(normal, radius2))
-  Some(ShapeCastHit::{ toi: t, point, normal })
 }
 
 ///|
@@ -867,13 +855,41 @@ fn shape_cast_ball_cuboid(
   let ray = Ray::new(start, vel)
   let expanded_hw = half_width + radius
   let expanded_hh = half_height + radius
+  let rot = @core.Rot2::from_angle(cuboid_rotation)
+  let inv = rot.inverse()
+  let local_p = inv.rotate_vec2(start.sub(cuboid_center))
+  let inside = @core.abs(local_p.x) <= expanded_hw &&
+    @core.abs(local_p.y) <= expanded_hh
   if ray_intersect_cuboid_oriented_and_get_normal(
-      ray, cuboid_center, cuboid_rotation, expanded_hw, expanded_hh, max_toi, stop_at_penetration,
+      ray, cuboid_center, cuboid_rotation, expanded_hw, expanded_hh, max_toi, true,
     )
     is Some(hit) {
+    let mut normal = hit.normal
+    if hit.toi < 1.0e-5F && inside {
+      // Find a stable normal based on the closest cuboid face (instead of -vel).
+      let dx = expanded_hw - @core.abs(local_p.x)
+      let dy = expanded_hh - @core.abs(local_p.y)
+      let vel_local = inv.rotate_vec2(vel)
+      if dx < dy {
+        let mut sx = if local_p.x >= 0.0F { 1.0F } else { -1.0F }
+        if @core.abs(local_p.x) <= 1.0e-12F {
+          sx = if -vel_local.x >= 0.0F { 1.0F } else { -1.0F }
+        }
+        normal = rot.rotate_vec2(@core.Vec2::new(sx, 0.0F))
+      } else {
+        let mut sy = if local_p.y >= 0.0F { 1.0F } else { -1.0F }
+        if @core.abs(local_p.y) <= 1.0e-12F {
+          sy = if -vel_local.y >= 0.0F { 1.0F } else { -1.0F }
+        }
+        normal = rot.rotate_vec2(@core.Vec2::new(0.0F, sy))
+      }
+    }
+    if !stop_at_penetration && hit.toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
+      return None
+    }
     let center = ray_point(ray, hit.toi)
-    let point = center.sub(vec2_scale(hit.normal, radius))
-    Some(ShapeCastHit::{ toi: hit.toi, point, normal: hit.normal })
+    let point = center.sub(vec2_scale(normal, radius))
+    Some(ShapeCastHit::{ toi: hit.toi, point, normal })
   } else {
     None
   }
@@ -936,18 +952,48 @@ fn shape_cast_ball_segment(
       0.5F * len,
       expanded_hh,
       max_toi,
-      stop_at_penetration,
+      true,
     )
     is Some(hit) {
-    let center = ray_point(ray, hit.toi)
-    let point = center.sub(vec2_scale(hit.normal, ball_radius))
-    let h = ShapeCastHit::{ toi: hit.toi, point, normal: hit.normal }
-    if best is Some(cur) {
-      if h.toi < cur.toi {
+    let mut normal = hit.normal
+    if hit.toi < 1.0e-5F {
+      // Determine if the ball center starts inside the expanded rectangle.
+      let rect_rot = @core.Rot2::from_angle(angle)
+      let rect_inv = rect_rot.inverse()
+      let local_p = rect_inv.rotate_vec2(start.sub(mid))
+      let inside_rect = @core.abs(local_p.x) <= 0.5F * len &&
+        @core.abs(local_p.y) <= expanded_hh
+      if inside_rect {
+        let q = closest_point_on_segment(seg_a, seg_b, start)
+        let delta = start.sub(q)
+        if delta.length_squared() > 1.0e-12F {
+          normal = delta.normalize()
+        } else {
+          let mut seg_n = normalize_or_fallback(
+            @core.Vec2::new(-dir.y, dir.x),
+            @core.Vec2::new(0.0F, 1.0F),
+          )
+          if seg_n.dot(vel) > 0.0F {
+            seg_n = @core.Vec2::new(-seg_n.x, -seg_n.y)
+          }
+          normal = seg_n
+        }
+      }
+    }
+    if !stop_at_penetration && hit.toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
+      // Discard initial penetration when separating.
+      ()
+    } else {
+      let center = ray_point(ray, hit.toi)
+      let point = center.sub(vec2_scale(normal, ball_radius))
+      let h = ShapeCastHit::{ toi: hit.toi, point, normal }
+      if best is Some(cur) {
+        if h.toi < cur.toi {
+          best = Some(h)
+        }
+      } else {
         best = Some(h)
       }
-    } else {
-      best = Some(h)
     }
   }
   best
@@ -1064,19 +1110,35 @@ fn shape_cast_cuboid_cuboid(
   if best_exit < 0.0F {
     return None
   }
-  let toi = if best_entry <= 0.0F {
-    if stop_at_penetration {
-      0.0F
-    } else {
-      0.0F
-    }
-  } else {
-    best_entry
-  }
+  let penetration = best_entry <= 0.0F
+  let toi = if penetration { 0.0F } else { best_entry }
   if toi > max_toi {
     return None
   }
-  let normal = if best_vel_axis > 1.0e-12F {
+  let normal = if penetration {
+    // Choose a stable penetration normal using the smallest overlap axis (SAT-style).
+    let mut best_overlap = 1.0e30F
+    let mut axis_best = @core.Vec2::new(1.0F, 0.0F)
+    for axis in axes {
+      let (min1, max1) = shape_cast_project_interval(
+        center1, rotation1, half_width1, half_height1, axis,
+      )
+      let (min2, max2) = shape_cast_project_interval(
+        center2, rotation2, half_width2, half_height2, axis,
+      )
+      let overlap = min_value(max1, max2) - max_value(min1, min2)
+      if overlap < best_overlap {
+        best_overlap = overlap
+        axis_best = axis
+      }
+    }
+    let sign = if center1.sub(center2).dot(axis_best) >= 0.0F {
+      1.0F
+    } else {
+      -1.0F
+    }
+    @core.Vec2::new(axis_best.x * sign, axis_best.y * sign)
+  } else if best_vel_axis > 1.0e-12F {
     @core.Vec2::new(-best_axis.x, -best_axis.y)
   } else if best_vel_axis < -1.0e-12F {
     best_axis
@@ -1085,6 +1147,9 @@ fn shape_cast_cuboid_cuboid(
       @core.Vec2::new(-vel.x, -vel.y),
       @core.Vec2::new(1.0F, 0.0F),
     )
+  }
+  if !stop_at_penetration && toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
+    return None
   }
   let point = shape_cast_support_point_cuboid(
     center2, rotation2, half_width2, half_height2, normal,
