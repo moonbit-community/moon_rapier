@@ -47,6 +47,47 @@ test "query pipeline cast_ray hits nearest collider" {
 }
 
 ///|
+test "query pipeline intersect_ray returns all hits" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let h1 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build(),
+  )
+  let h2 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(5.0F, 0.0F))
+    .build(),
+  )
+  let c1 = ColliderBuilder::ball(0.5F).build()
+  let c2 = ColliderBuilder::ball(0.5F).build()
+  let ch1 = colliders.insert_with_parent(c1, h1, bodies)
+  let ch2 = colliders.insert_with_parent(c2, h2, bodies)
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let hits = query_pipeline.intersect_ray(ray, 100.0F, true)
+  let mut found1 = false
+  let mut found2 = false
+  for i in 0..<hits.length() {
+    let h = hits[i]
+    if ColliderHandle::equals(h.0, ch1) {
+      found1 = true
+      inspect(@core.abs(h.1.toi() - 9.5F) < 1.0e-4F, content="true")
+    }
+    if ColliderHandle::equals(h.0, ch2) {
+      found2 = true
+      inspect(@core.abs(h.1.toi() - 14.5F) < 1.0e-4F, content="true")
+    }
+  }
+  inspect(found1 && found2, content="true")
+}
+
+///|
 test "query pipeline cast_ray solid vs hollow" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

@@ -806,6 +806,69 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
 }
 
 ///|
+pub fn QueryPipeline::intersect_ray(
+  self : QueryPipeline,
+  ray : Ray,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> Array[(ColliderHandle, RayIntersection)] {
+  let max_dist = if max_toi < 0.0F { 0.0F } else { max_toi }
+  let results : Array[(ColliderHandle, RayIntersection)] = []
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      let pos = collider.world_translation
+      let rot = collider.world_rotation
+      let hit = match collider.shape {
+        Shape::Ball(radius) =>
+          ray_intersect_ball_and_get_normal(ray, pos, radius, max_dist, solid)
+        Shape::Cuboid(hw, hh) =>
+          ray_intersect_cuboid_oriented_and_get_normal(
+            ray, pos, rot, hw, hh, max_dist, solid,
+          )
+        Shape::CapsuleX(half_height, radius) =>
+          ray_intersect_capsule_oriented_and_get_normal(
+            ray,
+            pos,
+            rot,
+            @core.Vec2::new(1.0F, 0.0F),
+            half_height,
+            radius,
+            half_height,
+            radius,
+            max_dist,
+            solid,
+          )
+        Shape::CapsuleY(half_height, radius) =>
+          ray_intersect_capsule_oriented_and_get_normal(
+            ray,
+            pos,
+            rot,
+            @core.Vec2::new(0.0F, 1.0F),
+            half_height,
+            radius,
+            radius,
+            half_height,
+            max_dist,
+            solid,
+          )
+        Shape::Segment(a, b) =>
+          ray_intersect_segment_and_get_normal(
+            ray, pos, rot, a, b, max_dist, solid,
+          )
+      }
+      if hit is Some(intersection) {
+        results.push((handle, intersection))
+      }
+    }
+  }
+  results
+}
+
+///|
 fn shape_cast_ball_ball(
   start : @core.Vec2,
   vel : @core.Vec2,

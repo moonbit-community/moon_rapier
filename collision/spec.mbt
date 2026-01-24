@@ -1131,6 +1131,17 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
 
 ///|
 #declaration_only
+pub fn QueryPipeline::intersect_ray(
+  self : QueryPipeline,
+  ray : Ray,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> Array[(ColliderHandle, RayIntersection)] {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryPipeline::cast_shape(
   self : QueryPipeline,
   shape_pos : @core.Isometry2,
