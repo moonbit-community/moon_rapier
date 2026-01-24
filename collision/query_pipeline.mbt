@@ -378,6 +378,43 @@ fn normalize_or_fallback(v : @core.Vec2, fallback : @core.Vec2) -> @core.Vec2 {
 }
 
 ///|
+fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
+  a.x * b.y - a.y * b.x
+}
+
+///|
+fn atan2_real(y : @core.Real, x : @core.Real) -> @core.Real {
+  Float::from_double(@math.atan2(y.to_double(), x.to_double()))
+}
+
+///|
+fn closest_point_on_segment(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  p : @core.Vec2,
+) -> @core.Vec2 {
+  let ab = b.sub(a)
+  let denom = ab.dot(ab)
+  if denom <= 1.0e-12F {
+    a
+  } else {
+    let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+    a.add(vec2_scale(ab, t))
+  }
+}
+
+///|
+fn segment_world_endpoints(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2) {
+  let rot = @core.Rot2::from_angle(rotation)
+  (center.add(rot.rotate_vec2(a)), center.add(rot.rotate_vec2(b)))
+}
+
+///|
 fn ray_intersect_ball(
   ray : Ray,
   center : @core.Vec2,
@@ -576,6 +613,48 @@ fn ray_intersect_cuboid_oriented_and_get_normal(
 }
 
 ///|
+fn ray_intersect_segment_and_get_normal(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  let (sa, sb) = segment_world_endpoints(center, rotation, a, b)
+  let s = sb.sub(sa)
+  let denom = cross2(ray.dir, s)
+
+  // Handle rays starting on the segment for solid casts (Rapier-like behavior).
+  let q0 = closest_point_on_segment(sa, sb, ray.origin)
+  if solid && ray.origin.sub(q0).dot(ray.origin.sub(q0)) <= 1.0e-12F {
+    let normal = normalize_or_fallback(
+      @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+      @core.Vec2::new(1.0F, 0.0F),
+    )
+    return Some(RayIntersection::{ toi: 0.0F, normal })
+  }
+  if @core.abs(denom) <= 1.0e-12F {
+    return None
+  }
+  let qp = sa.sub(ray.origin)
+  let t = cross2(qp, s) / denom
+  let u = cross2(qp, ray.dir) / denom
+  if t < 0.0F || t > max_toi || u < 0.0F || u > 1.0F {
+    return None
+  }
+  let mut normal = normalize_or_fallback(
+    @core.Vec2::new(-s.y, s.x),
+    @core.Vec2::new(0.0F, 1.0F),
+  )
+  if normal.dot(ray.dir) > 0.0F {
+    normal = @core.Vec2::new(-normal.x, -normal.y)
+  }
+  Some(RayIntersection::{ toi: t, normal })
+}
+
+///|
 fn ray_intersect_capsule_oriented_and_get_normal(
   ray : Ray,
   center : @core.Vec2,
@@ -687,6 +766,10 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
             half_height,
             max_dist,
             solid,
+          )
+        Shape::Segment(a, b) =>
+          ray_intersect_segment_and_get_normal(
+            ray, pos, rot, a, b, max_dist, solid,
           )
       }
       if hit is Some(intersection) {
@@ -1086,7 +1169,23 @@ pub fn QueryPipeline::cast_shape(
       if !query_filter_test(self.filter, self.bodies, handle, collider) {
         continue
       }
-      let hit = match (shape, collider.shape) {
+      let mut target_center = collider.world_translation
+      let mut target_rot = collider.world_rotation
+      let mut target_shape = collider.shape
+      if collider.shape is Shape::Segment(a, b) {
+        // Approximate segment sweeps by casting against a very thin oriented cuboid.
+        let (sa, sb) = segment_world_endpoints(target_center, target_rot, a, b)
+        let dir = sb.sub(sa)
+        let len = dir.length()
+        let angle = atan2_real(dir.y, dir.x)
+        target_center = @core.Vec2::new(
+          0.5F * (sa.x + sb.x),
+          0.5F * (sa.y + sb.y),
+        )
+        target_rot = angle
+        target_shape = Shape::Cuboid(0.5F * len, 1.0e-6F)
+      }
+      let hit = match (shape, target_shape) {
         (Shape::Ball(_), Shape::Ball(_))
         | (Shape::Ball(_), Shape::Cuboid(_, _))
         | (Shape::Cuboid(_, _), Shape::Ball(_))
@@ -1095,9 +1194,9 @@ pub fn QueryPipeline::cast_shape(
             shape_pos,
             shape_vel,
             shape,
-            collider.world_translation,
-            collider.world_rotation,
-            collider.shape,
+            target_center,
+            target_rot,
+            target_shape,
             max_toi,
             options.stop_at_penetration,
           )
@@ -1106,8 +1205,8 @@ pub fn QueryPipeline::cast_shape(
             shape_pos,
             shape_vel,
             shape,
-            collider.world_translation,
-            collider.world_rotation,
+            target_center,
+            target_rot,
             @core.Vec2::new(1.0F, 0.0F),
             h,
             r,
@@ -1121,8 +1220,8 @@ pub fn QueryPipeline::cast_shape(
             shape_pos,
             shape_vel,
             shape,
-            collider.world_translation,
-            collider.world_rotation,
+            target_center,
+            target_rot,
             @core.Vec2::new(0.0F, 1.0F),
             h,
             r,
@@ -1136,8 +1235,8 @@ pub fn QueryPipeline::cast_shape(
             shape_pos,
             shape_vel,
             shape,
-            collider.world_translation,
-            collider.world_rotation,
+            target_center,
+            target_rot,
             @core.Vec2::new(1.0F, 0.0F),
             h,
             r,
@@ -1151,8 +1250,8 @@ pub fn QueryPipeline::cast_shape(
             shape_pos,
             shape_vel,
             shape,
-            collider.world_translation,
-            collider.world_rotation,
+            target_center,
+            target_rot,
             @core.Vec2::new(0.0F, 1.0F),
             h,
             r,
@@ -1181,8 +1280,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   @core.Vec2::new(1.0F, 0.0F),
                   th,
                   tr,
@@ -1196,8 +1295,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   @core.Vec2::new(0.0F, 1.0F),
                   th,
                   tr,
@@ -1211,8 +1310,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   target,
                   max_toi,
                   options.stop_at_penetration,
@@ -1250,8 +1349,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   @core.Vec2::new(1.0F, 0.0F),
                   th,
                   tr,
@@ -1265,8 +1364,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   @core.Vec2::new(0.0F, 1.0F),
                   th,
                   tr,
@@ -1280,8 +1379,8 @@ pub fn QueryPipeline::cast_shape(
                   comp_pos,
                   shape_vel,
                   comp_shape,
-                  collider.world_translation,
-                  collider.world_rotation,
+                  target_center,
+                  target_rot,
                   target,
                   max_toi,
                   options.stop_at_penetration,
@@ -1299,6 +1398,7 @@ pub fn QueryPipeline::cast_shape(
           }
           best_hit
         }
+        _ => None
       }
       if hit is Some(intersection) {
         if best is Some(current) {
@@ -1361,6 +1461,11 @@ fn point_in_shape(
       let delta = @core.Vec2::new(local_point.x, local_point.y - cy)
       delta.dot(delta) <= radius * radius
     }
+    Shape::Segment(a, b) => {
+      let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
+      let q = closest_point_on_segment(wa, wb, point)
+      point.sub(q).dot(point.sub(q)) <= 1.0e-12F
+    }
   }
 }
 
@@ -1414,6 +1519,22 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
       @core.Aabb::new(
         @core.Vec2::new(min_x - radius, min_y - radius),
         @core.Vec2::new(max_x + radius, max_y + radius),
+      )
+    }
+    Shape::Segment(a, b) => {
+      let (wa, wb) = segment_world_endpoints(
+        collider.world_translation,
+        collider.world_rotation,
+        a,
+        b,
+      )
+      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
+      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
+      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
+      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x, min_y),
+        @core.Vec2::new(max_x, max_y),
       )
     }
   }
@@ -1542,6 +1663,19 @@ fn project_point_on_capsule_oriented(
 }
 
 ///|
+fn project_point_on_segment(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  point : @core.Vec2,
+) -> PointProjection {
+  let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
+  let q = closest_point_on_segment(wa, wb, point)
+  PointProjection::{ point: q, is_inside: false }
+}
+
+///|
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
   point : @core.Vec2,
@@ -1593,6 +1727,14 @@ pub fn QueryPipeline::project_point(
             radius,
             point,
             solid,
+          )
+        Shape::Segment(a, b) =>
+          project_point_on_segment(
+            collider.world_translation,
+            collider.world_rotation,
+            a,
+            b,
+            point,
           )
       }
       let delta = point.sub(projection.point)

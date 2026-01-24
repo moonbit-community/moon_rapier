@@ -465,3 +465,35 @@ test "character controller grounded on rotated cuboid (capsule character)" {
   )
   inspect(movement.is_grounded() == true, content="true")
 }
+
+///|
+test "character controller grounded on segment" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let ground = @collision.ColliderBuilder::segment(
+      @core.Vec2::new(-10.0F, 0.0F),
+      @core.Vec2::new(10.0F, 0.0F),
+    )
+    .translation(@core.Vec2::new(0.0F, -1.0F))
+    .build()
+  colliders.insert(ground) |> ignore
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  broad_phase.update(0.0F, bodies, colliders)
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let controller = KinematicCharacterController::new()
+  let shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 2.0F))
+  let movement = controller.move_shape(
+    0.016F,
+    query_pipeline,
+    shape,
+    start_pos,
+    @core.Vec2::new(0.0F, -4.0F),
+    fn(_collision) {  },
+  )
+  inspect(movement.is_grounded() == true, content="true")
+}

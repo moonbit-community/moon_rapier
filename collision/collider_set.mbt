@@ -233,6 +233,7 @@ pub(all) enum Shape {
   Cuboid(@core.Real, @core.Real)
   CapsuleX(@core.Real, @core.Real)
   CapsuleY(@core.Real, @core.Real)
+  Segment(@core.Vec2, @core.Vec2)
 }
 
 ///|
@@ -363,6 +364,32 @@ pub fn ColliderBuilder::capsule_y(
 ) -> ColliderBuilder {
   {
     shape: Shape::CapsuleY(half_height, radius),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: None,
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder::segment(
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> ColliderBuilder {
+  {
+    shape: Shape::Segment(a, b),
     translation: @core.Vec2::zero(),
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
@@ -1388,6 +1415,158 @@ fn shapes_intersect(
   pos2 : @core.Vec2,
   rot2 : @core.Real,
 ) -> Bool {
+  fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
+    a.x * b.y - a.y * b.x
+  }
+
+  fn segment_world_endpoints(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> (@core.Vec2, @core.Vec2) {
+    let rot = @core.Rot2::from_angle(rotation)
+    (center.add(rot.rotate_vec2(a)), center.add(rot.rotate_vec2(b)))
+  }
+
+  fn closest_point_on_segment(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    p : @core.Vec2,
+  ) -> @core.Vec2 {
+    let ab = b.sub(a)
+    let denom = ab.dot(ab)
+    if denom <= 1.0e-12F {
+      a
+    } else {
+      let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+      a.add(@core.Vec2::new(ab.x * t, ab.y * t))
+    }
+  }
+
+  fn segment_ball_intersect(
+    seg_center : @core.Vec2,
+    seg_rot : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+    ball_center : @core.Vec2,
+    radius : @core.Real,
+  ) -> Bool {
+    let (wa, wb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+    let q = closest_point_on_segment(wa, wb, ball_center)
+    ball_center.sub(q).length_squared() <= radius * radius
+  }
+
+  fn segment_aabb_intersect(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    hw : @core.Real,
+    hh : @core.Real,
+  ) -> Bool {
+    // Liang–Barsky clipping against axis-aligned AABB centered at origin.
+    let d = b.sub(a)
+    let mut t0 = 0.0F
+    let mut t1 = 1.0F
+    let p = [-d.x, d.x, -d.y, d.y]
+    let q = [a.x + hw, hw - a.x, a.y + hh, hh - a.y]
+    for i in 0..<4 {
+      let pi = p[i]
+      let qi = q[i]
+      if @core.abs(pi) <= 1.0e-12F {
+        if qi < 0.0F {
+          return false
+        }
+      } else {
+        let r = qi / pi
+        if pi < 0.0F {
+          if r > t1 {
+            return false
+          }
+          if r > t0 {
+            t0 = r
+          }
+        } else {
+          if r < t0 {
+            return false
+          }
+          if r < t1 {
+            t1 = r
+          }
+        }
+      }
+    }
+    true
+  }
+
+  fn segment_cuboid_intersect(
+    seg_center : @core.Vec2,
+    seg_rot : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+    cuboid_center : @core.Vec2,
+    cuboid_rot : @core.Real,
+    hw : @core.Real,
+    hh : @core.Real,
+  ) -> Bool {
+    let (wa, wb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+    let rot = @core.Rot2::from_angle(cuboid_rot)
+    let inv = rot.inverse()
+    let la = inv.rotate_vec2(wa.sub(cuboid_center))
+    let lb = inv.rotate_vec2(wb.sub(cuboid_center))
+    segment_aabb_intersect(la, lb, hw, hh)
+  }
+
+  fn on_segment(a : @core.Vec2, b : @core.Vec2, p : @core.Vec2) -> Bool {
+    min_value(a.x, b.x) - 1.0e-6F <= p.x &&
+    p.x <= max_value(a.x, b.x) + 1.0e-6F &&
+    min_value(a.y, b.y) - 1.0e-6F <= p.y &&
+    p.y <= max_value(a.y, b.y) + 1.0e-6F
+  }
+
+  fn segment_segment_intersect_world(
+    a1 : @core.Vec2,
+    b1 : @core.Vec2,
+    a2 : @core.Vec2,
+    b2 : @core.Vec2,
+  ) -> Bool {
+    let r = b1.sub(a1)
+    let s = b2.sub(a2)
+    let denom = cross2(r, s)
+    let qp = a2.sub(a1)
+    let num_t = cross2(qp, s)
+    let num_u = cross2(qp, r)
+    if @core.abs(denom) <= 1.0e-12F {
+      // Parallel: either disjoint or collinear overlap.
+      if @core.abs(cross2(qp, r)) > 1.0e-6F {
+        return false
+      }
+      // Collinear: check overlap of endpoints.
+      on_segment(a1, b1, a2) ||
+      on_segment(a1, b1, b2) ||
+      on_segment(a2, b2, a1) ||
+      on_segment(a2, b2, b1)
+    } else {
+      let t = num_t / denom
+      let u = num_u / denom
+      t >= 0.0F && t <= 1.0F && u >= 0.0F && u <= 1.0F
+    }
+  }
+
+  fn segment_segment_intersect(
+    center1 : @core.Vec2,
+    rot1 : @core.Real,
+    a1 : @core.Vec2,
+    b1 : @core.Vec2,
+    center2 : @core.Vec2,
+    rot2 : @core.Real,
+    a2 : @core.Vec2,
+    b2 : @core.Vec2,
+  ) -> Bool {
+    let (wa1, wb1) = segment_world_endpoints(center1, rot1, a1, b1)
+    let (wa2, wb2) = segment_world_endpoints(center2, rot2, a2, b2)
+    segment_segment_intersect_world(wa1, wb1, wa2, wb2)
+  }
+
   fn shapes_intersect_basic(
     s1 : Shape,
     p1 : @core.Vec2,
@@ -1409,6 +1588,16 @@ fn shapes_intersect(
         ball_cuboid_intersect(p1, r, p2, r2, hw, hh)
       (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
         ball_cuboid_intersect(p2, r, p1, r1, hw, hh)
+      (Shape::Segment(a, b), Shape::Ball(r)) =>
+        segment_ball_intersect(p1, r1, a, b, p2, r)
+      (Shape::Ball(r), Shape::Segment(a, b)) =>
+        segment_ball_intersect(p2, r2, a, b, p1, r)
+      (Shape::Segment(a, b), Shape::Cuboid(hw, hh)) =>
+        segment_cuboid_intersect(p1, r1, a, b, p2, r2, hw, hh)
+      (Shape::Cuboid(hw, hh), Shape::Segment(a, b)) =>
+        segment_cuboid_intersect(p2, r2, a, b, p1, r1, hw, hh)
+      (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
+        segment_segment_intersect(p1, r1, a1, b1, p2, r2, a2, b2)
       _ => false
     }
   }
@@ -1440,6 +1629,12 @@ fn shapes_intersect(
     | (Shape::Ball(_), Shape::Cuboid(_, _))
     | (Shape::Cuboid(_, _), Shape::Ball(_))
     | (Shape::Cuboid(_, _), Shape::Cuboid(_, _)) =>
+      shapes_intersect_basic(shape1, pos1, rot1, shape2, pos2, rot2)
+    (Shape::Ball(_), Shape::Segment(_, _))
+    | (Shape::Segment(_, _), Shape::Ball(_))
+    | (Shape::Cuboid(_, _), Shape::Segment(_, _))
+    | (Shape::Segment(_, _), Shape::Cuboid(_, _))
+    | (Shape::Segment(_, _), Shape::Segment(_, _)) =>
       shapes_intersect_basic(shape1, pos1, rot1, shape2, pos2, rot2)
     (Shape::CapsuleX(h, r), other) => {
       let comps = capsule_components(
@@ -1992,6 +2187,19 @@ fn compute_shape_aabb(
       Aabb::{
         min: @core.Vec2::new(min_x - r, min_y - r),
         max: @core.Vec2::new(max_x + r, max_y + r),
+      }
+    }
+    Shape::Segment(a, b) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let wa = center.add(rot.rotate_vec2(a))
+      let wb = center.add(rot.rotate_vec2(b))
+      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
+      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
+      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
+      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
+      Aabb::{
+        min: @core.Vec2::new(min_x - pd, min_y - pd),
+        max: @core.Vec2::new(max_x + pd, max_y + pd),
       }
     }
   }

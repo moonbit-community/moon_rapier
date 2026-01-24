@@ -169,6 +169,15 @@ pub fn ColliderBuilder::capsule_y(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::segment(
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::translation(
   self : ColliderBuilder,
   translation : @core.Vec2,

@@ -150,6 +150,19 @@ fn compute_aabb_for_test(
         @core.Vec2::new(max_x + r, max_y + r),
       )
     }
+    Shape::Segment(a, b) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let wa = center.add(rot.rotate_vec2(a))
+      let wb = center.add(rot.rotate_vec2(b))
+      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
+      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
+      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
+      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
+      (
+        @core.Vec2::new(min_x - pd, min_y - pd),
+        @core.Vec2::new(max_x + pd, max_y + pd),
+      )
+    }
   }
 }
 

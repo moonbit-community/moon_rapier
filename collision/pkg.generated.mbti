@@ -144,6 +144,7 @@ pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombine
 pub fn ColliderBuilder::restitution(Self, Float) -> Self
 pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::rotation(Self, Float) -> Self
+pub fn ColliderBuilder::segment(@core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
@@ -275,6 +276,7 @@ pub(all) enum Shape {
   Cuboid(Float, Float)
   CapsuleX(Float, Float)
   CapsuleY(Float, Float)
+  Segment(@core.Vec2, @core.Vec2)
 }
 
 pub struct ShapeCastHit {

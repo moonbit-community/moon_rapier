@@ -201,6 +201,11 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       (half_height + radius, radius)
     @collision.Shape::CapsuleY(half_height, radius) =>
       (radius, half_height + radius)
+    @collision.Shape::Segment(a, b) => {
+      let hw = max_real(@core.abs(a.x), @core.abs(b.x))
+      let hh = max_real(@core.abs(a.y), @core.abs(b.y))
+      (hw, hh)
+    }
   }
 }
 
@@ -294,6 +299,19 @@ fn compute_shape_aabb(
         @core.Vec2::new(max_x + r, max_y + r),
       )
     }
+    @collision.Shape::Segment(a, b) => {
+      let rot = shape_pos.rotation
+      let wa = shape_pos.translation.add(rot.rotate_vec2(a))
+      let wb = shape_pos.translation.add(rot.rotate_vec2(b))
+      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
+      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
+      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
+      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
+      @core.Aabb::new(
+        @core.Vec2::new(min_x - pd, min_y - pd),
+        @core.Vec2::new(max_x + pd, max_y + pd),
+      )
+    }
   }
 }
 
@@ -351,6 +369,114 @@ fn contact_ball_cuboid(
   let normal = rot.rotate_vec2(normal_local)
   let point2 = cuboid_center.add(rot.rotate_vec2(clamped))
   (dist - radius, normal, point2)
+}
+
+///|
+fn segment_world_endpoints(
+  center : @core.Vec2,
+  rot : @core.Rot2,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2) {
+  (center.add(rot.rotate_vec2(a)), center.add(rot.rotate_vec2(b)))
+}
+
+///|
+fn contact_ball_segment(
+  center : @core.Vec2,
+  radius : @core.Real,
+  seg_center : @core.Vec2,
+  seg_rot : @core.Rot2,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let (sa, sb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+  let q = closest_point_on_segment(sa, sb, center)
+  let delta = center.sub(q)
+  let dist = delta.length()
+  let normal = if dist <= 1.0e-6F {
+    @core.Vec2::new(0.0F, 1.0F)
+  } else {
+    vec2_scale(delta, 1.0F / dist)
+  }
+  (dist - radius, normal, q)
+}
+
+///|
+fn contact_cuboid_segment(
+  cuboid_center : @core.Vec2,
+  cuboid_rot : @core.Rot2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  seg_center : @core.Vec2,
+  seg_rot : @core.Rot2,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> (@core.Real, @core.Vec2, @core.Vec2) {
+  let (sa, sb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+  let vs = cuboid_vertices(cuboid_center, cuboid_rot, half_width, half_height)
+  let mut best_dist2 = 1.0e30F
+  let mut best_p_cuboid = cuboid_center
+  let mut best_p_seg = sa
+
+  // Segment-segment min distance is min over endpoint-to-segment projections.
+  for i in 0..<4 {
+    let ea = vs[i]
+    let eb = vs[(i + 1) % 4]
+    let q1 = closest_point_on_segment(sa, sb, ea)
+    let d1 = ea.sub(q1)
+    let dist2_1 = d1.dot(d1)
+    if dist2_1 < best_dist2 {
+      best_dist2 = dist2_1
+      best_p_cuboid = ea
+      best_p_seg = q1
+    }
+    let q2 = closest_point_on_segment(sa, sb, eb)
+    let d2 = eb.sub(q2)
+    let dist2_2 = d2.dot(d2)
+    if dist2_2 < best_dist2 {
+      best_dist2 = dist2_2
+      best_p_cuboid = eb
+      best_p_seg = q2
+    }
+    let p1 = closest_point_on_segment(ea, eb, sa)
+    let d3 = sa.sub(p1)
+    let dist2_3 = d3.dot(d3)
+    if dist2_3 < best_dist2 {
+      best_dist2 = dist2_3
+      best_p_cuboid = p1
+      best_p_seg = sa
+    }
+    let p2 = closest_point_on_segment(ea, eb, sb)
+    let d4 = sb.sub(p2)
+    let dist2_4 = d4.dot(d4)
+    if dist2_4 < best_dist2 {
+      best_dist2 = dist2_4
+      best_p_cuboid = p2
+      best_p_seg = sb
+    }
+  }
+  let dist = Float::sqrt(best_dist2)
+  let normal = if dist <= 1.0e-6F {
+    let dir = sb.sub(sa)
+    let mut n = if try_normalize_and_get_length(
+        @core.Vec2::new(-dir.y, dir.x),
+        1.0e-6F,
+      )
+      is Some(v) {
+      v.0
+    } else {
+      @core.Vec2::new(0.0F, 1.0F)
+    }
+    let mid = @core.Vec2::new(0.5F * (sa.x + sb.x), 0.5F * (sa.y + sb.y))
+    if cuboid_center.sub(mid).dot(n) < 0.0F {
+      n = @core.Vec2::new(-n.x, -n.y)
+    }
+    n
+  } else {
+    vec2_scale(best_p_cuboid.sub(best_p_seg), 1.0F / dist)
+  }
+  (dist, normal, best_p_seg)
 }
 
 ///|
@@ -585,6 +711,8 @@ fn detect_ground_contact(
           (@collision.Shape::Cuboid(radius, half_height), pos),
         ]
       }
+      @collision.Shape::Segment(a, b) =>
+        [(@collision.Shape::Segment(a, b), pos)]
     }
   }
 
@@ -619,6 +747,8 @@ fn detect_ground_contact(
           (@collision.Shape::Cuboid(radius, half_height), center, rotation),
         ]
       }
+      @collision.Shape::Segment(a, b) =>
+        [(@collision.Shape::Segment(a, b), center, rotation)]
     }
   }
 
@@ -660,6 +790,26 @@ fn detect_ground_contact(
           @core.Rot2::from_angle(col_rot),
           hw2,
           hh2,
+        )
+      (@collision.Shape::Ball(r), @collision.Shape::Segment(a, b)) =>
+        contact_ball_segment(
+          char_pos.translation,
+          r,
+          col_center,
+          @core.Rot2::from_angle(col_rot),
+          a,
+          b,
+        )
+      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Segment(a, b)) =>
+        contact_cuboid_segment(
+          char_pos.translation,
+          char_pos.rotation,
+          hw,
+          hh,
+          col_center,
+          @core.Rot2::from_angle(col_rot),
+          a,
+          b,
         )
       _ => (1.0e30F, @core.Vec2::new(0.0F, 1.0F), col_center)
     }

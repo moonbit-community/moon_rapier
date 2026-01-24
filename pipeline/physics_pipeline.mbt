@@ -200,6 +200,169 @@ fn separation_vector(
   pos2 : @core.Vec2,
   rot2 : @core.Real,
 ) -> @core.Vec2? {
+  fn segment_world_endpoints(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> (@core.Vec2, @core.Vec2) {
+    let rot = @core.Rot2::from_angle(rotation)
+    (center.add(rot.rotate_vec2(a)), center.add(rot.rotate_vec2(b)))
+  }
+
+  fn closest_point_on_segment(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    p : @core.Vec2,
+  ) -> @core.Vec2 {
+    let ab = b.sub(a)
+    let denom = ab.dot(ab)
+    if denom <= 1.0e-12F {
+      a
+    } else {
+      let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+      a.add(vec2_scale(ab, t))
+    }
+  }
+
+  fn segment_aabb_intersect(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    hw : @core.Real,
+    hh : @core.Real,
+  ) -> Bool {
+    let d = b.sub(a)
+    let mut t0 = 0.0F
+    let mut t1 = 1.0F
+    let p = [-d.x, d.x, -d.y, d.y]
+    let q = [a.x + hw, hw - a.x, a.y + hh, hh - a.y]
+    for i in 0..<4 {
+      let pi = p[i]
+      let qi = q[i]
+      if @core.abs(pi) <= 1.0e-12F {
+        if qi < 0.0F {
+          return false
+        }
+      } else {
+        let r = qi / pi
+        if pi < 0.0F {
+          if r > t1 {
+            return false
+          }
+          if r > t0 {
+            t0 = r
+          }
+        } else {
+          if r < t0 {
+            return false
+          }
+          if r < t1 {
+            t1 = r
+          }
+        }
+      }
+    }
+    true
+  }
+
+  fn cuboid_vertices(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    half_width : @core.Real,
+    half_height : @core.Real,
+  ) -> Array[@core.Vec2] {
+    let (ax, ay) = cuboid_axes(rotation)
+    [
+      center.add(vec2_scale(ax, -half_width)).add(vec2_scale(ay, -half_height)),
+      center.add(vec2_scale(ax, half_width)).add(vec2_scale(ay, -half_height)),
+      center.add(vec2_scale(ax, half_width)).add(vec2_scale(ay, half_height)),
+      center.add(vec2_scale(ax, -half_width)).add(vec2_scale(ay, half_height)),
+    ]
+  }
+
+  fn separation_ball_segment(
+    ball_center : @core.Vec2,
+    radius : @core.Real,
+    seg_center : @core.Vec2,
+    seg_rot : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> @core.Vec2? {
+    let (sa, sb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+    let q = closest_point_on_segment(sa, sb, ball_center)
+    let delta = ball_center.sub(q)
+    let dist = delta.length()
+    if dist >= radius {
+      None
+    } else {
+      let dir = if dist <= 1.0e-6F {
+        // Fallback: use segment normal.
+        let d = sb.sub(sa)
+        let n = @core.Vec2::new(-d.y, d.x)
+        if n.length_squared() <= 1.0e-12F {
+          @core.Vec2::new(0.0F, 1.0F)
+        } else {
+          n.normalize()
+        }
+      } else {
+        vec2_scale(delta, 1.0F / dist)
+      }
+      let depth = radius - dist
+      Some(vec2_scale(dir, depth))
+    }
+  }
+
+  fn separation_cuboid_segment(
+    cuboid_center : @core.Vec2,
+    cuboid_rot : @core.Real,
+    half_width : @core.Real,
+    half_height : @core.Real,
+    seg_center : @core.Vec2,
+    seg_rot : @core.Real,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> @core.Vec2? {
+    let (sa, sb) = segment_world_endpoints(seg_center, seg_rot, a, b)
+    // Early-out if they don't intersect.
+    let rot = @core.Rot2::from_angle(cuboid_rot)
+    let inv = rot.inverse()
+    let la = inv.rotate_vec2(sa.sub(cuboid_center))
+    let lb = inv.rotate_vec2(sb.sub(cuboid_center))
+    if !segment_aabb_intersect(la, lb, half_width, half_height) {
+      return None
+    }
+    let dir = sb.sub(sa)
+    let mut n = @core.Vec2::new(-dir.y, dir.x)
+    if n.length_squared() <= 1.0e-12F {
+      n = @core.Vec2::new(0.0F, 1.0F)
+    } else {
+      n = n.normalize()
+    }
+    let verts = cuboid_vertices(
+      cuboid_center, cuboid_rot, half_width, half_height,
+    )
+    let mut min_d = 1.0e30F
+    let mut max_d = -1.0e30F
+    for v in verts {
+      let d = v.sub(sa).dot(n)
+      if d < min_d {
+        min_d = d
+      }
+      if d > max_d {
+        max_d = d
+      }
+    }
+    // Move along +/-n until all vertices are on one side of the segment line.
+    let margin = 1.0e-6F
+    let shift_pos = -min_d + margin
+    let shift_neg = max_d + margin
+    if shift_pos < shift_neg {
+      Some(vec2_scale(n, shift_pos))
+    } else {
+      Some(vec2_scale(n, -shift_neg))
+    }
+  }
+
   fn separation_basic(
     s1 : @collision.Shape,
     p1 : @core.Vec2,
@@ -217,6 +380,22 @@ fn separation_vector(
         separation_ball_cuboid(p1, r, p2, r2, hw, hh)
       (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
         if separation_ball_cuboid(p2, r, p1, r1, hw, hh) is Some(sep) {
+          Some(@core.Vec2::new(-sep.x, -sep.y))
+        } else {
+          None
+        }
+      (@collision.Shape::Ball(r), @collision.Shape::Segment(a, b)) =>
+        separation_ball_segment(p1, r, p2, r2, a, b)
+      (@collision.Shape::Segment(a, b), @collision.Shape::Ball(r)) =>
+        if separation_ball_segment(p2, r, p1, r1, a, b) is Some(sep) {
+          Some(@core.Vec2::new(-sep.x, -sep.y))
+        } else {
+          None
+        }
+      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Segment(a, b)) =>
+        separation_cuboid_segment(p1, r1, hw, hh, p2, r2, a, b)
+      (@collision.Shape::Segment(a, b), @collision.Shape::Cuboid(hw, hh)) =>
+        if separation_cuboid_segment(p2, r2, hw, hh, p1, r1, a, b) is Some(sep) {
           Some(@core.Vec2::new(-sep.x, -sep.y))
         } else {
           None
@@ -277,12 +456,19 @@ fn separation_vector(
     (@collision.Shape::Ball(_), @collision.Shape::Ball(_))
     | (@collision.Shape::Ball(_), @collision.Shape::Cuboid(_, _))
     | (@collision.Shape::Cuboid(_, _), @collision.Shape::Ball(_))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Cuboid(_, _)) =>
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Cuboid(_, _))
+    | (@collision.Shape::Ball(_), @collision.Shape::Segment(_, _))
+    | (@collision.Shape::Segment(_, _), @collision.Shape::Ball(_))
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Segment(_, _))
+    | (@collision.Shape::Segment(_, _), @collision.Shape::Cuboid(_, _))
+    | (@collision.Shape::Segment(_, _), @collision.Shape::Segment(_, _)) =>
       separation_basic(shape1, pos1, rot1, shape2, pos2, rot2)
     (@collision.Shape::Ball(_), @collision.Shape::CapsuleX(_, _))
     | (@collision.Shape::Ball(_), @collision.Shape::CapsuleY(_, _))
     | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleX(_, _))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleY(_, _)) => {
+    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleY(_, _))
+    | (@collision.Shape::Segment(_, _), @collision.Shape::CapsuleX(_, _))
+    | (@collision.Shape::Segment(_, _), @collision.Shape::CapsuleY(_, _)) => {
       let comps2 = capsule_components(shape2, pos2, rot2)
       let mut best : @core.Vec2? = None
       for i in 0..<comps2.length() {

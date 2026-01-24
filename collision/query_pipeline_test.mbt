@@ -340,6 +340,33 @@ test "query pipeline cast_shape capsule hits ball" {
 }
 
 ///|
+test "query pipeline cast_ray hits segment" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let seg = ColliderBuilder::segment(
+    @core.Vec2::new(-1.0F, 0.0F),
+    @core.Vec2::new(1.0F, 0.0F),
+  ).build()
+  let handle = colliders.insert_with_parent(seg, body, bodies)
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let ray = Ray::new(@core.Vec2::new(0.0F, -1.0F), @core.Vec2::new(0.0F, 1.0F))
+  if query_pipeline.cast_ray_and_get_normal(ray, 10.0F, true) is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.toi() - 1.0F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x) < 1.0e-4F, content="true")
+    inspect(n.y < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline intersect_point" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
