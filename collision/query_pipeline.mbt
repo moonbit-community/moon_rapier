@@ -1255,6 +1255,21 @@ pub fn QueryPipeline::cast_shape(
   options : ShapeCastOptions,
 ) -> (ColliderHandle, ShapeCastHit)? {
   let max_toi = if options.max_toi < 0.0F { 0.0F } else { options.max_toi }
+  let target_distance = if options.target_distance < 0.0F {
+    0.0F
+  } else {
+    options.target_distance
+  }
+  // Match parry/rapier semantics: `target_distance` is an outward offset of the casted (moving)
+  // shape (like RoundShapeRef), not an expansion of the target collider.
+  let moving_shape = match shape {
+    Shape::Ball(r) => Shape::Ball(r + target_distance)
+    Shape::Cuboid(hw, hh) =>
+      Shape::Cuboid(hw + target_distance, hh + target_distance)
+    Shape::CapsuleX(h, r) => Shape::CapsuleX(h, r + target_distance)
+    Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
+    Shape::Segment(_, _) => shape
+  }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -1271,11 +1286,7 @@ pub fn QueryPipeline::cast_shape(
         )
         let seg_dir = sb.sub(sa)
         let seg_len = seg_dir.length()
-        let seg_radius = if options.target_distance < 0.0F {
-          0.0F
-        } else {
-          options.target_distance
-        }
+        let seg_radius = 0.0F
         fn best_hit(
           current : ShapeCastHit?,
           candidate : ShapeCastHit?,
@@ -1295,8 +1306,7 @@ pub fn QueryPipeline::cast_shape(
           }
         }
 
-        // Model the segment as a "capsule" with radius = target_distance, i.e.
-        // Minkowski expansion consistent with parry/rapier ShapeCastOptions::target_distance.
+        // Model the segment as a capsule with radius 0.
         let mut segment_components : Array[(Shape, @core.Vec2, @core.Real)] = []
         if seg_len <= 1.0e-6F {
           segment_components = [(Shape::Ball(seg_radius), sa, 0.0F)]
@@ -1312,9 +1322,9 @@ pub fn QueryPipeline::cast_shape(
 
         // Cast each moving component against the segment capsule components.
         let mut moving_components : Array[(Shape, @core.Isometry2)] = [
-          (shape, shape_pos),
+          (moving_shape, shape_pos),
         ]
-        match shape {
+        match moving_shape {
           Shape::CapsuleX(h, r) =>
             moving_components = capsule_components_moving(
               shape_pos,
@@ -1374,7 +1384,7 @@ pub fn QueryPipeline::cast_shape(
         }
         best
       } else {
-        match (shape, collider.shape) {
+        match (moving_shape, collider.shape) {
           (Shape::Ball(_), Shape::Ball(_))
           | (Shape::Ball(_), Shape::Cuboid(_, _))
           | (Shape::Cuboid(_, _), Shape::Ball(_))
@@ -1382,7 +1392,7 @@ pub fn QueryPipeline::cast_shape(
             shape_cast_basic(
               shape_pos,
               shape_vel,
-              shape,
+              moving_shape,
               collider.world_translation,
               collider.world_rotation,
               collider.shape,
@@ -1393,7 +1403,7 @@ pub fn QueryPipeline::cast_shape(
             shape_cast_against_capsule(
               shape_pos,
               shape_vel,
-              shape,
+              moving_shape,
               collider.world_translation,
               collider.world_rotation,
               @core.Vec2::new(1.0F, 0.0F),
@@ -1408,7 +1418,7 @@ pub fn QueryPipeline::cast_shape(
             shape_cast_against_capsule(
               shape_pos,
               shape_vel,
-              shape,
+              moving_shape,
               collider.world_translation,
               collider.world_rotation,
               @core.Vec2::new(0.0F, 1.0F),
@@ -1423,7 +1433,7 @@ pub fn QueryPipeline::cast_shape(
             shape_cast_against_capsule(
               shape_pos,
               shape_vel,
-              shape,
+              moving_shape,
               collider.world_translation,
               collider.world_rotation,
               @core.Vec2::new(1.0F, 0.0F),
@@ -1438,7 +1448,7 @@ pub fn QueryPipeline::cast_shape(
             shape_cast_against_capsule(
               shape_pos,
               shape_vel,
-              shape,
+              moving_shape,
               collider.world_translation,
               collider.world_rotation,
               @core.Vec2::new(0.0F, 1.0F),

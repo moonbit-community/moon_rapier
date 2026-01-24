@@ -527,6 +527,40 @@ test "query pipeline cast_shape capsule_y hits segment with target_distance" {
 }
 
 ///|
+test "query pipeline cast_shape target_distance applies to non-segment shapes (ball vs ball)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    ColliderBuilder::ball(1.0F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let shape_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(0.0F, -10.0F),
+  )
+  let vel = @core.Vec2::new(0.0F, 1.0F)
+  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.5F)
+  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+    is Some(hit) {
+    // Distance between centers is 10. "Impact" when dist <= (r1 + target_distance) + r2.
+    // => toi = 10 - (1.0 + 0.5) - 1.0 = 7.5.
+    inspect(@core.abs(hit.1.toi() - 7.5F) < 1.0e-4F, content="true")
+    let n = hit.1.normal()
+    inspect(@core.abs(n.x) < 1.0e-4F, content="true")
+    inspect(n.y < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline intersect_point" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
