@@ -151,6 +151,24 @@ pub fn ColliderBuilder::cuboid(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::capsule_x(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::capsule_y(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::translation(
   self : ColliderBuilder,
   translation : @core.Vec2,
