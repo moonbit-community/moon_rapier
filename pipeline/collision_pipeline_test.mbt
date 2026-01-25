@@ -192,3 +192,71 @@ test "collision pipeline physics hooks filter contact pair" {
   )
   inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
 }
+
+///|
+/// Ported from rapier/src/pipeline/physics_hooks.rs doc note:
+/// by default, contacts between two non-dynamic bodies are filtered out.
+test "collision pipeline filters out non-dynamic contact pairs by default" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let collider_a = @collision.ColliderBuilder::ball(1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .build()
+  let collider_b = @collision.ColliderBuilder::ball(1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .build()
+  let a_handle = collider_set.insert(collider_a)
+  let b_handle = collider_set.insert(collider_b)
+  let integration_parameters = IntegrationParameters::default()
+  let islands = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let collision_pipeline = CollisionPipeline::new()
+  collision_pipeline.step(
+    integration_parameters.prediction_distance(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
+}
+
+///|
+/// Ported from rapier/src/pipeline/physics_hooks.rs doc note:
+/// enabling ActiveHooks::FILTER_CONTACT_PAIRS replaces the default non-dynamic filtering.
+test "collision pipeline allows non-dynamic contact pairs with filter_contact_pairs hook" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let collider_a = @collision.ColliderBuilder::ball(1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .active_hooks(@collision.ActiveHooks::filter_contact_pairs())
+    .build()
+  let collider_b = @collision.ColliderBuilder::ball(1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .build()
+  let a_handle = collider_set.insert(collider_a)
+  let b_handle = collider_set.insert(collider_b)
+  let integration_parameters = IntegrationParameters::default()
+  let islands = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let collision_pipeline = CollisionPipeline::new()
+  collision_pipeline.step(
+    integration_parameters.prediction_distance(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  inspect(
+    narrow_phase.contact_pair(a_handle, b_handle) is Some(_),
+    content="true",
+  )
+}

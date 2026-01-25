@@ -38,6 +38,21 @@ pub fn CollisionPipeline::step(
   broad_phase.update(prediction_distance, bodies, colliders)
   let pairs = broad_phase.pairs()
   let filtered_pairs = []
+  fn is_dynamic_collider(
+    bodies : @dynamics.RigidBodySet,
+    collider : @collision.Collider,
+  ) -> Bool {
+    if collider.parent() is Some(parent) {
+      if bodies.get(parent) is Some(body) {
+        body.body_type() is @dynamics.RigidBodyType::Dynamic
+      } else {
+        false
+      }
+    } else {
+      false
+    }
+  }
+
   for i in 0..<pairs.length() {
     let pair = pairs[i]
     let h1 = pair.0
@@ -55,6 +70,15 @@ pub fn CollisionPipeline::step(
           }
         } else {
           let hook = @collision.ActiveHooks::filter_contact_pairs()
+          // Match Rapier's default filtering: ignore contacts between two non-dynamic bodies
+          // unless the pair filtering hook is enabled on at least one collider.
+          if !c1.active_hooks().contains(hook) &&
+            !c2.active_hooks().contains(hook) {
+            if !is_dynamic_collider(bodies, c1) &&
+              !is_dynamic_collider(bodies, c2) {
+              keep = false
+            }
+          }
           if c1.active_hooks().contains(hook) ||
             c2.active_hooks().contains(hook) {
             keep = physics_hooks.test_contact_pair(bodies, colliders, h1, h2)
