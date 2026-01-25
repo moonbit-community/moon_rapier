@@ -234,6 +234,7 @@ pub struct QueryFilter {
   excluded_collider : ColliderHandle?
   mut groups : @dynamics.InteractionGroups?
   mut flags : QueryFilterFlags
+  mut predicate : ((ColliderHandle, Collider) -> Bool)?
 }
 pub fn QueryFilter::exclude_collider(Self, ColliderHandle) -> Self
 pub fn QueryFilter::exclude_dynamic(Self) -> Self
@@ -248,6 +249,7 @@ pub fn QueryFilter::new() -> Self
 pub fn QueryFilter::only_dynamic() -> Self
 pub fn QueryFilter::only_fixed() -> Self
 pub fn QueryFilter::only_kinematic() -> Self
+pub fn QueryFilter::predicate(Self, (ColliderHandle, Collider) -> Bool) -> Self
 
 pub struct QueryFilterFlags {
   mut bits : Int

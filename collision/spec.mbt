@@ -1067,6 +1067,15 @@ pub fn QueryFilter::groups(
 
 ///|
 #declaration_only
+pub fn QueryFilter::predicate(
+  self : QueryFilter,
+  predicate : (ColliderHandle, Collider) -> Bool,
+) -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryFilter::exclude_fixed(self : QueryFilter) -> QueryFilter {
   ...
 }

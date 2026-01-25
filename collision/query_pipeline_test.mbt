@@ -317,6 +317,44 @@ test "query pipeline filter collision groups" {
 }
 
 ///|
+test "query filter predicate can exclude colliders" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let h2 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(5.0F, 0.0F))
+    .build(),
+  )
+  let near = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    h1,
+    bodies,
+  )
+  let far = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    h2,
+    bodies,
+  )
+  let filter = QueryFilter::new().predicate(fn(
+    handle : ColliderHandle,
+    _ : Collider,
+  ) -> Bool {
+    ColliderHandle::equals(handle, far)
+  })
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies, colliders, filter,
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+    inspect(!ColliderHandle::equals(hit.0, near), content="true")
+    inspect(ColliderHandle::equals(hit.0, far), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline cast_ray hits capsule" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

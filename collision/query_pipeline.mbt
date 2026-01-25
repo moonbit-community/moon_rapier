@@ -79,6 +79,7 @@ pub struct QueryFilter {
   excluded_collider : ColliderHandle?
   mut groups : @dynamics.InteractionGroups?
   mut flags : QueryFilterFlags
+  mut predicate : ((ColliderHandle, Collider) -> Bool)?
 }
 
 ///|
@@ -88,6 +89,7 @@ pub fn QueryFilter::new() -> QueryFilter {
     excluded_collider: None,
     groups: None,
     flags: QueryFilterFlags::empty(),
+    predicate: None,
   }
 }
 
@@ -102,6 +104,7 @@ pub fn QueryFilter::exclude_rigid_body(
     excluded_collider: self.excluded_collider,
     groups: self.groups,
     flags: self.flags,
+    predicate: self.predicate,
   }
 }
 
@@ -116,6 +119,7 @@ pub fn QueryFilter::exclude_collider(
     excluded_collider: Some(handle),
     groups: self.groups,
     flags: self.flags,
+    predicate: self.predicate,
   }
 }
 
@@ -125,6 +129,15 @@ pub fn QueryFilter::groups(
   groups : @dynamics.InteractionGroups,
 ) -> QueryFilter {
   self.groups = Some(groups)
+  self
+}
+
+///|
+pub fn QueryFilter::predicate(
+  self : QueryFilter,
+  predicate : (ColliderHandle, Collider) -> Bool,
+) -> QueryFilter {
+  self.predicate = Some(predicate)
   self
 }
 
@@ -234,6 +247,11 @@ fn query_filter_test(
         body_type.is_dynamic() {
         return false
       }
+    }
+  }
+  if filter.predicate is Some(pred) {
+    if !pred(handle, collider) {
+      return false
     }
   }
   true
