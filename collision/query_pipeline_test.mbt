@@ -1054,3 +1054,42 @@ test "query pipeline intersect_shape respects exclude_sensors filter" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 2.45F))
+    .build(),
+  )
+  let target = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let motion = NonlinearRigidMotion::new(
+    @core.Isometry2::identity(),
+    @core.Vec2::zero(),
+    @core.pi() * 0.5F,
+  )
+  if query_pipeline.cast_shape_nonlinear(
+      motion,
+      Shape::Cuboid(2.0F, 0.2F),
+      0.0F,
+      1.0F,
+      true,
+    )
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, target), content="true")
+    inspect(hit.1.toi() > 0.5F && hit.1.toi() <= 1.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

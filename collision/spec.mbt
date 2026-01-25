@@ -941,6 +941,26 @@ pub fn ShapeCastOptions::with_target_distance(
 
 ///|
 #declaration_only
+pub type NonlinearRigidMotion
+
+///|
+#declaration_only
+pub fn NonlinearRigidMotion::identity() -> NonlinearRigidMotion {
+  ...
+}
+
+///|
+#declaration_only
+pub fn NonlinearRigidMotion::new(
+  start_pos : @core.Isometry2,
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> NonlinearRigidMotion {
+  ...
+}
+
+///|
+#declaration_only
 pub type ShapeCastHit
 
 ///|
@@ -1148,6 +1168,19 @@ pub fn QueryPipeline::cast_shape(
   shape_vel : @core.Vec2,
   shape : Shape,
   options : ShapeCastOptions,
+) -> (ColliderHandle, ShapeCastHit)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::cast_shape_nonlinear(
+  self : QueryPipeline,
+  shape_motion : NonlinearRigidMotion,
+  shape : Shape,
+  start_time : @core.Real,
+  end_time : @core.Real,
+  stop_at_penetration : Bool,
 ) -> (ColliderHandle, ShapeCastHit)? {
   ...
 }

@@ -325,6 +325,57 @@ pub fn ShapeCastOptions::with_target_distance(
 }
 
 ///|
+pub struct NonlinearRigidMotion {
+  start_pos : @core.Isometry2
+  linvel : @core.Vec2
+  angvel : @core.Real
+}
+
+///|
+pub fn NonlinearRigidMotion::identity() -> NonlinearRigidMotion {
+  {
+    start_pos: @core.Isometry2::identity(),
+    linvel: @core.Vec2::zero(),
+    angvel: 0.0F,
+  }
+}
+
+///|
+pub fn NonlinearRigidMotion::new(
+  start_pos : @core.Isometry2,
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> NonlinearRigidMotion {
+  { start_pos, linvel, angvel }
+}
+
+///|
+fn NonlinearRigidMotion::pose_at_time(
+  self : NonlinearRigidMotion,
+  time : @core.Real,
+) -> @core.Isometry2 {
+  let translation = self.start_pos.translation.add(
+    vec2_scale(self.linvel, time),
+  )
+  let rot = self.start_pos.rotation.mul(
+    @core.Rot2::from_angle(self.angvel * time),
+  )
+  @core.Isometry2::new(translation, rot)
+}
+
+///|
+fn NonlinearRigidMotion::point_velocity_at_time(
+  self : NonlinearRigidMotion,
+  time : @core.Real,
+  point : @core.Vec2,
+) -> @core.Vec2 {
+  let pose = self.pose_at_time(time)
+  let r = point.sub(pose.translation)
+  let rot_vel = @core.Vec2::new(-self.angvel * r.y, self.angvel * r.x)
+  self.linvel.add(rot_vel)
+}
+
+///|
 pub struct ShapeCastHit {
   toi : @core.Real
   point : @core.Vec2
@@ -1735,6 +1786,327 @@ pub fn QueryPipeline::cast_shape(
           }
         } else {
           best = Some((handle, intersection))
+        }
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn QueryPipeline::cast_shape_nonlinear(
+  self : QueryPipeline,
+  shape_motion : NonlinearRigidMotion,
+  shape : Shape,
+  start_time : @core.Real,
+  end_time : @core.Real,
+  stop_at_penetration : Bool,
+) -> (ColliderHandle, ShapeCastHit)? {
+  if end_time <= start_time {
+    return None
+  }
+  fn shape_bounding_radius(shape : Shape) -> @core.Real {
+    match shape {
+      Shape::Ball(r) => r
+      Shape::Cuboid(hw, hh) => sqrt_real(hw * hw + hh * hh)
+      Shape::CapsuleX(h, r) => h + r
+      Shape::CapsuleY(h, r) => h + r
+      Shape::Segment(a, b) => {
+        let la = a.length()
+        let lb = b.length()
+        if la > lb {
+          la
+        } else {
+          lb
+        }
+      }
+    }
+  }
+
+  fn swept_center_aabb(
+    c0 : @core.Vec2,
+    c1 : @core.Vec2,
+    radius : @core.Real,
+  ) -> @core.Aabb {
+    @core.Aabb::new(
+      @core.Vec2::new(
+        min_value(c0.x, c1.x) - radius,
+        min_value(c0.y, c1.y) - radius,
+      ),
+      @core.Vec2::new(
+        max_value(c0.x, c1.x) + radius,
+        max_value(c0.y, c1.y) + radius,
+      ),
+    )
+  }
+
+  fn project_point_on_shape_boundary(
+    shape : Shape,
+    center : @core.Vec2,
+    rotation : @core.Real,
+    point : @core.Vec2,
+  ) -> @core.Vec2 {
+    match shape {
+      Shape::Ball(r) => project_point_on_ball(center, r, point, false).point
+      Shape::Cuboid(hw, hh) =>
+        project_point_on_cuboid_oriented(center, rotation, hw, hh, point, false).point
+      Shape::CapsuleX(h, r) =>
+        project_point_on_capsule_oriented(
+          center,
+          rotation,
+          @core.Vec2::new(1.0F, 0.0F),
+          h,
+          r,
+          point,
+          false,
+        ).point
+      Shape::CapsuleY(h, r) =>
+        project_point_on_capsule_oriented(
+          center,
+          rotation,
+          @core.Vec2::new(0.0F, 1.0F),
+          h,
+          r,
+          point,
+          false,
+        ).point
+      Shape::Segment(a, b) =>
+        project_point_on_segment(center, rotation, a, b, point).point
+    }
+  }
+
+  fn contact_at_time(
+    time : @core.Real,
+    target_shape : Shape,
+    target_center : @core.Vec2,
+    target_rot : @core.Real,
+  ) -> (@core.Vec2, @core.Vec2, @core.Vec2) {
+    let pose = shape_motion.pose_at_time(time)
+    let moving_center = pose.translation
+    let moving_rot = pose.rotation.angle()
+    let point_on_target = project_point_on_shape_boundary(
+      target_shape, target_center, target_rot, moving_center,
+    )
+    let point_on_moving = project_point_on_shape_boundary(
+      shape, moving_center, moving_rot, point_on_target,
+    )
+    let vel = shape_motion.point_velocity_at_time(time, point_on_moving)
+    let fallback = @core.Vec2::new(-vel.x, -vel.y)
+    let normal = normalize_or_fallback(
+      point_on_moving.sub(point_on_target),
+      normalize_or_fallback(fallback, @core.Vec2::new(1.0F, 0.0F)),
+    )
+    (point_on_target, point_on_moving, normal)
+  }
+
+  fn intersects_at_time(
+    time : @core.Real,
+    target_shape : Shape,
+    target_center : @core.Vec2,
+    target_rot : @core.Real,
+  ) -> Bool {
+    let pose = shape_motion.pose_at_time(time)
+    shapes_intersect(
+      shape,
+      pose.translation,
+      pose.rotation.angle(),
+      target_shape,
+      target_center,
+      target_rot,
+    )
+  }
+
+  fn compute_steps(
+    duration : @core.Real,
+    c0 : @core.Vec2,
+    c1 : @core.Vec2,
+    radius : @core.Real,
+    angvel : @core.Real,
+  ) -> Int {
+    let dist = c1.sub(c0).length()
+    let trans_scale = radius * 0.25F + 0.05F
+    let trans_steps = if trans_scale <= 1.0e-6F {
+      64
+    } else {
+      (dist / trans_scale).to_int() + 1
+    }
+    let rot_steps = (@core.abs(angvel) * duration / 0.1F).to_int() + 1
+    let mut steps = if trans_steps > rot_steps {
+      trans_steps
+    } else {
+      rot_steps
+    }
+    if steps < 8 {
+      steps = 8
+    }
+    if steps > 256 {
+      steps = 256
+    }
+    steps
+  }
+
+  fn bisect_transition(
+    lo : @core.Real,
+    hi : @core.Real,
+    target_shape : Shape,
+    target_center : @core.Vec2,
+    target_rot : @core.Real,
+    want_intersection_at_hi : Bool,
+  ) -> @core.Real {
+    let mut left = lo
+    let mut right = hi
+    for _ in 0..<25 {
+      let mid = 0.5F * (left + right)
+      let mid_state = intersects_at_time(
+        mid, target_shape, target_center, target_rot,
+      )
+      if mid_state == want_intersection_at_hi {
+        right = mid
+      } else {
+        left = mid
+      }
+    }
+    right
+  }
+
+  fn find_first_entry_time(
+    scan_start : @core.Real,
+    scan_end : @core.Real,
+    target_shape : Shape,
+    target_center : @core.Vec2,
+    target_rot : @core.Real,
+    radius : @core.Real,
+  ) -> @core.Real? {
+    let duration = scan_end - scan_start
+    if duration <= 0.0F {
+      return None
+    }
+    let c0 = shape_motion.pose_at_time(scan_start).translation
+    let c1 = shape_motion.pose_at_time(scan_end).translation
+    let steps = compute_steps(duration, c0, c1, radius, shape_motion.angvel)
+    let dt = duration / Float::from_double(steps.to_double())
+    let mut prev_t = scan_start
+    for si in 1..<(steps + 1) {
+      let mut t = scan_start + dt * Float::from_double(si.to_double())
+      if t > scan_end {
+        t = scan_end
+      }
+      if intersects_at_time(t, target_shape, target_center, target_rot) {
+        return Some(
+          bisect_transition(
+            prev_t, t, target_shape, target_center, target_rot, true,
+          ),
+        )
+      }
+      prev_t = t
+    }
+    None
+  }
+
+  fn find_first_exit_time(
+    scan_start : @core.Real,
+    scan_end : @core.Real,
+    target_shape : Shape,
+    target_center : @core.Vec2,
+    target_rot : @core.Real,
+    radius : @core.Real,
+  ) -> @core.Real? {
+    let duration = scan_end - scan_start
+    if duration <= 0.0F {
+      return None
+    }
+    let c0 = shape_motion.pose_at_time(scan_start).translation
+    let c1 = shape_motion.pose_at_time(scan_end).translation
+    let steps = compute_steps(duration, c0, c1, radius, shape_motion.angvel)
+    let dt = duration / Float::from_double(steps.to_double())
+    let mut prev_t = scan_start
+    for si in 1..<(steps + 1) {
+      let mut t = scan_start + dt * Float::from_double(si.to_double())
+      if t > scan_end {
+        t = scan_end
+      }
+      if !intersects_at_time(t, target_shape, target_center, target_rot) {
+        return Some(
+          bisect_transition(
+            prev_t, t, target_shape, target_center, target_rot, false,
+          ),
+        )
+      }
+      prev_t = t
+    }
+    None
+  }
+
+  let radius = shape_bounding_radius(shape)
+  let c0 = shape_motion.pose_at_time(start_time).translation
+  let c1 = shape_motion.pose_at_time(end_time).translation
+  let sweep_aabb = swept_center_aabb(c0, c1, radius)
+  let mut best : (ColliderHandle, ShapeCastHit)? = None
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      // AABB prefilter using the cached collider AABB (Rapier parity).
+      if i < self.aabbs.length() && self.aabbs[i] is Some(co_aabb) {
+        if !co_aabb.intersects(sweep_aabb) {
+          continue
+        }
+      }
+      let target_shape = collider.shape
+      let target_center = collider.world_translation
+      let target_rot = collider.world_rotation
+      let mut scan_start = start_time
+      if intersects_at_time(scan_start, target_shape, target_center, target_rot) {
+        let (point_on_target, point_on_moving, normal) = contact_at_time(
+          scan_start, target_shape, target_center, target_rot,
+        )
+        let vel = shape_motion.point_velocity_at_time(
+          scan_start, point_on_moving,
+        )
+        let separating = normal.dot(vel) >= 0.0F
+        if stop_at_penetration || !separating {
+          let hit = ShapeCastHit::{
+            toi: scan_start,
+            point: point_on_target,
+            normal,
+          }
+          if best is Some(current) {
+            if hit.toi < current.1.toi {
+              best = Some((handle, hit))
+            }
+          } else {
+            best = Some((handle, hit))
+          }
+          continue
+        }
+
+        // Separating from an initial penetration: skip until we exit the overlap, then
+        // look for a later time-of-impact.
+        if find_first_exit_time(
+            scan_start, end_time, target_shape, target_center, target_rot, radius,
+          )
+          is Some(exit_time) {
+          scan_start = exit_time
+        } else {
+          continue
+        }
+      }
+      if find_first_entry_time(
+          scan_start, end_time, target_shape, target_center, target_rot, radius,
+        )
+        is Some(toi) {
+        let (point_on_target, _, normal) = contact_at_time(
+          toi, target_shape, target_center, target_rot,
+        )
+        let hit = ShapeCastHit::{ toi, point: point_on_target, normal }
+        if best is Some(current) {
+          if hit.toi < current.1.toi {
+            best = Some((handle, hit))
+          }
+        } else {
+          best = Some((handle, hit))
         }
       }
     }

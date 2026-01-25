@@ -207,6 +207,14 @@ pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)]) -> Unit
 
+pub struct NonlinearRigidMotion {
+  start_pos : @core.Isometry2
+  linvel : @core.Vec2
+  angvel : Float
+}
+pub fn NonlinearRigidMotion::identity() -> Self
+pub fn NonlinearRigidMotion::new(@core.Isometry2, @core.Vec2, Float) -> Self
+
 pub struct PointProjection {
   point : @core.Vec2
   is_inside : Bool
@@ -251,6 +259,7 @@ pub struct QueryPipeline {
 pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
 pub fn QueryPipeline::cast_shape(Self, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
+pub fn QueryPipeline::cast_shape_nonlinear(Self, NonlinearRigidMotion, Shape, Float, Float, Bool) -> (ColliderHandle, ShapeCastHit)?
 pub fn QueryPipeline::collider(Self, ColliderHandle) -> Collider?
 pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
