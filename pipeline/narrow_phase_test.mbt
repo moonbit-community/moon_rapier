@@ -56,7 +56,7 @@ test "collider set parent depenetration" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if collider_set.get(collider_1_handle) is Some(c1) {
@@ -91,7 +91,7 @@ test "collider set parent depenetration" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let contact_pair2 = narrow_phase.contact_pair(
@@ -112,7 +112,7 @@ test "collider set parent depenetration" {
       impulse_joint_set,
       multibody_joint_set,
       ccd_solver,
-      (),
+      PhysicsHooks::new(),
       EventHandler::new(),
     )
   }
@@ -168,7 +168,7 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let contact_pair = narrow_phase.contact_pair(
@@ -193,7 +193,7 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let contact_pair2 = narrow_phase.contact_pair(
@@ -218,7 +218,7 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let contact_pair3 = narrow_phase.contact_pair(
@@ -278,7 +278,7 @@ test "narrow phase collision groups filtering" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   inspect(
@@ -326,7 +326,7 @@ test "narrow phase active collision types filtering" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   inspect(

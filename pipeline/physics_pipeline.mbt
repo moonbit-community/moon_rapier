@@ -863,11 +863,10 @@ pub fn PhysicsPipeline::step(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   ccd_solver : @dynamics.CCDSolver,
-  physics_hooks : Unit,
+  physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
   ccd_solver |> ignore
-  physics_hooks |> ignore
   let wake_from_impulse = impulse_joints.take_wake_up()
   for i in 0..<wake_from_impulse.length() {
     islands.wake_up(bodies, wake_from_impulse[i], true)

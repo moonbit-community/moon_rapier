@@ -42,7 +42,7 @@ test "kinematic and fixed contact crash" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
 }
@@ -80,7 +80,7 @@ test "rigid body removal before step" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
 }
@@ -118,7 +118,7 @@ test "collider removal before step" {
       impulse_joints,
       multibody_joints,
       ccd,
-      (),
+      PhysicsHooks::new(),
       EventHandler::new(),
     )
   }
@@ -151,7 +151,7 @@ test "rigid body type changed dynamic is in active set" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if bodies.get_mut(h) is Some(body) {
@@ -168,7 +168,7 @@ test "rigid body type changed dynamic is in active set" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if bodies.get(h) is Some(body_after) {
@@ -217,7 +217,7 @@ test "joint step delta time 0" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if bodies.get(h_dynamic) is Some(body) {
@@ -315,7 +315,7 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
     impulse_joints,
     multibody_joints,
     ccd,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if colliders.get(seg_handle) is Some(seg_after) &&
@@ -384,7 +384,7 @@ test "physics pipeline emits collision started/stopped events" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     handler,
   )
   let ev1 = handler.take_collision_events()
@@ -408,7 +408,7 @@ test "physics pipeline emits collision started/stopped events" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     handler,
   )
   inspect(handler.take_collision_events().length() == 0, content="true")
@@ -426,7 +426,7 @@ test "physics pipeline emits collision started/stopped events" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     handler,
   )
   let ev2 = handler.take_collision_events()
@@ -473,7 +473,7 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
@@ -492,7 +492,7 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
@@ -511,7 +511,7 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
 }
@@ -583,7 +583,7 @@ test "rotated cuboid does not generate false contacts" {
     impulse_joints,
     multibody_joints,
     @dynamics.CCDSolver::new(),
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   inspect(narrow_phase.contacts.length() == 0, content="true")

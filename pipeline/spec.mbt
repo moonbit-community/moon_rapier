@@ -69,6 +69,44 @@ pub fn EventHandler::take_collision_events(
 
 ///|
 #declaration_only
+pub type PhysicsHooks
+
+///|
+#declaration_only
+pub fn PhysicsHooks::new() -> PhysicsHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PhysicsHooks::filter_contact_pair(
+  self : PhysicsHooks,
+  predicate : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+  ) -> Bool,
+) -> PhysicsHooks {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PhysicsHooks::filter_intersection_pair(
+  self : PhysicsHooks,
+  predicate : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+  ) -> Bool,
+) -> PhysicsHooks {
+  ...
+}
+
+///|
+#declaration_only
 pub type CollisionPipeline
 
 ///|
@@ -87,7 +125,7 @@ pub fn CollisionPipeline::step(
   narrow_phase : @collision.NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
-  physics_hooks : Unit,
+  physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
   ...
@@ -117,7 +155,7 @@ pub fn PhysicsPipeline::step(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   ccd_solver : @dynamics.CCDSolver,
-  physics_hooks : Unit,
+  physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
   ...

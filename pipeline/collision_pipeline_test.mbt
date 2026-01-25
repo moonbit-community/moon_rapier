@@ -41,7 +41,7 @@ test "collision pipeline no rigid bodies" {
     narrow_phase,
     rigid_body_set,
     collider_set,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let mut hit = false
@@ -82,7 +82,7 @@ test "collision pipeline no rigid bodies (dim3 adapted)" {
     narrow_phase,
     rigid_body_set,
     collider_set,
-    (),
+    PhysicsHooks::new(),
     EventHandler::new(),
   )
   let mut hit = false
@@ -92,4 +92,103 @@ test "collision pipeline no rigid bodies (dim3 adapted)" {
     }
   }
   inspect(hit, content="true")
+}
+
+///|
+/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) adapted for 2D.
+test "collision pipeline physics hooks filter intersection pair" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let collider_a = @collision.ColliderBuilder::cuboid(1.0F, 1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .sensor(true)
+    .active_hooks(@collision.ActiveHooks::filter_intersection_pair())
+    .build()
+  let a_handle = collider_set.insert(collider_a)
+  let collider_b = @collision.ColliderBuilder::cuboid(1.0F, 1.0F)
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .sensor(true)
+    .build()
+  collider_set.insert(collider_b) |> ignore
+  let integration_parameters = IntegrationParameters::default()
+  let islands = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let collision_pipeline = CollisionPipeline::new()
+  let hooks = PhysicsHooks::new().filter_intersection_pair(fn(
+    _bodies : @dynamics.RigidBodySet,
+    _colliders : @collision.ColliderSet,
+    _c1 : @collision.ColliderHandle,
+    _c2 : @collision.ColliderHandle,
+  ) -> Bool {
+    false
+  })
+  collision_pipeline.step(
+    integration_parameters.prediction_distance(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    hooks,
+    EventHandler::new(),
+  )
+  let mut hit = false
+  for pair in narrow_phase.intersection_pairs_with(a_handle) {
+    if pair.intersecting {
+      hit = true
+    }
+  }
+  inspect(hit, content="false")
+}
+
+///|
+/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) adapted for 2D.
+test "collision pipeline physics hooks filter contact pair" {
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let body1 = rigid_body_set.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::zero())
+    .build(),
+  )
+  let body2 = rigid_body_set.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::zero())
+    .build(),
+  )
+  let collider_a = @collision.ColliderBuilder::ball(1.0F)
+    .active_hooks(@collision.ActiveHooks::filter_contact_pairs())
+    .build()
+  let collider_b = @collision.ColliderBuilder::ball(1.0F).build()
+  let a_handle = collider_set.insert_with_parent(
+    collider_a, body1, rigid_body_set,
+  )
+  let b_handle = collider_set.insert_with_parent(
+    collider_b, body2, rigid_body_set,
+  )
+  let integration_parameters = IntegrationParameters::default()
+  let islands = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let collision_pipeline = CollisionPipeline::new()
+  let hooks = PhysicsHooks::new().filter_contact_pair(fn(
+    _bodies : @dynamics.RigidBodySet,
+    _colliders : @collision.ColliderSet,
+    _c1 : @collision.ColliderHandle,
+    _c2 : @collision.ColliderHandle,
+  ) -> Bool {
+    false
+  })
+  collision_pipeline.step(
+    integration_parameters.prediction_distance(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    rigid_body_set,
+    collider_set,
+    hooks,
+    EventHandler::new(),
+  )
+  inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
 }

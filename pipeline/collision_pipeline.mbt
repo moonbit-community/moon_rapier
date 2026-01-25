@@ -29,13 +29,42 @@ pub fn CollisionPipeline::step(
   narrow_phase : @collision.NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
-  physics_hooks : Unit,
+  physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
   self |> ignore
   islands |> ignore
-  physics_hooks |> ignore
   event_handler |> ignore
   broad_phase.update(prediction_distance, bodies, colliders)
-  narrow_phase.update_with_pairs(bodies, colliders, broad_phase.pairs())
+  let pairs = broad_phase.pairs()
+  let filtered_pairs = []
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let h1 = pair.0
+    let h2 = pair.1
+    let mut keep = true
+    if colliders.get(h1) is Some(c1) {
+      if colliders.get(h2) is Some(c2) {
+        if c1.is_sensor() || c2.is_sensor() {
+          let hook = @collision.ActiveHooks::filter_intersection_pair()
+          if c1.active_hooks().contains(hook) ||
+            c2.active_hooks().contains(hook) {
+            keep = physics_hooks.test_intersection_pair(
+              bodies, colliders, h1, h2,
+            )
+          }
+        } else {
+          let hook = @collision.ActiveHooks::filter_contact_pairs()
+          if c1.active_hooks().contains(hook) ||
+            c2.active_hooks().contains(hook) {
+            keep = physics_hooks.test_contact_pair(bodies, colliders, h1, h2)
+          }
+        }
+      }
+    }
+    if keep {
+      filtered_pairs.push(pair)
+    }
+  }
+  narrow_phase.update_with_pairs(bodies, colliders, filtered_pairs)
 }

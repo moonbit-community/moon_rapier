@@ -86,7 +86,7 @@ test "character controller climb" {
       impulse_joints,
       multibody_joints,
       @dynamics.CCDSolver::new(),
-      (),
+      @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
     let update_character_controller = fn(
@@ -359,7 +359,7 @@ test "character controller ground detection" {
       impulse_joints,
       multibody_joints,
       @dynamics.CCDSolver::new(),
-      (),
+      @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
     let update_character_controller = fn(

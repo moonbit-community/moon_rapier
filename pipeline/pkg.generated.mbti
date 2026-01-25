@@ -15,7 +15,7 @@ import {
 pub struct CollisionPipeline {
 }
 pub fn CollisionPipeline::new() -> Self
-pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, Unit, EventHandler) -> Unit
+pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, EventHandler) -> Unit
 
 pub struct EventHandler {
   collision_events : Array[@collision.CollisionEvent]
@@ -31,11 +31,19 @@ pub fn IntegrationParameters::default() -> Self
 pub fn IntegrationParameters::prediction_distance(Self) -> Float
 pub fn IntegrationParameters::with_dt(Self, Float) -> Self
 
+pub struct PhysicsHooks {
+  mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
+  mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
+}
+pub fn PhysicsHooks::filter_contact_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
+pub fn PhysicsHooks::filter_intersection_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
+pub fn PhysicsHooks::new() -> Self
+
 pub struct PhysicsPipeline {
   prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags)]
 }
 pub fn PhysicsPipeline::new() -> Self
-pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, Unit, EventHandler) -> Unit
+pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 // Type aliases
 
