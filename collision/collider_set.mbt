@@ -245,7 +245,7 @@ pub struct Collider {
   mut world_rotation : @core.Real
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
-  mut active_events : ActiveEvents?
+  mut active_events : ActiveEvents
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
@@ -268,7 +268,7 @@ pub struct ColliderBuilder {
   mut rotation : @core.Real
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
-  mut active_events : ActiveEvents?
+  mut active_events : ActiveEvents
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
@@ -290,7 +290,7 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
-    active_events: None,
+    active_events: ActiveEvents::empty(),
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
@@ -316,7 +316,7 @@ pub fn ColliderBuilder::cuboid(
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
-    active_events: None,
+    active_events: ActiveEvents::empty(),
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
@@ -342,7 +342,7 @@ pub fn ColliderBuilder::capsule_x(
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
-    active_events: None,
+    active_events: ActiveEvents::empty(),
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
@@ -368,7 +368,7 @@ pub fn ColliderBuilder::capsule_y(
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
-    active_events: None,
+    active_events: ActiveEvents::empty(),
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
@@ -394,7 +394,7 @@ pub fn ColliderBuilder::segment(
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
     sensor: false,
-    active_events: None,
+    active_events: ActiveEvents::empty(),
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
@@ -450,7 +450,7 @@ pub fn ColliderBuilder::active_events(
   self : ColliderBuilder,
   events : ActiveEvents,
 ) -> ColliderBuilder {
-  self.active_events = Some(events)
+  self.active_events = events
   self
 }
 
@@ -646,7 +646,7 @@ pub fn Collider::active_collision_types(
 }
 
 ///|
-pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
+pub fn Collider::active_events(self : Collider) -> ActiveEvents {
   self.active_events
 }
 
@@ -733,7 +733,7 @@ pub fn Collider::set_active_collision_types(
 ///|
 pub fn Collider::set_active_events(
   self : Collider,
-  events : ActiveEvents?,
+  events : ActiveEvents,
 ) -> Collider {
   self.active_events = events
   self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)

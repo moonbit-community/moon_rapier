@@ -130,7 +130,7 @@ test "collider material and event accessors" {
     .contact_force_event_threshold(3.0F)
     .user_data(7)
     .active_hooks(ActiveHooks::filter_contact_pairs())
-    .active_events(ActiveEvents::CollisionEvents)
+    .active_events(ActiveEvents::collision_events())
     .build()
   inspect(collider.friction() == 0.75F, content="true")
   inspect(
@@ -150,7 +150,7 @@ test "collider material and event accessors" {
     content="true",
   )
   inspect(
-    collider.active_events() is Some(ActiveEvents::CollisionEvents),
+    collider.active_events().contains(ActiveEvents::collision_events()),
     content="true",
   )
   inspect(
@@ -191,13 +191,20 @@ test "collider material and event accessors" {
     collider.active_hooks().contains(ActiveHooks::modify_solver_contacts()),
     content="true",
   )
-  let collider = collider.set_active_events(None)
-  inspect(collider.active_events() is None, content="true")
-  let collider = collider.set_active_events(
-    Some(ActiveEvents::ContactForceEvents),
+  let collider = collider.set_active_events(ActiveEvents::empty())
+  inspect(
+    !collider.active_events().contains(ActiveEvents::collision_events()),
+    content="true",
   )
   inspect(
-    collider.active_events() is Some(ActiveEvents::ContactForceEvents),
+    !collider.active_events().contains(ActiveEvents::contact_force_events()),
+    content="true",
+  )
+  let collider = collider.set_active_events(
+    ActiveEvents::contact_force_events(),
+  )
+  inspect(
+    collider.active_events().contains(ActiveEvents::contact_force_events()),
     content="true",
   )
 }

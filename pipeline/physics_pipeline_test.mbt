@@ -372,12 +372,12 @@ test "physics pipeline emits collision started/stopped events" {
   )
   let co = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
-    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .active_events(@collision.ActiveEvents::collision_events())
     .build()
   colliders.insert_with_parent(co, b1, bodies) |> ignore
   let co2 = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
-    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .active_events(@collision.ActiveEvents::collision_events())
     .build()
   colliders.insert_with_parent(co2, b2, bodies) |> ignore
   pipeline.step(
@@ -463,11 +463,11 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let c1 = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
-    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .active_events(@collision.ActiveEvents::collision_events())
     .build()
   let c2 = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
-    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .active_events(@collision.ActiveEvents::collision_events())
     .build()
   colliders.insert_with_parent(c1, b1, bodies) |> ignore
   let h2 = colliders.insert_with_parent(c2, b2, bodies)
@@ -534,7 +534,7 @@ test "physics pipeline emits stopped event after removal even if other collider 
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let c1 = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
-    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .active_events(@collision.ActiveEvents::collision_events())
     .build()
   let c2 = @collision.ColliderBuilder::ball(1.0F).sensor(true).build()
   let h1 = colliders.insert_with_parent(c1, b1, bodies)

@@ -20,10 +20,14 @@ pub fn ActiveCollisionTypes::default() -> Self
 pub fn ActiveCollisionTypes::equals(Self, Self) -> Bool
 pub fn ActiveCollisionTypes::test_body_types(Self, @dynamics.RigidBodyType, @dynamics.RigidBodyType) -> Bool
 
-pub(all) enum ActiveEvents {
-  CollisionEvents
-  ContactForceEvents
+pub struct ActiveEvents {
+  mut bits : Int
 }
+pub fn ActiveEvents::collision_events() -> Self
+pub fn ActiveEvents::contact_force_events() -> Self
+pub fn ActiveEvents::contains(Self, Self) -> Bool
+pub fn ActiveEvents::empty() -> Self
+pub fn ActiveEvents::insert(Self, Self) -> Self
 
 pub struct ActiveHooks {
   mut value : Int
@@ -52,7 +56,7 @@ pub struct Collider {
   mut world_rotation : Float
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
-  mut active_events : ActiveEvents?
+  mut active_events : ActiveEvents
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
@@ -68,7 +72,7 @@ pub struct Collider {
   mut changes : ColliderChanges
 }
 pub fn Collider::active_collision_types(Self) -> ActiveCollisionTypes
-pub fn Collider::active_events(Self) -> ActiveEvents?
+pub fn Collider::active_events(Self) -> ActiveEvents
 pub fn Collider::active_hooks(Self) -> ActiveHooks
 pub fn Collider::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::contact_force_event_threshold(Self) -> Float
@@ -84,7 +88,7 @@ pub fn Collider::restitution(Self) -> Float
 pub fn Collider::restitution_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider::rotation(Self) -> Float
 pub fn Collider::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
-pub fn Collider::set_active_events(Self, ActiveEvents?) -> Self
+pub fn Collider::set_active_events(Self, ActiveEvents) -> Self
 pub fn Collider::set_active_hooks(Self, ActiveHooks) -> Self
 pub fn Collider::set_collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider::set_contact_force_event_threshold(Self, Float) -> Self
@@ -114,7 +118,7 @@ pub struct ColliderBuilder {
   mut rotation : Float
   mut active_collision_types : ActiveCollisionTypes
   mut sensor : Bool
-  mut active_events : ActiveEvents?
+  mut active_events : ActiveEvents
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups

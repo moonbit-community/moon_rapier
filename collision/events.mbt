@@ -13,6 +13,54 @@
 // limitations under the License.
 
 ///|
+const ACTIVE_EVENTS_COLLISION_EVENTS : Int = 1 << 0
+
+///|
+const ACTIVE_EVENTS_CONTACT_FORCE_EVENTS : Int = 1 << 1
+
+///|
+pub struct ActiveEvents {
+  mut bits : Int
+}
+
+///|
+fn ActiveEvents::new(bits : Int) -> ActiveEvents {
+  { bits, }
+}
+
+///|
+pub fn ActiveEvents::empty() -> ActiveEvents {
+  ActiveEvents::new(0)
+}
+
+///|
+pub fn ActiveEvents::collision_events() -> ActiveEvents {
+  ActiveEvents::new(ACTIVE_EVENTS_COLLISION_EVENTS)
+}
+
+///|
+pub fn ActiveEvents::contact_force_events() -> ActiveEvents {
+  ActiveEvents::new(ACTIVE_EVENTS_CONTACT_FORCE_EVENTS)
+}
+
+///|
+pub fn ActiveEvents::contains(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> Bool {
+  (self.bits & other.bits) == other.bits
+}
+
+///|
+pub fn ActiveEvents::insert(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  self.bits = self.bits | other.bits
+  self
+}
+
+///|
 const COLLISION_EVENT_FLAG_SENSOR : Int = 1 << 0
 
 ///|

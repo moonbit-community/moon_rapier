@@ -61,9 +61,43 @@ pub fn ActiveCollisionTypes::test_body_types(
 }
 
 ///|
-pub(all) enum ActiveEvents {
-  CollisionEvents
-  ContactForceEvents
+#declaration_only
+pub type ActiveEvents
+
+///|
+#declaration_only
+pub fn ActiveEvents::empty() -> ActiveEvents {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveEvents::collision_events() -> ActiveEvents {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveEvents::contact_force_events() -> ActiveEvents {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveEvents::contains(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ActiveEvents::insert(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  ...
 }
 
 ///|
@@ -466,7 +500,7 @@ pub fn Collider::active_collision_types(
 
 ///|
 #declaration_only
-pub fn Collider::active_events(self : Collider) -> ActiveEvents? {
+pub fn Collider::active_events(self : Collider) -> ActiveEvents {
   ...
 }
 
@@ -561,7 +595,7 @@ pub fn Collider::set_active_collision_types(
 #declaration_only
 pub fn Collider::set_active_events(
   self : Collider,
-  events : ActiveEvents?,
+  events : ActiveEvents,
 ) -> Collider {
   ...
 }

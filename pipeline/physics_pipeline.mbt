@@ -755,7 +755,9 @@ fn should_emit_collision_events(
   h2 : @collision.ColliderHandle,
 ) -> Bool {
   fn has_collision_events(collider : @collision.Collider) -> Bool {
-    collider.active_events() is Some(@collision.ActiveEvents::CollisionEvents)
+    collider
+    .active_events()
+    .contains(@collision.ActiveEvents::collision_events())
   }
 
   let mut enabled = false
