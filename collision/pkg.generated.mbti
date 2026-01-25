@@ -208,6 +208,22 @@ pub fn CollisionEventFlags::insert(Self, Self) -> Self
 pub fn CollisionEventFlags::removed() -> Self
 pub fn CollisionEventFlags::sensor() -> Self
 
+pub struct ContactForceEvent {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+  total_force : @core.Vec2
+  total_force_magnitude : Float
+  max_force_direction : @core.Vec2
+  max_force_magnitude : Float
+}
+pub fn ContactForceEvent::collider1(Self) -> ColliderHandle
+pub fn ContactForceEvent::collider2(Self) -> ColliderHandle
+pub fn ContactForceEvent::max_force_direction(Self) -> @core.Vec2
+pub fn ContactForceEvent::max_force_magnitude(Self) -> Float
+pub fn ContactForceEvent::new(ColliderHandle, ColliderHandle, @core.Vec2, Float, @core.Vec2, Float) -> Self
+pub fn ContactForceEvent::total_force(Self) -> @core.Vec2
+pub fn ContactForceEvent::total_force_magnitude(Self) -> Float
+
 pub struct ContactPair {
   manifold_count : Int
 }

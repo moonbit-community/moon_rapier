@@ -184,6 +184,65 @@ pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
 
 ///|
 #declaration_only
+pub type ContactForceEvent
+
+///|
+#declaration_only
+pub fn ContactForceEvent::new(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  total_force : @core.Vec2,
+  total_force_magnitude : @core.Real,
+  max_force_direction : @core.Vec2,
+  max_force_magnitude : @core.Real,
+) -> ContactForceEvent {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::collider1(self : ContactForceEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::collider2(self : ContactForceEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::total_force(self : ContactForceEvent) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::total_force_magnitude(
+  self : ContactForceEvent,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::max_force_direction(
+  self : ContactForceEvent,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactForceEvent::max_force_magnitude(
+  self : ContactForceEvent,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
 pub type ActiveHooks
 
 ///|

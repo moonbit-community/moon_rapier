@@ -583,6 +583,94 @@ test "physics pipeline emits stopped event after removal even if other collider 
 }
 
 ///|
+test "physics pipeline emits contact force events when enabled" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let handler = EventHandler::new()
+  let params = IntegrationParameters::default()
+  let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let c1 = @collision.ColliderBuilder::ball(1.0F)
+    .active_events(@collision.ActiveEvents::contact_force_events())
+    .contact_force_event_threshold(0.0F)
+    .build()
+  let c2 = @collision.ColliderBuilder::ball(1.0F).build()
+  let h1 = colliders.insert_with_parent(c1, b1, bodies)
+  let h2 = colliders.insert_with_parent(c2, b2, bodies)
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  let events = handler.take_contact_force_events()
+  inspect(events.length() == 1, content="true")
+  let ev = events[0]
+  let ok = (
+      @collision.ColliderHandle::equals(ev.collider1(), h1) &&
+      @collision.ColliderHandle::equals(ev.collider2(), h2)
+    ) ||
+    (
+      @collision.ColliderHandle::equals(ev.collider1(), h2) &&
+      @collision.ColliderHandle::equals(ev.collider2(), h1)
+    )
+  inspect(ok, content="true")
+  inspect(ev.total_force_magnitude() > 0.0F, content="true")
+}
+
+///|
+test "physics pipeline contact force events respect thresholds" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let handler = EventHandler::new()
+  let params = IntegrationParameters::default()
+  let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let c1 = @collision.ColliderBuilder::ball(1.0F)
+    .active_events(@collision.ActiveEvents::contact_force_events())
+    .contact_force_event_threshold(1.0e9F)
+    .build()
+  let c2 = @collision.ColliderBuilder::ball(1.0F).build()
+  colliders.insert_with_parent(c1, b1, bodies) |> ignore
+  colliders.insert_with_parent(c2, b2, bodies) |> ignore
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  inspect(handler.take_contact_force_events().length() == 0, content="true")
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (test_multi_sap_disable_body).
 test "multi sap disable body" {
   let rigid_body_set = @dynamics.RigidBodySet::new()

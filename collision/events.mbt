@@ -159,3 +159,68 @@ pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
       flags.contains(CollisionEventFlags::removed())
   }
 }
+
+///|
+pub struct ContactForceEvent {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+  total_force : @core.Vec2
+  total_force_magnitude : @core.Real
+  max_force_direction : @core.Vec2
+  max_force_magnitude : @core.Real
+}
+
+///|
+pub fn ContactForceEvent::new(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  total_force : @core.Vec2,
+  total_force_magnitude : @core.Real,
+  max_force_direction : @core.Vec2,
+  max_force_magnitude : @core.Real,
+) -> ContactForceEvent {
+  {
+    collider1,
+    collider2,
+    total_force,
+    total_force_magnitude,
+    max_force_direction,
+    max_force_magnitude,
+  }
+}
+
+///|
+pub fn ContactForceEvent::collider1(self : ContactForceEvent) -> ColliderHandle {
+  self.collider1
+}
+
+///|
+pub fn ContactForceEvent::collider2(self : ContactForceEvent) -> ColliderHandle {
+  self.collider2
+}
+
+///|
+pub fn ContactForceEvent::total_force(self : ContactForceEvent) -> @core.Vec2 {
+  self.total_force
+}
+
+///|
+pub fn ContactForceEvent::total_force_magnitude(
+  self : ContactForceEvent,
+) -> @core.Real {
+  self.total_force_magnitude
+}
+
+///|
+pub fn ContactForceEvent::max_force_direction(
+  self : ContactForceEvent,
+) -> @core.Vec2 {
+  self.max_force_direction
+}
+
+///|
+pub fn ContactForceEvent::max_force_magnitude(
+  self : ContactForceEvent,
+) -> @core.Real {
+  self.max_force_magnitude
+}

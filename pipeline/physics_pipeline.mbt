@@ -576,6 +576,8 @@ fn resolve_contact(
   colliders : @collision.ColliderSet,
   first : @collision.ColliderHandle,
   second : @collision.ColliderHandle,
+  dt : @core.Real,
+  event_handler : EventHandler,
 ) -> Unit {
   if colliders.get(first) is Some(collider1) &&
     colliders.get(second) is Some(collider2) {
@@ -602,6 +604,45 @@ fn resolve_contact(
       return
     }
     let sep = separation.unwrap()
+    // Approximate the contact force magnitude from the penetration correction applied this step.
+    // This is a placeholder until a proper impulse-based solver exists.
+    let max_threshold = 1.0e30F
+    let contact_flag = @collision.ActiveEvents::contact_force_events()
+    let threshold1 = if collider1.active_events().contains(contact_flag) {
+      collider1.contact_force_event_threshold()
+    } else {
+      max_threshold
+    }
+    let threshold2 = if collider2.active_events().contains(contact_flag) {
+      collider2.contact_force_event_threshold()
+    } else {
+      max_threshold
+    }
+    let threshold = if threshold1 < threshold2 {
+      threshold1
+    } else {
+      threshold2
+    }
+    if threshold < max_threshold && dt > 0.0F {
+      let len = sep.length()
+      let magnitude = len / dt
+      if magnitude > threshold {
+        let dir = if len <= 1.0e-6F {
+          @core.Vec2::new(1.0F, 0.0F)
+        } else {
+          sep.normalize()
+        }
+        let total_force = @core.Vec2::new(dir.x * magnitude, dir.y * magnitude)
+        event_handler.handle_contact_force_event(
+          dt,
+          bodies,
+          colliders,
+          @collision.ContactForceEvent::new(
+            first, second, total_force, magnitude, dir, magnitude,
+          ),
+        )
+      }
+    }
     let mut move1 = false
     let mut move2 = false
     if collider1.parent is Some(parent1) {
@@ -944,7 +985,7 @@ pub fn PhysicsPipeline::step(
   )
   for i in 0..<narrow_phase.contacts.length() {
     let pair = narrow_phase.contacts[i]
-    resolve_contact(bodies, colliders, pair.0, pair.1)
+    resolve_contact(bodies, colliders, pair.0, pair.1, dt, event_handler)
   }
   collision_pipeline.step(
     parameters.prediction_distance(),

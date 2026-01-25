@@ -20,11 +20,23 @@ pub struct EventHandler {
     @collision.ColliderSet,
     @collision.CollisionEvent,
   ) -> Unit)?
+  contact_force_events : Array[@collision.ContactForceEvent]
+  mut contact_force_callback : ((
+    @core.Real,
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ContactForceEvent,
+  ) -> Unit)?
 }
 
 ///|
 pub fn EventHandler::new() -> EventHandler {
-  { collision_events: [], collision_callback: None }
+  {
+    collision_events: [],
+    collision_callback: None,
+    contact_force_events: [],
+    contact_force_callback: None,
+  }
 }
 
 ///|
@@ -54,11 +66,47 @@ pub fn EventHandler::handle_collision_event(
 }
 
 ///|
+pub fn EventHandler::on_contact_force_event(
+  self : EventHandler,
+  callback : (
+    @core.Real,
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ContactForceEvent,
+  ) -> Unit,
+) -> EventHandler {
+  self.contact_force_callback = Some(callback)
+  self
+}
+
+///|
+pub fn EventHandler::handle_contact_force_event(
+  self : EventHandler,
+  dt : @core.Real,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.ContactForceEvent,
+) -> Unit {
+  if self.contact_force_callback is Some(callback) {
+    callback(dt, bodies, colliders, event)
+  }
+  self.contact_force_events.push(event)
+}
+
+///|
 pub fn EventHandler::push_collision_event(
   self : EventHandler,
   event : @collision.CollisionEvent,
 ) -> Unit {
   self.collision_events.push(event)
+}
+
+///|
+pub fn EventHandler::push_contact_force_event(
+  self : EventHandler,
+  event : @collision.ContactForceEvent,
+) -> Unit {
+  self.contact_force_events.push(event)
 }
 
 ///|
@@ -70,5 +118,17 @@ pub fn EventHandler::take_collision_events(
     result.push(self.collision_events[i])
   }
   self.collision_events.clear()
+  result
+}
+
+///|
+pub fn EventHandler::take_contact_force_events(
+  self : EventHandler,
+) -> Array[@collision.ContactForceEvent] {
+  let result : Array[@collision.ContactForceEvent] = []
+  for i in 0..<self.contact_force_events.length() {
+    result.push(self.contact_force_events[i])
+  }
+  self.contact_force_events.clear()
   result
 }
