@@ -814,7 +814,6 @@ fn PhysicsPipeline::emit_collision_events(
   narrow_phase : @collision.NarrowPhase,
   event_handler : EventHandler,
 ) -> Unit {
-  bodies |> ignore
   let current = collect_current_collisions(narrow_phase, colliders)
   let prev_pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)] = []
   for i in 0..<self.prev_collisions.length() {
@@ -830,7 +829,9 @@ fn PhysicsPipeline::emit_collision_events(
     let c = current[i]
     if !collision_pair_in_list((c.0, c.1), prev_pairs) &&
       should_emit_collision_events(colliders, c.0, c.1) {
-      event_handler.push_collision_event(
+      event_handler.handle_collision_event(
+        bodies,
+        colliders,
         @collision.CollisionEvent::Started(c.0, c.1, c.2),
       )
     }
@@ -839,7 +840,9 @@ fn PhysicsPipeline::emit_collision_events(
     let p = self.prev_collisions[i]
     if !collision_pair_in_list((p.0, p.1), cur_pairs) &&
       should_emit_collision_events(colliders, p.0, p.1) {
-      event_handler.push_collision_event(
+      event_handler.handle_collision_event(
+        bodies,
+        colliders,
         @collision.CollisionEvent::Stopped(p.0, p.1, p.2),
       )
     }

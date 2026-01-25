@@ -15,11 +15,42 @@
 ///|
 pub struct EventHandler {
   collision_events : Array[@collision.CollisionEvent]
+  mut collision_callback : ((
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.CollisionEvent,
+  ) -> Unit)?
 }
 
 ///|
 pub fn EventHandler::new() -> EventHandler {
-  { collision_events: [] }
+  { collision_events: [], collision_callback: None }
+}
+
+///|
+pub fn EventHandler::on_collision_event(
+  self : EventHandler,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.CollisionEvent,
+  ) -> Unit,
+) -> EventHandler {
+  self.collision_callback = Some(callback)
+  self
+}
+
+///|
+pub fn EventHandler::handle_collision_event(
+  self : EventHandler,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.CollisionEvent,
+) -> Unit {
+  if self.collision_callback is Some(callback) {
+    callback(bodies, colliders, event)
+  }
+  self.collision_events.push(event)
 }
 
 ///|

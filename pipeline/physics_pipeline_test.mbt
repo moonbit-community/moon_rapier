@@ -351,7 +351,14 @@ test "physics pipeline emits collision started/stopped events" {
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
-  let handler = EventHandler::new()
+  let callback_events : Array[@collision.CollisionEvent] = []
+  let handler = EventHandler::new().on_collision_event(fn(
+    _bodies : @dynamics.RigidBodySet,
+    _colliders : @collision.ColliderSet,
+    event : @collision.CollisionEvent,
+  ) -> Unit {
+    callback_events.push(event)
+  })
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
@@ -389,6 +396,7 @@ test "physics pipeline emits collision started/stopped events" {
   )
   let ev1 = handler.take_collision_events()
   inspect(ev1.length() == 1, content="true")
+  inspect(callback_events.length() == 1, content="true")
   match ev1[0] {
     @collision.CollisionEvent::Started(_, _, flags) =>
       inspect(
@@ -412,6 +420,7 @@ test "physics pipeline emits collision started/stopped events" {
     handler,
   )
   inspect(handler.take_collision_events().length() == 0, content="true")
+  inspect(callback_events.length() == 1, content="true")
   if bodies.get_mut(b2) is Some(body2) {
     body2.set_translation(@core.Vec2::new(10.0F, 0.0F), true) |> ignore
   }
@@ -431,6 +440,7 @@ test "physics pipeline emits collision started/stopped events" {
   )
   let ev2 = handler.take_collision_events()
   inspect(ev2.length() == 1, content="true")
+  inspect(callback_events.length() == 2, content="true")
   match ev2[0] {
     @collision.CollisionEvent::Stopped(_, _, _) => inspect(true, content="true")
     _ => inspect(false, content="true")

@@ -52,6 +52,30 @@ pub fn EventHandler::new() -> EventHandler {
 
 ///|
 #declaration_only
+pub fn EventHandler::on_collision_event(
+  self : EventHandler,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.CollisionEvent,
+  ) -> Unit,
+) -> EventHandler {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EventHandler::handle_collision_event(
+  self : EventHandler,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.CollisionEvent,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn EventHandler::push_collision_event(
   self : EventHandler,
   event : @collision.CollisionEvent,

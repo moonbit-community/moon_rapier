@@ -19,8 +19,11 @@ pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.
 
 pub struct EventHandler {
   collision_events : Array[@collision.CollisionEvent]
+  mut collision_callback : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit)?
 }
+pub fn EventHandler::handle_collision_event(Self, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit
 pub fn EventHandler::new() -> Self
+pub fn EventHandler::on_collision_event(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit) -> Self
 pub fn EventHandler::push_collision_event(Self, @collision.CollisionEvent) -> Unit
 pub fn EventHandler::take_collision_events(Self) -> Array[@collision.CollisionEvent]
 
