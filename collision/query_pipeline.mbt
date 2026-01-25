@@ -282,6 +282,14 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 }
 
 ///|
+pub(all) enum FeatureId {
+  Unknown
+  Vertex(Int)
+  Edge(Int)
+  Face(Int)
+}
+
+///|
 pub struct ShapeCastOptions {
   max_toi : @core.Real
   target_distance : @core.Real
@@ -412,6 +420,14 @@ pub fn QueryPipeline::new(
     }
   }
   { filter, bodies, colliders, aabbs }
+}
+
+///|
+pub fn QueryPipeline::with_filter(
+  self : QueryPipeline,
+  filter : QueryFilter,
+) -> QueryPipeline {
+  { filter, bodies: self.bodies, colliders: self.colliders, aabbs: self.aabbs }
 }
 
 ///|
@@ -2397,6 +2413,22 @@ fn project_point_on_ball(
 }
 
 ///|
+fn project_point_on_ball_and_get_feature(
+  center : @core.Vec2,
+  radius : @core.Real,
+  point : @core.Vec2,
+  solid : Bool,
+) -> (PointProjection, FeatureId) {
+  let projection = project_point_on_ball(center, radius, point, solid)
+  let feature = if projection.is_inside && solid {
+    FeatureId::Unknown
+  } else {
+    FeatureId::Face(0)
+  }
+  (projection, feature)
+}
+
+///|
 fn project_point_on_cuboid_oriented(
   center : @core.Vec2,
   rotation : @core.Real,
@@ -2431,6 +2463,66 @@ fn project_point_on_cuboid_oriented(
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
   PointProjection::{ point: projected, is_inside: inside }
+}
+
+///|
+fn project_point_on_cuboid_oriented_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  point : @core.Vec2,
+  solid : Bool,
+) -> (PointProjection, FeatureId) {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(point.sub(center))
+  let inside = @core.abs(local_point.x) <= half_width &&
+    @core.abs(local_point.y) <= half_height
+  if inside && solid {
+    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+  }
+  let projected_local = if inside {
+    let dx = half_width - @core.abs(local_point.x)
+    let dy = half_height - @core.abs(local_point.y)
+    if dx < dy {
+      let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(sign * half_width, local_point.y)
+    } else {
+      let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
+      @core.Vec2::new(local_point.x, sign * half_height)
+    }
+  } else {
+    @core.Vec2::new(
+      clamp_value(local_point.x, -half_width, half_width),
+      clamp_value(local_point.y, -half_height, half_height),
+    )
+  }
+  let projected = center.add(rot.rotate_vec2(projected_local))
+  let projection = PointProjection::{ point: projected, is_inside: inside }
+
+  // Feature indices:
+  // - Edges: 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
+  // - Vertices: 0 = (+,+), 1 = (-,+), 2 = (-,-), 3 = (+,-)
+  let on_x = @core.abs(@core.abs(projected_local.x) - half_width) <= 1.0e-6F
+  let on_y = @core.abs(@core.abs(projected_local.y) - half_height) <= 1.0e-6F
+  let feature = if on_x && on_y {
+    let vx = if projected_local.x >= 0.0F { 1 } else { 0 }
+    let vy = if projected_local.y >= 0.0F { 1 } else { 0 }
+    let vid = match (vx, vy) {
+      (1, 1) => 0
+      (0, 1) => 1
+      (0, 0) => 2
+      (1, 0) => 3
+      _ => 0
+    }
+    FeatureId::Vertex(vid)
+  } else if on_x {
+    FeatureId::Edge(if projected_local.x >= 0.0F { 0 } else { 1 })
+  } else {
+    FeatureId::Edge(if projected_local.y >= 0.0F { 2 } else { 3 })
+  }
+  (projection, feature)
 }
 
 ///|
@@ -2470,6 +2562,62 @@ fn project_point_on_capsule_oriented(
 }
 
 ///|
+fn project_point_on_capsule_oriented_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  axis : @core.Vec2,
+  half_height : @core.Real,
+  radius : @core.Real,
+  point : @core.Vec2,
+  solid : Bool,
+) -> (PointProjection, FeatureId) {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(point.sub(center))
+  let is_axis_x = @core.abs(axis.x) > @core.abs(axis.y)
+  let (clamped, cap_id) = if is_axis_x {
+    let cx = clamp_value(local_point.x, -half_height, half_height)
+    let id = if cx >= half_height - 1.0e-6F {
+      1
+    } else if cx <= -half_height + 1.0e-6F {
+      0
+    } else {
+      -1
+    }
+    (@core.Vec2::new(cx, 0.0F), id)
+  } else {
+    let cy = clamp_value(local_point.y, -half_height, half_height)
+    let id = if cy >= half_height - 1.0e-6F {
+      1
+    } else if cy <= -half_height + 1.0e-6F {
+      0
+    } else {
+      -1
+    }
+    (@core.Vec2::new(0.0F, cy), id)
+  }
+  let delta = local_point.sub(clamped)
+  let dist2 = delta.dot(delta)
+  let inside = dist2 <= radius * radius
+  if inside && solid {
+    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+  }
+  let projected_local = if dist2 <= 1.0e-12F {
+    clamped.add(@core.Vec2::new(radius, 0.0F))
+  } else {
+    clamped.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
+  }
+  let projected = center.add(rot.rotate_vec2(projected_local))
+  let projection = PointProjection::{ point: projected, is_inside: inside }
+  let feature = if cap_id >= 0 {
+    FeatureId::Vertex(cap_id)
+  } else {
+    FeatureId::Edge(0)
+  }
+  (projection, feature)
+}
+
+///|
 fn project_point_on_segment(
   center : @core.Vec2,
   rotation : @core.Real,
@@ -2480,6 +2628,32 @@ fn project_point_on_segment(
   let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
   let q = closest_point_on_segment(wa, wb, point)
   PointProjection::{ point: q, is_inside: false }
+}
+
+///|
+fn project_point_on_segment_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  point : @core.Vec2,
+) -> (PointProjection, FeatureId) {
+  let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
+  let ab = wb.sub(wa)
+  let denom = ab.dot(ab)
+  let mut t = 0.0F
+  if denom > 1.0e-12F {
+    t = clamp_value(point.sub(wa).dot(ab) / denom, 0.0F, 1.0F)
+  }
+  let q = wa.add(@core.Vec2::new(ab.x * t, ab.y * t))
+  let feature = if t <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if t >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+  (PointProjection::{ point: q, is_inside: false }, feature)
 }
 
 ///|
@@ -2557,6 +2731,86 @@ pub fn QueryPipeline::project_point(
   }
   if best is Some(hit) {
     Some((hit.0, hit.1))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn QueryPipeline::project_point_and_get_feature(
+  self : QueryPipeline,
+  point : @core.Vec2,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, PointProjection, FeatureId)? {
+  // Rapier keeps this parameter for API consistency, but doesn't use it.
+  max_dist |> ignore
+  let mut best : (ColliderHandle, PointProjection, FeatureId, @core.Real)? = None
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, self.colliders.generations[i])
+      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+        continue
+      }
+      let (projection, feature) = match collider.shape {
+        Shape::Ball(radius) =>
+          project_point_on_ball_and_get_feature(
+            collider.world_translation,
+            radius,
+            point,
+            solid,
+          )
+        Shape::Cuboid(hw, hh) =>
+          project_point_on_cuboid_oriented_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            hw,
+            hh,
+            point,
+            solid,
+          )
+        Shape::CapsuleX(half_height, radius) =>
+          project_point_on_capsule_oriented_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            @core.Vec2::new(1.0F, 0.0F),
+            half_height,
+            radius,
+            point,
+            solid,
+          )
+        Shape::CapsuleY(half_height, radius) =>
+          project_point_on_capsule_oriented_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            @core.Vec2::new(0.0F, 1.0F),
+            half_height,
+            radius,
+            point,
+            solid,
+          )
+        Shape::Segment(a, b) =>
+          project_point_on_segment_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            a,
+            b,
+            point,
+          )
+      }
+      let delta = point.sub(projection.point)
+      let dist2 = delta.dot(delta)
+      if best is Some(current) {
+        if dist2 < current.3 {
+          best = Some((handle, projection, feature, dist2))
+        }
+      } else {
+        best = Some((handle, projection, feature, dist2))
+      }
+    }
+  }
+  if best is Some(hit) {
+    Some((hit.0, hit.1, hit.2))
   } else {
     None
   }

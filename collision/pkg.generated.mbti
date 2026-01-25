@@ -189,6 +189,13 @@ pub struct ContactPair {
 }
 pub fn ContactPair::manifold_count(Self) -> Int
 
+pub(all) enum FeatureId {
+  Unknown
+  Vertex(Int)
+  Edge(Int)
+  Face(Int)
+}
+
 pub struct IntersectionPair {
   collider1 : ColliderHandle
   collider2 : ColliderHandle
@@ -267,7 +274,9 @@ pub fn QueryPipeline::intersect_ray(Self, Ray, Float, Bool) -> Array[(ColliderHa
 pub fn QueryPipeline::intersect_shape(Self, @core.Isometry2, Shape) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
 pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
+pub fn QueryPipeline::project_point_and_get_feature(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection, FeatureId)?
 pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
+pub fn QueryPipeline::with_filter(Self, QueryFilter) -> Self
 
 pub struct Ray {
   origin : @core.Vec2

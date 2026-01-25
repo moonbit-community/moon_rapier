@@ -783,6 +783,132 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
 }
 
 ///|
+test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+
+  // Near the +X face.
+  if query_pipeline.project_point_and_get_feature(
+      @core.Vec2::new(3.0F, 0.25F),
+      0.0F,
+      false,
+    )
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(hit.1.point().y - 0.25F) < 1.0e-4F, content="true")
+    match hit.2 {
+      FeatureId::Edge(id) => inspect(id == 0, content="true")
+      _ => inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Near the (+,+) corner.
+  if query_pipeline.project_point_and_get_feature(
+      @core.Vec2::new(3.0F, 3.0F),
+      0.0F,
+      false,
+    )
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(hit.1.point().y - 1.0F) < 1.0e-4F, content="true")
+    match hit.2 {
+      FeatureId::Vertex(id) => inspect(id == 0, content="true")
+      _ => inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline project_point_and_get_feature segment endpoint" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::segment(
+      @core.Vec2::new(-1.0F, 0.0F),
+      @core.Vec2::new(1.0F, 0.0F),
+    ).build(),
+    body,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  if query_pipeline.project_point_and_get_feature(
+      @core.Vec2::new(1.0F, 0.0F),
+      0.0F,
+      false,
+    )
+    is Some(hit) {
+    inspect(ColliderHandle::equals(hit.0, handle), content="true")
+    inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
+    inspect(@core.abs(hit.1.point().y) < 1.0e-4F, content="true")
+    match hit.2 {
+      FeatureId::Vertex(id) => inspect(id == 1, content="true")
+      _ => inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline with_filter overrides the pipeline filter" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(5.0F, 0.0F))
+    .build(),
+  )
+  let sensor = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).sensor(true).build(),
+    body1,
+    bodies,
+  )
+  let solid = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    body2,
+    bodies,
+  )
+  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    bodies,
+    colliders,
+    QueryFilter::new(),
+  )
+  let filtered = query_pipeline.with_filter(
+    QueryFilter::new().exclude_sensors(),
+  )
+  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  if filtered.cast_ray(ray, 100.0F, true) is Some(hit) {
+    inspect(!ColliderHandle::equals(hit.0, sensor), content="true")
+    inspect(ColliderHandle::equals(hit.0, solid), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query pipeline cast_ray respects cuboid rotation" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

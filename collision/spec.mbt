@@ -901,6 +901,10 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 
 ///|
 #declaration_only
+pub type FeatureId
+
+///|
+#declaration_only
 pub type ShapeCastOptions
 
 ///|
@@ -1129,6 +1133,15 @@ pub fn QueryPipeline::new(
 
 ///|
 #declaration_only
+pub fn QueryPipeline::with_filter(
+  self : QueryPipeline,
+  filter : QueryFilter,
+) -> QueryPipeline {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryPipeline::cast_ray(
   self : QueryPipeline,
   ray : Ray,
@@ -1221,6 +1234,17 @@ pub fn QueryPipeline::project_point(
   max_dist : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, PointProjection)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline::project_point_and_get_feature(
+  self : QueryPipeline,
+  point : @core.Vec2,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle, PointProjection, FeatureId)? {
   ...
 }
 
