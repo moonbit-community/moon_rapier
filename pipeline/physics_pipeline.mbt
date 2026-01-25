@@ -13,11 +13,19 @@
 // limitations under the License.
 
 ///|
-pub struct PhysicsPipeline {}
+pub struct PhysicsPipeline {
+  prev_collisions : Array[
+    (
+      @collision.ColliderHandle,
+      @collision.ColliderHandle,
+      @collision.CollisionEventFlags,
+    ),
+  ]
+}
 
 ///|
 pub fn PhysicsPipeline::new() -> PhysicsPipeline {
-  PhysicsPipeline::{  }
+  { prev_collisions: [] }
 }
 
 ///|
@@ -687,6 +695,162 @@ fn clear_modified_colliders(
 }
 
 ///|
+fn collider_handle_equals(
+  a : @collision.ColliderHandle,
+  b : @collision.ColliderHandle,
+) -> Bool {
+  @collision.ColliderHandle::equals(a, b)
+}
+
+///|
+fn collision_pair_equals(
+  a : (@collision.ColliderHandle, @collision.ColliderHandle),
+  b : (@collision.ColliderHandle, @collision.ColliderHandle),
+) -> Bool {
+  collider_handle_equals(a.0, b.0) && collider_handle_equals(a.1, b.1)
+}
+
+///|
+fn collision_pair_in_list(
+  pair : (@collision.ColliderHandle, @collision.ColliderHandle),
+  list : Array[(@collision.ColliderHandle, @collision.ColliderHandle)],
+) -> Bool {
+  for i in 0..<list.length() {
+    if collision_pair_equals(pair, list[i]) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn compute_collision_event_flags(
+  colliders : @collision.ColliderSet,
+  h1 : @collision.ColliderHandle,
+  h2 : @collision.ColliderHandle,
+) -> @collision.CollisionEventFlags {
+  let mut flags = @collision.CollisionEventFlags::empty()
+  let mut sensor = false
+  if colliders.get(h1) is Some(c1) {
+    sensor = sensor || c1.is_sensor()
+  } else {
+    flags = flags.insert(@collision.CollisionEventFlags::removed())
+  }
+  if colliders.get(h2) is Some(c2) {
+    sensor = sensor || c2.is_sensor()
+  } else {
+    flags = flags.insert(@collision.CollisionEventFlags::removed())
+  }
+  if sensor {
+    flags = flags.insert(@collision.CollisionEventFlags::sensor())
+  }
+  flags
+}
+
+///|
+fn should_emit_collision_events(
+  colliders : @collision.ColliderSet,
+  h1 : @collision.ColliderHandle,
+  h2 : @collision.ColliderHandle,
+) -> Bool {
+  fn has_collision_events(collider : @collision.Collider) -> Bool {
+    collider.active_events() is Some(@collision.ActiveEvents::CollisionEvents)
+  }
+
+  let mut enabled = false
+  if colliders.get(h1) is Some(c1) {
+    enabled = enabled || has_collision_events(c1)
+  }
+  if colliders.get(h2) is Some(c2) {
+    enabled = enabled || has_collision_events(c2)
+  }
+  enabled
+}
+
+///|
+fn collect_current_collisions(
+  narrow_phase : @collision.NarrowPhase,
+  colliders : @collision.ColliderSet,
+) -> Array[
+  (
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.CollisionEventFlags,
+  ),
+] {
+  let result : Array[
+    (
+      @collision.ColliderHandle,
+      @collision.ColliderHandle,
+      @collision.CollisionEventFlags,
+    ),
+  ] = []
+  let intersections = narrow_phase.intersection_pairs()
+  for i in 0..<intersections.length() {
+    let pair = intersections[i]
+    if pair.intersecting {
+      let flags = compute_collision_event_flags(
+        colliders,
+        pair.collider1,
+        pair.collider2,
+      )
+      result.push((pair.collider1, pair.collider2, flags))
+    }
+  }
+  let contacts = narrow_phase.contact_pairs()
+  for i in 0..<contacts.length() {
+    let pair = contacts[i]
+    let flags = compute_collision_event_flags(colliders, pair.0, pair.1)
+    result.push((pair.0, pair.1, flags))
+  }
+  result
+}
+
+///|
+fn PhysicsPipeline::emit_collision_events(
+  self : PhysicsPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  narrow_phase : @collision.NarrowPhase,
+  event_handler : EventHandler,
+) -> Unit {
+  bodies |> ignore
+  let current = collect_current_collisions(narrow_phase, colliders)
+  let prev_pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)] = []
+  for i in 0..<self.prev_collisions.length() {
+    let p = self.prev_collisions[i]
+    prev_pairs.push((p.0, p.1))
+  }
+  let cur_pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)] = []
+  for i in 0..<current.length() {
+    let c = current[i]
+    cur_pairs.push((c.0, c.1))
+  }
+  for i in 0..<current.length() {
+    let c = current[i]
+    if !collision_pair_in_list((c.0, c.1), prev_pairs) &&
+      should_emit_collision_events(colliders, c.0, c.1) {
+      event_handler.push_collision_event(
+        @collision.CollisionEvent::Started(c.0, c.1, c.2),
+      )
+    }
+  }
+  for i in 0..<self.prev_collisions.length() {
+    let p = self.prev_collisions[i]
+    if !collision_pair_in_list((p.0, p.1), cur_pairs) &&
+      should_emit_collision_events(colliders, p.0, p.1) {
+      event_handler.push_collision_event(
+        @collision.CollisionEvent::Stopped(p.0, p.1, p.2),
+      )
+    }
+  }
+  self.prev_collisions.clear()
+  for i in 0..<current.length() {
+    self.prev_collisions.push(current[i])
+  }
+}
+
+///|
 pub fn PhysicsPipeline::step(
   self : PhysicsPipeline,
   gravity : @core.Vec2,
@@ -700,12 +864,10 @@ pub fn PhysicsPipeline::step(
   multibody_joints : @dynamics.MultibodyJointSet,
   ccd_solver : @dynamics.CCDSolver,
   physics_hooks : Unit,
-  event_handler : Unit,
+  event_handler : EventHandler,
 ) -> Unit {
-  self |> ignore
   ccd_solver |> ignore
   physics_hooks |> ignore
-  event_handler |> ignore
   let wake_from_impulse = impulse_joints.take_wake_up()
   for i in 0..<wake_from_impulse.length() {
     islands.wake_up(bodies, wake_from_impulse[i], true)
@@ -778,6 +940,10 @@ pub fn PhysicsPipeline::step(
     colliders,
     physics_hooks,
     event_handler,
+  )
+  // Only emit collision events after the final collision detection pass.
+  PhysicsPipeline::emit_collision_events(
+    self, bodies, colliders, narrow_phase, event_handler,
   )
   let contacts = @dynamics.ContactGraph::new()
   for i in 0..<narrow_phase.contacts.length() {

@@ -42,7 +42,7 @@ test "collision pipeline no rigid bodies" {
     rigid_body_set,
     collider_set,
     (),
-    (),
+    EventHandler::new(),
   )
   let mut hit = false
   for pair in narrow_phase.intersection_pairs_with(a_handle) {
@@ -83,7 +83,7 @@ test "collision pipeline no rigid bodies (dim3 adapted)" {
     rigid_body_set,
     collider_set,
     (),
-    (),
+    EventHandler::new(),
   )
   let mut hit = false
   for pair in narrow_phase.intersection_pairs_with(a_handle) {

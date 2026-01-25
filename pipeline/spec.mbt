@@ -42,6 +42,33 @@ pub fn IntegrationParameters::prediction_distance(
 
 ///|
 #declaration_only
+pub type EventHandler
+
+///|
+#declaration_only
+pub fn EventHandler::new() -> EventHandler {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EventHandler::push_collision_event(
+  self : EventHandler,
+  event : @collision.CollisionEvent,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EventHandler::take_collision_events(
+  self : EventHandler,
+) -> Array[@collision.CollisionEvent] {
+  ...
+}
+
+///|
+#declaration_only
 pub type CollisionPipeline
 
 ///|
@@ -61,7 +88,7 @@ pub fn CollisionPipeline::step(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   physics_hooks : Unit,
-  event_handler : Unit,
+  event_handler : EventHandler,
 ) -> Unit {
   ...
 }
@@ -91,7 +118,7 @@ pub fn PhysicsPipeline::step(
   multibody_joints : @dynamics.MultibodyJointSet,
   ccd_solver : @dynamics.CCDSolver,
   physics_hooks : Unit,
-  event_handler : Unit,
+  event_handler : EventHandler,
 ) -> Unit {
   ...
 }

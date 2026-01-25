@@ -68,6 +68,88 @@ pub(all) enum ActiveEvents {
 
 ///|
 #declaration_only
+pub type CollisionEventFlags
+
+///|
+#declaration_only
+pub fn CollisionEventFlags::empty() -> CollisionEventFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEventFlags::sensor() -> CollisionEventFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEventFlags::removed() -> CollisionEventFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEventFlags::contains(
+  self : CollisionEventFlags,
+  other : CollisionEventFlags,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEventFlags::insert(
+  self : CollisionEventFlags,
+  other : CollisionEventFlags,
+) -> CollisionEventFlags {
+  ...
+}
+
+///|
+pub(all) enum CollisionEvent {
+  Started(ColliderHandle, ColliderHandle, CollisionEventFlags)
+  Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags)
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::started(self : CollisionEvent) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::stopped(self : CollisionEvent) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::collider1(self : CollisionEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::collider2(self : CollisionEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::sensor(self : CollisionEvent) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub type ActiveHooks
 
 ///|
@@ -761,6 +843,22 @@ pub type NarrowPhase
 ///|
 #declaration_only
 pub fn NarrowPhase::new() -> NarrowPhase {
+  ...
+}
+
+///|
+#declaration_only
+pub fn NarrowPhase::intersection_pairs(
+  self : NarrowPhase,
+) -> Array[IntersectionPair] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn NarrowPhase::contact_pairs(
+  self : NarrowPhase,
+) -> Array[(ColliderHandle, ColliderHandle, ContactPair)] {
   ...
 }
 

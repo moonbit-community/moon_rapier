@@ -87,7 +87,7 @@ test "character controller climb" {
       multibody_joints,
       @dynamics.CCDSolver::new(),
       (),
-      (),
+      @pipeline.EventHandler::new(),
     )
     let update_character_controller = fn(
       controller : KinematicCharacterController,
@@ -360,7 +360,7 @@ test "character controller ground detection" {
       multibody_joints,
       @dynamics.CCDSolver::new(),
       (),
-      (),
+      @pipeline.EventHandler::new(),
     )
     let update_character_controller = fn(
       controller : KinematicCharacterController,

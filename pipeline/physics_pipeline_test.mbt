@@ -43,7 +43,7 @@ test "kinematic and fixed contact crash" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
 }
 
@@ -81,7 +81,7 @@ test "rigid body removal before step" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
 }
 
@@ -119,7 +119,7 @@ test "collider removal before step" {
       multibody_joints,
       ccd,
       (),
-      (),
+      EventHandler::new(),
     )
   }
 }
@@ -152,7 +152,7 @@ test "rigid body type changed dynamic is in active set" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
   if bodies.get_mut(h) is Some(body) {
     body.set_body_type(@dynamics.RigidBodyType::Dynamic, true) |> ignore
@@ -169,7 +169,7 @@ test "rigid body type changed dynamic is in active set" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
   if bodies.get(h) is Some(body_after) {
     let position = body_after.translation()
@@ -218,7 +218,7 @@ test "joint step delta time 0" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
   if bodies.get(h_dynamic) is Some(body) {
     let translation = body.translation()
@@ -316,7 +316,7 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
     multibody_joints,
     ccd,
     (),
-    (),
+    EventHandler::new(),
   )
   if colliders.get(seg_handle) is Some(seg_after) &&
     colliders.get(cub_handle) is Some(cub_after) {
@@ -338,6 +338,102 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
     }
   } else {
     inspect(false, content="true")
+  }
+}
+
+///|
+test "physics pipeline emits collision started/stopped events" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let handler = EventHandler::new()
+  let params = IntegrationParameters::default()
+  let b1 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build(),
+  )
+  let b2 = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.5F, 0.0F))
+    .build(),
+  )
+  let co = @collision.ColliderBuilder::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .build()
+  colliders.insert_with_parent(co, b1, bodies) |> ignore
+  let co2 = @collision.ColliderBuilder::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .build()
+  colliders.insert_with_parent(co2, b2, bodies) |> ignore
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    (),
+    handler,
+  )
+  let ev1 = handler.take_collision_events()
+  inspect(ev1.length() == 1, content="true")
+  match ev1[0] {
+    @collision.CollisionEvent::Started(_, _, flags) =>
+      inspect(
+        flags.contains(@collision.CollisionEventFlags::sensor()),
+        content="true",
+      )
+    _ => inspect(false, content="true")
+  }
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    (),
+    handler,
+  )
+  inspect(handler.take_collision_events().length() == 0, content="true")
+  if bodies.get_mut(b2) is Some(body2) {
+    body2.set_translation(@core.Vec2::new(10.0F, 0.0F), true) |> ignore
+  }
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    (),
+    handler,
+  )
+  let ev2 = handler.take_collision_events()
+  inspect(ev2.length() == 1, content="true")
+  match ev2[0] {
+    @collision.CollisionEvent::Stopped(_, _, _) => inspect(true, content="true")
+    _ => inspect(false, content="true")
   }
 }
 
@@ -378,7 +474,7 @@ test "multi sap disable body" {
     multibody_joint_set,
     ccd_solver,
     (),
-    (),
+    EventHandler::new(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
     ball_body.set_translation(@core.Vec2::new(1.0F, 1.0F), true) |> ignore
@@ -397,7 +493,7 @@ test "multi sap disable body" {
     multibody_joint_set,
     ccd_solver,
     (),
-    (),
+    EventHandler::new(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
     ball_body.set_translation(@core.Vec2::new(0.0F, 0.0F), true) |> ignore
@@ -416,7 +512,7 @@ test "multi sap disable body" {
     multibody_joint_set,
     ccd_solver,
     (),
-    (),
+    EventHandler::new(),
   )
 }
 
@@ -488,7 +584,7 @@ test "rotated cuboid does not generate false contacts" {
     multibody_joints,
     @dynamics.CCDSolver::new(),
     (),
-    (),
+    EventHandler::new(),
   )
   inspect(narrow_phase.contacts.length() == 0, content="true")
   if bodies.get(ball_body) is Some(body) {

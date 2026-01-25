@@ -184,6 +184,26 @@ pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?,
 pub fn ColliderSet::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
 pub fn ColliderSet::take_modified(Self) -> Array[ColliderHandle]
 
+pub(all) enum CollisionEvent {
+  Started(ColliderHandle, ColliderHandle, CollisionEventFlags)
+  Stopped(ColliderHandle, ColliderHandle, CollisionEventFlags)
+}
+pub fn CollisionEvent::collider1(Self) -> ColliderHandle
+pub fn CollisionEvent::collider2(Self) -> ColliderHandle
+pub fn CollisionEvent::removed(Self) -> Bool
+pub fn CollisionEvent::sensor(Self) -> Bool
+pub fn CollisionEvent::started(Self) -> Bool
+pub fn CollisionEvent::stopped(Self) -> Bool
+
+pub struct CollisionEventFlags {
+  mut bits : Int
+}
+pub fn CollisionEventFlags::contains(Self, Self) -> Bool
+pub fn CollisionEventFlags::empty() -> Self
+pub fn CollisionEventFlags::insert(Self, Self) -> Self
+pub fn CollisionEventFlags::removed() -> Self
+pub fn CollisionEventFlags::sensor() -> Self
+
 pub struct ContactPair {
   manifold_count : Int
 }
@@ -207,8 +227,10 @@ pub struct NarrowPhase {
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
 }
 pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
+pub fn NarrowPhase::contact_pairs(Self) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
 pub fn NarrowPhase::contact_pairs_with(Self, ColliderHandle) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
 pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> IntersectionPair?
+pub fn NarrowPhase::intersection_pairs(Self) -> Array[IntersectionPair]
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit

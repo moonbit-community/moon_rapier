@@ -30,7 +30,7 @@ pub fn CollisionPipeline::step(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   physics_hooks : Unit,
-  event_handler : Unit,
+  event_handler : EventHandler,
 ) -> Unit {
   self |> ignore
   islands |> ignore

@@ -15,7 +15,14 @@ import {
 pub struct CollisionPipeline {
 }
 pub fn CollisionPipeline::new() -> Self
-pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, Unit, Unit) -> Unit
+pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, Unit, EventHandler) -> Unit
+
+pub struct EventHandler {
+  collision_events : Array[@collision.CollisionEvent]
+}
+pub fn EventHandler::new() -> Self
+pub fn EventHandler::push_collision_event(Self, @collision.CollisionEvent) -> Unit
+pub fn EventHandler::take_collision_events(Self) -> Array[@collision.CollisionEvent]
 
 pub struct IntegrationParameters {
   dt : Float
@@ -25,9 +32,10 @@ pub fn IntegrationParameters::prediction_distance(Self) -> Float
 pub fn IntegrationParameters::with_dt(Self, Float) -> Self
 
 pub struct PhysicsPipeline {
+  prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags)]
 }
 pub fn PhysicsPipeline::new() -> Self
-pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, Unit, Unit) -> Unit
+pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, Unit, EventHandler) -> Unit
 
 // Type aliases
 

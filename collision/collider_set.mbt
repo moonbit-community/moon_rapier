@@ -1297,6 +1297,28 @@ pub fn NarrowPhase::new() -> NarrowPhase {
 }
 
 ///|
+pub fn NarrowPhase::intersection_pairs(
+  self : NarrowPhase,
+) -> Array[IntersectionPair] {
+  let result : Array[IntersectionPair] = []
+  for i in 0..<self.intersections.length() {
+    result.push(self.intersections[i])
+  }
+  result
+}
+
+///|
+pub fn NarrowPhase::contact_pairs(
+  self : NarrowPhase,
+) -> Array[(ColliderHandle, ColliderHandle, ContactPair)] {
+  let result : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<self.contacts.length() {
+    result.push(self.contacts[i])
+  }
+  result
+}
+
+///|
 fn find_intersection_pair(
   pairs : Array[IntersectionPair],
   first : ColliderHandle,
