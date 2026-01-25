@@ -43,7 +43,7 @@ pub fn PhysicsHooks::filter_intersection_pair(Self, (@dynamics.RigidBodySet, @co
 pub fn PhysicsHooks::new() -> Self
 
 pub struct PhysicsPipeline {
-  prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags)]
+  prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags, Bool)]
 }
 pub fn PhysicsPipeline::new() -> Self
 pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit

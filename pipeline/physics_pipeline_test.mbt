@@ -448,6 +448,141 @@ test "physics pipeline emits collision started/stopped events" {
 }
 
 ///|
+test "physics pipeline stopped event includes removed flag (sensor pair)" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let handler = EventHandler::new()
+  let params = IntegrationParameters::default()
+  let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let c1 = @collision.ColliderBuilder::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .build()
+  let c2 = @collision.ColliderBuilder::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .build()
+  colliders.insert_with_parent(c1, b1, bodies) |> ignore
+  let h2 = colliders.insert_with_parent(c2, b2, bodies)
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  handler.take_collision_events() |> ignore
+  colliders.remove(h2, islands, bodies, true)
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  let ev = handler.take_collision_events()
+  inspect(ev.length() == 1, content="true")
+  match ev[0] {
+    @collision.CollisionEvent::Stopped(_, _, flags) => {
+      inspect(
+        flags.contains(@collision.CollisionEventFlags::sensor()),
+        content="true",
+      )
+      inspect(
+        flags.contains(@collision.CollisionEventFlags::removed()),
+        content="true",
+      )
+    }
+    _ => inspect(false, content="true")
+  }
+}
+
+///|
+test "physics pipeline emits stopped event after removal even if other collider has no events" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let handler = EventHandler::new()
+  let params = IntegrationParameters::default()
+  let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let c1 = @collision.ColliderBuilder::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::CollisionEvents)
+    .build()
+  let c2 = @collision.ColliderBuilder::ball(1.0F).sensor(true).build()
+  let h1 = colliders.insert_with_parent(c1, b1, bodies)
+  colliders.insert_with_parent(c2, b2, bodies) |> ignore
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  let started = handler.take_collision_events()
+  inspect(started.length() == 1, content="true")
+  colliders.remove(h1, islands, bodies, true)
+  pipeline.step(
+    @core.Vec2::zero(),
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  let stopped = handler.take_collision_events()
+  inspect(stopped.length() == 1, content="true")
+  match stopped[0] {
+    @collision.CollisionEvent::Stopped(_, _, flags) =>
+      inspect(
+        flags.contains(@collision.CollisionEventFlags::removed()),
+        content="true",
+      )
+    _ => inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (test_multi_sap_disable_body).
 test "multi sap disable body" {
   let rigid_body_set = @dynamics.RigidBodySet::new()

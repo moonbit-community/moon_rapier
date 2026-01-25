@@ -19,6 +19,7 @@ pub struct PhysicsPipeline {
       @collision.ColliderHandle,
       @collision.ColliderHandle,
       @collision.CollisionEventFlags,
+      Bool,
     ),
   ]
 }
@@ -776,6 +777,7 @@ fn collect_current_collisions(
     @collision.ColliderHandle,
     @collision.ColliderHandle,
     @collision.CollisionEventFlags,
+    Bool,
   ),
 ] {
   let result : Array[
@@ -783,6 +785,7 @@ fn collect_current_collisions(
       @collision.ColliderHandle,
       @collision.ColliderHandle,
       @collision.CollisionEventFlags,
+      Bool,
     ),
   ] = []
   let intersections = narrow_phase.intersection_pairs()
@@ -794,14 +797,20 @@ fn collect_current_collisions(
         pair.collider1,
         pair.collider2,
       )
-      result.push((pair.collider1, pair.collider2, flags))
+      let emit = should_emit_collision_events(
+        colliders,
+        pair.collider1,
+        pair.collider2,
+      )
+      result.push((pair.collider1, pair.collider2, flags, emit))
     }
   }
   let contacts = narrow_phase.contact_pairs()
   for i in 0..<contacts.length() {
     let pair = contacts[i]
     let flags = compute_collision_event_flags(colliders, pair.0, pair.1)
-    result.push((pair.0, pair.1, flags))
+    let emit = should_emit_collision_events(colliders, pair.0, pair.1)
+    result.push((pair.0, pair.1, flags, emit))
   }
   result
 }
@@ -827,8 +836,7 @@ fn PhysicsPipeline::emit_collision_events(
   }
   for i in 0..<current.length() {
     let c = current[i]
-    if !collision_pair_in_list((c.0, c.1), prev_pairs) &&
-      should_emit_collision_events(colliders, c.0, c.1) {
+    if !collision_pair_in_list((c.0, c.1), prev_pairs) && c.3 {
       event_handler.handle_collision_event(
         bodies,
         colliders,
@@ -838,12 +846,15 @@ fn PhysicsPipeline::emit_collision_events(
   }
   for i in 0..<self.prev_collisions.length() {
     let p = self.prev_collisions[i]
-    if !collision_pair_in_list((p.0, p.1), cur_pairs) &&
-      should_emit_collision_events(colliders, p.0, p.1) {
+    if !collision_pair_in_list((p.0, p.1), cur_pairs) && p.3 {
+      let mut flags = p.2
+      if colliders.get(p.0) is None || colliders.get(p.1) is None {
+        flags = flags.insert(@collision.CollisionEventFlags::removed())
+      }
       event_handler.handle_collision_event(
         bodies,
         colliders,
-        @collision.CollisionEvent::Stopped(p.0, p.1, p.2),
+        @collision.CollisionEvent::Stopped(p.0, p.1, flags),
       )
     }
   }
