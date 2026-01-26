@@ -1,0 +1,60 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/rapier_full"
+
+import {
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/control",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
+}
+
+// Values
+pub fn smoke_query() -> Bool
+
+pub fn smoke_scene() -> Bool
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @collision {type BroadPhaseBvh}
+
+pub using @dynamics {type CCDSolver}
+
+pub using @collision {type ColliderBuilder}
+
+pub using @collision {type ColliderSet}
+
+pub using @pipeline {type EventHandler}
+
+pub using @dynamics {type ImpulseJointSet}
+
+pub using @dynamics {type IntegrationParameters}
+
+pub using @dynamics {type IslandManager}
+
+pub using @control {type KinematicCharacterController}
+
+pub using @dynamics {type MultibodyJointSet}
+
+pub using @collision {type NarrowPhase}
+
+pub using @pipeline {type PhysicsHooks}
+
+pub using @pipeline {type PhysicsPipeline}
+
+pub using @collision {type QueryFilter}
+
+pub using @collision {type QueryPipeline}
+
+pub using @collision {type Ray}
+
+pub using @dynamics {type RigidBodyBuilder}
+
+pub using @dynamics {type RigidBodySet}
+
+pub using @collision {type Shape}
+
+// Traits
+
