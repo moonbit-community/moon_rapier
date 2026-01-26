@@ -360,6 +360,7 @@ pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
+pub fn RigidBody::set_ccd_properties(Self, Float, Float) -> Self
 pub fn RigidBody::set_dominance_group(Self, Int) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
@@ -370,6 +371,7 @@ pub fn RigidBody::set_local_mass_properties(Self, @core.MassProperties) -> Self
 pub fn RigidBody::set_next_kinematic_position(Self, @core.Isometry2) -> Self
 pub fn RigidBody::set_next_kinematic_rotation(Self, @core.Rot2) -> Self
 pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
+pub fn RigidBody::set_next_position_internal(Self, @core.Isometry2) -> Self
 pub fn RigidBody::set_position(Self, @core.Isometry2, Bool) -> Self
 pub fn RigidBody::set_rotation(Self, @core.Rot2, Bool) -> Self
 pub fn RigidBody::set_soft_ccd_prediction(Self, Float) -> Self

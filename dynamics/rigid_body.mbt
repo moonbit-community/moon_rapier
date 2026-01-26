@@ -1040,6 +1040,23 @@ pub fn RigidBody::set_soft_ccd_prediction(
 }
 
 ///|
+pub fn RigidBody::set_ccd_properties(
+  self : RigidBody,
+  ccd_thickness : @core.Real,
+  ccd_max_dist : @core.Real,
+) -> RigidBody {
+  let ccd = self.ccd
+  self.ccd = RigidBodyCcd::{
+    ccd_thickness,
+    ccd_max_dist,
+    ccd_active: ccd.ccd_active,
+    ccd_enabled: ccd.ccd_enabled,
+    soft_ccd_prediction: ccd.soft_ccd_prediction,
+  }
+  self
+}
+
+///|
 pub fn RigidBody::soft_ccd_prediction(self : RigidBody) -> @core.Real {
   self.ccd.soft_ccd_prediction
 }
@@ -1251,6 +1268,16 @@ pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
 ///|
 pub fn RigidBody::next_position(self : RigidBody) -> @core.Isometry2 {
   self.position.next_position
+}
+
+///|
+pub fn RigidBody::set_next_position_internal(
+  self : RigidBody,
+  next_position : @core.Isometry2,
+) -> RigidBody {
+  // Used by the pipeline to stage integration results (Rapier parity).
+  self.position.next_position = next_position
+  self
 }
 
 ///|

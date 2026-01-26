@@ -1224,6 +1224,16 @@ pub fn RigidBody::set_soft_ccd_prediction(
 
 ///|
 #declaration_only
+pub fn RigidBody::set_ccd_properties(
+  self : RigidBody,
+  ccd_thickness : @core.Real,
+  ccd_max_dist : @core.Real,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::soft_ccd_prediction(self : RigidBody) -> @core.Real {
   ...
 }
@@ -2200,6 +2210,15 @@ pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
 ///|
 #declaration_only
 pub fn RigidBody::next_position(self : RigidBody) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_next_position_internal(
+  self : RigidBody,
+  next_position : @core.Isometry2,
+) -> RigidBody {
   ...
 }
 

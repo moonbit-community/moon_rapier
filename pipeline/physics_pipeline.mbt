@@ -598,6 +598,9 @@ fn update_body_mass_properties_from_colliders(
       // local pose relative to the rigid-body, then apply `additional_mass` as a mass scaling.
       let attached = colliders.colliders_with_parent(handle)
       let mut mprops = @core.MassProperties::default()
+      let default_ccd = @dynamics.RigidBodyCcd::default()
+      let mut ccd_thickness = default_ccd.ccd_thickness
+      let mut ccd_max_dist = default_ccd.ccd_max_dist
       for j in 0..<attached.length() {
         let co_handle = attached[j]
         if colliders.get(co_handle) is Some(collider) {
@@ -609,6 +612,15 @@ fn update_body_mass_properties_from_colliders(
             mprops = mprops.add(
               collider.mass_properties().transform_by(local_pos),
             )
+            let thickness = shape_ccd_thickness(collider.shape)
+            if thickness < ccd_thickness {
+              ccd_thickness = thickness
+            }
+            let radius = shape_bounding_radius(collider.shape)
+            let dist = collider.local_translation.length() + radius
+            if dist > ccd_max_dist {
+              ccd_max_dist = dist
+            }
           }
         }
       }
@@ -617,6 +629,7 @@ fn update_body_mass_properties_from_colliders(
         mprops = mprops.set_mass(mprops.mass + added_mass, true)
       }
       body.set_local_mass_properties(mprops) |> ignore
+      body.set_ccd_properties(ccd_thickness, ccd_max_dist) |> ignore
     }
   }
 }
@@ -829,7 +842,6 @@ pub fn PhysicsPipeline::step(
   physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
-  ccd_solver |> ignore
   let wake_from_impulse = impulse_joints.take_wake_up()
   for i in 0..<wake_from_impulse.length() {
     islands.wake_up(bodies, wake_from_impulse[i], true)
@@ -873,6 +885,9 @@ pub fn PhysicsPipeline::step(
   }
   let dt = parameters.dt
   if dt > 0.0F {
+    // Keep collider world poses synced with the current rigid-body positions before we
+    // do any CCD shape casts (user may have teleported bodies without touching colliders).
+    broad_phase.update(parameters.prediction_distance(), bodies, colliders)
     for i in 0..<bodies.bodies.length() {
       if bodies.bodies[i] is Some(body) {
         if !body.enabled || body.is_sleeping() {
@@ -894,27 +909,48 @@ pub fn PhysicsPipeline::step(
               body.position(),
               body.center_of_mass(),
             )
-            body.set_position(next_pos, false) |> ignore
+            body.set_next_position_internal(next_pos) |> ignore
           }
           @dynamics.RigidBodyType::KinematicPositionBased => {
             // Rapier parity: advance from position -> next_position, and derive velocities
             // from the kinematic motion so contact resolution sees the correct relative speed.
-            let next_pos = body.next_position()
             let inv_dt = 1.0F / dt
             let derived_vels = @dynamics.RigidBodyPosition::new(
               body.position(),
-              next_pos,
+              body.next_position(),
             ).interpolate_velocity(inv_dt, body.center_of_mass())
             body.set_kinematic_position_based_vels(derived_vels) |> ignore
-            body.set_position(next_pos, false) |> ignore
           }
           @dynamics.RigidBodyType::KinematicVelocityBased => {
             let next_pos = body
               .vels()
               .integrate(dt, body.position(), body.center_of_mass())
-            body.set_position(next_pos, false) |> ignore
+            body.set_next_position_internal(next_pos) |> ignore
           }
           _ => ()
+        }
+      }
+    }
+
+    // Rapier parity: clamp motions of CCD-active bodies before collision detection.
+    let ccd_active = ccd_solver.update_ccd_active_flags(
+      islands, bodies, dt, false,
+    )
+    if ccd_active {
+      let impacts = predict_ccd_impacts_at_next_positions(
+        dt, islands, bodies, colliders,
+      )
+      ccd_solver.clamp_motions(dt, bodies, impacts)
+    }
+
+    // Advance rigid-bodies to their final position.
+    for i in 0..<bodies.bodies.length() {
+      if bodies.bodies[i] is Some(body) {
+        if !body.enabled || body.is_sleeping() {
+          continue
+        }
+        if body.body_type.is_dynamic_or_kinematic() {
+          body.set_position(body.next_position(), false) |> ignore
         }
       }
     }
