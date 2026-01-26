@@ -459,6 +459,41 @@ test "narrow phase contact manifolds: basic shapes" {
   } else {
     inspect(false, content="true")
   }
+
+  // Capsule-cuboid (capsule is collider1, no direct segment-box intersection).
+  let rigid_body_set2 = @dynamics.RigidBodySet::new()
+  let collider_set2 = @collision.ColliderSet::new()
+  let narrow_phase2 = @collision.NarrowPhase::new()
+  let cbody = rigid_body_set2.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::zero())
+    .build(),
+  )
+  let bbox = rigid_body_set2.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(2.4F, 0.0F))
+    .build(),
+  )
+  let capsule2 = collider_set2.insert_with_parent(
+    @collision.ColliderBuilder::capsule_x(1.0F, 0.5F).build(),
+    cbody,
+    rigid_body_set2,
+  )
+  let cuboid2 = collider_set2.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+    bbox,
+    rigid_body_set2,
+  )
+  narrow_phase2.update(rigid_body_set2, collider_set2)
+  let pair2 = narrow_phase2.contact_pair(capsule2, cuboid2)
+  if pair2 is Some(cp) {
+    let m = cp.manifolds()[0]
+    inspect(m.normal().x > 0.0F, content="true")
+    let pt = m.points()[0]
+    inspect(@core.abs(pt.dist() + 0.1F) < 1.0e-2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|

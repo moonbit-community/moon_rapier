@@ -2849,6 +2849,244 @@ fn contact_manifold_cuboid_segment(
 }
 
 ///|
+fn contact_manifold_segment_segment(
+  seg1 : Collider,
+  a1 : @core.Vec2,
+  b1 : @core.Vec2,
+  seg2 : Collider,
+  a2 : @core.Vec2,
+  b2 : @core.Vec2,
+) -> ContactManifold {
+  let (p1, q1) = segment_world_endpoints(
+    seg1.world_translation,
+    seg1.world_rotation,
+    a1,
+    b1,
+  )
+  let (p2, q2) = segment_world_endpoints(
+    seg2.world_translation,
+    seg2.world_rotation,
+    a2,
+    b2,
+  )
+  let (c1, c2, s, t) = closest_points_segment_segment(p1, q1, p2, q2)
+  let d = c2.sub(c1)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let fid1 = if s <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if s >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+  let fid2 = if t <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if t >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: seg1.position().inverse().transform_point(c1),
+        local_p2: seg2.position().inverse().transform_point(c2),
+        dist,
+        fid1,
+        fid2,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_segment_capsule(
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  capsule : Collider,
+  half_height : @core.Real,
+  radius : @core.Real,
+  axis : @core.Vec2,
+) -> ContactManifold {
+  let (sa, sb) = segment_world_endpoints(
+    segment.world_translation,
+    segment.world_rotation,
+    a,
+    b,
+  )
+  let (ca, cb) = capsule_world_segment(
+    capsule.world_translation,
+    capsule.world_rotation,
+    half_height,
+    axis,
+  )
+  let (pseg, pcap, s, t) = closest_points_segment_segment(sa, sb, ca, cb)
+  let d = pcap.sub(pseg)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = pseg
+  let world_p2 = pcap.sub(vec2_scale(normal, radius))
+  let fid1 = if s <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if s >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: segment.position().inverse().transform_point(world_p1),
+        local_p2: capsule.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1,
+        fid2: capsule_segment_feature(t),
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_capsule_segment(
+  capsule : Collider,
+  half_height : @core.Real,
+  radius : @core.Real,
+  axis : @core.Vec2,
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> ContactManifold {
+  let m = contact_manifold_segment_capsule(
+    segment, a, b, capsule, half_height, radius, axis,
+  )
+  let points : Array[ContactManifoldPoint] = []
+  let ps = m.points()
+  for i in 0..<ps.length() {
+    let p = ps[i]
+    points.push(ContactManifoldPoint::{
+      local_p1: p.local_p2(),
+      local_p2: p.local_p1(),
+      dist: p.dist(),
+      fid1: p.fid2(),
+      fid2: p.fid1(),
+    })
+  }
+  ContactManifold::{
+    normal: @core.Vec2::new(-m.normal().x, -m.normal().y),
+    points,
+  }
+}
+
+///|
+fn contact_manifold_capsule_cuboid(
+  capsule : Collider,
+  half_height : @core.Real,
+  radius : @core.Real,
+  axis : @core.Vec2,
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height2 : @core.Real,
+) -> ContactManifold {
+  let (ca, cb) = capsule_world_segment(
+    capsule.world_translation,
+    capsule.world_rotation,
+    half_height,
+    axis,
+  )
+  let rot = @core.Rot2::from_angle(cuboid.world_rotation)
+  let inv = rot.inverse()
+  let la = inv.rotate_vec2(ca.sub(cuboid.world_translation))
+  let lb = inv.rotate_vec2(cb.sub(cuboid.world_translation))
+  let (seg_l, box_l, dist_center, _seg_f, box_f) = closest_points_segment_aabb_local(
+    la, lb, half_width, half_height2,
+  )
+  let box_world = cuboid.world_translation.add(rot.rotate_vec2(box_l))
+  let seg_world = cuboid.world_translation.add(rot.rotate_vec2(seg_l))
+  let d = box_world.sub(seg_world)
+  let mut normal = if dist_center <= 1.0e-12F {
+    let n_local = match box_f {
+      FeatureId::Edge(id) =>
+        if id == 0 {
+          @core.Vec2::new(1.0F, 0.0F)
+        } else if id == 1 {
+          @core.Vec2::new(-1.0F, 0.0F)
+        } else if id == 2 {
+          @core.Vec2::new(0.0F, 1.0F)
+        } else {
+          @core.Vec2::new(0.0F, -1.0F)
+        }
+      _ => @core.Vec2::new(1.0F, 0.0F)
+    }
+    rot.rotate_vec2(n_local)
+  } else {
+    normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  }
+  if normal.dot(cuboid.world_translation.sub(capsule.world_translation)) < 0.0F {
+    normal = @core.Vec2::new(-normal.x, -normal.y)
+  }
+  let signed_dist = dist_center - radius
+  let world_p1 = seg_world.add(vec2_scale(normal, radius))
+  let world_p2 = box_world
+
+  // Compute param along capsule segment for a stable feature id.
+  let (ta, tb) = capsule_world_segment(
+    capsule.world_translation,
+    capsule.world_rotation,
+    half_height,
+    axis,
+  )
+  let (_, t) = closest_point_on_segment_with_param(ta, tb, seg_world)
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: capsule.position().inverse().transform_point(world_p1),
+        local_p2: cuboid.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: capsule_segment_feature(t),
+        fid2: box_f,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_cuboid_capsule(
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  capsule : Collider,
+  half_height2 : @core.Real,
+  radius : @core.Real,
+  axis : @core.Vec2,
+) -> ContactManifold {
+  let m = contact_manifold_capsule_cuboid(
+    capsule, half_height2, radius, axis, cuboid, half_width, half_height,
+  )
+  let points : Array[ContactManifoldPoint] = []
+  let ps = m.points()
+  for i in 0..<ps.length() {
+    let p = ps[i]
+    points.push(ContactManifoldPoint::{
+      local_p1: p.local_p2(),
+      local_p2: p.local_p1(),
+      dist: p.dist(),
+      fid1: p.fid2(),
+      fid2: p.fid1(),
+    })
+  }
+  ContactManifold::{
+    normal: @core.Vec2::new(-m.normal().x, -m.normal().y),
+    points,
+  }
+}
+
+///|
 fn build_contact_pair(
   collider1 : Collider,
   collider2 : Collider,
@@ -2981,25 +3219,106 @@ fn build_contact_pair(
       manifolds.push(
         contact_manifold_cuboid_segment(collider1, hw, hh, collider2, a, b),
       )
-    _ => {
-      let p1 = collider1.world_translation
-      let p2 = collider2.world_translation
-      let d = p2.sub(p1)
-      let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
-      let world_p = @core.Vec2::new((p1.x + p2.x) * 0.5F, (p1.y + p2.y) * 0.5F)
-      manifolds.push(ContactManifold::{
-        normal,
-        points: [
-          ContactManifoldPoint::{
-            local_p1: collider1.position().inverse().transform_point(world_p),
-            local_p2: collider2.position().inverse().transform_point(world_p),
-            dist: 0.0F,
-            fid1: FeatureId::Unknown,
-            fid2: FeatureId::Unknown,
-          },
-        ],
-      })
-    }
+    (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
+      manifolds.push(
+        contact_manifold_segment_segment(collider1, a1, b1, collider2, a2, b2),
+      )
+    (Shape::Segment(a, b), Shape::CapsuleX(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_segment_capsule(
+          collider1,
+          a,
+          b,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+        ),
+      )
+    (Shape::Segment(a, b), Shape::CapsuleY(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_segment_capsule(
+          collider1,
+          a,
+          b,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+        ),
+      )
+    (Shape::CapsuleX(hh, cr), Shape::Segment(a, b)) =>
+      manifolds.push(
+        contact_manifold_capsule_segment(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+          collider2,
+          a,
+          b,
+        ),
+      )
+    (Shape::CapsuleY(hh, cr), Shape::Segment(a, b)) =>
+      manifolds.push(
+        contact_manifold_capsule_segment(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+          collider2,
+          a,
+          b,
+        ),
+      )
+    (Shape::CapsuleX(hh, cr), Shape::Cuboid(hw, hh2)) =>
+      manifolds.push(
+        contact_manifold_capsule_cuboid(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+          collider2,
+          hw,
+          hh2,
+        ),
+      )
+    (Shape::CapsuleY(hh, cr), Shape::Cuboid(hw, hh2)) =>
+      manifolds.push(
+        contact_manifold_capsule_cuboid(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+          collider2,
+          hw,
+          hh2,
+        ),
+      )
+    (Shape::Cuboid(hw, hh2), Shape::CapsuleX(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_cuboid_capsule(
+          collider1,
+          hw,
+          hh2,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+        ),
+      )
+    (Shape::Cuboid(hw, hh2), Shape::CapsuleY(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_cuboid_capsule(
+          collider1,
+          hw,
+          hh2,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+        ),
+      )
   }
   ContactPair::{ manifolds, }
 }
