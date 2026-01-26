@@ -1,0 +1,51 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/rapier_full"
+
+import {
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @collision {type ColliderBuilder}
+
+pub using @collision {type ColliderSet}
+
+pub using @pipeline {type EventHandler}
+
+pub using @dynamics {type GenericJoint}
+
+pub using @dynamics {type ImpulseJointSet}
+
+pub using @dynamics {type IntegrationParameters}
+
+pub using @core {type Isometry2}
+
+pub using @dynamics {type MultibodyJointSet}
+
+pub using @pipeline {type PhysicsHooks}
+
+pub using @pipeline {type PhysicsPipeline}
+
+pub type Real = Float
+
+pub using @dynamics {type RevoluteJointBuilder}
+
+pub using @dynamics {type RigidBodyBuilder}
+
+pub using @dynamics {type RigidBodySet}
+
+pub using @core {type Rot2}
+
+pub using @core {type Vec2}
+
+// Traits
+

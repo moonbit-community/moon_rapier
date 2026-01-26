@@ -341,10 +341,13 @@ fn solve_joint_velocity_constraints(
         if c.motor_enabled {
           let error = joint_wrap_angle_pi(rel_angle - c.motor.target_pos)
           let vel_error = rel_w - c.motor.target_vel
-          let lambda = -(vel_error +
-            c.motor.stiffness * error +
-            c.motor.damping * vel_error) *
-            c.inv_mass_ang
+          // Treat `stiffness` and `damping` as torque spring constants (rapier style) and
+          // compute a stable angular impulse using an implicit damping term.
+          let inv_i_sum = 1.0F / c.inv_mass_ang
+          let denom = 1.0F + c.motor.damping * dt * inv_i_sum
+          let lambda = -(c.motor.stiffness * error + c.motor.damping * vel_error) *
+            dt /
+            denom
           let max_impulse = c.motor.max_force * dt
           let old = constraints[i].motor_impulse
           let mut new_impulse = old + lambda
