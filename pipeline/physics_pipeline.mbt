@@ -1006,6 +1006,7 @@ pub fn PhysicsPipeline::step(
       physics_hooks, event_handler,
     )
     solve_contacts(
+      parameters,
       bodies,
       colliders,
       narrow_phase,

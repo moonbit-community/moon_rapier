@@ -86,6 +86,7 @@ test "contact solver warmstart uses cached impulses" {
   let p_cold = points_cold[0]
   let cache_cold : Array[ContactImpulseCacheEntry] = []
   solve_contacts(
+    @dynamics.IntegrationParameters::default(),
     bodies_cold,
     colliders_cold,
     narrow_phase_cold,
@@ -132,6 +133,7 @@ test "contact solver warmstart uses cached impulses" {
     impulse_t: 0.0F,
   })
   solve_contacts(
+    @dynamics.IntegrationParameters::default(),
     bodies_warm,
     colliders_warm,
     narrow_phase_warm,

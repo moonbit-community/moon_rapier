@@ -8,7 +8,7 @@ import {
 }
 
 // Values
-pub fn solve_contacts(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
+pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
 // Errors
 

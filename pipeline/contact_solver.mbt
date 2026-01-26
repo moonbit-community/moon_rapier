@@ -32,9 +32,6 @@ const SOLVER_PENETRATION_SLOP : @core.Real = 0.0F
 const SOLVER_POSITION_CORRECTION_PERCENT : @core.Real = 1.0F
 
 ///|
-const SOLVER_ITERATIONS : Int = 8
-
-///|
 pub struct ContactImpulseCacheEntry {
   collider1 : @collision.ColliderHandle
   collider2 : @collision.ColliderHandle
@@ -190,6 +187,7 @@ fn build_constraints(
   narrow_phase : @collision.NarrowPhase,
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
+  warmstart_coefficient : @core.Real,
 ) -> Array[SolverConstraint] {
   let pairs = narrow_phase.contact_pairs()
   let constraints : Array[SolverConstraint] = []
@@ -350,8 +348,16 @@ fn build_constraints(
             1.0F / denom_t
           }
           let cached = cache_find(cache, h1, h2, p.fid1(), p.fid2())
-          let impulse_n = if cached is Some(e) { e.impulse_n } else { 0.0F }
-          let impulse_t = if cached is Some(e) { e.impulse_t } else { 0.0F }
+          let impulse_n = if cached is Some(e) {
+            e.impulse_n * warmstart_coefficient
+          } else {
+            0.0F
+          }
+          let impulse_t = if cached is Some(e) {
+            e.impulse_t * warmstart_coefficient
+          } else {
+            0.0F
+          }
           constraints.push(SolverConstraint::{
             collider1: h1,
             collider2: h2,
@@ -424,11 +430,13 @@ fn solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
   dt : @core.Real,
   constraints : Array[SolverConstraint],
+  iterations : Int,
 ) -> Unit {
   if dt <= 0.0F {
     return
   }
-  for _ in 0..<SOLVER_ITERATIONS {
+  let iters = if iterations <= 0 { 1 } else { iterations }
+  for _ in 0..<iters {
     for i in 0..<constraints.length() {
       let c = constraints[i]
       let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
@@ -681,6 +689,7 @@ fn update_cache(
 
 ///|
 pub fn solve_contacts(
+  parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   narrow_phase : @collision.NarrowPhase,
@@ -688,11 +697,21 @@ pub fn solve_contacts(
   event_handler : EventHandler,
   cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
+  let warmstart_coefficient = if parameters.warmstart_coefficient < 0.0F {
+    0.0F
+  } else {
+    parameters.warmstart_coefficient
+  }
   let constraints = build_constraints(
-    bodies, colliders, narrow_phase, dt, cache,
+    bodies, colliders, narrow_phase, dt, cache, warmstart_coefficient,
   )
   warmstart(bodies, constraints)
-  solve_velocity_constraints(bodies, dt, constraints)
+  solve_velocity_constraints(
+    bodies,
+    dt,
+    constraints,
+    parameters.num_solver_iterations,
+  )
   emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)
   position_correction(bodies, constraints)
   update_cache(cache, constraints)
