@@ -8,6 +8,7 @@ import {
 }
 
 // Values
+pub fn solve_contacts(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler) -> Unit
 
 // Errors
 

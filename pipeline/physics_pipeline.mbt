@@ -30,26 +30,6 @@ pub fn PhysicsPipeline::new() -> PhysicsPipeline {
 }
 
 ///|
-fn is_dynamic_body(body : @dynamics.RigidBody) -> Bool {
-  match body.body_type {
-    @dynamics.RigidBodyType::Dynamic => true
-    _ => false
-  }
-}
-
-///|
-fn apply_body_translation(
-  bodies : @dynamics.RigidBodySet,
-  handle : @dynamics.RigidBodyHandle,
-  delta : @core.Vec2,
-) -> Unit {
-  if bodies.get_mut(handle) is Some(body) {
-    let translation = body.translation()
-    body.set_translation(translation.add(delta), true) |> ignore
-  }
-}
-
-///|
 fn min_value(a : @core.Real, b : @core.Real) -> @core.Real {
   if a < b {
     a
@@ -571,117 +551,6 @@ fn separation_vector(
 }
 
 ///|
-fn resolve_contact(
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  first : @collision.ColliderHandle,
-  second : @collision.ColliderHandle,
-  dt : @core.Real,
-  event_handler : EventHandler,
-) -> Unit {
-  if colliders.get(first) is Some(collider1) &&
-    colliders.get(second) is Some(collider2) {
-    if collider1.sensor || collider2.sensor {
-      return
-    }
-    // Match Rapier behavior: solver groups only affect force/impulse computation.
-    // In this simplified pipeline, contact "resolution" is the only force we apply,
-    // so we skip it when solver groups don't match.
-    if !collider1.solver_groups().test_groups(collider2.solver_groups()) {
-      return
-    }
-    let pos1 = collider1.translation()
-    let pos2 = collider2.translation()
-    let separation = separation_vector(
-      collider1.shape,
-      pos1,
-      collider1.rotation(),
-      collider2.shape,
-      pos2,
-      collider2.rotation(),
-    )
-    if separation is None {
-      return
-    }
-    let sep = separation.unwrap()
-    // Approximate the contact force magnitude from the penetration correction applied this step.
-    // This is a placeholder until a proper impulse-based solver exists.
-    let max_threshold = 1.0e30F
-    let contact_flag = @collision.ActiveEvents::contact_force_events()
-    let threshold1 = if collider1.active_events().contains(contact_flag) {
-      collider1.contact_force_event_threshold()
-    } else {
-      max_threshold
-    }
-    let threshold2 = if collider2.active_events().contains(contact_flag) {
-      collider2.contact_force_event_threshold()
-    } else {
-      max_threshold
-    }
-    let threshold = if threshold1 < threshold2 {
-      threshold1
-    } else {
-      threshold2
-    }
-    if threshold < max_threshold && dt > 0.0F {
-      let len = sep.length()
-      let magnitude = len / dt
-      if magnitude > threshold {
-        let dir = if len <= 1.0e-6F {
-          @core.Vec2::new(1.0F, 0.0F)
-        } else {
-          sep.normalize()
-        }
-        let total_force = @core.Vec2::new(dir.x * magnitude, dir.y * magnitude)
-        event_handler.handle_contact_force_event(
-          dt,
-          bodies,
-          colliders,
-          @collision.ContactForceEvent::new(
-            first, second, total_force, magnitude, dir, magnitude,
-          ),
-        )
-      }
-    }
-    let mut move1 = false
-    let mut move2 = false
-    if collider1.parent is Some(parent1) {
-      if bodies.get(parent1) is Some(body1) {
-        move1 = body1.enabled && is_dynamic_body(body1)
-      }
-    }
-    if collider2.parent is Some(parent2) {
-      if bodies.get(parent2) is Some(body2) {
-        move2 = body2.enabled && is_dynamic_body(body2)
-      }
-    }
-    if collider1.parent is Some(parent1) && collider2.parent is Some(parent2) {
-      if move1 && move2 {
-        let half = @core.Vec2::new(sep.x * 0.5F, sep.y * 0.5F)
-        apply_body_translation(bodies, parent1, half)
-        apply_body_translation(
-          bodies,
-          parent2,
-          @core.Vec2::new(-half.x, -half.y),
-        )
-      } else if move1 {
-        apply_body_translation(bodies, parent1, sep)
-      } else if move2 {
-        apply_body_translation(bodies, parent2, @core.Vec2::new(-sep.x, -sep.y))
-      }
-    } else if collider1.parent is Some(parent1) {
-      if move1 {
-        apply_body_translation(bodies, parent1, sep)
-      }
-    } else if collider2.parent is Some(parent2) {
-      if move2 {
-        apply_body_translation(bodies, parent2, @core.Vec2::new(-sep.x, -sep.y))
-      }
-    }
-  }
-}
-
-///|
 fn handle_user_changes_to_bodies(
   islands : @dynamics.IslandManager,
   bodies : @dynamics.RigidBodySet,
@@ -963,12 +832,38 @@ pub fn PhysicsPipeline::step(
     )
   }
   let dt = parameters.dt
-  let gravity_step = @core.Vec2::new(gravity.x * dt, gravity.y * dt)
-  for i in 0..<bodies.bodies.length() {
-    if bodies.bodies[i] is Some(body) {
-      if body.enabled && is_dynamic_body(body) && !body.is_sleeping() {
-        let translation = body.translation()
-        body.set_translation(translation.add(gravity_step), true) |> ignore
+  if dt > 0.0F {
+    for i in 0..<bodies.bodies.length() {
+      if bodies.bodies[i] is Some(body) {
+        if !body.enabled || body.is_sleeping() {
+          continue
+        }
+        match body.body_type {
+          @dynamics.RigidBodyType::Dynamic => {
+            // Gravity is acceleration, so it does not depend on the body's mass.
+            let scale = body.gravity_scale()
+            let gravity_step = @core.Vec2::new(
+              gravity.x * dt * scale,
+              gravity.y * dt * scale,
+            )
+            body.set_linvel(body.linvel().add(gravity_step), false) |> ignore
+            let vels = body.vels().apply_damping(dt, body.damping())
+            body.set_vels(vels, false) |> ignore
+            let next_pos = vels.integrate(
+              dt,
+              body.position(),
+              body.center_of_mass(),
+            )
+            body.set_position(next_pos, false) |> ignore
+          }
+          @dynamics.RigidBodyType::KinematicVelocityBased => {
+            let next_pos = body
+              .vels()
+              .integrate(dt, body.position(), body.center_of_mass())
+            body.set_position(next_pos, false) |> ignore
+          }
+          _ => ()
+        }
       }
     }
   }
@@ -983,10 +878,7 @@ pub fn PhysicsPipeline::step(
     physics_hooks,
     event_handler,
   )
-  for i in 0..<narrow_phase.contacts.length() {
-    let pair = narrow_phase.contacts[i]
-    resolve_contact(bodies, colliders, pair.0, pair.1, dt, event_handler)
-  }
+  solve_contacts(bodies, colliders, narrow_phase, dt, event_handler)
   collision_pipeline.step(
     parameters.prediction_distance(),
     islands,
