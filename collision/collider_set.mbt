@@ -1946,6 +1946,8 @@ pub fn NarrowPhase::update(
   self : NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
   let pairs : Array[(ColliderHandle, ColliderHandle)] = []
@@ -1966,7 +1968,9 @@ pub fn NarrowPhase::update(
       }
     }
   }
-  self.update_with_pairs(bodies, colliders, pairs)
+  self.update_with_pairs(
+    bodies, colliders, pairs, impulse_joints, multibody_joints,
+  )
 }
 
 ///|
@@ -3329,7 +3333,10 @@ pub fn NarrowPhase::update_with_pairs(
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
   pairs : Array[(ColliderHandle, ColliderHandle)],
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {
+  multibody_joints |> ignore
   let intersections : Array[IntersectionPair] = []
   let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
   for i in 0..<pairs.length() {
@@ -3343,6 +3350,23 @@ pub fn NarrowPhase::update_with_pairs(
       }
       if is_same_parent(collider1, collider2) {
         continue
+      }
+      // Deal with contacts disabled between bodies attached by impulse joints (Rapier parity).
+      if collider1.parent is Some(parent1) && collider2.parent is Some(parent2) {
+        if !@dynamics.RigidBodyHandle::equals(parent1, parent2) {
+          let joints = impulse_joints.joints_between(parent1, parent2)
+          let mut disabled = false
+          for j in 0..<joints.length() {
+            let joint = joints[j].1
+            if !joint.data.contacts_enabled {
+              disabled = true
+              break
+            }
+          }
+          if disabled {
+            continue
+          }
+        }
       }
       let mut rb_type1 = @dynamics.RigidBodyType::Fixed
       let mut rb_type2 = @dynamics.RigidBodyType::Fixed

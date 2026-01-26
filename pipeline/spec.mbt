@@ -167,6 +167,8 @@ pub fn CollisionPipeline::step(
   narrow_phase : @collision.NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {

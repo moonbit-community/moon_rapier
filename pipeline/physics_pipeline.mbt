@@ -685,6 +685,60 @@ fn collision_pair_in_list(
 }
 
 ///|
+fn solve_joints_and_contacts_interleaved(
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  narrow_phase : @collision.NarrowPhase,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  dt : @core.Real,
+  event_handler : EventHandler,
+  contact_cache : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  let joint_constraints = build_joint_constraints(
+    parameters, bodies, impulse_joints, dt,
+  )
+  let contact_constraints = build_constraints(
+    bodies,
+    colliders,
+    narrow_phase,
+    dt,
+    contact_cache,
+    parameters.warmstart_coefficient,
+  )
+  if joint_constraints.length() > 0 {
+    warmstart_joints(bodies, joint_constraints)
+  }
+  if contact_constraints.length() > 0 {
+    warmstart(bodies, contact_constraints)
+  }
+  let iters = if parameters.num_solver_iterations <= 0 {
+    1
+  } else {
+    parameters.num_solver_iterations
+  }
+  for _ in 0..<iters {
+    if joint_constraints.length() > 0 {
+      solve_joint_velocity_constraints(bodies, joint_constraints, dt, 1)
+    }
+    if contact_constraints.length() > 0 {
+      solve_velocity_constraints(bodies, dt, contact_constraints, 1)
+    }
+  }
+  if joint_constraints.length() > 0 {
+    position_correction_joints(bodies, joint_constraints)
+    writeback_joint_impulses(impulse_joints, joint_constraints)
+  }
+  if contact_constraints.length() > 0 {
+    position_correction(bodies, contact_constraints)
+    emit_contact_force_events(
+      bodies, colliders, dt, event_handler, contact_constraints,
+    )
+    update_cache(contact_cache, contact_constraints)
+  }
+}
+
+///|
 fn compute_collision_event_flags(
   colliders : @collision.ColliderSet,
   h1 : @collision.ColliderHandle,
@@ -1003,21 +1057,21 @@ pub fn PhysicsPipeline::step(
     }
     collision_pipeline.step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
-      physics_hooks, event_handler,
+      impulse_joints, multibody_joints, physics_hooks, event_handler,
     )
-    solve_impulse_joints(parameters, bodies, impulse_joints, dt)
-    solve_contacts(
+    solve_joints_and_contacts_interleaved(
       parameters,
       bodies,
       colliders,
       narrow_phase,
+      impulse_joints,
       dt,
       event_handler,
       self.contact_solver_cache,
     )
     collision_pipeline.step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
-      physics_hooks, event_handler,
+      impulse_joints, multibody_joints, physics_hooks, event_handler,
     )
   }
   // Only emit collision events after the final collision detection pass.

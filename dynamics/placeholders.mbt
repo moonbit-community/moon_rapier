@@ -1169,16 +1169,61 @@ pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
 
 ///|
 pub struct GenericJoint {
-  data : RevoluteJoint
-  contacts_enabled : Bool
+  mut local_frame1 : @core.Isometry2
+  mut local_frame2 : @core.Isometry2
+  mut locked_axes : JointAxesMask
+  mut limit_axes : JointAxesMask
+  mut motor_axes : JointAxesMask
+  mut coupled_axes : JointAxesMask
+  mut limits : JointLimits3
+  mut motors : JointMotors3
+  mut softness : SpringCoefficients
+  mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
 }
 
 ///|
-pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
+pub fn GenericJoint::default() -> GenericJoint {
   {
-    data: joint,
+    local_frame1: @core.Isometry2::identity(),
+    local_frame2: @core.Isometry2::identity(),
+    locked_axes: JointAxesMask::empty(),
+    limit_axes: JointAxesMask::empty(),
+    motor_axes: JointAxesMask::empty(),
+    coupled_axes: JointAxesMask::empty(),
+    limits: JointLimits3::default(),
+    motors: JointMotors3::default(),
+    softness: SpringCoefficients::joint_defaults(),
+    contacts_enabled: true,
+    enabled: JointEnabled::Enabled,
+    user_data: 0,
+  }
+}
+
+///|
+pub fn GenericJoint::new(locked_axes : JointAxesMask) -> GenericJoint {
+  let j = GenericJoint::default()
+  j.locked_axes = locked_axes
+  j
+}
+
+///|
+pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
+  let anchor1 = joint.local_anchor1()
+  let anchor2 = joint.local_anchor2()
+  let frame1 = @core.Isometry2::from_translation(anchor1)
+  let frame2 = @core.Isometry2::from_translation(anchor2)
+  GenericJoint::{
+    local_frame1: frame1,
+    local_frame2: frame2,
+    locked_axes: JointAxesMask::locked_revolute_axes(),
+    limit_axes: JointAxesMask::empty(),
+    motor_axes: JointAxesMask::empty(),
+    coupled_axes: JointAxesMask::empty(),
+    limits: JointLimits3::default(),
+    motors: JointMotors3::default(),
+    softness: SpringCoefficients::joint_defaults(),
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
@@ -1188,6 +1233,174 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
 ///|
 pub fn GenericJoint::is_enabled(self : GenericJoint) -> Bool {
   self.enabled is JointEnabled::Enabled
+}
+
+///|
+pub fn GenericJoint::local_frame1(self : GenericJoint) -> @core.Isometry2 {
+  self.local_frame1
+}
+
+///|
+pub fn GenericJoint::local_frame2(self : GenericJoint) -> @core.Isometry2 {
+  self.local_frame2
+}
+
+///|
+pub fn GenericJoint::set_local_frame1(
+  self : GenericJoint,
+  frame : @core.Isometry2,
+) -> GenericJoint {
+  self.local_frame1 = frame
+  self
+}
+
+///|
+pub fn GenericJoint::set_local_frame2(
+  self : GenericJoint,
+  frame : @core.Isometry2,
+) -> GenericJoint {
+  self.local_frame2 = frame
+  self
+}
+
+///|
+pub fn GenericJoint::local_anchor1(self : GenericJoint) -> @core.Vec2 {
+  self.local_frame1.translation
+}
+
+///|
+pub fn GenericJoint::local_anchor2(self : GenericJoint) -> @core.Vec2 {
+  self.local_frame2.translation
+}
+
+///|
+pub fn GenericJoint::set_local_anchor1(
+  self : GenericJoint,
+  anchor : @core.Vec2,
+) -> GenericJoint {
+  self.local_frame1 = @core.Isometry2::new(anchor, self.local_frame1.rotation)
+  self
+}
+
+///|
+pub fn GenericJoint::set_local_anchor2(
+  self : GenericJoint,
+  anchor : @core.Vec2,
+) -> GenericJoint {
+  self.local_frame2 = @core.Isometry2::new(anchor, self.local_frame2.rotation)
+  self
+}
+
+///|
+pub fn GenericJoint::locked_axes(self : GenericJoint) -> JointAxesMask {
+  self.locked_axes
+}
+
+///|
+pub fn GenericJoint::limit_axes(self : GenericJoint) -> JointAxesMask {
+  self.limit_axes
+}
+
+///|
+pub fn GenericJoint::motor_axes(self : GenericJoint) -> JointAxesMask {
+  self.motor_axes
+}
+
+///|
+pub fn GenericJoint::coupled_axes(self : GenericJoint) -> JointAxesMask {
+  self.coupled_axes
+}
+
+///|
+pub fn GenericJoint::set_locked_axes(
+  self : GenericJoint,
+  axes : JointAxesMask,
+) -> GenericJoint {
+  self.locked_axes = axes
+  self
+}
+
+///|
+pub fn GenericJoint::set_limit_axes(
+  self : GenericJoint,
+  axes : JointAxesMask,
+) -> GenericJoint {
+  self.limit_axes = axes
+  self
+}
+
+///|
+pub fn GenericJoint::set_motor_axes(
+  self : GenericJoint,
+  axes : JointAxesMask,
+) -> GenericJoint {
+  self.motor_axes = axes
+  self
+}
+
+///|
+pub fn GenericJoint::set_coupled_axes(
+  self : GenericJoint,
+  axes : JointAxesMask,
+) -> GenericJoint {
+  self.coupled_axes = axes
+  self
+}
+
+///|
+pub fn GenericJoint::limits(self : GenericJoint) -> JointLimits3 {
+  self.limits
+}
+
+///|
+pub fn GenericJoint::motors(self : GenericJoint) -> JointMotors3 {
+  self.motors
+}
+
+///|
+pub fn GenericJoint::set_limits(
+  self : GenericJoint,
+  limits : JointLimits3,
+) -> GenericJoint {
+  self.limits = limits
+  self
+}
+
+///|
+pub fn GenericJoint::set_motors(
+  self : GenericJoint,
+  motors : JointMotors3,
+) -> GenericJoint {
+  self.motors = motors
+  self
+}
+
+///|
+pub fn GenericJoint::softness(self : GenericJoint) -> SpringCoefficients {
+  self.softness
+}
+
+///|
+pub fn GenericJoint::set_softness(
+  self : GenericJoint,
+  softness : SpringCoefficients,
+) -> GenericJoint {
+  self.softness = softness
+  self
+}
+
+///|
+pub fn GenericJoint::contacts_enabled(self : GenericJoint) -> Bool {
+  self.contacts_enabled
+}
+
+///|
+pub fn GenericJoint::set_contacts_enabled(
+  self : GenericJoint,
+  enabled : Bool,
+) -> GenericJoint {
+  self.contacts_enabled = enabled
+  self
 }
 
 ///|
@@ -1522,8 +1735,18 @@ pub fn ImpulseJointSet::insert(
   }
   let node1 = self.ensure_graph_node(body1)
   let node2 = self.ensure_graph_node(body2)
+  // Make sure each stored joint has its own backing data, even if the caller reuses the
+  // same GenericJoint value for multiple inserts.
   let joint_data = GenericJoint::{
-    data: joint.data,
+    local_frame1: joint.local_frame1,
+    local_frame2: joint.local_frame2,
+    locked_axes: joint.locked_axes,
+    limit_axes: joint.limit_axes,
+    motor_axes: joint.motor_axes,
+    coupled_axes: joint.coupled_axes,
+    limits: joint.limits,
+    motors: joint.motors,
+    softness: joint.softness,
     contacts_enabled: joint.contacts_enabled,
     enabled: joint.enabled,
     user_data: joint.user_data,

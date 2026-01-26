@@ -318,7 +318,11 @@ test "narrow phase contact manifolds: basic shapes" {
       b2,
       rigid_body_set,
     )
-    narrow_phase.update(rigid_body_set, collider_set)
+    let impulse_joints = @dynamics.ImpulseJointSet::new()
+    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    narrow_phase.update(
+      rigid_body_set, collider_set, impulse_joints, multibody_joints,
+    )
     let pair = narrow_phase.contact_pair(c1, c2)
     if pair is Some(cp) {
       inspect(cp.manifold_count() == 1, content="true")
@@ -357,7 +361,11 @@ test "narrow phase contact manifolds: basic shapes" {
       b4,
       rigid_body_set,
     )
-    narrow_phase.update(rigid_body_set, collider_set)
+    let impulse_joints = @dynamics.ImpulseJointSet::new()
+    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    narrow_phase.update(
+      rigid_body_set, collider_set, impulse_joints, multibody_joints,
+    )
     let pair2 = narrow_phase.contact_pair(ball, cuboid)
     if pair2 is Some(cp) {
       inspect(cp.manifold_count() == 1, content="true")
@@ -399,7 +407,11 @@ test "narrow phase contact manifolds: basic shapes" {
       b,
       rigid_body_set,
     )
-    narrow_phase.update(rigid_body_set, collider_set)
+    let impulse_joints = @dynamics.ImpulseJointSet::new()
+    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    narrow_phase.update(
+      rigid_body_set, collider_set, impulse_joints, multibody_joints,
+    )
     let pair = narrow_phase.contact_pair(ca, cb)
     if pair is Some(cp) {
       inspect(cp.manifold_count() == 1, content="true")
@@ -447,7 +459,11 @@ test "narrow phase contact manifolds: basic shapes" {
     b,
     rigid_body_set,
   )
-  narrow_phase.update(rigid_body_set, collider_set)
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  narrow_phase.update(
+    rigid_body_set, collider_set, impulse_joints, multibody_joints,
+  )
   let pair = narrow_phase.contact_pair(capsule, ball)
   if pair is Some(cp) {
     let pt = cp.manifolds()[0].points()[0]
@@ -484,7 +500,11 @@ test "narrow phase contact manifolds: basic shapes" {
     bbox,
     rigid_body_set2,
   )
-  narrow_phase2.update(rigid_body_set2, collider_set2)
+  let impulse_joints2 = @dynamics.ImpulseJointSet::new()
+  let multibody_joints2 = @dynamics.MultibodyJointSet::new()
+  narrow_phase2.update(
+    rigid_body_set2, collider_set2, impulse_joints2, multibody_joints2,
+  )
   let pair2 = narrow_phase2.contact_pair(capsule2, cuboid2)
   if pair2 is Some(cp) {
     let m = cp.manifolds()[0]

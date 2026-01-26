@@ -29,6 +29,8 @@ pub fn CollisionPipeline::step(
   narrow_phase : @collision.NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
@@ -90,5 +92,7 @@ pub fn CollisionPipeline::step(
       filtered_pairs.push(pair)
     }
   }
-  narrow_phase.update_with_pairs(bodies, colliders, filtered_pairs)
+  narrow_phase.update_with_pairs(
+    bodies, colliders, filtered_pairs, impulse_joints, multibody_joints,
+  )
 }

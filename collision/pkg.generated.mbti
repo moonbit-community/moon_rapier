@@ -280,8 +280,8 @@ pub fn NarrowPhase::intersection_pair(Self, ColliderHandle, ColliderHandle) -> I
 pub fn NarrowPhase::intersection_pairs(Self) -> Array[IntersectionPair]
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self
-pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
-pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)]) -> Unit
+pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
+pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
 
 pub struct NonlinearRigidMotion {
   start_pos : @core.Isometry2

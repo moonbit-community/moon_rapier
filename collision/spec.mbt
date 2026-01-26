@@ -999,6 +999,8 @@ pub fn NarrowPhase::update(
   self : NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {
   ...
 }
@@ -1010,6 +1012,8 @@ pub fn NarrowPhase::update_with_pairs(
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
   pairs : Array[(ColliderHandle, ColliderHandle)],
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {
   ...
 }

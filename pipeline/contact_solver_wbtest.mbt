@@ -52,6 +52,8 @@ fn setup_overlapping_balls() -> (
 
   // The solver relies on non-zero mass properties.
   update_body_mass_properties_from_colliders(bodies, colliders, [b1, b2])
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
   CollisionPipeline::new().step(
     0.0F,
     islands,
@@ -59,6 +61,8 @@ fn setup_overlapping_balls() -> (
     narrow_phase,
     bodies,
     colliders,
+    impulse_joints,
+    multibody_joints,
     PhysicsHooks::new(),
     EventHandler::new(),
   )

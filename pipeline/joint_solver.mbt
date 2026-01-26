@@ -100,8 +100,8 @@ fn build_joint_constraints(
     if !rb1.is_enabled() || !rb2.is_enabled() {
       continue
     }
-    let local_anchor1 = joint.data.data.local_anchor1()
-    let local_anchor2 = joint.data.data.local_anchor2()
+    let local_anchor1 = joint.data.local_anchor1()
+    let local_anchor2 = joint.data.local_anchor2()
     let world1 = rb1.position().transform_point(local_anchor1)
     let world2 = rb2.position().transform_point(local_anchor2)
     let error = world1.sub(world2)
@@ -310,31 +310,4 @@ fn writeback_joint_impulses(
     let c = constraints[i]
     impulse_joints.set_impulses(c.handle, c.impulses)
   }
-}
-
-///|
-fn solve_impulse_joints(
-  parameters : IntegrationParameters,
-  bodies : @dynamics.RigidBodySet,
-  impulse_joints : @dynamics.ImpulseJointSet,
-  dt : @core.Real,
-) -> Unit {
-  if dt <= 0.0F || impulse_joints.len() == 0 {
-    return
-  }
-  let constraints = build_joint_constraints(
-    parameters, bodies, impulse_joints, dt,
-  )
-  if constraints.length() == 0 {
-    return
-  }
-  warmstart_joints(bodies, constraints)
-  solve_joint_velocity_constraints(
-    bodies,
-    constraints,
-    dt,
-    parameters.num_solver_iterations,
-  )
-  position_correction_joints(bodies, constraints)
-  writeback_joint_impulses(impulse_joints, constraints)
 }

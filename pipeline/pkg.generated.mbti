@@ -16,7 +16,7 @@ pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @
 pub struct CollisionPipeline {
 }
 pub fn CollisionPipeline::new() -> Self
-pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, EventHandler) -> Unit
+pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, PhysicsHooks, EventHandler) -> Unit
 
 pub struct ContactImpulseCacheEntry {
   collider1 : @collision.ColliderHandle

@@ -1793,6 +1793,21 @@ pub fn GenericJoint::is_enabled(self : GenericJoint) -> Bool {
 
 ///|
 #declaration_only
+pub fn GenericJoint::contacts_enabled(self : GenericJoint) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn GenericJoint::set_contacts_enabled(
+  self : GenericJoint,
+  enabled : Bool,
+) -> GenericJoint {
+  ...
+}
+
+///|
+#declaration_only
 pub fn GenericJoint::set_enabled(
   self : GenericJoint,
   enabled : Bool,

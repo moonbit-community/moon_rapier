@@ -40,15 +40,49 @@ pub fn DVector::len(Self) -> Int
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
 pub struct GenericJoint {
-  data : RevoluteJoint
-  contacts_enabled : Bool
+  mut local_frame1 : @core.Isometry2
+  mut local_frame2 : @core.Isometry2
+  mut locked_axes : JointAxesMask
+  mut limit_axes : JointAxesMask
+  mut motor_axes : JointAxesMask
+  mut coupled_axes : JointAxesMask
+  mut limits : JointLimits3
+  mut motors : JointMotors3
+  mut softness : SpringCoefficients
+  mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
 }
+pub fn GenericJoint::contacts_enabled(Self) -> Bool
+pub fn GenericJoint::coupled_axes(Self) -> JointAxesMask
+pub fn GenericJoint::default() -> Self
 pub fn GenericJoint::from_revolute(RevoluteJoint) -> Self
 pub fn GenericJoint::is_enabled(Self) -> Bool
+pub fn GenericJoint::limit_axes(Self) -> JointAxesMask
+pub fn GenericJoint::limits(Self) -> JointLimits3
+pub fn GenericJoint::local_anchor1(Self) -> @core.Vec2
+pub fn GenericJoint::local_anchor2(Self) -> @core.Vec2
+pub fn GenericJoint::local_frame1(Self) -> @core.Isometry2
+pub fn GenericJoint::local_frame2(Self) -> @core.Isometry2
+pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
+pub fn GenericJoint::motor_axes(Self) -> JointAxesMask
+pub fn GenericJoint::motors(Self) -> JointMotors3
+pub fn GenericJoint::new(JointAxesMask) -> Self
+pub fn GenericJoint::set_contacts_enabled(Self, Bool) -> Self
+pub fn GenericJoint::set_coupled_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_enabled(Self, Bool) -> Self
 pub fn GenericJoint::set_enabled_by_attached_body(Self, Bool) -> Self
+pub fn GenericJoint::set_limit_axes(Self, JointAxesMask) -> Self
+pub fn GenericJoint::set_limits(Self, JointLimits3) -> Self
+pub fn GenericJoint::set_local_anchor1(Self, @core.Vec2) -> Self
+pub fn GenericJoint::set_local_anchor2(Self, @core.Vec2) -> Self
+pub fn GenericJoint::set_local_frame1(Self, @core.Isometry2) -> Self
+pub fn GenericJoint::set_local_frame2(Self, @core.Isometry2) -> Self
+pub fn GenericJoint::set_locked_axes(Self, JointAxesMask) -> Self
+pub fn GenericJoint::set_motor_axes(Self, JointAxesMask) -> Self
+pub fn GenericJoint::set_motors(Self, JointMotors3) -> Self
+pub fn GenericJoint::set_softness(Self, SpringCoefficients) -> Self
+pub fn GenericJoint::softness(Self) -> SpringCoefficients
 
 pub struct Group {
   value : Int
@@ -225,14 +259,75 @@ type Jacobian
 pub fn Jacobian::equals(Self, Self) -> Bool
 pub fn Jacobian::zeros(Int) -> Self
 
+pub struct JointAxesMask {
+  bits : Int
+}
+pub fn JointAxesMask::ang_axes() -> Self
+pub fn JointAxesMask::ang_z() -> Self
+pub fn JointAxesMask::bits(Self) -> Int
+pub fn JointAxesMask::contains(Self, Self) -> Bool
+pub fn JointAxesMask::empty() -> Self
+pub fn JointAxesMask::intersection(Self, Self) -> Self
+pub fn JointAxesMask::lin_axes() -> Self
+pub fn JointAxesMask::lin_x() -> Self
+pub fn JointAxesMask::lin_y() -> Self
+pub fn JointAxesMask::locked_revolute_axes() -> Self
+pub fn JointAxesMask::new(Int) -> Self
+pub fn JointAxesMask::or(Self, Self) -> Self
+
+pub(all) enum JointAxis {
+  LinX
+  LinY
+  AngZ
+}
+
 pub(all) enum JointEnabled {
   Enabled
   DisabledByAttachedBody
   Disabled
 }
 
+pub struct JointLimits {
+  min : Float
+  max : Float
+  mut impulse : Float
+}
+pub fn JointLimits::clear_impulse(Self) -> Self
+pub fn JointLimits::default() -> Self
+
+pub struct JointLimits3 {
+  lin_x : JointLimits
+  lin_y : JointLimits
+  ang_z : JointLimits
+}
+pub fn JointLimits3::default() -> Self
+
+pub struct JointMotor {
+  target_vel : Float
+  target_pos : Float
+  stiffness : Float
+  damping : Float
+  max_force : Float
+  mut impulse : Float
+  model : MotorModel
+}
+pub fn JointMotor::clear_impulse(Self) -> Self
+pub fn JointMotor::default() -> Self
+
+pub struct JointMotors3 {
+  lin_x : JointMotor
+  lin_y : JointMotor
+  ang_z : JointMotor
+}
+pub fn JointMotors3::default() -> Self
+
 pub struct LinkId {
   value : Int
+}
+
+pub(all) enum MotorModel {
+  AccelerationBased
+  ForceBased
 }
 
 type Multibody
