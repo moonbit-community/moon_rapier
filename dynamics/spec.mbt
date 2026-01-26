@@ -1062,6 +1062,15 @@ pub fn RigidBody::angvel(self : RigidBody) -> @core.Real {
 
 ///|
 #declaration_only
+pub fn RigidBody::set_kinematic_position_based_vels(
+  self : RigidBody,
+  vels : RigidBodyVelocity,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBody::set_vels(
   self : RigidBody,
   vels : RigidBodyVelocity,
@@ -2185,6 +2194,12 @@ pub fn RigidBodyBuilder::soft_ccd_prediction(
 ///|
 #declaration_only
 pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::next_position(self : RigidBody) -> @core.Isometry2 {
   ...
 }
 

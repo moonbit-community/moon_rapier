@@ -13,12 +13,17 @@
 // limitations under the License.
 
 ///|
-/// A minimal sequential-impulse contact solver (2D) aligned with Rapier's concepts.
-/// This is not feature-complete (no warmstarting/manifold caching yet), but it uses
-/// impulse-based resolution with restitution + friction and an optional position correction.
+/// A Rapier-style sequential impulse contact solver (2D) built from NarrowPhase contact manifolds.
+/// It supports:
+/// - multiple contact points per manifold (e.g. cuboid-cuboid clipping)
+/// - restitution + Coulomb friction
+/// - warmstarting through a per-pipeline cache keyed by collider handles + feature ids
+///
+/// This is still simplified compared to Rapier (no island-parallelism, no contact skin / prediction,
+/// no manifold caching inside NarrowPhase), but it matches the "constraint from manifold" design.
+
+///|
 const SOLVER_BAUMGARTE : @core.Real = 0.2F
-// Keep position correction strict for now so deep initial overlaps are resolved
-// in one step (matches existing pipeline tests and avoids persistent intersection).
 
 ///|
 const SOLVER_PENETRATION_SLOP : @core.Real = 0.0F
@@ -28,6 +33,16 @@ const SOLVER_POSITION_CORRECTION_PERCENT : @core.Real = 1.0F
 
 ///|
 const SOLVER_ITERATIONS : Int = 8
+
+///|
+pub struct ContactImpulseCacheEntry {
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  fid1 : @collision.FeatureId
+  fid2 : @collision.FeatureId
+  impulse_n : @core.Real
+  impulse_t : @core.Real
+}
 
 ///|
 fn solver_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
@@ -61,8 +76,7 @@ fn solver_clamp_value(
 
 ///|
 fn normalize_or_fallback(v : @core.Vec2, fallback : @core.Vec2) -> @core.Vec2 {
-  let len2 = v.dot(v)
-  if len2 <= 1.0e-12F {
+  if v.dot(v) <= 1.0e-12F {
     fallback
   } else {
     v.normalize()
@@ -70,65 +84,94 @@ fn normalize_or_fallback(v : @core.Vec2, fallback : @core.Vec2) -> @core.Vec2 {
 }
 
 ///|
-fn shape_support_point(
-  shape : @collision.Shape,
-  center : @core.Vec2,
-  rotation : @core.Real,
-  dir : @core.Vec2,
-) -> @core.Vec2 {
-  let d = normalize_or_fallback(dir, @core.Vec2::new(1.0F, 0.0F))
-  match shape {
-    @collision.Shape::Ball(radius) => center.add(solver_vec2_scale(d, radius))
-    @collision.Shape::Cuboid(hw, hh) => {
-      let rot = @core.Rot2::from_angle(rotation)
-      let ax = @core.Vec2::new(rot.cos, rot.sin)
-      let ay = @core.Vec2::new(-rot.sin, rot.cos)
-      let sx = if d.dot(ax) >= 0.0F { 1.0F } else { -1.0F }
-      let sy = if d.dot(ay) >= 0.0F { 1.0F } else { -1.0F }
-      center
-      .add(solver_vec2_scale(ax, hw * sx))
-      .add(solver_vec2_scale(ay, hh * sy))
+fn solver_collider_handle_equals(
+  a : @collision.ColliderHandle,
+  b : @collision.ColliderHandle,
+) -> Bool {
+  @collision.ColliderHandle::equals(a, b)
+}
+
+///|
+fn feature_id_equals(
+  a : @collision.FeatureId,
+  b : @collision.FeatureId,
+) -> Bool {
+  match (a, b) {
+    (@collision.FeatureId::Unknown, @collision.FeatureId::Unknown) => true
+    (@collision.FeatureId::Vertex(i), @collision.FeatureId::Vertex(j)) => i == j
+    (@collision.FeatureId::Edge(i), @collision.FeatureId::Edge(j)) => i == j
+    (@collision.FeatureId::Face(i), @collision.FeatureId::Face(j)) => i == j
+    _ => false
+  }
+}
+
+///|
+fn cache_key_equals(
+  entry : ContactImpulseCacheEntry,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  fid1 : @collision.FeatureId,
+  fid2 : @collision.FeatureId,
+) -> Bool {
+  solver_collider_handle_equals(entry.collider1, collider1) &&
+  solver_collider_handle_equals(entry.collider2, collider2) &&
+  feature_id_equals(entry.fid1, fid1) &&
+  feature_id_equals(entry.fid2, fid2)
+}
+
+///|
+fn cache_find(
+  cache : Array[ContactImpulseCacheEntry],
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  fid1 : @collision.FeatureId,
+  fid2 : @collision.FeatureId,
+) -> ContactImpulseCacheEntry? {
+  for i in 0..<cache.length() {
+    let entry = cache[i]
+    if cache_key_equals(entry, collider1, collider2, fid1, fid2) {
+      return Some(entry)
     }
-    @collision.Shape::CapsuleX(half_height, radius) => {
-      let rot = @core.Rot2::from_angle(rotation)
-      let axis = @core.Vec2::new(rot.cos, rot.sin)
-      let end = if d.dot(axis) >= 0.0F {
-        center.add(solver_vec2_scale(axis, half_height))
-      } else {
-        center.add(solver_vec2_scale(axis, -half_height))
-      }
-      end.add(solver_vec2_scale(d, radius))
-    }
-    @collision.Shape::CapsuleY(half_height, radius) => {
-      let rot = @core.Rot2::from_angle(rotation)
-      let axis = @core.Vec2::new(-rot.sin, rot.cos)
-      let end = if d.dot(axis) >= 0.0F {
-        center.add(solver_vec2_scale(axis, half_height))
-      } else {
-        center.add(solver_vec2_scale(axis, -half_height))
-      }
-      end.add(solver_vec2_scale(d, radius))
-    }
-    @collision.Shape::Segment(a, b) => {
-      let rot = @core.Rot2::from_angle(rotation)
-      let wa = center.add(rot.rotate_vec2(a))
-      let wb = center.add(rot.rotate_vec2(b))
-      if wa.dot(d) >= wb.dot(d) {
-        wa
-      } else {
-        wb
+  }
+  None
+}
+
+///|
+fn apply_impulse_delta_dynamic(
+  bodies : @dynamics.RigidBodySet,
+  handle : @dynamics.RigidBodyHandle?,
+  impulse : @core.Vec2,
+  point : @core.Vec2,
+) -> Unit {
+  if handle is Some(h) {
+    if bodies.get_mut(h) is Some(body) {
+      if body.is_dynamic() && body.is_enabled() {
+        let inv_m = body.inv_mass()
+        let inv_i = body.inv_inertia()
+        body.set_linvel(
+          body.linvel().add(solver_vec2_scale(impulse, inv_m)),
+          true,
+        )
+        |> ignore
+        let r = point.sub(body.world_com())
+        let torque_impulse = cross_vec2(r, impulse)
+        body.set_angvel(body.angvel() + torque_impulse * inv_i, true) |> ignore
       }
     }
   }
 }
 
 ///|
-priv struct ContactConstraint {
+priv struct SolverConstraint {
   collider1 : @collision.ColliderHandle
   collider2 : @collision.ColliderHandle
+  fid1 : @collision.FeatureId
+  fid2 : @collision.FeatureId
   body1 : @dynamics.RigidBodyHandle?
   body2 : @dynamics.RigidBodyHandle?
-  normal : @core.Vec2
+  // Direction of the force/impulse applied to body1 (Rapier: -manifold.normal).
+  dir1 : @core.Vec2
+  tangent1 : @core.Vec2
   contact_point : @core.Vec2
   penetration : @core.Real
   restitution : @core.Real
@@ -141,181 +184,246 @@ priv struct ContactConstraint {
 }
 
 ///|
-fn build_contact_constraint(
+fn build_constraints(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
-  collider1 : @collision.ColliderHandle,
-  collider2 : @collision.ColliderHandle,
+  narrow_phase : @collision.NarrowPhase,
   dt : @core.Real,
-) -> ContactConstraint? {
-  if colliders.get(collider1) is Some(c1) &&
-    colliders.get(collider2) is Some(c2) {
-    if c1.is_sensor() || c2.is_sensor() {
-      return None
-    }
-    if !c1.solver_groups().test_groups(c2.solver_groups()) {
-      return None
-    }
-    // Compute penetration and a separating normal using the existing separation logic.
-    // The returned vector points from c2 towards c1 and its length is the penetration depth.
-    let sep = separation_vector(
-      c1.shape(),
-      c1.translation(),
-      c1.rotation(),
-      c2.shape(),
-      c2.translation(),
-      c2.rotation(),
-    )
-    if sep is None {
-      return None
-    }
-    let sep_vec = sep.unwrap()
-    let penetration = sep_vec.length()
-    let normal = normalize_or_fallback(sep_vec, @core.Vec2::new(1.0F, 0.0F))
-    let p1 = shape_support_point(
-      c1.shape(),
-      c1.translation(),
-      c1.rotation(),
-      @core.Vec2::new(-normal.x, -normal.y),
-    )
-    let p2 = shape_support_point(
-      c2.shape(),
-      c2.translation(),
-      c2.rotation(),
-      normal,
-    )
-    let contact_point = @core.Vec2::new(
-      (p1.x + p2.x) * 0.5F,
-      (p1.y + p2.y) * 0.5F,
-    )
-    let mut inv_mass1 = 0.0F
-    let mut inv_inertia1 = 0.0F
-    let mut inv_mass2 = 0.0F
-    let mut inv_inertia2 = 0.0F
-    let body1 = c1.parent()
-    let body2 = c2.parent()
-    if body1 is Some(h1) {
-      if bodies.get(h1) is Some(rb1) {
-        if rb1.is_dynamic() && rb1.is_enabled() {
-          inv_mass1 = rb1.inv_mass()
-          inv_inertia1 = rb1.inv_inertia()
-        }
+  cache : Array[ContactImpulseCacheEntry],
+) -> Array[SolverConstraint] {
+  let pairs = narrow_phase.contact_pairs()
+  let constraints : Array[SolverConstraint] = []
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let h1 = pair.0
+    let h2 = pair.1
+    if colliders.get(h1) is Some(c1) && colliders.get(h2) is Some(c2) {
+      if c1.is_sensor() || c2.is_sensor() {
+        continue
       }
-    }
-    if body2 is Some(h2) {
-      if bodies.get(h2) is Some(rb2) {
-        if rb2.is_dynamic() && rb2.is_enabled() {
-          inv_mass2 = rb2.inv_mass()
-          inv_inertia2 = rb2.inv_inertia()
-        }
+      if !c1.solver_groups().test_groups(c2.solver_groups()) {
+        continue
       }
-    }
-    let tangent = @core.Vec2::new(-normal.y, normal.x)
-    let mut denom_n = inv_mass1 + inv_mass2
-    let mut denom_t = inv_mass1 + inv_mass2
-    if body1 is Some(h1) {
-      if bodies.get(h1) is Some(rb1) {
-        let r1 = contact_point.sub(rb1.world_com())
-        let rn = cross_vec2(r1, normal)
-        let rt = cross_vec2(r1, tangent)
-        denom_n = denom_n + inv_inertia1 * rn * rn
-        denom_t = denom_t + inv_inertia1 * rt * rt
-      }
-    }
-    if body2 is Some(h2) {
-      if bodies.get(h2) is Some(rb2) {
-        let r2 = contact_point.sub(rb2.world_com())
-        let rn = cross_vec2(r2, normal)
-        let rt = cross_vec2(r2, tangent)
-        denom_n = denom_n + inv_inertia2 * rn * rn
-        denom_t = denom_t + inv_inertia2 * rt * rt
-      }
-    }
-    let inv_mass_n = if denom_n <= 1.0e-12F { 0.0F } else { 1.0F / denom_n }
-    let inv_mass_t = if denom_t <= 1.0e-12F { 0.0F } else { 1.0F / denom_t }
+      let body1 = c1.parent()
+      let body2 = c2.parent()
 
-    // Baumgarte bias is negative so `-(vn + bias)` yields a positive impulse when penetrating.
-    let bias = if dt > 0.0F {
-      -(SOLVER_BAUMGARTE / dt) *
-      (if penetration > SOLVER_PENETRATION_SLOP {
-        penetration - SOLVER_PENETRATION_SLOP
+      // Like Rapier: only solve if at least one body is dynamic.
+      let mut any_dynamic = false
+      if body1 is Some(bh1) {
+        if bodies.get(bh1) is Some(rb1) {
+          if rb1.is_dynamic() && rb1.is_enabled() {
+            any_dynamic = true
+          }
+        }
+      }
+      if body2 is Some(bh2) {
+        if bodies.get(bh2) is Some(rb2) {
+          if rb2.is_dynamic() && rb2.is_enabled() {
+            any_dynamic = true
+          }
+        }
+      }
+      if !any_dynamic {
+        continue
+      }
+      let friction = @dynamics.CoefficientCombineRule::combine(
+        c1.friction(),
+        c2.friction(),
+        c1.friction_combine_rule(),
+        c2.friction_combine_rule(),
+      )
+      let restitution = @dynamics.CoefficientCombineRule::combine(
+        c1.restitution(),
+        c2.restitution(),
+        c1.restitution_combine_rule(),
+        c2.restitution_combine_rule(),
+      )
+
+      // For some manifolds (segment-* and capsule-*), we may not have a negative distance for
+      // penetrations. Use the separation depth as a fallback to preserve depenetration behavior.
+      let sep = separation_vector(
+        c1.shape(),
+        c1.translation(),
+        c1.rotation(),
+        c2.shape(),
+        c2.translation(),
+        c2.rotation(),
+      )
+      let sep_vec = if sep is Some(v) { v } else { @core.Vec2::zero() }
+      let sep_depth = sep_vec.length()
+      let sep_dir1 = if sep_depth > 1.0e-12F {
+        // sep points from collider2 toward collider1, so it matches dir1 convention.
+        sep_vec.normalize()
       } else {
-        0.0F
-      })
-    } else {
-      0.0F
+        @core.Vec2::zero()
+      }
+      let manifolds = pair.2.manifolds()
+      for mi in 0..<manifolds.length() {
+        let manifold = manifolds[mi]
+        // Rapier: dir1 = -manifold.normal (normal points from collider1 to collider2).
+        let dir1_from_manifold = normalize_or_fallback(
+          @core.Vec2::new(-manifold.normal().x, -manifold.normal().y),
+          @core.Vec2::new(1.0F, 0.0F),
+        )
+        let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
+        let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
+        let points = manifold.points()
+        for pi in 0..<points.length() {
+          let p = points[pi]
+          let world_p1 = c1.position().transform_point(p.local_p1())
+          let world_p2 = c2.position().transform_point(p.local_p2())
+          let contact_point = @core.Vec2::new(
+            (world_p1.x + world_p2.x) * 0.5F,
+            (world_p1.y + world_p2.y) * 0.5F,
+          )
+          let mut dist = p.dist()
+          if @core.abs(dist) <= 1.0e-6F && sep_depth > 0.0F {
+            dist = -sep_depth
+          }
+          let penetration = if dist < 0.0F { -dist } else { 0.0F }
+          let bias = if dt > 0.0F {
+            -(SOLVER_BAUMGARTE / dt) *
+            (if penetration > SOLVER_PENETRATION_SLOP {
+              penetration - SOLVER_PENETRATION_SLOP
+            } else {
+              0.0F
+            })
+          } else {
+            0.0F
+          }
+          let mut inv_mass1 = 0.0F
+          let mut inv_inertia1 = 0.0F
+          let mut v1 = @core.Vec2::zero()
+          let mut w1 = 0.0F
+          let mut com1 = @core.Vec2::zero()
+          if body1 is Some(bh1) {
+            if bodies.get(bh1) is Some(rb1) {
+              v1 = rb1.linvel()
+              w1 = rb1.angvel()
+              com1 = rb1.world_com()
+              if rb1.is_dynamic() && rb1.is_enabled() {
+                inv_mass1 = rb1.inv_mass()
+                inv_inertia1 = rb1.inv_inertia()
+              }
+            }
+          }
+          let mut inv_mass2 = 0.0F
+          let mut inv_inertia2 = 0.0F
+          let mut v2 = @core.Vec2::zero()
+          let mut w2 = 0.0F
+          let mut com2 = @core.Vec2::zero()
+          if body2 is Some(bh2) {
+            if bodies.get(bh2) is Some(rb2) {
+              v2 = rb2.linvel()
+              w2 = rb2.angvel()
+              com2 = rb2.world_com()
+              if rb2.is_dynamic() && rb2.is_enabled() {
+                inv_mass2 = rb2.inv_mass()
+                inv_inertia2 = rb2.inv_inertia()
+              }
+            }
+          }
+
+          // Effective mass denominators (2D).
+          let r1 = contact_point.sub(com1)
+          let r2 = contact_point.sub(com2)
+          let rn1 = cross_vec2(r1, dir1)
+          let rt1 = cross_vec2(r1, tangent1)
+          let rn2 = cross_vec2(r2, dir1)
+          let rt2 = cross_vec2(r2, tangent1)
+          let denom_n = inv_mass1 +
+            inv_mass2 +
+            inv_inertia1 * rn1 * rn1 +
+            inv_inertia2 * rn2 * rn2
+          let denom_t = inv_mass1 +
+            inv_mass2 +
+            inv_inertia1 * rt1 * rt1 +
+            inv_inertia2 * rt2 * rt2
+          let inv_mass_n = if denom_n <= 1.0e-12F {
+            0.0F
+          } else {
+            1.0F / denom_n
+          }
+          let inv_mass_t = if denom_t <= 1.0e-12F {
+            0.0F
+          } else {
+            1.0F / denom_t
+          }
+          let cached = cache_find(cache, h1, h2, p.fid1(), p.fid2())
+          let impulse_n = if cached is Some(e) { e.impulse_n } else { 0.0F }
+          let impulse_t = if cached is Some(e) { e.impulse_t } else { 0.0F }
+          constraints.push(SolverConstraint::{
+            collider1: h1,
+            collider2: h2,
+            fid1: p.fid1(),
+            fid2: p.fid2(),
+            body1,
+            body2,
+            dir1,
+            tangent1,
+            contact_point,
+            penetration,
+            restitution,
+            friction,
+            inv_mass_n,
+            inv_mass_t,
+            bias,
+            impulse_n,
+            impulse_t,
+          })
+          // Precomputed vels are not stored, but this keeps the constraint build close to Rapier.
+          v1 |> ignore
+          w1 |> ignore
+          v2 |> ignore
+          w2 |> ignore
+        }
+      }
     }
-    let friction = @dynamics.CoefficientCombineRule::combine(
-      c1.friction(),
-      c2.friction(),
-      c1.friction_combine_rule(),
-      c2.friction_combine_rule(),
+  }
+  constraints
+}
+
+///|
+fn warmstart(
+  bodies : @dynamics.RigidBodySet,
+  constraints : Array[SolverConstraint],
+) -> Unit {
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    let impulse = solver_vec2_scale(c.dir1, c.impulse_n).add(
+      solver_vec2_scale(c.tangent1, c.impulse_t),
     )
-    let restitution = @dynamics.CoefficientCombineRule::combine(
-      c1.restitution(),
-      c2.restitution(),
-      c1.restitution_combine_rule(),
-      c2.restitution_combine_rule(),
+    apply_impulse_delta_dynamic(bodies, c.body1, impulse, c.contact_point)
+    apply_impulse_delta_dynamic(
+      bodies,
+      c.body2,
+      @core.Vec2::new(-impulse.x, -impulse.y),
+      c.contact_point,
     )
-    Some(ContactConstraint::{
-      collider1,
-      collider2,
-      body1,
-      body2,
-      normal,
-      contact_point,
-      penetration,
-      restitution,
-      friction,
-      inv_mass_n,
-      inv_mass_t,
-      bias,
-      impulse_n: 0.0F,
-      impulse_t: 0.0F,
-    })
-  } else {
-    None
   }
 }
 
 ///|
-fn apply_impulse_delta(
+fn get_body_kinematic_state(
   bodies : @dynamics.RigidBodySet,
   handle : @dynamics.RigidBodyHandle?,
-  impulse : @core.Vec2,
-  point : @core.Vec2,
-) -> Unit {
+) -> (@core.Vec2, @core.Real, @core.Vec2) {
   if handle is Some(h) {
-    if bodies.get_mut(h) is Some(body) {
-      if body.is_dynamic() && body.is_enabled() {
-        let inv_m = body.inv_mass()
-        let inv_i = body.inv_inertia()
-        let new_linvel = body.linvel().add(solver_vec2_scale(impulse, inv_m))
-        body.set_linvel(new_linvel, true) |> ignore
-        let r = point.sub(body.world_com())
-        let torque_impulse = cross_vec2(r, impulse)
-        body.set_angvel(body.angvel() + torque_impulse * inv_i, true) |> ignore
-      }
+    if bodies.get(h) is Some(rb) {
+      (rb.linvel(), rb.angvel(), rb.world_com())
+    } else {
+      (@core.Vec2::zero(), 0.0F, @core.Vec2::zero())
     }
+  } else {
+    (@core.Vec2::zero(), 0.0F, @core.Vec2::zero())
   }
 }
 
 ///|
-fn relative_velocity_at_point(
-  body : @dynamics.RigidBody,
-  point : @core.Vec2,
-) -> @core.Vec2 {
-  let r = point.sub(body.world_com())
-  body.linvel().add(cross_z_scalar(body.angvel(), r))
-}
-
-///|
-fn solve_contact_constraints(
+fn solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
   dt : @core.Real,
-  event_handler : EventHandler,
-  constraints : Array[ContactConstraint],
+  constraints : Array[SolverConstraint],
 ) -> Unit {
   if dt <= 0.0F {
     return
@@ -323,72 +431,52 @@ fn solve_contact_constraints(
   for _ in 0..<SOLVER_ITERATIONS {
     for i in 0..<constraints.length() {
       let c = constraints[i]
-      let tangent = @core.Vec2::new(-c.normal.y, c.normal.x)
-      let mut v1 = @core.Vec2::zero()
-      let mut w1 = 0.0F
-      let mut com1 = @core.Vec2::zero()
-      if c.body1 is Some(h1) {
-        if bodies.get(h1) is Some(rb1) {
-          v1 = rb1.linvel()
-          w1 = rb1.angvel()
-          com1 = rb1.world_com()
-        }
-      }
-      let mut v2 = @core.Vec2::zero()
-      let mut w2 = 0.0F
-      let mut com2 = @core.Vec2::zero()
-      if c.body2 is Some(h2) {
-        if bodies.get(h2) is Some(rb2) {
-          v2 = rb2.linvel()
-          w2 = rb2.angvel()
-          com2 = rb2.world_com()
-        }
-      }
+      let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+      let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
       let r1 = c.contact_point.sub(com1)
       let r2 = c.contact_point.sub(com2)
       let vel1 = v1.add(cross_z_scalar(w1, r1))
       let vel2 = v2.add(cross_z_scalar(w2, r2))
       let rv = vel1.sub(vel2)
 
-      // Normal impulse (with restitution + bias).
-      let vn = rv.dot(c.normal)
+      // Normal impulse.
+      let vn = rv.dot(c.dir1)
       let restitution_term = if vn < -1.0e-3F {
         c.restitution * vn
       } else {
         0.0F
       }
       let lambda_n = -(vn + c.bias + restitution_term) * c.inv_mass_n
-      let new_impulse_n = if c.impulse_n + lambda_n > 0.0F {
-        c.impulse_n + lambda_n
+      let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
+        constraints[i].impulse_n + lambda_n
       } else {
         0.0F
       }
-      let delta_n = new_impulse_n - c.impulse_n
+      let delta_n = new_impulse_n - constraints[i].impulse_n
       constraints[i].impulse_n = new_impulse_n
-      let impulse_n_vec = solver_vec2_scale(c.normal, delta_n)
-      apply_impulse_delta(bodies, c.body1, impulse_n_vec, c.contact_point)
-      apply_impulse_delta(
+      let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
+      apply_impulse_delta_dynamic(
+        bodies,
+        c.body1,
+        impulse_n_vec,
+        c.contact_point,
+      )
+      apply_impulse_delta_dynamic(
         bodies,
         c.body2,
         @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
         c.contact_point,
       )
 
-      // Recompute relative velocity after normal impulse for friction.
-      let mut vel1_after = @core.Vec2::zero()
-      if c.body1 is Some(h1a) {
-        if bodies.get(h1a) is Some(rb1a) {
-          vel1_after = relative_velocity_at_point(rb1a, c.contact_point)
-        }
-      }
-      let mut vel2_after = @core.Vec2::zero()
-      if c.body2 is Some(h2a) {
-        if bodies.get(h2a) is Some(rb2a) {
-          vel2_after = relative_velocity_at_point(rb2a, c.contact_point)
-        }
-      }
-      let rv_after = vel1_after.sub(vel2_after)
-      let vt = rv_after.dot(tangent)
+      // Friction impulse.
+      let (v1a, w1a, com1a) = get_body_kinematic_state(bodies, c.body1)
+      let (v2a, w2a, com2a) = get_body_kinematic_state(bodies, c.body2)
+      let r1a = c.contact_point.sub(com1a)
+      let r2a = c.contact_point.sub(com2a)
+      let vel1a = v1a.add(cross_z_scalar(w1a, r1a))
+      let vel2a = v2a.add(cross_z_scalar(w2a, r2a))
+      let rv2 = vel1a.sub(vel2a)
+      let vt = rv2.dot(c.tangent1)
       let lambda_t = -vt * c.inv_mass_t
       let max_friction = c.friction * constraints[i].impulse_n
       let new_impulse_t = solver_clamp_value(
@@ -398,9 +486,14 @@ fn solve_contact_constraints(
       )
       let delta_t = new_impulse_t - constraints[i].impulse_t
       constraints[i].impulse_t = new_impulse_t
-      let impulse_t_vec = solver_vec2_scale(tangent, delta_t)
-      apply_impulse_delta(bodies, c.body1, impulse_t_vec, c.contact_point)
-      apply_impulse_delta(
+      let impulse_t_vec = solver_vec2_scale(c.tangent1, delta_t)
+      apply_impulse_delta_dynamic(
+        bodies,
+        c.body1,
+        impulse_t_vec,
+        c.contact_point,
+      )
+      apply_impulse_delta_dynamic(
         bodies,
         c.body2,
         @core.Vec2::new(-impulse_t_vec.x, -impulse_t_vec.y),
@@ -408,55 +501,13 @@ fn solve_contact_constraints(
       )
     }
   }
-
-  // Generate contact force events based on the solved normal impulse magnitude.
-  for i in 0..<constraints.length() {
-    let c = constraints[i]
-    if colliders.get(c.collider1) is Some(co1) &&
-      colliders.get(c.collider2) is Some(co2) {
-      let flag = @collision.ActiveEvents::contact_force_events()
-      let max_threshold = 1.0e30F
-      let t1 = if co1.active_events().contains(flag) {
-        co1.contact_force_event_threshold()
-      } else {
-        max_threshold
-      }
-      let t2 = if co2.active_events().contains(flag) {
-        co2.contact_force_event_threshold()
-      } else {
-        max_threshold
-      }
-      let threshold = if t1 < t2 { t1 } else { t2 }
-      if threshold < max_threshold {
-        let magnitude = c.impulse_n / dt
-        if magnitude > threshold {
-          let total_force = solver_vec2_scale(c.normal, magnitude)
-          event_handler.handle_contact_force_event(
-            dt,
-            bodies,
-            colliders,
-            @collision.ContactForceEvent::new(
-              c.collider1,
-              c.collider2,
-              total_force,
-              magnitude,
-              c.normal,
-              magnitude,
-            ),
-          )
-        }
-      }
-    }
-  }
 }
 
 ///|
 fn position_correction(
   bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  constraints : Array[ContactConstraint],
+  constraints : Array[SolverConstraint],
 ) -> Unit {
-  colliders |> ignore
   for i in 0..<constraints.length() {
     let c = constraints[i]
     if c.penetration <= SOLVER_PENETRATION_SLOP {
@@ -464,7 +515,7 @@ fn position_correction(
     }
     let correction_mag = (c.penetration - SOLVER_PENETRATION_SLOP) *
       SOLVER_POSITION_CORRECTION_PERCENT
-    let correction = solver_vec2_scale(c.normal, correction_mag)
+    let correction = solver_vec2_scale(c.dir1, correction_mag)
     let mut inv_m1 = 0.0F
     if c.body1 is Some(h1) {
       if bodies.get(h1) is Some(rb1) {
@@ -489,18 +540,142 @@ fn position_correction(
     let ratio2 = inv_m2 / denom
     if c.body1 is Some(h1m) {
       if bodies.get_mut(h1m) is Some(b1) {
-        let pos = b1.translation()
-        b1.set_translation(pos.add(solver_vec2_scale(correction, ratio1)), true)
-        |> ignore
+        if b1.is_dynamic() && b1.is_enabled() {
+          b1.set_translation(
+            b1.translation().add(solver_vec2_scale(correction, ratio1)),
+            true,
+          )
+          |> ignore
+        }
       }
     }
     if c.body2 is Some(h2m) {
       if bodies.get_mut(h2m) is Some(b2) {
-        let pos = b2.translation()
-        b2.set_translation(pos.sub(solver_vec2_scale(correction, ratio2)), true)
-        |> ignore
+        if b2.is_dynamic() && b2.is_enabled() {
+          b2.set_translation(
+            b2.translation().sub(solver_vec2_scale(correction, ratio2)),
+            true,
+          )
+          |> ignore
+        }
       }
     }
+  }
+}
+
+///|
+fn emit_contact_force_events(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  dt : @core.Real,
+  event_handler : EventHandler,
+  constraints : Array[SolverConstraint],
+) -> Unit {
+  if dt <= 0.0F {
+    return
+  }
+  // Rapier parity:
+  // - total_force = sum(manifold_normal * total_manifold_impulse) / dt
+  // - total_force_magnitude = sum(total_manifold_impulse) / dt (not |total_force|)
+  // - max_force_{direction,magnitude} comes from the strongest individual contact impulse.
+  let pairs : Array[
+    (
+      @collision.ColliderHandle,
+      @collision.ColliderHandle,
+      @core.Vec2,
+      @core.Real,
+      @core.Vec2,
+      @core.Real,
+    ),
+  ] = []
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    let normal = @core.Vec2::new(-c.dir1.x, -c.dir1.y)
+    let impulse = c.impulse_n
+    let impulse_vec = solver_vec2_scale(normal, impulse)
+    let mut found = false
+    for j in 0..<pairs.length() {
+      let p = pairs[j]
+      if solver_collider_handle_equals(p.0, c.collider1) &&
+        solver_collider_handle_equals(p.1, c.collider2) {
+        let max_dir = if impulse > p.5 { normal } else { p.4 }
+        let max_impulse = if impulse > p.5 { impulse } else { p.5 }
+        pairs[j] = (
+          p.0,
+          p.1,
+          p.2.add(impulse_vec),
+          p.3 + impulse,
+          max_dir,
+          max_impulse,
+        )
+        found = true
+        break
+      }
+    }
+    if !found {
+      pairs.push(
+        (c.collider1, c.collider2, impulse_vec, impulse, normal, impulse),
+      )
+    }
+  }
+  for i in 0..<pairs.length() {
+    let p = pairs[i]
+    let h1 = p.0
+    let h2 = p.1
+    if colliders.get(h1) is Some(co1) && colliders.get(h2) is Some(co2) {
+      let flag = @collision.ActiveEvents::contact_force_events()
+      let max_threshold = 1.0e30F
+      let t1 = if co1.active_events().contains(flag) {
+        co1.contact_force_event_threshold()
+      } else {
+        max_threshold
+      }
+      let t2 = if co2.active_events().contains(flag) {
+        co2.contact_force_event_threshold()
+      } else {
+        max_threshold
+      }
+      let threshold = if t1 < t2 { t1 } else { t2 }
+      if threshold < max_threshold {
+        let inv_dt = 1.0F / dt
+        let total_force_magnitude = p.3 * inv_dt
+        if total_force_magnitude > threshold {
+          let total_force = solver_vec2_scale(p.2, inv_dt)
+          event_handler.handle_contact_force_event(
+            dt,
+            bodies,
+            colliders,
+            @collision.ContactForceEvent::new(
+              h1,
+              h2,
+              total_force,
+              total_force_magnitude,
+              p.4,
+              p.5 * inv_dt,
+            ),
+          )
+        }
+      }
+    }
+  }
+}
+
+///|
+fn update_cache(
+  cache : Array[ContactImpulseCacheEntry],
+  constraints : Array[SolverConstraint],
+) -> Unit {
+  cache.clear()
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    cache.push(ContactImpulseCacheEntry::{
+      collider1: c.collider1,
+      collider2: c.collider2,
+      fid1: c.fid1,
+      fid2: c.fid2,
+      impulse_n: c.impulse_n,
+      impulse_t: c.impulse_t,
+    })
   }
 }
 
@@ -511,16 +686,14 @@ pub fn solve_contacts(
   narrow_phase : @collision.NarrowPhase,
   dt : @core.Real,
   event_handler : EventHandler,
+  cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  let pairs = narrow_phase.contact_pairs()
-  let constraints : Array[ContactConstraint] = []
-  for i in 0..<pairs.length() {
-    let pair = pairs[i]
-    if build_contact_constraint(bodies, colliders, pair.0, pair.1, dt)
-      is Some(c) {
-      constraints.push(c)
-    }
-  }
-  solve_contact_constraints(bodies, colliders, dt, event_handler, constraints)
-  position_correction(bodies, colliders, constraints)
+  let constraints = build_constraints(
+    bodies, colliders, narrow_phase, dt, cache,
+  )
+  warmstart(bodies, constraints)
+  solve_velocity_constraints(bodies, dt, constraints)
+  emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)
+  position_correction(bodies, constraints)
+  update_cache(cache, constraints)
 }

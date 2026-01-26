@@ -22,11 +22,12 @@ pub struct PhysicsPipeline {
       Bool,
     ),
   ]
+  contact_solver_cache : Array[ContactImpulseCacheEntry]
 }
 
 ///|
 pub fn PhysicsPipeline::new() -> PhysicsPipeline {
-  { prev_collisions: [] }
+  { prev_collisions: [], contact_solver_cache: [] }
 }
 
 ///|
@@ -895,6 +896,18 @@ pub fn PhysicsPipeline::step(
             )
             body.set_position(next_pos, false) |> ignore
           }
+          @dynamics.RigidBodyType::KinematicPositionBased => {
+            // Rapier parity: advance from position -> next_position, and derive velocities
+            // from the kinematic motion so contact resolution sees the correct relative speed.
+            let next_pos = body.next_position()
+            let inv_dt = 1.0F / dt
+            let derived_vels = @dynamics.RigidBodyPosition::new(
+              body.position(),
+              next_pos,
+            ).interpolate_velocity(inv_dt, body.center_of_mass())
+            body.set_kinematic_position_based_vels(derived_vels) |> ignore
+            body.set_position(next_pos, false) |> ignore
+          }
           @dynamics.RigidBodyType::KinematicVelocityBased => {
             let next_pos = body
               .vels()
@@ -917,7 +930,14 @@ pub fn PhysicsPipeline::step(
     physics_hooks,
     event_handler,
   )
-  solve_contacts(bodies, colliders, narrow_phase, dt, event_handler)
+  solve_contacts(
+    bodies,
+    colliders,
+    narrow_phase,
+    dt,
+    event_handler,
+    self.contact_solver_cache,
+  )
   collision_pipeline.step(
     parameters.prediction_distance(),
     islands,

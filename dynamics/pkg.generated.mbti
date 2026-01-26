@@ -350,6 +350,7 @@ pub fn RigidBody::linvel(Self) -> @core.Vec2
 pub fn RigidBody::mark_local_mass_properties_changed(Self) -> Self
 pub fn RigidBody::mass(Self) -> Float
 pub fn RigidBody::mass_props(Self) -> RigidBodyMassProps
+pub fn RigidBody::next_position(Self) -> @core.Isometry2
 pub fn RigidBody::position(Self) -> @core.Isometry2
 pub fn RigidBody::reset_forces(Self, Bool) -> Self
 pub fn RigidBody::reset_torques(Self, Bool) -> Self
@@ -362,6 +363,7 @@ pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
 pub fn RigidBody::set_dominance_group(Self, Int) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
+pub fn RigidBody::set_kinematic_position_based_vels(Self, RigidBodyVelocity) -> Self
 pub fn RigidBody::set_linear_damping(Self, Float) -> Self
 pub fn RigidBody::set_linvel(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::set_local_mass_properties(Self, @core.MassProperties) -> Self

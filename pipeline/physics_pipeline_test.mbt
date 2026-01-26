@@ -105,6 +105,104 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
 }
 
 ///|
+test "kinematic position-based next_position advances and affects contacts" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let params = IntegrationParameters::default()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(5.0F, 0.1F).friction(10.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 1.1F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(1.0F)
+    .friction(10.0F)
+    .restitution(0.0F)
+    .build(),
+    ball,
+    bodies,
+  )
+  |> ignore
+
+  // Let the ball settle on the kinematic ground.
+  for _ in 0..<30 {
+    pipeline.step(
+      gravity,
+      params,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+  }
+  let start_x = if bodies.get(ball) is Some(body) {
+    body.translation().x
+  } else {
+    0.0F
+  }
+
+  // Move the kinematic body along x using next_position. With friction, the ball should follow.
+  for _ in 0..<10 {
+    if bodies.get(ground) is Some(g) {
+      let t = g.translation()
+      if bodies.get_mut(ground) is Some(gm) {
+        gm.set_next_kinematic_translation(@core.Vec2::new(t.x + 0.05F, t.y))
+        |> ignore
+      }
+    }
+    pipeline.step(
+      gravity,
+      params,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+  }
+  if bodies.get(ground) is Some(g) {
+    inspect(g.translation().x > 0.0F, content="true")
+    inspect(@core.abs(g.linvel().x) > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get(ball) is Some(b) {
+    inspect(b.translation().x > start_x + 0.01F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_before_step).
 test "rigid body removal before step" {
   let colliders = @collision.ColliderSet::new()

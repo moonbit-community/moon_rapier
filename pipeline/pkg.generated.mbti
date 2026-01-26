@@ -8,7 +8,7 @@ import {
 }
 
 // Values
-pub fn solve_contacts(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler) -> Unit
+pub fn solve_contacts(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
 // Errors
 
@@ -17,6 +17,15 @@ pub struct CollisionPipeline {
 }
 pub fn CollisionPipeline::new() -> Self
 pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, EventHandler) -> Unit
+
+pub struct ContactImpulseCacheEntry {
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  fid1 : @collision.FeatureId
+  fid2 : @collision.FeatureId
+  impulse_n : Float
+  impulse_t : Float
+}
 
 pub struct EventHandler {
   collision_events : Array[@collision.CollisionEvent]
@@ -51,6 +60,7 @@ pub fn PhysicsHooks::new() -> Self
 
 pub struct PhysicsPipeline {
   prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags, Bool)]
+  contact_solver_cache : Array[ContactImpulseCacheEntry]
 }
 pub fn PhysicsPipeline::new() -> Self
 pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit

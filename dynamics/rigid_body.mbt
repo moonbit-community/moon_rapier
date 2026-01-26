@@ -801,6 +801,17 @@ pub fn RigidBody::angvel(self : RigidBody) -> @core.Real {
 }
 
 ///|
+pub fn RigidBody::set_kinematic_position_based_vels(
+  self : RigidBody,
+  vels : RigidBodyVelocity,
+) -> RigidBody {
+  if self.body_type is RigidBodyType::KinematicPositionBased {
+    self.vels = vels
+  }
+  self
+}
+
+///|
 pub fn RigidBody::set_vels(
   self : RigidBody,
   vels : RigidBodyVelocity,
@@ -1235,6 +1246,11 @@ pub fn RigidBody::mark_local_mass_properties_changed(
 ///|
 pub fn RigidBody::position(self : RigidBody) -> @core.Isometry2 {
   self.position.position
+}
+
+///|
+pub fn RigidBody::next_position(self : RigidBody) -> @core.Isometry2 {
+  self.position.next_position
 }
 
 ///|
