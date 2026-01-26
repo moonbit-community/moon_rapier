@@ -14,7 +14,7 @@
 
 ///|
 test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
-  fn run(ccd_enabled : Bool) -> @core.Real {
+  fn run(ccd_enabled : Bool, max_ccd_substeps : Int) -> @core.Real {
     let pipeline = PhysicsPipeline::new()
     let broad_phase = @collision.BroadPhaseBvh::new()
     let narrow_phase = @collision.NarrowPhase::new()
@@ -48,7 +48,9 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
     }
     pipeline.step(
       @core.Vec2::zero(),
-      IntegrationParameters::default().with_dt(1.0F),
+      @dynamics.IntegrationParameters::default()
+      .set_dt(1.0F)
+      .set_max_ccd_substeps(max_ccd_substeps),
       islands,
       broad_phase,
       narrow_phase,
@@ -67,8 +69,12 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
     }
   }
 
-  let no_ccd_x = run(false)
+  let no_ccd_x = run(false, 1)
   inspect(no_ccd_x > 0.0F, content="true")
-  let ccd_x = run(true)
+  let ccd_x = run(true, 1)
   inspect(ccd_x < 0.0F, content="true")
+  let ccd_disabled_by_params_x = run(true, 0)
+  inspect(ccd_disabled_by_params_x > 0.0F, content="true")
+  let ccd_substeps_x = run(true, 2)
+  inspect(ccd_substeps_x < 0.0F, content="true")
 }

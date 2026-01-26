@@ -883,11 +883,57 @@ pub fn PhysicsPipeline::step(
       false,
     )
   }
-  let dt = parameters.dt
-  if dt > 0.0F {
+  let prediction_distance = parameters.prediction_distance()
+  let mut remaining_time = parameters.dt
+  let mut remaining_substeps = parameters.max_ccd_substeps
+  let ccd_is_enabled = remaining_substeps > 0
+  if !ccd_is_enabled {
+    remaining_substeps = 1
+  }
+  let min_ccd_dt = parameters.min_ccd_dt
+  let collision_pipeline = CollisionPipeline::new()
+  while remaining_substeps > 0 && remaining_time > 0.0F {
+    let mut dt = remaining_time
+    if ccd_is_enabled && remaining_substeps > 1 {
+      // Take forces (gravity) into account for the initial TOI estimate.
+      let ccd_active = ccd_solver.update_ccd_active_flags(
+        islands, bodies, remaining_time, true,
+      )
+      let first_impact = if ccd_active {
+        find_first_ccd_impact(
+          gravity, remaining_time, islands, bodies, colliders,
+        )
+      } else {
+        None
+      }
+      if first_impact is Some(toi) {
+        let steps_real = Float::from_double(remaining_substeps.to_double())
+        let original_interval = remaining_time / steps_real
+        dt = if toi < original_interval {
+          original_interval
+        } else {
+          toi + (remaining_time - toi) / steps_real
+        }
+        remaining_substeps = remaining_substeps - 1
+      } else {
+        dt = remaining_time
+        remaining_substeps = 0
+      }
+      remaining_time = remaining_time - dt
+      if remaining_time <= min_ccd_dt {
+        dt = dt + remaining_time
+        remaining_time = 0.0F
+        remaining_substeps = 0
+      }
+    } else {
+      dt = remaining_time
+      remaining_time = 0.0F
+      remaining_substeps = 0
+    }
+
     // Keep collider world poses synced with the current rigid-body positions before we
     // do any CCD shape casts (user may have teleported bodies without touching colliders).
-    broad_phase.update(parameters.prediction_distance(), bodies, colliders)
+    broad_phase.update(prediction_distance, bodies, colliders)
     for i in 0..<bodies.bodies.length() {
       if bodies.bodies[i] is Some(body) {
         if !body.enabled || body.is_sleeping() {
@@ -912,8 +958,8 @@ pub fn PhysicsPipeline::step(
             body.set_next_position_internal(next_pos) |> ignore
           }
           @dynamics.RigidBodyType::KinematicPositionBased => {
-            // Rapier parity: advance from position -> next_position, and derive velocities
-            // from the kinematic motion so contact resolution sees the correct relative speed.
+            // Rapier parity: derive velocities from position -> next_position using the
+            // current substep dt.
             let inv_dt = 1.0F / dt
             let derived_vels = @dynamics.RigidBodyPosition::new(
               body.position(),
@@ -931,19 +977,20 @@ pub fn PhysicsPipeline::step(
         }
       }
     }
-
-    // Rapier parity: clamp motions of CCD-active bodies before collision detection.
-    let ccd_active = ccd_solver.update_ccd_active_flags(
-      islands, bodies, dt, false,
-    )
-    if ccd_active {
-      let impacts = predict_ccd_impacts_at_next_positions(
-        dt, islands, bodies, colliders,
+    if ccd_is_enabled {
+      // Clamp motions of CCD-active bodies before collision detection.
+      let ccd_active = ccd_solver.update_ccd_active_flags(
+        islands, bodies, dt, false,
       )
-      ccd_solver.clamp_motions(dt, bodies, impacts)
+      if ccd_active {
+        let impacts = predict_ccd_impacts_at_next_positions(
+          dt, islands, bodies, colliders,
+        )
+        ccd_solver.clamp_motions(dt, bodies, impacts)
+      }
     }
 
-    // Advance rigid-bodies to their final position.
+    // Advance rigid-bodies to their final position for this substep.
     for i in 0..<bodies.bodies.length() {
       if bodies.bodies[i] is Some(body) {
         if !body.enabled || body.is_sleeping() {
@@ -954,36 +1001,23 @@ pub fn PhysicsPipeline::step(
         }
       }
     }
+    collision_pipeline.step(
+      prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
+      physics_hooks, event_handler,
+    )
+    solve_contacts(
+      bodies,
+      colliders,
+      narrow_phase,
+      dt,
+      event_handler,
+      self.contact_solver_cache,
+    )
+    collision_pipeline.step(
+      prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
+      physics_hooks, event_handler,
+    )
   }
-  let collision_pipeline = CollisionPipeline::new()
-  collision_pipeline.step(
-    parameters.prediction_distance(),
-    islands,
-    broad_phase,
-    narrow_phase,
-    bodies,
-    colliders,
-    physics_hooks,
-    event_handler,
-  )
-  solve_contacts(
-    bodies,
-    colliders,
-    narrow_phase,
-    dt,
-    event_handler,
-    self.contact_solver_cache,
-  )
-  collision_pipeline.step(
-    parameters.prediction_distance(),
-    islands,
-    broad_phase,
-    narrow_phase,
-    bodies,
-    colliders,
-    physics_hooks,
-    event_handler,
-  )
   // Only emit collision events after the final collision detection pass.
   PhysicsPipeline::emit_collision_events(
     self, bodies, colliders, narrow_phase, event_handler,
@@ -1001,7 +1035,12 @@ pub fn PhysicsPipeline::step(
     }
   }
   islands.update_islands(
-    dt, 1.0F, bodies, contacts, impulse_joints, multibody_joints,
+    parameters.dt,
+    1.0F,
+    bodies,
+    contacts,
+    impulse_joints,
+    multibody_joints,
   )
   let modified_colliders_after_step = colliders.take_modified()
   let modified_bodies_after_step = bodies.take_modified()

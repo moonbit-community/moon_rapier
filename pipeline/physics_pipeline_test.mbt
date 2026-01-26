@@ -359,7 +359,7 @@ test "joint step delta time 0" {
     .build(),
   )
   impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
-  let parameters = IntegrationParameters::default().with_dt(0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(0.0F)
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   pipeline.step(
     gravity,

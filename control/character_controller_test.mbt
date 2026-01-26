@@ -51,7 +51,7 @@ test "character controller climb" {
     .rotation(impossible_slope_angle)
     .build()
   colliders.insert(collider) |> ignore
-  let integration_parameters = @pipeline.IntegrationParameters::default()
+  let integration_parameters = @dynamics.IntegrationParameters::default()
   let character_body_can_climb = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
@@ -321,7 +321,7 @@ test "character controller ground detection" {
   let floor_handle = bodies.insert(rigid_body)
   let collider = @collision.ColliderBuilder::cuboid(ground_size, ground_height).build()
   colliders.insert_with_parent(collider, floor_handle, bodies) |> ignore
-  let integration_parameters = @pipeline.IntegrationParameters::default()
+  let integration_parameters = @dynamics.IntegrationParameters::default()
   let character_controller_snap = KinematicCharacterController::new().with_snap_to_ground(
     Some(CharacterLength::relative(0.2F)),
   )

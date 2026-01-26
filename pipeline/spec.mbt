@@ -13,32 +13,7 @@
 // limitations under the License.
 
 ///|
-pub struct IntegrationParameters {
-  dt : @core.Real
-}
-
-///|
-#declaration_only
-pub fn IntegrationParameters::default() -> IntegrationParameters {
-  ...
-}
-
-///|
-#declaration_only
-pub fn IntegrationParameters::with_dt(
-  self : IntegrationParameters,
-  dt : @core.Real,
-) -> IntegrationParameters {
-  ...
-}
-
-///|
-#declaration_only
-pub fn IntegrationParameters::prediction_distance(
-  self : IntegrationParameters,
-) -> @core.Real {
-  ...
-}
+pub type IntegrationParameters = @dynamics.IntegrationParameters
 
 ///|
 #declaration_only

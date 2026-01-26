@@ -43,13 +43,6 @@ pub fn EventHandler::push_contact_force_event(Self, @collision.ContactForceEvent
 pub fn EventHandler::take_collision_events(Self) -> Array[@collision.CollisionEvent]
 pub fn EventHandler::take_contact_force_events(Self) -> Array[@collision.ContactForceEvent]
 
-pub struct IntegrationParameters {
-  dt : Float
-}
-pub fn IntegrationParameters::default() -> Self
-pub fn IntegrationParameters::prediction_distance(Self) -> Float
-pub fn IntegrationParameters::with_dt(Self, Float) -> Self
-
 pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
@@ -63,9 +56,10 @@ pub struct PhysicsPipeline {
   contact_solver_cache : Array[ContactImpulseCacheEntry]
 }
 pub fn PhysicsPipeline::new() -> Self
-pub fn PhysicsPipeline::step(Self, @core.Vec2, IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
+pub fn PhysicsPipeline::step(Self, @core.Vec2, @dynamics.IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 // Type aliases
+pub using @dynamics {type IntegrationParameters}
 
 // Traits
 
