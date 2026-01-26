@@ -2083,6 +2083,772 @@ fn contact_manifold_cuboid_ball(
 }
 
 ///|
+priv struct ClipVertex {
+  v : @core.Vec2
+  id : Int
+}
+
+///|
+fn clip_segment_to_line(
+  input : Array[ClipVertex],
+  normal : @core.Vec2,
+  offset : @core.Real,
+) -> Array[ClipVertex] {
+  let output : Array[ClipVertex] = []
+  if input.length() != 2 {
+    return output
+  }
+  let v1 = input[0]
+  let v2 = input[1]
+  let d1 = normal.dot(v1.v) - offset
+  let d2 = normal.dot(v2.v) - offset
+  if d1 <= 0.0F {
+    output.push(v1)
+  }
+  if d2 <= 0.0F {
+    output.push(v2)
+  }
+  if d1 * d2 < 0.0F {
+    let t = d1 / (d1 - d2)
+    let dv = v2.v.sub(v1.v)
+    let v = v1.v.add(@core.Vec2::new(dv.x * t, dv.y * t))
+    let id = if d1 > 0.0F { v1.id } else { v2.id }
+    output.push(ClipVertex::{ v, id })
+  }
+  output
+}
+
+///|
+fn cuboid_world_vertices(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> Array[@core.Vec2] {
+  let rot = @core.Rot2::from_angle(rotation)
+  // Match `FeatureId::Vertex` convention used by query_pipeline:
+  // 0 = (+,+), 1 = (-,+), 2 = (-,-), 3 = (+,-)
+  let v0 = center.add(rot.rotate_vec2(@core.Vec2::new(half_width, half_height)))
+  let v1 = center.add(
+    rot.rotate_vec2(@core.Vec2::new(-half_width, half_height)),
+  )
+  let v2 = center.add(
+    rot.rotate_vec2(@core.Vec2::new(-half_width, -half_height)),
+  )
+  let v3 = center.add(
+    rot.rotate_vec2(@core.Vec2::new(half_width, -half_height)),
+  )
+  [v0, v1, v2, v3]
+}
+
+///|
+fn cuboid_edge_endpoints_ccw(edge : Int) -> (Int, Int) {
+  // Edge indices follow the convention used by query_pipeline:
+  // 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
+  if edge == 0 {
+    // v3 -> v0
+    (3, 0)
+  } else if edge == 1 {
+    // v1 -> v2
+    (1, 2)
+  } else if edge == 2 {
+    // v0 -> v1
+    (0, 1)
+  } else {
+    // v2 -> v3
+    (2, 3)
+  }
+}
+
+///|
+fn cuboid_feature_from_local_point(
+  local_point : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> FeatureId {
+  let on_x = @core.abs(@core.abs(local_point.x) - half_width) <= 1.0e-6F
+  let on_y = @core.abs(@core.abs(local_point.y) - half_height) <= 1.0e-6F
+  if on_x && on_y {
+    let vx = if local_point.x >= 0.0F { 1 } else { 0 }
+    let vy = if local_point.y >= 0.0F { 1 } else { 0 }
+    let vid = match (vx, vy) {
+      (1, 1) => 0
+      (0, 1) => 1
+      (0, 0) => 2
+      (1, 0) => 3
+      _ => 0
+    }
+    FeatureId::Vertex(vid)
+  } else if on_x {
+    FeatureId::Edge(if local_point.x >= 0.0F { 0 } else { 1 })
+  } else {
+    FeatureId::Edge(if local_point.y >= 0.0F { 2 } else { 3 })
+  }
+}
+
+///|
+fn capsule_world_segment(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  half_height : @core.Real,
+  axis : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2) {
+  let rot = @core.Rot2::from_angle(rotation)
+  let world_axis = rot.rotate_vec2(axis)
+  (
+    center.sub(vec2_scale(world_axis, half_height)),
+    center.add(vec2_scale(world_axis, half_height)),
+  )
+}
+
+///|
+fn closest_point_on_segment_with_param(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  p : @core.Vec2,
+) -> (@core.Vec2, @core.Real) {
+  let ab = b.sub(a)
+  let denom = ab.dot(ab)
+  if denom <= 1.0e-12F {
+    (a, 0.0F)
+  } else {
+    let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+    (a.add(@core.Vec2::new(ab.x * t, ab.y * t)), t)
+  }
+}
+
+///|
+fn closest_points_segment_segment(
+  p1 : @core.Vec2,
+  q1 : @core.Vec2,
+  p2 : @core.Vec2,
+  q2 : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2, @core.Real, @core.Real) {
+  // Algorithm adapted from "Real-Time Collision Detection" (Christer Ericson).
+  let d1 = q1.sub(p1)
+  let d2 = q2.sub(p2)
+  let r = p1.sub(p2)
+  let a = d1.dot(d1)
+  let e = d2.dot(d2)
+  let f = d2.dot(r)
+  let mut s = 0.0F
+  let mut t = 0.0F
+  if a <= 1.0e-12F && e <= 1.0e-12F {
+    (p1, p2, 0.0F, 0.0F)
+  } else if a <= 1.0e-12F {
+    s = 0.0F
+    t = clamp_value(f / e, 0.0F, 1.0F)
+    (p1, p2.add(@core.Vec2::new(d2.x * t, d2.y * t)), s, t)
+  } else {
+    let c = d1.dot(r)
+    if e <= 1.0e-12F {
+      t = 0.0F
+      s = clamp_value(-c / a, 0.0F, 1.0F)
+    } else {
+      let b = d1.dot(d2)
+      let denom = a * e - b * b
+      if denom != 0.0F {
+        s = clamp_value((b * f - c * e) / denom, 0.0F, 1.0F)
+      } else {
+        s = 0.0F
+      }
+      let tnom = b * s + f
+      if tnom < 0.0F {
+        t = 0.0F
+        s = clamp_value(-c / a, 0.0F, 1.0F)
+      } else if tnom > e {
+        t = 1.0F
+        s = clamp_value((b - c) / a, 0.0F, 1.0F)
+      } else {
+        t = tnom / e
+      }
+    }
+    (
+      p1.add(@core.Vec2::new(d1.x * s, d1.y * s)),
+      p2.add(@core.Vec2::new(d2.x * t, d2.y * t)),
+      s,
+      t,
+    )
+  }
+}
+
+///|
+fn segment_aabb_intersection_params(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> (@core.Real, @core.Real)? {
+  // Liang–Barsky clipping against axis-aligned AABB centered at origin.
+  let d = b.sub(a)
+  let mut t0 = 0.0F
+  let mut t1 = 1.0F
+  let p = [-d.x, d.x, -d.y, d.y]
+  let q = [
+    a.x + half_width,
+    half_width - a.x,
+    a.y + half_height,
+    half_height - a.y,
+  ]
+  for i in 0..<4 {
+    let pi = p[i]
+    let qi = q[i]
+    if @core.abs(pi) <= 1.0e-12F {
+      if qi < 0.0F {
+        return None
+      }
+    } else {
+      let r = qi / pi
+      if pi < 0.0F {
+        if r > t1 {
+          return None
+        }
+        if r > t0 {
+          t0 = r
+        }
+      } else {
+        if r < t0 {
+          return None
+        }
+        if r < t1 {
+          t1 = r
+        }
+      }
+    }
+  }
+  Some((t0, t1))
+}
+
+///|
+fn closest_points_segment_aabb_local(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> (@core.Vec2, @core.Vec2, @core.Real, FeatureId, FeatureId) {
+  if segment_aabb_intersection_params(a, b, half_width, half_height)
+    is Some((t0, t1)) {
+    let d = b.sub(a)
+    // Pick a deterministic intersection point on the boundary (entry point).
+    let seg_p = a.add(@core.Vec2::new(d.x * t0, d.y * t0))
+    let box_p = seg_p
+    let seg_feature = if t0 <= 1.0e-6F {
+      FeatureId::Vertex(0)
+    } else if t0 >= 1.0F - 1.0e-6F {
+      FeatureId::Vertex(1)
+    } else {
+      FeatureId::Edge(0)
+    }
+    let box_feature = cuboid_feature_from_local_point(
+      box_p, half_width, half_height,
+    )
+    t1 |> ignore
+    return (seg_p, box_p, 0.0F, seg_feature, box_feature)
+  }
+
+  // Compute the minimum distance between the segment and each AABB edge segment.
+  let edges = [
+    // x=+hw
+    (
+      @core.Vec2::new(half_width, -half_height),
+      @core.Vec2::new(half_width, half_height),
+      FeatureId::Edge(0),
+    ),
+    // x=-hw
+    (
+      @core.Vec2::new(-half_width, half_height),
+      @core.Vec2::new(-half_width, -half_height),
+      FeatureId::Edge(1),
+    ),
+    // y=+hh
+    (
+      @core.Vec2::new(half_width, half_height),
+      @core.Vec2::new(-half_width, half_height),
+      FeatureId::Edge(2),
+    ),
+    // y=-hh
+    (
+      @core.Vec2::new(-half_width, -half_height),
+      @core.Vec2::new(half_width, -half_height),
+      FeatureId::Edge(3),
+    ),
+  ]
+  let mut best_dist2 = 1.0e30F
+  let mut best_seg = a
+  let mut best_box = @core.Vec2::new(half_width, half_height)
+  let mut best_s = 0.0F
+  for i in 0..<edges.length() {
+    let e = edges[i]
+    let (ps, pb, s, _) = closest_points_segment_segment(a, b, e.0, e.1)
+    let delta = pb.sub(ps)
+    let dist2 = delta.dot(delta)
+    if dist2 < best_dist2 {
+      best_dist2 = dist2
+      best_seg = ps
+      best_box = pb
+      best_s = s
+    }
+  }
+  let seg_feature = if best_s <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if best_s >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+  let box_feature = cuboid_feature_from_local_point(
+    best_box, half_width, half_height,
+  )
+  (best_seg, best_box, Float::sqrt(best_dist2), seg_feature, box_feature)
+}
+
+///|
+fn contact_manifold_cuboid_cuboid(
+  cuboid1 : Collider,
+  half_width1 : @core.Real,
+  half_height1 : @core.Real,
+  cuboid2 : Collider,
+  half_width2 : @core.Real,
+  half_height2 : @core.Real,
+) -> ContactManifold {
+  let (ax1, ay1) = cuboid_axes(cuboid1.world_rotation)
+  let (ax2, ay2) = cuboid_axes(cuboid2.world_rotation)
+  let delta = cuboid2.world_translation.sub(cuboid1.world_translation)
+  let axes = [ax1, ay1, ax2, ay2]
+  let mut best_overlap = 1.0e30F
+  let mut best_axis = ax1
+  let mut best_axis_owner = 0 // 0 = cuboid1, 1 = cuboid2
+  let mut best_axis_id = 0 // 0 = x, 1 = y
+  for i in 0..<axes.length() {
+    let axis = axes[i]
+    let proj = @core.abs(delta.dot(axis))
+    let r1 = projection_radius(axis, ax1, ay1, half_width1, half_height1)
+    let r2 = projection_radius(axis, ax2, ay2, half_width2, half_height2)
+    let overlap = r1 + r2 - proj
+    if overlap < best_overlap {
+      best_overlap = overlap
+      best_axis = axis
+      best_axis_owner = if i < 2 { 0 } else { 1 }
+      best_axis_id = if i % 2 == 0 { 0 } else { 1 }
+    }
+  }
+  let sign = if delta.dot(best_axis) < 0.0F { -1.0F } else { 1.0F }
+  let normal12 = vec2_scale(best_axis, sign)
+  let reference_is_1 = best_axis_owner == 0
+  let ref_normal = if reference_is_1 {
+    normal12
+  } else {
+    @core.Vec2::new(-normal12.x, -normal12.y)
+  }
+  let ref_edge_id = if best_axis_id == 0 {
+    if ref_normal.dot(if reference_is_1 { ax1 } else { ax2 }) >= 0.0F {
+      0
+    } else {
+      1
+    }
+  } else if ref_normal.dot(if reference_is_1 { ay1 } else { ay2 }) >= 0.0F {
+    2
+  } else {
+    3
+  }
+  let ref_verts = if reference_is_1 {
+    cuboid_world_vertices(
+      cuboid1.world_translation,
+      cuboid1.world_rotation,
+      half_width1,
+      half_height1,
+    )
+  } else {
+    cuboid_world_vertices(
+      cuboid2.world_translation,
+      cuboid2.world_rotation,
+      half_width2,
+      half_height2,
+    )
+  }
+  let (rv1i, rv2i) = cuboid_edge_endpoints_ccw(ref_edge_id)
+  let rv1 = ref_verts[rv1i]
+  let rv2 = ref_verts[rv2i]
+  let ref_tangent = normalize_or_fallback(
+    rv2.sub(rv1),
+    @core.Vec2::new(1.0F, 0.0F),
+  )
+  let side_normal1 = @core.Vec2::new(-ref_tangent.x, -ref_tangent.y)
+  let side_normal2 = ref_tangent
+  let clip1 = clip_segment_to_line(
+    {
+      let (iax, iay) = if reference_is_1 { (ax2, ay2) } else { (ax1, ay1) }
+      let mut best_dot = 1.0e30F
+      let mut incident_edge_id = 0
+      let normals = [
+        iax,
+        @core.Vec2::new(-iax.x, -iax.y),
+        iay,
+        @core.Vec2::new(-iay.x, -iay.y),
+      ]
+      for k in 0..<4 {
+        let d = normals[k].dot(ref_normal)
+        if d < best_dot {
+          best_dot = d
+          incident_edge_id = k
+        }
+      }
+      let iverts = if reference_is_1 {
+        cuboid_world_vertices(
+          cuboid2.world_translation,
+          cuboid2.world_rotation,
+          half_width2,
+          half_height2,
+        )
+      } else {
+        cuboid_world_vertices(
+          cuboid1.world_translation,
+          cuboid1.world_rotation,
+          half_width1,
+          half_height1,
+        )
+      }
+      let (iv1i, iv2i) = cuboid_edge_endpoints_ccw(incident_edge_id)
+      [
+        ClipVertex::{ v: iverts[iv1i], id: iv1i },
+        ClipVertex::{ v: iverts[iv2i], id: iv2i },
+      ]
+    },
+    side_normal1,
+    side_normal1.dot(rv1),
+  )
+  let clip2 = clip_segment_to_line(clip1, side_normal2, side_normal2.dot(rv2))
+  let front_offset = ref_normal.dot(rv1)
+  let points : Array[ContactManifoldPoint] = []
+  for i in 0..<clip2.length() {
+    let cv = clip2[i]
+    let separation = ref_normal.dot(cv.v) - front_offset
+    if separation <= 0.0F + 1.0e-6F {
+      let cp_ref = cv.v.sub(vec2_scale(ref_normal, separation))
+      let (world_p1, world_p2, fid1, fid2) = if reference_is_1 {
+        (cp_ref, cv.v, FeatureId::Edge(ref_edge_id), FeatureId::Vertex(cv.id))
+      } else {
+        (cv.v, cp_ref, FeatureId::Vertex(cv.id), FeatureId::Edge(ref_edge_id))
+      }
+      points.push(ContactManifoldPoint::{
+        local_p1: cuboid1.position().inverse().transform_point(world_p1),
+        local_p2: cuboid2.position().inverse().transform_point(world_p2),
+        dist: separation,
+        fid1,
+        fid2,
+      })
+    }
+  }
+
+  // Deterministic ordering along the reference tangent.
+  if points.length() == 2 {
+    let p0 = cuboid1.position().transform_point(points[0].local_p1)
+    let p1 = cuboid1.position().transform_point(points[1].local_p1)
+    if p0.dot(ref_tangent) > p1.dot(ref_tangent) {
+      let tmp = points[0]
+      points[0] = points[1]
+      points[1] = tmp
+    }
+  }
+  ContactManifold::{ normal: normal12, points }
+}
+
+///|
+fn contact_manifold_ball_segment(
+  ball : Collider,
+  radius : @core.Real,
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (projection, seg_feature) = project_point_on_segment_and_get_feature(
+    segment.world_translation,
+    segment.world_rotation,
+    a,
+    b,
+    ball_center,
+  )
+  let closest = projection.point()
+  let d = closest.sub(ball_center)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = ball_center.add(vec2_scale(normal, radius))
+  let world_p2 = closest
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: ball.position().inverse().transform_point(world_p1),
+        local_p2: segment.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: FeatureId::Face(0),
+        fid2: seg_feature,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_segment_ball(
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  ball : Collider,
+  radius : @core.Real,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (projection, seg_feature) = project_point_on_segment_and_get_feature(
+    segment.world_translation,
+    segment.world_rotation,
+    a,
+    b,
+    ball_center,
+  )
+  let closest = projection.point()
+  let d = ball_center.sub(closest)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = closest
+  let world_p2 = ball_center.sub(vec2_scale(normal, radius))
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: segment.position().inverse().transform_point(world_p1),
+        local_p2: ball.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: seg_feature,
+        fid2: FeatureId::Face(0),
+      },
+    ],
+  }
+}
+
+///|
+fn capsule_segment_feature(t : @core.Real) -> FeatureId {
+  if t <= 1.0e-6F {
+    FeatureId::Vertex(0)
+  } else if t >= 1.0F - 1.0e-6F {
+    FeatureId::Vertex(1)
+  } else {
+    FeatureId::Edge(0)
+  }
+}
+
+///|
+fn contact_manifold_ball_capsule(
+  ball : Collider,
+  radius_ball : @core.Real,
+  capsule : Collider,
+  half_height : @core.Real,
+  radius_capsule : @core.Real,
+  axis : @core.Vec2,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (sa, sb) = capsule_world_segment(
+    capsule.world_translation,
+    capsule.world_rotation,
+    half_height,
+    axis,
+  )
+  let (q, t) = closest_point_on_segment_with_param(sa, sb, ball_center)
+  let d = q.sub(ball_center)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - (radius_ball + radius_capsule)
+  let world_p1 = ball_center.add(vec2_scale(normal, radius_ball))
+  let world_p2 = q.sub(vec2_scale(normal, radius_capsule))
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: ball.position().inverse().transform_point(world_p1),
+        local_p2: capsule.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: FeatureId::Face(0),
+        fid2: capsule_segment_feature(t),
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_capsule_ball(
+  capsule : Collider,
+  half_height : @core.Real,
+  radius_capsule : @core.Real,
+  axis : @core.Vec2,
+  ball : Collider,
+  radius_ball : @core.Real,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (sa, sb) = capsule_world_segment(
+    capsule.world_translation,
+    capsule.world_rotation,
+    half_height,
+    axis,
+  )
+  let (q, t) = closest_point_on_segment_with_param(sa, sb, ball_center)
+  let d = ball_center.sub(q)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - (radius_ball + radius_capsule)
+  let world_p1 = q.add(vec2_scale(normal, radius_capsule))
+  let world_p2 = ball_center.sub(vec2_scale(normal, radius_ball))
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: capsule.position().inverse().transform_point(world_p1),
+        local_p2: ball.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: capsule_segment_feature(t),
+        fid2: FeatureId::Face(0),
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_capsule_capsule(
+  capsule1 : Collider,
+  half_height1 : @core.Real,
+  radius1 : @core.Real,
+  axis1 : @core.Vec2,
+  capsule2 : Collider,
+  half_height2 : @core.Real,
+  radius2 : @core.Real,
+  axis2 : @core.Vec2,
+) -> ContactManifold {
+  let (a1, b1) = capsule_world_segment(
+    capsule1.world_translation,
+    capsule1.world_rotation,
+    half_height1,
+    axis1,
+  )
+  let (a2, b2) = capsule_world_segment(
+    capsule2.world_translation,
+    capsule2.world_rotation,
+    half_height2,
+    axis2,
+  )
+  let (p1, p2, s, t) = closest_points_segment_segment(a1, b1, a2, b2)
+  let d = p2.sub(p1)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - (radius1 + radius2)
+  let world_p1 = p1.add(vec2_scale(normal, radius1))
+  let world_p2 = p2.sub(vec2_scale(normal, radius2))
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: capsule1.position().inverse().transform_point(world_p1),
+        local_p2: capsule2.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: capsule_segment_feature(s),
+        fid2: capsule_segment_feature(t),
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_segment_cuboid(
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> ContactManifold {
+  let (sa, sb) = segment_world_endpoints(
+    segment.world_translation,
+    segment.world_rotation,
+    a,
+    b,
+  )
+  let rot = @core.Rot2::from_angle(cuboid.world_rotation)
+  let inv = rot.inverse()
+  let la = inv.rotate_vec2(sa.sub(cuboid.world_translation))
+  let lb = inv.rotate_vec2(sb.sub(cuboid.world_translation))
+  let (seg_l, box_l, dist_center, seg_f, box_f) = closest_points_segment_aabb_local(
+    la, lb, half_width, half_height,
+  )
+  let box_world = cuboid.world_translation.add(rot.rotate_vec2(box_l))
+  let seg_world = cuboid.world_translation.add(rot.rotate_vec2(seg_l))
+  let d = box_world.sub(seg_world)
+  let normal = if dist_center <= 1.0e-12F {
+    let n_local = match box_f {
+      FeatureId::Edge(id) =>
+        if id == 0 {
+          @core.Vec2::new(1.0F, 0.0F)
+        } else if id == 1 {
+          @core.Vec2::new(-1.0F, 0.0F)
+        } else if id == 2 {
+          @core.Vec2::new(0.0F, 1.0F)
+        } else {
+          @core.Vec2::new(0.0F, -1.0F)
+        }
+      _ => @core.Vec2::new(1.0F, 0.0F)
+    }
+    let mut n = rot.rotate_vec2(n_local)
+    if n.dot(cuboid.world_translation.sub(segment.world_translation)) < 0.0F {
+      n = @core.Vec2::new(-n.x, -n.y)
+    }
+    n
+  } else {
+    normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  }
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: segment.position().inverse().transform_point(seg_world),
+        local_p2: cuboid.position().inverse().transform_point(box_world),
+        dist: dist_center,
+        fid1: seg_f,
+        fid2: box_f,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_cuboid_segment(
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  segment : Collider,
+  a : @core.Vec2,
+  b : @core.Vec2,
+) -> ContactManifold {
+  let m = contact_manifold_segment_cuboid(
+    segment, a, b, cuboid, half_width, half_height,
+  )
+  // Flip normal and swap feature ids/points into cuboid/segment order.
+  let points : Array[ContactManifoldPoint] = []
+  let ps = m.points()
+  for i in 0..<ps.length() {
+    let p = ps[i]
+    points.push(ContactManifoldPoint::{
+      local_p1: p.local_p2(),
+      local_p2: p.local_p1(),
+      dist: p.dist(),
+      fid1: p.fid2(),
+      fid2: p.fid1(),
+    })
+  }
+  ContactManifold::{
+    normal: @core.Vec2::new(-m.normal().x, -m.normal().y),
+    points,
+  }
+}
+
+///|
 fn build_contact_pair(
   collider1 : Collider,
   collider2 : Collider,
@@ -2098,6 +2864,122 @@ fn build_contact_pair(
     (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
       manifolds.push(
         contact_manifold_cuboid_ball(collider1, hw, hh, collider2, r),
+      )
+    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+      manifolds.push(
+        contact_manifold_cuboid_cuboid(collider1, hw1, hh1, collider2, hw2, hh2),
+      )
+    (Shape::Ball(r), Shape::Segment(a, b)) =>
+      manifolds.push(
+        contact_manifold_ball_segment(collider1, r, collider2, a, b),
+      )
+    (Shape::Segment(a, b), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_segment_ball(collider1, a, b, collider2, r),
+      )
+    (Shape::Ball(r), Shape::CapsuleX(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_ball_capsule(
+          collider1,
+          r,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+        ),
+      )
+    (Shape::Ball(r), Shape::CapsuleY(hh, cr)) =>
+      manifolds.push(
+        contact_manifold_ball_capsule(
+          collider1,
+          r,
+          collider2,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+        ),
+      )
+    (Shape::CapsuleX(hh, cr), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_capsule_ball(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(1.0F, 0.0F),
+          collider2,
+          r,
+        ),
+      )
+    (Shape::CapsuleY(hh, cr), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_capsule_ball(
+          collider1,
+          hh,
+          cr,
+          @core.Vec2::new(0.0F, 1.0F),
+          collider2,
+          r,
+        ),
+      )
+    (Shape::CapsuleX(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
+      manifolds.push(
+        contact_manifold_capsule_capsule(
+          collider1,
+          hh1,
+          r1,
+          @core.Vec2::new(1.0F, 0.0F),
+          collider2,
+          hh2,
+          r2,
+          @core.Vec2::new(1.0F, 0.0F),
+        ),
+      )
+    (Shape::CapsuleX(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
+      manifolds.push(
+        contact_manifold_capsule_capsule(
+          collider1,
+          hh1,
+          r1,
+          @core.Vec2::new(1.0F, 0.0F),
+          collider2,
+          hh2,
+          r2,
+          @core.Vec2::new(0.0F, 1.0F),
+        ),
+      )
+    (Shape::CapsuleY(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
+      manifolds.push(
+        contact_manifold_capsule_capsule(
+          collider1,
+          hh1,
+          r1,
+          @core.Vec2::new(0.0F, 1.0F),
+          collider2,
+          hh2,
+          r2,
+          @core.Vec2::new(1.0F, 0.0F),
+        ),
+      )
+    (Shape::CapsuleY(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
+      manifolds.push(
+        contact_manifold_capsule_capsule(
+          collider1,
+          hh1,
+          r1,
+          @core.Vec2::new(0.0F, 1.0F),
+          collider2,
+          hh2,
+          r2,
+          @core.Vec2::new(0.0F, 1.0F),
+        ),
+      )
+    (Shape::Segment(a, b), Shape::Cuboid(hw, hh)) =>
+      manifolds.push(
+        contact_manifold_segment_cuboid(collider1, a, b, collider2, hw, hh),
+      )
+    (Shape::Cuboid(hw, hh), Shape::Segment(a, b)) =>
+      manifolds.push(
+        contact_manifold_cuboid_segment(collider1, hw, hh, collider2, a, b),
       )
     _ => {
       let p1 = collider1.world_translation

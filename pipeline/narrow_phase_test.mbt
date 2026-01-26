@@ -292,79 +292,168 @@ test "narrow phase collision groups filtering" {
 }
 
 ///|
-test "narrow phase contact manifolds: ball-ball and ball-cuboid" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-
+test "narrow phase contact manifolds: basic shapes" {
   // Ball-ball.
-  let b1 = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::zero())
-    .build(),
-  )
-  let b2 = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.75F, 0.0F))
-    .build(),
-  )
-  let c1 = collider_set.insert_with_parent(
-    @collision.ColliderBuilder::ball(0.5F).build(),
-    b1,
-    rigid_body_set,
-  )
-  let c2 = collider_set.insert_with_parent(
-    @collision.ColliderBuilder::ball(0.5F).build(),
-    b2,
-    rigid_body_set,
-  )
-  narrow_phase.update(rigid_body_set, collider_set)
-  let pair = narrow_phase.contact_pair(c1, c2)
-  if pair is Some(cp) {
-    inspect(cp.manifold_count() == 1, content="true")
-    let manifolds = cp.manifolds()
-    inspect(manifolds.length() == 1, content="true")
-    let m = manifolds[0]
-    inspect(@core.abs(m.normal().x - 1.0F) < 1.0e-3F, content="true")
-    inspect(@core.abs(m.normal().y) < 1.0e-3F, content="true")
-    let pts = m.points()
-    inspect(pts.length() == 1, content="true")
-    inspect(@core.abs(pts[0].dist() + 0.25F) < 1.0e-3F, content="true")
-  } else {
-    inspect(false, content="true")
+  {
+    let rigid_body_set = @dynamics.RigidBodySet::new()
+    let collider_set = @collision.ColliderSet::new()
+    let narrow_phase = @collision.NarrowPhase::new()
+    let b1 = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      .translation(@core.Vec2::zero())
+      .build(),
+    )
+    let b2 = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      .translation(@core.Vec2::new(0.75F, 0.0F))
+      .build(),
+    )
+    let c1 = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::ball(0.5F).build(),
+      b1,
+      rigid_body_set,
+    )
+    let c2 = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::ball(0.5F).build(),
+      b2,
+      rigid_body_set,
+    )
+    narrow_phase.update(rigid_body_set, collider_set)
+    let pair = narrow_phase.contact_pair(c1, c2)
+    if pair is Some(cp) {
+      inspect(cp.manifold_count() == 1, content="true")
+      let m = cp.manifolds()[0]
+      inspect(@core.abs(m.normal().x - 1.0F) < 1.0e-3F, content="true")
+      inspect(@core.abs(m.normal().y) < 1.0e-3F, content="true")
+      let pt = m.points()[0]
+      inspect(@core.abs(pt.dist() + 0.25F) < 1.0e-3F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
   }
 
   // Ball-cuboid (ball is collider1, cuboid is collider2).
-  let b3 = rigid_body_set.insert(
+  {
+    let rigid_body_set = @dynamics.RigidBodySet::new()
+    let collider_set = @collision.ColliderSet::new()
+    let narrow_phase = @collision.NarrowPhase::new()
+    let b3 = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      .translation(@core.Vec2::zero())
+      .build(),
+    )
+    let b4 = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::fixed()
+      .translation(@core.Vec2::new(1.5F, 0.0F))
+      .build(),
+    )
+    let ball = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::ball(1.0F).build(),
+      b3,
+      rigid_body_set,
+    )
+    let cuboid = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+      b4,
+      rigid_body_set,
+    )
+    narrow_phase.update(rigid_body_set, collider_set)
+    let pair2 = narrow_phase.contact_pair(ball, cuboid)
+    if pair2 is Some(cp) {
+      inspect(cp.manifold_count() == 1, content="true")
+      let m = cp.manifolds()[0]
+      inspect(@core.abs(m.normal().x - 1.0F) < 1.0e-3F, content="true")
+      let pt = m.points()[0]
+      inspect(@core.abs(pt.dist() + 0.5F) < 1.0e-3F, content="true")
+      match pt.fid2() {
+        @collision.FeatureId::Edge(id) => inspect(id == 1, content="true")
+        _ => inspect(false, content="true")
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+
+  // Cuboid-cuboid (expect two contact points with stable vertex ids).
+  {
+    let rigid_body_set = @dynamics.RigidBodySet::new()
+    let collider_set = @collision.ColliderSet::new()
+    let narrow_phase = @collision.NarrowPhase::new()
+    let a = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      .translation(@core.Vec2::zero())
+      .build(),
+    )
+    let b = rigid_body_set.insert(
+      @dynamics.RigidBodyBuilder::fixed()
+      .translation(@core.Vec2::new(1.5F, 0.0F))
+      .build(),
+    )
+    let ca = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+      a,
+      rigid_body_set,
+    )
+    let cb = collider_set.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
+      b,
+      rigid_body_set,
+    )
+    narrow_phase.update(rigid_body_set, collider_set)
+    let pair = narrow_phase.contact_pair(ca, cb)
+    if pair is Some(cp) {
+      inspect(cp.manifold_count() == 1, content="true")
+      let m = cp.manifolds()[0]
+      inspect(m.points().length() == 2, content="true")
+      let pts = m.points()
+      inspect(@core.abs(pts[0].dist() + 0.5F) < 1.0e-3F, content="true")
+      inspect(@core.abs(pts[1].dist() + 0.5F) < 1.0e-3F, content="true")
+      let mut vertex_count = 0
+      for i in 0..<pts.length() {
+        let p = pts[i]
+        match (p.fid1(), p.fid2()) {
+          (@collision.FeatureId::Vertex(_), _) =>
+            vertex_count = vertex_count + 1
+          (_, @collision.FeatureId::Vertex(_)) =>
+            vertex_count = vertex_count + 1
+          _ => ()
+        }
+      }
+      inspect(vertex_count == 2, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  }
+
+  // Capsule-ball (capsule is collider1).
+  let rigid_body_set = @dynamics.RigidBodySet::new()
+  let collider_set = @collision.ColliderSet::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let a = rigid_body_set.insert(
+    @dynamics.RigidBodyBuilder::fixed().translation(@core.Vec2::zero()).build(),
+  )
+  let b = rigid_body_set.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::zero())
+    .translation(@core.Vec2::new(1.8F, 0.0F))
     .build(),
   )
-  let b4 = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(1.5F, 0.0F))
-    .build(),
-  )
-  let ball = collider_set.insert_with_parent(
-    @collision.ColliderBuilder::ball(1.0F).build(),
-    b3,
+  let capsule = collider_set.insert_with_parent(
+    @collision.ColliderBuilder::capsule_x(1.0F, 0.5F).build(),
+    a,
     rigid_body_set,
   )
-  let cuboid = collider_set.insert_with_parent(
-    @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
-    b4,
+  let ball = collider_set.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    b,
     rigid_body_set,
   )
   narrow_phase.update(rigid_body_set, collider_set)
-  let pair2 = narrow_phase.contact_pair(ball, cuboid)
-  if pair2 is Some(cp) {
-    inspect(cp.manifold_count() == 1, content="true")
-    let m = cp.manifolds()[0]
-    inspect(@core.abs(m.normal().x - 1.0F) < 1.0e-3F, content="true")
-    let pt = m.points()[0]
-    inspect(@core.abs(pt.dist() + 0.5F) < 1.0e-3F, content="true")
-    match pt.fid2() {
-      @collision.FeatureId::Edge(id) => inspect(id == 1, content="true")
+  let pair = narrow_phase.contact_pair(capsule, ball)
+  if pair is Some(cp) {
+    let pt = cp.manifolds()[0].points()[0]
+    inspect(@core.abs(pt.dist() + 0.2F) < 1.0e-2F, content="true")
+    match pt.fid1() {
+      @collision.FeatureId::Vertex(id) => inspect(id == 1, content="true")
       _ => inspect(false, content="true")
     }
   } else {
