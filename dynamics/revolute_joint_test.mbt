@@ -17,24 +17,21 @@
 test "revolute joint angle" {
   let revolute = RevoluteJointBuilder::new().build()
   let rot1 = @core.rotation_from_angle(1.0F)
-  let deltas = [
-    -@core.pi(),
-    -@core.pi() / 2.0F,
-    0.0F,
-    @core.pi() / 2.0F,
-    @core.pi(),
-  ]
-  for delta in deltas {
+  let steps = 100
+  let steps_real = Float::from_double(steps.to_double())
+  for step_index in 1..<steps {
+    let step_real = Float::from_double(step_index.to_double())
+    let delta = -@core.pi() + step_real * @core.two_pi() / steps_real
     let rot2 = @core.rotation_from_angle(1.0F + delta)
     let angle = revolute.angle(rot1, rot2)
     let diff = @core.abs(angle - delta)
-    let pi_value = @core.pi()
-    let near_pi = @core.abs(@core.abs(delta) - pi_value) < 1.0e-3F
-    let diff_alt = @core.abs(angle + delta)
-    if near_pi {
-      inspect(diff < 1.0e-2F || diff_alt < 1.0e-2F, content="true")
-    } else {
-      inspect(diff < 1.0e-2F, content="true")
-    }
+    inspect(diff < 1.0e-5F, content="true")
+  }
+  let boundary_deltas = [-@core.pi(), @core.pi()]
+  for delta in boundary_deltas {
+    let rot2 = @core.rotation_from_angle(1.0F + delta)
+    let angle = revolute.angle(rot1, rot2)
+    let diff = @core.abs(@core.abs(angle) - @core.abs(delta))
+    inspect(diff < 1.0e-2F, content="true")
   }
 }

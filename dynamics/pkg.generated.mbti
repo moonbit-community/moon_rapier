@@ -256,7 +256,10 @@ pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
 type IslandsOptimizer
 
 type Jacobian
+pub fn Jacobian::cols(Self) -> Int
 pub fn Jacobian::equals(Self, Self) -> Bool
+pub fn Jacobian::spatial_dim() -> Int
+pub fn Jacobian::value_at(Self, Int, Int) -> Float
 pub fn Jacobian::zeros(Int) -> Self
 
 pub struct JointAxesMask {

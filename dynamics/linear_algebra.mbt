@@ -159,7 +159,7 @@ struct Jacobian {
 }
 
 ///|
-fn Jacobian::spatial_dim() -> Int {
+pub fn Jacobian::spatial_dim() -> Int {
   3
 }
 
@@ -197,6 +197,16 @@ fn Jacobian::set_value(
   value : @core.Real,
 ) -> Unit {
   self.data[row * self.cols + col] = value
+}
+
+///|
+pub fn Jacobian::value_at(self : Jacobian, row : Int, col : Int) -> @core.Real {
+  self.data[row * self.cols + col]
+}
+
+///|
+pub fn Jacobian::cols(self : Jacobian) -> Int {
+  self.cols
 }
 
 ///|
