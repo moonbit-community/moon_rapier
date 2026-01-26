@@ -386,6 +386,64 @@ test "joint step delta time 0" {
 }
 
 ///|
+test "revolute impulse-joint keeps anchors coincident" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let h_fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let h_dynamic = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .additional_mass(1.0F)
+    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .build(),
+  )
+  let local_anchor1 = @core.Vec2::zero()
+  let local_anchor2 = @core.Vec2::new(-1.0F, 0.0F)
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
+    .local_anchor1(local_anchor1)
+    .local_anchor2(local_anchor2)
+    .build(),
+  )
+  impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    8,
+  )
+  let mut max_err = 0.0F
+  for _ in 0..<120 {
+    pipeline.step(
+      gravity,
+      parameters,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+    if bodies.get(h_fixed) is Some(b1) && bodies.get(h_dynamic) is Some(b2) {
+      let world1 = b1.position().transform_point(local_anchor1)
+      let world2 = b2.position().transform_point(local_anchor2)
+      let err = world1.sub(world2).length()
+      if err > max_err {
+        max_err = err
+      }
+    }
+  }
+  inspect(max_err < 1.0e-2F, content="true")
+}
+
+///|
 test "segment cuboid deep penetration resolves (no residual intersection)" {
   fn segment_world_endpoints(
     center : @core.Vec2,

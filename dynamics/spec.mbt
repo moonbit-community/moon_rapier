@@ -1972,6 +1972,16 @@ pub fn ImpulseJointSet::get_mut(
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::set_impulses(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::get_unknown_gen(
   self : ImpulseJointSet,
   id : Int,
@@ -2145,6 +2155,18 @@ pub fn RevoluteJointBuilder::build(
 ///|
 #declaration_only
 pub type RevoluteJoint
+
+///|
+#declaration_only
+pub fn RevoluteJoint::local_anchor1(self : RevoluteJoint) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RevoluteJoint::local_anchor2(self : RevoluteJoint) -> @core.Vec2 {
+  ...
+}
 
 ///|
 #declaration_only

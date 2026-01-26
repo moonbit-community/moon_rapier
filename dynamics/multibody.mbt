@@ -58,6 +58,16 @@ struct RevoluteJoint {
 }
 
 ///|
+pub fn RevoluteJoint::local_anchor1(self : RevoluteJoint) -> @core.Vec2 {
+  self.local_anchor1
+}
+
+///|
+pub fn RevoluteJoint::local_anchor2(self : RevoluteJoint) -> @core.Vec2 {
+  self.local_anchor2
+}
+
+///|
 pub fn RevoluteJoint::angle(
   self : RevoluteJoint,
   rot1 : @core.Rot2,

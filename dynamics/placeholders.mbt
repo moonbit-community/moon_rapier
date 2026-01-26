@@ -1081,6 +1081,7 @@ pub struct ImpulseJoint {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
   mut data : GenericJoint
+  mut impulses : @core.Vec2
   handle : ImpulseJointHandle
 }
 
@@ -1527,7 +1528,13 @@ pub fn ImpulseJointSet::insert(
     enabled: joint.enabled,
     user_data: joint.user_data,
   }
-  let impulse_joint = ImpulseJoint::{ body1, body2, data: joint_data, handle }
+  let impulse_joint = ImpulseJoint::{
+    body1,
+    body2,
+    data: joint_data,
+    impulses: @core.Vec2::zero(),
+    handle,
+  }
   let edge_id = self.graph_edges.length()
   self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
   self.adjacency[node1].push(edge_id)
@@ -1641,6 +1648,29 @@ pub fn ImpulseJointSet::set_enabled(
     node1: edge.node1,
     node2: edge.node2,
     joint: edge.joint.set_enabled(enabled),
+  }
+}
+
+///|
+pub fn ImpulseJointSet::set_impulses(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  let joint = edge.joint
+  joint.impulses = impulses
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint,
   }
 }
 

@@ -81,6 +81,7 @@ pub struct ImpulseJoint {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
   mut data : GenericJoint
+  mut impulses : @core.Vec2
   handle : ImpulseJointHandle
 }
 pub fn ImpulseJoint::is_enabled(Self) -> Bool
@@ -123,6 +124,7 @@ pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
 pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
 pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
+pub fn ImpulseJointSet::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
@@ -290,6 +292,8 @@ pub(all) enum PredictedImpacts {
 
 type RevoluteJoint
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
+pub fn RevoluteJoint::local_anchor1(Self) -> @core.Vec2
+pub fn RevoluteJoint::local_anchor2(Self) -> @core.Vec2
 
 type RevoluteJointBuilder
 pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint

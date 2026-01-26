@@ -1005,6 +1005,7 @@ pub fn PhysicsPipeline::step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
       physics_hooks, event_handler,
     )
+    solve_impulse_joints(parameters, bodies, impulse_joints, dt)
     solve_contacts(
       parameters,
       bodies,
