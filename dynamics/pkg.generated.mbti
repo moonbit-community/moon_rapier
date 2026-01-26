@@ -297,6 +297,11 @@ pub struct JointLimits {
 }
 pub fn JointLimits::clear_impulse(Self) -> Self
 pub fn JointLimits::default() -> Self
+pub fn JointLimits::max(Self) -> Float
+pub fn JointLimits::min(Self) -> Float
+pub fn JointLimits::new(Float, Float) -> Self
+pub fn JointLimits::set_max(Self, Float) -> Self
+pub fn JointLimits::set_min(Self, Float) -> Self
 
 pub struct JointLimits3 {
   lin_x : JointLimits
@@ -316,6 +321,12 @@ pub struct JointMotor {
 }
 pub fn JointMotor::clear_impulse(Self) -> Self
 pub fn JointMotor::default() -> Self
+pub fn JointMotor::set_damping(Self, Float) -> Self
+pub fn JointMotor::set_max_force(Self, Float) -> Self
+pub fn JointMotor::set_model(Self, MotorModel) -> Self
+pub fn JointMotor::set_stiffness(Self, Float) -> Self
+pub fn JointMotor::set_target_pos(Self, Float) -> Self
+pub fn JointMotor::set_target_vel(Self, Float) -> Self
 
 pub struct JointMotors3 {
   lin_x : JointMotor
@@ -390,14 +401,23 @@ pub(all) enum PredictedImpacts {
 
 type RevoluteJoint
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
+pub fn RevoluteJoint::limits(Self) -> JointLimits?
 pub fn RevoluteJoint::local_anchor1(Self) -> @core.Vec2
 pub fn RevoluteJoint::local_anchor2(Self) -> @core.Vec2
+pub fn RevoluteJoint::motor(Self) -> JointMotor?
+pub fn RevoluteJoint::softness(Self) -> SpringCoefficients
 
 type RevoluteJointBuilder
 pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint
+pub fn RevoluteJointBuilder::limits(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn RevoluteJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn RevoluteJointBuilder::motor_max_force(Self, Float) -> Self
+pub fn RevoluteJointBuilder::motor_model(Self, MotorModel) -> Self
+pub fn RevoluteJointBuilder::motor_position(Self, Float, Float, Float) -> Self
+pub fn RevoluteJointBuilder::motor_velocity(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder::new() -> Self
+pub fn RevoluteJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct RigidBody {
   mut ids : RigidBodyIds
@@ -540,6 +560,7 @@ pub fn RigidBodyBuilder::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder::linvel(Self, @core.Vec2) -> Self
+pub fn RigidBodyBuilder::new(RigidBodyType) -> Self
 pub fn RigidBodyBuilder::position(Self, @core.Isometry2) -> Self
 pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
 pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self

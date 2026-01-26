@@ -19,11 +19,24 @@ const SPATIAL_DIM : Int = 3
 struct RevoluteJointBuilder {
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+  mut softness : SpringCoefficients
+  mut motor : JointMotor
+  mut motor_enabled : Bool
+  mut limits : JointLimits
+  mut limits_enabled : Bool
 }
 
 ///|
 pub fn RevoluteJointBuilder::new() -> RevoluteJointBuilder {
-  { local_anchor1: @core.Vec2::zero(), local_anchor2: @core.Vec2::zero() }
+  {
+    local_anchor1: @core.Vec2::zero(),
+    local_anchor2: @core.Vec2::zero(),
+    softness: SpringCoefficients::joint_defaults(),
+    motor: JointMotor::default(),
+    motor_enabled: false,
+    limits: JointLimits::default(),
+    limits_enabled: false,
+  }
 }
 
 ///|
@@ -45,16 +58,97 @@ pub fn RevoluteJointBuilder::local_anchor2(
 }
 
 ///|
+pub fn RevoluteJointBuilder::softness(
+  self : RevoluteJointBuilder,
+  softness : SpringCoefficients,
+) -> RevoluteJointBuilder {
+  self.softness = softness
+  self
+}
+
+///|
+pub fn RevoluteJointBuilder::motor_model(
+  self : RevoluteJointBuilder,
+  model : MotorModel,
+) -> RevoluteJointBuilder {
+  self.motor = self.motor.set_model(model)
+  self
+}
+
+///|
+pub fn RevoluteJointBuilder::motor_velocity(
+  self : RevoluteJointBuilder,
+  target_vel : @core.Real,
+  factor : @core.Real,
+) -> RevoluteJointBuilder {
+  self.motor_enabled = true
+  self.motor = self.motor
+    .set_target_vel(target_vel)
+    .set_stiffness(0.0F)
+    .set_damping(factor)
+  self
+}
+
+///|
+pub fn RevoluteJointBuilder::motor_position(
+  self : RevoluteJointBuilder,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> RevoluteJointBuilder {
+  self.motor_enabled = true
+  self.motor = self.motor
+    .set_target_pos(target_pos)
+    .set_target_vel(0.0F)
+    .set_stiffness(stiffness)
+    .set_damping(damping)
+  self
+}
+
+///|
+pub fn RevoluteJointBuilder::motor_max_force(
+  self : RevoluteJointBuilder,
+  max_force : @core.Real,
+) -> RevoluteJointBuilder {
+  self.motor = self.motor.set_max_force(max_force)
+  self
+}
+
+///|
+pub fn RevoluteJointBuilder::limits(
+  self : RevoluteJointBuilder,
+  min : @core.Real,
+  max : @core.Real,
+) -> RevoluteJointBuilder {
+  self.limits_enabled = true
+  self.limits = JointLimits::new(min, max)
+  self
+}
+
+///|
 pub fn RevoluteJointBuilder::build(
   self : RevoluteJointBuilder,
 ) -> RevoluteJoint {
-  { local_anchor1: self.local_anchor1, local_anchor2: self.local_anchor2 }
+  {
+    local_anchor1: self.local_anchor1,
+    local_anchor2: self.local_anchor2,
+    softness: self.softness,
+    motor: self.motor,
+    motor_enabled: self.motor_enabled,
+    limits: self.limits,
+    limits_enabled: self.limits_enabled,
+  }
 }
 
 ///|
 struct RevoluteJoint {
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  softness : SpringCoefficients
+  motor : JointMotor
+  motor_enabled : Bool
+  limits : JointLimits
+  limits_enabled : Bool
 }
 
 ///|
@@ -65,6 +159,29 @@ pub fn RevoluteJoint::local_anchor1(self : RevoluteJoint) -> @core.Vec2 {
 ///|
 pub fn RevoluteJoint::local_anchor2(self : RevoluteJoint) -> @core.Vec2 {
   self.local_anchor2
+}
+
+///|
+pub fn RevoluteJoint::softness(self : RevoluteJoint) -> SpringCoefficients {
+  self.softness
+}
+
+///|
+pub fn RevoluteJoint::motor(self : RevoluteJoint) -> JointMotor? {
+  if self.motor_enabled {
+    Some(self.motor)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn RevoluteJoint::limits(self : RevoluteJoint) -> JointLimits? {
+  if self.limits_enabled {
+    Some(self.limits)
+  } else {
+    None
+  }
 }
 
 ///|

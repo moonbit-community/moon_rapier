@@ -1347,7 +1347,7 @@ pub struct RigidBodyBuilder {
 }
 
 ///|
-fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
+pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
   {
     position: @core.Isometry2::identity(),
     linvel: @core.Vec2::zero(),

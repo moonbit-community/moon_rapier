@@ -444,6 +444,107 @@ test "revolute impulse-joint keeps anchors coincident" {
 }
 
 ///|
+test "revolute impulse-joint motor position reaches target angle" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let h_fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let h_dynamic = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .additional_mass(1.0F)
+    .translation(@core.Vec2::zero())
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    h_dynamic,
+    bodies,
+  )
+  |> ignore
+  // Sanity check: angular velocity integration affects rotation.
+  if bodies.get_mut(h_dynamic) is Some(bm) {
+    bm.set_angvel(10.0F, true) |> ignore
+  }
+  pipeline.step(
+    @core.Vec2::zero(),
+    @dynamics.IntegrationParameters::default().set_num_solver_iterations(1),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  if bodies.get(h_dynamic) is Some(after_spin) {
+    inspect(@core.abs(after_spin.rotation().angle()) > 0.01F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get_mut(h_dynamic) is Some(bm) {
+    bm.set_angvel(0.0F, true) |> ignore
+    bm.set_rotation(@core.Rot2::identity(), true) |> ignore
+  }
+  let target = @core.pi() / 2.0F
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
+    .motor_position(target, 20.0F, 1.0F)
+    .motor_max_force(1000.0F)
+    .build(),
+  )
+  let joint_handle = impulse_joints.insert(h_fixed, h_dynamic, joint, true)
+  if impulse_joints.get(joint_handle) is Some(stored) {
+    let motor_axes = stored.data.motor_axes()
+    inspect(
+      motor_axes.contains(@dynamics.JointAxesMask::ang_z()),
+      content="true",
+    )
+    let motor = stored.data.motors().ang_z
+    inspect(@core.abs(motor.target_pos - target) < 1.0e-6F, content="true")
+    inspect(motor.stiffness > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  for _ in 0..<240 {
+    pipeline.step(
+      @core.Vec2::zero(),
+      parameters,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+  }
+  if bodies.get(h_dynamic) is Some(body) {
+    inspect(body.inv_inertia() > 0.0F, content="true")
+    let angle = body.rotation().angle()
+    inspect(angle == angle, content="true")
+    inspect(@core.abs(angle) > 0.1F, content="true")
+    let diff = @core.abs(angle - target)
+    inspect(diff < 0.2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "segment cuboid deep penetration resolves (no residual intersection)" {
   fn segment_world_endpoints(
     center : @core.Vec2,

@@ -63,17 +63,68 @@ fn joint_get_body_kinematic_state(
 }
 
 ///|
+fn joint_get_body_rotation(
+  bodies : @dynamics.RigidBodySet,
+  handle : @dynamics.RigidBodyHandle,
+) -> @core.Rot2 {
+  if bodies.get(handle) is Some(rb) {
+    rb.rotation()
+  } else {
+    @core.Rot2::identity()
+  }
+}
+
+///|
+fn joint_apply_angular_impulse_delta_dynamic(
+  bodies : @dynamics.RigidBodySet,
+  handle : @dynamics.RigidBodyHandle?,
+  impulse : @core.Real,
+) -> Unit {
+  if handle is Some(h) {
+    if bodies.get_mut(h) is Some(body) {
+      if body.is_dynamic() && body.is_enabled() {
+        let inv_i = body.inv_inertia()
+        body.set_angvel(body.angvel() + impulse * inv_i, true) |> ignore
+      }
+    }
+  }
+}
+
+///|
+fn joint_wrap_angle_pi(angle : @core.Real) -> @core.Real {
+  let pi_value = @core.pi()
+  let two_pi = @core.two_pi()
+  let mut a = angle
+  if a > pi_value {
+    a = a - two_pi
+  } else if a < -pi_value {
+    a = a + two_pi
+  }
+  a
+}
+
+///|
 priv struct JointConstraint {
   handle : @dynamics.ImpulseJointHandle
   body1 : @dynamics.RigidBodyHandle
   body2 : @dynamics.RigidBodyHandle
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  local_rot1 : @core.Rot2
+  local_rot2 : @core.Rot2
   anchor1 : @core.Vec2
   anchor2 : @core.Vec2
   bias : @core.Vec2
   inv_mass_x : @core.Real
   inv_mass_y : @core.Real
+  inv_mass_ang : @core.Real
+  motor_enabled : Bool
+  motor : @dynamics.JointMotor
+  mut motor_impulse : @core.Real
+  limits_enabled : Bool
+  limit_min : @core.Real
+  limit_max : @core.Real
+  mut limit_impulse : @core.Real
   mut impulses : @core.Vec2
 }
 
@@ -102,6 +153,10 @@ fn build_joint_constraints(
     }
     let local_anchor1 = joint.data.local_anchor1()
     let local_anchor2 = joint.data.local_anchor2()
+    let frame1 = joint.data.local_frame1()
+    let frame2 = joint.data.local_frame2()
+    let local_rot1 = frame1.rotation
+    let local_rot2 = frame2.rotation
     let world1 = rb1.position().transform_point(local_anchor1)
     let world2 = rb2.position().transform_point(local_anchor2)
     let error = world1.sub(world2)
@@ -138,8 +193,20 @@ fn build_joint_constraints(
       inv_mass2 +
       inv_inertia1 * r1.x * r1.x +
       inv_inertia2 * r2.x * r2.x
+    let denom_ang = inv_inertia1 + inv_inertia2
     let inv_mass_x = if denom_x <= 1.0e-12F { 0.0F } else { 1.0F / denom_x }
     let inv_mass_y = if denom_y <= 1.0e-12F { 0.0F } else { 1.0F / denom_y }
+    let inv_mass_ang = if denom_ang <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / denom_ang
+    }
+    let motor_axes = joint.data.motor_axes()
+    let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let motor = joint.data.motors().ang_z
+    let limit_axes = joint.data.limit_axes()
+    let limits_enabled = limit_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let limits = joint.data.limits().ang_z
     let impulses = joint_vec2_scale(joint.impulses, warmstart)
     constraints.push(JointConstraint::{
       handle,
@@ -147,11 +214,21 @@ fn build_joint_constraints(
       body2: joint.body2,
       local_anchor1,
       local_anchor2,
+      local_rot1,
+      local_rot2,
       anchor1: world1,
       anchor2: world2,
       bias,
       inv_mass_x,
       inv_mass_y,
+      inv_mass_ang,
+      motor_enabled,
+      motor,
+      motor_impulse: 0.0F,
+      limits_enabled,
+      limit_min: limits.min(),
+      limit_max: limits.max(),
+      limit_impulse: 0.0F,
       impulses,
     })
   }
@@ -241,6 +318,100 @@ fn solve_joint_velocity_constraints(
         @core.Vec2::new(0.0F, -lambda_y),
         c.anchor2,
       )
+
+      // Solve angular motor and limits around Z (2D).
+      if c.inv_mass_ang > 0.0F {
+        let w1a = if bodies.get(c.body1) is Some(rb) {
+          rb.angvel()
+        } else {
+          0.0F
+        }
+        let w2a = if bodies.get(c.body2) is Some(rb) {
+          rb.angvel()
+        } else {
+          0.0F
+        }
+        let rel_w = w2a - w1a
+        let rot1 = joint_get_body_rotation(bodies, c.body1)
+        let rot2 = joint_get_body_rotation(bodies, c.body2)
+        let joint_rot1 = rot1.mul(c.local_rot1)
+        let joint_rot2 = rot2.mul(c.local_rot2)
+        let rel_rot = joint_rot1.inverse().mul(joint_rot2)
+        let rel_angle = rel_rot.angle()
+        if c.motor_enabled {
+          let error = joint_wrap_angle_pi(rel_angle - c.motor.target_pos)
+          let vel_error = rel_w - c.motor.target_vel
+          let lambda = -(vel_error +
+            c.motor.stiffness * error +
+            c.motor.damping * vel_error) *
+            c.inv_mass_ang
+          let max_impulse = c.motor.max_force * dt
+          let old = constraints[i].motor_impulse
+          let mut new_impulse = old + lambda
+          if new_impulse > max_impulse {
+            new_impulse = max_impulse
+          } else if new_impulse < -max_impulse {
+            new_impulse = -max_impulse
+          }
+          let applied = new_impulse - old
+          constraints[i].motor_impulse = new_impulse
+          joint_apply_angular_impulse_delta_dynamic(
+            bodies,
+            Some(c.body1),
+            -applied,
+          )
+          joint_apply_angular_impulse_delta_dynamic(
+            bodies,
+            Some(c.body2),
+            applied,
+          )
+        }
+        if c.limits_enabled {
+          if rel_angle < c.limit_min {
+            let error = rel_angle - c.limit_min
+            let bias = JOINT_SOLVER_BAUMGARTE / dt * error
+            let lambda = -(rel_w + bias) * c.inv_mass_ang
+            let old = constraints[i].limit_impulse
+            let mut new_impulse = old + lambda
+            if new_impulse < 0.0F {
+              new_impulse = 0.0F
+            }
+            let applied = new_impulse - old
+            constraints[i].limit_impulse = new_impulse
+            joint_apply_angular_impulse_delta_dynamic(
+              bodies,
+              Some(c.body1),
+              -applied,
+            )
+            joint_apply_angular_impulse_delta_dynamic(
+              bodies,
+              Some(c.body2),
+              applied,
+            )
+          } else if rel_angle > c.limit_max {
+            let error = rel_angle - c.limit_max
+            let bias = JOINT_SOLVER_BAUMGARTE / dt * error
+            let lambda = -(rel_w + bias) * c.inv_mass_ang
+            let old = constraints[i].limit_impulse
+            let mut new_impulse = old + lambda
+            if new_impulse > 0.0F {
+              new_impulse = 0.0F
+            }
+            let applied = new_impulse - old
+            constraints[i].limit_impulse = new_impulse
+            joint_apply_angular_impulse_delta_dynamic(
+              bodies,
+              Some(c.body1),
+              -applied,
+            )
+            joint_apply_angular_impulse_delta_dynamic(
+              bodies,
+              Some(c.body2),
+              applied,
+            )
+          }
+        }
+      }
     }
   }
 }

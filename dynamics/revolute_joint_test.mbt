@@ -35,3 +35,14 @@ test "revolute joint angle" {
     inspect(diff < 1.0e-2F, content="true")
   }
 }
+
+///|
+test "revolute joint builder softness stored in generic joint" {
+  let softness = SpringCoefficients::new(5.0F, 0.25F)
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::new().softness(softness).build(),
+  )
+  let stored = joint.softness()
+  inspect(@core.abs(stored.natural_frequency - 5.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(stored.damping_ratio - 0.25F) < 1.0e-6F, content="true")
+}

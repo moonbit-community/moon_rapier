@@ -1214,7 +1214,7 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
   let anchor2 = joint.local_anchor2()
   let frame1 = @core.Isometry2::from_translation(anchor1)
   let frame2 = @core.Isometry2::from_translation(anchor2)
-  GenericJoint::{
+  let result = GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
     locked_axes: JointAxesMask::locked_revolute_axes(),
@@ -1223,11 +1223,30 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     coupled_axes: JointAxesMask::empty(),
     limits: JointLimits3::default(),
     motors: JointMotors3::default(),
-    softness: SpringCoefficients::joint_defaults(),
+    softness: joint.softness(),
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
   }
+  if joint.motor() is Some(motor) {
+    result.motor_axes = JointAxesMask::ang_z()
+    let motors = result.motors
+    result.motors = JointMotors3::{
+      lin_x: motors.lin_x,
+      lin_y: motors.lin_y,
+      ang_z: motor,
+    }
+  }
+  if joint.limits() is Some(limits) {
+    result.limit_axes = JointAxesMask::ang_z()
+    let current = result.limits
+    result.limits = JointLimits3::{
+      lin_x: current.lin_x,
+      lin_y: current.lin_y,
+      ang_z: limits,
+    }
+  }
+  result
 }
 
 ///|
