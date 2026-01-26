@@ -230,10 +230,31 @@ pub fn ContactForceEvent::new(ColliderHandle, ColliderHandle, @core.Vec2, Float,
 pub fn ContactForceEvent::total_force(Self) -> @core.Vec2
 pub fn ContactForceEvent::total_force_magnitude(Self) -> Float
 
+pub struct ContactManifold {
+  normal : @core.Vec2
+  points : Array[ContactManifoldPoint]
+}
+pub fn ContactManifold::normal(Self) -> @core.Vec2
+pub fn ContactManifold::points(Self) -> Array[ContactManifoldPoint]
+
+pub struct ContactManifoldPoint {
+  local_p1 : @core.Vec2
+  local_p2 : @core.Vec2
+  dist : Float
+  fid1 : FeatureId
+  fid2 : FeatureId
+}
+pub fn ContactManifoldPoint::dist(Self) -> Float
+pub fn ContactManifoldPoint::fid1(Self) -> FeatureId
+pub fn ContactManifoldPoint::fid2(Self) -> FeatureId
+pub fn ContactManifoldPoint::local_p1(Self) -> @core.Vec2
+pub fn ContactManifoldPoint::local_p2(Self) -> @core.Vec2
+
 pub struct ContactPair {
-  manifold_count : Int
+  manifolds : Array[ContactManifold]
 }
 pub fn ContactPair::manifold_count(Self) -> Int
+pub fn ContactPair::manifolds(Self) -> Array[ContactManifold]
 
 pub(all) enum FeatureId {
   Unknown

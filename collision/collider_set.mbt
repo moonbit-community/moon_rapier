@@ -1397,12 +1397,81 @@ pub fn handle_user_changes_to_colliders(
 
 ///|
 pub struct ContactPair {
-  manifold_count : Int
+  manifolds : Array[ContactManifold]
 }
 
 ///|
 pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
-  self.manifold_count
+  self.manifolds.length()
+}
+
+///|
+pub fn ContactPair::manifolds(self : ContactPair) -> Array[ContactManifold] {
+  let result : Array[ContactManifold] = []
+  for i in 0..<self.manifolds.length() {
+    result.push(self.manifolds[i])
+  }
+  result
+}
+
+///|
+pub struct ContactManifoldPoint {
+  local_p1 : @core.Vec2
+  local_p2 : @core.Vec2
+  dist : @core.Real
+  fid1 : FeatureId
+  fid2 : FeatureId
+}
+
+///|
+pub fn ContactManifoldPoint::local_p1(
+  self : ContactManifoldPoint,
+) -> @core.Vec2 {
+  self.local_p1
+}
+
+///|
+pub fn ContactManifoldPoint::local_p2(
+  self : ContactManifoldPoint,
+) -> @core.Vec2 {
+  self.local_p2
+}
+
+///|
+pub fn ContactManifoldPoint::dist(self : ContactManifoldPoint) -> @core.Real {
+  self.dist
+}
+
+///|
+pub fn ContactManifoldPoint::fid1(self : ContactManifoldPoint) -> FeatureId {
+  self.fid1
+}
+
+///|
+pub fn ContactManifoldPoint::fid2(self : ContactManifoldPoint) -> FeatureId {
+  self.fid2
+}
+
+///|
+pub struct ContactManifold {
+  normal : @core.Vec2
+  points : Array[ContactManifoldPoint]
+}
+
+///|
+pub fn ContactManifold::normal(self : ContactManifold) -> @core.Vec2 {
+  self.normal
+}
+
+///|
+pub fn ContactManifold::points(
+  self : ContactManifold,
+) -> Array[ContactManifoldPoint] {
+  let result : Array[ContactManifoldPoint] = []
+  for i in 0..<self.points.length() {
+    result.push(self.points[i])
+  }
+  result
 }
 
 ///|
@@ -1901,6 +1970,159 @@ pub fn NarrowPhase::update(
 }
 
 ///|
+fn contact_manifold_ball_ball(
+  collider1 : Collider,
+  radius1 : @core.Real,
+  collider2 : Collider,
+  radius2 : @core.Real,
+) -> ContactManifold {
+  let p1 = collider1.world_translation
+  let p2 = collider2.world_translation
+  let d = p2.sub(p1)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - (radius1 + radius2)
+  let world_p1 = p1.add(vec2_scale(normal, radius1))
+  let world_p2 = p2.sub(vec2_scale(normal, radius2))
+  let local_p1 = collider1.position().inverse().transform_point(world_p1)
+  let local_p2 = collider2.position().inverse().transform_point(world_p2)
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1,
+        local_p2,
+        dist: signed_dist,
+        fid1: FeatureId::Face(0),
+        fid2: FeatureId::Face(0),
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_ball_cuboid(
+  ball : Collider,
+  radius : @core.Real,
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let cuboid_center = cuboid.world_translation
+  let (projection, feature2) = project_point_on_cuboid_oriented_and_get_feature(
+    cuboid_center,
+    cuboid.world_rotation,
+    half_width,
+    half_height,
+    ball_center,
+    false,
+  )
+  let closest = projection.point()
+  let d = closest.sub(ball_center)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = ball_center.add(vec2_scale(normal, radius))
+  let world_p2 = closest
+  let local_p1 = ball.position().inverse().transform_point(world_p1)
+  let local_p2 = cuboid.position().inverse().transform_point(world_p2)
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1,
+        local_p2,
+        dist: signed_dist,
+        fid1: FeatureId::Face(0),
+        fid2: feature2,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_cuboid_ball(
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  ball : Collider,
+  radius : @core.Real,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let cuboid_center = cuboid.world_translation
+  let (projection, feature1) = project_point_on_cuboid_oriented_and_get_feature(
+    cuboid_center,
+    cuboid.world_rotation,
+    half_width,
+    half_height,
+    ball_center,
+    false,
+  )
+  let closest = projection.point()
+  let d = ball_center.sub(closest)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = closest
+  let world_p2 = ball_center.sub(vec2_scale(normal, radius))
+  let local_p1 = cuboid.position().inverse().transform_point(world_p1)
+  let local_p2 = ball.position().inverse().transform_point(world_p2)
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1,
+        local_p2,
+        dist: signed_dist,
+        fid1: feature1,
+        fid2: FeatureId::Face(0),
+      },
+    ],
+  }
+}
+
+///|
+fn build_contact_pair(
+  collider1 : Collider,
+  collider2 : Collider,
+) -> ContactPair {
+  let manifolds : Array[ContactManifold] = []
+  match (collider1.shape, collider2.shape) {
+    (Shape::Ball(r1), Shape::Ball(r2)) =>
+      manifolds.push(contact_manifold_ball_ball(collider1, r1, collider2, r2))
+    (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+      manifolds.push(
+        contact_manifold_ball_cuboid(collider1, r, collider2, hw, hh),
+      )
+    (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_cuboid_ball(collider1, hw, hh, collider2, r),
+      )
+    _ => {
+      let p1 = collider1.world_translation
+      let p2 = collider2.world_translation
+      let d = p2.sub(p1)
+      let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+      let world_p = @core.Vec2::new((p1.x + p2.x) * 0.5F, (p1.y + p2.y) * 0.5F)
+      manifolds.push(ContactManifold::{
+        normal,
+        points: [
+          ContactManifoldPoint::{
+            local_p1: collider1.position().inverse().transform_point(world_p),
+            local_p2: collider2.position().inverse().transform_point(world_p),
+            dist: 0.0F,
+            fid1: FeatureId::Unknown,
+            fid2: FeatureId::Unknown,
+          },
+        ],
+      })
+    }
+  }
+  ContactPair::{ manifolds, }
+}
+
+///|
 pub fn NarrowPhase::update_with_pairs(
   self : NarrowPhase,
   bodies : @dynamics.RigidBodySet,
@@ -1958,7 +2180,7 @@ pub fn NarrowPhase::update_with_pairs(
             intersecting,
           })
         } else {
-          let contact = ContactPair::{ manifold_count: 1 }
+          let contact = build_contact_pair(collider1, collider2)
           contacts.push((handle1, handle2, contact))
         }
       }
