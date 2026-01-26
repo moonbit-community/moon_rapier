@@ -45,28 +45,6 @@ fn cross_vec2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
 }
 
 ///|
-fn body_inv_mass(body : @dynamics.RigidBody) -> @core.Real {
-  // This repo does not yet compute mass properties from colliders, so we fall back to a
-  // unit mass (scaled by `additional_mass`) for impulse computations.
-  let m = 1.0F + body.additional_mass()
-  if m <= 1.0e-12F {
-    0.0F
-  } else {
-    1.0F / m
-  }
-}
-
-///|
-fn body_inv_inertia(body : @dynamics.RigidBody) -> @core.Real {
-  let i = 1.0F + body.additional_mass()
-  if i <= 1.0e-12F {
-    0.0F
-  } else {
-    1.0F / i
-  }
-}
-
-///|
 fn solver_clamp_value(
   value : @core.Real,
   min_val : @core.Real,
@@ -219,16 +197,16 @@ fn build_contact_constraint(
     if body1 is Some(h1) {
       if bodies.get(h1) is Some(rb1) {
         if rb1.is_dynamic() && rb1.is_enabled() {
-          inv_mass1 = body_inv_mass(rb1)
-          inv_inertia1 = body_inv_inertia(rb1)
+          inv_mass1 = rb1.inv_mass()
+          inv_inertia1 = rb1.inv_inertia()
         }
       }
     }
     if body2 is Some(h2) {
       if bodies.get(h2) is Some(rb2) {
         if rb2.is_dynamic() && rb2.is_enabled() {
-          inv_mass2 = body_inv_mass(rb2)
-          inv_inertia2 = body_inv_inertia(rb2)
+          inv_mass2 = rb2.inv_mass()
+          inv_inertia2 = rb2.inv_inertia()
         }
       }
     }
@@ -310,8 +288,8 @@ fn apply_impulse_delta(
   if handle is Some(h) {
     if bodies.get_mut(h) is Some(body) {
       if body.is_dynamic() && body.is_enabled() {
-        let inv_m = body_inv_mass(body)
-        let inv_i = body_inv_inertia(body)
+        let inv_m = body.inv_mass()
+        let inv_i = body.inv_inertia()
         let new_linvel = body.linvel().add(solver_vec2_scale(impulse, inv_m))
         body.set_linvel(new_linvel, true) |> ignore
         let r = point.sub(body.world_com())
@@ -491,7 +469,7 @@ fn position_correction(
     if c.body1 is Some(h1) {
       if bodies.get(h1) is Some(rb1) {
         if rb1.is_dynamic() && rb1.is_enabled() {
-          inv_m1 = body_inv_mass(rb1)
+          inv_m1 = rb1.inv_mass()
         }
       }
     }
@@ -499,7 +477,7 @@ fn position_correction(
     if c.body2 is Some(h2) {
       if bodies.get(h2) is Some(rb2) {
         if rb2.is_dynamic() && rb2.is_enabled() {
-          inv_m2 = body_inv_mass(rb2)
+          inv_m2 = rb2.inv_mass()
         }
       }
     }

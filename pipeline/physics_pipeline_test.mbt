@@ -48,6 +48,63 @@ test "kinematic and fixed contact crash" {
 }
 
 ///|
+test "mass properties recomputed from attached colliders (insert/remove)" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rb = @dynamics.RigidBodyBuilder::dynamic().build()
+  let rb_handle = bodies.insert(rb)
+  let co = @collision.ColliderBuilder::ball(1.0F).build()
+  let co_handle = colliders.insert_with_parent(co, rb_handle, bodies)
+  pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  if bodies.get(rb_handle) is Some(body_after_insert) {
+    inspect(body_after_insert.inv_mass() > 0.0F, content="true")
+    inspect(body_after_insert.inv_inertia() > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  colliders.remove(co_handle, islands, bodies, true)
+  pipeline.step(
+    @core.Vec2::zero(),
+    IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  if bodies.get(rb_handle) is Some(body_after_remove) {
+    inspect(body_after_remove.inv_mass() == 0.0F, content="true")
+    inspect(body_after_remove.inv_inertia() == 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_before_step).
 test "rigid body removal before step" {
   let colliders = @collision.ColliderSet::new()

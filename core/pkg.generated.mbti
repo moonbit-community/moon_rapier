@@ -41,7 +41,11 @@ pub struct MassProperties {
   inv_inertia : Float
   center_of_mass : Vec2
 }
+pub fn MassProperties::add(Self, Self) -> Self
+pub fn MassProperties::default() -> Self
 pub fn MassProperties::new(Float, Float, Vec2) -> Self
+pub fn MassProperties::set_mass(Self, Float, Bool) -> Self
+pub fn MassProperties::transform_by(Self, Isometry2) -> Self
 
 pub struct Rot2 {
   sin : Float

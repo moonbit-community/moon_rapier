@@ -364,6 +364,7 @@ pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
 pub fn RigidBody::set_linear_damping(Self, Float) -> Self
 pub fn RigidBody::set_linvel(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::set_local_mass_properties(Self, @core.MassProperties) -> Self
 pub fn RigidBody::set_next_kinematic_position(Self, @core.Isometry2) -> Self
 pub fn RigidBody::set_next_kinematic_rotation(Self, @core.Rot2) -> Self
 pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
@@ -492,11 +493,12 @@ pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : Float
-  local_mprops : @core.MassProperties
+  mut local_mprops : @core.MassProperties
 }
 pub fn RigidBodyMassProps::default() -> Self
 pub fn RigidBodyMassProps::set_effective_inv_mass(Self, @core.Vec2) -> Self
 pub fn RigidBodyMassProps::set_effective_world_inv_inertia(Self, Float) -> Self
+pub fn RigidBodyMassProps::update_world_mass_properties(Self, RigidBodyType, @core.Isometry2) -> Self
 
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2

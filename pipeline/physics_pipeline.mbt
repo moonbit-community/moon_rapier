@@ -585,6 +585,42 @@ fn handle_user_changes_to_bodies(
 }
 
 ///|
+fn update_body_mass_properties_from_colliders(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  modified_bodies : Array[@dynamics.RigidBodyHandle],
+) -> Unit {
+  for i in 0..<modified_bodies.length() {
+    let handle = modified_bodies[i]
+    if bodies.get_mut_internal(handle) is Some(body) {
+      // Recompute like Rapier: sum all enabled colliders mass properties transformed by their
+      // local pose relative to the rigid-body, then apply `additional_mass` as a mass scaling.
+      let attached = colliders.colliders_with_parent(handle)
+      let mut mprops = @core.MassProperties::default()
+      for j in 0..<attached.length() {
+        let co_handle = attached[j]
+        if colliders.get(co_handle) is Some(collider) {
+          if collider.is_enabled() {
+            let local_pos = @core.Isometry2::new(
+              collider.local_translation,
+              @core.Rot2::from_angle(collider.local_rotation),
+            )
+            mprops = mprops.add(
+              collider.mass_properties().transform_by(local_pos),
+            )
+          }
+        }
+      }
+      let added_mass = body.additional_mass()
+      if added_mass != 0.0F {
+        mprops = mprops.set_mass(mprops.mass + added_mass, true)
+      }
+      body.set_local_mass_properties(mprops) |> ignore
+    }
+  }
+}
+
+///|
 fn clear_modified_bodies(
   bodies : @dynamics.RigidBodySet,
   modified_bodies : Array[@dynamics.RigidBodyHandle],
@@ -808,6 +844,9 @@ pub fn PhysicsPipeline::step(
   let modified_bodies_before_step = bodies.take_modified()
   handle_user_changes_to_bodies(
     islands, bodies, colliders, impulse_joints, multibody_joints, modified_bodies_before_step,
+  )
+  update_body_mass_properties_from_colliders(
+    bodies, colliders, modified_bodies_before_step,
   )
   let join_from_impulse = impulse_joints.take_to_join()
   for i in 0..<join_from_impulse.length() {

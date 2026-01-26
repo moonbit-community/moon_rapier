@@ -293,3 +293,69 @@ pub fn MassProperties::new(
   let inv_inertia = if inertia <= EPSILON { 0.0F } else { 1.0F / inertia }
   MassProperties::{ mass, inv_mass, inertia, inv_inertia, center_of_mass }
 }
+
+///|
+pub fn MassProperties::default() -> MassProperties {
+  MassProperties::new(0.0F, 0.0F, Vec2::zero())
+}
+
+///|
+pub fn MassProperties::transform_by(
+  self : MassProperties,
+  transform : Isometry2,
+) -> MassProperties {
+  // `inertia` is expressed about the center-of-mass, so translation does not affect it.
+  MassProperties::new(
+    self.mass,
+    self.inertia,
+    transform.transform_point(self.center_of_mass),
+  )
+}
+
+///|
+pub fn MassProperties::add(
+  self : MassProperties,
+  other : MassProperties,
+) -> MassProperties {
+  if self.mass <= EPSILON {
+    return other
+  }
+  if other.mass <= EPSILON {
+    return self
+  }
+  let total_mass = self.mass + other.mass
+  let inv_total = 1.0F / total_mass
+  let com = Vec2::new(
+    (self.center_of_mass.x * self.mass + other.center_of_mass.x * other.mass) *
+    inv_total,
+    (self.center_of_mass.y * self.mass + other.center_of_mass.y * other.mass) *
+    inv_total,
+  )
+  let dx1 = self.center_of_mass.x - com.x
+  let dy1 = self.center_of_mass.y - com.y
+  let dx2 = other.center_of_mass.x - com.x
+  let dy2 = other.center_of_mass.y - com.y
+  let inertia = self.inertia +
+    self.mass * (dx1 * dx1 + dy1 * dy1) +
+    other.inertia +
+    other.mass * (dx2 * dx2 + dy2 * dy2)
+  MassProperties::new(total_mass, inertia, com)
+}
+
+///|
+pub fn MassProperties::set_mass(
+  self : MassProperties,
+  new_mass : Real,
+  update_inertia : Bool,
+) -> MassProperties {
+  if self.mass <= EPSILON {
+    let inertia = if update_inertia { 0.0F } else { self.inertia }
+    return MassProperties::new(new_mass, inertia, self.center_of_mass)
+  }
+  let inertia = if update_inertia {
+    self.inertia * (new_mass / self.mass)
+  } else {
+    self.inertia
+  }
+  MassProperties::new(new_mass, inertia, self.center_of_mass)
+}

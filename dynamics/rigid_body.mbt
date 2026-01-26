@@ -561,7 +561,7 @@ pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : @core.Real
-  local_mprops : @core.MassProperties
+  mut local_mprops : @core.MassProperties
 }
 
 ///|
@@ -593,6 +593,24 @@ pub fn RigidBodyMassProps::set_effective_world_inv_inertia(
 }
 
 ///|
+pub fn RigidBodyMassProps::update_world_mass_properties(
+  self : RigidBodyMassProps,
+  body_type : RigidBodyType,
+  position : @core.Isometry2,
+) -> RigidBodyMassProps {
+  self.world_com = position.transform_point(self.local_mprops.center_of_mass)
+  if body_type.is_dynamic() {
+    let inv_mass = self.local_mprops.inv_mass
+    self.effective_inv_mass = @core.Vec2::new(inv_mass, inv_mass)
+    self.effective_world_inv_inertia = self.local_mprops.inv_inertia
+  } else {
+    self.effective_inv_mass = @core.Vec2::zero()
+    self.effective_world_inv_inertia = 0.0F
+  }
+  self
+}
+
+///|
 pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition
@@ -619,6 +637,10 @@ pub fn RigidBody::set_body_type(
   if body_type_to_int(self.body_type) != body_type_to_int(body_type) {
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_TYPE)
     self.body_type = body_type
+    self.mass_props = self.mass_props.update_world_mass_properties(
+      self.body_type,
+      self.position.position,
+    )
     if body_type is RigidBodyType::Fixed {
       self.vels = RigidBodyVelocity::zero()
     }
@@ -1022,6 +1044,20 @@ pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
 }
 
 ///|
+pub fn RigidBody::set_local_mass_properties(
+  self : RigidBody,
+  mprops : @core.MassProperties,
+) -> RigidBody {
+  let mass_props = self.mass_props
+  mass_props.local_mprops = mprops
+  self.mass_props = mass_props.update_world_mass_properties(
+    self.body_type,
+    self.position.position,
+  )
+  self
+}
+
+///|
 pub fn RigidBody::mass(self : RigidBody) -> @core.Real {
   self.mass_props.local_mprops.mass
 }
@@ -1100,11 +1136,10 @@ pub fn RigidBody::set_translation(
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
     self.position.position = @core.Isometry2::new(translation, curr_rot)
     self.position.next_position = @core.Isometry2::new(translation, next_rot)
-    let mass_props = self.mass_props
-    mass_props.world_com = self.position.position.transform_point(
-      mass_props.local_mprops.center_of_mass,
+    self.mass_props = self.mass_props.update_world_mass_properties(
+      self.body_type,
+      self.position.position,
     )
-    self.mass_props = mass_props
     if wake_up && self.is_dynamic_or_kinematic() {
       self.wake_up(true) |> ignore
     }
@@ -1128,8 +1163,9 @@ pub fn RigidBody::set_rotation(
     self.position.next_position = @core.Isometry2::new(
       next_translation, rotation,
     )
-    self.mass_props.world_com = self.position.position.transform_point(
-      self.mass_props.local_mprops.center_of_mass,
+    self.mass_props = self.mass_props.update_world_mass_properties(
+      self.body_type,
+      self.position.position,
     )
     if wake_up && self.is_dynamic_or_kinematic() {
       self.wake_up(true) |> ignore
@@ -1158,11 +1194,10 @@ pub fn RigidBody::set_position(
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
     self.position.position = position
     self.position.next_position = position
-    let mass_props = self.mass_props
-    mass_props.world_com = self.position.position.transform_point(
-      mass_props.local_mprops.center_of_mass,
+    self.mass_props = self.mass_props.update_world_mass_properties(
+      self.body_type,
+      self.position.position,
     )
-    self.mass_props = mass_props
     if wake_up && self.is_dynamic_or_kinematic() {
       self.wake_up(true) |> ignore
     }

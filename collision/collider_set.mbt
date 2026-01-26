@@ -249,6 +249,7 @@ pub struct Collider {
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut density : @core.Real
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
@@ -272,6 +273,7 @@ pub struct ColliderBuilder {
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut density : @core.Real
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
@@ -294,6 +296,7 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -320,6 +323,7 @@ pub fn ColliderBuilder::cuboid(
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -346,6 +350,7 @@ pub fn ColliderBuilder::capsule_x(
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -372,6 +377,7 @@ pub fn ColliderBuilder::capsule_y(
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -398,6 +404,7 @@ pub fn ColliderBuilder::segment(
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
     friction: 0.5F,
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
@@ -478,6 +485,15 @@ pub fn ColliderBuilder::solver_groups(
   groups : @dynamics.InteractionGroups,
 ) -> ColliderBuilder {
   self.solver_groups = groups
+  self
+}
+
+///|
+pub fn ColliderBuilder::density(
+  self : ColliderBuilder,
+  density : @core.Real,
+) -> ColliderBuilder {
+  self.density = density
   self
 }
 
@@ -567,6 +583,7 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     active_hooks: self.active_hooks,
     collision_groups: self.collision_groups,
     solver_groups: self.solver_groups,
+    density: self.density,
     friction: self.friction,
     friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
@@ -668,6 +685,16 @@ pub fn Collider::solver_groups(self : Collider) -> @dynamics.InteractionGroups {
 }
 
 ///|
+pub fn Collider::density(self : Collider) -> @core.Real {
+  self.density
+}
+
+///|
+pub fn Collider::mass_properties(self : Collider) -> @core.MassProperties {
+  shape_mass_properties(self.shape, self.density)
+}
+
+///|
 pub fn Collider::friction(self : Collider) -> @core.Real {
   self.friction
 }
@@ -709,6 +736,91 @@ pub fn Collider::user_data(self : Collider) -> Int {
 ///|
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   self.enabled is ColliderEnabled::Enabled
+}
+
+///|
+fn shape_mass_properties(
+  shape : Shape,
+  density : @core.Real,
+) -> @core.MassProperties {
+  let pi = Float::from_double(@math.PI)
+  match shape {
+    Shape::Ball(radius) => {
+      let area = pi * radius * radius
+      let mass = density * area
+      let inertia = 0.5F * mass * radius * radius
+      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+    }
+    Shape::Cuboid(hw, hh) => {
+      let width = 2.0F * hw
+      let height = 2.0F * hh
+      let area = width * height
+      let mass = density * area
+      let inertia = mass * (width * width + height * height) / 12.0F
+      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+    }
+    Shape::CapsuleX(half_height, radius) => {
+      let area_rect = 4.0F * radius * half_height
+      let area_semi = 0.5F * pi * radius * radius
+      let mass_rect = density * area_rect
+      let mass_semi = density * area_semi
+      let inertia_rect = if mass_rect <= 1.0e-12F {
+        0.0F
+      } else {
+        mass_rect / 3.0F * (half_height * half_height + radius * radius)
+      }
+      let a = if radius <= 1.0e-12F {
+        0.0F
+      } else {
+        4.0F * radius / (3.0F * pi)
+      }
+      let inertia_semi_center = 0.5F * mass_semi * radius * radius
+      let inertia_semi_centroid = inertia_semi_center - mass_semi * a * a
+      let d = half_height + a
+      let inertia_semi_origin = inertia_semi_centroid + mass_semi * d * d
+      let mass = mass_rect + 2.0F * mass_semi
+      let inertia = inertia_rect + 2.0F * inertia_semi_origin
+      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+    }
+    Shape::CapsuleY(half_height, radius) => {
+      // Same as CapsuleX: inertia is a scalar about the z-axis.
+      let area_rect = 4.0F * radius * half_height
+      let area_semi = 0.5F * pi * radius * radius
+      let mass_rect = density * area_rect
+      let mass_semi = density * area_semi
+      let inertia_rect = if mass_rect <= 1.0e-12F {
+        0.0F
+      } else {
+        mass_rect / 3.0F * (half_height * half_height + radius * radius)
+      }
+      let a = if radius <= 1.0e-12F {
+        0.0F
+      } else {
+        4.0F * radius / (3.0F * pi)
+      }
+      let inertia_semi_center = 0.5F * mass_semi * radius * radius
+      let inertia_semi_centroid = inertia_semi_center - mass_semi * a * a
+      let d = half_height + a
+      let inertia_semi_origin = inertia_semi_centroid + mass_semi * d * d
+      let mass = mass_rect + 2.0F * mass_semi
+      let inertia = inertia_rect + 2.0F * inertia_semi_origin
+      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+    }
+    Shape::Segment(a, b) => {
+      // Like Rapier/Parry: segments have no area, so they don't contribute to mass properties.
+      let com = @core.Vec2::new((a.x + b.x) * 0.5F, (a.y + b.y) * 0.5F)
+      @core.MassProperties::new(0.0F, 0.0F, com)
+    }
+  }
+}
+
+///|
+pub fn Collider::set_density(self : Collider, density : @core.Real) -> Collider {
+  if self.density != density {
+    self.density = density
+    self.changes = self.changes.insert(COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES)
+  }
+  self
 }
 
 ///|
@@ -1144,14 +1256,22 @@ pub fn ColliderSet::remove(
     wake_up |> ignore
     return
   }
-  if self.colliders[handle.id] is Some(_) {
+  if self.colliders[handle.id] is Some(collider) {
+    // Removing a collider must invalidate the parent rigid-body mass-properties like Rapier.
+    if collider.parent is Some(parent) {
+      if bodies.get_mut_internal_with_modification_tracking(parent)
+        is Some(body) {
+        body.mark_local_mass_properties_changed() |> ignore
+        if wake_up && body.is_dynamic_or_kinematic() {
+          body.wake_up(true) |> ignore
+        }
+      }
+    }
     self.colliders[handle.id] = None
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
   }
   islands |> ignore
-  bodies |> ignore
-  wake_up |> ignore
 }
 
 ///|

@@ -60,6 +60,7 @@ pub struct Collider {
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut density : Float
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
@@ -77,10 +78,12 @@ pub fn Collider::active_hooks(Self) -> ActiveHooks
 pub fn Collider::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::contact_force_event_threshold(Self) -> Float
 pub fn Collider::contact_skin(Self) -> Float
+pub fn Collider::density(Self) -> Float
 pub fn Collider::friction(Self) -> Float
 pub fn Collider::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider::is_enabled(Self) -> Bool
 pub fn Collider::is_sensor(Self) -> Bool
+pub fn Collider::mass_properties(Self) -> @core.MassProperties
 pub fn Collider::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider::position(Self) -> @core.Isometry2
 pub fn Collider::position_wrt_parent(Self) -> @core.Isometry2?
@@ -93,6 +96,7 @@ pub fn Collider::set_active_hooks(Self, ActiveHooks) -> Self
 pub fn Collider::set_collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider::set_contact_skin(Self, Float) -> Self
+pub fn Collider::set_density(Self, Float) -> Self
 pub fn Collider::set_enabled(Self, Bool) -> Self
 pub fn Collider::set_friction(Self, Float) -> Self
 pub fn Collider::set_friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
@@ -122,6 +126,7 @@ pub struct ColliderBuilder {
   mut active_hooks : ActiveHooks
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut density : Float
   mut friction : Float
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
@@ -142,6 +147,7 @@ pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> S
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
+pub fn ColliderBuilder::density(Self, Float) -> Self
 pub fn ColliderBuilder::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
