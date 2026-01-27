@@ -901,7 +901,119 @@ test "examples2d/debug_vertical_column2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/drum2.rs
 test "examples2d/drum2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Dynamic boxes.
+  let num = 30
+  let rad = 0.2F
+  let shift = rad * 2.0F
+  let centerx = shift * Float::from_double(num.to_double()) / 2.0F
+  let centery = shift * Float::from_double(num.to_double()) / 2.0F
+  let box_handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<num {
+    for j in 0..<num {
+      let x = Float::from_double(i.to_double()) * shift - centerx
+      let y = Float::from_double(j.to_double()) * shift - centery
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::cuboid(rad, rad).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+      box_handles.push(handle)
+    }
+  }
+
+  // A kinematic "drum" controlled by constant angular velocity.
+  let drum_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_velocity_based().build(),
+  )
+  let sides = [
+    (10.0F, 0.25F, @core.Vec2::new(0.0F, 10.0F)),
+    (10.0F, 0.25F, @core.Vec2::new(0.0F, -10.0F)),
+    (0.25F, 10.0F, @core.Vec2::new(10.0F, 0.0F)),
+    (0.25F, 10.0F, @core.Vec2::new(-10.0F, 0.0F)),
+  ]
+  let balls = [
+    (1.25F, @core.Vec2::new(6.0F, 6.0F)),
+    (1.25F, @core.Vec2::new(-6.0F, 6.0F)),
+    (1.25F, @core.Vec2::new(6.0F, -6.0F)),
+    (1.25F, @core.Vec2::new(-6.0F, -6.0F)),
+  ]
+  for i in 0..<sides.length() {
+    let (hx, hy, pos) = sides[i]
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(hx, hy).translation(pos).build(),
+      drum_handle,
+      bodies,
+    )
+    |> ignore
+  }
+  for i in 0..<balls.length() {
+    let (r, pos) = balls[i]
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::ball(r).translation(pos).build(),
+      drum_handle,
+      bodies,
+    )
+    |> ignore
+  }
+
+  // Run the simulation, emulating the testbed callback.
+  for _ in 0..<30 {
+    if bodies.get_mut(drum_handle) is Some(drum) {
+      drum.set_angvel(-0.15F, true) |> ignore
+    } else {
+      inspect(false, content="true")
+    }
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, ccd_solver, hooks, events,
+    )
+  }
+  if bodies.get(drum_handle) is Some(drum) {
+    let angle = drum.rotation().angle()
+    inspect(angle == angle, content="true")
+    inspect(@core.abs(angle) > 1.0e-3F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Sanity: the simulation should remain stable (no NaNs/explosions).
+  let mut max_d2 = 0.0F
+  for i in 0..<box_handles.length() {
+    if bodies.get(box_handles[i]) is Some(body) {
+      let p = body.translation()
+      inspect(p.x == p.x, content="true")
+      inspect(p.y == p.y, content="true")
+      let d2 = p.length_squared()
+      if d2 > max_d2 {
+        max_d2 = d2
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(max_d2 < 1.0e6F, content="true")
 }
 
 ///|
