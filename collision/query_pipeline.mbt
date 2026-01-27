@@ -875,6 +875,10 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
           ray_intersect_segment_and_get_normal(
             ray, pos, rot, a, b, max_dist, solid,
           )
+        Shape::Polyline(vertices, indices) =>
+          ray_intersect_polyline_and_get_normal(
+            ray, pos, rot, vertices, indices, max_dist, solid,
+          )
       }
       if hit is Some(intersection) {
         if best is Some(current) {
@@ -943,6 +947,10 @@ pub fn QueryPipeline::intersect_ray(
         Shape::Segment(a, b) =>
           ray_intersect_segment_and_get_normal(
             ray, pos, rot, a, b, max_dist, solid,
+          )
+        Shape::Polyline(vertices, indices) =>
+          ray_intersect_polyline_and_get_normal(
+            ray, pos, rot, vertices, indices, max_dist, solid,
           )
       }
       if hit is Some(intersection) {
@@ -1482,6 +1490,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::CapsuleX(h, r) => Shape::CapsuleX(h, r + target_distance)
     Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
     Shape::Segment(_, _) => shape
+    Shape::Polyline(_, _) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<self.colliders.colliders.length() {
@@ -1854,6 +1863,16 @@ pub fn QueryPipeline::cast_shape_nonlinear(
           lb
         }
       }
+      Shape::Polyline(vertices, _) => {
+        let mut best = 0.0F
+        for i in 0..<vertices.length() {
+          let d = vertices[i].length()
+          if d > best {
+            best = d
+          }
+        }
+        best
+      }
     }
   }
 
@@ -1906,6 +1925,8 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         ).point
       Shape::Segment(a, b) =>
         project_point_on_segment(center, rotation, a, b, point).point
+      Shape::Polyline(vertices, indices) =>
+        project_point_on_polyline(center, rotation, vertices, indices, point).point
     }
   }
 
@@ -2200,6 +2221,13 @@ fn point_in_shape(
       let q = closest_point_on_segment(wa, wb, point)
       point.sub(q).dot(point.sub(q)) <= 1.0e-12F
     }
+    Shape::Polyline(vertices, indices) => {
+      let proj = project_point_on_polyline(
+        center, rotation, vertices, indices, point,
+      )
+      let delta = point.sub(proj.point)
+      delta.dot(delta) <= 1.0e-12F
+    }
   }
 }
 
@@ -2271,6 +2299,36 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
         @core.Vec2::new(max_x, max_y),
       )
     }
+    Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(collider.world_translation, collider.world_translation)
+      } else {
+        let rot = @core.Rot2::from_angle(collider.world_rotation)
+        let c = collider.world_translation
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = c.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
   }
 }
 
@@ -2344,6 +2402,34 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(max_x, max_y),
       )
     }
+    Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(center, center)
+      } else {
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
   }
 }
 
@@ -2675,6 +2761,125 @@ fn project_point_on_segment_and_get_feature(
 }
 
 ///|
+fn polyline_for_each_segment(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  callback : (Int, @core.Vec2, @core.Vec2) -> Unit,
+) -> Unit {
+  if indices is Some(idxs) {
+    for i in 0..<idxs.length() {
+      let (i0, i1) = idxs[i]
+      if i0 < 0 || i1 < 0 {
+        continue
+      }
+      if i0 >= vertices.length() || i1 >= vertices.length() {
+        continue
+      }
+      callback(i, vertices[i0], vertices[i1])
+    }
+  } else {
+    if vertices.length() < 2 {
+      return
+    }
+    for i in 0..<(vertices.length() - 1) {
+      callback(i, vertices[i], vertices[i + 1])
+    }
+  }
+}
+
+///|
+fn project_point_on_polyline(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  point : @core.Vec2,
+) -> PointProjection {
+  let mut best : PointProjection? = None
+  let mut best_dist2 = 1.0e30F
+  polyline_for_each_segment(vertices, indices, fn(
+    _seg_index : Int,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> Unit {
+    let proj = project_point_on_segment(center, rotation, a, b, point)
+    let delta = point.sub(proj.point)
+    let dist2 = delta.dot(delta)
+    if dist2 < best_dist2 {
+      best_dist2 = dist2
+      best = Some(proj)
+    }
+  })
+  if best is Some(p) {
+    p
+  } else {
+    PointProjection::{ point, is_inside: false }
+  }
+}
+
+///|
+fn project_point_on_polyline_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  point : @core.Vec2,
+) -> (PointProjection, FeatureId) {
+  let mut best : (PointProjection, FeatureId)? = None
+  let mut best_dist2 = 1.0e30F
+  polyline_for_each_segment(vertices, indices, fn(
+    seg_index : Int,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> Unit {
+    let proj = project_point_on_segment(center, rotation, a, b, point)
+    let delta = point.sub(proj.point)
+    let dist2 = delta.dot(delta)
+    if dist2 < best_dist2 {
+      best_dist2 = dist2
+      best = Some((proj, FeatureId::Edge(seg_index)))
+    }
+  })
+  if best is Some(r) {
+    r
+  } else {
+    (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+  }
+}
+
+///|
+fn ray_intersect_polyline_and_get_normal(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  let mut best : RayIntersection? = None
+  polyline_for_each_segment(vertices, indices, fn(
+    _seg_index : Int,
+    a : @core.Vec2,
+    b : @core.Vec2,
+  ) -> Unit {
+    let hit = ray_intersect_segment_and_get_normal(
+      ray, center, rotation, a, b, max_dist, solid,
+    )
+    if hit is Some(h) {
+      if best is Some(cur) {
+        if h.toi < cur.toi {
+          best = Some(h)
+        }
+      } else {
+        best = Some(h)
+      }
+    }
+  })
+  best
+}
+
+///|
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
   point : @core.Vec2,
@@ -2733,6 +2938,14 @@ pub fn QueryPipeline::project_point(
             collider.world_rotation,
             a,
             b,
+            point,
+          )
+        Shape::Polyline(vertices, indices) =>
+          project_point_on_polyline(
+            collider.world_translation,
+            collider.world_rotation,
+            vertices,
+            indices,
             point,
           )
       }
@@ -2813,6 +3026,14 @@ pub fn QueryPipeline::project_point_and_get_feature(
             collider.world_rotation,
             a,
             b,
+            point,
+          )
+        Shape::Polyline(vertices, indices) =>
+          project_point_on_polyline_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            vertices,
+            indices,
             point,
           )
       }

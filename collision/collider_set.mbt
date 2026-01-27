@@ -234,6 +234,7 @@ pub(all) enum Shape {
   CapsuleX(@core.Real, @core.Real)
   CapsuleY(@core.Real, @core.Real)
   Segment(@core.Vec2, @core.Vec2)
+  Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
 }
 
 ///|
@@ -396,6 +397,46 @@ pub fn ColliderBuilder::segment(
 ) -> ColliderBuilder {
   {
     shape: Shape::Segment(a, b),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: ActiveEvents::empty(),
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder::polyline(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+) -> ColliderBuilder {
+  let points : Array[@core.Vec2] = []
+  for i in 0..<vertices.length() {
+    points.push(vertices[i])
+  }
+  let idxs = if indices is Some(raw) {
+    let out : Array[(Int, Int)] = []
+    for i in 0..<raw.length() {
+      out.push(raw[i])
+    }
+    Some(out)
+  } else {
+    None
+  }
+  {
+    shape: Shape::Polyline(points, idxs),
     translation: @core.Vec2::zero(),
     rotation: 0.0F,
     active_collision_types: ActiveCollisionTypes::default(),
@@ -811,6 +852,8 @@ fn shape_mass_properties(
       let com = @core.Vec2::new((a.x + b.x) * 0.5F, (a.y + b.y) * 0.5F)
       @core.MassProperties::new(0.0F, 0.0F, com)
     }
+    Shape::Polyline(_, _) =>
+      @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
   }
 }
 
@@ -1835,7 +1878,240 @@ fn shapes_intersect(
     ]
   }
 
+  fn polyline_intersects_shape_basic(
+    vertices : Array[@core.Vec2],
+    indices : Array[(Int, Int)]?,
+    poly_pos : @core.Vec2,
+    poly_rot : @core.Real,
+    other : Shape,
+    other_pos : @core.Vec2,
+    other_rot : @core.Real,
+  ) -> Bool {
+    fn test_segment(
+      a : @core.Vec2,
+      b : @core.Vec2,
+      poly_pos : @core.Vec2,
+      poly_rot : @core.Real,
+      other : Shape,
+      other_pos : @core.Vec2,
+      other_rot : @core.Real,
+    ) -> Bool {
+      shapes_intersect_basic(
+        Shape::Segment(a, b),
+        poly_pos,
+        poly_rot,
+        other,
+        other_pos,
+        other_rot,
+      )
+    }
+
+    if indices is Some(idxs) {
+      for i in 0..<idxs.length() {
+        let (i0, i1) = idxs[i]
+        if i0 < 0 || i1 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() || i1 >= vertices.length() {
+          continue
+        }
+        if test_segment(
+            vertices[i0],
+            vertices[i1],
+            poly_pos,
+            poly_rot,
+            other,
+            other_pos,
+            other_rot,
+          ) {
+          return true
+        }
+      }
+      false
+    } else {
+      if vertices.length() < 2 {
+        return false
+      }
+      for i in 0..<(vertices.length() - 1) {
+        if test_segment(
+            vertices[i],
+            vertices[i + 1],
+            poly_pos,
+            poly_rot,
+            other,
+            other_pos,
+            other_rot,
+          ) {
+          return true
+        }
+      }
+      false
+    }
+  }
+
   match (shape1, shape2) {
+    (Shape::Polyline(vertices, indices), Shape::Polyline(vertices2, indices2)) => {
+      // Brute-force intersection for two polylines: any segment intersects any segment.
+      fn segments(
+        vertices : Array[@core.Vec2],
+        indices : Array[(Int, Int)]?,
+      ) -> Array[(@core.Vec2, @core.Vec2)] {
+        let result : Array[(@core.Vec2, @core.Vec2)] = []
+        if indices is Some(idxs) {
+          for i in 0..<idxs.length() {
+            let (i0, i1) = idxs[i]
+            if i0 < 0 || i1 < 0 {
+              continue
+            }
+            if i0 >= vertices.length() || i1 >= vertices.length() {
+              continue
+            }
+            result.push((vertices[i0], vertices[i1]))
+          }
+        } else if vertices.length() >= 2 {
+          for i in 0..<(vertices.length() - 1) {
+            result.push((vertices[i], vertices[i + 1]))
+          }
+        }
+        result
+      }
+
+      let s1 = segments(vertices, indices)
+      let s2 = segments(vertices2, indices2)
+      for i in 0..<s1.length() {
+        for j in 0..<s2.length() {
+          if shapes_intersect_basic(
+              Shape::Segment(s1[i].0, s1[i].1),
+              pos1,
+              rot1,
+              Shape::Segment(s2[j].0, s2[j].1),
+              pos2,
+              rot2,
+            ) {
+            return true
+          }
+        }
+      }
+      false
+    }
+    (Shape::Polyline(vertices, indices), other) =>
+      match other {
+        Shape::CapsuleX(h, r) => {
+          let comps = capsule_components(
+            pos2,
+            rot2,
+            @core.Vec2::new(1.0F, 0.0F),
+            h,
+            r,
+            h,
+            r,
+          )
+          for i in 0..<comps.length() {
+            let c = comps[i]
+            if polyline_intersects_shape_basic(
+                vertices,
+                indices,
+                pos1,
+                rot1,
+                c.0,
+                c.1,
+                c.2,
+              ) {
+              return true
+            }
+          }
+          false
+        }
+        Shape::CapsuleY(h, r) => {
+          let comps = capsule_components(
+            pos2,
+            rot2,
+            @core.Vec2::new(0.0F, 1.0F),
+            h,
+            r,
+            r,
+            h,
+          )
+          for i in 0..<comps.length() {
+            let c = comps[i]
+            if polyline_intersects_shape_basic(
+                vertices,
+                indices,
+                pos1,
+                rot1,
+                c.0,
+                c.1,
+                c.2,
+              ) {
+              return true
+            }
+          }
+          false
+        }
+        _ =>
+          polyline_intersects_shape_basic(
+            vertices, indices, pos1, rot1, other, pos2, rot2,
+          )
+      }
+    (other, Shape::Polyline(vertices, indices)) =>
+      match other {
+        Shape::CapsuleX(h, r) => {
+          let comps = capsule_components(
+            pos1,
+            rot1,
+            @core.Vec2::new(1.0F, 0.0F),
+            h,
+            r,
+            h,
+            r,
+          )
+          for i in 0..<comps.length() {
+            let c = comps[i]
+            if polyline_intersects_shape_basic(
+                vertices,
+                indices,
+                pos2,
+                rot2,
+                c.0,
+                c.1,
+                c.2,
+              ) {
+              return true
+            }
+          }
+          false
+        }
+        Shape::CapsuleY(h, r) => {
+          let comps = capsule_components(
+            pos1,
+            rot1,
+            @core.Vec2::new(0.0F, 1.0F),
+            h,
+            r,
+            r,
+            h,
+          )
+          for i in 0..<comps.length() {
+            let c = comps[i]
+            if polyline_intersects_shape_basic(
+                vertices,
+                indices,
+                pos2,
+                rot2,
+                c.0,
+                c.1,
+                c.2,
+              ) {
+              return true
+            }
+          }
+          false
+        }
+        _ =>
+          polyline_intersects_shape_basic(
+            vertices, indices, pos2, rot2, other, pos1, rot1,
+          )
+      }
     (Shape::Ball(_), Shape::Ball(_))
     | (Shape::Ball(_), Shape::Cuboid(_, _))
     | (Shape::Cuboid(_, _), Shape::Ball(_))
@@ -2854,6 +3130,265 @@ fn contact_manifold_cuboid_segment(
 }
 
 ///|
+fn contact_manifold_polyline_ball(
+  polyline : Collider,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  ball : Collider,
+  radius : @core.Real,
+) -> ContactManifold {
+  let mut best : ContactManifold? = None
+  let mut best_dist = 1.0e30F
+  fn consider(
+    polyline : Collider,
+    ball : Collider,
+    radius : @core.Real,
+    seg_index : Int,
+    a : @core.Vec2,
+    b : @core.Vec2,
+    best : ContactManifold?,
+    best_dist : @core.Real,
+  ) -> (ContactManifold?, @core.Real) {
+    let m = contact_manifold_segment_ball(polyline, a, b, ball, radius)
+    if m.points.length() == 0 {
+      return (best, best_dist)
+    }
+    let p = m.points[0]
+    let updated = ContactManifold::{
+      normal: m.normal,
+      points: [
+        ContactManifoldPoint::{
+          local_p1: p.local_p1,
+          local_p2: p.local_p2,
+          dist: p.dist,
+          fid1: FeatureId::Edge(seg_index),
+          fid2: p.fid2,
+        },
+      ],
+    }
+    if p.dist < best_dist {
+      (Some(updated), p.dist)
+    } else {
+      (best, best_dist)
+    }
+  }
+
+  if indices is Some(idxs) {
+    for i in 0..<idxs.length() {
+      let (i0, i1) = idxs[i]
+      if i0 < 0 || i1 < 0 {
+        continue
+      }
+      if i0 >= vertices.length() || i1 >= vertices.length() {
+        continue
+      }
+      let (b0, bd0) = consider(
+        polyline,
+        ball,
+        radius,
+        i,
+        vertices[i0],
+        vertices[i1],
+        best,
+        best_dist,
+      )
+      best = b0
+      best_dist = bd0
+    }
+  } else if vertices.length() >= 2 {
+    for i in 0..<(vertices.length() - 1) {
+      let (b0, bd0) = consider(
+        polyline,
+        ball,
+        radius,
+        i,
+        vertices[i],
+        vertices[i + 1],
+        best,
+        best_dist,
+      )
+      best = b0
+      best_dist = bd0
+    }
+  }
+  if best is Some(m) {
+    m
+  } else {
+    // Degenerate polyline: fallback to a zero-length segment.
+    contact_manifold_segment_ball(
+      polyline,
+      @core.Vec2::zero(),
+      @core.Vec2::zero(),
+      ball,
+      radius,
+    )
+  }
+}
+
+///|
+fn contact_manifold_ball_polyline(
+  ball : Collider,
+  radius : @core.Real,
+  polyline : Collider,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+) -> ContactManifold {
+  let m = contact_manifold_polyline_ball(
+    polyline, vertices, indices, ball, radius,
+  )
+  // Flip normal and swap feature ids/points into ball/polyline order.
+  let points : Array[ContactManifoldPoint] = []
+  let ps = m.points()
+  for i in 0..<ps.length() {
+    let p = ps[i]
+    points.push(ContactManifoldPoint::{
+      local_p1: p.local_p2(),
+      local_p2: p.local_p1(),
+      dist: p.dist(),
+      fid1: p.fid2(),
+      fid2: p.fid1(),
+    })
+  }
+  ContactManifold::{
+    normal: @core.Vec2::new(-m.normal().x, -m.normal().y),
+    points,
+  }
+}
+
+///|
+fn contact_manifold_polyline_cuboid(
+  polyline : Collider,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> ContactManifold {
+  let mut best : ContactManifold? = None
+  let mut best_dist = 1.0e30F
+  fn consider(
+    polyline : Collider,
+    cuboid : Collider,
+    half_width : @core.Real,
+    half_height : @core.Real,
+    seg_index : Int,
+    a : @core.Vec2,
+    b : @core.Vec2,
+    best : ContactManifold?,
+    best_dist : @core.Real,
+  ) -> (ContactManifold?, @core.Real) {
+    let m = contact_manifold_segment_cuboid(
+      polyline, a, b, cuboid, half_width, half_height,
+    )
+    if m.points.length() == 0 {
+      return (best, best_dist)
+    }
+    let p = m.points[0]
+    let updated = ContactManifold::{
+      normal: m.normal,
+      points: [
+        ContactManifoldPoint::{
+          local_p1: p.local_p1,
+          local_p2: p.local_p2,
+          dist: p.dist,
+          fid1: FeatureId::Edge(seg_index),
+          fid2: p.fid2,
+        },
+      ],
+    }
+    if p.dist < best_dist {
+      (Some(updated), p.dist)
+    } else {
+      (best, best_dist)
+    }
+  }
+
+  if indices is Some(idxs) {
+    for i in 0..<idxs.length() {
+      let (i0, i1) = idxs[i]
+      if i0 < 0 || i1 < 0 {
+        continue
+      }
+      if i0 >= vertices.length() || i1 >= vertices.length() {
+        continue
+      }
+      let (b0, bd0) = consider(
+        polyline,
+        cuboid,
+        half_width,
+        half_height,
+        i,
+        vertices[i0],
+        vertices[i1],
+        best,
+        best_dist,
+      )
+      best = b0
+      best_dist = bd0
+    }
+  } else if vertices.length() >= 2 {
+    for i in 0..<(vertices.length() - 1) {
+      let (b0, bd0) = consider(
+        polyline,
+        cuboid,
+        half_width,
+        half_height,
+        i,
+        vertices[i],
+        vertices[i + 1],
+        best,
+        best_dist,
+      )
+      best = b0
+      best_dist = bd0
+    }
+  }
+  if best is Some(m) {
+    m
+  } else {
+    contact_manifold_segment_cuboid(
+      polyline,
+      @core.Vec2::zero(),
+      @core.Vec2::zero(),
+      cuboid,
+      half_width,
+      half_height,
+    )
+  }
+}
+
+///|
+fn contact_manifold_cuboid_polyline(
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  polyline : Collider,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+) -> ContactManifold {
+  let m = contact_manifold_polyline_cuboid(
+    polyline, vertices, indices, cuboid, half_width, half_height,
+  )
+  // Flip normal and swap feature ids/points into cuboid/polyline order.
+  let points : Array[ContactManifoldPoint] = []
+  let ps = m.points()
+  for i in 0..<ps.length() {
+    let p = ps[i]
+    points.push(ContactManifoldPoint::{
+      local_p1: p.local_p2(),
+      local_p2: p.local_p1(),
+      dist: p.dist(),
+      fid1: p.fid2(),
+      fid2: p.fid1(),
+    })
+  }
+  ContactManifold::{
+    normal: @core.Vec2::new(-m.normal().x, -m.normal().y),
+    points,
+  }
+}
+
+///|
 fn contact_manifold_segment_segment(
   seg1 : Collider,
   a1 : @core.Vec2,
@@ -3123,6 +3658,18 @@ fn build_contact_pair(
       manifolds.push(
         contact_manifold_segment_ball(collider1, a, b, collider2, r),
       )
+    (Shape::Ball(r), Shape::Polyline(vertices, indices)) =>
+      manifolds.push(
+        contact_manifold_ball_polyline(
+          collider1, r, collider2, vertices, indices,
+        ),
+      )
+    (Shape::Polyline(vertices, indices), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_polyline_ball(
+          collider1, vertices, indices, collider2, r,
+        ),
+      )
     (Shape::Ball(r), Shape::CapsuleX(hh, cr)) =>
       manifolds.push(
         contact_manifold_ball_capsule(
@@ -3227,6 +3774,18 @@ fn build_contact_pair(
       manifolds.push(
         contact_manifold_cuboid_segment(collider1, hw, hh, collider2, a, b),
       )
+    (Shape::Polyline(vertices, indices), Shape::Cuboid(hw, hh)) =>
+      manifolds.push(
+        contact_manifold_polyline_cuboid(
+          collider1, vertices, indices, collider2, hw, hh,
+        ),
+      )
+    (Shape::Cuboid(hw, hh), Shape::Polyline(vertices, indices)) =>
+      manifolds.push(
+        contact_manifold_cuboid_polyline(
+          collider1, hw, hh, collider2, vertices, indices,
+        ),
+      )
     (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
       manifolds.push(
         contact_manifold_segment_segment(collider1, a1, b1, collider2, a2, b2),
@@ -3327,6 +3886,7 @@ fn build_contact_pair(
           @core.Vec2::new(0.0F, 1.0F),
         ),
       )
+    _ => ()
   }
   ContactPair::{ manifolds, }
 }
@@ -3812,6 +4372,35 @@ fn compute_shape_aabb(
         max: @core.Vec2::new(max_x + pd, max_y + pd),
       }
     }
+    Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        Aabb::{ min: center, max: center }
+      } else {
+        let rot = @core.Rot2::from_angle(rotation)
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        Aabb::{
+          min: @core.Vec2::new(min_x - pd, min_y - pd),
+          max: @core.Vec2::new(max_x + pd, max_y + pd),
+        }
+      }
   }
 }
 

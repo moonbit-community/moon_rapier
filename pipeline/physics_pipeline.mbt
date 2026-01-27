@@ -495,7 +495,99 @@ fn separation_vector(
     }
   }
 
+  fn polyline_for_each_segment(
+    vertices : Array[@core.Vec2],
+    indices : Array[(Int, Int)]?,
+    callback : (@core.Vec2, @core.Vec2) -> Unit,
+  ) -> Unit {
+    if indices is Some(idxs) {
+      for i in 0..<idxs.length() {
+        let (i0, i1) = idxs[i]
+        if i0 < 0 || i1 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() || i1 >= vertices.length() {
+          continue
+        }
+        callback(vertices[i0], vertices[i1])
+      }
+    } else {
+      if vertices.length() < 2 {
+        return
+      }
+      for i in 0..<(vertices.length() - 1) {
+        callback(vertices[i], vertices[i + 1])
+      }
+    }
+  }
+
+  fn separation_polyline_other(
+    vertices : Array[@core.Vec2],
+    indices : Array[(Int, Int)]?,
+    poly_pos : @core.Vec2,
+    poly_rot : @core.Real,
+    other : @collision.Shape,
+    other_pos : @core.Vec2,
+    other_rot : @core.Real,
+  ) -> @core.Vec2? {
+    let mut best : @core.Vec2? = None
+    polyline_for_each_segment(vertices, indices, fn(
+      a : @core.Vec2,
+      b : @core.Vec2,
+    ) -> Unit {
+      best = best_sep(
+        best,
+        separation_vector(
+          @collision.Shape::Segment(a, b),
+          poly_pos,
+          poly_rot,
+          other,
+          other_pos,
+          other_rot,
+        ),
+      )
+    })
+    best
+  }
+
+  fn separation_other_polyline(
+    other : @collision.Shape,
+    other_pos : @core.Vec2,
+    other_rot : @core.Real,
+    vertices : Array[@core.Vec2],
+    indices : Array[(Int, Int)]?,
+    poly_pos : @core.Vec2,
+    poly_rot : @core.Real,
+  ) -> @core.Vec2? {
+    let mut best : @core.Vec2? = None
+    polyline_for_each_segment(vertices, indices, fn(
+      a : @core.Vec2,
+      b : @core.Vec2,
+    ) -> Unit {
+      best = best_sep(
+        best,
+        separation_vector(
+          other,
+          other_pos,
+          other_rot,
+          @collision.Shape::Segment(a, b),
+          poly_pos,
+          poly_rot,
+        ),
+      )
+    })
+    best
+  }
+
   match (shape1, shape2) {
+    (@collision.Shape::Polyline(vertices, indices), other) =>
+      separation_polyline_other(
+        vertices, indices, pos1, rot1, other, pos2, rot2,
+      )
+    (other, @collision.Shape::Polyline(vertices, indices)) =>
+      separation_other_polyline(
+        other, pos1, rot1, vertices, indices, pos2, rot2,
+      )
     (@collision.Shape::Ball(_), @collision.Shape::Ball(_))
     | (@collision.Shape::Ball(_), @collision.Shape::Cuboid(_, _))
     | (@collision.Shape::Cuboid(_, _), @collision.Shape::Ball(_))

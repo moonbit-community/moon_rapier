@@ -271,7 +271,9 @@ fn build_constraints(
         let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
         let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
         let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
-          c2.shape() is @collision.Shape::Segment(_, _)
+          c2.shape() is @collision.Shape::Segment(_, _) ||
+          c1.shape() is @collision.Shape::Polyline(_, _) ||
+          c2.shape() is @collision.Shape::Polyline(_, _)
         fn push_constraint(
           fid1 : @collision.FeatureId,
           fid2 : @collision.FeatureId,
@@ -641,11 +643,13 @@ fn position_correction(
     let mut has_segment = false
     if colliders.get(c.collider1) is Some(co1) {
       has_segment = has_segment ||
-        co1.shape() is @collision.Shape::Segment(_, _)
+        co1.shape() is @collision.Shape::Segment(_, _) ||
+        co1.shape() is @collision.Shape::Polyline(_, _)
     }
     if colliders.get(c.collider2) is Some(co2) {
       has_segment = has_segment ||
-        co2.shape() is @collision.Shape::Segment(_, _)
+        co2.shape() is @collision.Shape::Segment(_, _) ||
+        co2.shape() is @collision.Shape::Polyline(_, _)
     }
     if !has_segment {
       continue
@@ -735,11 +739,17 @@ fn position_correction_all(
     let c = constraints[i]
     // Segment penetrations are handled by `position_correction` (stronger depenetration).
     if colliders.get(c.collider1) is Some(co1) &&
-      co1.shape() is @collision.Shape::Segment(_, _) {
+      (
+        co1.shape() is @collision.Shape::Segment(_, _) ||
+        co1.shape() is @collision.Shape::Polyline(_, _)
+      ) {
       continue
     }
     if colliders.get(c.collider2) is Some(co2) &&
-      co2.shape() is @collision.Shape::Segment(_, _) {
+      (
+        co2.shape() is @collision.Shape::Segment(_, _) ||
+        co2.shape() is @collision.Shape::Polyline(_, _)
+      ) {
       continue
     }
     if c.dist >= -allowed_error {
