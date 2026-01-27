@@ -466,7 +466,85 @@ test "examples2d/joints2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/locked_rotations2.rs
 test "examples2d/locked_rotations2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Ground.
+  let ground_height = 0.1F
+  let ground_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(5.0F, ground_height).build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+
+  // A rectangle that only rotates.
+  let rect_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 3.0F))
+    .lock_translations()
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(2.0F, 0.6F).build(),
+    rect_handle,
+    bodies,
+  )
+  |> ignore
+
+  // A tilted capsule that cannot rotate.
+  let capsule_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 5.0F))
+    .rotation(@core.Rot2::from_angle(1.0F))
+    .lock_rotations()
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::capsule_y(0.6F, 0.4F).build(),
+    capsule_handle,
+    bodies,
+  )
+  |> ignore
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 360,
+  )
+  if bodies.get(rect_handle) is Some(rect_body) {
+    inspect(
+      @core.abs(rect_body.translation().y - 3.0F) < 1.0e-3F,
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get(capsule_handle) is Some(capsule_body) {
+    inspect(capsule_body.translation().y < 5.0F, content="true")
+    inspect(
+      @core.abs(capsule_body.rotation().angle() - 1.0F) < 1.0e-2F,
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|

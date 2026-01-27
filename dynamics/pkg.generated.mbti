@@ -423,6 +423,8 @@ pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition
   mut body_type : RigidBodyType
+  mut locked_translations : Bool
+  mut locked_rotations : Bool
   dominance : RigidBodyDominance
   mut enabled : Bool
   mut activation : RigidBodyActivation
@@ -469,6 +471,10 @@ pub fn RigidBody::is_kinematic(Self) -> Bool
 pub fn RigidBody::is_sleeping(Self) -> Bool
 pub fn RigidBody::linear_damping(Self) -> Float
 pub fn RigidBody::linvel(Self) -> @core.Vec2
+pub fn RigidBody::lock_rotations(Self) -> Self
+pub fn RigidBody::lock_translations(Self) -> Self
+pub fn RigidBody::locked_rotations(Self) -> Bool
+pub fn RigidBody::locked_translations(Self) -> Bool
 pub fn RigidBody::mark_local_mass_properties_changed(Self) -> Self
 pub fn RigidBody::mass(Self) -> Float
 pub fn RigidBody::mass_props(Self) -> RigidBodyMassProps
@@ -490,6 +496,8 @@ pub fn RigidBody::set_kinematic_position_based_vels(Self, RigidBodyVelocity) -> 
 pub fn RigidBody::set_linear_damping(Self, Float) -> Self
 pub fn RigidBody::set_linvel(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::set_local_mass_properties(Self, @core.MassProperties) -> Self
+pub fn RigidBody::set_locked_rotations(Self, Bool, Bool) -> Self
+pub fn RigidBody::set_locked_translations(Self, Bool, Bool) -> Self
 pub fn RigidBody::set_next_kinematic_position(Self, @core.Isometry2) -> Self
 pub fn RigidBody::set_next_kinematic_rotation(Self, @core.Rot2) -> Self
 pub fn RigidBody::set_next_kinematic_translation(Self, @core.Vec2) -> Self
@@ -535,6 +543,8 @@ pub struct RigidBodyBuilder {
   mut linear_damping : Float
   mut angular_damping : Float
   body_type : RigidBodyType
+  mut lock_translations : Bool
+  mut lock_rotations : Bool
   mut additional_mass : Float
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
@@ -560,6 +570,8 @@ pub fn RigidBodyBuilder::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder::linvel(Self, @core.Vec2) -> Self
+pub fn RigidBodyBuilder::lock_rotations(Self) -> Self
+pub fn RigidBodyBuilder::lock_translations(Self) -> Self
 pub fn RigidBodyBuilder::new(RigidBodyType) -> Self
 pub fn RigidBodyBuilder::position(Self, @core.Isometry2) -> Self
 pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self

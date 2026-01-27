@@ -615,6 +615,8 @@ pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition
   mut body_type : RigidBodyType
+  mut locked_translations : Bool
+  mut locked_rotations : Bool
   dominance : RigidBodyDominance
   mut enabled : Bool
   mut activation : RigidBodyActivation
@@ -679,6 +681,56 @@ pub fn RigidBody::is_kinematic(self : RigidBody) -> Bool {
 ///|
 pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
   self.body_type.is_dynamic_or_kinematic()
+}
+
+///|
+pub fn RigidBody::locked_translations(self : RigidBody) -> Bool {
+  self.locked_translations
+}
+
+///|
+pub fn RigidBody::locked_rotations(self : RigidBody) -> Bool {
+  self.locked_rotations
+}
+
+///|
+pub fn RigidBody::set_locked_translations(
+  self : RigidBody,
+  locked : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.locked_translations != locked {
+    self.locked_translations = locked
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::set_locked_rotations(
+  self : RigidBody,
+  locked : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  if self.locked_rotations != locked {
+    self.locked_rotations = locked
+    if wake_up && self.is_dynamic_or_kinematic() {
+      self.wake_up(true) |> ignore
+    }
+  }
+  self
+}
+
+///|
+pub fn RigidBody::lock_translations(self : RigidBody) -> RigidBody {
+  self.set_locked_translations(true, true)
+}
+
+///|
+pub fn RigidBody::lock_rotations(self : RigidBody) -> RigidBody {
+  self.set_locked_rotations(true, true)
 }
 
 ///|
@@ -1336,6 +1388,8 @@ pub struct RigidBodyBuilder {
   mut linear_damping : @core.Real
   mut angular_damping : @core.Real
   body_type : RigidBodyType
+  mut lock_translations : Bool
+  mut lock_rotations : Bool
   mut additional_mass : @core.Real
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
@@ -1356,6 +1410,8 @@ pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     linear_damping: 0.0F,
     angular_damping: 0.0F,
     body_type,
+    lock_translations: false,
+    lock_rotations: false,
     additional_mass: 0.0F,
     additional_solver_iterations: 0,
     can_sleep: true,
@@ -1431,6 +1487,22 @@ pub fn RigidBodyBuilder::angvel(
   angvel : @core.Real,
 ) -> RigidBodyBuilder {
   self.angvel = angvel
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::lock_translations(
+  self : RigidBodyBuilder,
+) -> RigidBodyBuilder {
+  self.lock_translations = true
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::lock_rotations(
+  self : RigidBodyBuilder,
+) -> RigidBodyBuilder {
+  self.lock_rotations = true
   self
 }
 
@@ -1547,6 +1619,8 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     ids: RigidBodyIds::default(),
     position: pos,
     body_type: self.body_type,
+    locked_translations: self.lock_translations,
+    locked_rotations: self.lock_rotations,
     dominance: RigidBodyDominance::new(self.dominance_group),
     enabled: self.enabled,
     activation,
@@ -2155,6 +2229,8 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             ids: RigidBodyIds::default(),
             position: rb_pos,
             body_type,
+            locked_translations: false,
+            locked_rotations: false,
             dominance: RigidBodyDominance::new(dominance_group),
             enabled,
             activation,

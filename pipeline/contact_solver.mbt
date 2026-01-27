@@ -143,8 +143,16 @@ fn apply_impulse_delta_dynamic(
   if handle is Some(h) {
     if bodies.get_mut(h) is Some(body) {
       if body.is_dynamic() && body.is_enabled() {
-        let inv_m = body.inv_mass()
-        let inv_i = body.inv_inertia()
+        let inv_m = if body.locked_translations {
+          0.0F
+        } else {
+          body.inv_mass()
+        }
+        let inv_i = if body.locked_rotations {
+          0.0F
+        } else {
+          body.inv_inertia()
+        }
         body.set_linvel(
           body.linvel().add(solver_vec2_scale(impulse, inv_m)),
           true,
@@ -300,8 +308,16 @@ fn build_constraints(
               w1 = rb1.angvel()
               com1 = rb1.world_com()
               if rb1.is_dynamic() && rb1.is_enabled() {
-                inv_mass1 = rb1.inv_mass()
-                inv_inertia1 = rb1.inv_inertia()
+                inv_mass1 = if rb1.locked_translations {
+                  0.0F
+                } else {
+                  rb1.inv_mass()
+                }
+                inv_inertia1 = if rb1.locked_rotations {
+                  0.0F
+                } else {
+                  rb1.inv_inertia()
+                }
               }
             }
           }
@@ -316,8 +332,16 @@ fn build_constraints(
               w2 = rb2.angvel()
               com2 = rb2.world_com()
               if rb2.is_dynamic() && rb2.is_enabled() {
-                inv_mass2 = rb2.inv_mass()
-                inv_inertia2 = rb2.inv_inertia()
+                inv_mass2 = if rb2.locked_translations {
+                  0.0F
+                } else {
+                  rb2.inv_mass()
+                }
+                inv_inertia2 = if rb2.locked_rotations {
+                  0.0F
+                } else {
+                  rb2.inv_inertia()
+                }
               }
             }
           }
@@ -528,7 +552,7 @@ fn position_correction(
     if c.body1 is Some(h1) {
       if bodies.get(h1) is Some(rb1) {
         if rb1.is_dynamic() && rb1.is_enabled() {
-          inv_m1 = rb1.inv_mass()
+          inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
         }
       }
     }
@@ -536,7 +560,7 @@ fn position_correction(
     if c.body2 is Some(h2) {
       if bodies.get(h2) is Some(rb2) {
         if rb2.is_dynamic() && rb2.is_enabled() {
-          inv_m2 = rb2.inv_mass()
+          inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
         }
       }
     }
@@ -548,7 +572,7 @@ fn position_correction(
     let ratio2 = inv_m2 / denom
     if c.body1 is Some(h1m) {
       if bodies.get_mut(h1m) is Some(b1) {
-        if b1.is_dynamic() && b1.is_enabled() {
+        if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
           b1.set_translation(
             b1.translation().add(solver_vec2_scale(correction, ratio1)),
             true,
@@ -559,7 +583,7 @@ fn position_correction(
     }
     if c.body2 is Some(h2m) {
       if bodies.get_mut(h2m) is Some(b2) {
-        if b2.is_dynamic() && b2.is_enabled() {
+        if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
           b2.set_translation(
             b2.translation().sub(solver_vec2_scale(correction, ratio2)),
             true,

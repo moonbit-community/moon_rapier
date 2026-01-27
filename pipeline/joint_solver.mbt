@@ -63,8 +63,16 @@ fn joint_apply_impulse_delta_dynamic(
   if handle is Some(h) {
     if bodies.get_mut(h) is Some(body) {
       if body.is_dynamic() && body.is_enabled() {
-        let inv_m = body.inv_mass()
-        let inv_i = body.inv_inertia()
+        let inv_m = if body.locked_translations {
+          0.0F
+        } else {
+          body.inv_mass()
+        }
+        let inv_i = if body.locked_rotations {
+          0.0F
+        } else {
+          body.inv_inertia()
+        }
         body.set_linvel(
           body.linvel().add(joint_vec2_scale(impulse, inv_m)),
           true,
@@ -111,7 +119,11 @@ fn joint_apply_angular_impulse_delta_dynamic(
   if handle is Some(h) {
     if bodies.get_mut(h) is Some(body) {
       if body.is_dynamic() && body.is_enabled() {
-        let inv_i = body.inv_inertia()
+        let inv_i = if body.locked_rotations {
+          0.0F
+        } else {
+          body.inv_inertia()
+        }
         body.set_angvel(body.angvel() + impulse * inv_i, true) |> ignore
       }
     }
@@ -202,14 +214,14 @@ fn build_joint_constraints(
     let mut inv_mass1 = 0.0F
     let mut inv_inertia1 = 0.0F
     if rb1.is_dynamic() && rb1.is_enabled() {
-      inv_mass1 = rb1.inv_mass()
-      inv_inertia1 = rb1.inv_inertia()
+      inv_mass1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+      inv_inertia1 = if rb1.locked_rotations { 0.0F } else { rb1.inv_inertia() }
     }
     let mut inv_mass2 = 0.0F
     let mut inv_inertia2 = 0.0F
     if rb2.is_dynamic() && rb2.is_enabled() {
-      inv_mass2 = rb2.inv_mass()
-      inv_inertia2 = rb2.inv_inertia()
+      inv_mass2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+      inv_inertia2 = if rb2.locked_rotations { 0.0F } else { rb2.inv_inertia() }
     }
 
     // For u=(1,0), cross(r,u) = -r.y. For u=(0,1), cross(r,u) = r.x.
@@ -480,11 +492,11 @@ fn position_correction_joints(
     }
     let mut inv_m1 = 0.0F
     if rb1.is_dynamic() && rb1.is_enabled() {
-      inv_m1 = rb1.inv_mass()
+      inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
     }
     let mut inv_m2 = 0.0F
     if rb2.is_dynamic() && rb2.is_enabled() {
-      inv_m2 = rb2.inv_mass()
+      inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
     }
     let denom = inv_m1 + inv_m2
     if denom <= 1.0e-12F {
@@ -493,7 +505,7 @@ fn position_correction_joints(
     let ratio1 = inv_m1 / denom
     let ratio2 = inv_m2 / denom
     if bodies.get_mut(c.body1) is Some(b1) {
-      if b1.is_dynamic() && b1.is_enabled() {
+      if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
         b1.set_translation(
           b1.translation().sub(joint_vec2_scale(error, ratio1)),
           true,
@@ -502,7 +514,7 @@ fn position_correction_joints(
       }
     }
     if bodies.get_mut(c.body2) is Some(b2) {
-      if b2.is_dynamic() && b2.is_enabled() {
+      if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
         b2.set_translation(
           b2.translation().add(joint_vec2_scale(error, ratio2)),
           true,

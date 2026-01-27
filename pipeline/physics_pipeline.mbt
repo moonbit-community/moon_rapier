@@ -996,12 +996,19 @@ pub fn PhysicsPipeline::step(
         match body.body_type {
           @dynamics.RigidBodyType::Dynamic => {
             // Gravity is acceleration, so it does not depend on the body's mass.
-            let scale = body.gravity_scale()
-            let gravity_step = @core.Vec2::new(
-              gravity.x * dt * scale,
-              gravity.y * dt * scale,
-            )
-            body.set_linvel(body.linvel().add(gravity_step), false) |> ignore
+            if body.locked_translations {
+              body.set_linvel(@core.Vec2::zero(), false) |> ignore
+            } else {
+              let scale = body.gravity_scale()
+              let gravity_step = @core.Vec2::new(
+                gravity.x * dt * scale,
+                gravity.y * dt * scale,
+              )
+              body.set_linvel(body.linvel().add(gravity_step), false) |> ignore
+            }
+            if body.locked_rotations {
+              body.set_angvel(0.0F, false) |> ignore
+            }
             let vels = body.vels().apply_damping(dt, body.damping())
             body.set_vels(vels, false) |> ignore
             let next_pos = vels.integrate(
