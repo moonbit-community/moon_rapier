@@ -545,6 +545,262 @@ pub fn Multibody::apply_displacements(
 }
 
 ///|
+pub struct InverseKinematicsOption {
+  mut damping : @core.Real
+  mut max_iters : Int
+  mut constrained_axes : JointAxesMask
+  mut epsilon_linear : @core.Real
+  mut epsilon_angular : @core.Real
+}
+
+///|
+pub fn InverseKinematicsOption::default() -> InverseKinematicsOption {
+  {
+    damping: 1.0F,
+    max_iters: 10,
+    constrained_axes: JointAxesMask::all(),
+    epsilon_linear: 1.0e-3F,
+    epsilon_angular: 1.0e-3F,
+  }
+}
+
+///|
+pub fn InverseKinematicsOption::set_damping(
+  self : InverseKinematicsOption,
+  damping : @core.Real,
+) -> InverseKinematicsOption {
+  self.damping = damping
+  self
+}
+
+///|
+pub fn InverseKinematicsOption::set_max_iters(
+  self : InverseKinematicsOption,
+  max_iters : Int,
+) -> InverseKinematicsOption {
+  self.max_iters = max_iters
+  self
+}
+
+///|
+pub fn InverseKinematicsOption::set_constrained_axes(
+  self : InverseKinematicsOption,
+  constrained_axes : JointAxesMask,
+) -> InverseKinematicsOption {
+  self.constrained_axes = constrained_axes
+  self
+}
+
+///|
+pub fn InverseKinematicsOption::set_epsilon_linear(
+  self : InverseKinematicsOption,
+  epsilon_linear : @core.Real,
+) -> InverseKinematicsOption {
+  self.epsilon_linear = epsilon_linear
+  self
+}
+
+///|
+pub fn InverseKinematicsOption::set_epsilon_angular(
+  self : InverseKinematicsOption,
+  epsilon_angular : @core.Real,
+) -> InverseKinematicsOption {
+  self.epsilon_angular = epsilon_angular
+  self
+}
+
+///|
+fn ik_wrap_angle_pi(angle : @core.Real) -> @core.Real {
+  let pi_value = @core.pi()
+  let two_pi = @core.two_pi()
+  let mut a = angle
+  if a > pi_value {
+    a = a - two_pi
+  } else if a < -pi_value {
+    a = a + two_pi
+  }
+  a
+}
+
+///|
+fn ik_mat3_inverse(
+  a00 : @core.Real,
+  a01 : @core.Real,
+  a02 : @core.Real,
+  a10 : @core.Real,
+  a11 : @core.Real,
+  a12 : @core.Real,
+  a20 : @core.Real,
+  a21 : @core.Real,
+  a22 : @core.Real,
+) -> (
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+  @core.Real,
+)? {
+  let c00 = a11 * a22 - a12 * a21
+  let c01 = -(a10 * a22 - a12 * a20)
+  let c02 = a10 * a21 - a11 * a20
+  let det = a00 * c00 + a01 * c01 + a02 * c02
+  if @core.abs(det) <= 1.0e-5F {
+    return None
+  }
+  let inv_det = 1.0F / det
+  // Adjugate (transpose of cofactor matrix) * 1/det.
+  let inv00 = c00 * inv_det
+  let inv01 = -(a01 * a22 - a02 * a21) * inv_det
+  let inv02 = (a01 * a12 - a02 * a11) * inv_det
+  let inv10 = c01 * inv_det
+  let inv11 = (a00 * a22 - a02 * a20) * inv_det
+  let inv12 = -(a00 * a12 - a02 * a10) * inv_det
+  let inv20 = c02 * inv_det
+  let inv21 = -(a00 * a21 - a01 * a20) * inv_det
+  let inv22 = (a00 * a11 - a01 * a10) * inv_det
+  Some((inv00, inv01, inv02, inv10, inv11, inv12, inv20, inv21, inv22))
+}
+
+///|
+fn ik_inverse_kinematics_delta_with_jacobian(
+  jacobian : Jacobian,
+  dx : @core.Real,
+  dy : @core.Real,
+  da : @core.Real,
+  damping : @core.Real,
+  displacements : DVector,
+) -> Unit {
+  let cols = jacobian.cols()
+  if displacements.len() < cols {
+    return
+  }
+
+  // JJ = J * J^T + I * (damping^2), with J = 3 x cols.
+  let mut a00 = 0.0F
+  let mut a01 = 0.0F
+  let mut a02 = 0.0F
+  let mut a11 = 0.0F
+  let mut a12 = 0.0F
+  let mut a22 = 0.0F
+  for c in 0..<cols {
+    let j0 = jacobian.value_at(0, c)
+    let j1 = jacobian.value_at(1, c)
+    let j2 = jacobian.value_at(2, c)
+    a00 = a00 + j0 * j0
+    a01 = a01 + j0 * j1
+    a02 = a02 + j0 * j2
+    a11 = a11 + j1 * j1
+    a12 = a12 + j1 * j2
+    a22 = a22 + j2 * j2
+  }
+  let d2 = damping * damping
+  a00 = a00 + d2
+  a11 = a11 + d2
+  a22 = a22 + d2
+  let a10 = a01
+  let a20 = a02
+  let a21 = a12
+  let inv = ik_mat3_inverse(a00, a01, a02, a10, a11, a12, a20, a21, a22)
+  let (inv00, inv01, inv02, inv10, inv11, inv12, inv20, inv21, inv22) = if inv
+    is Some(v) {
+    v
+  } else {
+    (1.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F)
+  }
+
+  // u = inv(JJ) * desired_movement.
+  let u0 = inv00 * dx + inv01 * dy + inv02 * da
+  let u1 = inv10 * dx + inv11 * dy + inv12 * da
+  let u2 = inv20 * dx + inv21 * dy + inv22 * da
+
+  // displacements += J^T * u
+  for c in 0..<cols {
+    let j0 = jacobian.value_at(0, c)
+    let j1 = jacobian.value_at(1, c)
+    let j2 = jacobian.value_at(2, c)
+    let delta_q = j0 * u0 + j1 * u1 + j2 * u2
+    displacements.set_value(c, displacements.value_at(c) + delta_q)
+  }
+}
+
+///|
+pub fn Multibody::inverse_kinematics(
+  self : Multibody,
+  bodies : RigidBodySet,
+  link_id : LinkId,
+  options : InverseKinematicsOption,
+  target_pose : @core.Isometry2,
+  joint_can_move : (MultibodyLink) -> Bool,
+  displacements : DVector,
+) -> Unit {
+  // Ensure ndofs/assembly indices match the current root kind (fixed/dynamic).
+  self.update_ndofs_with_root(bodies)
+  if displacements.len() < self.ndofs {
+    return
+  }
+  let branch = self.branch_ids(link_id)
+  let can_move : Array[Bool] = []
+  for i in 0..<branch.length() {
+    let id = branch[i]
+    can_move.push(joint_can_move(self.links[id]))
+  }
+  let jacobian = Jacobian::zeros(0)
+  for _ in 0..<options.max_iters {
+    let pose = self.forward_kinematics_single_link(
+      bodies,
+      link_id,
+      Some(displacements.data),
+      Some(jacobian),
+    )
+
+    // Zero-out jacobian columns for joints that aren't allowed to move.
+    for i in 0..<branch.length() {
+      if !can_move[i] {
+        let link = self.links[branch[i]]
+        // Only one DOF per revolute joint link.
+        let col = link.assembly_id
+        if col >= 0 && col < self.ndofs {
+          jacobian.set_value(0, col, 0.0F)
+          jacobian.set_value(1, col, 0.0F)
+          jacobian.set_value(2, col, 0.0F)
+        }
+      }
+    }
+    let mut dx = target_pose.translation.x - pose.translation.x
+    let mut dy = target_pose.translation.y - pose.translation.y
+    let mut da = ik_wrap_angle_pi(
+      target_pose.rotation.mul(pose.rotation.inverse()).angle(),
+    )
+    if !options.constrained_axes.contains(JointAxesMask::lin_x()) {
+      dx = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::lin_y()) {
+      dy = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_z()) {
+      da = 0.0F
+    }
+    let lin_norm = Float::sqrt(dx * dx + dy * dy)
+    let ang_norm = @core.abs(da)
+    if lin_norm <= options.epsilon_linear && ang_norm <= options.epsilon_angular {
+      break
+    }
+    ik_inverse_kinematics_delta_with_jacobian(
+      jacobian,
+      dx,
+      dy,
+      da,
+      options.damping,
+      displacements,
+    )
+  }
+}
+
+///|
 struct MultibodyJointHandle {
   id : Int
 }

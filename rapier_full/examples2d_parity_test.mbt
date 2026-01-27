@@ -577,7 +577,53 @@ test "examples2d/debug_compression2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/debug_intersection2.rs
 test "examples2d/debug_intersection2.rs parity" {
-  inspect(true, content="true")
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let rad = 1.0F
+  let count = 20
+  for x in 0..<count {
+    for y in 0..<count {
+      let fx = Float::from_double(x.to_double())
+      let fy = Float::from_double(y.to_double())
+      let half = Float::from_double(count.to_double()) / 2.0F
+      let rigid_body = @dynamics.RigidBodyBuilder::fixed()
+        .translation(
+          @core.Vec2::new((fx - half) * rad * 3.0F, (fy - half) * rad * 3.0F),
+        )
+        .build()
+      let handle = bodies.insert(rigid_body)
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::ball(rad).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+    }
+  }
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let filter = @collision.QueryFilter::new()
+  let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
+  let query_center = @core.Vec2::zero()
+  let hits = query_pipeline.intersect_shape(
+    @core.Isometry2::from_translation(query_center),
+    @collision.Shape::Ball(rad / 2.0F),
+  )
+
+  // The query shape should intersect at least one of the fixed balls.
+  inspect(hits.length() > 0, content="true")
+  // Returned colliders should be actually close to the query shape center.
+  let mut max_d2 = 0.0F
+  for i in 0..<hits.length() {
+    if colliders.get(hits[i]) is Some(co) {
+      let d2 = co.translation().sub(query_center).length_squared()
+      if d2 > max_d2 {
+        max_d2 = d2
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(max_d2 <= rad * 3.0F * (rad * 3.0F), content="true")
 }
 
 ///|
@@ -792,13 +838,185 @@ test "examples2d/inv_pyramid2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/inverse_kinematics2.rs
 test "examples2d/inverse_kinematics2.rs parity" {
-  inspect(true, content="true")
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+
+  // Ground (kept for parity with upstream, though IK doesn't depend on it).
+  let ground_height = 0.01F
+  let floor_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(1.0F, ground_height).build(),
+    floor_handle,
+    bodies,
+  )
+  |> ignore
+
+  // Multibody chain.
+  let num_segments = 10
+  let size = 1.0F / Float::from_double(num_segments.to_double())
+  let mut last_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let mut last_link = @dynamics.MultibodyJointHandle::invalid()
+  for i in 0..<num_segments {
+    let new_body = bodies.insert(
+      @dynamics.RigidBodyBuilder::dynamic().can_sleep(false).build(),
+    )
+    // A sensor collider for visualization parity in upstream; keep it to exercise sensor handling.
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(size / 8.0F, size / 2.0F)
+      .density(0.0F)
+      .sensor(true)
+      .build(),
+      new_body,
+      bodies,
+    )
+    |> ignore
+    let joint = @dynamics.RevoluteJointBuilder::new()
+      .local_anchor1(
+        @core.Vec2::new(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F })),
+      )
+      .local_anchor2(@core.Vec2::new(0.0F, -size / 2.0F))
+      .build()
+    if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
+      last_link = handle
+    } else {
+      inspect(false, content="true")
+    }
+    last_body = new_body
+  }
+  if multibody_joints.get_mut(last_link) is Some(result) {
+    let (multibody, link_id) = result
+    let ndofs = multibody.ndofs()
+    let displacements = @dynamics.DVector::from_fn(ndofs, fn(
+      _ : Int,
+    ) -> @core.Real {
+      0.0F
+    })
+    let target_point = @core.Vec2::new(0.25F, 0.4F)
+    let options = @dynamics.InverseKinematicsOption::default()
+      .set_constrained_axes(@dynamics.JointAxesMask::lin_axes())
+      .set_max_iters(200)
+    multibody.inverse_kinematics(
+      bodies,
+      link_id,
+      options,
+      @core.Isometry2::from_translation(target_point),
+      fn(_link : @dynamics.MultibodyLink) -> Bool { true },
+      displacements,
+    )
+    multibody.apply_displacements(displacements.as_array())
+    let pose = multibody.forward_kinematics_single_link(
+      bodies,
+      link_id,
+      None,
+      None,
+    )
+    let err = pose.translation.sub(target_point).length()
+    inspect(err == err, content="true")
+    inspect(err < 5.0e-2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/joints2.rs
 test "examples2d/joints2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let rad = 0.4F
+  let numi = 10
+  let numk = 10
+  let shift = 1.0F
+  let softness = @dynamics.SpringCoefficients::joint_defaults()
+  let body_handles : Array[@dynamics.RigidBodyHandle] = []
+  for k in 0..<numk {
+    for i in 0..<numi {
+      let fk = Float::from_double(k.to_double())
+      let fi = Float::from_double(i.to_double())
+      let rb = if i == 0 && k == 0 {
+        @dynamics.RigidBodyBuilder::fixed()
+      } else {
+        @dynamics.RigidBodyBuilder::dynamic()
+      }
+      let child_handle = bodies.insert(
+        rb.translation(@core.Vec2::new(fk * shift, -fi * shift)).build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::ball(rad).build(),
+        child_handle,
+        bodies,
+      )
+      |> ignore
+
+      // Vertical joint.
+      if i > 0 {
+        let parent_handle = body_handles[body_handles.length() - 1]
+        let joint = @dynamics.GenericJoint::from_revolute(
+          @dynamics.RevoluteJointBuilder::new()
+          .local_anchor2(@core.Vec2::new(0.0F, shift))
+          .softness(softness)
+          .build(),
+        )
+        impulse_joints.insert(parent_handle, child_handle, joint, true)
+        |> ignore
+      }
+
+      // Horizontal joint.
+      if k > 0 {
+        let parent_index = body_handles.length() - numi
+        let parent_handle = body_handles[parent_index]
+        let joint = @dynamics.GenericJoint::from_revolute(
+          @dynamics.RevoluteJointBuilder::new()
+          .local_anchor2(@core.Vec2::new(-shift, 0.0F))
+          .softness(softness)
+          .build(),
+        )
+        impulse_joints.insert(parent_handle, child_handle, joint, true)
+        |> ignore
+      }
+      body_handles.push(child_handle)
+    }
+  }
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 120,
+  )
+
+  // Spot-check a few joints: anchors should remain reasonably close.
+  if bodies.get(body_handles[0]) is Some(a) &&
+    bodies.get(body_handles[1]) is Some(b) {
+    let d = b.translation().sub(a.translation()).length()
+    inspect(d == d, content="true")
+    inspect(@core.abs(d - shift) < 0.2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get(body_handles[0]) is Some(a) &&
+    bodies.get(body_handles[numi]) is Some(b) {
+    let d = b.translation().sub(a.translation()).length()
+    inspect(d == d, content="true")
+    inspect(@core.abs(d - shift) < 0.2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|

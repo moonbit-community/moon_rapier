@@ -92,6 +92,11 @@ pub fn JointAxesMask::ang_axes() -> JointAxesMask {
 }
 
 ///|
+pub fn JointAxesMask::all() -> JointAxesMask {
+  JointAxesMask::lin_axes().or(JointAxesMask::ang_axes())
+}
+
+///|
 pub fn JointAxesMask::locked_revolute_axes() -> JointAxesMask {
   // 2D hinge: lock both linear axes; keep angular free.
   JointAxesMask::lin_axes()

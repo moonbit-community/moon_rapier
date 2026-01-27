@@ -1013,9 +1013,11 @@ pub fn PhysicsPipeline::step(
       remaining_time = 0.0F
       remaining_substeps = 0
     }
-    // Keep collider world poses synced with the current rigid-body positions before we
-    // do any CCD shape casts (user may have teleported bodies without touching colliders).
-    broad_phase.update(prediction_distance, bodies, colliders)
+    // Compute contacts based on the current (start-of-substep) poses.
+    collision_pipeline.step(
+      prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, physics_hooks, event_handler,
+    )
     for i in 0..<bodies.bodies.length() {
       if bodies.bodies[i] is Some(body) {
         if !body.enabled || body.is_sleeping() {
@@ -1039,10 +1041,6 @@ pub fn PhysicsPipeline::step(
             }
             body.set_linvel(linvel, false) |> ignore
             body.set_angvel(angvel, false) |> ignore
-            let next_pos = body
-              .vels()
-              .integrate(dt, body.position(), body.center_of_mass())
-            body.set_next_position_internal(next_pos) |> ignore
           }
           @dynamics.RigidBodyType::KinematicPositionBased => {
             // Rapier parity: derive velocities from position -> next_position using the
@@ -1054,7 +1052,37 @@ pub fn PhysicsPipeline::step(
             ).interpolate_velocity(inv_dt, body.center_of_mass())
             body.set_kinematic_position_based_vels(derived_vels) |> ignore
           }
-          @dynamics.RigidBodyType::KinematicVelocityBased => {
+          @dynamics.RigidBodyType::KinematicVelocityBased =>
+            // Velocity-based kinematics will be integrated into `next_position` after the solver.
+            ()
+          _ => ()
+        }
+      }
+    }
+    solve_joints_and_contacts_interleaved(
+      parameters,
+      bodies,
+      colliders,
+      narrow_phase,
+      impulse_joints,
+      dt,
+      event_handler,
+      self.contact_solver_cache,
+    )
+
+    // Keep collider world poses synced with the corrected rigid-body positions before we
+    // do any CCD shape casts (the solver may have performed position corrections).
+    broad_phase.update(prediction_distance, bodies, colliders)
+
+    // Update `next_position` from the post-solver velocities.
+    for i in 0..<bodies.bodies.length() {
+      if bodies.bodies[i] is Some(body) {
+        if !body.enabled || body.is_sleeping() {
+          continue
+        }
+        match body.body_type {
+          @dynamics.RigidBodyType::Dynamic
+          | @dynamics.RigidBodyType::KinematicVelocityBased => {
             let next_pos = body
               .vels()
               .integrate(dt, body.position(), body.center_of_mass())
@@ -1088,20 +1116,49 @@ pub fn PhysicsPipeline::step(
         }
       }
     }
+
+    // Update narrow-phase based on the final poses (needed for the next substep and for
+    // the final collision events / island update at the end of this timestep).
     collision_pipeline.step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, physics_hooks, event_handler,
     )
-    solve_joints_and_contacts_interleaved(
+
+    // Post-stabilization pass using the final contacts (helps resting stacks with the
+    // "solve-then-advance" substep order).
+    let post_constraints = build_constraints(
       parameters,
       bodies,
       colliders,
       narrow_phase,
-      impulse_joints,
       dt,
-      event_handler,
       self.contact_solver_cache,
+      0.0F,
     )
+    if post_constraints.length() > 0 {
+      // Ensure deep segment-* penetrations get fully depenetrated in one step.
+      position_correction(
+        bodies,
+        colliders,
+        post_constraints,
+        parameters.allowed_linear_error(),
+      )
+      position_correction_all(
+        bodies,
+        colliders,
+        post_constraints,
+        parameters.allowed_linear_error(),
+      )
+    }
+    let post_joint_constraints = build_joint_constraints(
+      parameters, bodies, impulse_joints, dt,
+    )
+    if post_joint_constraints.length() > 0 {
+      position_correction_joints(bodies, post_joint_constraints)
+    }
+
+    // The post-stabilization pass may have moved bodies. Sync colliders + refresh contacts so
+    // the rest of the pipeline (events, islands, user queries) observes the corrected poses.
     collision_pipeline.step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, physics_hooks, event_handler,

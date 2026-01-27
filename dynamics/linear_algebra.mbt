@@ -136,6 +136,21 @@ pub fn DVector::len(self : DVector) -> Int {
 }
 
 ///|
+pub fn DVector::as_array(self : DVector) -> Array[@core.Real] {
+  // Most DVectors we expose publicly are full views (start=0, len=data.length()).
+  // Fall back to a copy if this is a sub-view.
+  if self.start == 0 && self.len == self.data.length() {
+    self.data
+  } else {
+    let out : Array[@core.Real] = []
+    for i in 0..<self.len {
+      out.push(self.value_at(i))
+    }
+    out
+  }
+}
+
+///|
 pub fn RowDVector::scale(self : RowDVector, value : @core.Real) -> RowDVector {
   let values : Array[@core.Real] = []
   for i in 0..<self.len {

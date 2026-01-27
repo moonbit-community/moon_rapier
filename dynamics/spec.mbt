@@ -2585,6 +2585,75 @@ pub fn Multibody::apply_displacements(
 
 ///|
 #declaration_only
+pub type InverseKinematicsOption
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::default() -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::set_damping(
+  self : InverseKinematicsOption,
+  damping : @core.Real,
+) -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::set_max_iters(
+  self : InverseKinematicsOption,
+  max_iters : Int,
+) -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::set_constrained_axes(
+  self : InverseKinematicsOption,
+  constrained_axes : JointAxesMask,
+) -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::set_epsilon_linear(
+  self : InverseKinematicsOption,
+  epsilon_linear : @core.Real,
+) -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn InverseKinematicsOption::set_epsilon_angular(
+  self : InverseKinematicsOption,
+  epsilon_angular : @core.Real,
+) -> InverseKinematicsOption {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Multibody::inverse_kinematics(
+  self : Multibody,
+  bodies : RigidBodySet,
+  link_id : LinkId,
+  options : InverseKinematicsOption,
+  target_pose : @core.Isometry2,
+  joint_can_move : (MultibodyLink) -> Bool,
+  displacements : DVector,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub type IndexSequence
 
 ///|

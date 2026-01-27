@@ -33,6 +33,7 @@ pub fn ContactGraph::clear(Self) -> Unit
 pub fn ContactGraph::new() -> Self
 
 type DVector
+pub fn DVector::as_array(Self) -> Array[Float]
 pub fn DVector::equals(Self, Self) -> Bool
 pub fn DVector::from_array(Array[Float]) -> Self
 pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
@@ -230,6 +231,20 @@ pub(all) enum InteractionTestMode {
   Or
 }
 
+pub struct InverseKinematicsOption {
+  mut damping : Float
+  mut max_iters : Int
+  mut constrained_axes : JointAxesMask
+  mut epsilon_linear : Float
+  mut epsilon_angular : Float
+}
+pub fn InverseKinematicsOption::default() -> Self
+pub fn InverseKinematicsOption::set_constrained_axes(Self, JointAxesMask) -> Self
+pub fn InverseKinematicsOption::set_damping(Self, Float) -> Self
+pub fn InverseKinematicsOption::set_epsilon_angular(Self, Float) -> Self
+pub fn InverseKinematicsOption::set_epsilon_linear(Self, Float) -> Self
+pub fn InverseKinematicsOption::set_max_iters(Self, Int) -> Self
+
 type Island
 
 pub struct IslandManager {
@@ -265,6 +280,7 @@ pub fn Jacobian::zeros(Int) -> Self
 pub struct JointAxesMask {
   bits : Int
 }
+pub fn JointAxesMask::all() -> Self
 pub fn JointAxesMask::ang_axes() -> Self
 pub fn JointAxesMask::ang_z() -> Self
 pub fn JointAxesMask::bits(Self) -> Int
@@ -349,6 +365,7 @@ pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
 pub fn Multibody::forward_kinematics(Self, RigidBodySet, Bool) -> Unit
 pub fn Multibody::forward_kinematics_single_link(Self, RigidBodySet, LinkId, Array[Float]?, Jacobian?) -> @core.Isometry2
+pub fn Multibody::inverse_kinematics(Self, RigidBodySet, LinkId, InverseKinematicsOption, @core.Isometry2, (MultibodyLink) -> Bool, DVector) -> Unit
 pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::ndofs(Self) -> Int
 

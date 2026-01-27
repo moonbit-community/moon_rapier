@@ -653,9 +653,100 @@ fn position_correction(
     if c.dist >= -allowed_error {
       continue
     }
-    // For segment contacts, use a slight overshoot to ensure the segment is fully outside
-    // after one step (helps deep intersection cases).
-    let correction_mag = -c.dist + 1.0e-3F
+    // For segment contacts, prefer an MTV from `separation_vector` (more robust than relying on
+    // manifold point distances) and overshoot a bit so the segment is fully outside after one step.
+    let mut correction = solver_vec2_scale(c.dir1, -c.dist + 1.0e-3F)
+    if colliders.get(c.collider1) is Some(co1) &&
+      colliders.get(c.collider2) is Some(co2) {
+      if separation_vector(
+          co1.shape(),
+          co1.translation(),
+          co1.rotation(),
+          co2.shape(),
+          co2.translation(),
+          co2.rotation(),
+        )
+        is Some(sep) {
+        let depth = sep.length()
+        if depth > 1.0e-6F {
+          let dir = sep.normalize()
+          correction = solver_vec2_scale(dir, depth + 1.0e-3F)
+        }
+      }
+    }
+    let mut inv_m1 = 0.0F
+    if c.body1 is Some(h1) {
+      if bodies.get(h1) is Some(rb1) {
+        if rb1.is_dynamic() && rb1.is_enabled() {
+          inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+        }
+      }
+    }
+    let mut inv_m2 = 0.0F
+    if c.body2 is Some(h2) {
+      if bodies.get(h2) is Some(rb2) {
+        if rb2.is_dynamic() && rb2.is_enabled() {
+          inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+        }
+      }
+    }
+    let denom = inv_m1 + inv_m2
+    if denom <= 1.0e-12F {
+      continue
+    }
+    let ratio1 = inv_m1 / denom
+    let ratio2 = inv_m2 / denom
+    if c.body1 is Some(h1m) {
+      if bodies.get_mut(h1m) is Some(b1) {
+        if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
+          b1.set_translation(
+            b1.translation().add(solver_vec2_scale(correction, ratio1)),
+            true,
+          )
+          |> ignore
+        }
+      }
+    }
+    if c.body2 is Some(h2m) {
+      if bodies.get_mut(h2m) is Some(b2) {
+        if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
+          b2.set_translation(
+            b2.translation().sub(solver_vec2_scale(correction, ratio2)),
+            true,
+          )
+          |> ignore
+        }
+      }
+    }
+  }
+}
+
+///|
+const CONTACT_POSITION_CORRECTION_BAUMGARTE : @core.Real = 0.2F
+
+///|
+fn position_correction_all(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  constraints : Array[SolverConstraint],
+  allowed_error : @core.Real,
+) -> Unit {
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    // Segment penetrations are handled by `position_correction` (stronger depenetration).
+    if colliders.get(c.collider1) is Some(co1) &&
+      co1.shape() is @collision.Shape::Segment(_, _) {
+      continue
+    }
+    if colliders.get(c.collider2) is Some(co2) &&
+      co2.shape() is @collision.Shape::Segment(_, _) {
+      continue
+    }
+    if c.dist >= -allowed_error {
+      continue
+    }
+    // Apply only a fraction of the penetration depth to reduce energy injection.
+    let correction_mag = -c.dist * CONTACT_POSITION_CORRECTION_BAUMGARTE
     let correction = solver_vec2_scale(c.dir1, correction_mag)
     let mut inv_m1 = 0.0F
     if c.body1 is Some(h1) {

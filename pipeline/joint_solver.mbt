@@ -155,8 +155,9 @@ priv struct JointConstraint {
   anchor1 : @core.Vec2
   anchor2 : @core.Vec2
   bias : @core.Vec2
-  inv_mass_x : @core.Real
-  inv_mass_y : @core.Real
+  inv_mass00 : @core.Real
+  inv_mass01 : @core.Real
+  inv_mass11 : @core.Real
   inv_mass_ang : @core.Real
   motor_enabled : Bool
   motor : @dynamics.JointMotor
@@ -225,17 +226,20 @@ fn build_joint_constraints(
     }
 
     // For u=(1,0), cross(r,u) = -r.y. For u=(0,1), cross(r,u) = r.x.
-    let denom_x = inv_mass1 +
+    let k00 = inv_mass1 +
       inv_mass2 +
       inv_inertia1 * r1.y * r1.y +
       inv_inertia2 * r2.y * r2.y
-    let denom_y = inv_mass1 +
+    let k01 = -inv_inertia1 * r1.x * r1.y - inv_inertia2 * r2.x * r2.y
+    let k11 = inv_mass1 +
       inv_mass2 +
       inv_inertia1 * r1.x * r1.x +
       inv_inertia2 * r2.x * r2.x
     let denom_ang = inv_inertia1 + inv_inertia2
-    let inv_mass_x = if denom_x <= 1.0e-12F { 0.0F } else { 1.0F / denom_x }
-    let inv_mass_y = if denom_y <= 1.0e-12F { 0.0F } else { 1.0F / denom_y }
+    let det = k00 * k11 - k01 * k01
+    let inv_mass00 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k11 / det }
+    let inv_mass01 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { -k01 / det }
+    let inv_mass11 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k00 / det }
     let inv_mass_ang = if denom_ang <= 1.0e-12F {
       0.0F
     } else {
@@ -259,8 +263,9 @@ fn build_joint_constraints(
       anchor1: world1,
       anchor2: world2,
       bias,
-      inv_mass_x,
-      inv_mass_y,
+      inv_mass00,
+      inv_mass01,
+      inv_mass11,
       inv_mass_ang,
       motor_enabled,
       motor,
@@ -307,7 +312,6 @@ fn solve_joint_velocity_constraints(
   for _ in 0..<iters {
     for i in 0..<constraints.length() {
       let c = constraints[i]
-      // Solve along world X.
       let (v1, w1, com1) = joint_get_body_kinematic_state(bodies, c.body1)
       let (v2, w2, com2) = joint_get_body_kinematic_state(bodies, c.body2)
       let r1 = c.anchor1.sub(com1)
@@ -315,47 +319,24 @@ fn solve_joint_velocity_constraints(
       let vel1 = v1.add(joint_cross_z_scalar(w1, r1))
       let vel2 = v2.add(joint_cross_z_scalar(w2, r2))
       let rv = vel1.sub(vel2)
-      let lambda_x = -(rv.x + c.bias.x) * c.inv_mass_x
+      let rhs_x = rv.x + c.bias.x
+      let rhs_y = rv.y + c.bias.y
+      let lambda_x = -(c.inv_mass00 * rhs_x + c.inv_mass01 * rhs_y)
+      let lambda_y = -(c.inv_mass01 * rhs_x + c.inv_mass11 * rhs_y)
       constraints[i].impulses = @core.Vec2::new(
         constraints[i].impulses.x + lambda_x,
-        constraints[i].impulses.y,
-      )
-      joint_apply_impulse_delta_dynamic(
-        bodies,
-        Some(c.body1),
-        @core.Vec2::new(lambda_x, 0.0F),
-        c.anchor1,
-      )
-      joint_apply_impulse_delta_dynamic(
-        bodies,
-        Some(c.body2),
-        @core.Vec2::new(-lambda_x, 0.0F),
-        c.anchor2,
-      )
-
-      // Solve along world Y (after X impulse is applied).
-      let (v1y, w1y, com1y) = joint_get_body_kinematic_state(bodies, c.body1)
-      let (v2y, w2y, com2y) = joint_get_body_kinematic_state(bodies, c.body2)
-      let r1y = c.anchor1.sub(com1y)
-      let r2y = c.anchor2.sub(com2y)
-      let vel1y = v1y.add(joint_cross_z_scalar(w1y, r1y))
-      let vel2y = v2y.add(joint_cross_z_scalar(w2y, r2y))
-      let rvy = vel1y.sub(vel2y)
-      let lambda_y = -(rvy.y + c.bias.y) * c.inv_mass_y
-      constraints[i].impulses = @core.Vec2::new(
-        constraints[i].impulses.x,
         constraints[i].impulses.y + lambda_y,
       )
       joint_apply_impulse_delta_dynamic(
         bodies,
         Some(c.body1),
-        @core.Vec2::new(0.0F, lambda_y),
+        @core.Vec2::new(lambda_x, lambda_y),
         c.anchor1,
       )
       joint_apply_impulse_delta_dynamic(
         bodies,
         Some(c.body2),
-        @core.Vec2::new(0.0F, -lambda_y),
+        @core.Vec2::new(-lambda_x, -lambda_y),
         c.anchor2,
       )
 
@@ -490,36 +471,68 @@ fn position_correction_joints(
     if error.length_squared() <= 1.0e-10F {
       continue
     }
+    let (v1, w1, com1) = joint_get_body_kinematic_state(bodies, c.body1)
+    let (v2, w2, com2) = joint_get_body_kinematic_state(bodies, c.body2)
+    v1 |> ignore
+    v2 |> ignore
+    w1 |> ignore
+    w2 |> ignore
+    let r1 = world1.sub(com1)
+    let r2 = world2.sub(com2)
     let mut inv_m1 = 0.0F
+    let mut inv_i1 = 0.0F
     if rb1.is_dynamic() && rb1.is_enabled() {
       inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+      inv_i1 = if rb1.locked_rotations { 0.0F } else { rb1.inv_inertia() }
     }
     let mut inv_m2 = 0.0F
+    let mut inv_i2 = 0.0F
     if rb2.is_dynamic() && rb2.is_enabled() {
       inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+      inv_i2 = if rb2.locked_rotations { 0.0F } else { rb2.inv_inertia() }
     }
-    let denom = inv_m1 + inv_m2
-    if denom <= 1.0e-12F {
+    let k00 = inv_m1 + inv_m2 + inv_i1 * r1.y * r1.y + inv_i2 * r2.y * r2.y
+    let k01 = -inv_i1 * r1.x * r1.y - inv_i2 * r2.x * r2.y
+    let k11 = inv_m1 + inv_m2 + inv_i1 * r1.x * r1.x + inv_i2 * r2.x * r2.x
+    let det = k00 * k11 - k01 * k01
+    if @core.abs(det) <= 1.0e-12F {
       continue
     }
-    let ratio1 = inv_m1 / denom
-    let ratio2 = inv_m2 / denom
+    let inv00 = k11 / det
+    let inv01 = -k01 / det
+    let inv11 = k00 / det
+    let scaled_error = joint_vec2_scale(error, JOINT_SOLVER_BAUMGARTE)
+    let lambda_x = -(inv00 * scaled_error.x + inv01 * scaled_error.y)
+    let lambda_y = -(inv01 * scaled_error.x + inv11 * scaled_error.y)
+    let impulse = @core.Vec2::new(lambda_x, lambda_y)
     if bodies.get_mut(c.body1) is Some(b1) {
-      if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
-        b1.set_translation(
-          b1.translation().sub(joint_vec2_scale(error, ratio1)),
-          true,
-        )
-        |> ignore
+      if b1.is_dynamic() && b1.is_enabled() {
+        if !b1.locked_translations {
+          b1.set_translation(
+            b1.translation().add(joint_vec2_scale(impulse, inv_m1)),
+            true,
+          )
+          |> ignore
+        }
+        if !b1.locked_rotations {
+          let ang = b1.rotation().angle() + r1.cross(impulse) * inv_i1
+          b1.set_rotation(@core.Rot2::from_angle(ang), true) |> ignore
+        }
       }
     }
     if bodies.get_mut(c.body2) is Some(b2) {
-      if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
-        b2.set_translation(
-          b2.translation().add(joint_vec2_scale(error, ratio2)),
-          true,
-        )
-        |> ignore
+      if b2.is_dynamic() && b2.is_enabled() {
+        if !b2.locked_translations {
+          b2.set_translation(
+            b2.translation().sub(joint_vec2_scale(impulse, inv_m2)),
+            true,
+          )
+          |> ignore
+        }
+        if !b2.locked_rotations {
+          let ang = b2.rotation().angle() - r2.cross(impulse) * inv_i2
+          b2.set_rotation(@core.Rot2::from_angle(ang), true) |> ignore
+        }
       }
     }
   }
