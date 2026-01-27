@@ -1019,7 +1019,101 @@ test "examples2d/drum2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/heightfield2.rs
 test "examples2d/heightfield2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Downscale subdivisions compared to the reference example for performance.
+  let ground_size = @core.Vec2::new(50.0F, 1.0F)
+  let nsubdivs = 200
+  let heights : Array[@core.Real] = []
+  let nx = Float::from_double(nsubdivs.to_double())
+  for i in 0..<(nsubdivs + 1) {
+    if i == 0 || i == nsubdivs {
+      heights.push(8.0F)
+    } else {
+      let t = Float::from_double(i.to_double()) * ground_size.x / nx
+      heights.push(local_cos(t) * 2.0F)
+    }
+  }
+  let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::heightfield(heights, ground_size).build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+
+  // Falling cubes/balls.
+  let num = 10
+  let rad = 0.5F
+  let shift = rad * 2.0F
+  let centerx = shift * Float::from_double((num / 2).to_double())
+  let centery = shift / 2.0F
+  let dynamic_handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<num {
+    for j in 0..<num {
+      let x = Float::from_double(i.to_double()) * shift - centerx
+      let y = Float::from_double(j.to_double()) * shift + centery + 3.0F
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      if j % 2 == 0 {
+        colliders.insert_with_parent(
+          @collision.ColliderBuilder::cuboid(rad, rad).build(),
+          handle,
+          bodies,
+        )
+        |> ignore
+      } else {
+        colliders.insert_with_parent(
+          @collision.ColliderBuilder::ball(rad).build(),
+          handle,
+          bodies,
+        )
+        |> ignore
+      }
+      dynamic_handles.push(handle)
+    }
+  }
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 120,
+  )
+  let mut min_y = 1.0e30F
+  let mut max_y = -1.0e30F
+  for i in 0..<dynamic_handles.length() {
+    if bodies.get(dynamic_handles[i]) is Some(body) {
+      let p = body.translation()
+      inspect(p.x == p.x, content="true")
+      inspect(p.y == p.y, content="true")
+      if p.y < min_y {
+        min_y = p.y
+      }
+      if p.y > max_y {
+        max_y = p.y
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(min_y < 2.0F, content="true")
+  inspect(min_y > -20.0F, content="true")
+  inspect(max_y < 200.0F, content="true")
 }
 
 ///|

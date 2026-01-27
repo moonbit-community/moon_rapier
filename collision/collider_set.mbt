@@ -458,6 +458,30 @@ pub fn ColliderBuilder::polyline(
 }
 
 ///|
+pub fn ColliderBuilder::heightfield(
+  heights : Array[@core.Real],
+  scale : @core.Vec2,
+) -> ColliderBuilder {
+  if heights.length() == 0 {
+    // Degenerate heightfield: empty polyline.
+    return ColliderBuilder::polyline([], None)
+  }
+  let vertices : Array[@core.Vec2] = []
+  if heights.length() == 1 {
+    vertices.push(@core.Vec2::new(0.0F, heights[0] * scale.y))
+  } else {
+    let denom = Float::from_double((heights.length() - 1).to_double())
+    let step = scale.x / denom
+    for i in 0..<heights.length() {
+      let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
+      let y = heights[i] * scale.y
+      vertices.push(@core.Vec2::new(x, y))
+    }
+  }
+  ColliderBuilder::polyline(vertices, None)
+}
+
+///|
 pub fn ColliderBuilder::translation(
   self : ColliderBuilder,
   translation : @core.Vec2,
