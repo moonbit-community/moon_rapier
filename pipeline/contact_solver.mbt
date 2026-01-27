@@ -637,9 +637,10 @@ fn position_correction(
 ) -> Unit {
   for i in 0..<constraints.length() {
     let c = constraints[i]
-    // Restrict positional correction to segment contacts. This is enough to resolve
-    // deep segment-* penetrations (e.g. ray/segment used as static geometry) without
-    // injecting energy into resting stacks of cuboids.
+    // Position correction (split-impulse style):
+    // - We keep this separate from velocity solving to avoid injecting energy.
+    // - For segments/polylines we prefer an MTV (separation_vector), because manifold
+    //   point distances are often too coarse for degenerate geometry.
     let mut has_segment = false
     if colliders.get(c.collider1) is Some(co1) {
       has_segment = has_segment ||
@@ -651,16 +652,25 @@ fn position_correction(
         co2.shape() is @collision.Shape::Segment(_, _) ||
         co2.shape() is @collision.Shape::Polyline(_, _)
     }
-    if !has_segment {
-      continue
+    let mut has_convex = false
+    if colliders.get(c.collider1) is Some(co1) {
+      has_convex = has_convex ||
+        co1.shape() is @collision.Shape::ConvexPolygon(_)
+    }
+    if colliders.get(c.collider2) is Some(co2) {
+      has_convex = has_convex ||
+        co2.shape() is @collision.Shape::ConvexPolygon(_)
     }
     if c.dist >= -allowed_error {
       continue
     }
-    // For segment contacts, prefer an MTV from `separation_vector` (more robust than relying on
-    // manifold point distances) and overshoot a bit so the segment is fully outside after one step.
-    let mut correction = solver_vec2_scale(c.dir1, -c.dist + 1.0e-3F)
-    if colliders.get(c.collider1) is Some(co1) &&
+    let depth = -c.dist - allowed_error
+    // For non-segment contacts, keep the correction small to avoid injecting visible jitter
+    // into resting stacks (Rapier relies on a dedicated stabilization stage).
+    let factor = if has_segment || has_convex { 1.0F } else { 0.2F }
+    let mut correction = solver_vec2_scale(c.dir1, depth * factor + 1.0e-3F)
+    if has_segment &&
+      colliders.get(c.collider1) is Some(co1) &&
       colliders.get(c.collider2) is Some(co2) {
       if separation_vector(
           co1.shape(),

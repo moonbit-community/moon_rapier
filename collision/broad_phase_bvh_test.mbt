@@ -192,6 +192,35 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
+    Shape::ConvexPolygon(vertices) =>
+      if vertices.length() == 0 {
+        (center, center)
+      } else {
+        let rot = @core.Rot2::from_angle(rotation)
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        (
+          @core.Vec2::new(min_x - pd, min_y - pd),
+          @core.Vec2::new(max_x + pd, max_y + pd),
+        )
+      }
   }
 }
 
@@ -259,22 +288,156 @@ test "broad phase bvh matches naive aabb pairing" {
     let translation = @core.Vec2::new(px * 20.0F - 10.0F, py * 20.0F - 10.0F)
     let rotation = rot_roll * @core.two_pi()
     let enabled = enabled_roll > 0.1F
-    let collider = if shape_roll < 0.5F {
+    let collider = if shape_roll < 0.4F {
       ColliderBuilder::ball(0.2F + 0.8F * px)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
       .build()
-    } else {
+    } else if shape_roll < 0.8F {
       ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
       .build()
+    } else {
+      // Small convex polygon around the origin.
+      let points : Array[@core.Vec2] = []
+      let mut s = seed
+      for _ in 0..<8 {
+        let (rx, s1) = rng_float01(s)
+        let (ry, s2) = rng_float01(s1)
+        s = s2
+        points.push(@core.Vec2::new((rx - 0.5F) * 2.0F, (ry - 0.5F) * 2.0F))
+      }
+      seed = s
+      let base = ColliderBuilder::convex_hull(points)
+      if base is Some(builder) {
+        builder
+        .translation(translation)
+        .rotation(rotation)
+        .enabled(enabled)
+        .build()
+      } else {
+        // Extremely unlikely degenerate case: fall back to a ball.
+        ColliderBuilder::ball(0.5F)
+        .translation(translation)
+        .rotation(rotation)
+        .enabled(enabled)
+        .build()
+      }
     }
     handles.push(colliders.insert(collider))
   }
   let prediction_distance = 0.05F
+  let broad_phase = BroadPhaseBvh::new()
+  broad_phase.update(prediction_distance, bodies, colliders)
+  let bvh_pairs = broad_phase.pairs()
+  let naive_pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  let mins : Array[@core.Vec2?] = []
+  let maxs : Array[@core.Vec2?] = []
+  for i in 0..<handles.length() {
+    let handle = handles[i]
+    if colliders.get(handle) is Some(collider) && collider.is_enabled() {
+      let (min_v, max_v) = compute_aabb_for_test(
+        collider.shape(),
+        collider.translation(),
+        collider.rotation(),
+        prediction_distance,
+      )
+      mins.push(Some(min_v))
+      maxs.push(Some(max_v))
+    } else {
+      mins.push(None)
+      maxs.push(None)
+    }
+  }
+  for i in 0..<mins.length() {
+    if mins[i] is Some(min1) && maxs[i] is Some(max1) {
+      let h1 = handles[i]
+      for j in (i + 1)..<mins.length() {
+        if mins[j] is Some(min2) &&
+          maxs[j] is Some(max2) &&
+          aabb_intersects_for_test(min1, max1, min2, max2) {
+          let h2 = handles[j]
+          if handle_less_for_test(h1, h2) {
+            naive_pairs.push((h1, h2))
+          } else {
+            naive_pairs.push((h2, h1))
+          }
+        }
+      }
+    }
+  }
+  sort_pairs_for_test(naive_pairs)
+  sort_pairs_for_test(bvh_pairs)
+  inspect(bvh_pairs.length() == naive_pairs.length(), content="true")
+  for i in 0..<bvh_pairs.length() {
+    inspect(
+      ColliderHandle::equals(bvh_pairs[i].0, naive_pairs[i].0) &&
+      ColliderHandle::equals(bvh_pairs[i].1, naive_pairs[i].1),
+      content="true",
+    )
+  }
+}
+
+///|
+test "broad phase bvh matches naive aabb pairing (large)" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let handles : Array[ColliderHandle] = []
+  let mut seed = 202501
+  // Stress BVH construction/traversal with a larger leaf count.
+  for _ in 0..<800 {
+    let (shape_roll, seed1) = rng_float01(seed)
+    let (px, seed2) = rng_float01(seed1)
+    let (py, seed3) = rng_float01(seed2)
+    let (rot_roll, seed4) = rng_float01(seed3)
+    let (enabled_roll, seed5) = rng_float01(seed4)
+    seed = seed5
+    let translation = @core.Vec2::new(px * 40.0F - 20.0F, py * 40.0F - 20.0F)
+    let rotation = rot_roll * @core.two_pi()
+    let enabled = enabled_roll > 0.02F
+    let collider = if shape_roll < 0.4F {
+      ColliderBuilder::ball(0.2F + 0.8F * px)
+      .translation(translation)
+      .rotation(rotation)
+      .enabled(enabled)
+      .build()
+    } else if shape_roll < 0.8F {
+      ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
+      .translation(translation)
+      .rotation(rotation)
+      .enabled(enabled)
+      .build()
+    } else {
+      let points : Array[@core.Vec2] = []
+      let mut s = seed
+      for _ in 0..<10 {
+        let (rx, s1) = rng_float01(s)
+        let (ry, s2) = rng_float01(s1)
+        s = s2
+        points.push(@core.Vec2::new((rx - 0.5F) * 3.0F, (ry - 0.5F) * 3.0F))
+      }
+      seed = s
+      let base = ColliderBuilder::convex_hull(points)
+      if base is Some(builder) {
+        builder
+        .translation(translation)
+        .rotation(rotation)
+        .enabled(enabled)
+        .build()
+      } else {
+        ColliderBuilder::ball(0.5F)
+        .translation(translation)
+        .rotation(rotation)
+        .enabled(enabled)
+        .build()
+      }
+    }
+    handles.push(colliders.insert(collider))
+  }
+  let prediction_distance = 0.0F
   let broad_phase = BroadPhaseBvh::new()
   broad_phase.update(prediction_distance, bodies, colliders)
   let bvh_pairs = broad_phase.pairs()

@@ -640,6 +640,7 @@ fn separation_vector(
       }
       best
     }
+    _ => separation_basic(shape1, pos1, rot1, shape2, pos2, rot2)
   }
 }
 

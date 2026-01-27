@@ -454,7 +454,131 @@ test "examples2d/collision_groups2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/convex_polygons2.rs
 test "examples2d/convex_polygons2.rs parity" {
-  inspect(true, content="true")
+  fn rng_next(seed : Int) -> Int {
+    // Deterministic 31-bit LCG (fast, stable across platforms).
+    (seed * 1103515245 + 12345) & 0x7fffffff
+  }
+
+  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+    let next = rng_next(seed)
+    let value = Float::from_double(next.to_double() / 2147483647.0)
+    (value, next)
+  }
+
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Ground + walls (match rapier-reference).
+  let ground_size = 30.0F
+  let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let ground_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size, 1.2F).build(),
+    ground_handle,
+    bodies,
+  )
+  let wall_r = @core.pi() / 2.0F
+  let right_wall = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .rotation(@core.Rot2::from_angle(wall_r))
+    .translation(@core.Vec2::new(ground_size, ground_size * 2.0F))
+    .build(),
+  )
+  let right_wall_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size * 2.0F, 1.2F).build(),
+    right_wall,
+    bodies,
+  )
+  let left_wall = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .rotation(@core.Rot2::from_angle(wall_r))
+    .translation(@core.Vec2::new(-ground_size, ground_size * 2.0F))
+    .build(),
+  )
+  let left_wall_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size * 2.0F, 1.2F).build(),
+    left_wall,
+    bodies,
+  )
+
+  // Create the convex polygons.
+  let num = 14
+  let scale = 4.0F
+  let border_rad = 0.0F
+  let shift = border_rad * 2.0F + scale
+  let centerx = shift * Float::from_double(num.to_double()) / 2.0F
+  let centery = shift / 2.0F
+  let mut seed = 0
+  let handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<num {
+    for j in 0..<(num * 4) {
+      let x = Float::from_double(i.to_double()) * shift - centerx
+      let y = Float::from_double(j.to_double()) * shift * 2.0F + centery + 2.0F
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      handles.push(handle)
+      let points : Array[@core.Vec2] = []
+      for _ in 0..<10 {
+        let (rx, s1) = rng_float01(seed)
+        let (ry, s2) = rng_float01(s1)
+        seed = s2
+        points.push(@core.Vec2::new(rx * scale, ry * scale))
+      }
+      if @collision.ColliderBuilder::convex_hull(points) is Some(builder) {
+        colliders.insert_with_parent(builder.build(), handle, bodies) |> ignore
+      } else {
+        inspect(false, content="true")
+      }
+    }
+  }
+
+  // Let low layers hit the ground/walls (this is intentionally fewer than the full stack
+  // settling time to keep the test fast, but still exercises convex polygon contacts).
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 300,
+  )
+  inspect(
+    narrow_phase.contact_pairs_with(ground_collider).length() > 0,
+    content="true",
+  )
+  inspect(
+    narrow_phase.contact_pairs_with(right_wall_collider).length() > 0,
+    content="true",
+  )
+  inspect(
+    narrow_phase.contact_pairs_with(left_wall_collider).length() > 0,
+    content="true",
+  )
+  let mut min_y = 1.0e30F
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(body) {
+      let y = body.translation().y
+      // Basic sanity: no NaN and no obvious tunneling through the ground.
+      inspect(y == y, content="true")
+      if y < min_y {
+        min_y = y
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(min_y > -20.0F, content="true")
 }
 
 ///|

@@ -759,6 +759,98 @@ fn ray_intersect_segment_and_get_normal(
 }
 
 ///|
+fn ray_intersect_convex_polygon_local_and_get_normal(
+  ray : Ray,
+  vertices : Array[@core.Vec2],
+  max_toi : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  if vertices.length() < 3 {
+    return None
+  }
+  // Half-space intersection (Liang–Barsky style) against a CCW convex polygon.
+  let mut tmin = 0.0F
+  let mut tmax = max_toi
+  let mut enter_normal = @core.Vec2::new(1.0F, 0.0F)
+  let mut exit_normal = @core.Vec2::new(1.0F, 0.0F)
+  for i in 0..<vertices.length() {
+    let a = vertices[i]
+    let b = vertices[(i + 1) % vertices.length()]
+    let e = b.sub(a)
+    // Outward normal for CCW polygon.
+    let n = normalize_or_fallback(
+      @core.Vec2::new(e.y, -e.x),
+      @core.Vec2::new(1.0F, 0.0F),
+    )
+    let num = n.dot(ray.origin.sub(a))
+    let den = n.dot(ray.dir)
+    if @core.abs(den) <= 1.0e-12F {
+      if num > 0.0F {
+        return None
+      }
+      continue
+    }
+    let t = -num / den
+    if den > 0.0F {
+      // Exiting the half-space.
+      if t < tmax {
+        tmax = t
+        exit_normal = n
+      }
+      // Entering the half-space.
+    } else if t > tmin {
+      tmin = t
+      enter_normal = n
+    }
+    if tmax < tmin {
+      return None
+    }
+  }
+  if tmin <= 0.0F && tmax >= 0.0F {
+    if solid {
+      let normal = normalize_or_fallback(
+        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+        @core.Vec2::new(1.0F, 0.0F),
+      )
+      Some(RayIntersection::{ toi: 0.0F, normal })
+    } else if tmax <= max_toi {
+      Some(RayIntersection::{ toi: tmax, normal: exit_normal })
+    } else {
+      None
+    }
+  } else if tmin >= 0.0F && tmin <= max_toi {
+    Some(RayIntersection::{ toi: tmin, normal: enter_normal })
+  } else {
+    None
+  }
+}
+
+///|
+fn ray_intersect_convex_polygon_oriented_and_get_normal(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  max_toi : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_ray = Ray::new(
+    inv.rotate_vec2(ray.origin.sub(center)),
+    inv.rotate_vec2(ray.dir),
+  )
+  if ray_intersect_convex_polygon_local_and_get_normal(
+      local_ray, vertices, max_toi, solid,
+    )
+    is Some(hit) {
+    Some(RayIntersection::{ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+  } else {
+    None
+  }
+}
+
+///|
 fn ray_intersect_capsule_oriented_and_get_normal(
   ray : Ray,
   center : @core.Vec2,
@@ -879,6 +971,10 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
           ray_intersect_polyline_and_get_normal(
             ray, pos, rot, vertices, indices, max_dist, solid,
           )
+        Shape::ConvexPolygon(vertices) =>
+          ray_intersect_convex_polygon_oriented_and_get_normal(
+            ray, pos, rot, vertices, max_dist, solid,
+          )
       }
       if hit is Some(intersection) {
         if best is Some(current) {
@@ -951,6 +1047,10 @@ pub fn QueryPipeline::intersect_ray(
         Shape::Polyline(vertices, indices) =>
           ray_intersect_polyline_and_get_normal(
             ray, pos, rot, vertices, indices, max_dist, solid,
+          )
+        Shape::ConvexPolygon(vertices) =>
+          ray_intersect_convex_polygon_oriented_and_get_normal(
+            ray, pos, rot, vertices, max_dist, solid,
           )
       }
       if hit is Some(intersection) {
@@ -1491,6 +1591,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
     Shape::Segment(_, _) => shape
     Shape::Polyline(_, _) => shape
+    Shape::ConvexPolygon(_) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<self.colliders.colliders.length() {
@@ -1873,6 +1974,16 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
+      Shape::ConvexPolygon(vertices) => {
+        let mut best = 0.0F
+        for i in 0..<vertices.length() {
+          let d = vertices[i].length()
+          if d > best {
+            best = d
+          }
+        }
+        best
+      }
     }
   }
 
@@ -1927,6 +2038,10 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         project_point_on_segment(center, rotation, a, b, point).point
       Shape::Polyline(vertices, indices) =>
         project_point_on_polyline(center, rotation, vertices, indices, point).point
+      Shape::ConvexPolygon(vertices) =>
+        project_point_on_convex_polygon_oriented(
+          center, rotation, vertices, point, false,
+        ).point
     }
   }
 
@@ -2228,6 +2343,12 @@ fn point_in_shape(
       let delta = point.sub(proj.point)
       delta.dot(delta) <= 1.0e-12F
     }
+    Shape::ConvexPolygon(vertices) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let inv = rot.inverse()
+      let local_point = inv.rotate_vec2(point.sub(center))
+      point_in_convex_polygon_local(vertices, local_point)
+    }
   }
 }
 
@@ -2300,6 +2421,36 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
       )
     }
     Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(collider.world_translation, collider.world_translation)
+      } else {
+        let rot = @core.Rot2::from_angle(collider.world_rotation)
+        let c = collider.world_translation
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = c.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
+    Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         @core.Aabb::new(collider.world_translation, collider.world_translation)
       } else {
@@ -2403,6 +2554,34 @@ fn compute_query_shape_aabb(
       )
     }
     Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(center, center)
+      } else {
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
+    Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -2627,6 +2806,114 @@ fn project_point_on_cuboid_oriented_and_get_feature(
     FeatureId::Edge(if projected_local.y >= 0.0F { 2 } else { 3 })
   }
   (projection, feature)
+}
+
+///|
+fn point_in_convex_polygon_local(
+  vertices : Array[@core.Vec2],
+  point : @core.Vec2,
+) -> Bool {
+  if vertices.length() < 3 {
+    return false
+  }
+  // CCW polygon: point is inside iff it is never strictly to the right of an edge.
+  let eps = 1.0e-6F
+  for i in 0..<vertices.length() {
+    let a = vertices[i]
+    let b = vertices[(i + 1) % vertices.length()]
+    let e = b.sub(a)
+    if cross2(e, point.sub(a)) < -eps {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn project_point_on_convex_polygon_oriented(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  point : @core.Vec2,
+  solid : Bool,
+) -> PointProjection {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(point.sub(center))
+  let inside = point_in_convex_polygon_local(vertices, local_point)
+  if inside && solid {
+    return PointProjection::{ point, is_inside: true }
+  }
+  let mut best_dist2 = 1.0e30F
+  let mut best_local = local_point
+  for i in 0..<vertices.length() {
+    let a = vertices[i]
+    let b = vertices[(i + 1) % vertices.length()]
+    let ab = b.sub(a)
+    let denom = ab.dot(ab)
+    let t = if denom <= 1.0e-12F {
+      0.0F
+    } else {
+      clamp_value(local_point.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+    }
+    let proj = a.add(vec2_scale(ab, t))
+    let delta = local_point.sub(proj)
+    let dist2 = delta.dot(delta)
+    if dist2 < best_dist2 {
+      best_dist2 = dist2
+      best_local = proj
+    }
+  }
+  let projected = center.add(rot.rotate_vec2(best_local))
+  PointProjection::{ point: projected, is_inside: inside }
+}
+
+///|
+fn project_point_on_convex_polygon_oriented_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+  point : @core.Vec2,
+  solid : Bool,
+) -> (PointProjection, FeatureId) {
+  let rot = @core.Rot2::from_angle(rotation)
+  let inv = rot.inverse()
+  let local_point = inv.rotate_vec2(point.sub(center))
+  let inside = point_in_convex_polygon_local(vertices, local_point)
+  if inside && solid {
+    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+  }
+  let mut best_dist2 = 1.0e30F
+  let mut best_local = local_point
+  let mut best_feature = FeatureId::Unknown
+  let eps = 1.0e-6F
+  for i in 0..<vertices.length() {
+    let a = vertices[i]
+    let b = vertices[(i + 1) % vertices.length()]
+    let ab = b.sub(a)
+    let denom = ab.dot(ab)
+    let t = if denom <= 1.0e-12F {
+      0.0F
+    } else {
+      clamp_value(local_point.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+    }
+    let proj = a.add(vec2_scale(ab, t))
+    let delta = local_point.sub(proj)
+    let dist2 = delta.dot(delta)
+    if dist2 < best_dist2 {
+      best_dist2 = dist2
+      best_local = proj
+      best_feature = if t <= eps {
+        FeatureId::Vertex(i)
+      } else if t >= 1.0F - eps {
+        FeatureId::Vertex((i + 1) % vertices.length())
+      } else {
+        FeatureId::Edge(i)
+      }
+    }
+  }
+  let projected = center.add(rot.rotate_vec2(best_local))
+  (PointProjection::{ point: projected, is_inside: inside }, best_feature)
 }
 
 ///|
@@ -2948,6 +3235,14 @@ pub fn QueryPipeline::project_point(
             indices,
             point,
           )
+        Shape::ConvexPolygon(vertices) =>
+          project_point_on_convex_polygon_oriented(
+            collider.world_translation,
+            collider.world_rotation,
+            vertices,
+            point,
+            solid,
+          )
       }
       let delta = point.sub(projection.point)
       let dist2 = delta.dot(delta)
@@ -3035,6 +3330,14 @@ pub fn QueryPipeline::project_point_and_get_feature(
             vertices,
             indices,
             point,
+          )
+        Shape::ConvexPolygon(vertices) =>
+          project_point_on_convex_polygon_oriented_and_get_feature(
+            collider.world_translation,
+            collider.world_rotation,
+            vertices,
+            point,
+            solid,
           )
       }
       let delta = point.sub(projection.point)

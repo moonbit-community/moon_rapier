@@ -146,6 +146,7 @@ pub fn ColliderBuilder::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
+pub fn ColliderBuilder::convex_hull(Array[@core.Vec2]) -> Self?
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
 pub fn ColliderBuilder::density(Self, Float) -> Self
 pub fn ColliderBuilder::enabled(Self, Bool) -> Self
@@ -372,6 +373,7 @@ pub(all) enum Shape {
   CapsuleY(Float, Float)
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  ConvexPolygon(Array[@core.Vec2])
 }
 
 pub struct ShapeCastHit {

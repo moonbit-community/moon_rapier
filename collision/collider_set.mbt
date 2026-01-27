@@ -235,6 +235,7 @@ pub(all) enum Shape {
   CapsuleY(@core.Real, @core.Real)
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  ConvexPolygon(Array[@core.Vec2])
 }
 
 ///|
@@ -508,6 +509,133 @@ pub fn ColliderBuilder::trimesh(
     return None
   }
   Some(ColliderBuilder::polyline(vertices, Some(edges)))
+}
+
+///|
+pub fn ColliderBuilder::convex_hull(
+  points : Array[@core.Vec2],
+) -> ColliderBuilder? {
+  fn less_xy(a : @core.Vec2, b : @core.Vec2) -> Bool {
+    if a.x < b.x {
+      true
+    } else if a.x > b.x {
+      false
+    } else {
+      a.y < b.y
+    }
+  }
+
+  fn cross_z(a : @core.Vec2, b : @core.Vec2, c : @core.Vec2) -> @core.Real {
+    let ab = b.sub(a)
+    let ac = c.sub(a)
+    ab.x * ac.y - ab.y * ac.x
+  }
+
+  fn polygon_area(points : Array[@core.Vec2]) -> @core.Real {
+    if points.length() < 3 {
+      return 0.0F
+    }
+    let mut sum = 0.0F
+    for i in 0..<points.length() {
+      let a = points[i]
+      let b = points[(i + 1) % points.length()]
+      sum = sum + (a.x * b.y - b.x * a.y)
+    }
+    sum * 0.5F
+  }
+
+  if points.length() < 3 {
+    return None
+  }
+  // Sort points (insertion sort; inputs are tiny in rapier-reference examples).
+  let pts : Array[@core.Vec2] = []
+  for i in 0..<points.length() {
+    pts.push(points[i])
+  }
+  for i in 1..<pts.length() {
+    let key = pts[i]
+    let mut j = i - 1
+    while j >= 0 && less_xy(key, pts[j]) {
+      pts[j + 1] = pts[j]
+      j = j - 1
+    }
+    pts[j + 1] = key
+  }
+  let eps = 1.0e-6F
+  let lower : Array[@core.Vec2] = []
+  for i in 0..<pts.length() {
+    let p = pts[i]
+    while lower.length() >= 2 {
+      let b = lower[lower.length() - 1]
+      let a = lower[lower.length() - 2]
+      if cross_z(a, b, p) > eps {
+        break
+      }
+      lower.pop() |> ignore
+    }
+    lower.push(p)
+  }
+  let upper : Array[@core.Vec2] = []
+  for ii in 0..<pts.length() {
+    let i = pts.length() - 1 - ii
+    let p = pts[i]
+    while upper.length() >= 2 {
+      let b = upper[upper.length() - 1]
+      let a = upper[upper.length() - 2]
+      if cross_z(a, b, p) > eps {
+        break
+      }
+      upper.pop() |> ignore
+    }
+    upper.push(p)
+  }
+  if lower.length() < 2 || upper.length() < 2 {
+    return None
+  }
+  // Concatenate without duplicating end points.
+  let hull : Array[@core.Vec2] = []
+  for i in 0..<lower.length() {
+    hull.push(lower[i])
+  }
+  for i in 1..<(upper.length() - 1) {
+    hull.push(upper[i])
+  }
+  if hull.length() < 3 {
+    return None
+  }
+  let area = polygon_area(hull)
+  if @core.abs(area) <= 1.0e-5F {
+    return None
+  }
+  // Ensure a consistent CCW winding so contact normals/edge features are stable.
+  if area < 0.0F {
+    for i in 0..<(hull.length() / 2) {
+      let j = hull.length() - 1 - i
+      let tmp = hull[i]
+      hull[i] = hull[j]
+      hull[j] = tmp
+    }
+  }
+  Some({
+    shape: Shape::ConvexPolygon(hull),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: ActiveEvents::empty(),
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  })
 }
 
 ///|
@@ -907,6 +1035,52 @@ fn shape_mass_properties(
     }
     Shape::Polyline(_, _) =>
       @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+    Shape::ConvexPolygon(vertices) => {
+      if vertices.length() < 3 {
+        return @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+      }
+      let mut area2 = 0.0F
+      let mut cx_acc = 0.0F
+      let mut cy_acc = 0.0F
+      let mut inertia_acc = 0.0F
+      for i in 0..<vertices.length() {
+        let a = vertices[i]
+        let b = vertices[(i + 1) % vertices.length()]
+        let cross = a.x * b.y - b.x * a.y
+        area2 = area2 + cross
+        cx_acc = cx_acc + (a.x + b.x) * cross
+        cy_acc = cy_acc + (a.y + b.y) * cross
+        inertia_acc = inertia_acc +
+          (
+            a.x * a.x +
+            a.x * b.x +
+            b.x * b.x +
+            a.y * a.y +
+            a.y * b.y +
+            b.y * b.y
+          ) *
+          cross
+      }
+      if @core.abs(area2) <= 1.0e-8F {
+        return @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+      }
+      // Centroid uses 1/(3*area2) because area2 = 2 * area.
+      let inv3_area2 = 1.0F / (3.0F * area2)
+      let com = @core.Vec2::new(cx_acc * inv3_area2, cy_acc * inv3_area2)
+      let area_abs = @core.abs(area2) * 0.5F
+      let mass = density * area_abs
+      let inertia_origin = density * @core.abs(inertia_acc) / 12.0F
+      let inertia = inertia_origin - mass * (com.x * com.x + com.y * com.y)
+      @core.MassProperties::new(
+        mass,
+        if inertia > 0.0F {
+          inertia
+        } else {
+          0.0F
+        },
+        com,
+      )
+    }
   }
 }
 
@@ -1874,6 +2048,159 @@ fn shapes_intersect(
     segment_segment_intersect_world(wa1, wb1, wa2, wb2)
   }
 
+  fn convex_polygon_world_vertices(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    vertices : Array[@core.Vec2],
+  ) -> Array[@core.Vec2] {
+    let rot = @core.Rot2::from_angle(rotation)
+    let out : Array[@core.Vec2] = []
+    for i in 0..<vertices.length() {
+      out.push(center.add(rot.rotate_vec2(vertices[i])))
+    }
+    out
+  }
+
+  fn point_in_convex_polygon_world(
+    vertices : Array[@core.Vec2],
+    point : @core.Vec2,
+  ) -> Bool {
+    if vertices.length() < 3 {
+      return false
+    }
+    let eps = 1.0e-6F
+    for i in 0..<vertices.length() {
+      let a = vertices[i]
+      let b = vertices[(i + 1) % vertices.length()]
+      if cross2(b.sub(a), point.sub(a)) < -eps {
+        return false
+      }
+    }
+    true
+  }
+
+  fn cuboid_world_vertices(
+    center : @core.Vec2,
+    rotation : @core.Real,
+    half_width : @core.Real,
+    half_height : @core.Real,
+  ) -> Array[@core.Vec2] {
+    let rot = @core.Rot2::from_angle(rotation)
+    [
+      center.add(rot.rotate_vec2(@core.Vec2::new(half_width, half_height))),
+      center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, half_height))),
+      center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, -half_height))),
+      center.add(rot.rotate_vec2(@core.Vec2::new(half_width, -half_height))),
+    ]
+  }
+
+  fn convex_polygons_intersect_world(
+    poly1 : Array[@core.Vec2],
+    poly2 : Array[@core.Vec2],
+  ) -> Bool {
+    if poly1.length() < 3 || poly2.length() < 3 {
+      return false
+    }
+    fn axes(poly : Array[@core.Vec2]) -> Array[@core.Vec2] {
+      let out : Array[@core.Vec2] = []
+      for i in 0..<poly.length() {
+        let a = poly[i]
+        let b = poly[(i + 1) % poly.length()]
+        let e = b.sub(a)
+        let n = @core.Vec2::new(e.y, -e.x)
+        if n.dot(n) > 1.0e-12F {
+          out.push(n.normalize())
+        }
+      }
+      out
+    }
+
+    fn project(
+      poly : Array[@core.Vec2],
+      axis : @core.Vec2,
+    ) -> (@core.Real, @core.Real) {
+      let mut minp = 1.0e30F
+      let mut maxp = -1.0e30F
+      for i in 0..<poly.length() {
+        let d = poly[i].dot(axis)
+        if d < minp {
+          minp = d
+        }
+        if d > maxp {
+          maxp = d
+        }
+      }
+      (minp, maxp)
+    }
+
+    let axes1 = axes(poly1)
+    let axes2 = axes(poly2)
+    for i in 0..<axes1.length() {
+      let axis = axes1[i]
+      let (min1, max1) = project(poly1, axis)
+      let (min2, max2) = project(poly2, axis)
+      if max1 < min2 || max2 < min1 {
+        return false
+      }
+    }
+    for i in 0..<axes2.length() {
+      let axis = axes2[i]
+      let (min1, max1) = project(poly1, axis)
+      let (min2, max2) = project(poly2, axis)
+      if max1 < min2 || max2 < min1 {
+        return false
+      }
+    }
+    true
+  }
+
+  fn ball_convex_polygon_intersect_world(
+    center : @core.Vec2,
+    radius : @core.Real,
+    poly : Array[@core.Vec2],
+  ) -> Bool {
+    if poly.length() < 3 {
+      return false
+    }
+    if point_in_convex_polygon_world(poly, center) {
+      return true
+    }
+    let mut best_dist2 = 1.0e30F
+    for i in 0..<poly.length() {
+      let a = poly[i]
+      let b = poly[(i + 1) % poly.length()]
+      let q = closest_point_on_segment(a, b, center)
+      let d = center.sub(q)
+      let dist2 = d.dot(d)
+      if dist2 < best_dist2 {
+        best_dist2 = dist2
+      }
+    }
+    best_dist2 <= radius * radius
+  }
+
+  fn segment_convex_polygon_intersect_world(
+    a : @core.Vec2,
+    b : @core.Vec2,
+    poly : Array[@core.Vec2],
+  ) -> Bool {
+    if poly.length() < 3 {
+      return false
+    }
+    if point_in_convex_polygon_world(poly, a) ||
+      point_in_convex_polygon_world(poly, b) {
+      return true
+    }
+    for i in 0..<poly.length() {
+      let c = poly[i]
+      let d = poly[(i + 1) % poly.length()]
+      if segment_segment_intersect_world(a, b, c, d) {
+        return true
+      }
+    }
+    false
+  }
+
   fn shapes_intersect_basic(
     s1 : Shape,
     p1 : @core.Vec2,
@@ -1905,6 +2232,39 @@ fn shapes_intersect(
         segment_cuboid_intersect(p2, r2, a, b, p1, r1, hw, hh)
       (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
         segment_segment_intersect(p1, r1, a1, b1, p2, r2, a2, b2)
+      (Shape::ConvexPolygon(v1), Shape::ConvexPolygon(v2)) => {
+        let p1w = convex_polygon_world_vertices(p1, r1, v1)
+        let p2w = convex_polygon_world_vertices(p2, r2, v2)
+        convex_polygons_intersect_world(p1w, p2w)
+      }
+      (Shape::ConvexPolygon(v1), Shape::Cuboid(hw, hh)) => {
+        let p1w = convex_polygon_world_vertices(p1, r1, v1)
+        let p2w = cuboid_world_vertices(p2, r2, hw, hh)
+        convex_polygons_intersect_world(p1w, p2w)
+      }
+      (Shape::Cuboid(hw, hh), Shape::ConvexPolygon(v2)) => {
+        let p1w = cuboid_world_vertices(p1, r1, hw, hh)
+        let p2w = convex_polygon_world_vertices(p2, r2, v2)
+        convex_polygons_intersect_world(p1w, p2w)
+      }
+      (Shape::ConvexPolygon(v), Shape::Ball(r)) => {
+        let pw = convex_polygon_world_vertices(p1, r1, v)
+        ball_convex_polygon_intersect_world(p2, r, pw)
+      }
+      (Shape::Ball(r), Shape::ConvexPolygon(v)) => {
+        let pw = convex_polygon_world_vertices(p2, r2, v)
+        ball_convex_polygon_intersect_world(p1, r, pw)
+      }
+      (Shape::ConvexPolygon(v), Shape::Segment(a, b)) => {
+        let pw = convex_polygon_world_vertices(p1, r1, v)
+        let (wa, wb) = segment_world_endpoints(p2, r2, a, b)
+        segment_convex_polygon_intersect_world(wa, wb, pw)
+      }
+      (Shape::Segment(a, b), Shape::ConvexPolygon(v)) => {
+        let pw = convex_polygon_world_vertices(p2, r2, v)
+        let (wa, wb) = segment_world_endpoints(p1, r1, a, b)
+        segment_convex_polygon_intersect_world(wa, wb, pw)
+      }
       _ => false
     }
   }
@@ -2248,6 +2608,7 @@ fn shapes_intersect(
       }
       false
     }
+    _ => shapes_intersect_basic(shape1, pos1, rot1, shape2, pos2, rot2)
   }
 }
 
@@ -2416,6 +2777,78 @@ fn contact_manifold_cuboid_ball(
 }
 
 ///|
+fn contact_manifold_ball_convex_polygon(
+  ball : Collider,
+  radius : @core.Real,
+  poly : Collider,
+  vertices : Array[@core.Vec2],
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (projection, feature2) = project_point_on_convex_polygon_oriented_and_get_feature(
+    poly.world_translation,
+    poly.world_rotation,
+    vertices,
+    ball_center,
+    false,
+  )
+  let closest = projection.point()
+  let d = closest.sub(ball_center)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = ball_center.add(vec2_scale(normal, radius))
+  let world_p2 = closest
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: ball.position().inverse().transform_point(world_p1),
+        local_p2: poly.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: FeatureId::Face(0),
+        fid2: feature2,
+      },
+    ],
+  }
+}
+
+///|
+fn contact_manifold_convex_polygon_ball(
+  poly : Collider,
+  vertices : Array[@core.Vec2],
+  ball : Collider,
+  radius : @core.Real,
+) -> ContactManifold {
+  let ball_center = ball.world_translation
+  let (projection, feature1) = project_point_on_convex_polygon_oriented_and_get_feature(
+    poly.world_translation,
+    poly.world_rotation,
+    vertices,
+    ball_center,
+    false,
+  )
+  let closest = projection.point()
+  let d = ball_center.sub(closest)
+  let dist = d.length()
+  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let signed_dist = dist - radius
+  let world_p1 = closest
+  let world_p2 = ball_center.sub(vec2_scale(normal, radius))
+  ContactManifold::{
+    normal,
+    points: [
+      ContactManifoldPoint::{
+        local_p1: poly.position().inverse().transform_point(world_p1),
+        local_p2: ball.position().inverse().transform_point(world_p2),
+        dist: signed_dist,
+        fid1: feature1,
+        fid2: FeatureId::Face(0),
+      },
+    ],
+  }
+}
+
+///|
 priv struct ClipVertex {
   v : @core.Vec2
   id : Int
@@ -2472,6 +2905,245 @@ fn cuboid_world_vertices(
     rot.rotate_vec2(@core.Vec2::new(half_width, -half_height)),
   )
   [v0, v1, v2, v3]
+}
+
+///|
+fn convex_polygon_world_vertices(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  vertices : Array[@core.Vec2],
+) -> Array[@core.Vec2] {
+  let rot = @core.Rot2::from_angle(rotation)
+  let out : Array[@core.Vec2] = []
+  for i in 0..<vertices.length() {
+    out.push(center.add(rot.rotate_vec2(vertices[i])))
+  }
+  out
+}
+
+///|
+fn cuboid_edge_feature_from_poly_edge_index(edge : Int) -> FeatureId {
+  // `cuboid_world_vertices` order is CCW: v0, v1, v2, v3.
+  // Edge i = v[i] -> v[i+1]. Map to query_pipeline's edge convention:
+  // 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
+  match edge {
+    0 => FeatureId::Edge(2) // v0->v1 (top)
+    1 => FeatureId::Edge(1) // v1->v2 (left)
+    2 => FeatureId::Edge(3) // v2->v3 (bottom)
+    _ => FeatureId::Edge(0) // v3->v0 (right)
+  }
+}
+
+///|
+fn polygon_edge_normal(poly : Array[@core.Vec2], edge : Int) -> @core.Vec2 {
+  let a = poly[edge]
+  let b = poly[(edge + 1) % poly.length()]
+  let e = b.sub(a)
+  normalize_or_fallback(@core.Vec2::new(e.y, -e.x), @core.Vec2::new(1.0F, 0.0F))
+}
+
+///|
+fn polygon_project(
+  poly : Array[@core.Vec2],
+  axis : @core.Vec2,
+) -> (@core.Real, @core.Real) {
+  let mut minp = 1.0e30F
+  let mut maxp = -1.0e30F
+  for i in 0..<poly.length() {
+    let d = poly[i].dot(axis)
+    if d < minp {
+      minp = d
+    }
+    if d > maxp {
+      maxp = d
+    }
+  }
+  (minp, maxp)
+}
+
+///|
+fn polygon_contact_manifold(
+  collider1 : Collider,
+  poly1 : Array[@core.Vec2],
+  poly1_is_cuboid : Bool,
+  collider2 : Collider,
+  poly2 : Array[@core.Vec2],
+  poly2_is_cuboid : Bool,
+  prediction_distance : @core.Real,
+) -> ContactManifold {
+  // SAT: find reference edge of smallest overlap.
+  // Use shape centroids (not collider origins) for normal orientation; convex hulls in
+  // rapier-reference are not centered at the origin.
+  let mp1 = collider1.mass_properties()
+  let mp2 = collider2.mass_properties()
+  let c1 = collider1.position().transform_point(mp1.center_of_mass)
+  let c2 = collider2.position().transform_point(mp2.center_of_mass)
+  let delta = c2.sub(c1)
+  let mut best_overlap = 1.0e30F
+  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_owner = 0 // 0 = poly1, 1 = poly2
+  for i in 0..<poly1.length() {
+    let axis = polygon_edge_normal(poly1, i)
+    let (min1, max1) = polygon_project(poly1, axis)
+    let (min2, max2) = polygon_project(poly2, axis)
+    let overlap = min_value(max1, max2) - max_value(min1, min2)
+    if overlap < best_overlap {
+      best_overlap = overlap
+      best_axis = axis
+      best_owner = 0
+    }
+  }
+  for i in 0..<poly2.length() {
+    let axis = polygon_edge_normal(poly2, i)
+    let (min1, max1) = polygon_project(poly1, axis)
+    let (min2, max2) = polygon_project(poly2, axis)
+    let overlap = min_value(max1, max2) - max_value(min1, min2)
+    if overlap < best_overlap {
+      best_overlap = overlap
+      best_axis = axis
+      best_owner = 1
+    }
+  }
+  let overlap_depth = if best_overlap > 0.0F { best_overlap } else { 0.0F }
+  let sign = if delta.dot(best_axis) < 0.0F { -1.0F } else { 1.0F }
+  let normal12 = vec2_scale(best_axis, sign)
+  let reference_is_1 = best_owner == 0
+  let ref_normal = if reference_is_1 {
+    normal12
+  } else {
+    @core.Vec2::new(-normal12.x, -normal12.y)
+  }
+  let ref_poly = if reference_is_1 { poly1 } else { poly2 }
+  let incident_poly = if reference_is_1 { poly2 } else { poly1 }
+  let incident_is_cuboid = if reference_is_1 {
+    poly2_is_cuboid
+  } else {
+    poly1_is_cuboid
+  }
+  let reference_is_cuboid = if reference_is_1 {
+    poly1_is_cuboid
+  } else {
+    poly2_is_cuboid
+  }
+  reference_is_cuboid |> ignore
+  incident_is_cuboid |> ignore
+
+  // The SAT axis is directionless. Pick the reference edge whose *outward* normal
+  // is most aligned with `ref_normal` (like Box2D/rapier).
+  let mut ref_edge = 0
+  let mut ref_dot = -1.0e30F
+  for i in 0..<ref_poly.length() {
+    let d = polygon_edge_normal(ref_poly, i).dot(ref_normal)
+    if d > ref_dot {
+      ref_dot = d
+      ref_edge = i
+    }
+  }
+  let rv1 = ref_poly[ref_edge]
+  let rv2 = ref_poly[(ref_edge + 1) % ref_poly.length()]
+  let ref_tangent = normalize_or_fallback(
+    rv2.sub(rv1),
+    @core.Vec2::new(1.0F, 0.0F),
+  )
+  let side_normal1 = @core.Vec2::new(-ref_tangent.x, -ref_tangent.y)
+  let side_normal2 = ref_tangent
+
+  // Pick the incident edge with the most anti-parallel normal.
+  let mut best_dot = 1.0e30F
+  let mut incident_edge = 0
+  for i in 0..<incident_poly.length() {
+    let n = polygon_edge_normal(incident_poly, i)
+    let d = n.dot(ref_normal)
+    if d < best_dot {
+      best_dot = d
+      incident_edge = i
+    }
+  }
+  let iv1i = incident_edge
+  let iv2i = (incident_edge + 1) % incident_poly.length()
+  let clip_in = [
+    ClipVertex::{ v: incident_poly[iv1i], id: iv1i },
+    ClipVertex::{ v: incident_poly[iv2i], id: iv2i },
+  ]
+  let clip1 = clip_segment_to_line(clip_in, side_normal1, side_normal1.dot(rv1))
+  let clip2 = clip_segment_to_line(clip1, side_normal2, side_normal2.dot(rv2))
+  let front_offset = ref_normal.dot(rv1)
+  let points : Array[ContactManifoldPoint] = []
+  // Capture the reference edge feature once; we may need it for a fallback contact.
+  let reference_edge_feature = if reference_is_1 {
+    if poly1_is_cuboid {
+      cuboid_edge_feature_from_poly_edge_index(ref_edge)
+    } else {
+      FeatureId::Edge(ref_edge)
+    }
+  } else if poly2_is_cuboid {
+    cuboid_edge_feature_from_poly_edge_index(ref_edge)
+  } else {
+    FeatureId::Edge(ref_edge)
+  }
+  for i in 0..<clip2.length() {
+    let cv = clip2[i]
+    let separation = ref_normal.dot(cv.v) - front_offset
+    if separation <= prediction_distance + 1.0e-6F {
+      let cp_ref = cv.v.sub(vec2_scale(ref_normal, separation))
+      let (world_p1, world_p2, fid1, fid2) = if reference_is_1 {
+        (cp_ref, cv.v, reference_edge_feature, FeatureId::Vertex(cv.id))
+      } else {
+        (cv.v, cp_ref, FeatureId::Vertex(cv.id), reference_edge_feature)
+      }
+      points.push(ContactManifoldPoint::{
+        local_p1: collider1.position().inverse().transform_point(world_p1),
+        local_p2: collider2.position().inverse().transform_point(world_p2),
+        // If the clipping gives a small positive separation due to numeric imprecision,
+        // fall back to the SAT overlap depth.
+        dist: if separation <= 0.0F {
+          separation
+        } else {
+          -overlap_depth
+        },
+        fid1,
+        fid2,
+      })
+    }
+  }
+
+  // Robust fallback for vertex contacts where clipping may discard everything.
+  if points.length() == 0 {
+    let mut best_sep = 1.0e30F
+    let mut best_vid = 0
+    for i in 0..<incident_poly.length() {
+      let sep = ref_normal.dot(incident_poly[i]) - front_offset
+      if sep < best_sep {
+        best_sep = sep
+        best_vid = i
+      }
+    }
+    let v = incident_poly[best_vid]
+    let sep = if best_sep <= 0.0F { best_sep } else { -overlap_depth }
+    let cp_ref = v.sub(vec2_scale(ref_normal, sep))
+    let (world_p1, world_p2, fid1, fid2) = if reference_is_1 {
+      (cp_ref, v, reference_edge_feature, FeatureId::Vertex(best_vid))
+    } else {
+      (v, cp_ref, FeatureId::Vertex(best_vid), reference_edge_feature)
+    }
+    points.push(ContactManifoldPoint::{
+      local_p1: collider1.position().inverse().transform_point(world_p1),
+      local_p2: collider2.position().inverse().transform_point(world_p2),
+      dist: sep,
+      fid1,
+      fid2,
+    })
+  }
+  if points.length() == 2 {
+    let p0 = collider1.position().transform_point(points[0].local_p1)
+    let p1 = collider1.position().transform_point(points[1].local_p1)
+    if p0.dot(ref_tangent) > p1.dot(ref_tangent) {
+      let tmp = points[0]
+      points[0] = points[1]
+      points[1] = tmp
+    }
+  }
+  ContactManifold::{ normal: normal12, points }
 }
 
 ///|
@@ -2885,6 +3557,79 @@ fn contact_manifold_cuboid_cuboid(
     }
   }
   ContactManifold::{ normal: normal12, points }
+}
+
+///|
+fn contact_manifold_convex_polygon_convex_polygon(
+  poly1 : Collider,
+  vertices1 : Array[@core.Vec2],
+  poly2 : Collider,
+  vertices2 : Array[@core.Vec2],
+  prediction_distance : @core.Real,
+) -> ContactManifold {
+  let p1 = convex_polygon_world_vertices(
+    poly1.world_translation,
+    poly1.world_rotation,
+    vertices1,
+  )
+  let p2 = convex_polygon_world_vertices(
+    poly2.world_translation,
+    poly2.world_rotation,
+    vertices2,
+  )
+  polygon_contact_manifold(
+    poly1, p1, false, poly2, p2, false, prediction_distance,
+  )
+}
+
+///|
+fn contact_manifold_convex_polygon_cuboid(
+  poly : Collider,
+  vertices : Array[@core.Vec2],
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  prediction_distance : @core.Real,
+) -> ContactManifold {
+  let p1 = convex_polygon_world_vertices(
+    poly.world_translation,
+    poly.world_rotation,
+    vertices,
+  )
+  let p2 = cuboid_world_vertices(
+    cuboid.world_translation,
+    cuboid.world_rotation,
+    half_width,
+    half_height,
+  )
+  polygon_contact_manifold(
+    poly, p1, false, cuboid, p2, true, prediction_distance,
+  )
+}
+
+///|
+fn contact_manifold_cuboid_convex_polygon(
+  cuboid : Collider,
+  half_width : @core.Real,
+  half_height : @core.Real,
+  poly : Collider,
+  vertices : Array[@core.Vec2],
+  prediction_distance : @core.Real,
+) -> ContactManifold {
+  let p1 = cuboid_world_vertices(
+    cuboid.world_translation,
+    cuboid.world_rotation,
+    half_width,
+    half_height,
+  )
+  let p2 = convex_polygon_world_vertices(
+    poly.world_translation,
+    poly.world_rotation,
+    vertices,
+  )
+  polygon_contact_manifold(
+    cuboid, p1, true, poly, p2, false, prediction_distance,
+  )
 }
 
 ///|
@@ -3693,14 +4438,40 @@ fn build_contact_pair(
       manifolds.push(
         contact_manifold_ball_cuboid(collider1, r, collider2, hw, hh),
       )
+    (Shape::Ball(r), Shape::ConvexPolygon(vertices)) =>
+      manifolds.push(
+        contact_manifold_ball_convex_polygon(collider1, r, collider2, vertices),
+      )
     (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
       manifolds.push(
         contact_manifold_cuboid_ball(collider1, hw, hh, collider2, r),
+      )
+    (Shape::ConvexPolygon(vertices), Shape::Ball(r)) =>
+      manifolds.push(
+        contact_manifold_convex_polygon_ball(collider1, vertices, collider2, r),
       )
     (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
       manifolds.push(
         contact_manifold_cuboid_cuboid(
           collider1, hw1, hh1, collider2, hw2, hh2, prediction_distance,
+        ),
+      )
+    (Shape::ConvexPolygon(vertices1), Shape::ConvexPolygon(vertices2)) =>
+      manifolds.push(
+        contact_manifold_convex_polygon_convex_polygon(
+          collider1, vertices1, collider2, vertices2, prediction_distance,
+        ),
+      )
+    (Shape::ConvexPolygon(vertices), Shape::Cuboid(hw, hh)) =>
+      manifolds.push(
+        contact_manifold_convex_polygon_cuboid(
+          collider1, vertices, collider2, hw, hh, prediction_distance,
+        ),
+      )
+    (Shape::Cuboid(hw, hh), Shape::ConvexPolygon(vertices)) =>
+      manifolds.push(
+        contact_manifold_cuboid_convex_polygon(
+          collider1, hw, hh, collider2, vertices, prediction_distance,
         ),
       )
     (Shape::Ball(r), Shape::Segment(a, b)) =>
@@ -4026,15 +4797,10 @@ pub fn NarrowPhase::update_with_pairs(
         } else {
           let contact = build_contact_pair(pd, collider1, collider2)
           let mut keep = false
+          // `shapes_intersect` already guarantees overlap. Keep any manifold that produced points.
           for mi in 0..<contact.manifolds.length() {
-            let manifold = contact.manifolds[mi]
-            for pi in 0..<manifold.points.length() {
-              if manifold.points[pi].dist <= pd {
-                keep = true
-                break
-              }
-            }
-            if keep {
+            if contact.manifolds[mi].points.length() > 0 {
+              keep = true
               break
             }
           }
@@ -4426,6 +5192,35 @@ fn compute_shape_aabb(
       }
     }
     Shape::Polyline(vertices, _) =>
+      if vertices.length() == 0 {
+        Aabb::{ min: center, max: center }
+      } else {
+        let rot = @core.Rot2::from_angle(rotation)
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        Aabb::{
+          min: @core.Vec2::new(min_x - pd, min_y - pd),
+          max: @core.Vec2::new(max_x + pd, max_y + pd),
+        }
+      }
+    Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         Aabb::{ min: center, max: center }
       } else {

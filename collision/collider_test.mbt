@@ -210,6 +210,126 @@ test "collider material and event accessors" {
 }
 
 ///|
+test "convex polygon contacts cuboid" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let narrow_phase = NarrowPhase::new()
+  let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let ground = colliders.insert_with_parent(
+    ColliderBuilder::cuboid(10.0F, 1.2F).build(),
+    ground_body,
+    bodies,
+  )
+  let poly_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 1.0F))
+    .build(),
+  )
+  let points = [
+    @core.Vec2::new(0.0F, 0.0F),
+    @core.Vec2::new(4.0F, 0.0F),
+    @core.Vec2::new(4.0F, 4.0F),
+    @core.Vec2::new(0.0F, 4.0F),
+  ]
+  if ColliderBuilder::convex_hull(points) is Some(builder) {
+    let poly = colliders.insert_with_parent(builder.build(), poly_body, bodies)
+    narrow_phase.update_with_pairs(
+      bodies,
+      colliders,
+      0.0F,
+      [(ground, poly)],
+      impulse_joints,
+      multibody_joints,
+    )
+    if narrow_phase.contact_pair(ground, poly) is Some(pair) {
+      inspect(pair.manifold_count() > 0, content="true")
+      let manifolds = pair.manifolds()
+      inspect(manifolds.length() > 0, content="true")
+      let points = manifolds[0].points()
+      inspect(points.length() > 0, content="true")
+      inspect(points[0].dist() == points[0].dist(), content="true")
+      inspect(points[0].dist() < 0.0F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "convex polygon cuboid manifold keeps contacts for random hulls" {
+  fn rng_next(seed : Int) -> Int {
+    (seed * 1103515245 + 12345) & 0x7fffffff
+  }
+
+  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+    let next = rng_next(seed)
+    let value = Float::from_double(next.to_double() / 2147483647.0)
+    (value, next)
+  }
+
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let narrow_phase = NarrowPhase::new()
+  let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let ground = colliders.insert_with_parent(
+    ColliderBuilder::cuboid(50.0F, 1.2F).build(),
+    ground_body,
+    bodies,
+  )
+  let pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  let mut seed = 42
+  for i in 0..<200 {
+    let handle = bodies.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      // Ensure all random hulls intersect the ground AABB:
+      // local y ∈ [0, 4) => world y ∈ [-2.8, 1.2) overlaps the ground cuboid.
+      .translation(
+        @core.Vec2::new(
+          0.0F,
+          -2.8F + Float::from_double(i.to_double()) * 0.0001F,
+        ),
+      )
+      .build(),
+    )
+    let points : Array[@core.Vec2] = []
+    for _ in 0..<10 {
+      let (rx, s1) = rng_float01(seed)
+      let (ry, s2) = rng_float01(s1)
+      seed = s2
+      points.push(@core.Vec2::new(rx * 4.0F, ry * 4.0F))
+    }
+    if ColliderBuilder::convex_hull(points) is Some(builder) {
+      let poly = colliders.insert_with_parent(builder.build(), handle, bodies)
+      pairs.push((ground, poly))
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  narrow_phase.update_with_pairs(
+    bodies, colliders, 0.0F, pairs, impulse_joints, multibody_joints,
+  )
+  for i in 0..<pairs.length() {
+    let (h1, h2) = pairs[i]
+    if narrow_phase.contact_pair(h1, h2) is Some(pair) {
+      inspect(pair.manifold_count() > 0, content="true")
+      let manifolds = pair.manifolds()
+      inspect(manifolds.length() > 0, content="true")
+      let pts = manifolds[0].points()
+      inspect(pts.length() > 0, content="true")
+      inspect(pts[0].dist() <= 0.0F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  }
+}
+
+///|
 /// Ported from rapier active collision types checks.
 test "active collision types test" {
   let defaults = ActiveCollisionTypes::default()
