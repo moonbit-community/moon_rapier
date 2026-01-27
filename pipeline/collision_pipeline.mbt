@@ -93,6 +93,6 @@ pub fn CollisionPipeline::step(
     }
   }
   narrow_phase.update_with_pairs(
-    bodies, colliders, filtered_pairs, impulse_joints, multibody_joints,
+    bodies, colliders, prediction_distance, filtered_pairs, impulse_joints, multibody_joints,
   )
 }

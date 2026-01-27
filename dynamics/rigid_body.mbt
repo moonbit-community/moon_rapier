@@ -968,6 +968,25 @@ pub fn RigidBody::forces(self : RigidBody) -> RigidBodyForces {
 }
 
 ///|
+/// Update the effective force/torque (gravity + accumulated user force/torque) stored on this body.
+/// This matches Rapier's workflow where `RigidBodyForces.force/torque` are derived each step.
+pub fn RigidBody::update_effective_force_and_torque(
+  self : RigidBody,
+  gravity : @core.Vec2,
+) -> RigidBody {
+  let mass = self.mass_props.local_mprops.mass
+  let mass_v = @core.Vec2::new(mass, mass)
+  self.forces = self.forces.compute_effective_force_and_torque(gravity, mass_v)
+  if self.locked_translations {
+    self.forces.force = @core.Vec2::zero()
+  }
+  if self.locked_rotations {
+    self.forces.torque = 0.0F
+  }
+  self
+}
+
+///|
 pub fn RigidBody::gravity_scale(self : RigidBody) -> @core.Real {
   self.forces.gravity_scale
 }

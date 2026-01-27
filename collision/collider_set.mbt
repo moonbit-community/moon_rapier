@@ -1969,7 +1969,7 @@ pub fn NarrowPhase::update(
     }
   }
   self.update_with_pairs(
-    bodies, colliders, pairs, impulse_joints, multibody_joints,
+    bodies, colliders, 0.0F, pairs, impulse_joints, multibody_joints,
   )
 }
 
@@ -2414,6 +2414,7 @@ fn contact_manifold_cuboid_cuboid(
   cuboid2 : Collider,
   half_width2 : @core.Real,
   half_height2 : @core.Real,
+  prediction_distance : @core.Real,
 ) -> ContactManifold {
   let (ax1, ay1) = cuboid_axes(cuboid1.world_rotation)
   let (ax2, ay2) = cuboid_axes(cuboid2.world_rotation)
@@ -2527,7 +2528,7 @@ fn contact_manifold_cuboid_cuboid(
   for i in 0..<clip2.length() {
     let cv = clip2[i]
     let separation = ref_normal.dot(cv.v) - front_offset
-    if separation <= 0.0F + 1.0e-6F {
+    if separation <= prediction_distance + 1.0e-6F {
       let cp_ref = cv.v.sub(vec2_scale(ref_normal, separation))
       let (world_p1, world_p2, fid1, fid2) = if reference_is_1 {
         (cp_ref, cv.v, FeatureId::Edge(ref_edge_id), FeatureId::Vertex(cv.id))
@@ -3092,6 +3093,7 @@ fn contact_manifold_cuboid_capsule(
 
 ///|
 fn build_contact_pair(
+  prediction_distance : @core.Real,
   collider1 : Collider,
   collider2 : Collider,
 ) -> ContactPair {
@@ -3109,7 +3111,9 @@ fn build_contact_pair(
       )
     (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
       manifolds.push(
-        contact_manifold_cuboid_cuboid(collider1, hw1, hh1, collider2, hw2, hh2),
+        contact_manifold_cuboid_cuboid(
+          collider1, hw1, hh1, collider2, hw2, hh2, prediction_distance,
+        ),
       )
     (Shape::Ball(r), Shape::Segment(a, b)) =>
       manifolds.push(
@@ -3332,11 +3336,13 @@ pub fn NarrowPhase::update_with_pairs(
   self : NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
+  prediction_distance : @core.Real,
   pairs : Array[(ColliderHandle, ColliderHandle)],
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {
   multibody_joints |> ignore
+  let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
   let intersections : Array[IntersectionPair] = []
   let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
   for i in 0..<pairs.length() {
@@ -3405,8 +3411,23 @@ pub fn NarrowPhase::update_with_pairs(
             intersecting,
           })
         } else {
-          let contact = build_contact_pair(collider1, collider2)
-          contacts.push((handle1, handle2, contact))
+          let contact = build_contact_pair(pd, collider1, collider2)
+          let mut keep = false
+          for mi in 0..<contact.manifolds.length() {
+            let manifold = contact.manifolds[mi]
+            for pi in 0..<manifold.points.length() {
+              if manifold.points[pi].dist <= pd {
+                keep = true
+                break
+              }
+            }
+            if keep {
+              break
+            }
+          }
+          if keep {
+            contacts.push((handle1, handle2, contact))
+          }
         }
       }
     }

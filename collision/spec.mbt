@@ -1011,6 +1011,7 @@ pub fn NarrowPhase::update_with_pairs(
   self : NarrowPhase,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
+  prediction_distance : @core.Real,
   pairs : Array[(ColliderHandle, ColliderHandle)],
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,

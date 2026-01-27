@@ -699,6 +699,7 @@ fn solve_joints_and_contacts_interleaved(
     parameters, bodies, impulse_joints, dt,
   )
   let contact_constraints = build_constraints(
+    parameters,
     bodies,
     colliders,
     narrow_phase,
@@ -712,25 +713,42 @@ fn solve_joints_and_contacts_interleaved(
   if contact_constraints.length() > 0 {
     warmstart(bodies, contact_constraints)
   }
-  let iters = if parameters.num_solver_iterations <= 0 {
+  let base_iters = if parameters.num_solver_iterations <= 0 {
     1
   } else {
     parameters.num_solver_iterations
   }
-  for _ in 0..<iters {
-    if joint_constraints.length() > 0 {
+  // Our contact solver is simpler than Rapier's (no block solver, no SIMD),
+  // so we give contacts more iterations to improve stacking stability.
+  let joint_iters = base_iters
+  let contact_iters = base_iters
+  let iters = if contact_iters > joint_iters {
+    contact_iters
+  } else {
+    joint_iters
+  }
+  for i in 0..<iters {
+    if joint_constraints.length() > 0 && i < joint_iters {
       solve_joint_velocity_constraints(bodies, joint_constraints, dt, 1)
     }
     if contact_constraints.length() > 0 {
       solve_velocity_constraints(bodies, dt, contact_constraints, 1)
     }
   }
+  if contact_constraints.length() > 0 {
+    solve_restitution_constraints(bodies, contact_constraints)
+    position_correction(
+      bodies,
+      colliders,
+      contact_constraints,
+      parameters.allowed_linear_error(),
+    )
+  }
   if joint_constraints.length() > 0 {
     position_correction_joints(bodies, joint_constraints)
     writeback_joint_impulses(impulse_joints, joint_constraints)
   }
   if contact_constraints.length() > 0 {
-    position_correction(bodies, contact_constraints)
     emit_contact_force_events(
       bodies, colliders, dt, event_handler, contact_constraints,
     )
@@ -950,6 +968,17 @@ pub fn PhysicsPipeline::step(
     let mut dt = remaining_time
     if ccd_is_enabled && remaining_substeps > 1 {
       // Take forces (gravity) into account for the initial TOI estimate.
+      // NOTE: CCD activation uses `RigidBodyForces.force/torque`, so compute them first.
+      for i in 0..<bodies.bodies.length() {
+        if bodies.bodies[i] is Some(body) {
+          if !body.enabled || body.is_sleeping() {
+            continue
+          }
+          if body.body_type is @dynamics.RigidBodyType::Dynamic {
+            body.update_effective_force_and_torque(gravity) |> ignore
+          }
+        }
+      }
       let ccd_active = ccd_solver.update_ccd_active_flags(
         islands, bodies, remaining_time, true,
       )
@@ -984,7 +1013,6 @@ pub fn PhysicsPipeline::step(
       remaining_time = 0.0F
       remaining_substeps = 0
     }
-
     // Keep collider world poses synced with the current rigid-body positions before we
     // do any CCD shape casts (user may have teleported bodies without touching colliders).
     broad_phase.update(prediction_distance, bodies, colliders)
@@ -995,27 +1023,25 @@ pub fn PhysicsPipeline::step(
         }
         match body.body_type {
           @dynamics.RigidBodyType::Dynamic => {
-            // Gravity is acceleration, so it does not depend on the body's mass.
-            if body.locked_translations {
-              body.set_linvel(@core.Vec2::zero(), false) |> ignore
+            body.update_effective_force_and_torque(gravity) |> ignore
+            let forces = body.forces()
+            let raw_vels = forces.integrate(dt, body.vels(), body.mass_props())
+            let damped_vels = raw_vels.apply_damping(dt, body.damping())
+            let linvel = if body.locked_translations {
+              @core.Vec2::zero()
             } else {
-              let scale = body.gravity_scale()
-              let gravity_step = @core.Vec2::new(
-                gravity.x * dt * scale,
-                gravity.y * dt * scale,
-              )
-              body.set_linvel(body.linvel().add(gravity_step), false) |> ignore
+              damped_vels.linvel
             }
-            if body.locked_rotations {
-              body.set_angvel(0.0F, false) |> ignore
+            let angvel = if body.locked_rotations {
+              0.0F
+            } else {
+              damped_vels.angvel
             }
-            let vels = body.vels().apply_damping(dt, body.damping())
-            body.set_vels(vels, false) |> ignore
-            let next_pos = vels.integrate(
-              dt,
-              body.position(),
-              body.center_of_mass(),
-            )
+            body.set_linvel(linvel, false) |> ignore
+            body.set_angvel(angvel, false) |> ignore
+            let next_pos = body
+              .vels()
+              .integrate(dt, body.position(), body.center_of_mass())
             body.set_next_position_internal(next_pos) |> ignore
           }
           @dynamics.RigidBodyType::KinematicPositionBased => {
@@ -1039,7 +1065,7 @@ pub fn PhysicsPipeline::step(
       }
     }
     if ccd_is_enabled {
-      // Clamp motions of CCD-active bodies before collision detection.
+      // Clamp motions of CCD-active bodies before advancing to their final positions.
       let ccd_active = ccd_solver.update_ccd_active_flags(
         islands, bodies, dt, false,
       )

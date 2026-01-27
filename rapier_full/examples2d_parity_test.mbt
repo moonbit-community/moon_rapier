@@ -1044,11 +1044,7 @@ test "examples2d/pyramid2.rs parity" {
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = 10.0F
   let ground_thickness = 1.0F
-  let ground_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_thickness))
-    .build(),
-  )
+  let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(ground_size, ground_thickness).build(),
     ground_handle,

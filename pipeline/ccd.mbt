@@ -114,6 +114,26 @@ fn find_first_ccd_impact(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
 ) -> @core.Real? {
+  fn integrate_lin_ang(
+    dt : @core.Real,
+    curr_pos : @core.Isometry2,
+    local_com : @core.Vec2,
+    linvel : @core.Vec2,
+    angvel : @core.Real,
+  ) -> @core.Isometry2 {
+    let com = curr_pos.transform_point(local_com)
+    let shift = @core.Isometry2::from_translation(
+      @core.Vec2::new(-com.x, -com.y),
+    )
+    let rot = @core.Isometry2::new(
+      @core.Vec2::zero(),
+      @core.Rot2::from_angle(angvel * dt),
+    )
+    let translation = @core.Vec2::new(linvel.x * dt, linvel.y * dt)
+    let unshift = @core.Isometry2::from_translation(com.add(translation))
+    unshift.mul(rot).mul(shift).mul(curr_pos)
+  }
+
   if dt <= 0.0F {
     return None
   }
@@ -125,31 +145,31 @@ fn find_first_ccd_impact(
     if bodies.get(handle) is Some(body) && body.is_ccd_active() {
       let predicted_body_pos = match body.body_type() {
         @dynamics.RigidBodyType::Dynamic => {
-          let scale = body.gravity_scale()
-          let gravity_step = @core.Vec2::new(
-            gravity.x * dt * scale,
-            gravity.y * dt * scale,
+          // For the TOI estimate, external forces are not integrated into velocities yet.
+          let mass = body.mass()
+          let mass_v = @core.Vec2::new(mass, mass)
+          let forces = body
+            .forces()
+            .compute_effective_force_and_torque(gravity, mass_v)
+          let raw_vels = forces.integrate(dt, body.vels(), body.mass_props())
+          let damped_vels = raw_vels.apply_damping(dt, body.damping())
+          let linvel = if body.locked_translations() {
+            @core.Vec2::zero()
+          } else {
+            damped_vels.linvel
+          }
+          let angvel = if body.locked_rotations() {
+            0.0F
+          } else {
+            damped_vels.angvel
+          }
+          integrate_lin_ang(
+            dt,
+            body.position(),
+            body.center_of_mass(),
+            linvel,
+            angvel,
           )
-          let lin_scale = 1.0F / (1.0F + dt * body.linear_damping())
-          let ang_scale = 1.0F / (1.0F + dt * body.angular_damping())
-          let linvel = body.linvel().add(gravity_step)
-          let linvel = @core.Vec2::new(
-            linvel.x * lin_scale,
-            linvel.y * lin_scale,
-          )
-          let angvel = body.angvel() * ang_scale
-          let curr_pos = body.position()
-          let com = curr_pos.transform_point(body.center_of_mass())
-          let shift = @core.Isometry2::from_translation(
-            @core.Vec2::new(-com.x, -com.y),
-          )
-          let rot = @core.Isometry2::new(
-            @core.Vec2::zero(),
-            @core.Rot2::from_angle(angvel * dt),
-          )
-          let translation = @core.Vec2::new(linvel.x * dt, linvel.y * dt)
-          let unshift = @core.Isometry2::from_translation(com.add(translation))
-          unshift.mul(rot).mul(shift).mul(curr_pos)
         }
         @dynamics.RigidBodyType::KinematicVelocityBased =>
           body.vels().integrate(dt, body.position(), body.center_of_mass())

@@ -23,15 +23,6 @@
 /// no manifold caching inside NarrowPhase), but it matches the "constraint from manifold" design.
 
 ///|
-const SOLVER_BAUMGARTE : @core.Real = 0.2F
-
-///|
-const SOLVER_PENETRATION_SLOP : @core.Real = 0.0F
-
-///|
-const SOLVER_POSITION_CORRECTION_PERCENT : @core.Real = 1.0F
-
-///|
 pub struct ContactImpulseCacheEntry {
   collider1 : @collision.ColliderHandle
   collider2 : @collision.ColliderHandle
@@ -178,18 +169,20 @@ priv struct SolverConstraint {
   dir1 : @core.Vec2
   tangent1 : @core.Vec2
   contact_point : @core.Vec2
-  penetration : @core.Real
+  dist : @core.Real
   restitution_vel : @core.Real
   friction : @core.Real
   inv_mass_n : @core.Real
+  inv_mass_n_nocfm : @core.Real
   inv_mass_t : @core.Real
-  bias : @core.Real
+  rhs_bias : @core.Real
   mut impulse_n : @core.Real
   mut impulse_t : @core.Real
 }
 
 ///|
 fn build_constraints(
+  parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   narrow_phase : @collision.NarrowPhase,
@@ -197,6 +190,10 @@ fn build_constraints(
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
 ) -> Array[SolverConstraint] {
+  let allowed_error = parameters.allowed_linear_error()
+  let max_corrective_velocity = parameters.max_corrective_velocity()
+  let erp_inv_dt = parameters.contact_softness.erp_inv_dt(dt)
+  let cfm_coeff = parameters.contact_softness.cfm_coeff(dt)
   let pairs = narrow_phase.contact_pairs()
   let constraints : Array[SolverConstraint] = []
   for i in 0..<pairs.length() {
@@ -273,30 +270,28 @@ fn build_constraints(
         )
         let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
         let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
-        let points = manifold.points()
-        for pi in 0..<points.length() {
-          let p = points[pi]
-          let world_p1 = c1.position().transform_point(p.local_p1())
-          let world_p2 = c2.position().transform_point(p.local_p2())
-          let contact_point = @core.Vec2::new(
-            (world_p1.x + world_p2.x) * 0.5F,
-            (world_p1.y + world_p2.y) * 0.5F,
-          )
-          let mut dist = p.dist()
-          if @core.abs(dist) <= 1.0e-6F && sep_depth > 0.0F {
+        let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
+          c2.shape() is @collision.Shape::Segment(_, _)
+        fn push_constraint(
+          fid1 : @collision.FeatureId,
+          fid2 : @collision.FeatureId,
+          contact_point : @core.Vec2,
+          dist_in : @core.Real,
+        ) -> Unit {
+          let mut dist = dist_in
+          // Some manifold generators (notably segment-*) only provide a non-negative distance.
+          // When we have an MTV from `separation_vector`, use it to recover a penetration depth.
+          if has_segment && sep_depth > 0.0F && dist >= 0.0F {
             dist = -sep_depth
           }
-          let penetration = if dist < 0.0F { -dist } else { 0.0F }
-          let bias = if dt > 0.0F {
-            -(SOLVER_BAUMGARTE / dt) *
-            (if penetration > SOLVER_PENETRATION_SLOP {
-              penetration - SOLVER_PENETRATION_SLOP
-            } else {
-              0.0F
-            })
-          } else {
-            0.0F
-          }
+          // Rapier-style RHS bias term:
+          //   rhs_bias = clamp(erp_inv_dt * (dist + allowed_error), -max_corrective_velocity, 0)
+          // With `dist` negative for penetration and positive for separation (speculative contacts).
+          let rhs_bias0 = solver_clamp_value(
+            erp_inv_dt * (dist + allowed_error),
+            -max_corrective_velocity,
+            0.0F,
+          )
           let mut inv_mass1 = 0.0F
           let mut inv_inertia1 = 0.0F
           let mut v1 = @core.Vec2::zero()
@@ -361,17 +356,22 @@ fn build_constraints(
             inv_mass2 +
             inv_inertia1 * rt1 * rt1 +
             inv_inertia2 * rt2 * rt2
-          let inv_mass_n = if denom_n <= 1.0e-12F {
+          let inv_mass_n_nocfm = if denom_n <= 1.0e-12F {
             0.0F
           } else {
             1.0F / denom_n
+          }
+          let inv_mass_n = if denom_n + cfm_coeff <= 1.0e-12F {
+            0.0F
+          } else {
+            1.0F / (denom_n + cfm_coeff)
           }
           let inv_mass_t = if denom_t <= 1.0e-12F {
             0.0F
           } else {
             1.0F / denom_t
           }
-          let cached = cache_find(cache, h1, h2, p.fid1(), p.fid2())
+          let cached = cache_find(cache, h1, h2, fid1, fid2)
           let impulse_n = if cached is Some(e) {
             e.impulse_n * warmstart_coefficient
           } else {
@@ -388,27 +388,30 @@ fn build_constraints(
           let vel2 = v2.add(cross_z_scalar(w2, r2))
           let rv = vel1.sub(vel2)
           let vn0 = rv.dot(dir1)
-          let restitution_vel = if vn0 < -1.0e-3F {
+          let restitution_vel = if dist <= 0.0F && vn0 < -1.0e-3F {
             -restitution * vn0
           } else {
             0.0F
           }
+          // Match Rapier behavior: restitution is solved with an RHS without bias.
+          let rhs_bias = if restitution_vel != 0.0F { 0.0F } else { rhs_bias0 }
           constraints.push(SolverConstraint::{
             collider1: h1,
             collider2: h2,
-            fid1: p.fid1(),
-            fid2: p.fid2(),
+            fid1,
+            fid2,
             body1,
             body2,
             dir1,
             tangent1,
             contact_point,
-            penetration,
+            dist,
             restitution_vel,
             friction,
             inv_mass_n,
+            inv_mass_n_nocfm,
             inv_mass_t,
-            bias,
+            rhs_bias,
             impulse_n,
             impulse_t,
           })
@@ -417,6 +420,47 @@ fn build_constraints(
           w1 |> ignore
           v2 |> ignore
           w2 |> ignore
+        }
+
+        let points = manifold.points()
+        if points.length() == 0 {
+          continue
+        }
+        if has_segment {
+          for pi in 0..<points.length() {
+            let p = points[pi]
+            let world_p1 = c1.position().transform_point(p.local_p1())
+            let world_p2 = c2.position().transform_point(p.local_p2())
+            let contact_point = @core.Vec2::new(
+              (world_p1.x + world_p2.x) * 0.5F,
+              (world_p1.y + world_p2.y) * 0.5F,
+            )
+            push_constraint(p.fid1(), p.fid2(), contact_point, p.dist())
+          }
+        } else {
+          // Rapier solves up to two points per manifold with a block solver. Our simplified
+          // implementation converges poorly for tall stacks if we treat each point independently,
+          // because it introduces spurious torques. Use the averaged contact point instead.
+          let mut world_p1_sum = @core.Vec2::zero()
+          let mut world_p2_sum = @core.Vec2::zero()
+          let mut dist_sum = 0.0F
+          let p0 = points[0]
+          for pi in 0..<points.length() {
+            let p = points[pi]
+            let wp1 = c1.position().transform_point(p.local_p1())
+            let wp2 = c2.position().transform_point(p.local_p2())
+            world_p1_sum = world_p1_sum.add(wp1)
+            world_p2_sum = world_p2_sum.add(wp2)
+            dist_sum = dist_sum + p.dist()
+          }
+          let inv_n = 1.0F / Float::from_double(points.length().to_double())
+          let world_p1 = solver_vec2_scale(world_p1_sum, inv_n)
+          let world_p2 = solver_vec2_scale(world_p2_sum, inv_n)
+          let contact_point = @core.Vec2::new(
+            (world_p1.x + world_p2.x) * 0.5F,
+            (world_p1.y + world_p2.y) * 0.5F,
+          )
+          push_constraint(p0.fid1(), p0.fid2(), contact_point, dist_sum * inv_n)
         }
       }
     }
@@ -470,8 +514,10 @@ fn solve_velocity_constraints(
   if dt <= 0.0F {
     return
   }
+  let inv_dt = 1.0F / dt
   let iters = if iterations <= 0 { 1 } else { iterations }
   for _ in 0..<iters {
+    // Solve all normal constraints first (better convergence for stacks).
     for i in 0..<constraints.length() {
       let c = constraints[i]
       let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
@@ -481,10 +527,9 @@ fn solve_velocity_constraints(
       let vel1 = v1.add(cross_z_scalar(w1, r1))
       let vel2 = v2.add(cross_z_scalar(w2, r2))
       let rv = vel1.sub(vel2)
-
-      // Normal impulse.
       let vn = rv.dot(c.dir1)
-      let lambda_n = -(vn + c.bias - c.restitution_vel) * c.inv_mass_n
+      let sep_term = if c.dist > 0.0F { c.dist * inv_dt } else { 0.0F }
+      let lambda_n = -(vn + sep_term + c.rhs_bias) * c.inv_mass_n
       let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
         constraints[i].impulse_n + lambda_n
       } else {
@@ -505,16 +550,19 @@ fn solve_velocity_constraints(
         @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
         c.contact_point,
       )
+    }
 
-      // Friction impulse.
-      let (v1a, w1a, com1a) = get_body_kinematic_state(bodies, c.body1)
-      let (v2a, w2a, com2a) = get_body_kinematic_state(bodies, c.body2)
-      let r1a = c.contact_point.sub(com1a)
-      let r2a = c.contact_point.sub(com2a)
-      let vel1a = v1a.add(cross_z_scalar(w1a, r1a))
-      let vel2a = v2a.add(cross_z_scalar(w2a, r2a))
-      let rv2 = vel1a.sub(vel2a)
-      let vt = rv2.dot(c.tangent1)
+    // Then solve all friction constraints using the updated normal impulses.
+    for i in 0..<constraints.length() {
+      let c = constraints[i]
+      let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+      let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+      let r1 = c.contact_point.sub(com1)
+      let r2 = c.contact_point.sub(com2)
+      let vel1 = v1.add(cross_z_scalar(w1, r1))
+      let vel2 = v2.add(cross_z_scalar(w2, r2))
+      let rv = vel1.sub(vel2)
+      let vt = rv.dot(c.tangent1)
       let lambda_t = -vt * c.inv_mass_t
       let max_friction = c.friction * constraints[i].impulse_n
       let new_impulse_t = solver_clamp_value(
@@ -542,17 +590,72 @@ fn solve_velocity_constraints(
 }
 
 ///|
-fn position_correction(
+fn solve_restitution_constraints(
   bodies : @dynamics.RigidBodySet,
   constraints : Array[SolverConstraint],
 ) -> Unit {
   for i in 0..<constraints.length() {
     let c = constraints[i]
-    if c.penetration <= SOLVER_PENETRATION_SLOP {
+    if c.restitution_vel == 0.0F {
       continue
     }
-    let correction_mag = (c.penetration - SOLVER_PENETRATION_SLOP) *
-      SOLVER_POSITION_CORRECTION_PERCENT
+    let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+    let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+    let r1 = c.contact_point.sub(com1)
+    let r2 = c.contact_point.sub(com2)
+    let vel1 = v1.add(cross_z_scalar(w1, r1))
+    let vel2 = v2.add(cross_z_scalar(w2, r2))
+    let rv = vel1.sub(vel2)
+    let vn = rv.dot(c.dir1)
+    let lambda_n = -(vn - c.restitution_vel) * c.inv_mass_n_nocfm
+    let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
+      constraints[i].impulse_n + lambda_n
+    } else {
+      0.0F
+    }
+    let delta_n = new_impulse_n - constraints[i].impulse_n
+    constraints[i].impulse_n = new_impulse_n
+    let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
+    apply_impulse_delta_dynamic(bodies, c.body1, impulse_n_vec, c.contact_point)
+    apply_impulse_delta_dynamic(
+      bodies,
+      c.body2,
+      @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+      c.contact_point,
+    )
+  }
+}
+
+///|
+fn position_correction(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  constraints : Array[SolverConstraint],
+  allowed_error : @core.Real,
+) -> Unit {
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    // Restrict positional correction to segment contacts. This is enough to resolve
+    // deep segment-* penetrations (e.g. ray/segment used as static geometry) without
+    // injecting energy into resting stacks of cuboids.
+    let mut has_segment = false
+    if colliders.get(c.collider1) is Some(co1) {
+      has_segment = has_segment ||
+        co1.shape() is @collision.Shape::Segment(_, _)
+    }
+    if colliders.get(c.collider2) is Some(co2) {
+      has_segment = has_segment ||
+        co2.shape() is @collision.Shape::Segment(_, _)
+    }
+    if !has_segment {
+      continue
+    }
+    if c.dist >= -allowed_error {
+      continue
+    }
+    // For segment contacts, use a slight overshoot to ensure the segment is fully outside
+    // after one step (helps deep intersection cases).
+    let correction_mag = -c.dist + 1.0e-3F
     let correction = solver_vec2_scale(c.dir1, correction_mag)
     let mut inv_m1 = 0.0F
     if c.body1 is Some(h1) {
@@ -733,7 +836,7 @@ pub fn solve_contacts(
     parameters.warmstart_coefficient
   }
   let constraints = build_constraints(
-    bodies, colliders, narrow_phase, dt, cache, warmstart_coefficient,
+    parameters, bodies, colliders, narrow_phase, dt, cache, warmstart_coefficient,
   )
   warmstart(bodies, constraints)
   solve_velocity_constraints(
@@ -742,7 +845,13 @@ pub fn solve_contacts(
     constraints,
     parameters.num_solver_iterations,
   )
+  solve_restitution_constraints(bodies, constraints)
+  position_correction(
+    bodies,
+    colliders,
+    constraints,
+    parameters.allowed_linear_error(),
+  )
   emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)
-  position_correction(bodies, constraints)
   update_cache(cache, constraints)
 }

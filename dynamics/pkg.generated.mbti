@@ -510,6 +510,7 @@ pub fn RigidBody::set_vels(Self, RigidBodyVelocity, Bool) -> Self
 pub fn RigidBody::sleep(Self) -> Self
 pub fn RigidBody::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody::translation(Self) -> @core.Vec2
+pub fn RigidBody::update_effective_force_and_torque(Self, @core.Vec2) -> Self
 pub fn RigidBody::vels(Self) -> RigidBodyVelocity
 pub fn RigidBody::wake_up(Self, Bool) -> Self
 pub fn RigidBody::world_com(Self) -> @core.Vec2
