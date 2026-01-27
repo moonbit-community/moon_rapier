@@ -562,7 +562,122 @@ test "examples2d/pin_slot_joint2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/platform2.rs
 test "examples2d/platform2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let inv_dt = parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+  let ground_height = 0.1F
+  let ground_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(10.0F, ground_height).build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+  let num = 6
+  let rad = 0.2F
+  let shift = rad * 2.0F
+  let centerx = shift * Float::from_double(num.to_double()) / 2.0F
+  let centery = shift / 2.0F + 3.04F
+  for i in 0..<num {
+    for j in 0..<num {
+      let x = Float::from_double(i.to_double()) * shift - centerx
+      let y = Float::from_double(j.to_double()) * shift + centery
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::cuboid(rad, rad).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+    }
+  }
+  let vel_based_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_velocity_based()
+    .translation(@core.Vec2::new(-10.0F * rad, 1.5F + 0.8F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(rad * 10.0F, rad).build(),
+    vel_based_handle,
+    bodies,
+  )
+  |> ignore
+  let pos_based_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based()
+    .translation(@core.Vec2::new(-10.0F * rad, 2.0F + 1.5F + 0.8F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(rad * 10.0F, rad).build(),
+    pos_based_handle,
+    bodies,
+  )
+  |> ignore
+  let time = 0.5F
+  let velocity = @core.Vec2::new(local_sin(time) * 5.0F, local_sin(time * 5.0F))
+  let vel_before = if bodies.get(vel_based_handle) is Some(body) {
+    body.translation()
+  } else {
+    @core.Vec2::zero()
+  }
+  if bodies.get_mut(vel_based_handle) is Some(platform) {
+    platform.set_linvel(velocity, true) |> ignore
+  }
+  let pos_before = if bodies.get(pos_based_handle) is Some(body) {
+    body.translation()
+  } else {
+    @core.Vec2::zero()
+  }
+  let pos_target = pos_before.add(
+    @core.Vec2::new(velocity.x * dt, velocity.y * dt),
+  )
+  if bodies.get_mut(pos_based_handle) is Some(platform) {
+    platform.set_next_kinematic_translation(pos_target) |> ignore
+  }
+  pipeline.step(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, impulse_joints,
+    multibody_joints, ccd_solver, hooks, events,
+  )
+  if bodies.get(vel_based_handle) is Some(platform) {
+    let expected = vel_before.add(
+      @core.Vec2::new(velocity.x * dt, velocity.y * dt),
+    )
+    inspect(
+      platform.translation().sub(expected).length() < 5.0e-3F,
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get(pos_based_handle) is Some(platform) {
+    inspect(
+      platform.translation().sub(pos_target).length() < 5.0e-3F,
+      content="true",
+    )
+    inspect(platform.linvel().sub(velocity).length() < 5.0e-3F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|
