@@ -464,7 +464,114 @@ test "examples2d/debug_box_ball2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/debug_compression2.rs
 test "examples2d/debug_compression2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::zero()
+  let width = 75.0F
+  let thickness = 2.0F
+  let ys = [-30.0F - thickness, 30.0F + thickness]
+  for i in 0..<ys.length() {
+    let handle = bodies.insert(
+      @dynamics.RigidBodyBuilder::fixed()
+      .translation(@core.Vec2::new(0.0F, ys[i]))
+      .build(),
+    )
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(width, thickness).build(),
+      handle,
+      bodies,
+    )
+    |> ignore
+  }
+  let half_height = (ys[1] - ys[0]) / 2.0F - thickness
+  let xs = [-width + thickness, width - thickness]
+  let plank_handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<xs.length() {
+    let handle = bodies.insert(
+      @dynamics.RigidBodyBuilder::dynamic()
+      .translation(@core.Vec2::new(xs[i], 0.0F))
+      .build(),
+    )
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(thickness, half_height).build(),
+      handle,
+      bodies,
+    )
+    |> ignore
+    plank_handles.push(handle)
+  }
+  let num = 8
+  let rad = half_height / Float::from_double(num.to_double())
+  for i in 0..<num {
+    for j in 0..<num {
+      let x = Float::from_double(i.to_double()) * rad * 2.0F -
+        Float::from_double(num.to_double()) * rad
+      let y = Float::from_double(j.to_double()) * rad * 2.0F -
+        Float::from_double(num.to_double()) * rad +
+        rad
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::ball(rad).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+    }
+  }
+  let left0 = if bodies.get(plank_handles[0]) is Some(body) {
+    body.translation().x
+  } else {
+    0.0F
+  }
+  let right0 = if bodies.get(plank_handles[1]) is Some(body) {
+    body.translation().x
+  } else {
+    0.0F
+  }
+  let mut force_x = 0.0F
+  for _ in 0..<30 {
+    if bodies.get_mut(plank_handles[0]) is Some(left) {
+      left.reset_forces(true) |> ignore
+      left.add_force(@core.Vec2::new(force_x, 0.0F), true) |> ignore
+    }
+    if bodies.get_mut(plank_handles[1]) is Some(right) {
+      right.reset_forces(true) |> ignore
+      right.add_force(@core.Vec2::new(-force_x, 0.0F), true) |> ignore
+    }
+    force_x = force_x + 10000.0F
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, ccd_solver, hooks, events,
+    )
+  }
+
+  // With forces integrated like Rapier, the planks should move toward each other.
+  if bodies.get(plank_handles[0]) is Some(left) {
+    inspect(left.translation().x > left0 + 0.01F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get(plank_handles[1]) is Some(right) {
+    inspect(right.translation().x < right0 - 0.01F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }
 
 ///|
@@ -476,7 +583,63 @@ test "examples2d/debug_intersection2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/debug_total_overlap2.rs
 test "examples2d/debug_total_overlap2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let rad = 0.5F
+  let handles : Array[@dynamics.RigidBodyHandle] = []
+  for _ in 0..<100 {
+    let handle = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder::cuboid(rad, rad).build(),
+      handle,
+      bodies,
+    )
+    |> ignore
+    handles.push(handle)
+  }
+  step_pipeline_2d_n(
+    pipeline,
+    @core.Vec2::zero(),
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    ccd_solver,
+    hooks,
+    events,
+    10,
+  )
+  let mut max_dist2 = 0.0F
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(body) {
+      let p = body.translation()
+      inspect(p.x == p.x, content="true")
+      inspect(p.y == p.y, content="true")
+      let d2 = p.length_squared()
+      if d2 > max_dist2 {
+        max_dist2 = d2
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(max_dist2 > 1.0e-6F, content="true")
 }
 
 ///|
