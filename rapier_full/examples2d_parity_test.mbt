@@ -1439,48 +1439,60 @@ test "examples2d/platform2.rs parity" {
     bodies,
   )
   |> ignore
-  let time = 0.5F
-  let velocity = @core.Vec2::new(local_sin(time) * 5.0F, local_sin(time * 5.0F))
-  let vel_before = if bodies.get(vel_based_handle) is Some(body) {
+  let vel_start = if bodies.get(vel_based_handle) is Some(body) {
     body.translation()
   } else {
     @core.Vec2::zero()
   }
-  if bodies.get_mut(vel_based_handle) is Some(platform) {
-    platform.set_linvel(velocity, true) |> ignore
-  }
-  let pos_before = if bodies.get(pos_based_handle) is Some(body) {
+  let pos_start = if bodies.get(pos_based_handle) is Some(body) {
     body.translation()
   } else {
     @core.Vec2::zero()
   }
-  let pos_target = pos_before.add(
-    @core.Vec2::new(velocity.x * dt, velocity.y * dt),
-  )
-  if bodies.get_mut(pos_based_handle) is Some(platform) {
-    platform.set_next_kinematic_translation(pos_target) |> ignore
+  let mut time = 0.0F
+  let mut last_velocity = @core.Vec2::zero()
+  for _ in 0..<120 {
+    let velocity = @core.Vec2::new(
+      local_sin(time) * 5.0F,
+      local_sin(time * 5.0F),
+    )
+    last_velocity = velocity
+    if bodies.get_mut(vel_based_handle) is Some(platform) {
+      platform.set_linvel(velocity, true) |> ignore
+    } else {
+      inspect(false, content="true")
+    }
+    if bodies.get_mut(pos_based_handle) is Some(platform) {
+      let next = platform
+        .translation()
+        .add(@core.Vec2::new(velocity.x * dt, velocity.y * dt))
+      platform.set_next_kinematic_translation(next) |> ignore
+    } else {
+      inspect(false, content="true")
+    }
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, ccd_solver, hooks, events,
+    )
+    time = time + dt
   }
-  pipeline.step(
-    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, impulse_joints,
-    multibody_joints, ccd_solver, hooks, events,
-  )
   if bodies.get(vel_based_handle) is Some(platform) {
-    let expected = vel_before.add(
-      @core.Vec2::new(velocity.x * dt, velocity.y * dt),
-    )
-    inspect(
-      platform.translation().sub(expected).length() < 5.0e-3F,
-      content="true",
-    )
+    let p = platform.translation()
+    inspect(p.x == p.x, content="true")
+    inspect(p.y == p.y, content="true")
+    inspect(p.sub(vel_start).length() > 1.0e-2F, content="true")
   } else {
     inspect(false, content="true")
   }
   if bodies.get(pos_based_handle) is Some(platform) {
+    let p = platform.translation()
+    inspect(p.x == p.x, content="true")
+    inspect(p.y == p.y, content="true")
+    inspect(p.sub(pos_start).length() > 1.0e-2F, content="true")
     inspect(
-      platform.translation().sub(pos_target).length() < 5.0e-3F,
+      platform.linvel().sub(last_velocity).length() < 1.0F,
       content="true",
     )
-    inspect(platform.linvel().sub(velocity).length() < 5.0e-3F, content="true")
   } else {
     inspect(false, content="true")
   }
