@@ -179,7 +179,145 @@ test "examples2d/all_examples2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/ccd2.rs
 test "examples2d/ccd2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Static ground + walls.
+  let ground_size = 25.0F
+  let ground_thickness = 0.1F
+  let ground_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed().ccd_enabled(true).build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size, ground_thickness).build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
+    .translation(@core.Vec2::new(-3.0F, 0.0F))
+    .build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
+    .translation(@core.Vec2::new(6.0F, 0.0F))
+    .build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+  let sensor_handle = colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
+    .translation(@core.Vec2::new(2.5F, 0.0F))
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    ground_handle,
+    bodies,
+  )
+
+  // Create dynamic bodies with a "compound cross" approximated by 3 colliders.
+  let radx = 0.4F
+  let rady = 0.05F
+  let num = 6
+  let shift = (radx + 0.01F) * 2.0F
+  let centerx = shift * Float::from_double(num.to_double()) / 2.0F - 0.5F
+  let centery = shift / 2.0F + 4.0F
+  let dynamic_handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<num {
+    for j in 0..<num {
+      let x = Float::from_double(i.to_double()) * shift - centerx
+      let y = Float::from_double(j.to_double()) * shift + centery
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .linvel(@core.Vec2::new(100.0F, -10.0F))
+        .ccd_enabled(true)
+        .can_sleep(false)
+        .build(),
+      )
+      // Horizontal bar.
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::cuboid(radx, rady)
+        .translation(@core.Vec2::new(0.0F, radx - rady))
+        .build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+      // Left vertical bar.
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::cuboid(rady, radx)
+        .translation(@core.Vec2::new(-radx + rady, 0.0F))
+        .build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+      // Right vertical bar.
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder::cuboid(rady, radx)
+        .translation(@core.Vec2::new(radx - rady, 0.0F))
+        .build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+      dynamic_handles.push(handle)
+    }
+  }
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 60,
+  )
+
+  // CCD regression: none of the fast-moving bodies should tunnel past the right wall.
+  let mut max_x = -1.0e30F
+  for i in 0..<dynamic_handles.length() {
+    if bodies.get(dynamic_handles[i]) is Some(body) {
+      let x = body.translation().x
+      inspect(x == x, content="true")
+      inspect(body.translation().y == body.translation().y, content="true")
+      if x > max_x {
+        max_x = x
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(max_x < 7.0F, content="true")
+
+  // Sensor collision events should be emitted at least once.
+  let evs = events.take_collision_events()
+  let mut saw_sensor = false
+  for i in 0..<evs.length() {
+    match evs[i] {
+      @collision.CollisionEvent::Started(h1, h2, _) =>
+        if @collision.ColliderHandle::equals(h1, sensor_handle) ||
+          @collision.ColliderHandle::equals(h2, sensor_handle) {
+          saw_sensor = true
+        }
+      _ => ()
+    }
+  }
+  inspect(saw_sensor, content="true")
 }
 
 ///|
