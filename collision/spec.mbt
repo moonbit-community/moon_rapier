@@ -344,6 +344,16 @@ pub fn ColliderBuilder::capsule_y(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::capsule_from_endpoints(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::segment(
   a : @core.Vec2,
   b : @core.Vec2,

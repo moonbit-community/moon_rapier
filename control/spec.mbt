@@ -169,3 +169,16 @@ pub fn KinematicCharacterController::move_shape(
 ) -> EffectiveMovement {
   ...
 }
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::solve_character_collision_impulses(
+  self : KinematicCharacterController,
+  dt : @core.Real,
+  query : @collision.QueryPipeline,
+  character_shape : @collision.Shape,
+  character_mass : @core.Real,
+  collisions : Array[CharacterCollision],
+) -> Unit {
+  ...
+}

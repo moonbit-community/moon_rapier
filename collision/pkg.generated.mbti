@@ -141,6 +141,7 @@ pub fn ColliderBuilder::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder::ball(Float) -> Self
 pub fn ColliderBuilder::build(Self) -> Collider
+pub fn ColliderBuilder::capsule_from_endpoints(@core.Vec2, @core.Vec2, Float) -> Self
 pub fn ColliderBuilder::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> Self

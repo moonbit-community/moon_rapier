@@ -40,6 +40,14 @@ pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
 pub fn DVector::len(Self) -> Int
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
+type FixedJoint
+
+type FixedJointBuilder
+pub fn FixedJointBuilder::build(Self) -> FixedJoint
+pub fn FixedJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn FixedJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn FixedJointBuilder::new() -> Self
+
 pub struct GenericJoint {
   mut local_frame1 : @core.Isometry2
   mut local_frame2 : @core.Isometry2
@@ -50,6 +58,7 @@ pub struct GenericJoint {
   mut limits : JointLimits3
   mut motors : JointMotors3
   mut softness : SpringCoefficients
+  mut rope_max_length : Float?
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
@@ -57,10 +66,16 @@ pub struct GenericJoint {
 pub fn GenericJoint::contacts_enabled(Self) -> Bool
 pub fn GenericJoint::coupled_axes(Self) -> JointAxesMask
 pub fn GenericJoint::default() -> Self
+pub fn GenericJoint::flip(Self) -> Self
+pub fn GenericJoint::from_fixed(FixedJoint) -> Self
+pub fn GenericJoint::from_pin_slot(PinSlotJoint) -> Self
+pub fn GenericJoint::from_prismatic(PrismaticJoint) -> Self
 pub fn GenericJoint::from_revolute(RevoluteJoint) -> Self
+pub fn GenericJoint::from_rope(RopeJoint) -> Self
 pub fn GenericJoint::is_enabled(Self) -> Bool
 pub fn GenericJoint::limit_axes(Self) -> JointAxesMask
 pub fn GenericJoint::limits(Self) -> JointLimits3
+pub fn GenericJoint::limits_axis(Self, JointAxis) -> JointLimits?
 pub fn GenericJoint::local_anchor1(Self) -> @core.Vec2
 pub fn GenericJoint::local_anchor2(Self) -> @core.Vec2
 pub fn GenericJoint::local_frame1(Self) -> @core.Isometry2
@@ -69,19 +84,27 @@ pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motor_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motors(Self) -> JointMotors3
 pub fn GenericJoint::new(JointAxesMask) -> Self
+pub fn GenericJoint::rope_max_length(Self) -> Float?
 pub fn GenericJoint::set_contacts_enabled(Self, Bool) -> Self
 pub fn GenericJoint::set_coupled_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_enabled(Self, Bool) -> Self
 pub fn GenericJoint::set_enabled_by_attached_body(Self, Bool) -> Self
 pub fn GenericJoint::set_limit_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_limits(Self, JointLimits3) -> Self
+pub fn GenericJoint::set_limits_axis(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_local_anchor1(Self, @core.Vec2) -> Self
 pub fn GenericJoint::set_local_anchor2(Self, @core.Vec2) -> Self
 pub fn GenericJoint::set_local_frame1(Self, @core.Isometry2) -> Self
 pub fn GenericJoint::set_local_frame2(Self, @core.Isometry2) -> Self
 pub fn GenericJoint::set_locked_axes(Self, JointAxesMask) -> Self
+pub fn GenericJoint::set_motor(Self, JointAxis, Float, Float, Float, Float) -> Self
 pub fn GenericJoint::set_motor_axes(Self, JointAxesMask) -> Self
+pub fn GenericJoint::set_motor_max_force(Self, JointAxis, Float) -> Self
+pub fn GenericJoint::set_motor_model(Self, JointAxis, MotorModel) -> Self
+pub fn GenericJoint::set_motor_position(Self, JointAxis, Float, Float, Float) -> Self
+pub fn GenericJoint::set_motor_velocity(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_motors(Self, JointMotors3) -> Self
+pub fn GenericJoint::set_rope_max_length(Self, Float?) -> Self
 pub fn GenericJoint::set_softness(Self, SpringCoefficients) -> Self
 pub fn GenericJoint::softness(Self) -> SpringCoefficients
 
@@ -117,6 +140,8 @@ pub struct ImpulseJoint {
   body2 : RigidBodyHandle
   mut data : GenericJoint
   mut impulses : @core.Vec2
+  mut ang_impulse : Float
+  mut rope_impulse : Float
   handle : ImpulseJointHandle
 }
 pub fn ImpulseJoint::is_enabled(Self) -> Bool
@@ -160,6 +185,7 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHand
 pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
 pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
+pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
@@ -313,9 +339,11 @@ pub struct JointLimits {
 }
 pub fn JointLimits::clear_impulse(Self) -> Self
 pub fn JointLimits::default() -> Self
+pub fn JointLimits::impulse(Self) -> Float
 pub fn JointLimits::max(Self) -> Float
 pub fn JointLimits::min(Self) -> Float
 pub fn JointLimits::new(Float, Float) -> Self
+pub fn JointLimits::set_impulse(Self, Float) -> Self
 pub fn JointLimits::set_max(Self, Float) -> Self
 pub fn JointLimits::set_min(Self, Float) -> Self
 
@@ -337,7 +365,9 @@ pub struct JointMotor {
 }
 pub fn JointMotor::clear_impulse(Self) -> Self
 pub fn JointMotor::default() -> Self
+pub fn JointMotor::impulse(Self) -> Float
 pub fn JointMotor::set_damping(Self, Float) -> Self
+pub fn JointMotor::set_impulse(Self, Float) -> Self
 pub fn JointMotor::set_max_force(Self, Float) -> Self
 pub fn JointMotor::set_model(Self, MotorModel) -> Self
 pub fn JointMotor::set_stiffness(Self, Float) -> Self
@@ -410,11 +440,29 @@ pub struct MultibodyLinkId {
   id : Int
 }
 
+type PinSlotJoint
+
+type PinSlotJointBuilder
+pub fn PinSlotJointBuilder::build(Self) -> PinSlotJoint
+pub fn PinSlotJointBuilder::limits(Self, Float, Float) -> Self
+pub fn PinSlotJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn PinSlotJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn PinSlotJointBuilder::new(@core.Vec2) -> Self
+
 pub(all) enum PredictedImpacts {
   Impacts(Array[(RigidBodyHandle, Float)])
   ImpactsAfterEndTime(Float)
   NoImpacts
 }
+
+type PrismaticJoint
+
+type PrismaticJointBuilder
+pub fn PrismaticJointBuilder::build(Self) -> PrismaticJoint
+pub fn PrismaticJointBuilder::limits(Self, Float, Float) -> Self
+pub fn PrismaticJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn PrismaticJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn PrismaticJointBuilder::new(@core.Vec2) -> Self
 
 type RevoluteJoint
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
@@ -709,6 +757,15 @@ pub struct RigidBodyVelocity {
 pub fn RigidBodyVelocity::apply_damping(Self, Float, RigidBodyDamping) -> Self
 pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) -> @core.Isometry2
 pub fn RigidBodyVelocity::zero() -> Self
+
+type RopeJoint
+pub fn RopeJoint::max_length(Self) -> Float
+
+type RopeJointBuilder
+pub fn RopeJointBuilder::build(Self) -> RopeJoint
+pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn RopeJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn RopeJointBuilder::new(Float) -> Self
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool

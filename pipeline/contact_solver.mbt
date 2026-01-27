@@ -168,6 +168,8 @@ priv struct SolverConstraint {
   // Direction of the force/impulse applied to body1 (Rapier: -manifold.normal).
   dir1 : @core.Vec2
   tangent1 : @core.Vec2
+  // Target relative velocity along `tangent1` (Rapier's SolverContact.tangent_velocity projected).
+  tangent_velocity : @core.Real
   contact_point : @core.Vec2
   dist : @core.Real
   restitution_vel : @core.Real
@@ -185,6 +187,7 @@ fn build_constraints(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
+  hooks : PhysicsHooks,
   narrow_phase : @collision.NarrowPhase,
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
@@ -270,6 +273,22 @@ fn build_constraints(
         )
         let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
         let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
+        let mut tangent_velocity = @core.Vec2::zero()
+        if c1
+          .active_hooks()
+          .contains(@collision.ActiveHooks::modify_solver_contacts()) ||
+          c2
+          .active_hooks()
+          .contains(@collision.ActiveHooks::modify_solver_contacts()) {
+          let (accept, tv) = hooks.modify_solver_contacts_internal(
+            bodies, colliders, h1, h2, manifold,
+          )
+          if !accept {
+            continue
+          }
+          tangent_velocity = tv
+        }
+        let tangent_velocity_proj = tangent_velocity.dot(tangent1)
         let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
           c2.shape() is @collision.Shape::Segment(_, _) ||
           c1.shape() is @collision.Shape::Polyline(_, _) ||
@@ -286,9 +305,8 @@ fn build_constraints(
           if has_segment && sep_depth > 0.0F && dist >= 0.0F {
             dist = -sep_depth
           }
-          // Rapier-style RHS bias term:
-          //   rhs_bias = clamp(erp_inv_dt * (dist + allowed_error), -max_corrective_velocity, 0)
-          // With `dist` negative for penetration and positive for separation (speculative contacts).
+          // A small velocity-level bias is needed so overlapping objects separate even when their
+          // relative velocity is zero (this also drives contact-force events).
           let rhs_bias0 = solver_clamp_value(
             erp_inv_dt * (dist + allowed_error),
             -max_corrective_velocity,
@@ -395,8 +413,10 @@ fn build_constraints(
           } else {
             0.0F
           }
-          // Match Rapier behavior: restitution is solved with an RHS without bias.
-          let rhs_bias = if restitution_vel != 0.0F { 0.0F } else { rhs_bias0 }
+          // We keep the bias smaller than Rapier's default spring model because we also apply
+          // explicit position corrections; a full split-impulse solver would be ideal, but this
+          // balance avoids the high-mass-ratio "launch" instability while still resolving overlaps.
+          let rhs_bias = rhs_bias0 * 0.2F
           constraints.push(SolverConstraint::{
             collider1: h1,
             collider2: h2,
@@ -406,6 +426,7 @@ fn build_constraints(
             body2,
             dir1,
             tangent1,
+            tangent_velocity: tangent_velocity_proj,
             contact_point,
             dist,
             restitution_vel,
@@ -564,8 +585,8 @@ fn solve_velocity_constraints(
       let vel1 = v1.add(cross_z_scalar(w1, r1))
       let vel2 = v2.add(cross_z_scalar(w2, r2))
       let rv = vel1.sub(vel2)
-      let vt = rv.dot(c.tangent1)
-      let lambda_t = -vt * c.inv_mass_t
+      let vt_err = rv.dot(c.tangent1) - c.tangent_velocity
+      let lambda_t = -vt_err * c.inv_mass_t
       let max_friction = c.friction * constraints[i].impulse_n
       let new_impulse_t = solver_clamp_value(
         constraints[i].impulse_t + lambda_t,
@@ -936,6 +957,7 @@ pub fn solve_contacts(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
+  hooks : PhysicsHooks,
   narrow_phase : @collision.NarrowPhase,
   dt : @core.Real,
   event_handler : EventHandler,
@@ -947,7 +969,7 @@ pub fn solve_contacts(
     parameters.warmstart_coefficient
   }
   let constraints = build_constraints(
-    parameters, bodies, colliders, narrow_phase, dt, cache, warmstart_coefficient,
+    parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
   )
   warmstart(bodies, constraints)
   solve_velocity_constraints(

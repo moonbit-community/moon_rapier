@@ -1997,6 +1997,24 @@ pub fn ImpulseJointSet::set_impulses(
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::set_solver_impulses(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+  ang_impulse : @core.Real,
+  rope_impulse : @core.Real,
+  motor_lin_x : @core.Real,
+  motor_lin_y : @core.Real,
+  motor_ang_z : @core.Real,
+  limit_lin_x : @core.Real,
+  limit_lin_y : @core.Real,
+  limit_ang_z : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::get_unknown_gen(
   self : ImpulseJointSet,
   id : Int,

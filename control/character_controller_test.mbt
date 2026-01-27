@@ -497,3 +497,91 @@ test "character controller grounded on segment" {
   )
   inspect(movement.is_grounded() == true, content="true")
 }
+
+///|
+test "character controller transfers impulse to dynamic body" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let pipeline = @pipeline.PhysicsPipeline::new()
+
+  // Static floor so the pushed body doesn't fall away.
+  let floor = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -1.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(20.0F, 1.0F).build(),
+    floor,
+    bodies,
+  )
+  |> ignore
+
+  // Dynamic box we will push using `solve_character_collision_impulses`.
+  let box_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 0.5F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(0.5F, 0.5F).build(),
+    box_handle,
+    bodies,
+  )
+  |> ignore
+
+  // Ensure mass-properties are computed from colliders so impulses affect velocities.
+  pipeline.step(
+    @core.Vec2::zero(),
+    @dynamics.IntegrationParameters::default().set_dt(0.0F),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    ccd_solver,
+    hooks,
+    events,
+  )
+  let query_pipeline = broad_phase.as_query_pipeline(
+    bodies,
+    colliders,
+    @collision.QueryFilter::new(),
+  )
+  let controller = KinematicCharacterController::new()
+  let dt = 0.016F
+  let character_shape = @collision.Shape::Ball(0.5F)
+  let start_pos = @core.Isometry2::from_translation(
+    @core.Vec2::new(-2.0F, 0.5F),
+  )
+  let collisions : Array[CharacterCollision] = []
+  let movement = controller.move_shape(
+    dt,
+    query_pipeline,
+    character_shape,
+    start_pos,
+    @core.Vec2::new(4.0F, 0.0F),
+    fn(c) { collisions.push(c) },
+  )
+  // We should have hit the box.
+  inspect(movement.translation().x > 0.0F, content="true")
+  inspect(collisions.length() > 0, content="true")
+  controller.solve_character_collision_impulses(
+    dt, query_pipeline, character_shape, 1.0F, collisions,
+  )
+  if bodies.get(box_handle) is Some(body) {
+    inspect(body.linvel().x > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

@@ -26,11 +26,22 @@ pub struct PhysicsHooks {
     @collision.ColliderHandle,
     @collision.ColliderHandle,
   ) -> Bool)?
+  mut modify_solver_contacts : ((
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+  ) -> (Bool, @core.Vec2))?
 }
 
 ///|
 pub fn PhysicsHooks::new() -> PhysicsHooks {
-  { filter_contact_pair: None, filter_intersection_pair: None }
+  {
+    filter_contact_pair: None,
+    filter_intersection_pair: None,
+    modify_solver_contacts: None,
+  }
 }
 
 ///|
@@ -62,6 +73,21 @@ pub fn PhysicsHooks::filter_intersection_pair(
 }
 
 ///|
+pub fn PhysicsHooks::modify_solver_contacts(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+  ) -> (Bool, @core.Vec2),
+) -> PhysicsHooks {
+  self.modify_solver_contacts = Some(callback)
+  self
+}
+
+///|
 fn PhysicsHooks::test_contact_pair(
   self : PhysicsHooks,
   bodies : @dynamics.RigidBodySet,
@@ -88,5 +114,21 @@ fn PhysicsHooks::test_intersection_pair(
     predicate(bodies, colliders, collider1, collider2)
   } else {
     true
+  }
+}
+
+///|
+fn PhysicsHooks::modify_solver_contacts_internal(
+  self : PhysicsHooks,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  manifold : @collision.ContactManifold,
+) -> (Bool, @core.Vec2) {
+  if self.modify_solver_contacts is Some(callback) {
+    callback(bodies, colliders, collider1, collider2, manifold)
+  } else {
+    (true, @core.Vec2::zero())
   }
 }

@@ -130,6 +130,11 @@ pub fn JointLimits::max(self : JointLimits) -> @core.Real {
 }
 
 ///|
+pub fn JointLimits::impulse(self : JointLimits) -> @core.Real {
+  self.impulse
+}
+
+///|
 pub fn JointLimits::set_min(
   self : JointLimits,
   min : @core.Real,
@@ -148,6 +153,15 @@ pub fn JointLimits::set_max(
 ///|
 pub fn JointLimits::clear_impulse(self : JointLimits) -> JointLimits {
   self.impulse = 0.0F
+  self
+}
+
+///|
+pub fn JointLimits::set_impulse(
+  self : JointLimits,
+  impulse : @core.Real,
+) -> JointLimits {
+  self.impulse = impulse
   self
 }
 
@@ -296,6 +310,20 @@ pub fn JointMotor::set_model(
 ///|
 pub fn JointMotor::clear_impulse(self : JointMotor) -> JointMotor {
   self.impulse = 0.0F
+  self
+}
+
+///|
+pub fn JointMotor::impulse(self : JointMotor) -> @core.Real {
+  self.impulse
+}
+
+///|
+pub fn JointMotor::set_impulse(
+  self : JointMotor,
+  impulse : @core.Real,
+) -> JointMotor {
+  self.impulse = impulse
   self
 }
 

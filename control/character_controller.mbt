@@ -582,3 +582,64 @@ pub fn KinematicCharacterController::move_shape(
   }
   { translation: result_translation, grounded }
 }
+
+///|
+pub fn KinematicCharacterController::solve_character_collision_impulses(
+  self : KinematicCharacterController,
+  dt : @core.Real,
+  query : @collision.QueryPipeline,
+  character_shape : @collision.Shape,
+  character_mass : @core.Real,
+  collisions : Array[CharacterCollision],
+) -> Unit {
+  self |> ignore
+  character_shape |> ignore
+  if dt <= 0.0F {
+    return
+  }
+  // Simplified parity with Rapier: transfer a portion of the character's remaining movement
+  // along the collision normal as an impulse applied to the dynamic body hit by the shape-cast.
+  for i in 0..<collisions.length() {
+    let collision = collisions[i]
+    let hit = collision.hit()
+    let remaining = collision.translation_remaining()
+    let normal0 = hit.normal()
+    let proj = remaining.dot(normal0)
+    // Ensure the normal points in the direction of motion we want to transfer.
+    let normal = if proj < 0.0F {
+      @core.Vec2::new(-normal0.x, -normal0.y)
+    } else {
+      normal0
+    }
+    let to_transfer = vec2_scale(normal, @core.abs(proj))
+    if to_transfer.length_squared() <= 1.0e-12F {
+      continue
+    }
+    let vel_to_transfer = vec2_scale(to_transfer, 1.0F / dt)
+    let point = hit.point()
+    let handle = collision.handle()
+    if query.collider(handle) is Some(co) &&
+      co.parent() is Some(parent) &&
+      query.bodies.get_mut(parent) is Some(body) {
+      if !body.is_dynamic() || !body.is_enabled() {
+        continue
+      }
+      let r = point.sub(body.world_com())
+      let body_vel_at_point = body
+        .linvel()
+        .add(@core.Vec2::new(-body.angvel() * r.y, body.angvel() * r.x))
+      let delta_v = vel_to_transfer.sub(body_vel_at_point).dot(normal)
+      if delta_v <= 0.0F {
+        continue
+      }
+      let m2 = body.mass()
+      let denom = m2 + character_mass
+      if denom <= 1.0e-12F {
+        continue
+      }
+      let mass_ratio = m2 * character_mass / denom
+      let impulse = vec2_scale(normal, delta_v * mass_ratio)
+      body.apply_impulse_at_point(impulse, point, true) |> ignore
+    }
+  }
+}

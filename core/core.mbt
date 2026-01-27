@@ -29,7 +29,7 @@ fn cos(value : Real) -> Real {
 }
 
 ///|
-fn atan2(y : Real, x : Real) -> Real {
+pub fn atan2(y : Real, x : Real) -> Real {
   Float::from_double(@math.atan2(y.to_double(), x.to_double()))
 }
 

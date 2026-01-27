@@ -110,3 +110,52 @@ test "impulse joint wake and join queues" {
   joints.remove(handle, true) |> ignore
   inspect(joints.take_wake_up().length() == 2, content="true")
 }
+
+///|
+test "impulse joint get_mut persists modifications" {
+  let bodies = RigidBodySet::new()
+  let joints = ImpulseJointSet::new()
+  let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let handle = joints.insert(body1, body2, joint, true)
+  if joints.get_mut(handle, true) is Some(j) {
+    j.set_enabled(false) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  if joints.get(handle) is Some(j) {
+    inspect(!j.is_enabled(), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "impulse joint get_mut persists joint data edits" {
+  let bodies = RigidBodySet::new()
+  let joints = ImpulseJointSet::new()
+  let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let handle = joints.insert(body1, body2, joint, true)
+  if joints.get_mut(handle, true) is Some(j) {
+    j.data
+    .set_motor_velocity(JointAxis::AngZ, 2.0F, 0.0F)
+    .set_motor_max_force(JointAxis::AngZ, 123.0F)
+    |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  if joints.get(handle) is Some(j) {
+    inspect(
+      j.data.motor_axes().contains(JointAxesMask::ang_z()),
+      content="true",
+    )
+    let motor = j.data.motors().ang_z
+    inspect(motor.target_vel == 2.0F, content="true")
+    inspect(motor.max_force == 123.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

@@ -4,6 +4,8 @@ package "Milky2018/moon_rapier/core"
 // Values
 pub fn abs(Float) -> Float
 
+pub fn atan2(Float, Float) -> Float
+
 pub fn pi() -> Float
 
 pub fn rotation_from_angle(Float) -> Rot2

@@ -392,6 +392,27 @@ pub fn ColliderBuilder::capsule_y(
 }
 
 ///|
+pub fn ColliderBuilder::capsule_from_endpoints(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  radius : @core.Real,
+) -> ColliderBuilder {
+  let delta = b.sub(a)
+  let len = delta.length()
+  if len <= 1.0e-12F {
+    return ColliderBuilder::ball(radius).translation(a)
+  }
+  // `capsule_y(half_height, radius)` has its segment aligned with local +y/-y. Rotate it so its
+  // axis matches `b - a`, and place it at the segment midpoint.
+  let half_height = len / 2.0F
+  let center = @core.Vec2::new((a.x + b.x) / 2.0F, (a.y + b.y) / 2.0F)
+  let angle = @core.atan2(delta.y, delta.x) - @core.pi() / 2.0F
+  ColliderBuilder::capsule_y(half_height, radius)
+  .translation(center)
+  .rotation(angle)
+}
+
+///|
 pub fn ColliderBuilder::segment(
   a : @core.Vec2,
   b : @core.Vec2,

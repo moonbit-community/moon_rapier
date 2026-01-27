@@ -53,6 +53,7 @@ pub struct KinematicCharacterController {
 }
 pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
+pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
 pub fn KinematicCharacterController::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self

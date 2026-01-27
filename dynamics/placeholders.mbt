@@ -1082,6 +1082,8 @@ pub struct ImpulseJoint {
   body2 : RigidBodyHandle
   mut data : GenericJoint
   mut impulses : @core.Vec2
+  mut ang_impulse : @core.Real
+  mut rope_impulse : @core.Real
   handle : ImpulseJointHandle
 }
 
@@ -1178,6 +1180,8 @@ pub struct GenericJoint {
   mut limits : JointLimits3
   mut motors : JointMotors3
   mut softness : SpringCoefficients
+  // Optional max-length constraint used by RopeJoint.
+  mut rope_max_length : @core.Real?
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
@@ -1195,6 +1199,7 @@ pub fn GenericJoint::default() -> GenericJoint {
     limits: JointLimits3::default(),
     motors: JointMotors3::default(),
     softness: SpringCoefficients::joint_defaults(),
+    rope_max_length: None,
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
@@ -1224,6 +1229,7 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     limits: JointLimits3::default(),
     motors: JointMotors3::default(),
     softness: joint.softness(),
+    rope_max_length: None,
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
@@ -1367,6 +1373,51 @@ pub fn GenericJoint::set_coupled_axes(
 }
 
 ///|
+/// Flips the orientation of the joint, including limits and motors.
+///
+/// Ported from rapier-reference `GenericJoint::flip`.
+pub fn GenericJoint::flip(self : GenericJoint) -> GenericJoint {
+  let tmp = self.local_frame1
+  self.local_frame1 = self.local_frame2
+  self.local_frame2 = tmp
+  let coupled_bits = self.coupled_axes.bits()
+  // In 2D we have 3 dofs (LinX, LinY, AngZ) matching bit indices 0..2.
+  if (coupled_bits & (1 << 0)) == 0 {
+    let lim = self.limits.lin_x
+    self.limits = JointLimits3::{
+      lin_x: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
+      lin_y: self.limits.lin_y,
+      ang_z: self.limits.ang_z,
+    }
+  }
+  if (coupled_bits & (1 << 1)) == 0 {
+    let lim = self.limits.lin_y
+    self.limits = JointLimits3::{
+      lin_x: self.limits.lin_x,
+      lin_y: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
+      ang_z: self.limits.ang_z,
+    }
+  }
+  if (coupled_bits & (1 << 2)) == 0 {
+    let lim = self.limits.ang_z
+    self.limits = JointLimits3::{
+      lin_x: self.limits.lin_x,
+      lin_y: self.limits.lin_y,
+      ang_z: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
+    }
+  }
+  let mx = self.motors.lin_x
+  let my = self.motors.lin_y
+  let mz = self.motors.ang_z
+  self.motors = JointMotors3::{
+    lin_x: mx.set_target_vel(-mx.target_vel).set_target_pos(-mx.target_pos),
+    lin_y: my.set_target_vel(-my.target_vel).set_target_pos(-my.target_pos),
+    ang_z: mz.set_target_vel(-mz.target_vel).set_target_pos(-mz.target_pos),
+  }
+  self
+}
+
+///|
 pub fn GenericJoint::limits(self : GenericJoint) -> JointLimits3 {
   self.limits
 }
@@ -1395,8 +1446,207 @@ pub fn GenericJoint::set_motors(
 }
 
 ///|
+fn joint_axis_mask(axis : JointAxis) -> JointAxesMask {
+  match axis {
+    JointAxis::LinX => JointAxesMask::lin_x()
+    JointAxis::LinY => JointAxesMask::lin_y()
+    JointAxis::AngZ => JointAxesMask::ang_z()
+  }
+}
+
+///|
+pub fn GenericJoint::set_motor(
+  self : GenericJoint,
+  axis : JointAxis,
+  target_pos : @core.Real,
+  target_vel : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> GenericJoint {
+  self.motor_axes = self.motor_axes.or(joint_axis_mask(axis))
+  match axis {
+    JointAxis::LinX => {
+      let m0 = self.motors.lin_x
+      let m = m0
+        .set_target_vel(target_vel)
+        .set_target_pos(target_pos)
+        .set_stiffness(stiffness)
+        .set_damping(damping)
+      self.motors = JointMotors3::{
+        lin_x: m,
+        lin_y: self.motors.lin_y,
+        ang_z: self.motors.ang_z,
+      }
+    }
+    JointAxis::LinY => {
+      let m0 = self.motors.lin_y
+      let m = m0
+        .set_target_vel(target_vel)
+        .set_target_pos(target_pos)
+        .set_stiffness(stiffness)
+        .set_damping(damping)
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: m,
+        ang_z: self.motors.ang_z,
+      }
+    }
+    JointAxis::AngZ => {
+      let m0 = self.motors.ang_z
+      let m = m0
+        .set_target_vel(target_vel)
+        .set_target_pos(target_pos)
+        .set_stiffness(stiffness)
+        .set_damping(damping)
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: self.motors.lin_y,
+        ang_z: m,
+      }
+    }
+  }
+  self
+}
+
+///|
+pub fn GenericJoint::set_motor_velocity(
+  self : GenericJoint,
+  axis : JointAxis,
+  target_vel : @core.Real,
+  factor : @core.Real,
+) -> GenericJoint {
+  let current_pos = match axis {
+    JointAxis::LinX => self.motors.lin_x.target_pos
+    JointAxis::LinY => self.motors.lin_y.target_pos
+    JointAxis::AngZ => self.motors.ang_z.target_pos
+  }
+  self.set_motor(axis, current_pos, target_vel, 0.0F, factor)
+}
+
+///|
+pub fn GenericJoint::set_motor_position(
+  self : GenericJoint,
+  axis : JointAxis,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> GenericJoint {
+  self.set_motor(axis, target_pos, 0.0F, stiffness, damping)
+}
+
+///|
+pub fn GenericJoint::set_motor_max_force(
+  self : GenericJoint,
+  axis : JointAxis,
+  max_force : @core.Real,
+) -> GenericJoint {
+  match axis {
+    JointAxis::LinX =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x.set_max_force(max_force),
+        lin_y: self.motors.lin_y,
+        ang_z: self.motors.ang_z,
+      }
+    JointAxis::LinY =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: self.motors.lin_y.set_max_force(max_force),
+        ang_z: self.motors.ang_z,
+      }
+    JointAxis::AngZ =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: self.motors.lin_y,
+        ang_z: self.motors.ang_z.set_max_force(max_force),
+      }
+  }
+  self
+}
+
+///|
+pub fn GenericJoint::set_motor_model(
+  self : GenericJoint,
+  axis : JointAxis,
+  model : MotorModel,
+) -> GenericJoint {
+  match axis {
+    JointAxis::LinX =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x.set_model(model),
+        lin_y: self.motors.lin_y,
+        ang_z: self.motors.ang_z,
+      }
+    JointAxis::LinY =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: self.motors.lin_y.set_model(model),
+        ang_z: self.motors.ang_z,
+      }
+    JointAxis::AngZ =>
+      self.motors = JointMotors3::{
+        lin_x: self.motors.lin_x,
+        lin_y: self.motors.lin_y,
+        ang_z: self.motors.ang_z.set_model(model),
+      }
+  }
+  self
+}
+
+///|
+pub fn GenericJoint::limits_axis(
+  self : GenericJoint,
+  axis : JointAxis,
+) -> JointLimits? {
+  let mask = joint_axis_mask(axis)
+  if !self.limit_axes.contains(mask) {
+    return None
+  }
+  match axis {
+    JointAxis::LinX => Some(self.limits.lin_x)
+    JointAxis::LinY => Some(self.limits.lin_y)
+    JointAxis::AngZ => Some(self.limits.ang_z)
+  }
+}
+
+///|
+pub fn GenericJoint::set_limits_axis(
+  self : GenericJoint,
+  axis : JointAxis,
+  min : @core.Real,
+  max : @core.Real,
+) -> GenericJoint {
+  self.limit_axes = self.limit_axes.or(joint_axis_mask(axis))
+  match axis {
+    JointAxis::LinX =>
+      self.limits = JointLimits3::{
+        lin_x: self.limits.lin_x.set_min(min).set_max(max),
+        lin_y: self.limits.lin_y,
+        ang_z: self.limits.ang_z,
+      }
+    JointAxis::LinY =>
+      self.limits = JointLimits3::{
+        lin_x: self.limits.lin_x,
+        lin_y: self.limits.lin_y.set_min(min).set_max(max),
+        ang_z: self.limits.ang_z,
+      }
+    JointAxis::AngZ =>
+      self.limits = JointLimits3::{
+        lin_x: self.limits.lin_x,
+        lin_y: self.limits.lin_y,
+        ang_z: self.limits.ang_z.set_min(min).set_max(max),
+      }
+  }
+  self
+}
+
+///|
 pub fn GenericJoint::softness(self : GenericJoint) -> SpringCoefficients {
   self.softness
+}
+
+///|
+pub fn GenericJoint::rope_max_length(self : GenericJoint) -> @core.Real? {
+  self.rope_max_length
 }
 
 ///|
@@ -1405,6 +1655,15 @@ pub fn GenericJoint::set_softness(
   softness : SpringCoefficients,
 ) -> GenericJoint {
   self.softness = softness
+  self
+}
+
+///|
+pub fn GenericJoint::set_rope_max_length(
+  self : GenericJoint,
+  length : @core.Real?,
+) -> GenericJoint {
+  self.rope_max_length = length
   self
 }
 
@@ -1766,6 +2025,7 @@ pub fn ImpulseJointSet::insert(
     limits: joint.limits,
     motors: joint.motors,
     softness: joint.softness,
+    rope_max_length: joint.rope_max_length,
     contacts_enabled: joint.contacts_enabled,
     enabled: joint.enabled,
     user_data: joint.user_data,
@@ -1775,6 +2035,8 @@ pub fn ImpulseJointSet::insert(
     body2,
     data: joint_data,
     impulses: @core.Vec2::zero(),
+    ang_impulse: 0.0F,
+    rope_impulse: 0.0F,
     handle,
   }
   let edge_id = self.graph_edges.length()
@@ -1909,6 +2171,51 @@ pub fn ImpulseJointSet::set_impulses(
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
   joint.impulses = impulses
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint,
+  }
+}
+
+///|
+pub fn ImpulseJointSet::set_solver_impulses(
+  self : ImpulseJointSet,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+  ang_impulse : @core.Real,
+  rope_impulse : @core.Real,
+  motor_lin_x : @core.Real,
+  motor_lin_y : @core.Real,
+  motor_ang_z : @core.Real,
+  limit_lin_x : @core.Real,
+  limit_lin_y : @core.Real,
+  limit_ang_z : @core.Real,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  let joint = edge.joint
+  joint.impulses = impulses
+  joint.ang_impulse = ang_impulse
+  joint.rope_impulse = rope_impulse
+  let motors = joint.data.motors
+  joint.data.motors = JointMotors3::{
+    lin_x: motors.lin_x.set_impulse(motor_lin_x),
+    lin_y: motors.lin_y.set_impulse(motor_lin_y),
+    ang_z: motors.ang_z.set_impulse(motor_ang_z),
+  }
+  let limits = joint.data.limits
+  joint.data.limits = JointLimits3::{
+    lin_x: limits.lin_x.set_impulse(limit_lin_x),
+    lin_y: limits.lin_y.set_impulse(limit_lin_y),
+    ang_z: limits.ang_z.set_impulse(limit_ang_z),
+  }
   self.graph_edges[edge_id] = JointGraphEdge::{
     node1: edge.node1,
     node2: edge.node2,

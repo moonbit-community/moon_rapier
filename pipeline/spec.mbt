@@ -149,6 +149,21 @@ pub fn PhysicsHooks::filter_intersection_pair(
 
 ///|
 #declaration_only
+pub fn PhysicsHooks::modify_solver_contacts(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+  ) -> (Bool, @core.Vec2),
+) -> PhysicsHooks {
+  ...
+}
+
+///|
+#declaration_only
 pub type CollisionPipeline
 
 ///|
@@ -202,5 +217,20 @@ pub fn PhysicsPipeline::step(
   physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn remove_rigid_body(
+  bodies : @dynamics.RigidBodySet,
+  handle : @dynamics.RigidBodyHandle,
+  islands : @dynamics.IslandManager,
+  colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+  remove_attached_colliders : Bool,
+  wake_up : Bool,
+) -> @dynamics.RigidBody? {
   ...
 }

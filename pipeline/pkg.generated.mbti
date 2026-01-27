@@ -8,7 +8,9 @@ import {
 }
 
 // Values
-pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
+pub fn remove_rigid_body(@dynamics.RigidBodySet, @dynamics.RigidBodyHandle, @dynamics.IslandManager, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, Bool, Bool) -> @dynamics.RigidBody?
+
+pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
 // Errors
 
@@ -46,9 +48,11 @@ pub fn EventHandler::take_contact_force_events(Self) -> Array[@collision.Contact
 pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
+  mut modify_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2))?
 }
 pub fn PhysicsHooks::filter_contact_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
 pub fn PhysicsHooks::filter_intersection_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
+pub fn PhysicsHooks::modify_solver_contacts(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2)) -> Self
 pub fn PhysicsHooks::new() -> Self
 
 pub struct PhysicsPipeline {
