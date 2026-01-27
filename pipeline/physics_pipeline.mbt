@@ -362,7 +362,16 @@ fn separation_vector(
         cuboid_center, cuboid_rot, half_width, half_height, axis,
       )
       let (min2, max2) = project_segment(sa, sb, axis)
-      let overlap = min_value(max1, max2) - max_value(min1, min2)
+      // SAT overlap for a degenerate segment: if the segment projects to a point on this axis,
+      // the "interval overlap" becomes zero even when the segment lies inside the cuboid. Use the
+      // point-to-interval overlap instead to recover a valid MTV (needed for contact recovery).
+      let seg_span = max2 - min2
+      let overlap = if @core.abs(seg_span) <= 1.0e-6F {
+        let p = min2
+        min_value(max1 - p, p - min1)
+      } else {
+        min_value(max1, max2) - max_value(min1, min2)
+      }
       if overlap <= 0.0F {
         return None
       }
@@ -687,8 +696,11 @@ fn update_body_mass_properties_from_colliders(
   for i in 0..<modified_bodies.length() {
     let handle = modified_bodies[i]
     if bodies.get_mut_internal(handle) is Some(body) {
-      // Recompute like Rapier: sum all enabled colliders mass properties transformed by their
+      // Recompute like Rapier: sum all colliders mass properties transformed by their
       // local pose relative to the rigid-body, then apply `additional_mass` as a mass scaling.
+      //
+      // NOTE: Collider enable/disable controls collision detection/solver participation.
+      // It must not make the attached rigid-body lose its mass/inertia.
       let attached = colliders.colliders_with_parent(handle)
       let mut mprops = @core.MassProperties::default()
       let default_ccd = @dynamics.RigidBodyCcd::default()
@@ -697,23 +709,21 @@ fn update_body_mass_properties_from_colliders(
       for j in 0..<attached.length() {
         let co_handle = attached[j]
         if colliders.get(co_handle) is Some(collider) {
-          if collider.is_enabled() {
-            let local_pos = @core.Isometry2::new(
-              collider.local_translation,
-              @core.Rot2::from_angle(collider.local_rotation),
-            )
-            mprops = mprops.add(
-              collider.mass_properties().transform_by(local_pos),
-            )
-            let thickness = shape_ccd_thickness(collider.shape)
-            if thickness < ccd_thickness {
-              ccd_thickness = thickness
-            }
-            let radius = shape_bounding_radius(collider.shape)
-            let dist = collider.local_translation.length() + radius
-            if dist > ccd_max_dist {
-              ccd_max_dist = dist
-            }
+          let local_pos = @core.Isometry2::new(
+            collider.local_translation,
+            @core.Rot2::from_angle(collider.local_rotation),
+          )
+          mprops = mprops.add(
+            collider.mass_properties().transform_by(local_pos),
+          )
+          let thickness = shape_ccd_thickness(collider.shape)
+          if thickness < ccd_thickness {
+            ccd_thickness = thickness
+          }
+          let radius = shape_bounding_radius(collider.shape)
+          let dist = collider.local_translation.length() + radius
+          if dist > ccd_max_dist {
+            ccd_max_dist = dist
           }
         }
       }

@@ -819,6 +819,18 @@ pub fn ColliderSet::new() -> ColliderSet {
 
 ///|
 #declaration_only
+pub fn ColliderSet::len(self : ColliderSet) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderSet::is_empty(self : ColliderSet) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderSet::insert(
   self : ColliderSet,
   collider : Collider,

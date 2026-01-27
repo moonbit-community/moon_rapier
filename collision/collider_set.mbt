@@ -511,6 +511,40 @@ pub fn ColliderBuilder::trimesh(
   if vertices.length() == 0 || indices.length() == 0 {
     return None
   }
+  // In 3D, a trimesh collider is a triangle surface. In this 2D port, we approximate it as a
+  // *filled* convex shape so it can act as a proper ground/support in parity tests.
+  //
+  // Fall back to a polyline (wireframe) if the convex hull is degenerate.
+  let points : Array[@core.Vec2] = []
+  for i in 0..<indices.length() {
+    let (i0, i1, i2) = indices[i]
+    if i0 < 0 || i1 < 0 || i2 < 0 {
+      continue
+    }
+    if i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    let vs = [vertices[i0], vertices[i1], vertices[i2]]
+    for k in 0..<vs.length() {
+      let v = vs[k]
+      let mut exists = false
+      for j in 0..<points.length() {
+        if points[j].x == v.x && points[j].y == v.y {
+          exists = true
+        }
+      }
+      if !exists {
+        points.push(v)
+      }
+    }
+  }
+  if ColliderBuilder::convex_hull(points) is Some(hull) {
+    return Some(hull)
+  }
+
+  // Fallback: polyline edges extracted from triangle indices.
   let edges : Array[(Int, Int)] = []
   for i in 0..<indices.length() {
     let (i0, i1, i2) = indices[i]
@@ -1338,6 +1372,22 @@ pub struct ColliderSet {
 ///|
 pub fn ColliderSet::new() -> ColliderSet {
   { colliders: [], generations: [], free_list: [], modified_colliders: [] }
+}
+
+///|
+pub fn ColliderSet::len(self : ColliderSet) -> Int {
+  let mut count = 0
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(_) {
+      count = count + 1
+    }
+  }
+  count
+}
+
+///|
+pub fn ColliderSet::is_empty(self : ColliderSet) -> Bool {
+  self.len() == 0
 }
 
 ///|

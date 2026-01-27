@@ -204,6 +204,9 @@ fn build_constraints(
     let h1 = pair.0
     let h2 = pair.1
     if colliders.get(h1) is Some(c1) && colliders.get(h2) is Some(c2) {
+      if !c1.is_enabled() || !c2.is_enabled() {
+        continue
+      }
       if c1.is_sensor() || c2.is_sensor() {
         continue
       }

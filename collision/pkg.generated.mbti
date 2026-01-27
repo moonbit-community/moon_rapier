@@ -193,6 +193,8 @@ pub fn ColliderSet::get_mut_internal(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::get_mut_internal_with_modification_tracking(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet) -> ColliderHandle
+pub fn ColliderSet::is_empty(Self) -> Bool
+pub fn ColliderSet::len(Self) -> Int
 pub fn ColliderSet::new() -> Self
 pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
