@@ -695,7 +695,87 @@ test "examples2d/pyramid2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/restitution2.rs
 test "examples2d/restitution2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let ground_height = 1.0F
+  let ground_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(20.0F, ground_height)
+    .restitution(1.0F)
+    .build(),
+    ground_handle,
+    bodies,
+  )
+  |> ignore
+  let rad = 0.5F
+  let low_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(-2.0F, 10.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(rad).restitution(0.0F).build(),
+    low_body,
+    bodies,
+  )
+  |> ignore
+  let high_body = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(2.0F, 10.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(rad).restitution(1.0F).build(),
+    high_body,
+    bodies,
+  )
+  |> ignore
+  let mut low_bounced = false
+  let mut high_bounced = false
+  let mut low_max_y = -1.0e30F
+  let mut high_max_y = -1.0e30F
+  for _ in 0..<360 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, ccd_solver, hooks, events,
+    )
+    if bodies.get(low_body) is Some(body) {
+      if !low_bounced && body.translation().y < 1.0F && body.linvel().y > 0.0F {
+        low_bounced = true
+      }
+      if low_bounced && body.translation().y > low_max_y {
+        low_max_y = body.translation().y
+      }
+    }
+    if bodies.get(high_body) is Some(body) {
+      if !high_bounced && body.translation().y < 1.0F && body.linvel().y > 0.0F {
+        high_bounced = true
+      }
+      if high_bounced && body.translation().y > high_max_y {
+        high_max_y = body.translation().y
+      }
+    }
+  }
+  inspect(low_bounced, content="true")
+  inspect(high_bounced, content="true")
+  inspect(high_max_y > low_max_y + 5.0F, content="true")
 }
 
 ///|

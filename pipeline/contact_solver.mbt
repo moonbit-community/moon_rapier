@@ -179,7 +179,7 @@ priv struct SolverConstraint {
   tangent1 : @core.Vec2
   contact_point : @core.Vec2
   penetration : @core.Real
-  restitution : @core.Real
+  restitution_vel : @core.Real
   friction : @core.Real
   inv_mass_n : @core.Real
   inv_mass_t : @core.Real
@@ -382,6 +382,17 @@ fn build_constraints(
           } else {
             0.0F
           }
+          // Restitution is applied as a velocity target based on the pre-solve normal speed,
+          // like Rapier (use the initial impact speed, not the iterative vn which changes).
+          let vel1 = v1.add(cross_z_scalar(w1, r1))
+          let vel2 = v2.add(cross_z_scalar(w2, r2))
+          let rv = vel1.sub(vel2)
+          let vn0 = rv.dot(dir1)
+          let restitution_vel = if vn0 < -1.0e-3F {
+            -restitution * vn0
+          } else {
+            0.0F
+          }
           constraints.push(SolverConstraint::{
             collider1: h1,
             collider2: h2,
@@ -393,7 +404,7 @@ fn build_constraints(
             tangent1,
             contact_point,
             penetration,
-            restitution,
+            restitution_vel,
             friction,
             inv_mass_n,
             inv_mass_t,
@@ -473,12 +484,7 @@ fn solve_velocity_constraints(
 
       // Normal impulse.
       let vn = rv.dot(c.dir1)
-      let restitution_term = if vn < -1.0e-3F {
-        c.restitution * vn
-      } else {
-        0.0F
-      }
-      let lambda_n = -(vn + c.bias + restitution_term) * c.inv_mass_n
+      let lambda_n = -(vn + c.bias - c.restitution_vel) * c.inv_mass_n
       let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
         constraints[i].impulse_n + lambda_n
       } else {
