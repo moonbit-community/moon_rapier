@@ -2016,7 +2016,103 @@ test "examples2d/sensor2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/trimesh2.rs
 test "examples2d/trimesh2.rs parity" {
-  inspect(true, content="true")
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let hooks = @pipeline.PhysicsHooks::new()
+  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+
+  // Ground + walls.
+  let ground_size = 25.0F
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size, 1.2F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let wall_r = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(ground_size, ground_size))
+    .rotation(@core.Rot2::from_angle(@core.pi() / 2.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size, 1.2F).build(),
+    wall_r,
+    bodies,
+  )
+  |> ignore
+  let wall_l = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(-ground_size, ground_size))
+    .rotation(@core.Rot2::from_angle(@core.pi() / 2.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(ground_size, 1.2F).build(),
+    wall_l,
+    bodies,
+  )
+  |> ignore
+
+  // Upstream uses a tessellated SVG for the Rapier logo. Here we use a small fixed mesh and
+  // verify trimesh collider construction + basic dynamics.
+  let vtx = [
+    @core.Vec2::new(-1.0F, -1.0F),
+    @core.Vec2::new(1.0F, -1.0F),
+    @core.Vec2::new(1.0F, 1.0F),
+    @core.Vec2::new(-1.0F, 1.0F),
+  ]
+  let idx = [(0, 1, 2), (0, 2, 3)]
+  let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
+  for k in 0..<5 {
+    if @collision.ColliderBuilder::trimesh(vtx, idx) is Some(builder) {
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(
+          @core.Vec2::new(
+            0.0F,
+            20.0F + Float::from_double(k.to_double()) * 5.0F,
+          ),
+        )
+        .build(),
+      )
+      colliders.insert_with_parent(
+        builder.contact_skin(0.2F).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+      dyn_handles.push(handle)
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  step_pipeline_2d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, 120,
+  )
+  for i in 0..<dyn_handles.length() {
+    if bodies.get(dyn_handles[i]) is Some(body) {
+      let p = body.translation()
+      inspect(p.x == p.x, content="true")
+      inspect(p.y == p.y, content="true")
+      inspect(p.y > -10.0F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  }
 }
 
 ///|

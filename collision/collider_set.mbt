@@ -482,6 +482,35 @@ pub fn ColliderBuilder::heightfield(
 }
 
 ///|
+pub fn ColliderBuilder::trimesh(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder? {
+  if vertices.length() == 0 || indices.length() == 0 {
+    return None
+  }
+  let edges : Array[(Int, Int)] = []
+  for i in 0..<indices.length() {
+    let (i0, i1, i2) = indices[i]
+    if i0 < 0 || i1 < 0 || i2 < 0 {
+      continue
+    }
+    if i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    edges.push((i0, i1))
+    edges.push((i1, i2))
+    edges.push((i2, i0))
+  }
+  if edges.length() == 0 {
+    return None
+  }
+  Some(ColliderBuilder::polyline(vertices, Some(edges)))
+}
+
+///|
 pub fn ColliderBuilder::translation(
   self : ColliderBuilder,
   translation : @core.Vec2,

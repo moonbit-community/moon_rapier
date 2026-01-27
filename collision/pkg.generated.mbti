@@ -160,6 +160,7 @@ pub fn ColliderBuilder::segment(@core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
+pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder::user_data(Self, Int) -> Self
 
 type ColliderChanges
