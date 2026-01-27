@@ -16,6 +16,34 @@
 const JOINT_SOLVER_BAUMGARTE : @core.Real = 0.2F
 
 ///|
+const JOINT_SOLVER_INV_EPSILON : @core.Real = 1.0e-6F
+
+///|
+fn joint_inv(val : @core.Real) -> @core.Real {
+  if @core.abs(val) <= JOINT_SOLVER_INV_EPSILON {
+    0.0F
+  } else {
+    1.0F / val
+  }
+}
+
+///|
+fn joint_motor_coefficients(
+  model : @dynamics.MotorModel,
+  dt : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> (@core.Real, @core.Real, @core.Real) {
+  // Keep consistent with Rapier's MotorModel::combine_coefficients.
+  let erp_inv_dt = stiffness * joint_inv(dt * stiffness + damping)
+  let inv_cfm = joint_inv(dt * dt * stiffness + dt * damping)
+  match model {
+    @dynamics.MotorModel::AccelerationBased => (erp_inv_dt, inv_cfm, 0.0F)
+    @dynamics.MotorModel::ForceBased => (erp_inv_dt, 0.0F, inv_cfm)
+  }
+}
+
+///|
 fn joint_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
   @core.Vec2::new(v.x * s, v.y * s)
 }
@@ -339,18 +367,27 @@ fn solve_joint_velocity_constraints(
         let rel_rot = joint_rot1.inverse().mul(joint_rot2)
         let rel_angle = rel_rot.angle()
         if c.motor_enabled {
-          let error = joint_wrap_angle_pi(rel_angle - c.motor.target_pos)
-          let vel_error = rel_w - c.motor.target_vel
-          // Treat `stiffness` and `damping` as torque spring constants (rapier style) and
-          // compute a stable angular impulse using an implicit damping term.
-          let inv_i_sum = 1.0F / c.inv_mass_ang
-          let denom = 1.0F + c.motor.damping * dt * inv_i_sum
-          let lambda = -(c.motor.stiffness * error + c.motor.damping * vel_error) *
-            dt /
-            denom
+          let (erp_inv_dt, cfm_coeff, cfm_gain) = joint_motor_coefficients(
+            c.motor.model,
+            dt,
+            c.motor.stiffness,
+            c.motor.damping,
+          )
+          let mut rhs_wo_bias = -c.motor.target_vel
+          if erp_inv_dt != 0.0F {
+            let error = joint_wrap_angle_pi(rel_angle - c.motor.target_pos)
+            rhs_wo_bias = rhs_wo_bias + error * erp_inv_dt
+          }
+          // Match Rapier's motor constraint solve:
+          //   total = impulse + inv_lhs * (rhs - cfm_gain_total * impulse)
+          // where rhs = rel_w + rhs_wo_bias.
+          let dot_jj = 1.0F / c.inv_mass_ang
+          let cfm_gain_total = dot_jj * cfm_coeff + cfm_gain
+          let inv_lhs = joint_inv(dot_jj + cfm_gain_total)
+          let rhs = rel_w + rhs_wo_bias
           let max_impulse = c.motor.max_force * dt
           let old = constraints[i].motor_impulse
-          let mut new_impulse = old + lambda
+          let mut new_impulse = old + inv_lhs * (rhs - cfm_gain_total * old)
           if new_impulse > max_impulse {
             new_impulse = max_impulse
           } else if new_impulse < -max_impulse {
@@ -358,15 +395,16 @@ fn solve_joint_velocity_constraints(
           }
           let applied = new_impulse - old
           constraints[i].motor_impulse = new_impulse
+          // Positive impulses reduce `rel_w = w2 - w1`.
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
             Some(c.body1),
-            -applied,
+            applied,
           )
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
             Some(c.body2),
-            applied,
+            -applied,
           )
         }
         if c.limits_enabled {

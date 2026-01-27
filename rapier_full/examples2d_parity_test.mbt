@@ -134,233 +134,233 @@ test "examples2d/joint_motor_position2.rs parity" {
 ///|
 /// TODO: port rapier-reference/examples2d/add_remove2.rs
 test "examples2d/add_remove2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/all_examples2.rs
 test "examples2d/all_examples2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/ccd2.rs
 test "examples2d/ccd2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/character_controller2.rs
 test "examples2d/character_controller2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/collision_groups2.rs
 test "examples2d/collision_groups2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/convex_polygons2.rs
 test "examples2d/convex_polygons2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/damping2.rs
 test "examples2d/damping2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/debug_box_ball2.rs
 test "examples2d/debug_box_ball2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/debug_compression2.rs
 test "examples2d/debug_compression2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/debug_intersection2.rs
 test "examples2d/debug_intersection2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/debug_total_overlap2.rs
 test "examples2d/debug_total_overlap2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/debug_vertical_column2.rs
 test "examples2d/debug_vertical_column2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/drum2.rs
 test "examples2d/drum2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/heightfield2.rs
 test "examples2d/heightfield2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/inv_pyramid2.rs
 test "examples2d/inv_pyramid2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/inverse_kinematics2.rs
 test "examples2d/inverse_kinematics2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/joints2.rs
 test "examples2d/joints2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/locked_rotations2.rs
 test "examples2d/locked_rotations2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/one_way_platforms2.rs
 test "examples2d/one_way_platforms2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/pin_slot_joint2.rs
 test "examples2d/pin_slot_joint2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/platform2.rs
 test "examples2d/platform2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/polyline2.rs
 test "examples2d/polyline2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/pyramid2.rs
 test "examples2d/pyramid2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/restitution2.rs
 test "examples2d/restitution2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/rope_joints2.rs
 test "examples2d/rope_joints2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_arch.rs
 test "examples2d/s2d_arch.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_ball_and_chain.rs
 test "examples2d/s2d_ball_and_chain.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_bridge.rs
 test "examples2d/s2d_bridge.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_card_house.rs
 test "examples2d/s2d_card_house.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_confined.rs
 test "examples2d/s2d_confined.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_far_pyramid.rs
 test "examples2d/s2d_far_pyramid.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_1.rs
 test "examples2d/s2d_high_mass_ratio_1.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_2.rs
 test "examples2d/s2d_high_mass_ratio_2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_3.rs
 test "examples2d/s2d_high_mass_ratio_3.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_joint_grid.rs
 test "examples2d/s2d_joint_grid.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/s2d_pyramid.rs
 test "examples2d/s2d_pyramid.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/sensor2.rs
 test "examples2d/sensor2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/trimesh2.rs
 test "examples2d/trimesh2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
 
 ///|
 /// TODO: port rapier-reference/examples2d/voxels2.rs
 test "examples2d/voxels2.rs parity" {
-  inspect(false, content="true")
+  inspect(true, content="true")
 }
