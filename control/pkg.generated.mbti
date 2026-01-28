@@ -15,10 +15,13 @@ import {
 pub struct CharacterAutostep {
   max_height : CharacterLength
   min_width : CharacterLength
+  include_dynamic_bodies : Bool
 }
+pub fn CharacterAutostep::include_dynamic_bodies(Self) -> Bool
 pub fn CharacterAutostep::max_height(Self) -> CharacterLength
 pub fn CharacterAutostep::min_width(Self) -> CharacterLength
 pub fn CharacterAutostep::new(CharacterLength, CharacterLength) -> Self
+pub fn CharacterAutostep::with_include_dynamic_bodies(Self, Bool) -> Self
 
 pub struct CharacterCollision {
   handle : @collision.ColliderHandle
@@ -43,21 +46,33 @@ pub fn CharacterLength::relative(Float) -> Self
 pub struct EffectiveMovement {
   translation : @core.Vec2
   grounded : Bool
+  is_sliding_down_slope : Bool
 }
 pub fn EffectiveMovement::is_grounded(Self) -> Bool
+pub fn EffectiveMovement::is_sliding_down_slope(Self) -> Bool
 pub fn EffectiveMovement::translation(Self) -> @core.Vec2
 
 pub struct KinematicCharacterController {
+  up : @core.Vec2
+  offset : CharacterLength
+  slide : Bool
   max_slope_climb_angle : Float
+  min_slope_slide_angle : Float
   snap_to_ground : CharacterLength?
   autostep : CharacterAutostep?
+  normal_nudge_factor : Float
 }
 pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
 pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
 pub fn KinematicCharacterController::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
+pub fn KinematicCharacterController::with_min_slope_slide_angle(Self, Float) -> Self
+pub fn KinematicCharacterController::with_normal_nudge_factor(Self, Float) -> Self
+pub fn KinematicCharacterController::with_offset(Self, CharacterLength) -> Self
+pub fn KinematicCharacterController::with_slide(Self, Bool) -> Self
 pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self
+pub fn KinematicCharacterController::with_up(Self, @core.Vec2) -> Self
 
 pub(all) struct PdController {
   lin_kp : @core.Vec2

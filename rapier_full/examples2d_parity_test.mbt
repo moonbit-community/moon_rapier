@@ -858,9 +858,9 @@ test "examples2d/character_controller2.rs parity" {
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
   let ccd_solver = @dynamics.CCDSolver::new()
-  let controller = @control.KinematicCharacterController::new().with_max_slope_climb_angle(
-    impossible_slope_angle - 0.02F,
-  )
+  let controller = @control.KinematicCharacterController::new()
+    .with_max_slope_climb_angle(impossible_slope_angle - 0.02F)
+    .with_min_slope_slide_angle(impossible_slope_angle - 0.02F)
   let mut time = 0.0F
   for _ in 0..<600 {
     time = time + dt
@@ -892,7 +892,8 @@ test "examples2d/character_controller2.rs parity" {
         query_pipeline,
         character_shape,
         character_body.position(),
-        @core.Vec2::new(0.12F, -0.12F),
+        // Deterministic "right + artificial gravity" input (match rapier-reference utils/character.rs).
+        @core.Vec2::new(0.1F, -0.1F),
         fn(_collision) {  },
       )
       let p = character_body.translation()

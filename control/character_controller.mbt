@@ -81,6 +81,7 @@ pub fn CharacterCollision::character_pos(
 pub struct CharacterAutostep {
   max_height : CharacterLength
   min_width : CharacterLength
+  include_dynamic_bodies : Bool
 }
 
 ///|
@@ -88,7 +89,8 @@ pub fn CharacterAutostep::new(
   max_height : CharacterLength,
   min_width : CharacterLength,
 ) -> CharacterAutostep {
-  { max_height, min_width }
+  // Rapier parity: include dynamic bodies by default.
+  { max_height, min_width, include_dynamic_bodies: true }
 }
 
 ///|
@@ -106,9 +108,29 @@ pub fn CharacterAutostep::min_width(
 }
 
 ///|
+pub fn CharacterAutostep::include_dynamic_bodies(
+  self : CharacterAutostep,
+) -> Bool {
+  self.include_dynamic_bodies
+}
+
+///|
+pub fn CharacterAutostep::with_include_dynamic_bodies(
+  self : CharacterAutostep,
+  include_dynamic_bodies : Bool,
+) -> CharacterAutostep {
+  {
+    max_height: self.max_height,
+    min_width: self.min_width,
+    include_dynamic_bodies,
+  }
+}
+
+///|
 pub struct EffectiveMovement {
   translation : @core.Vec2
   grounded : Bool
+  is_sliding_down_slope : Bool
 }
 
 ///|
@@ -122,18 +144,86 @@ pub fn EffectiveMovement::is_grounded(self : EffectiveMovement) -> Bool {
 }
 
 ///|
+pub fn EffectiveMovement::is_sliding_down_slope(
+  self : EffectiveMovement,
+) -> Bool {
+  self.is_sliding_down_slope
+}
+
+///|
 pub struct KinematicCharacterController {
+  up : @core.Vec2
+  offset : CharacterLength
+  slide : Bool
   max_slope_climb_angle : @core.Real
+  min_slope_slide_angle : @core.Real
   snap_to_ground : CharacterLength?
   autostep : CharacterAutostep?
+  normal_nudge_factor : @core.Real
 }
 
 ///|
 pub fn KinematicCharacterController::new() -> KinematicCharacterController {
   {
+    up: @core.Vec2::new(0.0F, 1.0F),
+    offset: CharacterLength::relative(0.01F),
+    slide: true,
     max_slope_climb_angle: 0.785398163F,
+    min_slope_slide_angle: 0.785398163F,
     snap_to_ground: Some(CharacterLength::relative(0.2F)),
     autostep: None,
+    normal_nudge_factor: 1.0e-4F,
+  }
+}
+
+///|
+pub fn KinematicCharacterController::with_up(
+  self : KinematicCharacterController,
+  up : @core.Vec2,
+) -> KinematicCharacterController {
+  {
+    up,
+    offset: self.offset,
+    slide: self.slide,
+    max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
+    snap_to_ground: self.snap_to_ground,
+    autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
+  }
+}
+
+///|
+pub fn KinematicCharacterController::with_offset(
+  self : KinematicCharacterController,
+  offset : CharacterLength,
+) -> KinematicCharacterController {
+  {
+    up: self.up,
+    offset,
+    slide: self.slide,
+    max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
+    snap_to_ground: self.snap_to_ground,
+    autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
+  }
+}
+
+///|
+pub fn KinematicCharacterController::with_slide(
+  self : KinematicCharacterController,
+  slide : Bool,
+) -> KinematicCharacterController {
+  {
+    up: self.up,
+    offset: self.offset,
+    slide,
+    max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
+    snap_to_ground: self.snap_to_ground,
+    autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
   }
 }
 
@@ -143,9 +233,31 @@ pub fn KinematicCharacterController::with_max_slope_climb_angle(
   angle : @core.Real,
 ) -> KinematicCharacterController {
   {
+    up: self.up,
+    offset: self.offset,
+    slide: self.slide,
     max_slope_climb_angle: angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
     snap_to_ground: self.snap_to_ground,
     autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
+  }
+}
+
+///|
+pub fn KinematicCharacterController::with_min_slope_slide_angle(
+  self : KinematicCharacterController,
+  angle : @core.Real,
+) -> KinematicCharacterController {
+  {
+    up: self.up,
+    offset: self.offset,
+    slide: self.slide,
+    max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: angle,
+    snap_to_ground: self.snap_to_ground,
+    autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
   }
 }
 
@@ -155,9 +267,14 @@ pub fn KinematicCharacterController::with_snap_to_ground(
   snap : CharacterLength?,
 ) -> KinematicCharacterController {
   {
+    up: self.up,
+    offset: self.offset,
+    slide: self.slide,
     max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
     snap_to_ground: snap,
     autostep: self.autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
   }
 }
 
@@ -167,15 +284,42 @@ pub fn KinematicCharacterController::with_autostep(
   autostep : CharacterAutostep?,
 ) -> KinematicCharacterController {
   {
+    up: self.up,
+    offset: self.offset,
+    slide: self.slide,
     max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
     snap_to_ground: self.snap_to_ground,
     autostep,
+    normal_nudge_factor: self.normal_nudge_factor,
+  }
+}
+
+///|
+pub fn KinematicCharacterController::with_normal_nudge_factor(
+  self : KinematicCharacterController,
+  normal_nudge_factor : @core.Real,
+) -> KinematicCharacterController {
+  {
+    up: self.up,
+    offset: self.offset,
+    slide: self.slide,
+    max_slope_climb_angle: self.max_slope_climb_angle,
+    min_slope_slide_angle: self.min_slope_slide_angle,
+    snap_to_ground: self.snap_to_ground,
+    autostep: self.autostep,
+    normal_nudge_factor,
   }
 }
 
 ///|
 fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
   @core.Vec2::new(v.x * s, v.y * s)
+}
+
+///|
+fn vec2_neg(v : @core.Vec2) -> @core.Vec2 {
+  @core.Vec2::new(-v.x, -v.y)
 }
 
 ///|
@@ -192,12 +336,7 @@ fn try_normalize_and_get_length(
 }
 
 ///|
-fn cos_real(angle : @core.Real) -> @core.Real {
-  Float::from_double(@math.cos(angle.to_double()))
-}
-
-///|
-fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
+fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
   match shape {
     @collision.Shape::Ball(r) => (r, r)
     @collision.Shape::Cuboid(hw, hh) => (hw, hh)
@@ -264,7 +403,7 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       for i in 0..<parts.length() {
         let (pose, part_shape) = parts[i]
         let t = pose.transform_point(@core.Vec2::zero())
-        let (phw, phh) = compute_dims(part_shape)
+        let (phw, phh) = compute_extents(part_shape)
         let cand_hw = @core.abs(t.x) + phw
         let cand_hh = @core.abs(t.y) + phh
         if cand_hw > hw {
@@ -277,6 +416,20 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       (hw, hh)
     }
   }
+}
+
+///|
+fn compute_dims_with_up(
+  shape : @collision.Shape,
+  up : @core.Vec2,
+) -> (@core.Real, @core.Real) {
+  let (hw, hh) = compute_extents(shape)
+  let extents = @core.Vec2::new(hw, hh)
+  let up_abs = @core.Vec2::new(@core.abs(up.x), @core.abs(up.y))
+  let up_extent = extents.dot(up_abs)
+  let side_vec = extents.sub(vec2_scale(up_abs, up_extent))
+  let side_extent = side_vec.length()
+  (side_extent, up_extent)
 }
 
 ///|
@@ -298,8 +451,129 @@ fn max_real(a : @core.Real, b : @core.Real) -> @core.Real {
 }
 
 ///|
-fn is_wall_normal(normal : @core.Vec2, cos_max_slope : @core.Real) -> Bool {
-  @core.abs(normal.x) >= 0.5F && @core.abs(normal.y) <= cos_max_slope
+fn angle_between(u : @core.Vec2, v : @core.Vec2) -> @core.Real {
+  // Robust 2D angle computation without acos: angle = atan2(|u×v|, u·v).
+  let cross = u.cross(v)
+  let dot = u.dot(v)
+  @core.abs(@core.atan2(cross, dot))
+}
+
+///|
+fn split_into_components(
+  up : @core.Vec2,
+  translation : @core.Vec2,
+) -> (@core.Vec2, @core.Vec2) {
+  let vertical = vec2_scale(up, up.dot(translation))
+  let horizontal = translation.sub(vertical)
+  (vertical, horizontal)
+}
+
+///|
+fn subtract_hit(
+  translation : @core.Vec2,
+  hit : @collision.ShapeCastHit,
+) -> @core.Vec2 {
+  let n = hit.normal()
+  let surface_correction = max_real(vec2_neg(translation).dot(n), 0.0F)
+  // Match Rapier's small multiplier to avoid tunneling through walls.
+  let surface_correction = surface_correction * (1.0F + 1.0e-5F)
+  translation.add(vec2_scale(n, surface_correction))
+}
+
+///|
+priv struct HitInfo {
+  toi : @collision.ShapeCastHit
+  is_wall : Bool
+  is_nonslip_slope : Bool
+}
+
+///|
+priv struct HitDecomposition {
+  normal_part : @core.Vec2
+  horizontal_tangent : @core.Vec2
+  vertical_tangent : @core.Vec2
+}
+
+///|
+fn HitDecomposition::unconstrained_slide_part(
+  self : HitDecomposition,
+) -> @core.Vec2 {
+  self.normal_part.add(self.horizontal_tangent).add(self.vertical_tangent)
+}
+
+///|
+fn compute_hit_info(
+  controller : KinematicCharacterController,
+  toi : @collision.ShapeCastHit,
+) -> HitInfo {
+  let up = controller.up
+  let angle_with_floor = angle_between(up, toi.normal())
+  let is_ceiling = up.dot(toi.normal()) < 0.0F
+  let is_wall = angle_with_floor >= controller.max_slope_climb_angle &&
+    !is_ceiling
+  let is_nonslip_slope = angle_with_floor <= controller.min_slope_slide_angle
+  { toi, is_wall, is_nonslip_slope }
+}
+
+///|
+fn decompose_hit(
+  controller : KinematicCharacterController,
+  translation : @core.Vec2,
+  hit : @collision.ShapeCastHit,
+) -> HitDecomposition {
+  let n = hit.normal()
+  let dist_to_surface = translation.dot(n)
+  let (normal_part, penetration_part) = if dist_to_surface < 0.0F {
+    (@core.Vec2::zero(), vec2_scale(n, dist_to_surface))
+  } else {
+    (vec2_scale(n, dist_to_surface), @core.Vec2::zero())
+  }
+  let tangent = translation.sub(normal_part).sub(penetration_part)
+  // Rapier dim2 parity: the tangent space is 1D, so horizontal_tangent is always zero.
+  controller |> ignore
+  {
+    normal_part,
+    horizontal_tangent: @core.Vec2::zero(),
+    vertical_tangent: tangent,
+  }
+}
+
+///|
+fn handle_slopes(
+  controller : KinematicCharacterController,
+  hit : HitInfo,
+  movement_input : @core.Vec2,
+  translation_remaining : @core.Vec2,
+) -> (@core.Vec2, Bool) {
+  let up = controller.up
+  let (vertical_input, horizontal_input) = split_into_components(
+    up, movement_input,
+  )
+  let horiz_input_decomp = decompose_hit(controller, horizontal_input, hit.toi)
+  let decomp = decompose_hit(controller, translation_remaining, hit.toi)
+
+  // An object is trying to slip if the tangential movement induced by its horizontal movement points downward.
+  let slipping_intent = up.dot(horiz_input_decomp.vertical_tangent) < 0.0F
+  // An object is slipping if its tangential movement points downward.
+  let slipping = up.dot(decomp.vertical_tangent) < 0.0F
+
+  // An object is trying to climb if its vertical input motion points upward.
+  let climbing_intent = up.dot(vertical_input) > 0.0F
+  // An object is climbing if the tangential movement induced by its movement points upward.
+  let climbing = up.dot(decomp.vertical_tangent) > 0.0F
+  let mut is_sliding = false
+  let allowed = if hit.is_wall && climbing && !climbing_intent {
+    decomp.horizontal_tangent.add(decomp.normal_part)
+  } else if hit.is_nonslip_slope && slipping && !slipping_intent {
+    decomp.horizontal_tangent.add(decomp.normal_part)
+  } else {
+    is_sliding = true
+    decomp.unconstrained_slide_part()
+  }
+  let nudged = allowed.add(
+    vec2_scale(hit.toi.normal(), controller.normal_nudge_factor),
+  )
+  (nudged, is_sliding)
 }
 
 ///|
@@ -307,16 +581,20 @@ fn detect_ground_contact(
   query : @collision.QueryPipeline,
   shape : @collision.Shape,
   position : @core.Isometry2,
-  cos_max_slope : @core.Real,
+  up : @core.Vec2,
+  prediction : @core.Real,
+  offset : @core.Real,
 ) -> (@collision.ColliderHandle, @core.Vec2, @core.Vec2)? {
-  // Use a downward shape-cast for grounded detection. This matches Rapier more closely than our
-  // previous contact approximation, and avoids occasional false negatives on slopes.
-  let prediction = 0.06F
-  let down = @core.Vec2::new(0.0F, -1.0F)
-  let options = @collision.ShapeCastOptions::new(prediction, true)
+  // Rapier parity: grounded detection uses a conservative prediction based on offset.
+  let down = vec2_neg(up)
+  let options = @collision.ShapeCastOptions::new(prediction, true).with_target_distance(
+    offset,
+  )
   if query.cast_shape(position, down, shape, options) is Some(hit) {
     let normal = hit.1.normal()
-    if normal.y >= cos_max_slope {
+    // For the controller to be grounded, the angle between the contact normal and the up vector
+    // has to be smaller than acos(1.0e-3) ≈ 89.94 degrees.
+    if normal.dot(up) >= 1.0e-3F {
       Some((hit.0, normal, hit.1.point()))
     } else {
       None
@@ -332,86 +610,118 @@ fn attempt_autostep(
   shape : @collision.Shape,
   start_pos : @core.Isometry2,
   remaining : @core.Vec2,
-  cos_max_slope : @core.Real,
-  skin : @core.Real,
+  controller : KinematicCharacterController,
+  dims : (@core.Real, @core.Real),
+  stair_handle : @collision.ColliderHandle,
   autostep : CharacterAutostep,
-) -> (@core.Vec2, @core.Vec2, Bool)? {
-  let up = @core.Vec2::new(0.0F, 1.0F)
-  let down = @core.Vec2::new(0.0F, -1.0F)
-  if @core.abs(remaining.x) <= 1.0e-6F {
+) -> (@core.Vec2, @core.Vec2)? {
+  let up = controller.up
+  let down = vec2_neg(up)
+  let (side_extent, up_extent) = dims
+  let offset = character_length_eval(controller.offset, up_extent)
+  let min_width = character_length_eval(autostep.min_width, side_extent) +
+    offset
+  let max_height = character_length_eval(autostep.max_height, up_extent) +
+    offset
+  if max_height <= 0.0F || min_width <= 0.0F {
     return None
   }
-  let dir_x = @core.Vec2::new(remaining.x, 0.0F)
-  let step_dir = if try_normalize_and_get_length(dir_x, 1.0e-6F) is Some(step) {
+  if !autostep.include_dynamic_bodies() {
+    // If the obstacle is dynamic, ignore it (Rapier parity).
+    if query.collider(stair_handle) is Some(co) &&
+      co.parent() is Some(parent) &&
+      query.rigid_body(parent) is Some(body) &&
+      body.is_dynamic() {
+      return None
+    }
+  }
+  let shifted_pos = @core.Isometry2::new(
+    start_pos.translation.add(vec2_scale(up, max_height)),
+    start_pos.rotation,
+  )
+  let horiz = remaining.sub(vec2_scale(up, up.dot(remaining)))
+  let horizontal_dir = if try_normalize_and_get_length(horiz, 1.0e-6F)
+    is Some(step) {
     step.0
   } else {
     return None
   }
-  let dist_x = @core.abs(remaining.x)
-  let (side_extent, up_extent) = compute_dims(shape)
-  let max_height = character_length_eval(autostep.max_height, up_extent) + skin
-  let min_width = character_length_eval(autostep.min_width, side_extent) + skin
-  if max_height <= 0.0F || min_width <= 0.0F {
-    return None
-  }
-  let up_free = if query.cast_shape(
+
+  // Can we go up?
+  if query.cast_shape(
       start_pos,
       up,
       shape,
-      @collision.ShapeCastOptions::new(max_height, false),
-    )
-    is Some(hit) {
-    if hit.1.toi() > skin {
-      hit.1.toi() - skin
-    } else {
-      max_height
-    }
-  } else {
-    max_height
-  }
-  if up_free <= 0.0F {
-    return None
-  }
-  let pos_up = @core.Isometry2::new(
-    start_pos.translation.add(vec2_scale(up, up_free)),
-    start_pos.rotation,
-  )
-  let forward = min_real(dist_x, min_width)
-  if query.cast_shape(
-      pos_up,
-      step_dir,
-      shape,
-      @collision.ShapeCastOptions::new(forward, false),
+      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+        offset,
+      ),
     )
     is Some(_) {
     return None
   }
-  let pos_fwd = @core.Isometry2::new(
-    pos_up.translation.add(vec2_scale(step_dir, forward)),
-    pos_up.rotation,
+
+  // Is there enough room on the stair after stepping?
+  if query.cast_shape(
+      shifted_pos,
+      horizontal_dir,
+      shape,
+      @collision.ShapeCastOptions::new(min_width, false).with_target_distance(
+        offset,
+      ),
+    )
+    is Some(_) {
+    return None
+  }
+
+  // Check the ramp we would land on isn't too steep.
+  let pos_on_stair = @core.Isometry2::new(
+    shifted_pos.translation.add(vec2_scale(horizontal_dir, min_width)),
+    shifted_pos.rotation,
   )
   if query.cast_shape(
-      pos_fwd,
+      pos_on_stair,
       down,
       shape,
-      @collision.ShapeCastOptions::new(max_height + skin, false),
+      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+        offset,
+      ),
     )
     is Some(hit_down) {
-    let n = hit_down.1.normal()
-    if n.y < cos_max_slope {
+    let (vertical_input, horizontal_input) = split_into_components(
+      up, remaining,
+    )
+    let vertical_slope = subtract_hit(vertical_input, hit_down.1)
+    let horizontal_slope = subtract_hit(horizontal_input, hit_down.1)
+    let slope_translation = horizontal_slope.add(vertical_slope)
+    let angle = angle_between(up, hit_down.1.normal())
+    let climbing = up.dot(slope_translation) >= 0.0F
+    if climbing && angle > controller.max_slope_climb_angle {
       return None
     }
-    let step_translation = vec2_scale(up, up_free)
-      .add(vec2_scale(step_dir, forward))
-      .add(vec2_scale(down, hit_down.1.toi()))
-    let new_remaining = @core.Vec2::new(
-      remaining.x - step_dir.x * forward,
-      remaining.y,
-    )
-    Some((step_translation, new_remaining, true))
-  } else {
-    None
   }
+
+  // Find actual step height.
+  let toi_down = if query.cast_shape(
+      pos_on_stair,
+      down,
+      shape,
+      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+        offset,
+      ),
+    )
+    is Some(hit2) {
+    hit2.1.toi()
+  } else {
+    max_height
+  }
+  let step_height = max_height - toi_down
+  let step = vec2_scale(up, step_height)
+  let remaining1 = remaining.sub(step)
+  let nudge_amt = min_real(horizontal_dir.dot(remaining1), min_width)
+  let horizontal_nudge = vec2_scale(horizontal_dir, nudge_amt)
+  let remaining2 = remaining1.sub(horizontal_nudge)
+  let delta = step.add(horizontal_nudge)
+  Some((remaining2, delta))
 }
 
 ///|
@@ -419,12 +729,12 @@ fn detect_grounded(
   query : @collision.QueryPipeline,
   shape : @collision.Shape,
   position : @core.Isometry2,
-  max_slope_climb_angle : @core.Real,
+  up : @core.Vec2,
+  prediction : @core.Real,
+  offset : @core.Real,
 ) -> Bool {
-  // Rapier parity: grounded detection is independent from the climb angle. We only require the
-  // contact normal to have a non-negligible upward component (acos(1.0e-3) ≈ 89.94 degrees).
-  max_slope_climb_angle |> ignore
-  detect_ground_contact(query, shape, position, 1.0e-3F) is Some(_)
+  detect_ground_contact(query, shape, position, up, prediction, offset)
+  is Some(_)
 }
 
 ///|
@@ -432,10 +742,12 @@ fn grounded_info(
   query : @collision.QueryPipeline,
   shape : @collision.Shape,
   position : @core.Isometry2,
-  max_slope_climb_angle : @core.Real,
+  up : @core.Vec2,
+  prediction : @core.Real,
+  offset : @core.Real,
 ) -> (Bool, @core.Vec2) {
-  max_slope_climb_angle |> ignore
-  if detect_ground_contact(query, shape, position, 1.0e-3F) is Some(hit) {
+  if detect_ground_contact(query, shape, position, up, prediction, offset)
+    is Some(hit) {
     let handle = hit.0
     if query.collider(handle) is Some(co) &&
       co.parent is Some(parent) &&
@@ -460,34 +772,15 @@ pub fn KinematicCharacterController::move_shape(
   translation : @core.Vec2,
   handle_collision : (CharacterCollision) -> Unit,
 ) -> EffectiveMovement {
-  let up = @core.Vec2::new(0.0F, 1.0F)
-  let skin = 1.0e-3F
-  // Match Rapier's default normal-nudge factor to avoid accumulating visible drift.
-  let normal_nudge = 1.0e-4F
-  let cos_max_slope = cos_real(self.max_slope_climb_angle)
+  let up = self.up
+  let (side_extent, up_extent) = compute_dims_with_up(shape, up)
+  let offset = character_length_eval(self.offset, up_extent)
+  let prediction = offset + 0.05F
   let dt_value = if dt < 0.0F { 0.0F } else { dt }
   let mut result_translation = @core.Vec2::zero()
+  let mut sliding_down_slope = false
 
-  // Approximate Rapier's "check_and_fix_penetrations": if we start penetrating, push out
-  // along the impact normal so subsequent casts don't get stuck at toi=0.
-  let mut fix_iters = 0
-  while fix_iters < 8 {
-    fix_iters = fix_iters + 1
-    let pos0 = @core.Isometry2::new(
-      position.translation.add(result_translation),
-      position.rotation,
-    )
-    let opts = @collision.ShapeCastOptions::new(0.0F, true)
-    if query.cast_shape(pos0, up, shape, opts) is Some(hit) {
-      if hit.1.toi() < 1.0e-5F {
-        result_translation = result_translation.add(
-          vec2_scale(hit.1.normal(), skin),
-        )
-        continue
-      }
-    }
-    break
-  }
+  // Rapier parity: `check_and_fix_penetrations` is currently a stub upstream.
   let grounded_at_start = grounded_info(
       query,
       shape,
@@ -495,7 +788,9 @@ pub fn KinematicCharacterController::move_shape(
         position.translation.add(result_translation),
         position.rotation,
       ),
-      self.max_slope_climb_angle,
+      up,
+      prediction,
+      offset,
     ).0
   let mut remaining = translation
   let mut grounded = false
@@ -512,7 +807,7 @@ pub fn KinematicCharacterController::move_shape(
       position.rotation,
     )
     let options = @collision.ShapeCastOptions::new(dist, false).with_target_distance(
-      skin,
+      offset,
     )
     if query.cast_shape(current_pos, dir, shape, options) is Some(hit) {
       let toi = hit.1.toi()
@@ -531,36 +826,29 @@ pub fn KinematicCharacterController::move_shape(
         translation_remaining: remaining,
         character_pos: event_pos,
       })
-      let normal = hit.1.normal()
-      if normal.y >= cos_max_slope {
-        grounded = true
-      }
-      if self.autostep is Some(autostep) &&
-        is_wall_normal(normal, cos_max_slope) {
+      let hit_info = compute_hit_info(self, hit.1)
+      if self.autostep is Some(autostep) && hit_info.is_wall {
         if attempt_autostep(
-            query, shape, event_pos, remaining, cos_max_slope, skin, autostep,
+            query,
+            shape,
+            event_pos,
+            remaining,
+            self,
+            (side_extent, up_extent),
+            hit.0,
+            autostep,
           )
           is Some(step) {
-          result_translation = result_translation.add(step.0)
-          remaining = step.1
-          grounded = grounded || step.2
+          remaining = step.0
+          result_translation = result_translation.add(step.1)
           continue
         }
       }
-      let dot = remaining.dot(normal)
-      if dot < 0.0F {
-        remaining = remaining.sub(vec2_scale(normal, dot))
-      }
-
-      // Prevent climbing slopes steeper than `max_slope_climb_angle`.
-      if normal.y > 0.0F && normal.y < cos_max_slope && remaining.y > 0.0F {
-        remaining = @core.Vec2::new(remaining.x, 0.0F)
-      }
-
-      // Small nudge to avoid getting stuck on surfaces.
-      result_translation = result_translation.add(
-        vec2_scale(normal, normal_nudge),
+      let (new_remaining, slid) = handle_slopes(
+        self, hit_info, translation, remaining,
       )
+      remaining = new_remaining
+      sliding_down_slope = sliding_down_slope || slid
     } else {
       result_translation = result_translation.add(remaining)
       remaining = @core.Vec2::zero()
@@ -574,22 +862,28 @@ pub fn KinematicCharacterController::move_shape(
           position.translation.add(result_translation),
           position.rotation,
         ),
-        self.max_slope_climb_angle,
+        up,
+        prediction,
+        offset,
       )
+    if !self.slide {
+      break
+    }
   }
   if iters == 0 {
-    grounded = grounded_info(query, shape, position, self.max_slope_climb_angle).0
+    grounded = grounded_info(query, shape, position, up, prediction, offset).0
   }
   if grounded_at_start && !grounded && self.snap_to_ground is Some(snap_length) {
-    let (_, up_extent) = compute_dims(shape)
     let snap_dist = character_length_eval(snap_length, up_extent)
     if result_translation.dot(up) < -1.0e-5F && snap_dist > 0.0F {
       let current_pos = @core.Isometry2::new(
         position.translation.add(result_translation),
         position.rotation,
       )
-      let down = @core.Vec2::new(-up.x, -up.y)
-      let options = @collision.ShapeCastOptions::new(snap_dist, true)
+      let down = vec2_neg(up)
+      let options = @collision.ShapeCastOptions::new(snap_dist, false).with_target_distance(
+        offset,
+      )
       if query.cast_shape(current_pos, down, shape, options) is Some(hit) {
         result_translation = result_translation.add(
           vec2_scale(down, hit.1.toi()),
@@ -602,19 +896,18 @@ pub fn KinematicCharacterController::move_shape(
     position.translation.add(result_translation),
     position.rotation,
   )
-  let end_info = grounded_info(
-    query,
-    shape,
-    final_pos,
-    self.max_slope_climb_angle,
-  )
-  grounded = end_info.0
-  if grounded {
+  let end_info = grounded_info(query, shape, final_pos, up, prediction, offset)
+  if end_info.0 {
+    grounded = true
     result_translation = result_translation.add(
       vec2_scale(end_info.1, dt_value),
     )
   }
-  { translation: result_translation, grounded }
+  {
+    translation: result_translation,
+    grounded,
+    is_sliding_down_slope: sliding_down_slope,
+  }
 }
 
 ///|

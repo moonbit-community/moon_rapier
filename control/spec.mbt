@@ -92,6 +92,14 @@ pub fn EffectiveMovement::is_grounded(self : EffectiveMovement) -> Bool {
 
 ///|
 #declaration_only
+pub fn EffectiveMovement::is_sliding_down_slope(
+  self : EffectiveMovement,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
 pub type CharacterAutostep
 
 ///|
@@ -121,6 +129,23 @@ pub fn CharacterAutostep::min_width(
 
 ///|
 #declaration_only
+pub fn CharacterAutostep::include_dynamic_bodies(
+  self : CharacterAutostep,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterAutostep::with_include_dynamic_bodies(
+  self : CharacterAutostep,
+  include_dynamic_bodies : Bool,
+) -> CharacterAutostep {
+  ...
+}
+
+///|
+#declaration_only
 pub type KinematicCharacterController
 
 ///|
@@ -131,7 +156,43 @@ pub fn KinematicCharacterController::new() -> KinematicCharacterController {
 
 ///|
 #declaration_only
+pub fn KinematicCharacterController::with_up(
+  self : KinematicCharacterController,
+  up : @core.Vec2,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::with_offset(
+  self : KinematicCharacterController,
+  offset : CharacterLength,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::with_slide(
+  self : KinematicCharacterController,
+  slide : Bool,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
 pub fn KinematicCharacterController::with_max_slope_climb_angle(
+  self : KinematicCharacterController,
+  angle : @core.Real,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::with_min_slope_slide_angle(
   self : KinematicCharacterController,
   angle : @core.Real,
 ) -> KinematicCharacterController {
@@ -152,6 +213,15 @@ pub fn KinematicCharacterController::with_snap_to_ground(
 pub fn KinematicCharacterController::with_autostep(
   self : KinematicCharacterController,
   autostep : CharacterAutostep?,
+) -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::with_normal_nudge_factor(
+  self : KinematicCharacterController,
+  normal_nudge_factor : @core.Real,
 ) -> KinematicCharacterController {
   ...
 }
