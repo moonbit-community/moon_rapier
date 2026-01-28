@@ -221,6 +221,45 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
+    Shape::Compound(parts) =>
+      if parts.length() == 0 {
+        (center, center)
+      } else {
+        let parent_iso = @core.Isometry2::new(
+          center,
+          @core.Rot2::from_angle(rotation),
+        )
+        let mut acc_min_x = 1.0e30F
+        let mut acc_min_y = 1.0e30F
+        let mut acc_max_x = -1.0e30F
+        let mut acc_max_y = -1.0e30F
+        for i in 0..<parts.length() {
+          let (pose, part_shape) = parts[i]
+          let w = parent_iso.mul(pose)
+          let origin = w.transform_point(@core.Vec2::zero())
+          let px = w.transform_point(@core.Vec2::new(1.0F, 0.0F))
+          let axis = px.sub(origin)
+          let r = @core.atan2(axis.y, axis.x)
+          let p = origin
+          let (mn, mx) = compute_aabb_for_test(part_shape, p, r, pd)
+          if mn.x < acc_min_x {
+            acc_min_x = mn.x
+          }
+          if mn.y < acc_min_y {
+            acc_min_y = mn.y
+          }
+          if mx.x > acc_max_x {
+            acc_max_x = mx.x
+          }
+          if mx.y > acc_max_y {
+            acc_max_y = mx.y
+          }
+        }
+        (
+          @core.Vec2::new(acc_min_x, acc_min_y),
+          @core.Vec2::new(acc_max_x, acc_max_y),
+        )
+      }
   }
 }
 

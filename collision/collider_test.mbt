@@ -158,8 +158,15 @@ test "collider builder: compound + round_convex_hull" {
     ),
   ]
   let co = ColliderBuilder::compound(parts).build()
-  if co.shape() is Shape::ConvexPolygon(vertices) {
-    inspect(vertices.length() >= 3, content="true")
+  if co.shape() is Shape::Compound(compound_parts) {
+    inspect(compound_parts.length() == parts.length(), content="true")
+    let p1 = compound_parts[1].0.transform_point(@core.Vec2::zero())
+    inspect(@core.abs(p1.x - 2.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(p1.y - 0.0F) < 1.0e-6F, content="true")
+    match compound_parts[0].1 {
+      Shape::Cuboid(_, _) => inspect(true, content="true")
+      _ => inspect(false, content="true")
+    }
   } else {
     inspect(false, content="true")
   }

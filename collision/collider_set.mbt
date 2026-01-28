@@ -236,6 +236,7 @@ pub(all) enum Shape {
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
   ConvexPolygon(Array[@core.Vec2])
+  Compound(Array[(@core.Isometry2, Shape)])
 }
 
 ///|
@@ -470,88 +471,25 @@ pub fn ColliderBuilder::round_triangle(
 pub fn ColliderBuilder::compound(
   shapes : Array[(@core.Isometry2, Shape)],
 ) -> ColliderBuilder {
-  // Approximate a compound shape with the convex-hull of points sampled from its sub-shapes.
-  // This preserves a useful "filled" collision surface for most gameplay uses, though it does
-  // not model concavities.
-  fn sample_shape(shape : Shape) -> Array[@core.Vec2] {
-    match shape {
-      Shape::Ball(r) => {
-        let s = r * 0.70710678118F
-        [
-          @core.Vec2::new(r, 0.0F),
-          @core.Vec2::new(-r, 0.0F),
-          @core.Vec2::new(0.0F, r),
-          @core.Vec2::new(0.0F, -r),
-          @core.Vec2::new(s, s),
-          @core.Vec2::new(-s, s),
-          @core.Vec2::new(-s, -s),
-          @core.Vec2::new(s, -s),
-        ]
-      }
-      Shape::Cuboid(hw, hh) =>
-        [
-          @core.Vec2::new(-hw, -hh),
-          @core.Vec2::new(hw, -hh),
-          @core.Vec2::new(hw, hh),
-          @core.Vec2::new(-hw, hh),
-        ]
-      Shape::CapsuleX(half_height, radius) => {
-        let hx = half_height
-        let r = radius
-        [
-          @core.Vec2::new(hx + r, 0.0F),
-          @core.Vec2::new(-hx - r, 0.0F),
-          @core.Vec2::new(hx, r),
-          @core.Vec2::new(hx, -r),
-          @core.Vec2::new(-hx, r),
-          @core.Vec2::new(-hx, -r),
-        ]
-      }
-      Shape::CapsuleY(half_height, radius) => {
-        let hy = half_height
-        let r = radius
-        [
-          @core.Vec2::new(0.0F, hy + r),
-          @core.Vec2::new(0.0F, -hy - r),
-          @core.Vec2::new(r, hy),
-          @core.Vec2::new(-r, hy),
-          @core.Vec2::new(r, -hy),
-          @core.Vec2::new(-r, -hy),
-        ]
-      }
-      Shape::Segment(a, b) => [a, b]
-      Shape::Polyline(vertices, _) => {
-        let out : Array[@core.Vec2] = []
-        for i in 0..<vertices.length() {
-          out.push(vertices[i])
-        }
-        out
-      }
-      Shape::ConvexPolygon(vertices) => {
-        let out : Array[@core.Vec2] = []
-        for i in 0..<vertices.length() {
-          out.push(vertices[i])
-        }
-        out
-      }
-    }
-  }
-
-  let points : Array[@core.Vec2] = []
-  for i in 0..<shapes.length() {
-    let (pose, shape) = shapes[i]
-    let samples = sample_shape(shape)
-    for j in 0..<samples.length() {
-      points.push(pose.transform_point(samples[j]))
-    }
-  }
-  if points.length() == 0 {
-    return ColliderBuilder::polyline([], None)
-  }
-  if ColliderBuilder::convex_hull(points) is Some(builder) {
-    builder
-  } else {
-    ColliderBuilder::polyline(points, None)
+  {
+    shape: Shape::Compound(shapes),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: ActiveEvents::empty(),
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
   }
 }
 
@@ -1290,6 +1228,17 @@ fn shape_mass_properties(
         },
         com,
       )
+    }
+    Shape::Compound(parts) => {
+      let mut acc = @core.MassProperties::default()
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let part_mp = shape_mass_properties(part_shape, density).transform_by(
+          pose,
+        )
+        acc = acc.add(part_mp)
+      }
+      acc
     }
   }
 }
@@ -2589,6 +2538,61 @@ fn shapes_intersect(
   }
 
   match (shape1, shape2) {
+    (Shape::Compound(parts1), Shape::Compound(parts2)) => {
+      if parts1.length() == 0 || parts2.length() == 0 {
+        return false
+      }
+      let iso1 = @core.Isometry2::new(pos1, @core.Rot2::from_angle(rot1))
+      let iso2 = @core.Isometry2::new(pos2, @core.Rot2::from_angle(rot2))
+      for i in 0..<parts1.length() {
+        let (pose1, s1) = parts1[i]
+        let w1 = iso1.mul(pose1)
+        let p1 = isometry2_translation(w1)
+        let r1 = isometry2_rotation_angle(w1)
+        for j in 0..<parts2.length() {
+          let (pose2, s2) = parts2[j]
+          let w2 = iso2.mul(pose2)
+          let p2 = isometry2_translation(w2)
+          let r2 = isometry2_rotation_angle(w2)
+          if shapes_intersect(s1, p1, r1, s2, p2, r2) {
+            return true
+          }
+        }
+      }
+      false
+    }
+    (Shape::Compound(parts), other) => {
+      if parts.length() == 0 {
+        return false
+      }
+      let iso = @core.Isometry2::new(pos1, @core.Rot2::from_angle(rot1))
+      for i in 0..<parts.length() {
+        let (pose, s) = parts[i]
+        let w = iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        if shapes_intersect(s, p, r, other, pos2, rot2) {
+          return true
+        }
+      }
+      false
+    }
+    (other, Shape::Compound(parts)) => {
+      if parts.length() == 0 {
+        return false
+      }
+      let iso = @core.Isometry2::new(pos2, @core.Rot2::from_angle(rot2))
+      for i in 0..<parts.length() {
+        let (pose, s) = parts[i]
+        let w = iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        if shapes_intersect(other, pos1, rot1, s, p, r) {
+          return true
+        }
+      }
+      false
+    }
     (Shape::Polyline(vertices, indices), Shape::Polyline(vertices2, indices2)) => {
       // Brute-force intersection for two polylines: any segment intersects any segment.
       fn segments(
@@ -4656,288 +4660,395 @@ fn build_contact_pair(
   collider1 : Collider,
   collider2 : Collider,
 ) -> ContactPair {
-  let manifolds : Array[ContactManifold] = []
-  match (collider1.shape, collider2.shape) {
-    (Shape::Ball(r1), Shape::Ball(r2)) =>
-      manifolds.push(contact_manifold_ball_ball(collider1, r1, collider2, r2))
-    (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
-      manifolds.push(
-        contact_manifold_ball_cuboid(collider1, r, collider2, hw, hh),
-      )
-    (Shape::Ball(r), Shape::ConvexPolygon(vertices)) =>
-      manifolds.push(
-        contact_manifold_ball_convex_polygon(collider1, r, collider2, vertices),
-      )
-    (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_cuboid_ball(collider1, hw, hh, collider2, r),
-      )
-    (Shape::ConvexPolygon(vertices), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_convex_polygon_ball(collider1, vertices, collider2, r),
-      )
-    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
-      manifolds.push(
-        contact_manifold_cuboid_cuboid(
-          collider1, hw1, hh1, collider2, hw2, hh2, prediction_distance,
-        ),
-      )
-    (Shape::ConvexPolygon(vertices1), Shape::ConvexPolygon(vertices2)) =>
-      manifolds.push(
-        contact_manifold_convex_polygon_convex_polygon(
-          collider1, vertices1, collider2, vertices2, prediction_distance,
-        ),
-      )
-    (Shape::ConvexPolygon(vertices), Shape::Cuboid(hw, hh)) =>
-      manifolds.push(
-        contact_manifold_convex_polygon_cuboid(
-          collider1, vertices, collider2, hw, hh, prediction_distance,
-        ),
-      )
-    (Shape::Cuboid(hw, hh), Shape::ConvexPolygon(vertices)) =>
-      manifolds.push(
-        contact_manifold_cuboid_convex_polygon(
-          collider1, hw, hh, collider2, vertices, prediction_distance,
-        ),
-      )
-    (Shape::Ball(r), Shape::Segment(a, b)) =>
-      manifolds.push(
-        contact_manifold_ball_segment(collider1, r, collider2, a, b),
-      )
-    (Shape::Segment(a, b), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_segment_ball(collider1, a, b, collider2, r),
-      )
-    (Shape::Ball(r), Shape::Polyline(vertices, indices)) =>
-      manifolds.push(
-        contact_manifold_ball_polyline(
-          collider1, r, collider2, vertices, indices,
-        ),
-      )
-    (Shape::Polyline(vertices, indices), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_polyline_ball(
-          collider1, vertices, indices, collider2, r,
-        ),
-      )
-    (Shape::Ball(r), Shape::CapsuleX(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_ball_capsule(
-          collider1,
-          r,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-        ),
-      )
-    (Shape::Ball(r), Shape::CapsuleY(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_ball_capsule(
-          collider1,
-          r,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-        ),
-      )
-    (Shape::CapsuleX(hh, cr), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_capsule_ball(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-          collider2,
-          r,
-        ),
-      )
-    (Shape::CapsuleY(hh, cr), Shape::Ball(r)) =>
-      manifolds.push(
-        contact_manifold_capsule_ball(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-          collider2,
-          r,
-        ),
-      )
-    (Shape::CapsuleX(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
-      manifolds.push(
-        contact_manifold_capsule_capsule(
-          collider1,
-          hh1,
-          r1,
-          @core.Vec2::new(1.0F, 0.0F),
-          collider2,
-          hh2,
-          r2,
-          @core.Vec2::new(1.0F, 0.0F),
-        ),
-      )
-    (Shape::CapsuleX(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
-      manifolds.push(
-        contact_manifold_capsule_capsule(
-          collider1,
-          hh1,
-          r1,
-          @core.Vec2::new(1.0F, 0.0F),
-          collider2,
-          hh2,
-          r2,
-          @core.Vec2::new(0.0F, 1.0F),
-        ),
-      )
-    (Shape::CapsuleY(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
-      manifolds.push(
-        contact_manifold_capsule_capsule(
-          collider1,
-          hh1,
-          r1,
-          @core.Vec2::new(0.0F, 1.0F),
-          collider2,
-          hh2,
-          r2,
-          @core.Vec2::new(1.0F, 0.0F),
-        ),
-      )
-    (Shape::CapsuleY(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
-      manifolds.push(
-        contact_manifold_capsule_capsule(
-          collider1,
-          hh1,
-          r1,
-          @core.Vec2::new(0.0F, 1.0F),
-          collider2,
-          hh2,
-          r2,
-          @core.Vec2::new(0.0F, 1.0F),
-        ),
-      )
-    (Shape::Segment(a, b), Shape::Cuboid(hw, hh)) =>
-      manifolds.push(
-        contact_manifold_segment_cuboid(collider1, a, b, collider2, hw, hh),
-      )
-    (Shape::Cuboid(hw, hh), Shape::Segment(a, b)) =>
-      manifolds.push(
-        contact_manifold_cuboid_segment(collider1, hw, hh, collider2, a, b),
-      )
-    (Shape::Polyline(vertices, indices), Shape::Cuboid(hw, hh)) =>
-      manifolds.push(
-        contact_manifold_polyline_cuboid(
-          collider1, vertices, indices, collider2, hw, hh,
-        ),
-      )
-    (Shape::Cuboid(hw, hh), Shape::Polyline(vertices, indices)) =>
-      manifolds.push(
-        contact_manifold_cuboid_polyline(
-          collider1, hw, hh, collider2, vertices, indices,
-        ),
-      )
-    (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
-      manifolds.push(
-        contact_manifold_segment_segment(collider1, a1, b1, collider2, a2, b2),
-      )
-    (Shape::Segment(a, b), Shape::CapsuleX(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_segment_capsule(
-          collider1,
-          a,
-          b,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-        ),
-      )
-    (Shape::Segment(a, b), Shape::CapsuleY(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_segment_capsule(
-          collider1,
-          a,
-          b,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-        ),
-      )
-    (Shape::CapsuleX(hh, cr), Shape::Segment(a, b)) =>
-      manifolds.push(
-        contact_manifold_capsule_segment(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-          collider2,
-          a,
-          b,
-        ),
-      )
-    (Shape::CapsuleY(hh, cr), Shape::Segment(a, b)) =>
-      manifolds.push(
-        contact_manifold_capsule_segment(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-          collider2,
-          a,
-          b,
-        ),
-      )
-    (Shape::CapsuleX(hh, cr), Shape::Cuboid(hw, hh2)) =>
-      manifolds.push(
-        contact_manifold_capsule_cuboid(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-          collider2,
-          hw,
-          hh2,
-        ),
-      )
-    (Shape::CapsuleY(hh, cr), Shape::Cuboid(hw, hh2)) =>
-      manifolds.push(
-        contact_manifold_capsule_cuboid(
-          collider1,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-          collider2,
-          hw,
-          hh2,
-        ),
-      )
-    (Shape::Cuboid(hw, hh2), Shape::CapsuleX(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_cuboid_capsule(
-          collider1,
-          hw,
-          hh2,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(1.0F, 0.0F),
-        ),
-      )
-    (Shape::Cuboid(hw, hh2), Shape::CapsuleY(hh, cr)) =>
-      manifolds.push(
-        contact_manifold_cuboid_capsule(
-          collider1,
-          hw,
-          hh2,
-          collider2,
-          hh,
-          cr,
-          @core.Vec2::new(0.0F, 1.0F),
-        ),
-      )
-    _ => ()
+  fn pack_feature(prefix : Int, fid : FeatureId) -> FeatureId {
+    if prefix == 0 {
+      return fid
+    }
+    let base = prefix * 1000000
+    match fid {
+      FeatureId::Unknown => FeatureId::Face(base)
+      FeatureId::Vertex(id) => FeatureId::Vertex(base + id)
+      FeatureId::Edge(id) => FeatureId::Edge(base + id)
+      FeatureId::Face(id) => FeatureId::Face(base + id)
+    }
   }
+
+  fn leaf_manifolds(
+    prediction_distance : @core.Real,
+    c1 : Collider,
+    c2 : Collider,
+  ) -> Array[ContactManifold] {
+    let out : Array[ContactManifold] = []
+    match (c1.shape, c2.shape) {
+      (Shape::Ball(r1), Shape::Ball(r2)) =>
+        out.push(contact_manifold_ball_ball(c1, r1, c2, r2))
+      (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+        out.push(contact_manifold_ball_cuboid(c1, r, c2, hw, hh))
+      (Shape::Ball(r), Shape::ConvexPolygon(vertices)) =>
+        out.push(contact_manifold_ball_convex_polygon(c1, r, c2, vertices))
+      (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+        out.push(contact_manifold_cuboid_ball(c1, hw, hh, c2, r))
+      (Shape::ConvexPolygon(vertices), Shape::Ball(r)) =>
+        out.push(contact_manifold_convex_polygon_ball(c1, vertices, c2, r))
+      (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+        out.push(
+          contact_manifold_cuboid_cuboid(
+            c1, hw1, hh1, c2, hw2, hh2, prediction_distance,
+          ),
+        )
+      (Shape::ConvexPolygon(vertices1), Shape::ConvexPolygon(vertices2)) =>
+        out.push(
+          contact_manifold_convex_polygon_convex_polygon(
+            c1, vertices1, c2, vertices2, prediction_distance,
+          ),
+        )
+      (Shape::ConvexPolygon(vertices), Shape::Cuboid(hw, hh)) =>
+        out.push(
+          contact_manifold_convex_polygon_cuboid(
+            c1, vertices, c2, hw, hh, prediction_distance,
+          ),
+        )
+      (Shape::Cuboid(hw, hh), Shape::ConvexPolygon(vertices)) =>
+        out.push(
+          contact_manifold_cuboid_convex_polygon(
+            c1, hw, hh, c2, vertices, prediction_distance,
+          ),
+        )
+      (Shape::Ball(r), Shape::Segment(a, b)) =>
+        out.push(contact_manifold_ball_segment(c1, r, c2, a, b))
+      (Shape::Segment(a, b), Shape::Ball(r)) =>
+        out.push(contact_manifold_segment_ball(c1, a, b, c2, r))
+      (Shape::Ball(r), Shape::Polyline(vertices, indices)) =>
+        out.push(contact_manifold_ball_polyline(c1, r, c2, vertices, indices))
+      (Shape::Polyline(vertices, indices), Shape::Ball(r)) =>
+        out.push(contact_manifold_polyline_ball(c1, vertices, indices, c2, r))
+      (Shape::Ball(r), Shape::CapsuleX(hh, cr)) =>
+        out.push(
+          contact_manifold_ball_capsule(
+            c1,
+            r,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+          ),
+        )
+      (Shape::Ball(r), Shape::CapsuleY(hh, cr)) =>
+        out.push(
+          contact_manifold_ball_capsule(
+            c1,
+            r,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+          ),
+        )
+      (Shape::CapsuleX(hh, cr), Shape::Ball(r)) =>
+        out.push(
+          contact_manifold_capsule_ball(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+            c2,
+            r,
+          ),
+        )
+      (Shape::CapsuleY(hh, cr), Shape::Ball(r)) =>
+        out.push(
+          contact_manifold_capsule_ball(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+            c2,
+            r,
+          ),
+        )
+      (Shape::CapsuleX(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
+        out.push(
+          contact_manifold_capsule_capsule(
+            c1,
+            hh1,
+            r1,
+            @core.Vec2::new(1.0F, 0.0F),
+            c2,
+            hh2,
+            r2,
+            @core.Vec2::new(1.0F, 0.0F),
+          ),
+        )
+      (Shape::CapsuleX(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
+        out.push(
+          contact_manifold_capsule_capsule(
+            c1,
+            hh1,
+            r1,
+            @core.Vec2::new(1.0F, 0.0F),
+            c2,
+            hh2,
+            r2,
+            @core.Vec2::new(0.0F, 1.0F),
+          ),
+        )
+      (Shape::CapsuleY(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
+        out.push(
+          contact_manifold_capsule_capsule(
+            c1,
+            hh1,
+            r1,
+            @core.Vec2::new(0.0F, 1.0F),
+            c2,
+            hh2,
+            r2,
+            @core.Vec2::new(1.0F, 0.0F),
+          ),
+        )
+      (Shape::CapsuleY(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
+        out.push(
+          contact_manifold_capsule_capsule(
+            c1,
+            hh1,
+            r1,
+            @core.Vec2::new(0.0F, 1.0F),
+            c2,
+            hh2,
+            r2,
+            @core.Vec2::new(0.0F, 1.0F),
+          ),
+        )
+      (Shape::Segment(a, b), Shape::Cuboid(hw, hh)) =>
+        out.push(contact_manifold_segment_cuboid(c1, a, b, c2, hw, hh))
+      (Shape::Cuboid(hw, hh), Shape::Segment(a, b)) =>
+        out.push(contact_manifold_cuboid_segment(c1, hw, hh, c2, a, b))
+      (Shape::Polyline(vertices, indices), Shape::Cuboid(hw, hh)) =>
+        out.push(
+          contact_manifold_polyline_cuboid(c1, vertices, indices, c2, hw, hh),
+        )
+      (Shape::Cuboid(hw, hh), Shape::Polyline(vertices, indices)) =>
+        out.push(
+          contact_manifold_cuboid_polyline(c1, hw, hh, c2, vertices, indices),
+        )
+      (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
+        out.push(contact_manifold_segment_segment(c1, a1, b1, c2, a2, b2))
+      (Shape::Segment(a, b), Shape::CapsuleX(hh, cr)) =>
+        out.push(
+          contact_manifold_segment_capsule(
+            c1,
+            a,
+            b,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+          ),
+        )
+      (Shape::Segment(a, b), Shape::CapsuleY(hh, cr)) =>
+        out.push(
+          contact_manifold_segment_capsule(
+            c1,
+            a,
+            b,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+          ),
+        )
+      (Shape::CapsuleX(hh, cr), Shape::Segment(a, b)) =>
+        out.push(
+          contact_manifold_capsule_segment(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+            c2,
+            a,
+            b,
+          ),
+        )
+      (Shape::CapsuleY(hh, cr), Shape::Segment(a, b)) =>
+        out.push(
+          contact_manifold_capsule_segment(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+            c2,
+            a,
+            b,
+          ),
+        )
+      (Shape::CapsuleX(hh, cr), Shape::Cuboid(hw, hh2)) =>
+        out.push(
+          contact_manifold_capsule_cuboid(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+            c2,
+            hw,
+            hh2,
+          ),
+        )
+      (Shape::CapsuleY(hh, cr), Shape::Cuboid(hw, hh2)) =>
+        out.push(
+          contact_manifold_capsule_cuboid(
+            c1,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+            c2,
+            hw,
+            hh2,
+          ),
+        )
+      (Shape::Cuboid(hw, hh2), Shape::CapsuleX(hh, cr)) =>
+        out.push(
+          contact_manifold_cuboid_capsule(
+            c1,
+            hw,
+            hh2,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(1.0F, 0.0F),
+          ),
+        )
+      (Shape::Cuboid(hw, hh2), Shape::CapsuleY(hh, cr)) =>
+        out.push(
+          contact_manifold_cuboid_capsule(
+            c1,
+            hw,
+            hh2,
+            c2,
+            hh,
+            cr,
+            @core.Vec2::new(0.0F, 1.0F),
+          ),
+        )
+      _ => ()
+    }
+    out
+  }
+
+  fn map_manifold_points(
+    manifold : ContactManifold,
+    pose1 : @core.Isometry2,
+    pose2 : @core.Isometry2,
+    prefix1 : Int,
+    prefix2 : Int,
+  ) -> ContactManifold {
+    let out_pts : Array[ContactManifoldPoint] = []
+    for i in 0..<manifold.points.length() {
+      let p = manifold.points[i]
+      out_pts.push(ContactManifoldPoint::{
+        local_p1: pose1.transform_point(p.local_p1()),
+        local_p2: pose2.transform_point(p.local_p2()),
+        dist: p.dist(),
+        fid1: pack_feature(prefix1, p.fid1()),
+        fid2: pack_feature(prefix2, p.fid2()),
+      })
+    }
+    ContactManifold::{ normal: manifold.normal, points: out_pts }
+  }
+
+  let manifolds : Array[ContactManifold] = []
+  let base1 = @core.Isometry2::new(
+    collider1.world_translation,
+    @core.Rot2::from_angle(collider1.world_rotation),
+  )
+  let base2 = @core.Isometry2::new(
+    collider2.world_translation,
+    @core.Rot2::from_angle(collider2.world_rotation),
+  )
+  fn visit(
+    prediction_distance : @core.Real,
+    collider1 : Collider,
+    base1 : @core.Isometry2,
+    shape1 : Shape,
+    pose1 : @core.Isometry2,
+    prefix1 : Int,
+    collider2 : Collider,
+    base2 : @core.Isometry2,
+    shape2 : Shape,
+    pose2 : @core.Isometry2,
+    prefix2 : Int,
+    out : Array[ContactManifold],
+  ) -> Unit {
+    match (shape1, shape2) {
+      (Shape::Compound(parts1), Shape::Compound(parts2)) =>
+        for i in 0..<parts1.length() {
+          let (p1, s1) = parts1[i]
+          let child_pose1 = pose1.mul(p1)
+          let child_prefix1 = prefix1 * 1000 + (i + 1)
+          for j in 0..<parts2.length() {
+            let (p2, s2) = parts2[j]
+            let child_pose2 = pose2.mul(p2)
+            let child_prefix2 = prefix2 * 1000 + (j + 1)
+            visit(
+              prediction_distance, collider1, base1, s1, child_pose1, child_prefix1,
+              collider2, base2, s2, child_pose2, child_prefix2, out,
+            )
+          }
+        }
+      (Shape::Compound(parts), other) =>
+        for i in 0..<parts.length() {
+          let (p, s) = parts[i]
+          let child_pose = pose1.mul(p)
+          let child_prefix = prefix1 * 1000 + (i + 1)
+          visit(
+            prediction_distance, collider1, base1, s, child_pose, child_prefix, collider2,
+            base2, other, pose2, prefix2, out,
+          )
+        }
+      (other, Shape::Compound(parts)) =>
+        for i in 0..<parts.length() {
+          let (p, s) = parts[i]
+          let child_pose = pose2.mul(p)
+          let child_prefix = prefix2 * 1000 + (i + 1)
+          visit(
+            prediction_distance, collider1, base1, other, pose1, prefix1, collider2,
+            base2, s, child_pose, child_prefix, out,
+          )
+        }
+      (leaf1, leaf2) => {
+        let world1 = base1.mul(pose1)
+        let world2 = base2.mul(pose2)
+        let c1 = collider1
+        c1.shape = leaf1
+        c1.world_translation = isometry2_translation(world1)
+        c1.world_rotation = isometry2_rotation_angle(world1)
+        let c2 = collider2
+        c2.shape = leaf2
+        c2.world_translation = isometry2_translation(world2)
+        c2.world_rotation = isometry2_rotation_angle(world2)
+        let leafs = leaf_manifolds(prediction_distance, c1, c2)
+        for mi in 0..<leafs.length() {
+          let m = leafs[mi]
+          if m.points.length() > 0 {
+            out.push(map_manifold_points(m, pose1, pose2, prefix1, prefix2))
+          }
+        }
+      }
+    }
+  }
+
+  visit(
+    prediction_distance,
+    collider1,
+    base1,
+    collider1.shape,
+    @core.Isometry2::identity(),
+    0,
+    collider2,
+    base2,
+    collider2.shape,
+    @core.Isometry2::identity(),
+    0,
+    manifolds,
+  )
   ContactPair::{ manifolds, }
 }
 
@@ -5347,6 +5458,19 @@ fn collect_bvh_pairs(
 }
 
 ///|
+fn isometry2_translation(iso : @core.Isometry2) -> @core.Vec2 {
+  iso.transform_point(@core.Vec2::zero())
+}
+
+///|
+fn isometry2_rotation_angle(iso : @core.Isometry2) -> @core.Real {
+  let origin = isometry2_translation(iso)
+  let px = iso.transform_point(@core.Vec2::new(1.0F, 0.0F))
+  let axis = px.sub(origin)
+  @core.atan2(axis.y, axis.x)
+}
+
+///|
 fn compute_shape_aabb(
   shape : Shape,
   center : @core.Vec2,
@@ -5473,6 +5597,35 @@ fn compute_shape_aabb(
         Aabb::{
           min: @core.Vec2::new(min_x - pd, min_y - pd),
           max: @core.Vec2::new(max_x + pd, max_y + pd),
+        }
+      }
+    Shape::Compound(parts) =>
+      if parts.length() == 0 {
+        Aabb::{ min: center, max: center }
+      } else {
+        let parent_iso = @core.Isometry2::new(
+          center,
+          @core.Rot2::from_angle(rotation),
+        )
+        let mut acc : Aabb? = None
+        for i in 0..<parts.length() {
+          let (pose, part_shape) = parts[i]
+          let world_iso = parent_iso.mul(pose)
+          let part_center = isometry2_translation(world_iso)
+          let part_rot = isometry2_rotation_angle(world_iso)
+          let part_aabb = compute_shape_aabb(
+            part_shape, part_center, part_rot, pd,
+          )
+          if acc is Some(existing) {
+            acc = Some(aabb_union(existing, part_aabb))
+          } else {
+            acc = Some(part_aabb)
+          }
+        }
+        if acc is Some(aabb) {
+          aabb
+        } else {
+          Aabb::{ min: center, max: center }
         }
       }
   }

@@ -930,52 +930,14 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
       }
       let pos = collider.world_translation
       let rot = collider.world_rotation
-      let hit = match collider.shape {
-        Shape::Ball(radius) =>
-          ray_intersect_ball_and_get_normal(ray, pos, radius, max_dist, solid)
-        Shape::Cuboid(hw, hh) =>
-          ray_intersect_cuboid_oriented_and_get_normal(
-            ray, pos, rot, hw, hh, max_dist, solid,
-          )
-        Shape::CapsuleX(half_height, radius) =>
-          ray_intersect_capsule_oriented_and_get_normal(
-            ray,
-            pos,
-            rot,
-            @core.Vec2::new(1.0F, 0.0F),
-            half_height,
-            radius,
-            half_height,
-            radius,
-            max_dist,
-            solid,
-          )
-        Shape::CapsuleY(half_height, radius) =>
-          ray_intersect_capsule_oriented_and_get_normal(
-            ray,
-            pos,
-            rot,
-            @core.Vec2::new(0.0F, 1.0F),
-            half_height,
-            radius,
-            radius,
-            half_height,
-            max_dist,
-            solid,
-          )
-        Shape::Segment(a, b) =>
-          ray_intersect_segment_and_get_normal(
-            ray, pos, rot, a, b, max_dist, solid,
-          )
-        Shape::Polyline(vertices, indices) =>
-          ray_intersect_polyline_and_get_normal(
-            ray, pos, rot, vertices, indices, max_dist, solid,
-          )
-        Shape::ConvexPolygon(vertices) =>
-          ray_intersect_convex_polygon_oriented_and_get_normal(
-            ray, pos, rot, vertices, max_dist, solid,
-          )
-      }
+      let hit = ray_intersect_shape_and_get_normal(
+        ray,
+        pos,
+        rot,
+        collider.shape,
+        max_dist,
+        solid,
+      )
       if hit is Some(intersection) {
         if best is Some(current) {
           if intersection.toi < current.1.toi {
@@ -1007,52 +969,14 @@ pub fn QueryPipeline::intersect_ray(
       }
       let pos = collider.world_translation
       let rot = collider.world_rotation
-      let hit = match collider.shape {
-        Shape::Ball(radius) =>
-          ray_intersect_ball_and_get_normal(ray, pos, radius, max_dist, solid)
-        Shape::Cuboid(hw, hh) =>
-          ray_intersect_cuboid_oriented_and_get_normal(
-            ray, pos, rot, hw, hh, max_dist, solid,
-          )
-        Shape::CapsuleX(half_height, radius) =>
-          ray_intersect_capsule_oriented_and_get_normal(
-            ray,
-            pos,
-            rot,
-            @core.Vec2::new(1.0F, 0.0F),
-            half_height,
-            radius,
-            half_height,
-            radius,
-            max_dist,
-            solid,
-          )
-        Shape::CapsuleY(half_height, radius) =>
-          ray_intersect_capsule_oriented_and_get_normal(
-            ray,
-            pos,
-            rot,
-            @core.Vec2::new(0.0F, 1.0F),
-            half_height,
-            radius,
-            radius,
-            half_height,
-            max_dist,
-            solid,
-          )
-        Shape::Segment(a, b) =>
-          ray_intersect_segment_and_get_normal(
-            ray, pos, rot, a, b, max_dist, solid,
-          )
-        Shape::Polyline(vertices, indices) =>
-          ray_intersect_polyline_and_get_normal(
-            ray, pos, rot, vertices, indices, max_dist, solid,
-          )
-        Shape::ConvexPolygon(vertices) =>
-          ray_intersect_convex_polygon_oriented_and_get_normal(
-            ray, pos, rot, vertices, max_dist, solid,
-          )
-      }
+      let hit = ray_intersect_shape_and_get_normal(
+        ray,
+        pos,
+        rot,
+        collider.shape,
+        max_dist,
+        solid,
+      )
       if hit is Some(intersection) {
         results.push((handle, intersection))
       }
@@ -1592,6 +1516,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::Segment(_, _) => shape
     Shape::Polyline(_, _) => shape
     Shape::ConvexPolygon(_) => shape
+    Shape::Compound(_) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<self.colliders.colliders.length() {
@@ -1600,329 +1525,346 @@ pub fn QueryPipeline::cast_shape(
       if !query_filter_test(self.filter, self.bodies, handle, collider) {
         continue
       }
-      let hit = if collider.shape is Shape::Segment(a, b) {
-        let (sa, sb) = segment_world_endpoints(
-          collider.world_translation,
-          collider.world_rotation,
-          a,
-          b,
-        )
-        let seg_dir = sb.sub(sa)
-        let seg_len = seg_dir.length()
-        let seg_radius = 0.0F
-        fn best_hit(
-          current : ShapeCastHit?,
-          candidate : ShapeCastHit?,
-        ) -> ShapeCastHit? {
-          if candidate is None {
-            return current
-          }
-          if current is None {
-            return candidate
-          }
-          let c = current.unwrap()
-          let n = candidate.unwrap()
-          if n.toi < c.toi {
-            candidate
-          } else {
-            current
-          }
+      fn best_hit(
+        current : ShapeCastHit?,
+        candidate : ShapeCastHit?,
+      ) -> ShapeCastHit? {
+        if candidate is None {
+          return current
         }
-
-        // Model the segment as a capsule with radius 0.
-        let mut segment_components : Array[(Shape, @core.Vec2, @core.Real)] = []
-        if seg_len <= 1.0e-6F {
-          segment_components = [(Shape::Ball(seg_radius), sa, 0.0F)]
+        if current is None {
+          return candidate
+        }
+        let c = current.unwrap()
+        let n = candidate.unwrap()
+        if n.toi < c.toi {
+          candidate
         } else {
-          let angle = atan2_real(seg_dir.y, seg_dir.x)
-          let mid = @core.Vec2::new(0.5F * (sa.x + sb.x), 0.5F * (sa.y + sb.y))
-          segment_components = [
-            (Shape::Ball(seg_radius), sa, 0.0F),
-            (Shape::Ball(seg_radius), sb, 0.0F),
-            (Shape::Cuboid(0.5F * seg_len, seg_radius), mid, angle),
-          ]
-        }
-
-        // Cast each moving component against the segment capsule components.
-        let mut moving_components : Array[(Shape, @core.Isometry2)] = [
-          (moving_shape, shape_pos),
-        ]
-        match moving_shape {
-          Shape::CapsuleX(h, r) =>
-            moving_components = capsule_components_moving(
-              shape_pos,
-              @core.Vec2::new(1.0F, 0.0F),
-              h,
-              r,
-              h,
-              r,
-            )
-          Shape::CapsuleY(h, r) =>
-            moving_components = capsule_components_moving(
-              shape_pos,
-              @core.Vec2::new(0.0F, 1.0F),
-              h,
-              r,
-              r,
-              h,
-            )
-          _ => ()
-        }
-        let mut best : ShapeCastHit? = None
-        for ci in 0..<moving_components.length() {
-          let comp = moving_components[ci]
-          match comp.0 {
-            Shape::Ball(r) =>
-              best = best_hit(
-                best,
-                shape_cast_ball_segment(
-                  comp.1.translation,
-                  shape_vel,
-                  r,
-                  sa,
-                  sb,
-                  seg_radius,
-                  max_toi,
-                  options.stop_at_penetration,
-                ),
-              )
-            _ =>
-              for sj in 0..<segment_components.length() {
-                let seg_comp = segment_components[sj]
-                best = best_hit(
-                  best,
-                  shape_cast_basic(
-                    comp.1,
-                    shape_vel,
-                    comp.0,
-                    seg_comp.1,
-                    seg_comp.2,
-                    seg_comp.0,
-                    max_toi,
-                    options.stop_at_penetration,
-                  ),
-                )
-              }
-          }
-        }
-        best
-      } else {
-        match (moving_shape, collider.shape) {
-          (Shape::Ball(_), Shape::Ball(_))
-          | (Shape::Ball(_), Shape::Cuboid(_, _))
-          | (Shape::Cuboid(_, _), Shape::Ball(_))
-          | (Shape::Cuboid(_, _), Shape::Cuboid(_, _)) =>
-            shape_cast_basic(
-              shape_pos,
-              shape_vel,
-              moving_shape,
-              collider.world_translation,
-              collider.world_rotation,
-              collider.shape,
-              max_toi,
-              options.stop_at_penetration,
-            )
-          (Shape::Ball(_), Shape::CapsuleX(h, r)) =>
-            shape_cast_against_capsule(
-              shape_pos,
-              shape_vel,
-              moving_shape,
-              collider.world_translation,
-              collider.world_rotation,
-              @core.Vec2::new(1.0F, 0.0F),
-              h,
-              r,
-              h,
-              r,
-              max_toi,
-              options.stop_at_penetration,
-            )
-          (Shape::Ball(_), Shape::CapsuleY(h, r)) =>
-            shape_cast_against_capsule(
-              shape_pos,
-              shape_vel,
-              moving_shape,
-              collider.world_translation,
-              collider.world_rotation,
-              @core.Vec2::new(0.0F, 1.0F),
-              h,
-              r,
-              r,
-              h,
-              max_toi,
-              options.stop_at_penetration,
-            )
-          (Shape::Cuboid(_, _), Shape::CapsuleX(h, r)) =>
-            shape_cast_against_capsule(
-              shape_pos,
-              shape_vel,
-              moving_shape,
-              collider.world_translation,
-              collider.world_rotation,
-              @core.Vec2::new(1.0F, 0.0F),
-              h,
-              r,
-              h,
-              r,
-              max_toi,
-              options.stop_at_penetration,
-            )
-          (Shape::Cuboid(_, _), Shape::CapsuleY(h, r)) =>
-            shape_cast_against_capsule(
-              shape_pos,
-              shape_vel,
-              moving_shape,
-              collider.world_translation,
-              collider.world_rotation,
-              @core.Vec2::new(0.0F, 1.0F),
-              h,
-              r,
-              r,
-              h,
-              max_toi,
-              options.stop_at_penetration,
-            )
-          (Shape::CapsuleX(h, r), target) => {
-            let moving_components = capsule_components_moving(
-              shape_pos,
-              @core.Vec2::new(1.0F, 0.0F),
-              h,
-              r,
-              h,
-              r,
-            )
-            let mut best_hit : ShapeCastHit? = None
-            for ci in 0..<moving_components.length() {
-              let comp = moving_components[ci]
-              let comp_shape = comp.0
-              let comp_pos = comp.1
-              let h2 = match target {
-                Shape::CapsuleX(th, tr) =>
-                  shape_cast_against_capsule(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    @core.Vec2::new(1.0F, 0.0F),
-                    th,
-                    tr,
-                    th,
-                    tr,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-                Shape::CapsuleY(th, tr) =>
-                  shape_cast_against_capsule(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    @core.Vec2::new(0.0F, 1.0F),
-                    th,
-                    tr,
-                    tr,
-                    th,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-                _ =>
-                  shape_cast_basic(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    target,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-              }
-              if h2 is Some(hit2) {
-                if best_hit is Some(cur) {
-                  if hit2.toi < cur.toi {
-                    best_hit = Some(hit2)
-                  }
-                } else {
-                  best_hit = Some(hit2)
-                }
-              }
-            }
-            best_hit
-          }
-          (Shape::CapsuleY(h, r), target) => {
-            let moving_components = capsule_components_moving(
-              shape_pos,
-              @core.Vec2::new(0.0F, 1.0F),
-              h,
-              r,
-              r,
-              h,
-            )
-            let mut best_hit : ShapeCastHit? = None
-            for ci in 0..<moving_components.length() {
-              let comp = moving_components[ci]
-              let comp_shape = comp.0
-              let comp_pos = comp.1
-              let h2 = match target {
-                Shape::CapsuleX(th, tr) =>
-                  shape_cast_against_capsule(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    @core.Vec2::new(1.0F, 0.0F),
-                    th,
-                    tr,
-                    th,
-                    tr,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-                Shape::CapsuleY(th, tr) =>
-                  shape_cast_against_capsule(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    @core.Vec2::new(0.0F, 1.0F),
-                    th,
-                    tr,
-                    tr,
-                    th,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-                _ =>
-                  shape_cast_basic(
-                    comp_pos,
-                    shape_vel,
-                    comp_shape,
-                    collider.world_translation,
-                    collider.world_rotation,
-                    target,
-                    max_toi,
-                    options.stop_at_penetration,
-                  )
-              }
-              if h2 is Some(hit2) {
-                if best_hit is Some(cur) {
-                  if hit2.toi < cur.toi {
-                    best_hit = Some(hit2)
-                  }
-                } else {
-                  best_hit = Some(hit2)
-                }
-              }
-            }
-            best_hit
-          }
-          _ => None
+          current
         }
       }
+
+      fn cast_against_target(
+        target_center : @core.Vec2,
+        target_rotation : @core.Real,
+        target_shape : Shape,
+      ) -> ShapeCastHit? {
+        match target_shape {
+          Shape::Compound(parts) => {
+            if parts.length() == 0 {
+              return None
+            }
+            let parent_iso = @core.Isometry2::new(
+              target_center,
+              @core.Rot2::from_angle(target_rotation),
+            )
+            let mut best : ShapeCastHit? = None
+            for i in 0..<parts.length() {
+              let (pose, part_shape) = parts[i]
+              let w = parent_iso.mul(pose)
+              let p = isometry2_translation(w)
+              let r = isometry2_rotation_angle(w)
+              best = best_hit(best, cast_against_target(p, r, part_shape))
+            }
+            best
+          }
+          Shape::Segment(a, b) => {
+            let (sa, sb) = segment_world_endpoints(
+              target_center, target_rotation, a, b,
+            )
+            let seg_dir = sb.sub(sa)
+            let seg_len = seg_dir.length()
+            let seg_radius = 0.0F
+
+            // Model the segment as a capsule with radius 0.
+            let mut segment_components : Array[(Shape, @core.Vec2, @core.Real)] = []
+            if seg_len <= 1.0e-6F {
+              segment_components = [(Shape::Ball(seg_radius), sa, 0.0F)]
+            } else {
+              let angle = atan2_real(seg_dir.y, seg_dir.x)
+              let mid = @core.Vec2::new(
+                0.5F * (sa.x + sb.x),
+                0.5F * (sa.y + sb.y),
+              )
+              segment_components = [
+                (Shape::Ball(seg_radius), sa, 0.0F),
+                (Shape::Ball(seg_radius), sb, 0.0F),
+                (Shape::Cuboid(0.5F * seg_len, seg_radius), mid, angle),
+              ]
+            }
+
+            // Cast each moving component against the segment capsule components.
+            let mut moving_components : Array[(Shape, @core.Isometry2)] = [
+              (moving_shape, shape_pos),
+            ]
+            match moving_shape {
+              Shape::CapsuleX(h, r) =>
+                moving_components = capsule_components_moving(
+                  shape_pos,
+                  @core.Vec2::new(1.0F, 0.0F),
+                  h,
+                  r,
+                  h,
+                  r,
+                )
+              Shape::CapsuleY(h, r) =>
+                moving_components = capsule_components_moving(
+                  shape_pos,
+                  @core.Vec2::new(0.0F, 1.0F),
+                  h,
+                  r,
+                  r,
+                  h,
+                )
+              _ => ()
+            }
+            let mut best : ShapeCastHit? = None
+            for ci in 0..<moving_components.length() {
+              let comp = moving_components[ci]
+              match comp.0 {
+                Shape::Ball(r) =>
+                  best = best_hit(
+                    best,
+                    shape_cast_ball_segment(
+                      comp.1.translation,
+                      shape_vel,
+                      r,
+                      sa,
+                      sb,
+                      seg_radius,
+                      max_toi,
+                      options.stop_at_penetration,
+                    ),
+                  )
+                _ =>
+                  for sj in 0..<segment_components.length() {
+                    let seg_comp = segment_components[sj]
+                    best = best_hit(
+                      best,
+                      shape_cast_basic(
+                        comp.1,
+                        shape_vel,
+                        comp.0,
+                        seg_comp.1,
+                        seg_comp.2,
+                        seg_comp.0,
+                        max_toi,
+                        options.stop_at_penetration,
+                      ),
+                    )
+                  }
+              }
+            }
+            best
+          }
+          target =>
+            match (moving_shape, target) {
+              (Shape::Ball(_), Shape::Ball(_))
+              | (Shape::Ball(_), Shape::Cuboid(_, _))
+              | (Shape::Cuboid(_, _), Shape::Ball(_))
+              | (Shape::Cuboid(_, _), Shape::Cuboid(_, _)) =>
+                shape_cast_basic(
+                  shape_pos,
+                  shape_vel,
+                  moving_shape,
+                  target_center,
+                  target_rotation,
+                  target,
+                  max_toi,
+                  options.stop_at_penetration,
+                )
+              (Shape::Ball(_), Shape::CapsuleX(h, r)) =>
+                shape_cast_against_capsule(
+                  shape_pos,
+                  shape_vel,
+                  moving_shape,
+                  target_center,
+                  target_rotation,
+                  @core.Vec2::new(1.0F, 0.0F),
+                  h,
+                  r,
+                  h,
+                  r,
+                  max_toi,
+                  options.stop_at_penetration,
+                )
+              (Shape::Ball(_), Shape::CapsuleY(h, r)) =>
+                shape_cast_against_capsule(
+                  shape_pos,
+                  shape_vel,
+                  moving_shape,
+                  target_center,
+                  target_rotation,
+                  @core.Vec2::new(0.0F, 1.0F),
+                  h,
+                  r,
+                  r,
+                  h,
+                  max_toi,
+                  options.stop_at_penetration,
+                )
+              (Shape::Cuboid(_, _), Shape::CapsuleX(h, r)) =>
+                shape_cast_against_capsule(
+                  shape_pos,
+                  shape_vel,
+                  moving_shape,
+                  target_center,
+                  target_rotation,
+                  @core.Vec2::new(1.0F, 0.0F),
+                  h,
+                  r,
+                  h,
+                  r,
+                  max_toi,
+                  options.stop_at_penetration,
+                )
+              (Shape::Cuboid(_, _), Shape::CapsuleY(h, r)) =>
+                shape_cast_against_capsule(
+                  shape_pos,
+                  shape_vel,
+                  moving_shape,
+                  target_center,
+                  target_rotation,
+                  @core.Vec2::new(0.0F, 1.0F),
+                  h,
+                  r,
+                  r,
+                  h,
+                  max_toi,
+                  options.stop_at_penetration,
+                )
+              (Shape::CapsuleX(h, r), target) => {
+                let moving_components = capsule_components_moving(
+                  shape_pos,
+                  @core.Vec2::new(1.0F, 0.0F),
+                  h,
+                  r,
+                  h,
+                  r,
+                )
+                let mut best_hit2 : ShapeCastHit? = None
+                for ci in 0..<moving_components.length() {
+                  let comp = moving_components[ci]
+                  let comp_shape = comp.0
+                  let comp_pos = comp.1
+                  let h2 = match target {
+                    Shape::CapsuleX(th, tr) =>
+                      shape_cast_against_capsule(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        @core.Vec2::new(1.0F, 0.0F),
+                        th,
+                        tr,
+                        th,
+                        tr,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                    Shape::CapsuleY(th, tr) =>
+                      shape_cast_against_capsule(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        @core.Vec2::new(0.0F, 1.0F),
+                        th,
+                        tr,
+                        tr,
+                        th,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                    _ =>
+                      shape_cast_basic(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        target,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                  }
+                  best_hit2 = best_hit(best_hit2, h2)
+                }
+                best_hit2
+              }
+              (Shape::CapsuleY(h, r), target) => {
+                let moving_components = capsule_components_moving(
+                  shape_pos,
+                  @core.Vec2::new(0.0F, 1.0F),
+                  h,
+                  r,
+                  r,
+                  h,
+                )
+                let mut best_hit2 : ShapeCastHit? = None
+                for ci in 0..<moving_components.length() {
+                  let comp = moving_components[ci]
+                  let comp_shape = comp.0
+                  let comp_pos = comp.1
+                  let h2 = match target {
+                    Shape::CapsuleX(th, tr) =>
+                      shape_cast_against_capsule(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        @core.Vec2::new(1.0F, 0.0F),
+                        th,
+                        tr,
+                        th,
+                        tr,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                    Shape::CapsuleY(th, tr) =>
+                      shape_cast_against_capsule(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        @core.Vec2::new(0.0F, 1.0F),
+                        th,
+                        tr,
+                        tr,
+                        th,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                    _ =>
+                      shape_cast_basic(
+                        comp_pos,
+                        shape_vel,
+                        comp_shape,
+                        target_center,
+                        target_rotation,
+                        target,
+                        max_toi,
+                        options.stop_at_penetration,
+                      )
+                  }
+                  best_hit2 = best_hit(best_hit2, h2)
+                }
+                best_hit2
+              }
+              _ => None
+            }
+        }
+      }
+
+      let hit = cast_against_target(
+        collider.world_translation,
+        collider.world_rotation,
+        collider.shape,
+      )
       if hit is Some(intersection) {
         if best is Some(current) {
           if intersection.toi < current.1.toi {
@@ -1978,6 +1920,18 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         let mut best = 0.0F
         for i in 0..<vertices.length() {
           let d = vertices[i].length()
+          if d > best {
+            best = d
+          }
+        }
+        best
+      }
+      Shape::Compound(parts) => {
+        let mut best = 0.0F
+        for i in 0..<parts.length() {
+          let (pose, part_shape) = parts[i]
+          let t = isometry2_translation(pose)
+          let d = t.length() + shape_bounding_radius(part_shape)
           if d > best {
             best = d
           }
@@ -2041,6 +1995,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
       Shape::ConvexPolygon(vertices) =>
         project_point_on_convex_polygon_oriented(
           center, rotation, vertices, point, false,
+        ).point
+      Shape::Compound(parts) =>
+        project_point_on_shape(
+          center,
+          rotation,
+          Shape::Compound(parts),
+          point,
+          false,
         ).point
     }
   }
@@ -2349,6 +2311,25 @@ fn point_in_shape(
       let local_point = inv.rotate_vec2(point.sub(center))
       point_in_convex_polygon_local(vertices, local_point)
     }
+    Shape::Compound(parts) => {
+      if parts.length() == 0 {
+        return false
+      }
+      let parent_iso = @core.Isometry2::new(
+        center,
+        @core.Rot2::from_angle(rotation),
+      )
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let w = parent_iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        if point_in_shape(part_shape, p, r, point) {
+          return true
+        }
+      }
+      false
+    }
   }
 }
 
@@ -2480,6 +2461,38 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
           @core.Vec2::new(max_x, max_y),
         )
       }
+    Shape::Compound(parts) =>
+      if parts.length() == 0 {
+        @core.Aabb::new(collider.world_translation, collider.world_translation)
+      } else {
+        let base_iso = @core.Isometry2::new(
+          collider.world_translation,
+          @core.Rot2::from_angle(collider.world_rotation),
+        )
+        let mut acc : @core.Aabb? = None
+        for i in 0..<parts.length() {
+          let (pose, part_shape) = parts[i]
+          let w = base_iso.mul(pose)
+          let part_collider = collider
+          part_collider.shape = part_shape
+          part_collider.world_translation = isometry2_translation(w)
+          part_collider.world_rotation = isometry2_rotation_angle(w)
+          let part_aabb = compute_collider_aabb(part_collider)
+          if acc is Some(existing) {
+            acc = Some(existing.combine(part_aabb))
+          } else {
+            acc = Some(part_aabb)
+          }
+        }
+        if acc is Some(aabb) {
+          aabb
+        } else {
+          @core.Aabb::new(
+            collider.world_translation,
+            collider.world_translation,
+          )
+        }
+      }
   }
 }
 
@@ -2608,6 +2621,27 @@ fn compute_query_shape_aabb(
           @core.Vec2::new(min_x, min_y),
           @core.Vec2::new(max_x, max_y),
         )
+      }
+    Shape::Compound(parts) =>
+      if parts.length() == 0 {
+        @core.Aabb::new(center, center)
+      } else {
+        let mut acc : @core.Aabb? = None
+        for i in 0..<parts.length() {
+          let (pose, part_shape) = parts[i]
+          let part_pos = shape_pos.mul(pose)
+          let part_aabb = compute_query_shape_aabb(part_pos, part_shape)
+          if acc is Some(existing) {
+            acc = Some(existing.combine(part_aabb))
+          } else {
+            acc = Some(part_aabb)
+          }
+        }
+        if acc is Some(aabb) {
+          aabb
+        } else {
+          @core.Aabb::new(center, center)
+        }
       }
   }
 }
@@ -3167,6 +3201,259 @@ fn ray_intersect_polyline_and_get_normal(
 }
 
 ///|
+fn ray_intersect_shape_and_get_normal(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  shape : Shape,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  match shape {
+    Shape::Ball(radius) =>
+      ray_intersect_ball_and_get_normal(ray, center, radius, max_dist, solid)
+    Shape::Cuboid(hw, hh) =>
+      ray_intersect_cuboid_oriented_and_get_normal(
+        ray, center, rotation, hw, hh, max_dist, solid,
+      )
+    Shape::CapsuleX(half_height, radius) =>
+      ray_intersect_capsule_oriented_and_get_normal(
+        ray,
+        center,
+        rotation,
+        @core.Vec2::new(1.0F, 0.0F),
+        half_height,
+        radius,
+        half_height,
+        radius,
+        max_dist,
+        solid,
+      )
+    Shape::CapsuleY(half_height, radius) =>
+      ray_intersect_capsule_oriented_and_get_normal(
+        ray,
+        center,
+        rotation,
+        @core.Vec2::new(0.0F, 1.0F),
+        half_height,
+        radius,
+        radius,
+        half_height,
+        max_dist,
+        solid,
+      )
+    Shape::Segment(a, b) =>
+      ray_intersect_segment_and_get_normal(
+        ray, center, rotation, a, b, max_dist, solid,
+      )
+    Shape::Polyline(vertices, indices) =>
+      ray_intersect_polyline_and_get_normal(
+        ray, center, rotation, vertices, indices, max_dist, solid,
+      )
+    Shape::ConvexPolygon(vertices) =>
+      ray_intersect_convex_polygon_oriented_and_get_normal(
+        ray, center, rotation, vertices, max_dist, solid,
+      )
+    Shape::Compound(parts) => {
+      if parts.length() == 0 {
+        return None
+      }
+      let parent_iso = @core.Isometry2::new(
+        center,
+        @core.Rot2::from_angle(rotation),
+      )
+      let mut best : RayIntersection? = None
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let w = parent_iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        let hit = ray_intersect_shape_and_get_normal(
+          ray, p, r, part_shape, max_dist, solid,
+        )
+        if hit is Some(h) {
+          if best is Some(cur) {
+            if h.toi < cur.toi {
+              best = Some(h)
+            }
+          } else {
+            best = Some(h)
+          }
+        }
+      }
+      best
+    }
+  }
+}
+
+///|
+fn project_point_on_shape(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  shape : Shape,
+  point : @core.Vec2,
+  solid : Bool,
+) -> PointProjection {
+  match shape {
+    Shape::Ball(radius) => project_point_on_ball(center, radius, point, solid)
+    Shape::Cuboid(hw, hh) =>
+      project_point_on_cuboid_oriented(center, rotation, hw, hh, point, solid)
+    Shape::CapsuleX(half_height, radius) =>
+      project_point_on_capsule_oriented(
+        center,
+        rotation,
+        @core.Vec2::new(1.0F, 0.0F),
+        half_height,
+        radius,
+        point,
+        solid,
+      )
+    Shape::CapsuleY(half_height, radius) =>
+      project_point_on_capsule_oriented(
+        center,
+        rotation,
+        @core.Vec2::new(0.0F, 1.0F),
+        half_height,
+        radius,
+        point,
+        solid,
+      )
+    Shape::Segment(a, b) =>
+      project_point_on_segment(center, rotation, a, b, point)
+    Shape::Polyline(vertices, indices) =>
+      project_point_on_polyline(center, rotation, vertices, indices, point)
+    Shape::ConvexPolygon(vertices) =>
+      project_point_on_convex_polygon_oriented(
+        center, rotation, vertices, point, solid,
+      )
+    Shape::Compound(parts) => {
+      if parts.length() == 0 {
+        return PointProjection::{ point, is_inside: false }
+      }
+      let parent_iso = @core.Isometry2::new(
+        center,
+        @core.Rot2::from_angle(rotation),
+      )
+      let mut best : PointProjection? = None
+      let mut best_dist2 = 1.0e30F
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let w = parent_iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        let proj = project_point_on_shape(p, r, part_shape, point, solid)
+        let delta = point.sub(proj.point)
+        let dist2 = delta.dot(delta)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          best = Some(proj)
+        }
+      }
+      if best is Some(p) {
+        p
+      } else {
+        PointProjection::{ point, is_inside: false }
+      }
+    }
+  }
+}
+
+///|
+fn project_point_on_shape_and_get_feature(
+  center : @core.Vec2,
+  rotation : @core.Real,
+  shape : Shape,
+  point : @core.Vec2,
+  solid : Bool,
+) -> (PointProjection, FeatureId) {
+  fn pack_feature(prefix : Int, fid : FeatureId) -> FeatureId {
+    if prefix == 0 {
+      return fid
+    }
+    let base = prefix * 1000000
+    match fid {
+      FeatureId::Unknown => FeatureId::Face(base)
+      FeatureId::Vertex(id) => FeatureId::Vertex(base + id)
+      FeatureId::Edge(id) => FeatureId::Edge(base + id)
+      FeatureId::Face(id) => FeatureId::Face(base + id)
+    }
+  }
+
+  match shape {
+    Shape::Ball(radius) =>
+      project_point_on_ball_and_get_feature(center, radius, point, solid)
+    Shape::Cuboid(hw, hh) =>
+      project_point_on_cuboid_oriented_and_get_feature(
+        center, rotation, hw, hh, point, solid,
+      )
+    Shape::CapsuleX(half_height, radius) =>
+      project_point_on_capsule_oriented_and_get_feature(
+        center,
+        rotation,
+        @core.Vec2::new(1.0F, 0.0F),
+        half_height,
+        radius,
+        point,
+        solid,
+      )
+    Shape::CapsuleY(half_height, radius) =>
+      project_point_on_capsule_oriented_and_get_feature(
+        center,
+        rotation,
+        @core.Vec2::new(0.0F, 1.0F),
+        half_height,
+        radius,
+        point,
+        solid,
+      )
+    Shape::Segment(a, b) =>
+      project_point_on_segment_and_get_feature(center, rotation, a, b, point)
+    Shape::Polyline(vertices, indices) =>
+      project_point_on_polyline_and_get_feature(
+        center, rotation, vertices, indices, point,
+      )
+    Shape::ConvexPolygon(vertices) =>
+      project_point_on_convex_polygon_oriented_and_get_feature(
+        center, rotation, vertices, point, solid,
+      )
+    Shape::Compound(parts) => {
+      if parts.length() == 0 {
+        return (
+          PointProjection::{ point, is_inside: false },
+          FeatureId::Unknown,
+        )
+      }
+      let parent_iso = @core.Isometry2::new(
+        center,
+        @core.Rot2::from_angle(rotation),
+      )
+      let mut best : (PointProjection, FeatureId)? = None
+      let mut best_dist2 = 1.0e30F
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let w = parent_iso.mul(pose)
+        let p = isometry2_translation(w)
+        let r = isometry2_rotation_angle(w)
+        let (proj, feature) = project_point_on_shape_and_get_feature(
+          p, r, part_shape, point, solid,
+        )
+        let delta = point.sub(proj.point)
+        let dist2 = delta.dot(delta)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          best = Some((proj, pack_feature(i + 1, feature)))
+        }
+      }
+      if best is Some(result) {
+        result
+      } else {
+        (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+      }
+    }
+  }
+}
+
+///|
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
   point : @core.Vec2,
@@ -3182,68 +3469,13 @@ pub fn QueryPipeline::project_point(
       if !query_filter_test(self.filter, self.bodies, handle, collider) {
         continue
       }
-      let projection = match collider.shape {
-        Shape::Ball(radius) =>
-          project_point_on_ball(
-            collider.world_translation,
-            radius,
-            point,
-            solid,
-          )
-        Shape::Cuboid(hw, hh) =>
-          project_point_on_cuboid_oriented(
-            collider.world_translation,
-            collider.world_rotation,
-            hw,
-            hh,
-            point,
-            solid,
-          )
-        Shape::CapsuleX(half_height, radius) =>
-          project_point_on_capsule_oriented(
-            collider.world_translation,
-            collider.world_rotation,
-            @core.Vec2::new(1.0F, 0.0F),
-            half_height,
-            radius,
-            point,
-            solid,
-          )
-        Shape::CapsuleY(half_height, radius) =>
-          project_point_on_capsule_oriented(
-            collider.world_translation,
-            collider.world_rotation,
-            @core.Vec2::new(0.0F, 1.0F),
-            half_height,
-            radius,
-            point,
-            solid,
-          )
-        Shape::Segment(a, b) =>
-          project_point_on_segment(
-            collider.world_translation,
-            collider.world_rotation,
-            a,
-            b,
-            point,
-          )
-        Shape::Polyline(vertices, indices) =>
-          project_point_on_polyline(
-            collider.world_translation,
-            collider.world_rotation,
-            vertices,
-            indices,
-            point,
-          )
-        Shape::ConvexPolygon(vertices) =>
-          project_point_on_convex_polygon_oriented(
-            collider.world_translation,
-            collider.world_rotation,
-            vertices,
-            point,
-            solid,
-          )
-      }
+      let projection = project_point_on_shape(
+        collider.world_translation,
+        collider.world_rotation,
+        collider.shape,
+        point,
+        solid,
+      )
       let delta = point.sub(projection.point)
       let dist2 = delta.dot(delta)
       if best is Some(current) {
@@ -3278,68 +3510,13 @@ pub fn QueryPipeline::project_point_and_get_feature(
       if !query_filter_test(self.filter, self.bodies, handle, collider) {
         continue
       }
-      let (projection, feature) = match collider.shape {
-        Shape::Ball(radius) =>
-          project_point_on_ball_and_get_feature(
-            collider.world_translation,
-            radius,
-            point,
-            solid,
-          )
-        Shape::Cuboid(hw, hh) =>
-          project_point_on_cuboid_oriented_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            hw,
-            hh,
-            point,
-            solid,
-          )
-        Shape::CapsuleX(half_height, radius) =>
-          project_point_on_capsule_oriented_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            @core.Vec2::new(1.0F, 0.0F),
-            half_height,
-            radius,
-            point,
-            solid,
-          )
-        Shape::CapsuleY(half_height, radius) =>
-          project_point_on_capsule_oriented_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            @core.Vec2::new(0.0F, 1.0F),
-            half_height,
-            radius,
-            point,
-            solid,
-          )
-        Shape::Segment(a, b) =>
-          project_point_on_segment_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            a,
-            b,
-            point,
-          )
-        Shape::Polyline(vertices, indices) =>
-          project_point_on_polyline_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            vertices,
-            indices,
-            point,
-          )
-        Shape::ConvexPolygon(vertices) =>
-          project_point_on_convex_polygon_oriented_and_get_feature(
-            collider.world_translation,
-            collider.world_rotation,
-            vertices,
-            point,
-            solid,
-          )
-      }
+      let (projection, feature) = project_point_on_shape_and_get_feature(
+        collider.world_translation,
+        collider.world_rotation,
+        collider.shape,
+        point,
+        solid,
+      )
       let delta = point.sub(projection.point)
       let dist2 = delta.dot(delta)
       if best is Some(current) {

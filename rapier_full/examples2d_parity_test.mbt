@@ -607,9 +607,23 @@ test "examples2d/ccd2.rs parity" {
     bodies,
   )
 
-  // Create dynamic bodies with a "compound cross" approximated by 3 colliders.
+  // Create dynamic bodies with a compound cross.
   let radx = 0.4F
   let rady = 0.05F
+  let compound_parts = [
+    (
+      @core.Isometry2::from_translation(@core.Vec2::new(0.0F, radx - rady)),
+      @collision.Shape::Cuboid(radx, rady),
+    ),
+    (
+      @core.Isometry2::from_translation(@core.Vec2::new(-radx + rady, 0.0F)),
+      @collision.Shape::Cuboid(rady, radx),
+    ),
+    (
+      @core.Isometry2::from_translation(@core.Vec2::new(radx - rady, 0.0F)),
+      @collision.Shape::Cuboid(rady, radx),
+    ),
+  ]
   let num = 6
   let shift = (radx + 0.01F) * 2.0F
   let centerx = shift * Float::from_double(num.to_double()) / 2.0F - 0.5F
@@ -627,29 +641,8 @@ test "examples2d/ccd2.rs parity" {
         .can_sleep(false)
         .build(),
       )
-      // Horizontal bar.
       colliders.insert_with_parent(
-        @collision.ColliderBuilder::cuboid(radx, rady)
-        .translation(@core.Vec2::new(0.0F, radx - rady))
-        .build(),
-        handle,
-        bodies,
-      )
-      |> ignore
-      // Left vertical bar.
-      colliders.insert_with_parent(
-        @collision.ColliderBuilder::cuboid(rady, radx)
-        .translation(@core.Vec2::new(-radx + rady, 0.0F))
-        .build(),
-        handle,
-        bodies,
-      )
-      |> ignore
-      // Right vertical bar.
-      colliders.insert_with_parent(
-        @collision.ColliderBuilder::cuboid(rady, radx)
-        .translation(@core.Vec2::new(radx - rady, 0.0F))
-        .build(),
+        @collision.ColliderBuilder::compound(compound_parts).build(),
         handle,
         bodies,
       )

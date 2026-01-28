@@ -242,6 +242,24 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
+    @collision.Shape::Compound(parts) => {
+      let mut hw = 0.0F
+      let mut hh = 0.0F
+      for i in 0..<parts.length() {
+        let (pose, part_shape) = parts[i]
+        let t = pose.transform_point(@core.Vec2::zero())
+        let (phw, phh) = compute_dims(part_shape)
+        let cand_hw = @core.abs(t.x) + phw
+        let cand_hh = @core.abs(t.y) + phh
+        if cand_hw > hw {
+          hw = cand_hw
+        }
+        if cand_hh > hh {
+          hh = cand_hh
+        }
+      }
+      (hw, hh)
+    }
   }
 }
 
