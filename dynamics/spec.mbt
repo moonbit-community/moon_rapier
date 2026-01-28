@@ -125,6 +125,82 @@ pub fn CoefficientCombineRule::combine(
 
 ///|
 #declaration_only
+pub type AxesMask
+
+///|
+#declaration_only
+pub fn AxesMask::empty() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::all() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::new(bits : Int) -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::bits(self : AxesMask) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::contains(self : AxesMask, other : AxesMask) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::insert(self : AxesMask, other : AxesMask) -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::remove(self : AxesMask, other : AxesMask) -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::lin_x() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::lin_y() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::ang_z() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::lin_axes() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn AxesMask::ang_axes() -> AxesMask {
+  ...
+}
+
+///|
+#declaration_only
 pub type Group
 
 ///|
@@ -1598,6 +1674,27 @@ pub fn RigidBodyPosition::integrate_forces_and_velocities(
 ///|
 #declaration_only
 pub type RigidBodyVelocity
+
+///|
+#declaration_only
+pub fn RigidBodyVelocity::new(
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyVelocity::linvel(self : RigidBodyVelocity) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyVelocity::angvel(self : RigidBodyVelocity) -> @core.Real {
+  ...
+}
 
 ///|
 #declaration_only

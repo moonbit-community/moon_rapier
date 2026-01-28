@@ -1043,6 +1043,68 @@ pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
 
 ///|
 #declaration_only
+pub fn ContactPair::manifolds(self : ContactPair) -> Array[ContactManifold] {
+  ...
+}
+
+///|
+#declaration_only
+pub type ContactManifold
+
+///|
+#declaration_only
+pub fn ContactManifold::normal(self : ContactManifold) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactManifold::points(
+  self : ContactManifold,
+) -> Array[ContactManifoldPoint] {
+  ...
+}
+
+///|
+#declaration_only
+pub type ContactManifoldPoint
+
+///|
+#declaration_only
+pub fn ContactManifoldPoint::local_p1(
+  self : ContactManifoldPoint,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactManifoldPoint::local_p2(
+  self : ContactManifoldPoint,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactManifoldPoint::dist(self : ContactManifoldPoint) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactManifoldPoint::fid1(self : ContactManifoldPoint) -> FeatureId {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ContactManifoldPoint::fid2(self : ContactManifoldPoint) -> FeatureId {
+  ...
+}
+
+///|
+#declaration_only
 pub type NarrowPhase
 
 ///|
@@ -1208,6 +1270,7 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 }
 
 ///|
+// NOTE: defined in collision/query_pipeline.mbt.
 #declaration_only
 pub type FeatureId
 
