@@ -9,6 +9,7 @@ import {
 }
 
 // Values
+pub fn rapier_logo_buffers_2d() -> Array[(Array[@core.Vec2], Array[(Int, Int, Int)])]
 
 // Errors
 

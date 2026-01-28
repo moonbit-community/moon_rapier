@@ -4227,38 +4227,35 @@ test "examples2d/trimesh2.rs parity" {
     bodies,
   )
   |> ignore
-
-  // Upstream uses a tessellated SVG for the Rapier logo. Here we use a small fixed mesh and
-  // verify trimesh collider construction + basic dynamics.
-  let vtx = [
-    @core.Vec2::new(-1.0F, -1.0F),
-    @core.Vec2::new(1.0F, -1.0F),
-    @core.Vec2::new(1.0F, 1.0F),
-    @core.Vec2::new(-1.0F, 1.0F),
-  ]
-  let idx = [(0, 1, 2), (0, 2, 3)]
+  let rapier_logo_buffers = @rapier_full.rapier_logo_buffers_2d()
   let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
-  for k in 0..<5 {
-    if @collision.ColliderBuilder::trimesh(vtx, idx) is Some(builder) {
-      let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(
-          @core.Vec2::new(
-            0.0F,
-            20.0F + Float::from_double(k.to_double()) * 5.0F,
-          ),
+  for ith in 0..<rapier_logo_buffers.length() {
+    let buffer = rapier_logo_buffers[ith]
+    let vtx = buffer.0
+    let idx = buffer.1
+    let x = Float::from_double(ith.to_double()) * 8.0F - 20.0F
+    for k in 0..<5 {
+      if @collision.ColliderBuilder::trimesh(vtx, idx) is Some(builder) {
+        let handle = bodies.insert(
+          @dynamics.RigidBodyBuilder::dynamic()
+          .translation(
+            @core.Vec2::new(
+              x,
+              20.0F + Float::from_double(k.to_double()) * 11.0F,
+            ),
+          )
+          .build(),
         )
-        .build(),
-      )
-      colliders.insert_with_parent(
-        builder.contact_skin(0.2F).build(),
-        handle,
-        bodies,
-      )
-      |> ignore
-      dyn_handles.push(handle)
-    } else {
-      inspect(false, content="true")
+        colliders.insert_with_parent(
+          builder.contact_skin(0.2F).build(),
+          handle,
+          bodies,
+        )
+        |> ignore
+        dyn_handles.push(handle)
+      } else {
+        inspect(false, content="true")
+      }
     }
   }
   step_pipeline_2d_n(
