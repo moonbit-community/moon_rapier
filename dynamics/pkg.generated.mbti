@@ -10,6 +10,22 @@ import {
 // Errors
 
 // Types and methods
+pub struct AxesMask {
+  bits : Int
+}
+pub fn AxesMask::all() -> Self
+pub fn AxesMask::ang_axes() -> Self
+pub fn AxesMask::ang_z() -> Self
+pub fn AxesMask::bits(Self) -> Int
+pub fn AxesMask::contains(Self, Self) -> Bool
+pub fn AxesMask::empty() -> Self
+pub fn AxesMask::insert(Self, Self) -> Self
+pub fn AxesMask::lin_axes() -> Self
+pub fn AxesMask::lin_x() -> Self
+pub fn AxesMask::lin_y() -> Self
+pub fn AxesMask::new(Int) -> Self
+pub fn AxesMask::remove(Self, Self) -> Self
+
 pub struct CCDSolver {
 }
 pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit
@@ -398,6 +414,7 @@ pub fn Multibody::forward_kinematics_single_link(Self, RigidBodySet, LinkId, Arr
 pub fn Multibody::inverse_kinematics(Self, RigidBodySet, LinkId, InverseKinematicsOption, @core.Isometry2, (MultibodyLink) -> Bool, DVector) -> Unit
 pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::ndofs(Self) -> Int
+pub fn Multibody::update_rigid_bodies(Self, RigidBodySet) -> Unit
 
 pub struct MultibodyIndex {
   value : Int
@@ -429,6 +446,7 @@ pub fn MultibodyJointSet::new() -> Self
 pub fn MultibodyJointSet::remove(Self, MultibodyJointHandle, Bool) -> Unit
 pub fn MultibodyJointSet::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
 pub fn MultibodyJointSet::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet) -> Unit
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
@@ -754,8 +772,11 @@ pub struct RigidBodyVelocity {
   mut linvel : @core.Vec2
   mut angvel : Float
 }
+pub fn RigidBodyVelocity::angvel(Self) -> Float
 pub fn RigidBodyVelocity::apply_damping(Self, Float, RigidBodyDamping) -> Self
 pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) -> @core.Isometry2
+pub fn RigidBodyVelocity::linvel(Self) -> @core.Vec2
+pub fn RigidBodyVelocity::new(@core.Vec2, Float) -> Self
 pub fn RigidBodyVelocity::zero() -> Self
 
 type RopeJoint

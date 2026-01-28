@@ -354,10 +354,91 @@ pub fn ColliderBuilder::capsule_from_endpoints(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::triangle(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::round_triangle(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+  border_radius : @core.Real,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::halfspace(
+  outward_normal : @core.Vec2,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::compound(
+  shapes : Array[(@core.Isometry2, Shape)],
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::round_convex_hull(
+  points : Array[@core.Vec2],
+  border_radius : @core.Real,
+) -> ColliderBuilder? {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::segment(
   a : @core.Vec2,
   b : @core.Vec2,
 ) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::polyline(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::heightfield(
+  heights : Array[@core.Real],
+  scale : @core.Vec2,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::trimesh(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::convex_hull(
+  points : Array[@core.Vec2],
+) -> ColliderBuilder? {
   ...
 }
 
@@ -429,6 +510,15 @@ pub fn ColliderBuilder::collision_groups(
 pub fn ColliderBuilder::solver_groups(
   self : ColliderBuilder,
   groups : @dynamics.InteractionGroups,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderBuilder::density(
+  self : ColliderBuilder,
+  density : @core.Real,
 ) -> ColliderBuilder {
   ...
 }

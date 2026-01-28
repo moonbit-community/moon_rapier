@@ -1060,6 +1060,8 @@ pub fn PhysicsPipeline::step(
       false,
     )
   }
+  // Keep rigid-body poses in sync with multibody kinematics.
+  multibody_joints.sync_rigid_bodies_from_multibodies(bodies)
   let prediction_distance = parameters.prediction_distance()
   let mut remaining_time = parameters.dt
   let mut remaining_substeps = parameters.max_ccd_substeps

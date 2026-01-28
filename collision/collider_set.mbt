@@ -413,6 +413,161 @@ pub fn ColliderBuilder::capsule_from_endpoints(
 }
 
 ///|
+const HALFSPACE_EXTENT : @core.Real = 1.0e4F
+
+///|
+pub fn ColliderBuilder::halfspace(
+  outward_normal : @core.Vec2,
+) -> ColliderBuilder {
+  // Approximate Rapier's infinite half-space with a very large cuboid, where the face with
+  // outward normal `outward_normal` passes through the local origin.
+  let n0 = if outward_normal.length_squared() <= 1.0e-12F {
+    @core.Vec2::new(0.0F, 1.0F)
+  } else {
+    outward_normal.normalize()
+  }
+  // Find angle so that Rot(angle) * (0, 1) == n0.
+  let angle = @core.atan2(-n0.x, n0.y)
+  let extent = HALFSPACE_EXTENT
+  let center = @core.Vec2::new(-n0.x * extent, -n0.y * extent)
+  ColliderBuilder::cuboid(extent, extent).translation(center).rotation(angle)
+}
+
+///|
+pub fn ColliderBuilder::triangle(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+) -> ColliderBuilder {
+  // Rapier uses a dedicated triangle primitive. In this 2D port we use a convex polygon and
+  // fall back to a segment for degenerate inputs.
+  let ab = b.sub(a)
+  let ac = c.sub(a)
+  let area2 = ab.x * ac.y - ab.y * ac.x
+  if @core.abs(area2) <= 1.0e-8F {
+    return ColliderBuilder::segment(a, b)
+  }
+  let pts = [a, b, c]
+  if ColliderBuilder::convex_hull(pts) is Some(builder) {
+    builder
+  } else {
+    let edges = [(0, 1), (1, 2), (2, 0)]
+    ColliderBuilder::polyline(pts, Some(edges))
+  }
+}
+
+///|
+pub fn ColliderBuilder::round_triangle(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+  border_radius : @core.Real,
+) -> ColliderBuilder {
+  ColliderBuilder::triangle(a, b, c).contact_skin(border_radius)
+}
+
+///|
+pub fn ColliderBuilder::compound(
+  shapes : Array[(@core.Isometry2, Shape)],
+) -> ColliderBuilder {
+  // Approximate a compound shape with the convex-hull of points sampled from its sub-shapes.
+  // This preserves a useful "filled" collision surface for most gameplay uses, though it does
+  // not model concavities.
+  fn sample_shape(shape : Shape) -> Array[@core.Vec2] {
+    match shape {
+      Shape::Ball(r) => {
+        let s = r * 0.70710678118F
+        [
+          @core.Vec2::new(r, 0.0F),
+          @core.Vec2::new(-r, 0.0F),
+          @core.Vec2::new(0.0F, r),
+          @core.Vec2::new(0.0F, -r),
+          @core.Vec2::new(s, s),
+          @core.Vec2::new(-s, s),
+          @core.Vec2::new(-s, -s),
+          @core.Vec2::new(s, -s),
+        ]
+      }
+      Shape::Cuboid(hw, hh) =>
+        [
+          @core.Vec2::new(-hw, -hh),
+          @core.Vec2::new(hw, -hh),
+          @core.Vec2::new(hw, hh),
+          @core.Vec2::new(-hw, hh),
+        ]
+      Shape::CapsuleX(half_height, radius) => {
+        let hx = half_height
+        let r = radius
+        [
+          @core.Vec2::new(hx + r, 0.0F),
+          @core.Vec2::new(-hx - r, 0.0F),
+          @core.Vec2::new(hx, r),
+          @core.Vec2::new(hx, -r),
+          @core.Vec2::new(-hx, r),
+          @core.Vec2::new(-hx, -r),
+        ]
+      }
+      Shape::CapsuleY(half_height, radius) => {
+        let hy = half_height
+        let r = radius
+        [
+          @core.Vec2::new(0.0F, hy + r),
+          @core.Vec2::new(0.0F, -hy - r),
+          @core.Vec2::new(r, hy),
+          @core.Vec2::new(-r, hy),
+          @core.Vec2::new(r, -hy),
+          @core.Vec2::new(-r, -hy),
+        ]
+      }
+      Shape::Segment(a, b) => [a, b]
+      Shape::Polyline(vertices, _) => {
+        let out : Array[@core.Vec2] = []
+        for i in 0..<vertices.length() {
+          out.push(vertices[i])
+        }
+        out
+      }
+      Shape::ConvexPolygon(vertices) => {
+        let out : Array[@core.Vec2] = []
+        for i in 0..<vertices.length() {
+          out.push(vertices[i])
+        }
+        out
+      }
+    }
+  }
+
+  let points : Array[@core.Vec2] = []
+  for i in 0..<shapes.length() {
+    let (pose, shape) = shapes[i]
+    let samples = sample_shape(shape)
+    for j in 0..<samples.length() {
+      points.push(pose.transform_point(samples[j]))
+    }
+  }
+  if points.length() == 0 {
+    return ColliderBuilder::polyline([], None)
+  }
+  if ColliderBuilder::convex_hull(points) is Some(builder) {
+    builder
+  } else {
+    ColliderBuilder::polyline(points, None)
+  }
+}
+
+///|
+pub fn ColliderBuilder::round_convex_hull(
+  points : Array[@core.Vec2],
+  border_radius : @core.Real,
+) -> ColliderBuilder? {
+  if ColliderBuilder::convex_hull(points) is Some(builder) {
+    Some(builder.contact_skin(border_radius))
+  } else {
+    None
+  }
+}
+
+///|
 pub fn ColliderBuilder::segment(
   a : @core.Vec2,
   b : @core.Vec2,

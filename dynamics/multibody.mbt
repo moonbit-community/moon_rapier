@@ -398,6 +398,21 @@ pub fn Multibody::forward_kinematics(
 }
 
 ///|
+pub fn Multibody::update_rigid_bodies(
+  self : Multibody,
+  bodies : RigidBodySet,
+) -> Unit {
+  for i in 0..<self.links.length() {
+    let link = self.links[i]
+    let handle = link.rigid_body
+    if bodies.get_mut_internal_with_modification_tracking(handle) is Some(body) {
+      // Keep the rigid-body poses in sync with the multibody kinematics.
+      body.set_position(link.local_to_world, false) |> ignore
+    }
+  }
+}
+
+///|
 pub fn Multibody::ndofs(self : Multibody) -> Int {
   self.ndofs
 }
@@ -998,6 +1013,19 @@ pub fn MultibodyJointSet::take_to_join(
   }
   self.to_join.clear()
   result
+}
+
+///|
+pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(
+  self : MultibodyJointSet,
+  bodies : RigidBodySet,
+) -> Unit {
+  for i in 0..<self.multibodies.length() {
+    let mb = self.multibodies[i]
+    mb.forward_kinematics(bodies, true)
+    mb.update_rigid_bodies(bodies)
+    self.multibodies[i] = mb
+  }
 }
 
 ///|

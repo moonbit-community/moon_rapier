@@ -182,3 +182,165 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
 ) -> Unit {
   ...
 }
+
+///|
+#declaration_only
+pub type PdErrors
+
+///|
+#declaration_only
+pub fn PdErrors::from_vels(vels : @dynamics.RigidBodyVelocity) -> PdErrors {
+  ...
+}
+
+///|
+#declaration_only
+pub type PdController
+
+///|
+#declaration_only
+pub fn PdController::default() -> PdController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PdController::new(
+  kp : @core.Real,
+  kd : @core.Real,
+  axes : @dynamics.AxesMask,
+) -> PdController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PdController::linear_rigid_body_correction(
+  self : PdController,
+  rb : @dynamics.RigidBody,
+  target_pos : @core.Vec2,
+  target_linvel : @core.Vec2,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PdController::angular_rigid_body_correction(
+  self : PdController,
+  rb : @dynamics.RigidBody,
+  target_rot : @core.Rot2,
+  target_angvel : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PdController::rigid_body_correction(
+  self : PdController,
+  rb : @dynamics.RigidBody,
+  target_pose : @core.Isometry2,
+  target_vels : @dynamics.RigidBodyVelocity,
+) -> @dynamics.RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PdController::correction(
+  self : PdController,
+  pose_errors : PdErrors,
+  vel_errors : PdErrors,
+) -> @dynamics.RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub type PidController
+
+///|
+#declaration_only
+pub fn PidController::default() -> PidController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::new(
+  kp : @core.Real,
+  ki : @core.Real,
+  kd : @core.Real,
+  axes : @dynamics.AxesMask,
+) -> PidController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::set_axes(
+  self : PidController,
+  axes : @dynamics.AxesMask,
+) -> PidController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::axes(self : PidController) -> @dynamics.AxesMask {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::reset_integrals(self : PidController) -> PidController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::linear_rigid_body_correction(
+  self : PidController,
+  dt : @core.Real,
+  rb : @dynamics.RigidBody,
+  target_pos : @core.Vec2,
+  target_linvel : @core.Vec2,
+) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::angular_rigid_body_correction(
+  self : PidController,
+  dt : @core.Real,
+  rb : @dynamics.RigidBody,
+  target_rot : @core.Rot2,
+  target_angvel : @core.Real,
+) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::rigid_body_correction(
+  self : PidController,
+  dt : @core.Real,
+  rb : @dynamics.RigidBody,
+  target_pose : @core.Isometry2,
+  target_vels : @dynamics.RigidBodyVelocity,
+) -> @dynamics.RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub fn PidController::correction(
+  self : PidController,
+  dt : @core.Real,
+  pose_errors : PdErrors,
+  vel_errors : PdErrors,
+) -> @dynamics.RigidBodyVelocity {
+  ...
+}

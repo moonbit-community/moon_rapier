@@ -4,6 +4,7 @@ package "Milky2018/moon_rapier/control"
 import {
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/dynamics",
 }
 
 // Values
@@ -57,6 +58,43 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Fl
 pub fn KinematicCharacterController::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self
+
+pub(all) struct PdController {
+  lin_kp : @core.Vec2
+  lin_kd : @core.Vec2
+  ang_kp : Float
+  ang_kd : Float
+  axes : @dynamics.AxesMask
+}
+pub fn PdController::angular_rigid_body_correction(Self, @dynamics.RigidBody, @core.Rot2, Float) -> Float
+pub fn PdController::correction(Self, PdErrors, PdErrors) -> @dynamics.RigidBodyVelocity
+pub fn PdController::default() -> Self
+pub fn PdController::linear_rigid_body_correction(Self, @dynamics.RigidBody, @core.Vec2, @core.Vec2) -> @core.Vec2
+pub fn PdController::new(Float, Float, @dynamics.AxesMask) -> Self
+pub fn PdController::rigid_body_correction(Self, @dynamics.RigidBody, @core.Isometry2, @dynamics.RigidBodyVelocity) -> @dynamics.RigidBodyVelocity
+
+pub(all) struct PdErrors {
+  linear : @core.Vec2
+  angular : Float
+}
+pub fn PdErrors::from_vels(@dynamics.RigidBodyVelocity) -> Self
+
+pub(all) struct PidController {
+  mut pd : PdController
+  mut lin_integral : @core.Vec2
+  mut ang_integral : Float
+  lin_ki : @core.Vec2
+  ang_ki : Float
+}
+pub fn PidController::angular_rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Rot2, Float) -> Float
+pub fn PidController::axes(Self) -> @dynamics.AxesMask
+pub fn PidController::correction(Self, Float, PdErrors, PdErrors) -> @dynamics.RigidBodyVelocity
+pub fn PidController::default() -> Self
+pub fn PidController::linear_rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Vec2, @core.Vec2) -> @core.Vec2
+pub fn PidController::new(Float, Float, Float, @dynamics.AxesMask) -> Self
+pub fn PidController::reset_integrals(Self) -> Self
+pub fn PidController::rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Isometry2, @dynamics.RigidBodyVelocity) -> @dynamics.RigidBodyVelocity
+pub fn PidController::set_axes(Self, @dynamics.AxesMask) -> Self
 
 // Type aliases
 

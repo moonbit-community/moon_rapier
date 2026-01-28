@@ -119,6 +119,65 @@ test "collider groups accessors" {
 }
 
 ///|
+test "collider builder: triangle + round_triangle" {
+  let a = @core.Vec2::new(0.0F, 0.0F)
+  let b = @core.Vec2::new(2.0F, 0.0F)
+  let c = @core.Vec2::new(0.0F, 1.0F)
+  let tri = ColliderBuilder::triangle(a, b, c).build()
+  match tri.shape() {
+    Shape::ConvexPolygon(vertices) =>
+      inspect(vertices.length() >= 3, content="true")
+    Shape::Polyline(_, _) => inspect(true, content="true")
+    Shape::Segment(_, _) => inspect(true, content="true")
+    _ => inspect(false, content="true")
+  }
+  let round = ColliderBuilder::round_triangle(a, b, c, 0.2F).build()
+  inspect(@core.abs(round.contact_skin() - 0.2F) < 1.0e-6F, content="true")
+}
+
+///|
+test "collider builder: halfspace approximation" {
+  let ground = ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 1.0F)).build()
+  if ground.shape() is Shape::Cuboid(hw, hh) {
+    inspect(hw > 1.0F, content="true")
+    inspect(hh > 1.0F, content="true")
+    // The approximation shifts the cuboid so the supporting face is near the origin.
+    inspect(ground.translation().y < 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "collider builder: compound + round_convex_hull" {
+  let parts = [
+    (@core.Isometry2::identity(), Shape::Cuboid(1.0F, 0.2F)),
+    (
+      @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.0F)),
+      Shape::Cuboid(0.5F, 0.5F),
+    ),
+  ]
+  let co = ColliderBuilder::compound(parts).build()
+  if co.shape() is Shape::ConvexPolygon(vertices) {
+    inspect(vertices.length() >= 3, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  let pts = [
+    @core.Vec2::new(0.0F, 0.0F),
+    @core.Vec2::new(2.0F, 0.0F),
+    @core.Vec2::new(2.0F, 1.0F),
+    @core.Vec2::new(0.0F, 1.0F),
+  ]
+  if ColliderBuilder::round_convex_hull(pts, 0.3F) is Some(builder) {
+    let collider = builder.build()
+    inspect(@core.abs(collider.contact_skin() - 0.3F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier collider material and event accessors.
 test "collider material and event accessors" {
   let collider = ColliderBuilder::ball(1.0F)

@@ -232,6 +232,24 @@ pub struct RigidBodyVelocity {
 }
 
 ///|
+pub fn RigidBodyVelocity::new(
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> RigidBodyVelocity {
+  { linvel, angvel }
+}
+
+///|
+pub fn RigidBodyVelocity::linvel(self : RigidBodyVelocity) -> @core.Vec2 {
+  self.linvel
+}
+
+///|
+pub fn RigidBodyVelocity::angvel(self : RigidBodyVelocity) -> @core.Real {
+  self.angvel
+}
+
+///|
 pub fn RigidBodyVelocity::integrate(
   self : RigidBodyVelocity,
   dt : @core.Real,

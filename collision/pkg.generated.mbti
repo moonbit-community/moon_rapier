@@ -145,6 +145,7 @@ pub fn ColliderBuilder::capsule_from_endpoints(@core.Vec2, @core.Vec2, Float) ->
 pub fn ColliderBuilder::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn ColliderBuilder::compound(Array[(@core.Isometry2, Shape)]) -> Self
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder::convex_hull(Array[@core.Vec2]) -> Self?
@@ -153,15 +154,19 @@ pub fn ColliderBuilder::density(Self, Float) -> Self
 pub fn ColliderBuilder::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
+pub fn ColliderBuilder::halfspace(@core.Vec2) -> Self
 pub fn ColliderBuilder::heightfield(Array[Float], @core.Vec2) -> Self
 pub fn ColliderBuilder::polyline(Array[@core.Vec2], Array[(Int, Int)]?) -> Self
 pub fn ColliderBuilder::restitution(Self, Float) -> Self
 pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::rotation(Self, Float) -> Self
+pub fn ColliderBuilder::round_convex_hull(Array[@core.Vec2], Float) -> Self?
+pub fn ColliderBuilder::round_triangle(@core.Vec2, @core.Vec2, @core.Vec2, Float) -> Self
 pub fn ColliderBuilder::segment(@core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
+pub fn ColliderBuilder::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder::user_data(Self, Int) -> Self
 
