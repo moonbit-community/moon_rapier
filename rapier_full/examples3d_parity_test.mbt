@@ -1316,32 +1316,33 @@ fn run_examples3d_voxels3() -> Bool {
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder::polyline(polyline, Some(poly_idx)).build(),
+    @collision.ColliderBuilder::voxelized_mesh(
+      polyline,
+      poly_idx,
+      0.2F,
+      @collision.FillMode::default(),
+    ).build(),
     mesh_body,
     bodies,
   )
   |> ignore
-  let n = 301
   let voxel_size_y = 1.0F
-  let scale_x = 150.0F
-  let heights : Array[@core.Real] = []
-  for i in 0..<n {
+  let voxel_size = @core.Vec2::new(1.0F, voxel_size_y)
+  let voxels : Array[@core.Vec2] = []
+  for i in 0..<300 {
     let t = Float::from_double(i.to_double()) / 20.0F
-    let mut y = Float::from_double(@math.sin(t.to_double())) * 20.0F
-    if y < -10.0F {
-      y = -10.0F
-    } else if y > 10.0F {
-      y = 10.0F
+    let mut y = Float::from_double(@math.sin(t.to_double()))
+    if y < -0.5F {
+      y = -0.5F
+    } else if y > 0.5F {
+      y = 0.5F
     }
-    heights.push(y / voxel_size_y)
+    y = y * 20.0F
+    let x = (Float::from_double(i.to_double()) - 125.0F) * voxel_size.x / 2.0F
+    voxels.push(@core.Vec2::new(x, y * voxel_size.y))
   }
   colliders.insert(
-    @collision.ColliderBuilder::heightfield(
-      heights,
-      @core.Vec2::new(scale_x, voxel_size_y),
-    )
-    .translation(@core.Vec2::new(12.5F, 0.0F))
-    .build(),
+    @collision.ColliderBuilder::voxels_from_points(voxel_size, voxels).build(),
   )
   |> ignore
   let nx = 20

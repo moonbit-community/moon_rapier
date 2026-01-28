@@ -156,6 +156,7 @@ pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::halfspace(@core.Vec2) -> Self
 pub fn ColliderBuilder::heightfield(Array[Float], @core.Vec2) -> Self
+pub fn ColliderBuilder::new(Shape) -> Self
 pub fn ColliderBuilder::polyline(Array[@core.Vec2], Array[(Int, Int)]?) -> Self
 pub fn ColliderBuilder::restitution(Self, Float) -> Self
 pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
@@ -169,6 +170,8 @@ pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
 pub fn ColliderBuilder::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder::user_data(Self, Int) -> Self
+pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
+pub fn ColliderBuilder::voxels_from_points(@core.Vec2, Array[@core.Vec2]) -> Self
 
 type ColliderChanges
 
@@ -274,6 +277,13 @@ pub(all) enum FeatureId {
   Edge(Int)
   Face(Int)
 }
+
+pub(all) enum FillMode {
+  SurfaceOnly
+  FloodFill(Bool, Bool)
+}
+pub fn FillMode::default() -> Self
+pub fn FillMode::surface_only() -> Self
 
 pub struct IntersectionPair {
   collider1 : ColliderHandle
@@ -385,6 +395,7 @@ pub(all) enum Shape {
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
 }
+pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
 
 pub struct ShapeCastHit {
   toi : Float

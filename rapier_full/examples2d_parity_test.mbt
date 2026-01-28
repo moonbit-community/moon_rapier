@@ -4275,7 +4275,7 @@ test "examples2d/trimesh2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/voxels2.rs
+/// Ported from `rapier-reference/examples2d/voxels2.rs` (testbed settings fixed to defaults).
 test "examples2d/voxels2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -4293,10 +4293,44 @@ test "examples2d/voxels2.rs parity" {
   )
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
-  // Reference example uses voxelized shapes. Our MoonBit port approximates those with polylines and
-  // heightfields; this still exercises lots of contact generation and stacking.
+  // Ported from `rapier-reference/examples2d/voxels2.rs` (defaults: Mixed falling objects,
+  // voxel_size_y = 1.0, CCD disabled).
 
-  // "Voxelized mesh" outline (closed polyline).
+  // Create dynamic objects to fall on voxels.
+  let falling_objects_default = 3
+  let voxel_size_y = 1.0F
+  let voxel_size = @core.Vec2::new(1.0F, voxel_size_y)
+  let nx = 50
+  let ball_radius = 0.5F
+  let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<nx {
+    for j in 0..<10 {
+      let x = Float::from_double(i.to_double()) * 2.0F -
+        Float::from_double(nx.to_double()) / 2.0F
+      let y = 20.0F + Float::from_double(j.to_double()) * 2.0F
+      let rb_handle = bodies.insert(
+        @dynamics.RigidBodyBuilder::dynamic()
+        .translation(@core.Vec2::new(x, y))
+        .build(),
+      )
+      let falling_objects = if falling_objects_default == 3 {
+        j % 3
+      } else {
+        falling_objects_default
+      }
+      let co = if falling_objects == 0 {
+        @collision.ColliderBuilder::ball(ball_radius)
+      } else if falling_objects == 1 {
+        @collision.ColliderBuilder::cuboid(ball_radius, ball_radius)
+      } else {
+        @collision.ColliderBuilder::capsule_y(ball_radius, ball_radius)
+      }
+      colliders.insert_with_parent(co.build(), rb_handle, bodies) |> ignore
+      dyn_handles.push(rb_handle)
+    }
+  }
+
+  // Voxelization of a polyline mesh.
   let polyline = [
     @core.Vec2::new(0.0F, 0.0F),
     @core.Vec2::new(0.0F, 10.0F),
@@ -4317,65 +4351,35 @@ test "examples2d/voxels2.rs parity" {
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder::polyline(polyline, Some(poly_idx)).build(),
+    @collision.ColliderBuilder::voxelized_mesh(
+      polyline,
+      poly_idx,
+      0.2F,
+      @collision.FillMode::default(),
+    ).build(),
     mesh_body,
     bodies,
   )
   |> ignore
 
-  // Wavy floor (approximate voxels_from_points with a heightfield).
-  let n = 301
-  let voxel_size_y = 1.0F
-  let scale_x = 150.0F
-  let heights : Array[@core.Real] = []
-  for i in 0..<n {
+  // A voxel wavy floor (`ColliderBuilder::voxels_from_points`).
+  let voxels : Array[@core.Vec2] = []
+  for i in 0..<300 {
     let t = Float::from_double(i.to_double()) / 20.0F
-    let mut y = Float::from_double(@math.sin(t.to_double())) * 20.0F
-    if y < -10.0F {
-      y = -10.0F
-    } else if y > 10.0F {
-      y = 10.0F
+    let mut y = Float::from_double(@math.sin(t.to_double()))
+    if y < -0.5F {
+      y = -0.5F
+    } else if y > 0.5F {
+      y = 0.5F
     }
-    heights.push(y / voxel_size_y)
+    y = y * 20.0F
+    let x = (Float::from_double(i.to_double()) - 125.0F) * voxel_size.x / 2.0F
+    voxels.push(@core.Vec2::new(x, y * voxel_size.y))
   }
   colliders.insert(
-    @collision.ColliderBuilder::heightfield(
-      heights,
-      @core.Vec2::new(scale_x, voxel_size_y),
-    )
-    // Match the x-offset of rapier-reference's voxels_from_points.
-    .translation(@core.Vec2::new(12.5F, 0.0F))
-    .build(),
+    @collision.ColliderBuilder::voxels_from_points(voxel_size, voxels).build(),
   )
   |> ignore
-
-  // Dynamic objects to fall.
-  let nx = 20
-  let ny = 6
-  let ball_radius = 0.5F
-  let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
-  for i in 0..<nx {
-    for j in 0..<ny {
-      let x = Float::from_double(i.to_double()) * 2.0F -
-        Float::from_double(nx.to_double()) / 2.0F
-      let y = 20.0F + Float::from_double(j.to_double()) * 2.0F
-      let rb_handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
-      )
-      let kind = j % 3
-      let co = if kind == 0 {
-        @collision.ColliderBuilder::ball(ball_radius)
-      } else if kind == 1 {
-        @collision.ColliderBuilder::cuboid(ball_radius, ball_radius)
-      } else {
-        @collision.ColliderBuilder::capsule_y(ball_radius, ball_radius)
-      }
-      colliders.insert_with_parent(co.build(), rb_handle, bodies) |> ignore
-      dyn_handles.push(rb_handle)
-    }
-  }
   step_pipeline_2d_n(
     pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     impulse_joints, multibody_joints, ccd_solver, hooks, events, 240,
