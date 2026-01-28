@@ -53,9 +53,7 @@ test "examples2d/s2d_pyramid.rs parity" {
   let events = @pipeline.EventHandler::new()
   let ccd_solver = @dynamics.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
-  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
-  )
+  let parameters = @dynamics.IntegrationParameters::default()
 
   // Ground.
   let ground_handle = bodies.insert(
