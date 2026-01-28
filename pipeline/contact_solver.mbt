@@ -170,7 +170,8 @@ priv struct SolverConstraint {
   tangent1 : @core.Vec2
   // Target relative velocity along `tangent1` (Rapier's SolverContact.tangent_velocity projected).
   tangent_velocity : @core.Real
-  contact_point : @core.Vec2
+  world_p1 : @core.Vec2
+  world_p2 : @core.Vec2
   dist : @core.Real
   restitution_vel : @core.Real
   friction : @core.Real
@@ -183,6 +184,12 @@ priv struct SolverConstraint {
 }
 
 ///|
+priv struct SolverManifold {
+  start : Int
+  len : Int
+}
+
+///|
 fn build_constraints(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
@@ -192,13 +199,14 @@ fn build_constraints(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
-) -> Array[SolverConstraint] {
+) -> (Array[SolverConstraint], Array[SolverManifold]) {
   let allowed_error = parameters.allowed_linear_error()
   let max_corrective_velocity = parameters.max_corrective_velocity()
   let erp_inv_dt = parameters.contact_softness.erp_inv_dt(dt)
   let cfm_coeff = parameters.contact_softness.cfm_coeff(dt)
   let pairs = narrow_phase.contact_pairs()
   let constraints : Array[SolverConstraint] = []
+  let solver_manifolds : Array[SolverManifold] = []
   for i in 0..<pairs.length() {
     let pair = pairs[i]
     let h1 = pair.0
@@ -266,10 +274,15 @@ fn build_constraints(
       } else {
         @core.Vec2::zero()
       }
-      let manifolds = pair.2.manifolds()
-      for mi in 0..<manifolds.length() {
-        let manifold = manifolds[mi]
+      let contact_manifolds = pair.2.manifolds()
+      for mi in 0..<contact_manifolds.length() {
+        let manifold = contact_manifolds[mi]
+        let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
+          c2.shape() is @collision.Shape::Segment(_, _) ||
+          c1.shape() is @collision.Shape::Polyline(_, _) ||
+          c2.shape() is @collision.Shape::Polyline(_, _)
         // Rapier: dir1 = -manifold.normal (normal points from collider1 to collider2).
+        // When we have an MTV from `separation_vector`, use it to recover a robust direction.
         let dir1_from_manifold = normalize_or_fallback(
           @core.Vec2::new(-manifold.normal().x, -manifold.normal().y),
           @core.Vec2::new(1.0F, 0.0F),
@@ -292,14 +305,11 @@ fn build_constraints(
           tangent_velocity = tv
         }
         let tangent_velocity_proj = tangent_velocity.dot(tangent1)
-        let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
-          c2.shape() is @collision.Shape::Segment(_, _) ||
-          c1.shape() is @collision.Shape::Polyline(_, _) ||
-          c2.shape() is @collision.Shape::Polyline(_, _)
         fn push_constraint(
           fid1 : @collision.FeatureId,
           fid2 : @collision.FeatureId,
-          contact_point : @core.Vec2,
+          world_p1 : @core.Vec2,
+          world_p2 : @core.Vec2,
           dist_in : @core.Real,
         ) -> Unit {
           let mut dist = dist_in
@@ -365,12 +375,12 @@ fn build_constraints(
           }
 
           // Effective mass denominators (2D).
-          let r1 = contact_point.sub(com1)
-          let r2 = contact_point.sub(com2)
-          let rn1 = cross_vec2(r1, dir1)
+          let r1 = world_p1.sub(com1)
+          let r2 = world_p2.sub(com2)
           let rt1 = cross_vec2(r1, tangent1)
-          let rn2 = cross_vec2(r2, dir1)
           let rt2 = cross_vec2(r2, tangent1)
+          let rn1 = cross_vec2(r1, dir1)
+          let rn2 = cross_vec2(r2, dir1)
           let denom_n = inv_mass1 +
             inv_mass2 +
             inv_inertia1 * rn1 * rn1 +
@@ -430,7 +440,8 @@ fn build_constraints(
             dir1,
             tangent1,
             tangent_velocity: tangent_velocity_proj,
-            contact_point,
+            world_p1,
+            world_p2,
             dist,
             restitution_vel,
             friction,
@@ -452,46 +463,21 @@ fn build_constraints(
         if points.length() == 0 {
           continue
         }
-        if has_segment {
-          for pi in 0..<points.length() {
-            let p = points[pi]
-            let world_p1 = c1.position().transform_point(p.local_p1())
-            let world_p2 = c2.position().transform_point(p.local_p2())
-            let contact_point = @core.Vec2::new(
-              (world_p1.x + world_p2.x) * 0.5F,
-              (world_p1.y + world_p2.y) * 0.5F,
-            )
-            push_constraint(p.fid1(), p.fid2(), contact_point, p.dist())
-          }
-        } else {
-          // Rapier solves up to two points per manifold with a block solver. Our simplified
-          // implementation converges poorly for tall stacks if we treat each point independently,
-          // because it introduces spurious torques. Use the averaged contact point instead.
-          let mut world_p1_sum = @core.Vec2::zero()
-          let mut world_p2_sum = @core.Vec2::zero()
-          let mut dist_sum = 0.0F
-          let p0 = points[0]
-          for pi in 0..<points.length() {
-            let p = points[pi]
-            let wp1 = c1.position().transform_point(p.local_p1())
-            let wp2 = c2.position().transform_point(p.local_p2())
-            world_p1_sum = world_p1_sum.add(wp1)
-            world_p2_sum = world_p2_sum.add(wp2)
-            dist_sum = dist_sum + p.dist()
-          }
-          let inv_n = 1.0F / Float::from_double(points.length().to_double())
-          let world_p1 = solver_vec2_scale(world_p1_sum, inv_n)
-          let world_p2 = solver_vec2_scale(world_p2_sum, inv_n)
-          let contact_point = @core.Vec2::new(
-            (world_p1.x + world_p2.x) * 0.5F,
-            (world_p1.y + world_p2.y) * 0.5F,
-          )
-          push_constraint(p0.fid1(), p0.fid2(), contact_point, dist_sum * inv_n)
+        let start = constraints.length()
+        for pi in 0..<points.length() {
+          let p = points[pi]
+          let world_p1 = c1.position().transform_point(p.local_p1())
+          let world_p2 = c2.position().transform_point(p.local_p2())
+          push_constraint(p.fid1(), p.fid2(), world_p1, world_p2, p.dist())
+        }
+        let len = constraints.length() - start
+        if len > 0 {
+          solver_manifolds.push(SolverManifold::{ start, len })
         }
       }
     }
   }
-  constraints
+  (constraints, solver_manifolds)
 }
 
 ///|
@@ -504,12 +490,12 @@ fn warmstart(
     let impulse = solver_vec2_scale(c.dir1, c.impulse_n).add(
       solver_vec2_scale(c.tangent1, c.impulse_t),
     )
-    apply_impulse_delta_dynamic(bodies, c.body1, impulse, c.contact_point)
+    apply_impulse_delta_dynamic(bodies, c.body1, impulse, c.world_p1)
     apply_impulse_delta_dynamic(
       bodies,
       c.body2,
       @core.Vec2::new(-impulse.x, -impulse.y),
-      c.contact_point,
+      c.world_p2,
     )
   }
 }
@@ -531,10 +517,33 @@ fn get_body_kinematic_state(
 }
 
 ///|
+fn get_body_inv_mass_inertia(
+  bodies : @dynamics.RigidBodySet,
+  handle : @dynamics.RigidBodyHandle?,
+) -> (@core.Real, @core.Real) {
+  if handle is Some(h) {
+    if bodies.get(h) is Some(rb) {
+      if rb.is_dynamic() && rb.is_enabled() {
+        let inv_m = if rb.locked_translations { 0.0F } else { rb.inv_mass() }
+        let inv_i = if rb.locked_rotations { 0.0F } else { rb.inv_inertia() }
+        (inv_m, inv_i)
+      } else {
+        (0.0F, 0.0F)
+      }
+    } else {
+      (0.0F, 0.0F)
+    }
+  } else {
+    (0.0F, 0.0F)
+  }
+}
+
+///|
 fn solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
   dt : @core.Real,
   constraints : Array[SolverConstraint],
+  manifolds : Array[SolverManifold],
   iterations : Int,
 ) -> Unit {
   if dt <= 0.0F {
@@ -544,73 +553,264 @@ fn solve_velocity_constraints(
   let iters = if iterations <= 0 { 1 } else { iterations }
   for _ in 0..<iters {
     // Solve all normal constraints first (better convergence for stacks).
-    for i in 0..<constraints.length() {
-      let c = constraints[i]
-      let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-      let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
-      let r1 = c.contact_point.sub(com1)
-      let r2 = c.contact_point.sub(com2)
-      let vel1 = v1.add(cross_z_scalar(w1, r1))
-      let vel2 = v2.add(cross_z_scalar(w2, r2))
-      let rv = vel1.sub(vel2)
-      let vn = rv.dot(c.dir1)
-      let sep_term = if c.dist > 0.0F { c.dist * inv_dt } else { 0.0F }
-      let lambda_n = -(vn + sep_term + c.rhs_bias) * c.inv_mass_n
-      let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
-        constraints[i].impulse_n + lambda_n
+    for mi in 0..<manifolds.length() {
+      let m = manifolds[mi]
+      if m.len == 2 {
+        let i1 = m.start
+        let i2 = m.start + 1
+        let c1 = constraints[i1]
+        let c2 = constraints[i2]
+        let n = c1.dir1
+        let (v1, w1, com1) = get_body_kinematic_state(bodies, c1.body1)
+        let (v2, w2, com2) = get_body_kinematic_state(bodies, c1.body2)
+        let (inv_m1, inv_i1) = get_body_inv_mass_inertia(bodies, c1.body1)
+        let (inv_m2, inv_i2) = get_body_inv_mass_inertia(bodies, c1.body2)
+        let r1a = c1.world_p1.sub(com1)
+        let r2a = c1.world_p2.sub(com2)
+        let r1b = c2.world_p1.sub(com1)
+        let r2b = c2.world_p2.sub(com2)
+        let rv1 = v1
+          .add(cross_z_scalar(w1, r1a))
+          .sub(v2.add(cross_z_scalar(w2, r2a)))
+        let rv2 = v1
+          .add(cross_z_scalar(w1, r1b))
+          .sub(v2.add(cross_z_scalar(w2, r2b)))
+        let vn1 = rv1.dot(n)
+        let vn2 = rv2.dot(n)
+        let bias1 = (if c1.dist > 0.0F { c1.dist * inv_dt } else { 0.0F }) +
+          c1.rhs_bias
+        let bias2 = (if c2.dist > 0.0F { c2.dist * inv_dt } else { 0.0F }) +
+          c2.rhs_bias
+        let b1 = vn1 + bias1
+        let b2 = vn2 + bias2
+
+        // Approximate Rapier's CFM by recovering the diagonal term from inv_mass_n (which already
+        // includes the `cfm_coeff` contribution).
+        fn cfm_diag(c : SolverConstraint) -> @core.Real {
+          if c.inv_mass_n <= 1.0e-12F || c.inv_mass_n_nocfm <= 1.0e-12F {
+            0.0F
+          } else {
+            let d_cfm = 1.0F / c.inv_mass_n
+            let d0 = 1.0F / c.inv_mass_n_nocfm
+            let cfm = d_cfm - d0
+            if cfm > 0.0F {
+              cfm
+            } else {
+              0.0F
+            }
+          }
+        }
+
+        let rn1a = cross_vec2(r1a, n)
+        let rn2a = cross_vec2(r2a, n)
+        let rn1b = cross_vec2(r1b, n)
+        let rn2b = cross_vec2(r2b, n)
+        let k_base = inv_m1 + inv_m2
+        let k11 = k_base +
+          inv_i1 * rn1a * rn1a +
+          inv_i2 * rn2a * rn2a +
+          cfm_diag(c1)
+        let k22 = k_base +
+          inv_i1 * rn1b * rn1b +
+          inv_i2 * rn2b * rn2b +
+          cfm_diag(c2)
+        let k12 = k_base + inv_i1 * rn1a * rn1b + inv_i2 * rn2a * rn2b
+        let old1 = constraints[i1].impulse_n
+        let old2 = constraints[i2].impulse_n
+        let eps = 1.0e-12F
+        let tol = -1.0e-6F
+        let mut new1 = old1
+        let mut new2 = old2
+        let mut delta1 = 0.0F
+        let mut delta2 = 0.0F
+        let mut solved = false
+
+        // Case 1: solve both points.
+        let det = k11 * k22 - k12 * k12
+        if det > eps {
+          let inv_det = 1.0F / det
+          let inv11 = k22 * inv_det
+          let inv12 = -k12 * inv_det
+          let inv22 = k11 * inv_det
+          delta1 = -(inv11 * b1 + inv12 * b2)
+          delta2 = -(inv12 * b1 + inv22 * b2)
+          new1 = old1 + delta1
+          new2 = old2 + delta2
+          if new1 >= 0.0F && new2 >= 0.0F {
+            solved = true
+          }
+        }
+
+        // Case 2: new1 = 0.
+        if !solved {
+          let d1 = -old1
+          let d2 = if k22 > eps { -(b2 + k12 * d1) / k22 } else { 0.0F }
+          let n2 = old2 + d2
+          let vn1p = b1 + k11 * d1 + k12 * d2
+          if n2 >= 0.0F && vn1p >= tol {
+            new1 = 0.0F
+            new2 = n2
+            delta1 = d1
+            delta2 = d2
+            solved = true
+          }
+        }
+
+        // Case 3: new2 = 0.
+        if !solved {
+          let d2 = -old2
+          let d1 = if k11 > eps { -(b1 + k12 * d2) / k11 } else { 0.0F }
+          let n1 = old1 + d1
+          let vn2p = b2 + k12 * d1 + k22 * d2
+          if n1 >= 0.0F && vn2p >= tol {
+            new1 = n1
+            new2 = 0.0F
+            delta1 = d1
+            delta2 = d2
+            solved = true
+          }
+        }
+
+        // Case 4: new1 = new2 = 0.
+        if !solved {
+          let d1 = -old1
+          let d2 = -old2
+          let vn1p = b1 + k11 * d1 + k12 * d2
+          let vn2p = b2 + k12 * d1 + k22 * d2
+          if vn1p >= tol && vn2p >= tol {
+            new1 = 0.0F
+            new2 = 0.0F
+            delta1 = d1
+            delta2 = d2
+            solved = true
+          }
+        }
+        if solved {
+          constraints[i1].impulse_n = new1
+          constraints[i2].impulse_n = new2
+          let impulse1 = solver_vec2_scale(n, delta1)
+          let impulse2 = solver_vec2_scale(n, delta2)
+          apply_impulse_delta_dynamic(bodies, c1.body1, impulse1, c1.world_p1)
+          apply_impulse_delta_dynamic(
+            bodies,
+            c1.body2,
+            @core.Vec2::new(-impulse1.x, -impulse1.y),
+            c1.world_p2,
+          )
+          apply_impulse_delta_dynamic(bodies, c2.body1, impulse2, c2.world_p1)
+          apply_impulse_delta_dynamic(
+            bodies,
+            c2.body2,
+            @core.Vec2::new(-impulse2.x, -impulse2.y),
+            c2.world_p2,
+          )
+        } else {
+          // Degenerate case fallback: solve sequentially.
+          for k in 0..<2 {
+            let i = if k == 0 { i1 } else { i2 }
+            let c = constraints[i]
+            let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+            let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+            let r1 = c.world_p1.sub(com1)
+            let r2 = c.world_p2.sub(com2)
+            let vel1 = v1.add(cross_z_scalar(w1, r1))
+            let vel2 = v2.add(cross_z_scalar(w2, r2))
+            let rv = vel1.sub(vel2)
+            let vn = rv.dot(c.dir1)
+            let sep_term = if c.dist > 0.0F { c.dist * inv_dt } else { 0.0F }
+            let lambda_n = -(vn + sep_term + c.rhs_bias) * c.inv_mass_n
+            let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
+              constraints[i].impulse_n + lambda_n
+            } else {
+              0.0F
+            }
+            let delta_n = new_impulse_n - constraints[i].impulse_n
+            constraints[i].impulse_n = new_impulse_n
+            let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
+            apply_impulse_delta_dynamic(
+              bodies,
+              c.body1,
+              impulse_n_vec,
+              c.world_p1,
+            )
+            apply_impulse_delta_dynamic(
+              bodies,
+              c.body2,
+              @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+              c.world_p2,
+            )
+          }
+        }
       } else {
-        0.0F
+        for j in 0..<m.len {
+          let i = m.start + j
+          let c = constraints[i]
+          let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+          let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+          let r1 = c.world_p1.sub(com1)
+          let r2 = c.world_p2.sub(com2)
+          let vel1 = v1.add(cross_z_scalar(w1, r1))
+          let vel2 = v2.add(cross_z_scalar(w2, r2))
+          let rv = vel1.sub(vel2)
+          let vn = rv.dot(c.dir1)
+          let sep_term = if c.dist > 0.0F { c.dist * inv_dt } else { 0.0F }
+          let lambda_n = -(vn + sep_term + c.rhs_bias) * c.inv_mass_n
+          let new_impulse_n = if constraints[i].impulse_n + lambda_n > 0.0F {
+            constraints[i].impulse_n + lambda_n
+          } else {
+            0.0F
+          }
+          let delta_n = new_impulse_n - constraints[i].impulse_n
+          constraints[i].impulse_n = new_impulse_n
+          let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
+          apply_impulse_delta_dynamic(
+            bodies,
+            c.body1,
+            impulse_n_vec,
+            c.world_p1,
+          )
+          apply_impulse_delta_dynamic(
+            bodies,
+            c.body2,
+            @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+            c.world_p2,
+          )
+        }
       }
-      let delta_n = new_impulse_n - constraints[i].impulse_n
-      constraints[i].impulse_n = new_impulse_n
-      let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
-      apply_impulse_delta_dynamic(
-        bodies,
-        c.body1,
-        impulse_n_vec,
-        c.contact_point,
-      )
-      apply_impulse_delta_dynamic(
-        bodies,
-        c.body2,
-        @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
-        c.contact_point,
-      )
     }
 
     // Then solve all friction constraints using the updated normal impulses.
-    for i in 0..<constraints.length() {
-      let c = constraints[i]
-      let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-      let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
-      let r1 = c.contact_point.sub(com1)
-      let r2 = c.contact_point.sub(com2)
-      let vel1 = v1.add(cross_z_scalar(w1, r1))
-      let vel2 = v2.add(cross_z_scalar(w2, r2))
-      let rv = vel1.sub(vel2)
-      let vt_err = rv.dot(c.tangent1) - c.tangent_velocity
-      let lambda_t = -vt_err * c.inv_mass_t
-      let max_friction = c.friction * constraints[i].impulse_n
-      let new_impulse_t = solver_clamp_value(
-        constraints[i].impulse_t + lambda_t,
-        -max_friction,
-        max_friction,
-      )
-      let delta_t = new_impulse_t - constraints[i].impulse_t
-      constraints[i].impulse_t = new_impulse_t
-      let impulse_t_vec = solver_vec2_scale(c.tangent1, delta_t)
-      apply_impulse_delta_dynamic(
-        bodies,
-        c.body1,
-        impulse_t_vec,
-        c.contact_point,
-      )
-      apply_impulse_delta_dynamic(
-        bodies,
-        c.body2,
-        @core.Vec2::new(-impulse_t_vec.x, -impulse_t_vec.y),
-        c.contact_point,
-      )
+    for mi in 0..<manifolds.length() {
+      let m = manifolds[mi]
+      for j in 0..<m.len {
+        let i = m.start + j
+        let c = constraints[i]
+        let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
+        let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+        let r1 = c.world_p1.sub(com1)
+        let r2 = c.world_p2.sub(com2)
+        let vel1 = v1.add(cross_z_scalar(w1, r1))
+        let vel2 = v2.add(cross_z_scalar(w2, r2))
+        let rv = vel1.sub(vel2)
+        let vt_err = rv.dot(c.tangent1) - c.tangent_velocity
+        let lambda_t = -vt_err * c.inv_mass_t
+        let max_friction = c.friction * constraints[i].impulse_n
+        let new_impulse_t = solver_clamp_value(
+          constraints[i].impulse_t + lambda_t,
+          -max_friction,
+          max_friction,
+        )
+        let delta_t = new_impulse_t - constraints[i].impulse_t
+        constraints[i].impulse_t = new_impulse_t
+        let impulse_t_vec = solver_vec2_scale(c.tangent1, delta_t)
+        apply_impulse_delta_dynamic(bodies, c.body1, impulse_t_vec, c.world_p1)
+        apply_impulse_delta_dynamic(
+          bodies,
+          c.body2,
+          @core.Vec2::new(-impulse_t_vec.x, -impulse_t_vec.y),
+          c.world_p2,
+        )
+      }
     }
   }
 }
@@ -627,8 +827,8 @@ fn solve_restitution_constraints(
     }
     let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
     let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
-    let r1 = c.contact_point.sub(com1)
-    let r2 = c.contact_point.sub(com2)
+    let r1 = c.world_p1.sub(com1)
+    let r2 = c.world_p2.sub(com2)
     let vel1 = v1.add(cross_z_scalar(w1, r1))
     let vel2 = v2.add(cross_z_scalar(w2, r2))
     let rv = vel1.sub(vel2)
@@ -642,12 +842,12 @@ fn solve_restitution_constraints(
     let delta_n = new_impulse_n - constraints[i].impulse_n
     constraints[i].impulse_n = new_impulse_n
     let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
-    apply_impulse_delta_dynamic(bodies, c.body1, impulse_n_vec, c.contact_point)
+    apply_impulse_delta_dynamic(bodies, c.body1, impulse_n_vec, c.world_p1)
     apply_impulse_delta_dynamic(
       bodies,
       c.body2,
       @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
-      c.contact_point,
+      c.world_p2,
     )
   }
 }
@@ -657,102 +857,178 @@ fn position_correction(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   constraints : Array[SolverConstraint],
+  manifolds : Array[SolverManifold],
   allowed_error : @core.Real,
 ) -> Unit {
-  for i in 0..<constraints.length() {
-    let c = constraints[i]
+  for mi in 0..<manifolds.length() {
+    let m = manifolds[mi]
+    if m.len <= 0 {
+      continue
+    }
+    let c0 = constraints[m.start]
     // Position correction (split-impulse style):
-    // - We keep this separate from velocity solving to avoid injecting energy.
-    // - For segments/polylines we prefer an MTV (separation_vector), because manifold
-    //   point distances are often too coarse for degenerate geometry.
+    // - Kept separate from velocity solving to avoid injecting energy.
+    // - For segments/polylines we prefer an MTV (separation_vector), because manifold distances
+    //   are often too coarse for degenerate geometry.
     let mut has_segment = false
-    if colliders.get(c.collider1) is Some(co1) {
+    if colliders.get(c0.collider1) is Some(co1) {
       has_segment = has_segment ||
         co1.shape() is @collision.Shape::Segment(_, _) ||
         co1.shape() is @collision.Shape::Polyline(_, _)
     }
-    if colliders.get(c.collider2) is Some(co2) {
+    if colliders.get(c0.collider2) is Some(co2) {
       has_segment = has_segment ||
         co2.shape() is @collision.Shape::Segment(_, _) ||
         co2.shape() is @collision.Shape::Polyline(_, _)
     }
     let mut has_convex = false
-    if colliders.get(c.collider1) is Some(co1) {
+    if colliders.get(c0.collider1) is Some(co1) {
       has_convex = has_convex ||
         co1.shape() is @collision.Shape::ConvexPolygon(_)
     }
-    if colliders.get(c.collider2) is Some(co2) {
+    if colliders.get(c0.collider2) is Some(co2) {
       has_convex = has_convex ||
         co2.shape() is @collision.Shape::ConvexPolygon(_)
     }
-    if c.dist >= -allowed_error {
-      continue
-    }
-    let depth = -c.dist - allowed_error
-    // For non-segment contacts, keep the correction small to avoid injecting visible jitter
-    // into resting stacks (Rapier relies on a dedicated stabilization stage).
-    let factor = if has_segment || has_convex { 1.0F } else { 0.2F }
-    let mut correction = solver_vec2_scale(c.dir1, depth * factor + 1.0e-3F)
-    if has_segment &&
-      colliders.get(c.collider1) is Some(co1) &&
-      colliders.get(c.collider2) is Some(co2) {
-      if separation_vector(
-          co1.shape(),
-          co1.translation(),
-          co1.rotation(),
-          co2.shape(),
-          co2.translation(),
-          co2.rotation(),
-        )
-        is Some(sep) {
-        let depth = sep.length()
-        if depth > 1.0e-6F {
-          let dir = sep.normalize()
-          correction = solver_vec2_scale(dir, depth + 1.0e-3F)
+    if has_segment {
+      for j in 0..<m.len {
+        let i = m.start + j
+        let c = constraints[i]
+        if c.dist >= -allowed_error {
+          continue
+        }
+        let depth = -c.dist - allowed_error
+        let mut correction = solver_vec2_scale(c.dir1, depth + 1.0e-3F)
+        if colliders.get(c.collider1) is Some(co1) &&
+          colliders.get(c.collider2) is Some(co2) {
+          if separation_vector(
+              co1.shape(),
+              co1.translation(),
+              co1.rotation(),
+              co2.shape(),
+              co2.translation(),
+              co2.rotation(),
+            )
+            is Some(sep) {
+            let depth = sep.length()
+            if depth > 1.0e-6F {
+              let dir = sep.normalize()
+              correction = solver_vec2_scale(dir, depth + 1.0e-3F)
+            }
+          }
+        }
+        let mut inv_m1 = 0.0F
+        if c.body1 is Some(h1) {
+          if bodies.get(h1) is Some(rb1) {
+            if rb1.is_dynamic() && rb1.is_enabled() {
+              inv_m1 = if rb1.locked_translations {
+                0.0F
+              } else {
+                rb1.inv_mass()
+              }
+            }
+          }
+        }
+        let mut inv_m2 = 0.0F
+        if c.body2 is Some(h2) {
+          if bodies.get(h2) is Some(rb2) {
+            if rb2.is_dynamic() && rb2.is_enabled() {
+              inv_m2 = if rb2.locked_translations {
+                0.0F
+              } else {
+                rb2.inv_mass()
+              }
+            }
+          }
+        }
+        let denom = inv_m1 + inv_m2
+        if denom <= 1.0e-12F {
+          continue
+        }
+        let ratio1 = inv_m1 / denom
+        let ratio2 = inv_m2 / denom
+        if c.body1 is Some(h1m) {
+          if bodies.get_mut(h1m) is Some(b1) {
+            if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
+              b1.set_translation(
+                b1.translation().add(solver_vec2_scale(correction, ratio1)),
+                true,
+              )
+              |> ignore
+            }
+          }
+        }
+        if c.body2 is Some(h2m) {
+          if bodies.get_mut(h2m) is Some(b2) {
+            if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
+              b2.set_translation(
+                b2.translation().sub(solver_vec2_scale(correction, ratio2)),
+                true,
+              )
+              |> ignore
+            }
+          }
         }
       }
-    }
-    let mut inv_m1 = 0.0F
-    if c.body1 is Some(h1) {
-      if bodies.get(h1) is Some(rb1) {
-        if rb1.is_dynamic() && rb1.is_enabled() {
-          inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+    } else {
+      // For non-segment manifolds, correct once per manifold to avoid over-correcting
+      // multi-point contacts (Rapier relies on stabilization to do this robustly).
+      let mut dist_min = c0.dist
+      for j in 0..<m.len {
+        let idx = m.start + j
+        let d = constraints[idx].dist
+        if d < dist_min {
+          dist_min = d
         }
       }
-    }
-    let mut inv_m2 = 0.0F
-    if c.body2 is Some(h2) {
-      if bodies.get(h2) is Some(rb2) {
-        if rb2.is_dynamic() && rb2.is_enabled() {
-          inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+      if dist_min >= -allowed_error {
+        continue
+      }
+      let depth = -dist_min - allowed_error
+      let factor = if has_convex { 1.0F } else { 0.2F }
+      let correction = solver_vec2_scale(c0.dir1, depth * factor + 1.0e-3F)
+      let mut inv_m1 = 0.0F
+      if c0.body1 is Some(h1) {
+        if bodies.get(h1) is Some(rb1) {
+          if rb1.is_dynamic() && rb1.is_enabled() {
+            inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+          }
         }
       }
-    }
-    let denom = inv_m1 + inv_m2
-    if denom <= 1.0e-12F {
-      continue
-    }
-    let ratio1 = inv_m1 / denom
-    let ratio2 = inv_m2 / denom
-    if c.body1 is Some(h1m) {
-      if bodies.get_mut(h1m) is Some(b1) {
-        if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
-          b1.set_translation(
-            b1.translation().add(solver_vec2_scale(correction, ratio1)),
-            true,
-          )
-          |> ignore
+      let mut inv_m2 = 0.0F
+      if c0.body2 is Some(h2) {
+        if bodies.get(h2) is Some(rb2) {
+          if rb2.is_dynamic() && rb2.is_enabled() {
+            inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+          }
         }
       }
-    }
-    if c.body2 is Some(h2m) {
-      if bodies.get_mut(h2m) is Some(b2) {
-        if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
-          b2.set_translation(
-            b2.translation().sub(solver_vec2_scale(correction, ratio2)),
-            true,
-          )
-          |> ignore
+      let denom = inv_m1 + inv_m2
+      if denom <= 1.0e-12F {
+        continue
+      }
+      let ratio1 = inv_m1 / denom
+      let ratio2 = inv_m2 / denom
+      if c0.body1 is Some(h1m) {
+        if bodies.get_mut(h1m) is Some(b1) {
+          if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
+            b1.set_translation(
+              b1.translation().add(solver_vec2_scale(correction, ratio1)),
+              true,
+            )
+            |> ignore
+          }
+        }
+      }
+      if c0.body2 is Some(h2m) {
+        if bodies.get_mut(h2m) is Some(b2) {
+          if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
+            b2.set_translation(
+              b2.translation().sub(solver_vec2_scale(correction, ratio2)),
+              true,
+            )
+            |> ignore
+          }
         }
       }
     }
@@ -767,33 +1043,46 @@ fn position_correction_all(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   constraints : Array[SolverConstraint],
+  manifolds : Array[SolverManifold],
   allowed_error : @core.Real,
 ) -> Unit {
-  for i in 0..<constraints.length() {
-    let c = constraints[i]
+  for mi in 0..<manifolds.length() {
+    let m = manifolds[mi]
+    if m.len <= 0 {
+      continue
+    }
+    let c0 = constraints[m.start]
     // Segment penetrations are handled by `position_correction` (stronger depenetration).
-    if colliders.get(c.collider1) is Some(co1) &&
+    if colliders.get(c0.collider1) is Some(co1) &&
       (
         co1.shape() is @collision.Shape::Segment(_, _) ||
         co1.shape() is @collision.Shape::Polyline(_, _)
       ) {
       continue
     }
-    if colliders.get(c.collider2) is Some(co2) &&
+    if colliders.get(c0.collider2) is Some(co2) &&
       (
         co2.shape() is @collision.Shape::Segment(_, _) ||
         co2.shape() is @collision.Shape::Polyline(_, _)
       ) {
       continue
     }
-    if c.dist >= -allowed_error {
+    let mut dist_min = c0.dist
+    for j in 0..<m.len {
+      let idx = m.start + j
+      let d = constraints[idx].dist
+      if d < dist_min {
+        dist_min = d
+      }
+    }
+    if dist_min >= -allowed_error {
       continue
     }
     // Apply only a fraction of the penetration depth to reduce energy injection.
-    let correction_mag = -c.dist * CONTACT_POSITION_CORRECTION_BAUMGARTE
-    let correction = solver_vec2_scale(c.dir1, correction_mag)
+    let correction_mag = -dist_min * CONTACT_POSITION_CORRECTION_BAUMGARTE
+    let correction = solver_vec2_scale(c0.dir1, correction_mag)
     let mut inv_m1 = 0.0F
-    if c.body1 is Some(h1) {
+    if c0.body1 is Some(h1) {
       if bodies.get(h1) is Some(rb1) {
         if rb1.is_dynamic() && rb1.is_enabled() {
           inv_m1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
@@ -801,7 +1090,7 @@ fn position_correction_all(
       }
     }
     let mut inv_m2 = 0.0F
-    if c.body2 is Some(h2) {
+    if c0.body2 is Some(h2) {
       if bodies.get(h2) is Some(rb2) {
         if rb2.is_dynamic() && rb2.is_enabled() {
           inv_m2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
@@ -814,7 +1103,7 @@ fn position_correction_all(
     }
     let ratio1 = inv_m1 / denom
     let ratio2 = inv_m2 / denom
-    if c.body1 is Some(h1m) {
+    if c0.body1 is Some(h1m) {
       if bodies.get_mut(h1m) is Some(b1) {
         if b1.is_dynamic() && b1.is_enabled() && !b1.locked_translations {
           b1.set_translation(
@@ -825,7 +1114,7 @@ fn position_correction_all(
         }
       }
     }
-    if c.body2 is Some(h2m) {
+    if c0.body2 is Some(h2m) {
       if bodies.get_mut(h2m) is Some(b2) {
         if b2.is_dynamic() && b2.is_enabled() && !b2.locked_translations {
           b2.set_translation(
@@ -971,7 +1260,7 @@ pub fn solve_contacts(
   } else {
     parameters.warmstart_coefficient
   }
-  let constraints = build_constraints(
+  let (constraints, manifolds) = build_constraints(
     parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
   )
   warmstart(bodies, constraints)
@@ -979,6 +1268,7 @@ pub fn solve_contacts(
     bodies,
     dt,
     constraints,
+    manifolds,
     parameters.num_solver_iterations,
   )
   solve_restitution_constraints(bodies, constraints)
@@ -986,6 +1276,7 @@ pub fn solve_contacts(
     bodies,
     colliders,
     constraints,
+    manifolds,
     parameters.allowed_linear_error(),
   )
   emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)

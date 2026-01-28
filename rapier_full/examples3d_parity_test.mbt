@@ -3579,7 +3579,7 @@ test "examples3d/domino3.rs parity" {
   let num = 80
   let width = 0.5F
   let thickness = 0.08F
-  let spacing = thickness * 2.0F
+  let spacing = thickness * 2.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<num {
     let x = Float::from_double(i.to_double()) * spacing

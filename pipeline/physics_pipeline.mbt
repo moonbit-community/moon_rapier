@@ -802,7 +802,7 @@ fn solve_joints_and_contacts_interleaved(
   let joint_constraints = build_joint_constraints(
     parameters, bodies, impulse_joints, dt,
   )
-  let contact_constraints = build_constraints(
+  let (contact_constraints, contact_manifolds) = build_constraints(
     parameters,
     bodies,
     colliders,
@@ -837,7 +837,9 @@ fn solve_joints_and_contacts_interleaved(
       solve_joint_velocity_constraints(bodies, joint_constraints, dt, 1)
     }
     if contact_constraints.length() > 0 {
-      solve_velocity_constraints(bodies, dt, contact_constraints, 1)
+      solve_velocity_constraints(
+        bodies, dt, contact_constraints, contact_manifolds, 1,
+      )
     }
   }
   if contact_constraints.length() > 0 {
@@ -846,6 +848,7 @@ fn solve_joints_and_contacts_interleaved(
       bodies,
       colliders,
       contact_constraints,
+      contact_manifolds,
       parameters.allowed_linear_error(),
     )
   }
@@ -1234,7 +1237,7 @@ pub fn PhysicsPipeline::step(
 
     // Post-stabilization pass using the final contacts (helps resting stacks with the
     // "solve-then-advance" substep order).
-    let post_constraints = build_constraints(
+    let (post_constraints, post_manifolds) = build_constraints(
       parameters,
       bodies,
       colliders,
@@ -1250,12 +1253,14 @@ pub fn PhysicsPipeline::step(
         bodies,
         colliders,
         post_constraints,
+        post_manifolds,
         parameters.allowed_linear_error(),
       )
       position_correction_all(
         bodies,
         colliders,
         post_constraints,
+        post_manifolds,
         parameters.allowed_linear_error(),
       )
     }
