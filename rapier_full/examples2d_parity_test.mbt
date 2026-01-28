@@ -3937,9 +3937,8 @@ test "examples2d/s2d_joint_grid.rs parity" {
     16,
   )
   let rad = 0.4F
-  // Downscale the grid heavily for test runtime.
-  let numi = 20
-  let numk = 20
+  let numi = 100
+  let numk = 100
   let shift = 1.0F
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for _ in 0..<(numi * numk) {
@@ -4042,8 +4041,8 @@ test "examples2d/s2d_pyramid.rs parity" {
   )
   |> ignore
 
-  // Downscale base_count compared to the interactive example settings.
-  let base_count = 50
+  // rapier-reference default uses base_count = 100 (through testbed settings).
+  let base_count = 100
   let h = 0.5F
   let shift = 1.0F * h
   let mut dyn_count = 0
