@@ -38,10 +38,8 @@ fn step_pipeline_2d_n_s2d_pyramid(
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_pyramid.rs
-///
-/// NOTE: this is intentionally heavy (base_count = 100 → 5050 bodies). Keep it in a dedicated file
-/// so it can be run explicitly when needed.
+/// Ported from `rapier-reference/examples2d/s2d_pyramid.rs`.
+/// NOTE: This is intentionally heavy (base_count = 100 -> 5050 bodies). Keep it in a dedicated file.
 test "examples2d/s2d_pyramid.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()

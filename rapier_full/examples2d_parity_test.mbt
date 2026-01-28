@@ -165,7 +165,7 @@ test "examples2d/joint_motor_position2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/add_remove2.rs
+/// Ported from `rapier-reference/examples2d/add_remove2.rs`.
 test "examples2d/add_remove2.rs parity" {
   fn rng_next(seed : Int) -> Int {
     (seed * 1103515245 + 12345) & 0x7fffffff
@@ -280,7 +280,8 @@ test "examples2d/add_remove2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/all_examples2.rs
+/// Ported from `rapier-reference/examples2d/all_examples2.rs`.
+/// NOTE: Upstream is a testbed entrypoint that lists demos. This port keeps a headless smoke test.
 test "examples2d/all_examples2.rs parity" {
   // all_examples2.rs is a UI entrypoint listing every demo. For headless parity, we smoke-run a
   // representative subset spanning the major feature buckets (shapes, joints, controls).
@@ -551,7 +552,7 @@ test "examples2d/all_examples2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/ccd2.rs
+/// Ported from `rapier-reference/examples2d/ccd2.rs`.
 test "examples2d/ccd2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -638,7 +639,6 @@ test "examples2d/ccd2.rs parity" {
         .translation(@core.Vec2::new(x, y))
         .linvel(@core.Vec2::new(100.0F, -10.0F))
         .ccd_enabled(true)
-        .can_sleep(false)
         .build(),
       )
       colliders.insert_with_parent(
@@ -688,7 +688,8 @@ test "examples2d/ccd2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/character_controller2.rs
+/// Ported from `rapier-reference/examples2d/character_controller2.rs`.
+/// NOTE: Upstream uses interactive controls; this port uses deterministic scripted movement to exercise the controller.
 test "examples2d/character_controller2.rs parity" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -924,7 +925,7 @@ test "examples2d/character_controller2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/collision_groups2.rs
+/// Ported from `rapier-reference/examples2d/collision_groups2.rs`.
 test "examples2d/collision_groups2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1049,7 +1050,7 @@ test "examples2d/collision_groups2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/convex_polygons2.rs
+/// Ported from `rapier-reference/examples2d/convex_polygons2.rs`.
 test "examples2d/convex_polygons2.rs parity" {
   fn rng_next(seed : Int) -> Int {
     // Deterministic 31-bit LCG (fast, stable across platforms).
@@ -1179,7 +1180,7 @@ test "examples2d/convex_polygons2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/damping2.rs
+/// Ported from `rapier-reference/examples2d/damping2.rs`.
 test "examples2d/damping2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1263,7 +1264,7 @@ test "examples2d/damping2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/debug_box_ball2.rs
+/// Ported from `rapier-reference/examples2d/debug_box_ball2.rs`.
 test "examples2d/debug_box_ball2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1321,7 +1322,7 @@ test "examples2d/debug_box_ball2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/debug_compression2.rs
+/// Ported from `rapier-reference/examples2d/debug_compression2.rs`.
 test "examples2d/debug_compression2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1434,7 +1435,7 @@ test "examples2d/debug_compression2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/debug_intersection2.rs
+/// Ported from `rapier-reference/examples2d/debug_intersection2.rs`.
 test "examples2d/debug_intersection2.rs parity" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
@@ -1486,7 +1487,7 @@ test "examples2d/debug_intersection2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/debug_total_overlap2.rs
+/// Ported from `rapier-reference/examples2d/debug_total_overlap2.rs`.
 test "examples2d/debug_total_overlap2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1548,7 +1549,7 @@ test "examples2d/debug_total_overlap2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/debug_vertical_column2.rs
+/// Ported from `rapier-reference/examples2d/debug_vertical_column2.rs`.
 test "examples2d/debug_vertical_column2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1620,7 +1621,7 @@ test "examples2d/debug_vertical_column2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/drum2.rs
+/// Ported from `rapier-reference/examples2d/drum2.rs`.
 test "examples2d/drum2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1738,7 +1739,7 @@ test "examples2d/drum2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/heightfield2.rs
+/// Ported from `rapier-reference/examples2d/heightfield2.rs`.
 test "examples2d/heightfield2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1836,7 +1837,7 @@ test "examples2d/heightfield2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/inv_pyramid2.rs
+/// Ported from `rapier-reference/examples2d/inv_pyramid2.rs`.
 test "examples2d/inv_pyramid2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1899,7 +1900,7 @@ test "examples2d/inv_pyramid2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/inverse_kinematics2.rs
+/// Ported from `rapier-reference/examples2d/inverse_kinematics2.rs`.
 test "examples2d/inverse_kinematics2.rs parity" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
@@ -1987,7 +1988,7 @@ test "examples2d/inverse_kinematics2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/joints2.rs
+/// Ported from `rapier-reference/examples2d/joints2.rs`.
 test "examples2d/joints2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2083,7 +2084,7 @@ test "examples2d/joints2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/locked_rotations2.rs
+/// Ported from `rapier-reference/examples2d/locked_rotations2.rs`.
 test "examples2d/locked_rotations2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2167,7 +2168,7 @@ test "examples2d/locked_rotations2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/one_way_platforms2.rs
+/// Ported from `rapier-reference/examples2d/one_way_platforms2.rs`.
 test "examples2d/one_way_platforms2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2325,7 +2326,7 @@ test "examples2d/one_way_platforms2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/pin_slot_joint2.rs
+/// Ported from `rapier-reference/examples2d/pin_slot_joint2.rs`.
 test "examples2d/pin_slot_joint2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2462,7 +2463,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/platform2.rs
+/// Ported from `rapier-reference/examples2d/platform2.rs`.
 test "examples2d/platform2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2595,7 +2596,7 @@ test "examples2d/platform2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/polyline2.rs
+/// Ported from `rapier-reference/examples2d/polyline2.rs`.
 test "examples2d/polyline2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2696,7 +2697,7 @@ test "examples2d/polyline2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/pyramid2.rs
+/// Ported from `rapier-reference/examples2d/pyramid2.rs`.
 test "examples2d/pyramid2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2770,7 +2771,7 @@ test "examples2d/pyramid2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/restitution2.rs
+/// Ported from `rapier-reference/examples2d/restitution2.rs`.
 test "examples2d/restitution2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2856,7 +2857,7 @@ test "examples2d/restitution2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/rope_joints2.rs
+/// Ported from `rapier-reference/examples2d/rope_joints2.rs`.
 test "examples2d/rope_joints2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -2971,7 +2972,7 @@ test "examples2d/rope_joints2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_arch.rs
+/// Ported from `rapier-reference/examples2d/s2d_arch.rs`.
 test "examples2d/s2d_arch.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3114,7 +3115,7 @@ test "examples2d/s2d_arch.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_ball_and_chain.rs
+/// Ported from `rapier-reference/examples2d/s2d_ball_and_chain.rs`.
 test "examples2d/s2d_ball_and_chain.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3239,7 +3240,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_bridge.rs
+/// Ported from `rapier-reference/examples2d/s2d_bridge.rs`.
 test "examples2d/s2d_bridge.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3332,7 +3333,7 @@ test "examples2d/s2d_bridge.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_card_house.rs
+/// Ported from `rapier-reference/examples2d/s2d_card_house.rs`.
 test "examples2d/s2d_card_house.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3450,7 +3451,7 @@ test "examples2d/s2d_card_house.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_confined.rs
+/// Ported from `rapier-reference/examples2d/s2d_confined.rs`.
 test "examples2d/s2d_confined.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3564,7 +3565,7 @@ test "examples2d/s2d_confined.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_far_pyramid.rs
+/// Ported from `rapier-reference/examples2d/s2d_far_pyramid.rs`.
 test "examples2d/s2d_far_pyramid.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3642,7 +3643,7 @@ test "examples2d/s2d_far_pyramid.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_1.rs
+/// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_1.rs`.
 test "examples2d/s2d_high_mass_ratio_1.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3727,7 +3728,7 @@ test "examples2d/s2d_high_mass_ratio_1.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_2.rs
+/// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_2.rs`.
 test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3811,7 +3812,7 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_high_mass_ratio_3.rs
+/// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_3.rs`.
 test "examples2d/s2d_high_mass_ratio_3.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -3912,7 +3913,7 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/s2d_joint_grid.rs
+/// Ported from `rapier-reference/examples2d/s2d_joint_grid.rs`.
 test "examples2d/s2d_joint_grid.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -4003,7 +4004,7 @@ test "examples2d/s2d_joint_grid.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/sensor2.rs
+/// Ported from `rapier-reference/examples2d/sensor2.rs`.
 test "examples2d/sensor2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -4090,7 +4091,7 @@ test "examples2d/sensor2.rs parity" {
 }
 
 ///|
-/// TODO: port rapier-reference/examples2d/trimesh2.rs
+/// Ported from `rapier-reference/examples2d/trimesh2.rs`.
 test "examples2d/trimesh2.rs parity" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
