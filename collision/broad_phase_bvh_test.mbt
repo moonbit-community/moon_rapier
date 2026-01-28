@@ -221,6 +221,35 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
+    Shape::TriMesh(vertices, _) =>
+      if vertices.length() == 0 {
+        (center, center)
+      } else {
+        let rot = @core.Rot2::from_angle(rotation)
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        (
+          @core.Vec2::new(min_x - pd, min_y - pd),
+          @core.Vec2::new(max_x + pd, max_y + pd),
+        )
+      }
     Shape::Compound(parts) =>
       if parts.length() == 0 {
         (center, center)

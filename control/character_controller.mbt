@@ -242,6 +242,22 @@ fn compute_dims(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
+    @collision.Shape::TriMesh(vertices, _) => {
+      let mut hw = 0.0F
+      let mut hh = 0.0F
+      for i in 0..<vertices.length() {
+        let p = vertices[i]
+        let ax = @core.abs(p.x)
+        let ay = @core.abs(p.y)
+        if ax > hw {
+          hw = ax
+        }
+        if ay > hh {
+          hh = ay
+        }
+      }
+      (hw, hh)
+    }
     @collision.Shape::Compound(parts) => {
       let mut hw = 0.0F
       let mut hh = 0.0F

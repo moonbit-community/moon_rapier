@@ -22,6 +22,7 @@ fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
     @collision.Shape::Segment(_, _) => 0.0F
     @collision.Shape::Polyline(_, _) => 0.0F
     @collision.Shape::ConvexPolygon(_) => 0.0F
+    @collision.Shape::TriMesh(_, _) => 0.0F
     @collision.Shape::Compound(parts) => {
       if parts.length() == 0 {
         return 0.0F
@@ -69,6 +70,16 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
       best
     }
     @collision.Shape::ConvexPolygon(vertices) => {
+      let mut best = 0.0F
+      for i in 0..<vertices.length() {
+        let d = vertices[i].length()
+        if d > best {
+          best = d
+        }
+      }
+      best
+    }
+    @collision.Shape::TriMesh(vertices, _) => {
       let mut best = 0.0F
       for i in 0..<vertices.length() {
         let d = vertices[i].length()

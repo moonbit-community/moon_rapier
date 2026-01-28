@@ -1516,6 +1516,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::Segment(_, _) => shape
     Shape::Polyline(_, _) => shape
     Shape::ConvexPolygon(_) => shape
+    Shape::TriMesh(_, _) => shape
     Shape::Compound(_) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
@@ -1926,6 +1927,16 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
+      Shape::TriMesh(vertices, _) => {
+        let mut best = 0.0F
+        for i in 0..<vertices.length() {
+          let d = vertices[i].length()
+          if d > best {
+            best = d
+          }
+        }
+        best
+      }
       Shape::Compound(parts) => {
         let mut best = 0.0F
         for i in 0..<parts.length() {
@@ -1995,6 +2006,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
       Shape::ConvexPolygon(vertices) =>
         project_point_on_convex_polygon_oriented(
           center, rotation, vertices, point, false,
+        ).point
+      Shape::TriMesh(vertices, indices) =>
+        project_point_on_shape(
+          center,
+          rotation,
+          Shape::TriMesh(vertices, indices),
+          point,
+          false,
         ).point
       Shape::Compound(parts) =>
         project_point_on_shape(
@@ -2311,6 +2330,34 @@ fn point_in_shape(
       let local_point = inv.rotate_vec2(point.sub(center))
       point_in_convex_polygon_local(vertices, local_point)
     }
+    Shape::TriMesh(vertices, indices) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let inv = rot.inverse()
+      let local_point = inv.rotate_vec2(point.sub(center))
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        if point_in_convex_polygon_local([a, b, c], local_point) {
+          return true
+        }
+      }
+      false
+    }
     Shape::Compound(parts) => {
       if parts.length() == 0 {
         return false
@@ -2432,6 +2479,36 @@ fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
         )
       }
     Shape::ConvexPolygon(vertices) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(collider.world_translation, collider.world_translation)
+      } else {
+        let rot = @core.Rot2::from_angle(collider.world_rotation)
+        let c = collider.world_translation
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = c.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
+    Shape::TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb::new(collider.world_translation, collider.world_translation)
       } else {
@@ -2595,6 +2672,34 @@ fn compute_query_shape_aabb(
         )
       }
     Shape::ConvexPolygon(vertices) =>
+      if vertices.length() == 0 {
+        @core.Aabb::new(center, center)
+      } else {
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        @core.Aabb::new(
+          @core.Vec2::new(min_x, min_y),
+          @core.Vec2::new(max_x, max_y),
+        )
+      }
+    Shape::TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -3254,6 +3359,46 @@ fn ray_intersect_shape_and_get_normal(
       ray_intersect_convex_polygon_oriented_and_get_normal(
         ray, center, rotation, vertices, max_dist, solid,
       )
+    Shape::TriMesh(vertices, indices) => {
+      let mut best : RayIntersection? = None
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let hit = ray_intersect_convex_polygon_oriented_and_get_normal(
+          ray,
+          center,
+          rotation,
+          [a, b, c],
+          max_dist,
+          solid,
+        )
+        if hit is Some(h) {
+          if best is Some(cur) {
+            if h.toi < cur.toi {
+              best = Some(h)
+            }
+          } else {
+            best = Some(h)
+          }
+        }
+      }
+      best
+    }
     Shape::Compound(parts) => {
       if parts.length() == 0 {
         return None
@@ -3326,6 +3471,47 @@ fn project_point_on_shape(
       project_point_on_convex_polygon_oriented(
         center, rotation, vertices, point, solid,
       )
+    Shape::TriMesh(vertices, indices) => {
+      let mut best : PointProjection? = None
+      let mut best_dist2 = 1.0e30F
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let proj = project_point_on_convex_polygon_oriented(
+          center,
+          rotation,
+          [a, b, c],
+          point,
+          solid,
+        )
+        let delta = point.sub(proj.point)
+        let dist2 = delta.dot(delta)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          best = Some(proj)
+        }
+      }
+      if best is Some(p) {
+        p
+      } else {
+        PointProjection::{ point, is_inside: false }
+      }
+    }
     Shape::Compound(parts) => {
       if parts.length() == 0 {
         return PointProjection::{ point, is_inside: false }
@@ -3416,6 +3602,47 @@ fn project_point_on_shape_and_get_feature(
       project_point_on_convex_polygon_oriented_and_get_feature(
         center, rotation, vertices, point, solid,
       )
+    Shape::TriMesh(vertices, indices) => {
+      let mut best : (PointProjection, FeatureId)? = None
+      let mut best_dist2 = 1.0e30F
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let (proj, feature) = project_point_on_convex_polygon_oriented_and_get_feature(
+          center,
+          rotation,
+          [a, b, c],
+          point,
+          solid,
+        )
+        let delta = point.sub(proj.point)
+        let dist2 = delta.dot(delta)
+        if dist2 < best_dist2 {
+          best_dist2 = dist2
+          best = Some((proj, pack_feature(i + 1, feature)))
+        }
+      }
+      if best is Some(r) {
+        r
+      } else {
+        (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+      }
+    }
     Shape::Compound(parts) => {
       if parts.length() == 0 {
         return (

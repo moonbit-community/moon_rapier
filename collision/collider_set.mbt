@@ -236,6 +236,7 @@ pub(all) enum Shape {
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
   ConvexPolygon(Array[@core.Vec2])
+  TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
 }
 
@@ -604,11 +605,7 @@ pub fn ColliderBuilder::trimesh(
   if vertices.length() == 0 || indices.length() == 0 {
     return None
   }
-  // In 3D, a trimesh collider is a triangle surface. In this 2D port, we approximate it as a
-  // *filled* convex shape so it can act as a proper ground/support in parity tests.
-  //
-  // Fall back to a polyline (wireframe) if the convex hull is degenerate.
-  let points : Array[@core.Vec2] = []
+  let valid : Array[(Int, Int, Int)] = []
   for i in 0..<indices.length() {
     let (i0, i1, i2) = indices[i]
     if i0 < 0 || i1 < 0 || i2 < 0 {
@@ -619,44 +616,43 @@ pub fn ColliderBuilder::trimesh(
       i2 >= vertices.length() {
       continue
     }
-    let vs = [vertices[i0], vertices[i1], vertices[i2]]
-    for k in 0..<vs.length() {
-      let v = vs[k]
-      let mut exists = false
-      for j in 0..<points.length() {
-        if points[j].x == v.x && points[j].y == v.y {
-          exists = true
-        }
-      }
-      if !exists {
-        points.push(v)
-      }
-    }
-  }
-  if ColliderBuilder::convex_hull(points) is Some(hull) {
-    return Some(hull)
-  }
-
-  // Fallback: polyline edges extracted from triangle indices.
-  let edges : Array[(Int, Int)] = []
-  for i in 0..<indices.length() {
-    let (i0, i1, i2) = indices[i]
-    if i0 < 0 || i1 < 0 || i2 < 0 {
+    if i0 == i1 || i1 == i2 || i2 == i0 {
       continue
     }
-    if i0 >= vertices.length() ||
-      i1 >= vertices.length() ||
-      i2 >= vertices.length() {
+    let a = vertices[i0]
+    let b = vertices[i1]
+    let c = vertices[i2]
+    let ab = b.sub(a)
+    let ac = c.sub(a)
+    let area2 = ab.x * ac.y - ab.y * ac.x
+    if @core.abs(area2) <= 1.0e-8F {
       continue
     }
-    edges.push((i0, i1))
-    edges.push((i1, i2))
-    edges.push((i2, i0))
+    valid.push((i0, i1, i2))
   }
-  if edges.length() == 0 {
+  if valid.length() == 0 {
     return None
   }
-  Some(ColliderBuilder::polyline(vertices, Some(edges)))
+  Some({
+    shape: Shape::TriMesh(vertices, valid),
+    translation: @core.Vec2::zero(),
+    rotation: 0.0F,
+    active_collision_types: ActiveCollisionTypes::default(),
+    sensor: false,
+    active_events: ActiveEvents::empty(),
+    active_hooks: ActiveHooks::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
+    density: 1.0F,
+    friction: 0.5F,
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    contact_skin: 0.0F,
+    contact_force_event_threshold: 0.0F,
+    user_data: 0,
+    enabled: true,
+  })
 }
 
 ///|
@@ -1228,6 +1224,24 @@ fn shape_mass_properties(
         },
         com,
       )
+    }
+    Shape::TriMesh(vertices, indices) => {
+      let mut acc = @core.MassProperties::default()
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let tri = [vertices[i0], vertices[i1], vertices[i2]]
+        let part_mp = shape_mass_properties(Shape::ConvexPolygon(tri), density)
+        acc = acc.add(part_mp)
+      }
+      acc
     }
     Shape::Compound(parts) => {
       let mut acc = @core.MassProperties::default()
@@ -2588,6 +2602,104 @@ fn shapes_intersect(
         let p = isometry2_translation(w)
         let r = isometry2_rotation_angle(w)
         if shapes_intersect(other, pos1, rot1, s, p, r) {
+          return true
+        }
+      }
+      false
+    }
+    (Shape::TriMesh(vertices, indices), Shape::TriMesh(vertices2, indices2)) => {
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let tri1 = Shape::ConvexPolygon([a, b, c])
+        for j in 0..<indices2.length() {
+          let (j0, j1, j2) = indices2[j]
+          if j0 < 0 || j1 < 0 || j2 < 0 {
+            continue
+          }
+          if j0 >= vertices2.length() ||
+            j1 >= vertices2.length() ||
+            j2 >= vertices2.length() {
+            continue
+          }
+          let a2 = vertices2[j0]
+          let b20 = vertices2[j1]
+          let c20 = vertices2[j2]
+          let ab2 = b20.sub(a2)
+          let ac2 = c20.sub(a2)
+          let area22 = ab2.x * ac2.y - ab2.y * ac2.x
+          let b2 = if area22 >= 0.0F { b20 } else { c20 }
+          let c2 = if area22 >= 0.0F { c20 } else { b20 }
+          let tri2 = Shape::ConvexPolygon([a2, b2, c2])
+          if shapes_intersect(tri1, pos1, rot1, tri2, pos2, rot2) {
+            return true
+          }
+        }
+      }
+      false
+    }
+    (Shape::TriMesh(vertices, indices), other) => {
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let tri = Shape::ConvexPolygon([a, b, c])
+        if shapes_intersect(tri, pos1, rot1, other, pos2, rot2) {
+          return true
+        }
+      }
+      false
+    }
+    (other, Shape::TriMesh(vertices, indices)) => {
+      for i in 0..<indices.length() {
+        let (i0, i1, i2) = indices[i]
+        if i0 < 0 || i1 < 0 || i2 < 0 {
+          continue
+        }
+        if i0 >= vertices.length() ||
+          i1 >= vertices.length() ||
+          i2 >= vertices.length() {
+          continue
+        }
+        let a = vertices[i0]
+        let b0 = vertices[i1]
+        let c0 = vertices[i2]
+        let ab = b0.sub(a)
+        let ac = c0.sub(a)
+        let area2 = ab.x * ac.y - ab.y * ac.x
+        let b = if area2 >= 0.0F { b0 } else { c0 }
+        let c = if area2 >= 0.0F { c0 } else { b0 }
+        let tri = Shape::ConvexPolygon([a, b, c])
+        if shapes_intersect(other, pos1, rot1, tri, pos2, rot2) {
           return true
         }
       }
@@ -5013,6 +5125,58 @@ fn build_contact_pair(
             base2, s, child_pose, child_prefix, out,
           )
         }
+      (Shape::TriMesh(vertices, indices), other) =>
+        for i in 0..<indices.length() {
+          let (i0, i1, i2) = indices[i]
+          if i0 < 0 || i1 < 0 || i2 < 0 {
+            continue
+          }
+          if i0 >= vertices.length() ||
+            i1 >= vertices.length() ||
+            i2 >= vertices.length() {
+            continue
+          }
+          let a = vertices[i0]
+          let b0 = vertices[i1]
+          let c0 = vertices[i2]
+          let ab = b0.sub(a)
+          let ac = c0.sub(a)
+          let area2 = ab.x * ac.y - ab.y * ac.x
+          let b = if area2 >= 0.0F { b0 } else { c0 }
+          let c = if area2 >= 0.0F { c0 } else { b0 }
+          let tri = Shape::ConvexPolygon([a, b, c])
+          let child_prefix = prefix1 * 1000 + (i + 1)
+          visit(
+            prediction_distance, collider1, base1, tri, pose1, child_prefix, collider2,
+            base2, other, pose2, prefix2, out,
+          )
+        }
+      (other, Shape::TriMesh(vertices, indices)) =>
+        for i in 0..<indices.length() {
+          let (i0, i1, i2) = indices[i]
+          if i0 < 0 || i1 < 0 || i2 < 0 {
+            continue
+          }
+          if i0 >= vertices.length() ||
+            i1 >= vertices.length() ||
+            i2 >= vertices.length() {
+            continue
+          }
+          let a = vertices[i0]
+          let b0 = vertices[i1]
+          let c0 = vertices[i2]
+          let ab = b0.sub(a)
+          let ac = c0.sub(a)
+          let area2 = ab.x * ac.y - ab.y * ac.x
+          let b = if area2 >= 0.0F { b0 } else { c0 }
+          let c = if area2 >= 0.0F { c0 } else { b0 }
+          let tri = Shape::ConvexPolygon([a, b, c])
+          let child_prefix = prefix2 * 1000 + (i + 1)
+          visit(
+            prediction_distance, collider1, base1, other, pose1, prefix1, collider2,
+            base2, tri, pose2, child_prefix, out,
+          )
+        }
       (leaf1, leaf2) => {
         let world1 = base1.mul(pose1)
         let world2 = base2.mul(pose2)
@@ -5571,6 +5735,35 @@ fn compute_shape_aabb(
         }
       }
     Shape::ConvexPolygon(vertices) =>
+      if vertices.length() == 0 {
+        Aabb::{ min: center, max: center }
+      } else {
+        let rot = @core.Rot2::from_angle(rotation)
+        let mut min_x = 1.0e30F
+        let mut max_x = -1.0e30F
+        let mut min_y = 1.0e30F
+        let mut max_y = -1.0e30F
+        for i in 0..<vertices.length() {
+          let wp = center.add(rot.rotate_vec2(vertices[i]))
+          if wp.x < min_x {
+            min_x = wp.x
+          }
+          if wp.x > max_x {
+            max_x = wp.x
+          }
+          if wp.y < min_y {
+            min_y = wp.y
+          }
+          if wp.y > max_y {
+            max_y = wp.y
+          }
+        }
+        Aabb::{
+          min: @core.Vec2::new(min_x - pd, min_y - pd),
+          max: @core.Vec2::new(max_x + pd, max_y + pd),
+        }
+      }
+    Shape::TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         Aabb::{ min: center, max: center }
       } else {
