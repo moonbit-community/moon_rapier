@@ -195,13 +195,6 @@ priv struct JointConstraint {
   mut impulses : @core.Vec2
   // Angular equality impulse (locked ang_z).
   mut ang_impulse : @core.Real
-  // Rope unilateral constraint (distance <= max_length).
-  rope_active : Bool
-  rope_max_length : @core.Real
-  rope_dir : @core.Vec2
-  rope_bias : @core.Real
-  rope_inv_mass : @core.Real
-  mut rope_impulse : @core.Real
   // Coupled linear axis constraint (e.g. rope joint in Rapier): distance between anchors is
   // constrained using a single axis stored in `limits/motors` on LinX and an implicit direction.
   coupled_dir : @core.Vec2
@@ -467,36 +460,6 @@ fn build_joint_constraints(
     if limits_enabled && (rel_angle < limits.min() || rel_angle > limits.max()) {
       limit_impulse = limits.impulse() * warmstart
     }
-
-    // Rope unilateral constraint: distance between anchors must be <= max_length.
-    let mut rope_active = false
-    let mut rope_max_length = 0.0F
-    let mut rope_dir = @core.Vec2::zero()
-    let mut rope_bias = 0.0F
-    let mut rope_inv_mass = 0.0F
-    let mut rope_impulse = 0.0F
-    if joint.data.rope_max_length() is Some(max_len) && dt > 0.0F {
-      let delta = world2.sub(world1)
-      let dist = delta.length()
-      if dist > max_len + 1.0e-6F {
-        rope_active = true
-        rope_max_length = max_len
-        rope_dir = if dist > 1.0e-12F {
-          joint_vec2_scale(delta, 1.0F / dist)
-        } else {
-          @core.Vec2::new(1.0F, 0.0F)
-        }
-        rope_bias = (dist - max_len) * JOINT_SOLVER_BAUMGARTE / dt
-        let rn1 = r1.cross(rope_dir)
-        let rn2 = r2.cross(rope_dir)
-        let denom = inv_mass1 +
-          inv_mass2 +
-          inv_inertia1 * rn1 * rn1 +
-          inv_inertia2 * rn2 * rn2
-        rope_inv_mass = joint_inv(denom)
-        rope_impulse = joint.rope_impulse * warmstart
-      }
-    }
     let mut impulses = joint_vec2_scale(joint.impulses, warmstart)
     if !lock_x {
       impulses = @core.Vec2::new(0.0F, impulses.y)
@@ -572,12 +535,6 @@ fn build_joint_constraints(
       lin_limit_y_max,
       impulses,
       ang_impulse,
-      rope_active,
-      rope_max_length,
-      rope_dir,
-      rope_bias,
-      rope_inv_mass,
-      rope_impulse,
       coupled_dir,
       coupled_dist,
       coupled_inv_mass,
@@ -775,12 +732,6 @@ fn build_joint_constraints(
       impulses = @core.Vec2::new(impulses.x, 0.0F)
     }
     let ang_impulse = 0.0F
-    let rope_active = false
-    let rope_max_length = 0.0F
-    let rope_dir = @core.Vec2::zero()
-    let rope_bias = 0.0F
-    let rope_inv_mass = 0.0F
-    let rope_impulse = 0.0F
     let motor_impulse = if motor_enabled {
       motors.ang_z.impulse() * warmstart
     } else {
@@ -844,12 +795,6 @@ fn build_joint_constraints(
       lin_limit_y_max,
       impulses,
       ang_impulse,
-      rope_active,
-      rope_max_length,
-      rope_dir,
-      rope_bias,
-      rope_inv_mass,
-      rope_impulse,
       coupled_dir: @core.Vec2::zero(),
       coupled_dist: 0.0F,
       coupled_inv_mass: 0.0F,
@@ -880,11 +825,6 @@ fn warmstart_joints(
     let lin_lim = joint_vec2_scale(c.basis_x, c.lin_limit_x_impulse).add(
       joint_vec2_scale(c.basis_y, c.lin_limit_y_impulse),
     )
-    let rope = if c.rope_active {
-      joint_vec2_scale(c.rope_dir, c.rope_impulse)
-    } else {
-      @core.Vec2::zero()
-    }
     let coupled_limit = if c.coupled_limit_active != 0 {
       joint_vec2_scale(c.coupled_dir, c.coupled_limit_impulse)
     } else {
@@ -900,7 +840,6 @@ fn warmstart_joints(
     )
     let impulse = lin_eq
       .add(lin_lim)
-      .add(rope)
       .add(coupled_limit)
       .add(coupled_motor)
       .add(lin_motor)
@@ -1027,34 +966,6 @@ fn solve_joint_velocity_constraints(
             constraints[i].impulses.y + lambda,
           )
           let impulse = joint_vec2_scale(c.basis_y, lambda)
-          joint_apply_impulse_delta_dynamic(
-            bodies,
-            Some(c.body1),
-            impulse,
-            c.anchor1,
-          )
-          joint_apply_impulse_delta_dynamic(
-            bodies,
-            Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
-            c.anchor2,
-          )
-        }
-      }
-
-      // Rope unilateral constraint (distance <= max_length).
-      if c.rope_active && c.rope_inv_mass > 0.0F {
-        let vn = rv.dot(c.rope_dir)
-        let lambda = -(vn + c.rope_bias) * c.rope_inv_mass
-        let old = constraints[i].rope_impulse
-        let mut new_impulse = old + lambda
-        if new_impulse < 0.0F {
-          new_impulse = 0.0F
-        }
-        let applied = new_impulse - old
-        constraints[i].rope_impulse = new_impulse
-        if applied != 0.0F {
-          let impulse = joint_vec2_scale(c.rope_dir, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
             Some(c.body1),
@@ -1710,31 +1621,6 @@ fn position_correction_joints(
         )
       }
     }
-    if c.rope_active && c.rope_max_length > 0.0F {
-      let delta = world2.sub(world1)
-      let dist = delta.length()
-      if dist > c.rope_max_length + 1.0e-6F {
-        let dir = if dist > 1.0e-12F {
-          joint_vec2_scale(delta, 1.0F / dist)
-        } else {
-          @core.Vec2::new(1.0F, 0.0F)
-        }
-        let err = dist - c.rope_max_length
-        apply_linear_correction(
-          bodies,
-          c.body1,
-          c.body2,
-          dir,
-          -err, // negative -> pulls anchors together.
-          r1,
-          r2,
-          inv_m1,
-          inv_m2,
-          inv_i1,
-          inv_i2,
-        )
-      }
-    }
     if c.lock_ang && inv_i1 + inv_i2 > 1.0e-12F {
       let rot2 = rb2.rotation()
       let joint_rot2 = rot2.mul(c.local_rot2)
@@ -1799,7 +1685,6 @@ fn writeback_joint_impulses(
         handle,
         c.impulses,
         c.ang_impulse,
-        c.rope_impulse,
         motor_lin_x,
         motor_lin_y,
         c.motor_impulse,

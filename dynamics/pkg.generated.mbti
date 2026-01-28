@@ -74,7 +74,6 @@ pub struct GenericJoint {
   mut limits : JointLimits3
   mut motors : JointMotors3
   mut softness : SpringCoefficients
-  mut rope_max_length : Float?
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
@@ -100,7 +99,6 @@ pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motor_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motors(Self) -> JointMotors3
 pub fn GenericJoint::new(JointAxesMask) -> Self
-pub fn GenericJoint::rope_max_length(Self) -> Float?
 pub fn GenericJoint::set_contacts_enabled(Self, Bool) -> Self
 pub fn GenericJoint::set_coupled_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_enabled(Self, Bool) -> Self
@@ -120,7 +118,6 @@ pub fn GenericJoint::set_motor_model(Self, JointAxis, MotorModel) -> Self
 pub fn GenericJoint::set_motor_position(Self, JointAxis, Float, Float, Float) -> Self
 pub fn GenericJoint::set_motor_velocity(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_motors(Self, JointMotors3) -> Self
-pub fn GenericJoint::set_rope_max_length(Self, Float?) -> Self
 pub fn GenericJoint::set_softness(Self, SpringCoefficients) -> Self
 pub fn GenericJoint::softness(Self) -> SpringCoefficients
 
@@ -157,7 +154,6 @@ pub struct ImpulseJoint {
   mut data : GenericJoint
   mut impulses : @core.Vec2
   mut ang_impulse : Float
-  mut rope_impulse : Float
   handle : ImpulseJointHandle
 }
 pub fn ImpulseJoint::is_enabled(Self) -> Bool
@@ -201,7 +197,7 @@ pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHand
 pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
 pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
-pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float, Float) -> Unit
+pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float) -> Unit
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 

@@ -1083,7 +1083,6 @@ pub struct ImpulseJoint {
   mut data : GenericJoint
   mut impulses : @core.Vec2
   mut ang_impulse : @core.Real
-  mut rope_impulse : @core.Real
   handle : ImpulseJointHandle
 }
 
@@ -1180,8 +1179,6 @@ pub struct GenericJoint {
   mut limits : JointLimits3
   mut motors : JointMotors3
   mut softness : SpringCoefficients
-  // Optional max-length constraint used by RopeJoint.
-  mut rope_max_length : @core.Real?
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
@@ -1199,7 +1196,6 @@ pub fn GenericJoint::default() -> GenericJoint {
     limits: JointLimits3::default(),
     motors: JointMotors3::default(),
     softness: SpringCoefficients::joint_defaults(),
-    rope_max_length: None,
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
@@ -1229,7 +1225,6 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     limits: JointLimits3::default(),
     motors: JointMotors3::default(),
     softness: joint.softness(),
-    rope_max_length: None,
     contacts_enabled: true,
     enabled: JointEnabled::Enabled,
     user_data: 0,
@@ -1645,25 +1640,11 @@ pub fn GenericJoint::softness(self : GenericJoint) -> SpringCoefficients {
 }
 
 ///|
-pub fn GenericJoint::rope_max_length(self : GenericJoint) -> @core.Real? {
-  self.rope_max_length
-}
-
-///|
 pub fn GenericJoint::set_softness(
   self : GenericJoint,
   softness : SpringCoefficients,
 ) -> GenericJoint {
   self.softness = softness
-  self
-}
-
-///|
-pub fn GenericJoint::set_rope_max_length(
-  self : GenericJoint,
-  length : @core.Real?,
-) -> GenericJoint {
-  self.rope_max_length = length
   self
 }
 
@@ -2025,7 +2006,6 @@ pub fn ImpulseJointSet::insert(
     limits: joint.limits,
     motors: joint.motors,
     softness: joint.softness,
-    rope_max_length: joint.rope_max_length,
     contacts_enabled: joint.contacts_enabled,
     enabled: joint.enabled,
     user_data: joint.user_data,
@@ -2036,7 +2016,6 @@ pub fn ImpulseJointSet::insert(
     data: joint_data,
     impulses: @core.Vec2::zero(),
     ang_impulse: 0.0F,
-    rope_impulse: 0.0F,
     handle,
   }
   let edge_id = self.graph_edges.length()
@@ -2184,7 +2163,6 @@ pub fn ImpulseJointSet::set_solver_impulses(
   handle : ImpulseJointHandle,
   impulses : @core.Vec2,
   ang_impulse : @core.Real,
-  rope_impulse : @core.Real,
   motor_lin_x : @core.Real,
   motor_lin_y : @core.Real,
   motor_ang_z : @core.Real,
@@ -2203,7 +2181,6 @@ pub fn ImpulseJointSet::set_solver_impulses(
   let joint = edge.joint
   joint.impulses = impulses
   joint.ang_impulse = ang_impulse
-  joint.rope_impulse = rope_impulse
   let motors = joint.data.motors
   joint.data.motors = JointMotors3::{
     lin_x: motors.lin_x.set_impulse(motor_lin_x),

@@ -2099,7 +2099,6 @@ pub fn ImpulseJointSet::set_solver_impulses(
   handle : ImpulseJointHandle,
   impulses : @core.Vec2,
   ang_impulse : @core.Real,
-  rope_impulse : @core.Real,
   motor_lin_x : @core.Real,
   motor_lin_y : @core.Real,
   motor_ang_z : @core.Real,
