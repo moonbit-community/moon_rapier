@@ -145,7 +145,8 @@ fn joint_wrap_angle_pi(angle : @core.Real) -> @core.Real {
 
 ///|
 priv struct JointConstraint {
-  handle : @dynamics.ImpulseJointHandle
+  handle : @dynamics.ImpulseJointHandle?
+  mb_link : @dynamics.MultibodyLinkId?
   body1 : @dynamics.RigidBodyHandle
   body2 : @dynamics.RigidBodyHandle
   local_anchor1 : @core.Vec2
@@ -201,6 +202,20 @@ priv struct JointConstraint {
   rope_bias : @core.Real
   rope_inv_mass : @core.Real
   mut rope_impulse : @core.Real
+  // Coupled linear axis constraint (e.g. rope joint in Rapier): distance between anchors is
+  // constrained using a single axis stored in `limits/motors` on LinX and an implicit direction.
+  coupled_dir : @core.Vec2
+  coupled_dist : @core.Real
+  coupled_inv_mass : @core.Real
+  coupled_limit_enabled : Bool
+  coupled_limit_min : @core.Real
+  coupled_limit_max : @core.Real
+  coupled_limit_active : Int // -1=min, +1=max, 0=inactive
+  coupled_limit_bias : @core.Real
+  mut coupled_limit_impulse : @core.Real
+  coupled_motor_enabled : Bool
+  coupled_motor : @dynamics.JointMotor
+  mut coupled_motor_impulse : @core.Real
 }
 
 ///|
@@ -208,6 +223,7 @@ fn build_joint_constraints(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
   impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
 ) -> Array[JointConstraint] {
   let constraints : Array[JointConstraint] = []
@@ -309,12 +325,14 @@ fn build_joint_constraints(
     } else {
       1.0F / denom_ang
     }
+    let coupled_axes = joint.data.coupled_axes()
+    let coupled_lin = coupled_axes.contains(@dynamics.JointAxesMask::lin_axes())
     let motor_axes = joint.data.motor_axes()
     let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
-    let motor_lin_x_enabled = motor_axes.contains(
+    let mut motor_lin_x_enabled = motor_axes.contains(
       @dynamics.JointAxesMask::lin_x(),
     )
-    let motor_lin_y_enabled = motor_axes.contains(
+    let mut motor_lin_y_enabled = motor_axes.contains(
       @dynamics.JointAxesMask::lin_y(),
     )
     let motors = joint.data.motors()
@@ -324,13 +342,81 @@ fn build_joint_constraints(
     let limit_axes = joint.data.limit_axes()
     let limits_all = joint.data.limits()
 
+    // Coupled linear motor (distance motor). The coupled solver reads settings from LinX.
+    let mut coupled_motor_enabled = false
+    let mut coupled_motor = motors.lin_x
+    let mut coupled_motor_impulse = 0.0F
+    if coupled_lin && motor_axes.contains(@dynamics.JointAxesMask::lin_x()) {
+      coupled_motor_enabled = true
+      coupled_motor = motors.lin_x
+      coupled_motor_impulse = motors.lin_x.impulse() * warmstart
+      motor_lin_x_enabled = false
+      motor_lin_y_enabled = false
+    }
+
+    // Coupled linear constraint geometry (used by coupled limits/motors).
+    let mut coupled_dir = @core.Vec2::zero()
+    let mut coupled_dist = 0.0F
+    let mut coupled_inv_mass = 0.0F
+    if coupled_lin &&
+      (
+        limit_axes.contains(@dynamics.JointAxesMask::lin_x()) ||
+        motor_axes.contains(@dynamics.JointAxesMask::lin_x())
+      ) {
+      let delta = world2.sub(world1)
+      let dist = delta.length()
+      coupled_dist = dist
+      coupled_dir = if dist > 1.0e-12F {
+        joint_vec2_scale(delta, 1.0F / dist)
+      } else {
+        @core.Vec2::new(1.0F, 0.0F)
+      }
+      let rn1 = r1.cross(coupled_dir)
+      let rn2 = r2.cross(coupled_dir)
+      let denom = inv_mass1 +
+        inv_mass2 +
+        inv_inertia1 * rn1 * rn1 +
+        inv_inertia2 * rn2 * rn2
+      coupled_inv_mass = joint_inv(denom)
+    }
+
+    // Coupled linear limits (distance limits).
+    let mut coupled_limit_enabled = false
+    let mut coupled_limit_min = 0.0F
+    let mut coupled_limit_max = 0.0F
+    let mut coupled_limit_active = 0
+    let mut coupled_limit_bias = 0.0F
+    let mut coupled_limit_impulse = 0.0F
+    if coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_x()) &&
+      dt > 0.0F {
+      coupled_limit_enabled = true
+      coupled_limit_min = limits_all.lin_x.min()
+      coupled_limit_max = limits_all.lin_x.max()
+      if coupled_dist < coupled_limit_min - 1.0e-6F {
+        coupled_limit_active = -1
+        coupled_limit_bias = (coupled_dist - coupled_limit_min) *
+          JOINT_SOLVER_BAUMGARTE /
+          dt
+        coupled_limit_impulse = limits_all.lin_x.impulse() * warmstart
+      } else if coupled_dist > coupled_limit_max + 1.0e-6F {
+        coupled_limit_active = 1
+        coupled_limit_bias = (coupled_dist - coupled_limit_max) *
+          JOINT_SOLVER_BAUMGARTE /
+          dt
+        coupled_limit_impulse = limits_all.lin_x.impulse() * warmstart
+      }
+    }
+
     // Build unilateral linear limits in joint-frame coordinates.
     let mut lin_limit_x_min = 0.0F
     let mut lin_limit_x_max = 0.0F
     let mut lin_limit_x_active = 0
     let mut lin_limit_x_bias = 0.0F
     let mut lin_limit_x_impulse = 0.0F
-    if limit_axes.contains(@dynamics.JointAxesMask::lin_x()) && dt > 0.0F {
+    if !coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_x()) &&
+      dt > 0.0F {
       let bounds_min = -limits_all.lin_x.max()
       let bounds_max = -limits_all.lin_x.min()
       lin_limit_x_min = bounds_min
@@ -351,7 +437,9 @@ fn build_joint_constraints(
     let mut lin_limit_y_active = 0
     let mut lin_limit_y_bias = 0.0F
     let mut lin_limit_y_impulse = 0.0F
-    if limit_axes.contains(@dynamics.JointAxesMask::lin_y()) && dt > 0.0F {
+    if !coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_y()) &&
+      dt > 0.0F {
       let bounds_min = -limits_all.lin_y.max()
       let bounds_max = -limits_all.lin_y.min()
       lin_limit_y_min = bounds_min
@@ -437,7 +525,8 @@ fn build_joint_constraints(
       0.0F
     }
     constraints.push(JointConstraint::{
-      handle,
+      handle: Some(handle),
+      mb_link: None,
       body1: joint.body1,
       body2: joint.body2,
       local_anchor1,
@@ -489,6 +578,290 @@ fn build_joint_constraints(
       rope_bias,
       rope_inv_mass,
       rope_impulse,
+      coupled_dir,
+      coupled_dist,
+      coupled_inv_mass,
+      coupled_limit_enabled,
+      coupled_limit_min,
+      coupled_limit_max,
+      coupled_limit_active,
+      coupled_limit_bias,
+      coupled_limit_impulse,
+      coupled_motor_enabled,
+      coupled_motor,
+      coupled_motor_impulse,
+    })
+  }
+  let mb_joints = multibody_joints.revolute_joint_descriptors()
+  for i in 0..<mb_joints.length() {
+    let desc = mb_joints[i]
+    if bodies.get(desc.parent) is None || bodies.get(desc.child) is None {
+      continue
+    }
+    let rb1 = bodies.get(desc.parent).unwrap()
+    let rb2 = bodies.get(desc.child).unwrap()
+    if !rb1.is_enabled() || !rb2.is_enabled() {
+      continue
+    }
+    // Convert to a GenericJoint so we can reuse the same constraint builder.
+    let data = @dynamics.GenericJoint::from_revolute(desc.joint)
+    if !data.is_enabled() {
+      continue
+    }
+    let local_anchor1 = data.local_anchor1()
+    let local_anchor2 = data.local_anchor2()
+    let frame1 = data.local_frame1()
+    let frame2 = data.local_frame2()
+    let local_rot1 = frame1.rotation
+    let local_rot2 = frame2.rotation
+    let world1 = rb1.position().transform_point(local_anchor1)
+    let world2 = rb2.position().transform_point(local_anchor2)
+    let error = world1.sub(world2)
+    let lock_axes = data.locked_axes()
+    let lock_x = lock_axes.contains(@dynamics.JointAxesMask::lin_x())
+    let lock_y = lock_axes.contains(@dynamics.JointAxesMask::lin_y())
+    let lock_ang = lock_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let joint_rot1 = rb1.rotation().mul(local_rot1)
+    let (basis_x, basis_y) = if lock_x && lock_y {
+      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+    } else {
+      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
+      (x, @core.Vec2::new(-x.y, x.x))
+    }
+    let bias = if dt > 0.0F {
+      @core.Vec2::new(
+        if lock_x {
+          error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
+        } else {
+          0.0F
+        },
+        if lock_y {
+          error.dot(basis_y) * JOINT_SOLVER_BAUMGARTE / dt
+        } else {
+          0.0F
+        },
+      )
+    } else {
+      @core.Vec2::zero()
+    }
+    let inv_mass1 = if rb1.is_dynamic() &&
+      rb1.is_enabled() &&
+      !rb1.locked_translations {
+      rb1.inv_mass()
+    } else {
+      0.0F
+    }
+    let inv_mass2 = if rb2.is_dynamic() &&
+      rb2.is_enabled() &&
+      !rb2.locked_translations {
+      rb2.inv_mass()
+    } else {
+      0.0F
+    }
+    let inv_inertia1 = if rb1.is_dynamic() &&
+      rb1.is_enabled() &&
+      !rb1.locked_rotations {
+      rb1.inv_inertia()
+    } else {
+      0.0F
+    }
+    let inv_inertia2 = if rb2.is_dynamic() &&
+      rb2.is_enabled() &&
+      !rb2.locked_rotations {
+      rb2.inv_inertia()
+    } else {
+      0.0F
+    }
+    let com1 = rb1.world_com()
+    let com2 = rb2.world_com()
+    let r1 = world1.sub(com1)
+    let r2 = world2.sub(com2)
+    let rn1x = r1.cross(basis_x)
+    let rn2x = r2.cross(basis_x)
+    let rn1y = r1.cross(basis_y)
+    let rn2y = r2.cross(basis_y)
+    let k00 = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * rn1x * rn1x +
+      inv_inertia2 * rn2x * rn2x
+    let k01 = inv_inertia1 * rn1x * rn1y + inv_inertia2 * rn2x * rn2y
+    let k11 = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * rn1y * rn1y +
+      inv_inertia2 * rn2y * rn2y
+    let denom_ang = inv_inertia1 + inv_inertia2
+    let det = k00 * k11 - k01 * k01
+    let inv_mass00 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k11 / det }
+    let inv_mass01 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { -k01 / det }
+    let inv_mass11 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k00 / det }
+    let inv_mass_x = joint_inv(k00)
+    let inv_mass_y = joint_inv(k11)
+    let inv_mass_ang = if denom_ang <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / denom_ang
+    }
+    let motor_axes = data.motor_axes()
+    let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let motor_lin_x_enabled = motor_axes.contains(
+      @dynamics.JointAxesMask::lin_x(),
+    )
+    let motor_lin_y_enabled = motor_axes.contains(
+      @dynamics.JointAxesMask::lin_y(),
+    )
+    let motors = data.motors()
+    let motor = motors.ang_z
+    let motor_lin_x = motors.lin_x
+    let motor_lin_y = motors.lin_y
+    let limit_axes = data.limit_axes()
+    let limits_all = data.limits()
+    let mut lin_limit_x_min = 0.0F
+    let mut lin_limit_x_max = 0.0F
+    let mut lin_limit_x_active = 0
+    let mut lin_limit_x_bias = 0.0F
+    let mut lin_limit_x_impulse = 0.0F
+    if limit_axes.contains(@dynamics.JointAxesMask::lin_x()) && dt > 0.0F {
+      let bounds_min = -limits_all.lin_x.max()
+      let bounds_max = -limits_all.lin_x.min()
+      lin_limit_x_min = bounds_min
+      lin_limit_x_max = bounds_max
+      let coord = error.dot(basis_x)
+      if coord < bounds_min {
+        lin_limit_x_active = -1
+        lin_limit_x_bias = (coord - bounds_min) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_x_impulse = limits_all.lin_x.impulse() * warmstart
+      } else if coord > bounds_max {
+        lin_limit_x_active = 1
+        lin_limit_x_bias = (coord - bounds_max) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_x_impulse = limits_all.lin_x.impulse() * warmstart
+      }
+    }
+    let mut lin_limit_y_min = 0.0F
+    let mut lin_limit_y_max = 0.0F
+    let mut lin_limit_y_active = 0
+    let mut lin_limit_y_bias = 0.0F
+    let mut lin_limit_y_impulse = 0.0F
+    if limit_axes.contains(@dynamics.JointAxesMask::lin_y()) && dt > 0.0F {
+      let bounds_min = -limits_all.lin_y.max()
+      let bounds_max = -limits_all.lin_y.min()
+      lin_limit_y_min = bounds_min
+      lin_limit_y_max = bounds_max
+      let coord = error.dot(basis_y)
+      if coord < bounds_min {
+        lin_limit_y_active = -1
+        lin_limit_y_bias = (coord - bounds_min) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
+      } else if coord > bounds_max {
+        lin_limit_y_active = 1
+        lin_limit_y_bias = (coord - bounds_max) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
+      }
+    }
+    let limits_enabled = limit_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let limits = limits_all.ang_z
+    let rot2 = rb2.rotation()
+    let joint_rot2 = rot2.mul(local_rot2)
+    let rel_rot = joint_rot1.inverse().mul(joint_rot2)
+    let rel_angle = rel_rot.angle()
+    let mut limit_impulse = 0.0F
+    if limits_enabled && (rel_angle < limits.min() || rel_angle > limits.max()) {
+      limit_impulse = limits.impulse() * warmstart
+    }
+    let mut impulses = joint_vec2_scale(desc.solver_lin_impulses, warmstart)
+    if !lock_x {
+      impulses = @core.Vec2::new(0.0F, impulses.y)
+    }
+    if !lock_y {
+      impulses = @core.Vec2::new(impulses.x, 0.0F)
+    }
+    let ang_impulse = 0.0F
+    let rope_active = false
+    let rope_max_length = 0.0F
+    let rope_dir = @core.Vec2::zero()
+    let rope_bias = 0.0F
+    let rope_inv_mass = 0.0F
+    let rope_impulse = 0.0F
+    let motor_impulse = if motor_enabled {
+      motors.ang_z.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    let motor_lin_x_impulse = if motor_lin_x_enabled {
+      motors.lin_x.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    let motor_lin_y_impulse = if motor_lin_y_enabled {
+      motors.lin_y.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    constraints.push(JointConstraint::{
+      handle: None,
+      mb_link: Some(desc.link),
+      body1: desc.parent,
+      body2: desc.child,
+      local_anchor1,
+      local_anchor2,
+      local_rot1,
+      local_rot2,
+      anchor1: world1,
+      anchor2: world2,
+      basis_x,
+      basis_y,
+      lock_x,
+      lock_y,
+      lock_ang,
+      bias,
+      inv_mass00,
+      inv_mass01,
+      inv_mass11,
+      inv_mass_x,
+      inv_mass_y,
+      inv_mass_ang,
+      motor_enabled,
+      motor,
+      motor_impulse,
+      motor_lin_x_enabled,
+      motor_lin_x,
+      motor_lin_x_impulse,
+      motor_lin_y_enabled,
+      motor_lin_y,
+      motor_lin_y_impulse,
+      limits_enabled,
+      limit_min: limits.min(),
+      limit_max: limits.max(),
+      limit_impulse,
+      lin_limit_x_active,
+      lin_limit_x_bias,
+      lin_limit_x_impulse,
+      lin_limit_x_min,
+      lin_limit_x_max,
+      lin_limit_y_active,
+      lin_limit_y_bias,
+      lin_limit_y_impulse,
+      lin_limit_y_min,
+      lin_limit_y_max,
+      impulses,
+      ang_impulse,
+      rope_active,
+      rope_max_length,
+      rope_dir,
+      rope_bias,
+      rope_inv_mass,
+      rope_impulse,
+      coupled_dir: @core.Vec2::zero(),
+      coupled_dist: 0.0F,
+      coupled_inv_mass: 0.0F,
+      coupled_limit_enabled: false,
+      coupled_limit_min: 0.0F,
+      coupled_limit_max: 0.0F,
+      coupled_limit_active: 0,
+      coupled_limit_bias: 0.0F,
+      coupled_limit_impulse: 0.0F,
+      coupled_motor_enabled: false,
+      coupled_motor: motors.lin_x,
+      coupled_motor_impulse: 0.0F,
     })
   }
   constraints
@@ -512,10 +885,25 @@ fn warmstart_joints(
     } else {
       @core.Vec2::zero()
     }
+    let coupled_limit = if c.coupled_limit_active != 0 {
+      joint_vec2_scale(c.coupled_dir, c.coupled_limit_impulse)
+    } else {
+      @core.Vec2::zero()
+    }
+    let coupled_motor = if c.coupled_motor_enabled {
+      joint_vec2_scale(c.coupled_dir, c.coupled_motor_impulse)
+    } else {
+      @core.Vec2::zero()
+    }
     let lin_motor = joint_vec2_scale(c.basis_x, c.motor_lin_x_impulse).add(
       joint_vec2_scale(c.basis_y, c.motor_lin_y_impulse),
     )
-    let impulse = lin_eq.add(lin_lim).add(rope).add(lin_motor)
+    let impulse = lin_eq
+      .add(lin_lim)
+      .add(rope)
+      .add(coupled_limit)
+      .add(coupled_motor)
+      .add(lin_motor)
     joint_apply_impulse_delta_dynamic(bodies, Some(c.body1), impulse, c.anchor1)
     joint_apply_impulse_delta_dynamic(
       bodies,
@@ -682,6 +1070,40 @@ fn solve_joint_velocity_constraints(
         }
       }
 
+      // Coupled linear limits (distance between anchors).
+      if c.coupled_limit_active != 0 && c.coupled_inv_mass > 0.0F {
+        let vn = rv.dot(c.coupled_dir)
+        let lambda = -(vn + c.coupled_limit_bias) * c.coupled_inv_mass
+        let old = constraints[i].coupled_limit_impulse
+        let mut new_impulse = old + lambda
+        if c.coupled_limit_active < 0 {
+          // Min violation: enforce impulse <= 0 (push anchors apart).
+          if new_impulse > 0.0F {
+            new_impulse = 0.0F
+          }
+          // Max violation: enforce impulse >= 0 (pull anchors together).
+        } else if new_impulse < 0.0F {
+          new_impulse = 0.0F
+        }
+        let applied = new_impulse - old
+        constraints[i].coupled_limit_impulse = new_impulse
+        if applied != 0.0F {
+          let impulse = joint_vec2_scale(c.coupled_dir, applied)
+          joint_apply_impulse_delta_dynamic(
+            bodies,
+            Some(c.body1),
+            impulse,
+            c.anchor1,
+          )
+          joint_apply_impulse_delta_dynamic(
+            bodies,
+            Some(c.body2),
+            @core.Vec2::new(-impulse.x, -impulse.y),
+            c.anchor2,
+          )
+        }
+      }
+
       // Linear unilateral limits along joint-frame X/Y.
       if c.lin_limit_x_active != 0 && c.inv_mass_x > 0.0F {
         let rel_v = rv.dot(c.basis_x)
@@ -729,6 +1151,60 @@ fn solve_joint_velocity_constraints(
         constraints[i].lin_limit_y_impulse = new_impulse
         if applied != 0.0F {
           let impulse = joint_vec2_scale(c.basis_y, applied)
+          joint_apply_impulse_delta_dynamic(
+            bodies,
+            Some(c.body1),
+            impulse,
+            c.anchor1,
+          )
+          joint_apply_impulse_delta_dynamic(
+            bodies,
+            Some(c.body2),
+            @core.Vec2::new(-impulse.x, -impulse.y),
+            c.anchor2,
+          )
+        }
+      }
+
+      // Coupled linear motor (distance motor).
+      if c.coupled_motor_enabled && c.coupled_inv_mass > 0.0F {
+        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(bodies, c.body1)
+        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(bodies, c.body2)
+        let r1m = c.anchor1.sub(com1m)
+        let r2m = c.anchor2.sub(com2m)
+        let vel1m = v1m.add(joint_cross_z_scalar(w1m, r1m))
+        let vel2m = v2m.add(joint_cross_z_scalar(w2m, r2m))
+        let rvm = vel1m.sub(vel2m)
+        // Match angular motor convention: use relative velocity (body2 - body1).
+        let rel_v = -rvm.dot(c.coupled_dir)
+        let (erp_inv_dt, cfm_coeff, cfm_gain) = joint_motor_coefficients(
+          c.coupled_motor.model,
+          dt,
+          c.coupled_motor.stiffness,
+          c.coupled_motor.damping,
+        )
+        let coord = c.coupled_dist
+        let mut rhs_wo_bias = -c.coupled_motor.target_vel
+        if erp_inv_dt != 0.0F {
+          let error = coord - c.coupled_motor.target_pos
+          rhs_wo_bias = rhs_wo_bias + error * erp_inv_dt
+        }
+        let dot_jj = 1.0F / c.coupled_inv_mass
+        let cfm_gain_total = dot_jj * cfm_coeff + cfm_gain
+        let inv_lhs = joint_inv(dot_jj + cfm_gain_total)
+        let rhs = rel_v + rhs_wo_bias
+        let max_impulse = c.coupled_motor.max_force * dt
+        let old = constraints[i].coupled_motor_impulse
+        let mut new_impulse = old + inv_lhs * (rhs - cfm_gain_total * old)
+        if new_impulse > max_impulse {
+          new_impulse = max_impulse
+        } else if new_impulse < -max_impulse {
+          new_impulse = -max_impulse
+        }
+        let applied = new_impulse - old
+        constraints[i].coupled_motor_impulse = new_impulse
+        if applied != 0.0F {
+          let impulse = joint_vec2_scale(c.coupled_dir, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
             Some(c.body1),
@@ -1204,6 +1680,36 @@ fn position_correction_joints(
         )
       }
     }
+    if c.coupled_limit_enabled {
+      let delta = world2.sub(world1)
+      let dist = delta.length()
+      let mut err = 0.0F
+      if dist < c.coupled_limit_min {
+        err = c.coupled_limit_min - dist
+      } else if dist > c.coupled_limit_max {
+        err = c.coupled_limit_max - dist
+      }
+      if err != 0.0F {
+        let dir = if dist > 1.0e-12F {
+          joint_vec2_scale(delta, 1.0F / dist)
+        } else {
+          @core.Vec2::new(1.0F, 0.0F)
+        }
+        apply_linear_correction(
+          bodies,
+          c.body1,
+          c.body2,
+          dir,
+          err,
+          r1,
+          r2,
+          inv_m1,
+          inv_m2,
+          inv_i1,
+          inv_i2,
+        )
+      }
+    }
     if c.rope_active && c.rope_max_length > 0.0F {
       let delta = world2.sub(world1)
       let dist = delta.length()
@@ -1263,21 +1769,51 @@ fn position_correction_joints(
 ///|
 fn writeback_joint_impulses(
   impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   constraints : Array[JointConstraint],
 ) -> Unit {
   for i in 0..<constraints.length() {
     let c = constraints[i]
-    impulse_joints.set_solver_impulses(
-      c.handle,
-      c.impulses,
-      c.ang_impulse,
-      c.rope_impulse,
-      c.motor_lin_x_impulse,
-      c.motor_lin_y_impulse,
-      c.motor_impulse,
-      c.lin_limit_x_impulse,
-      c.lin_limit_y_impulse,
-      c.limit_impulse,
-    )
+    if c.handle is Some(handle) {
+      let motor_lin_x = if c.coupled_motor_enabled {
+        c.coupled_motor_impulse
+      } else {
+        c.motor_lin_x_impulse
+      }
+      let motor_lin_y = if c.coupled_motor_enabled {
+        0.0F
+      } else {
+        c.motor_lin_y_impulse
+      }
+      let limit_lin_x = if c.coupled_limit_enabled {
+        c.coupled_limit_impulse
+      } else {
+        c.lin_limit_x_impulse
+      }
+      let limit_lin_y = if c.coupled_limit_enabled {
+        0.0F
+      } else {
+        c.lin_limit_y_impulse
+      }
+      impulse_joints.set_solver_impulses(
+        handle,
+        c.impulses,
+        c.ang_impulse,
+        c.rope_impulse,
+        motor_lin_x,
+        motor_lin_y,
+        c.motor_impulse,
+        limit_lin_x,
+        limit_lin_y,
+        c.limit_impulse,
+      )
+    } else if c.mb_link is Some(link) {
+      multibody_joints.set_revolute_joint_solver_impulses(
+        link,
+        c.impulses,
+        c.motor_impulse,
+        c.limit_impulse,
+      )
+    }
   }
 }

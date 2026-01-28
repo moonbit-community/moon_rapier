@@ -16,6 +16,7 @@
 test "joint solver motor applies angular impulse (wbtest)" {
   let bodies = @dynamics.RigidBodySet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
   let fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let dynamic = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   if bodies.get_mut_internal(dynamic) is Some(rb) {
@@ -37,7 +38,9 @@ test "joint solver motor applies angular impulse (wbtest)" {
     .set_dt(dt)
     .set_warmstart_coefficient(0.0F)
     .set_num_solver_iterations(1)
-  let constraints = build_joint_constraints(params, bodies, impulse_joints, dt)
+  let constraints = build_joint_constraints(
+    params, bodies, impulse_joints, multibody_joints, dt,
+  )
   inspect(constraints.length() == 1, content="true")
   solve_joint_velocity_constraints(bodies, constraints, dt, 1)
   if bodies.get(dynamic) is Some(rb) {

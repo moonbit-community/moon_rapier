@@ -445,7 +445,9 @@ pub fn MultibodyJointSet::multibodies(Self) -> Array[Multibody]
 pub fn MultibodyJointSet::new() -> Self
 pub fn MultibodyJointSet::remove(Self, MultibodyJointHandle, Bool) -> Unit
 pub fn MultibodyJointSet::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
+pub fn MultibodyJointSet::revolute_joint_descriptors(Self) -> Array[MultibodyRevoluteJointDesc]
 pub fn MultibodyJointSet::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(Self, MultibodyLinkId, @core.Vec2, Float, Float) -> Unit
 pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet) -> Unit
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
@@ -456,6 +458,14 @@ pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
 pub struct MultibodyLinkId {
   multibody : MultibodyIndex
   id : Int
+}
+
+pub struct MultibodyRevoluteJointDesc {
+  link : MultibodyLinkId
+  parent : RigidBodyHandle
+  child : RigidBodyHandle
+  joint : RevoluteJoint
+  solver_lin_impulses : @core.Vec2
 }
 
 type PinSlotJoint

@@ -125,7 +125,9 @@ pub fn GenericJoint::from_rope(joint : RopeJoint) -> GenericJoint {
   .set_local_frame1(frame1)
   .set_local_frame2(frame2)
   .set_coupled_axes(JointAxesMask::lin_axes())
-  .set_rope_max_length(Some(joint.max_length))
+  // Rapier parity: rope joint is a coupled linear limit on the distance between anchors.
+  // The coupled solver reads the limits stored on the first coupled axis (LinX).
+  .set_limits_axis(JointAxis::LinX, 0.0F, joint.max_length)
 }
 
 ///|

@@ -1064,6 +1064,67 @@ test "multi sap disable body" {
 }
 
 ///|
+test "multibody joints participate in pipeline solver (revolute constraint)" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let ccd_solver = @dynamics.CCDSolver::new()
+  let params = IntegrationParameters::default()
+  let gravity = @core.Vec2::zero()
+  let parent = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let child = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    parent,
+    bodies,
+  )
+  |> ignore
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    child,
+    bodies,
+  )
+  |> ignore
+
+  // A simple multibody with one revolute joint (locks the two linear DOFs).
+  let joint = @dynamics.RevoluteJointBuilder::new().build()
+  multibody_joints.insert(parent, child, joint, true) |> ignore
+
+  // Give the child an initial velocity; without a solver-backed joint, it would drift away.
+  if bodies.get_mut(child) is Some(rb) {
+    rb.set_linvel(@core.Vec2::new(10.0F, 0.0F), true) |> ignore
+  }
+  for _ in 0..<30 {
+    pipeline.step(
+      gravity,
+      params,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      ccd_solver,
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+  }
+  if bodies.get(parent) is Some(a) && bodies.get(child) is Some(b) {
+    let d = a.translation().sub(b.translation()).length()
+    inspect(d == d, content="true")
+    inspect(d < 0.5F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_snapshot_handle_determinism).
 test "rigid body removal snapshot handle determinism" {
   let colliders = @collision.ColliderSet::new()

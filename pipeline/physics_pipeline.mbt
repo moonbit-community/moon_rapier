@@ -795,12 +795,13 @@ fn solve_joints_and_contacts_interleaved(
   physics_hooks : PhysicsHooks,
   narrow_phase : @collision.NarrowPhase,
   impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
   event_handler : EventHandler,
   contact_cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
   let joint_constraints = build_joint_constraints(
-    parameters, bodies, impulse_joints, dt,
+    parameters, bodies, impulse_joints, multibody_joints, dt,
   )
   let (contact_constraints, contact_manifolds) = build_constraints(
     parameters,
@@ -854,7 +855,9 @@ fn solve_joints_and_contacts_interleaved(
   }
   if joint_constraints.length() > 0 {
     position_correction_joints(bodies, joint_constraints)
-    writeback_joint_impulses(impulse_joints, joint_constraints)
+    writeback_joint_impulses(
+      impulse_joints, multibody_joints, joint_constraints,
+    )
   }
   if contact_constraints.length() > 0 {
     emit_contact_force_events(
@@ -1176,6 +1179,7 @@ pub fn PhysicsPipeline::step(
       physics_hooks,
       narrow_phase,
       impulse_joints,
+      multibody_joints,
       dt,
       event_handler,
       self.contact_solver_cache,
@@ -1265,7 +1269,7 @@ pub fn PhysicsPipeline::step(
       )
     }
     let post_joint_constraints = build_joint_constraints(
-      parameters, bodies, impulse_joints, dt,
+      parameters, bodies, impulse_joints, multibody_joints, dt,
     )
     if post_joint_constraints.length() > 0 {
       position_correction_joints(bodies, post_joint_constraints)

@@ -137,6 +137,7 @@ pub fn RevoluteJointBuilder::build(
     motor_enabled: self.motor_enabled,
     limits: self.limits,
     limits_enabled: self.limits_enabled,
+    solver_lin_impulses: @core.Vec2::zero(),
   }
 }
 
@@ -145,10 +146,13 @@ struct RevoluteJoint {
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
   softness : SpringCoefficients
-  motor : JointMotor
+  mut motor : JointMotor
   motor_enabled : Bool
-  limits : JointLimits
+  mut limits : JointLimits
   limits_enabled : Bool
+  // Solver warmstart cache for the (locked) linear DOFs of this revolute joint.
+  // The motor/limit impulses are stored inside `motor` and `limits`.
+  mut solver_lin_impulses : @core.Vec2
 }
 
 ///|
@@ -868,6 +872,20 @@ pub struct MultibodyLinkId {
 }
 
 ///|
+/// A lightweight joint view used by the physics pipeline to build solver constraints.
+///
+/// This intentionally exposes only what the pipeline needs (parent/child rigid-bodies and the
+/// revolute joint parameters + warmstart cache). The canonical storage remains inside the
+/// multibody.
+pub struct MultibodyRevoluteJointDesc {
+  link : MultibodyLinkId
+  parent : RigidBodyHandle
+  child : RigidBodyHandle
+  joint : RevoluteJoint
+  solver_lin_impulses : @core.Vec2
+}
+
+///|
 priv struct LinkInfo {
   mb_index : Int
   link_id : LinkId
@@ -1026,6 +1044,59 @@ pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(
     mb.update_rigid_bodies(bodies)
     self.multibodies[i] = mb
   }
+}
+
+///|
+pub fn MultibodyJointSet::revolute_joint_descriptors(
+  self : MultibodyJointSet,
+) -> Array[MultibodyRevoluteJointDesc] {
+  let result : Array[MultibodyRevoluteJointDesc] = []
+  for mb_index in 0..<self.multibodies.length() {
+    let mb = self.multibodies[mb_index]
+    for link_id in 1..<mb.links.length() {
+      let link = mb.links[link_id]
+      let parent_id = link.parent_internal_id
+      if parent_id < 0 || parent_id >= mb.links.length() || parent_id == link_id {
+        continue
+      }
+      let parent_link = mb.links[parent_id]
+      result.push(MultibodyRevoluteJointDesc::{
+        link: MultibodyLinkId::{
+          multibody: MultibodyIndex::new(mb_index),
+          id: link_id,
+        },
+        parent: parent_link.rigid_body,
+        child: link.rigid_body,
+        joint: link.joint,
+        solver_lin_impulses: link.joint.solver_lin_impulses,
+      })
+    }
+  }
+  result
+}
+
+///|
+pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(
+  self : MultibodyJointSet,
+  link : MultibodyLinkId,
+  lin_impulses : @core.Vec2,
+  motor_impulse : @core.Real,
+  limit_impulse : @core.Real,
+) -> Unit {
+  let mb_index = link.multibody.value
+  if mb_index < 0 || mb_index >= self.multibodies.length() {
+    return
+  }
+  let mb = self.multibodies[mb_index]
+  if link.id <= 0 || link.id >= mb.links.length() {
+    return
+  }
+  let lnk = mb.links[link.id]
+  lnk.joint.solver_lin_impulses = lin_impulses
+  lnk.joint.motor = lnk.joint.motor.set_impulse(motor_impulse)
+  lnk.joint.limits = lnk.joint.limits.set_impulse(limit_impulse)
+  mb.links[link.id] = lnk
+  self.multibodies[mb_index] = mb
 }
 
 ///|
