@@ -1257,3 +1257,65 @@ test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "query pipeline update refreshes collider world state + aabb cache" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let rb = @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build()
+  let h = bodies.insert(rb)
+  let ch = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h, bodies)
+
+  let q = QueryPipeline::new(QueryFilter::new(), bodies, colliders)
+  let ray = Ray::new(
+    @core.Vec2::new(5.0F, 10.0F),
+    @core.Vec2::new(0.0F, -1.0F),
+  )
+
+  // Move the rigid-body but don't sync colliders manually.
+  if bodies.get_mut(h) is Some(body) {
+    body.set_translation(@core.Vec2::new(5.0F, 0.0F), true) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Without `update`, the collider still has the old world position, so the ray misses.
+  inspect(q.cast_ray(ray, 100.0F, true) is None, content="true")
+
+  q.update()
+  if q.cast_ray(ray, 100.0F, true) is Some((hit, _)) {
+    inspect(ColliderHandle::equals(hit, ch), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "query pipeline mut wrapper provides as_ref and update" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let rb = @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build()
+  let h = bodies.insert(rb)
+  let ch = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h, bodies)
+  let broad_phase = BroadPhaseBvh::new()
+  let qm = broad_phase.as_query_pipeline_mut(bodies, colliders, QueryFilter::new())
+  if bodies.get_mut(h) is Some(body) {
+    body.set_translation(@core.Vec2::new(5.0F, 0.0F), true) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  qm.update()
+  let ray = Ray::new(
+    @core.Vec2::new(5.0F, 10.0F),
+    @core.Vec2::new(0.0F, -1.0F),
+  )
+  if qm.as_ref().cast_ray(ray, 100.0F, true) is Some((hit, _)) {
+    inspect(ColliderHandle::equals(hit, ch), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

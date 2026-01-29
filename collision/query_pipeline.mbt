@@ -268,6 +268,11 @@ pub struct QueryPipeline {
 }
 
 ///|
+pub struct QueryPipelineMut {
+  pipeline : QueryPipeline
+}
+
+///|
 pub struct RayIntersection {
   toi : @core.Real
   normal : @core.Vec2
@@ -441,11 +446,44 @@ pub fn QueryPipeline::new(
 }
 
 ///|
+pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
+  // Refresh collider world-space state and cached AABBs so scene queries see the latest positions.
+  self.colliders.sync_with_bodies(self.bodies)
+  self.aabbs.clear()
+  for i in 0..<self.colliders.colliders.length() {
+    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      self.aabbs.push(Some(compute_collider_aabb(collider)))
+    } else {
+      self.aabbs.push(None)
+    }
+  }
+}
+
+///|
 pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
   { filter, bodies: self.bodies, colliders: self.colliders, aabbs: self.aabbs }
+}
+
+///|
+pub fn QueryPipelineMut::new(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> QueryPipelineMut {
+  { pipeline: QueryPipeline::new(filter, bodies, colliders) }
+}
+
+///|
+pub fn QueryPipelineMut::as_ref(self : QueryPipelineMut) -> QueryPipeline {
+  self.pipeline
+}
+
+///|
+pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
+  self.pipeline.update()
 }
 
 ///|

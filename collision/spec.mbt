@@ -1438,6 +1438,17 @@ pub fn BroadPhaseBvh::as_query_pipeline(
 
 ///|
 #declaration_only
+pub fn BroadPhaseBvh::as_query_pipeline_mut(
+  self : BroadPhaseBvh,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  filter : QueryFilter,
+) -> QueryPipelineMut {
+  ...
+}
+
+///|
+#declaration_only
 pub fn BroadPhaseBvh::update(
   self : BroadPhaseBvh,
   prediction_distance : @core.Real,
@@ -1743,10 +1754,42 @@ pub fn QueryPipeline::new(
 
 ///|
 #declaration_only
+pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub type QueryPipelineMut
+
+///|
+#declaration_only
+pub fn QueryPipelineMut::new(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> QueryPipelineMut {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipelineMut::as_ref(self : QueryPipelineMut) -> QueryPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
   ...
 }
 
