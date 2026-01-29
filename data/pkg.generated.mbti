@@ -1,0 +1,101 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/data"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct Arena[T] {
+  items : Array[Entry[T]]
+  mut generation : Int
+  mut free_list_head : Int?
+  mut len : Int
+}
+pub fn[T] Arena::capacity(Self[T]) -> Int
+pub fn[T] Arena::clear(Self[T]) -> Unit
+pub fn[T] Arena::contains(Self[T], Index) -> Bool
+pub fn[T] Arena::get(Self[T], Index) -> T?
+pub fn[T] Arena::get2_mut(Self[T], Index, Index) -> (T?, T?)
+pub fn[T] Arena::get_mut(Self[T], Index) -> T?
+pub fn[T] Arena::insert(Self[T], T) -> Index
+pub fn[T] Arena::insert_with(Self[T], (Index) -> T) -> Index
+pub fn[T] Arena::is_empty(Self[T]) -> Bool
+pub fn[T] Arena::iter(Self[T]) -> Array[(Index, T)]
+pub fn[T] Arena::iter_mut(Self[T]) -> Array[(Index, T)]
+pub fn[T] Arena::len(Self[T]) -> Int
+pub fn[T] Arena::new() -> Self[T]
+pub fn[T] Arena::remove(Self[T], Index) -> T?
+pub fn[T] Arena::reserve(Self[T], Int) -> Unit
+pub fn[T] Arena::retain(Self[T], (Index, T) -> Bool) -> Unit
+pub fn[T] Arena::try_insert(Self[T], T) -> Result[Index, T]
+pub fn[T] Arena::try_insert_with(Self[T], (Index) -> T) -> Result[Index, (Index) -> T]
+pub fn[T] Arena::with_capacity(Int) -> Self[T]
+
+pub struct Coarena[T] {
+  data : Array[(Int, T)]
+}
+pub fn[T] Coarena::ensure_element_exist(Self[T], Index, T) -> T
+pub fn[T] Coarena::ensure_pair_exists(Self[T], Index, Index, T) -> (T, T)
+pub fn[T] Coarena::get(Self[T], Index) -> T?
+pub fn[T] Coarena::get_mut(Self[T], Index) -> T?
+pub fn[T] Coarena::get_mut_unknown_gen(Self[T], Int) -> T?
+pub fn[T] Coarena::get_unknown_gen(Self[T], Int) -> T?
+pub fn[T : Default] Coarena::insert(Self[T], Index, T) -> Unit
+pub fn[T] Coarena::iter(Self[T]) -> Array[(Index, T)]
+pub fn[T] Coarena::len(Self[T]) -> Int
+pub fn[T] Coarena::new() -> Self[T]
+pub fn[T] Coarena::remove(Self[T], Index, T) -> T?
+pub fn[T] Coarena::reserve(Self[T], Int) -> Unit
+
+type Entry[T]
+
+pub struct Index {
+  index : Int
+  generation : Int
+}
+pub fn Index::default() -> Self
+pub fn Index::from_raw_parts(Int, Int) -> Self
+pub fn Index::into_raw_parts(Self) -> (Int, Int)
+
+pub struct ModifiedObjects[Handle, Object] {
+  handles : Array[Handle]
+  object_marker : Object?
+}
+pub fn[Handle, Object] ModifiedObjects::as_internal(Self[Handle, Object]) -> Array[Handle]
+pub fn[Handle, Object] ModifiedObjects::as_mut_internal(Self[Handle, Object]) -> Array[Handle]
+pub fn[Handle, Object] ModifiedObjects::clear(Self[Handle, Object]) -> Unit
+pub fn[Handle, Object] ModifiedObjects::new() -> Self[Handle, Object]
+pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_once(Self[Handle, Object], Handle, Object) -> Unit
+pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_unchecked(Self[Handle, Object], Handle, Object) -> Unit
+pub fn[Handle, Object] ModifiedObjects::with_capacity(Int) -> Self[Handle, Object]
+
+pub struct PubSub[T] {
+  mut deleted_messages : Int
+  mut deleted_offsets : Int
+  messages : Array[T]
+  offsets : Array[Int]
+  cursors : Array[PubSubCursor]
+}
+pub fn[T] PubSub::ack(Self[T], Subscription[T]) -> Unit
+pub fn[T] PubSub::new() -> Self[T]
+pub fn[T] PubSub::publish(Self[T], T) -> Unit
+pub fn[T] PubSub::read(Self[T], Subscription[T]) -> Array[T]
+pub fn[T] PubSub::read_ith(Self[T], Subscription[T], Int) -> T?
+pub fn[T] PubSub::subscribe(Self[T]) -> Subscription[T]
+
+type PubSubCursor
+
+pub struct Subscription[T] {
+  id : Int
+  marker : T?
+}
+
+// Type aliases
+
+// Traits
+pub(open) trait HasModifiedFlag {
+  has_modified_flag(Self) -> Bool
+  set_modified_flag(Self) -> Unit
+}
+

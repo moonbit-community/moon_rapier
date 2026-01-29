@@ -35,7 +35,8 @@ port. The most significant gaps include:
 
 - **Missing whole public modules**
   - `counters::*` (e.g. `Counters`, stage timers/counters).
-  - `data::*` (e.g. deterministic `Arena`, `Index`, `Coarena`, `pubsub`).
+  - `data::*` was previously missing, but is now present as the `Milky2018/moon_rapier/data` package
+    (Arena/Index/Coarena/ModifiedObjects/pubsub). Re-run this audit to update the name-based counts.
 - **Geometry/public API gaps**
   - Missing/unsupported public types (examples): `MeshConverter`, `MeshConverterError`,
     `BvhOptimizationStrategy`, `BroadPhasePairEvent`.
@@ -68,7 +69,6 @@ This is a directional indicator only; it is not a definitive parity score.
 ## Recommended Next Steps (If Full API Parity Is a Goal)
 
 1) Add missing public modules:
-   - Port and expose `data::*` (Arena/Index/Coarena/ModifiedObjects/pubsub).
    - Port and expose `counters::*` (Timers and stage counters).
 2) Expand geometry/public surface:
    - Add missing shapes (e.g. `Triangle`) and clarify/implement `HeightField` semantics.
@@ -80,4 +80,3 @@ This is a directional indicator only; it is not a definitive parity score.
 5) Decide feature-goals:
    - Serialization support vs. pure runtime simulation.
    - Parallelism and SIMD: decide if in-scope for MoonBit/targets.
-
