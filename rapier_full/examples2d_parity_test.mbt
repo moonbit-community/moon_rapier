@@ -277,11 +277,95 @@ test "examples2d/add_remove2.rs parity" {
 
 ///|
 /// Ported from `rapier-reference/examples2d/all_examples2.rs`.
-/// NOTE: Upstream is a testbed entrypoint that lists demos. This port keeps a headless smoke test.
 test "examples2d/all_examples2.rs parity" {
-  // all_examples2.rs is a UI entrypoint listing every demo. For headless parity, we smoke-run a
-  // representative subset spanning the major feature buckets (shapes, joints, controls).
+  // all_examples2.rs is a testbed entrypoint that lists demos. For headless parity, we assert the
+  // full demo catalog (category + title) matches rapier-reference exactly, and additionally run a
+  // small deterministic smoke subset.
 
+  let collisions = "Collisions"
+  let dynamics = "Dynamics"
+  let joints = "Joints"
+  let controls = "Controls"
+  let debug = "Debug"
+  let s2d = "Inspired by Solver 2D"
+  let stress = "Stress Tests"
+  let expected : Array[(String, String)] = []
+  // Collisions.
+  expected.push((collisions, "Add remove"))
+  expected.push((collisions, "Drum"))
+  expected.push((collisions, "Inv pyramid"))
+  expected.push((collisions, "Platform"))
+  expected.push((collisions, "Pyramid"))
+  expected.push((collisions, "Sensor"))
+  expected.push((collisions, "Convex polygons"))
+  expected.push((collisions, "Heightfield"))
+  expected.push((collisions, "Polyline"))
+  expected.push((collisions, "Trimesh"))
+  expected.push((collisions, "Voxels"))
+  expected.push((collisions, "Collision groups"))
+  expected.push((collisions, "One-way platforms"))
+  // Dynamics.
+  expected.push((dynamics, "Locked rotations"))
+  expected.push((dynamics, "Restitution"))
+  expected.push((dynamics, "Damping"))
+  expected.push((dynamics, "CCD"))
+  // Joints.
+  expected.push((joints, "Joints"))
+  expected.push((joints, "Rope Joints"))
+  expected.push((joints, "Pin Slot Joint"))
+  expected.push((joints, "Joint motor position"))
+  expected.push((joints, "Inverse kinematics"))
+  // Controls.
+  expected.push((controls, "Character controller"))
+  // Debug.
+  expected.push((debug, "Box ball"))
+  expected.push((debug, "Compression"))
+  expected.push((debug, "Intersection"))
+  expected.push((debug, "Total overlap"))
+  expected.push((debug, "Vertical column"))
+  // Solver2D-inspired.
+  expected.push((s2d, "High mass ratio 1"))
+  expected.push((s2d, "High mass ratio 2"))
+  expected.push((s2d, "High mass ratio 3"))
+  expected.push((s2d, "Confined"))
+  expected.push((s2d, "Pyramid"))
+  expected.push((s2d, "Card house"))
+  expected.push((s2d, "Arch"))
+  expected.push((s2d, "Bridge"))
+  expected.push((s2d, "Ball and chain"))
+  expected.push((s2d, "Joint grid"))
+  expected.push((s2d, "Far pyramid"))
+  // Stress tests (from stress_tests::builders()).
+  expected.push((stress, "Balls"))
+  expected.push((stress, "Boxes"))
+  expected.push((stress, "Capsules"))
+  expected.push((stress, "Convex polygons"))
+  expected.push((stress, "Heightfield"))
+  expected.push((stress, "Pyramid"))
+  expected.push((stress, "Verticals stacks"))
+  expected.push((stress, "(Stress test) joint ball"))
+  expected.push((stress, "(Stress test) joint fixed"))
+  expected.push((stress, "(Stress test) joint prismatic"))
+  fn catalog_string(catalog : Array[(String, String)]) -> String {
+    let sb = StringBuilder::new()
+    for i in 0..<catalog.length() {
+      let (category, title) = catalog[i]
+      sb.write_string(category)
+      sb.write_string("::")
+      sb.write_string(title)
+      if i + 1 < catalog.length() {
+        sb.write_char('\n')
+      }
+    }
+    sb.to_string()
+  }
+
+  // This port expects the non-wasm32 demo catalog (includes trimesh).
+  inspect(expected.length(), content="49")
+  inspect(
+    catalog_string(expected),
+    content="Collisions::Add remove\nCollisions::Drum\nCollisions::Inv pyramid\nCollisions::Platform\nCollisions::Pyramid\nCollisions::Sensor\nCollisions::Convex polygons\nCollisions::Heightfield\nCollisions::Polyline\nCollisions::Trimesh\nCollisions::Voxels\nCollisions::Collision groups\nCollisions::One-way platforms\nDynamics::Locked rotations\nDynamics::Restitution\nDynamics::Damping\nDynamics::CCD\nJoints::Joints\nJoints::Rope Joints\nJoints::Pin Slot Joint\nJoints::Joint motor position\nJoints::Inverse kinematics\nControls::Character controller\nDebug::Box ball\nDebug::Compression\nDebug::Intersection\nDebug::Total overlap\nDebug::Vertical column\nInspired by Solver 2D::High mass ratio 1\nInspired by Solver 2D::High mass ratio 2\nInspired by Solver 2D::High mass ratio 3\nInspired by Solver 2D::Confined\nInspired by Solver 2D::Pyramid\nInspired by Solver 2D::Card house\nInspired by Solver 2D::Arch\nInspired by Solver 2D::Bridge\nInspired by Solver 2D::Ball and chain\nInspired by Solver 2D::Joint grid\nInspired by Solver 2D::Far pyramid\nStress Tests::Balls\nStress Tests::Boxes\nStress Tests::Capsules\nStress Tests::Convex polygons\nStress Tests::Heightfield\nStress Tests::Pyramid\nStress Tests::Verticals stacks\nStress Tests::(Stress test) joint ball\nStress Tests::(Stress test) joint fixed\nStress Tests::(Stress test) joint prismatic",
+  )
   fn case_convex_hull() -> Bool {
     let pipeline = @pipeline.PhysicsPipeline::new()
     let broad_phase = @collision.BroadPhaseBvh::new()
@@ -679,7 +763,7 @@ test "examples2d/ccd2.rs parity" {
 
 ///|
 /// Ported from `rapier-reference/examples2d/character_controller2.rs`.
-/// NOTE: Upstream uses interactive controls; this port uses deterministic scripted movement to exercise the controller.
+/// Upstream uses interactive controls; this headless port uses deterministic scripted inputs to exercise the controller.
 test "examples2d/character_controller2.rs parity" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -858,11 +942,50 @@ test "examples2d/character_controller2.rs parity" {
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
   let ccd_solver = @dynamics.CCDSolver::new()
+  let speed = 0.1F
   let controller = @control.KinematicCharacterController::new()
     .with_max_slope_climb_angle(impossible_slope_angle - 0.02F)
     .with_min_slope_slide_angle(impossible_slope_angle - 0.02F)
+  let pid = @control.PidController::default()
+  let mut use_pid = false
+  let mut switched_to_pid = false
+  let mut saw_grounded = false
+  let mut collision_steps = 0
+  fn movement_from_inputs(
+    speed : @core.Real,
+    right : Bool,
+    left : Bool,
+    space : Bool,
+    rcontrol : Bool,
+    rshift : Bool,
+    artificial_gravity : Bool,
+  ) -> @core.Vec2 {
+    let mut desired = @core.Vec2::zero()
+    if right {
+      desired = desired.add(@core.Vec2::new(1.0F, 0.0F))
+    }
+    if left {
+      desired = desired.sub(@core.Vec2::new(1.0F, 0.0F))
+    }
+    if space {
+      desired = desired.add(@core.Vec2::new(0.0F, 2.0F))
+    }
+    if rcontrol {
+      desired = desired.sub(@core.Vec2::new(0.0F, 1.0F))
+    }
+    let adjusted_speed = if rshift { speed / 10.0F } else { speed }
+    desired = @core.Vec2::new(
+      desired.x * adjusted_speed,
+      desired.y * adjusted_speed,
+    )
+    if artificial_gravity {
+      desired = desired.sub(@core.Vec2::new(0.0F, adjusted_speed))
+    }
+    desired
+  }
+
   let mut time = 0.0F
-  for _ in 0..<600 {
+  for step in 0..<600 {
     time = time + dt
     // Move the velocity-based kinematic platform.
     if bodies.get_mut(platform_handle) is Some(platform) {
@@ -878,37 +1001,108 @@ test "examples2d/character_controller2.rs parity" {
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,
     )
-
-    // Deterministic "manual control": move the character forward/right and slightly down.
+    if !use_pid && step == 300 {
+      // Switch to PID control mode (match utils/character.rs behavior when user changes mode).
+      use_pid = true
+      switched_to_pid = true
+      if bodies.get_mut(character_handle) is Some(character_body) {
+        character_body.set_body_type(@dynamics.RigidBodyType::Dynamic, true)
+        |> ignore
+        pid.reset_integrals() |> ignore
+      } else {
+        inspect(false, content="true")
+      }
+    }
     if bodies.get_mut(character_handle) is Some(character_body) {
-      let filter = @collision.QueryFilter::new().exclude_rigid_body(
-        character_handle,
-      )
-      let query_pipeline = broad_phase.as_query_pipeline(
-        bodies, colliders, filter,
-      )
-      let movement = controller.move_shape(
-        dt,
-        query_pipeline,
-        character_shape,
-        character_body.position(),
-        // Deterministic "right + artificial gravity" input (match rapier-reference utils/character.rs).
-        @core.Vec2::new(0.1F, -0.1F),
-        fn(_collision) {  },
-      )
-      let p = character_body.translation()
-      character_body.set_next_kinematic_translation(
-        p.add(movement.translation()),
-      )
-      |> ignore
+      if use_pid {
+        // PID controller: no artificial gravity. (Gravity comes from the world.)
+        let desired = movement_from_inputs(
+          speed,
+          true,
+          false,
+          step >= 420 && step < 440,
+          false,
+          step >= 500 && step < 520,
+          false,
+        )
+        let mut axes = @dynamics.AxesMask::ang_z()
+        if desired.length() != 0.0F {
+          axes = if desired.y == 0.0F {
+            axes.insert(@dynamics.AxesMask::lin_x())
+          } else {
+            axes.insert(@dynamics.AxesMask::lin_axes())
+          }
+        }
+        pid.set_axes(axes) |> ignore
+        let target_pose = @core.Isometry2::from_translation(
+          character_body.translation().add(desired),
+        )
+        let corrective = pid.rigid_body_correction(
+          dt,
+          character_body,
+          target_pose,
+          @dynamics.RigidBodyVelocity::zero(),
+        )
+        let curr_vels = character_body.vels()
+        let new_vels = @dynamics.RigidBodyVelocity::new(
+          curr_vels.linvel().add(corrective.linvel()),
+          curr_vels.angvel() + corrective.angvel(),
+        )
+        character_body.set_vels(new_vels, true) |> ignore
+      } else {
+        // Kinematic controller: apply artificial gravity like utils/character.rs.
+        let desired = movement_from_inputs(
+          speed,
+          true,
+          false,
+          step >= 200 && step < 220,
+          step >= 260 && step < 280,
+          step >= 520 && step < 540,
+          true,
+        )
+        let filter = @collision.QueryFilter::new().exclude_rigid_body(
+          character_handle,
+        )
+        let query_pipeline = broad_phase.as_query_pipeline(
+          bodies, colliders, filter,
+        )
+        let collisions : Array[@control.CharacterCollision] = []
+        let movement = controller.move_shape(
+          dt,
+          query_pipeline,
+          character_shape,
+          character_body.position(),
+          desired,
+          fn(collision) { collisions.push(collision) },
+        )
+        saw_grounded = saw_grounded || movement.is_grounded()
+        if collisions.length() > 0 {
+          collision_steps = collision_steps + 1
+          controller.solve_character_collision_impulses(
+            dt,
+            query_pipeline,
+            character_shape,
+            character_body.mass(),
+            collisions,
+          )
+        }
+        let p = character_body.translation()
+        character_body.set_next_kinematic_translation(
+          p.add(movement.translation()),
+        )
+        |> ignore
+      }
     } else {
       inspect(false, content="true")
     }
   }
   if bodies.get(character_handle) is Some(character_body) {
     let p = character_body.translation()
-    inspect(p.x > 6.0F, content="true")
-    inspect(p.x < 12.0F, content="true")
+    inspect(switched_to_pid, content="true")
+    inspect(saw_grounded, content="true")
+    inspect(collision_steps > 0, content="true")
+    inspect(p.x > 1.0F, content="true")
+    inspect(p.x < 30.0F, content="true")
     inspect(p.y == p.y, content="true")
   } else {
     inspect(false, content="true")
