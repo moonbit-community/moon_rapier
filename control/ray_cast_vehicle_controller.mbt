@@ -44,6 +44,96 @@ pub fn WheelTuning::default() -> WheelTuning {
 }
 
 ///|
+pub fn WheelTuning::with_suspension_stiffness(
+  self : WheelTuning,
+  suspension_stiffness : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    friction_slip: self.friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_suspension_compression(
+  self : WheelTuning,
+  suspension_compression : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    friction_slip: self.friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_suspension_damping(
+  self : WheelTuning,
+  suspension_damping : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    friction_slip: self.friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_max_suspension_travel(
+  self : WheelTuning,
+  max_suspension_travel : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel,
+    friction_slip: self.friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_friction_slip(
+  self : WheelTuning,
+  friction_slip : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_max_suspension_force(
+  self : WheelTuning,
+  max_suspension_force : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    friction_slip: self.friction_slip,
+    max_suspension_force,
+  }
+}
+
+///|
 pub struct RayCastInfo {
   mut contact_normal_ws : @core.Vec2
   mut contact_point_ws : @core.Vec2

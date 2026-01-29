@@ -457,6 +457,60 @@ pub fn WheelTuning::default() -> WheelTuning {
 
 ///|
 #declaration_only
+pub fn WheelTuning::with_suspension_stiffness(
+  self : WheelTuning,
+  suspension_stiffness : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub fn WheelTuning::with_suspension_compression(
+  self : WheelTuning,
+  suspension_compression : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub fn WheelTuning::with_suspension_damping(
+  self : WheelTuning,
+  suspension_damping : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub fn WheelTuning::with_max_suspension_travel(
+  self : WheelTuning,
+  max_suspension_travel : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub fn WheelTuning::with_friction_slip(
+  self : WheelTuning,
+  friction_slip : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub fn WheelTuning::with_max_suspension_force(
+  self : WheelTuning,
+  max_suspension_force : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
 pub type RayCastInfo
 
 ///|

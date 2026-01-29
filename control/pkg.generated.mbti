@@ -173,6 +173,12 @@ pub struct WheelTuning {
   max_suspension_force : Float
 }
 pub fn WheelTuning::default() -> Self
+pub fn WheelTuning::with_friction_slip(Self, Float) -> Self
+pub fn WheelTuning::with_max_suspension_force(Self, Float) -> Self
+pub fn WheelTuning::with_max_suspension_travel(Self, Float) -> Self
+pub fn WheelTuning::with_suspension_compression(Self, Float) -> Self
+pub fn WheelTuning::with_suspension_damping(Self, Float) -> Self
+pub fn WheelTuning::with_suspension_stiffness(Self, Float) -> Self
 
 // Type aliases
 
