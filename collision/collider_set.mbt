@@ -5826,12 +5826,29 @@ fn compute_shape_aabb(
 
 ///|
 pub struct BroadPhaseBvh {
+  optimization_strategy : BvhOptimizationStrategy
   pairs : Array[(ColliderHandle, ColliderHandle)]
+  mut events : Array[BroadPhasePairEvent]
 }
 
 ///|
 pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
-  { pairs: [] }
+  {
+    optimization_strategy: BvhOptimizationStrategy::none(),
+    pairs: [],
+    events: [],
+  }
+}
+
+///|
+pub fn BroadPhaseBvh::with_optimization_strategy(
+  optimization_strategy : BvhOptimizationStrategy,
+) -> BroadPhaseBvh {
+  {
+    optimization_strategy,
+    pairs: [],
+    events: [],
+  }
 }
 
 ///|
@@ -5853,7 +5870,7 @@ pub fn BroadPhaseBvh::update(
   colliders : ColliderSet,
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
-  self.pairs.clear()
+  let prev_pairs = self.pairs.copy()
   let leaves : Array[BvhLeaf] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -5867,13 +5884,49 @@ pub fn BroadPhaseBvh::update(
       leaves.push(BvhLeaf::{ handle, aabb, center: aabb_center(aabb) })
     }
   }
-  if leaves.length() <= 1 {
-    return
+  let next_pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  if leaves.length() > 1 {
+    let nodes : Array[BvhNode] = []
+    let root = build_bvh(nodes, leaves, 0, leaves.length())
+    collect_bvh_pairs(nodes, root, root, next_pairs)
+    sort_pairs(next_pairs)
   }
-  let nodes : Array[BvhNode] = []
-  let root = build_bvh(nodes, leaves, 0, leaves.length())
-  collect_bvh_pairs(nodes, root, root, self.pairs)
-  sort_pairs(self.pairs)
+
+  // Update pair list and generate deterministic pair events.
+  self.pairs.clear()
+  self.pairs.append(next_pairs[:])
+
+  self.events.clear()
+  let mut i = 0
+  let mut j = 0
+  while i < prev_pairs.length() && j < next_pairs.length() {
+    let a = prev_pairs[i]
+    let b = next_pairs[j]
+    if ColliderHandle::equals(a.0, b.0) && ColliderHandle::equals(a.1, b.1) {
+      i = i + 1
+      j = j + 1
+    } else if pair_less(a, b) {
+      self.events.push(
+        BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)),
+      )
+      i = i + 1
+    } else {
+      self.events.push(
+        BroadPhasePairEvent::AddPair(ColliderPair::new(b.0, b.1)),
+      )
+      j = j + 1
+    }
+  }
+  while i < prev_pairs.length() {
+    let a = prev_pairs[i]
+    self.events.push(BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)))
+    i = i + 1
+  }
+  while j < next_pairs.length() {
+    let b = next_pairs[j]
+    self.events.push(BroadPhasePairEvent::AddPair(ColliderPair::new(b.0, b.1)))
+    j = j + 1
+  }
 }
 
 ///|
@@ -5881,4 +5934,13 @@ pub fn BroadPhaseBvh::pairs(
   self : BroadPhaseBvh,
 ) -> Array[(ColliderHandle, ColliderHandle)] {
   self.pairs
+}
+
+///|
+pub fn BroadPhaseBvh::take_events(
+  self : BroadPhaseBvh,
+) -> Array[BroadPhasePairEvent] {
+  let result = self.events
+  self.events = []
+  result
 }

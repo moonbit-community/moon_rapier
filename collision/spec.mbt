@@ -307,6 +307,220 @@ pub type Shape
 
 ///|
 #declaration_only
+pub type SharedShape
+
+///|
+#declaration_only
+pub fn SharedShape::new(shape : Shape) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::as_shape(self : SharedShape) -> Shape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::ball(radius : @core.Real) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::cuboid(
+  half_width : @core.Real,
+  half_height : @core.Real,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::capsule_x(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::capsule_y(
+  half_height : @core.Real,
+  radius : @core.Real,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::segment(a : @core.Vec2, b : @core.Vec2) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::triangle(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::polyline(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)]?,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::trimesh(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> SharedShape? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SharedShape::heightfield(
+  heights : Array[@core.Real],
+  scale : @core.Vec2,
+) -> SharedShape {
+  ...
+}
+
+///|
+#declaration_only
+pub type Triangle
+
+///|
+#declaration_only
+pub fn Triangle::new(a : @core.Vec2, b : @core.Vec2, c : @core.Vec2) -> Triangle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Triangle::as_shape(self : Triangle) -> Shape {
+  ...
+}
+
+///|
+#declaration_only
+pub type HeightField
+
+///|
+#declaration_only
+pub fn HeightField::new(heights : Array[@core.Real], scale : @core.Vec2) -> HeightField {
+  ...
+}
+
+///|
+#declaration_only
+pub fn HeightField::as_shape(self : HeightField) -> Shape {
+  ...
+}
+
+///|
+#declaration_only
+pub type MeshConverterError
+
+///|
+#declaration_only
+pub fn MeshConverterError::to_string(self : MeshConverterError) -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub type MeshConverter
+
+///|
+#declaration_only
+pub fn MeshConverter::trimesh() -> MeshConverter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MeshConverter::aabb() -> MeshConverter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MeshConverter::obb() -> MeshConverter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MeshConverter::convex_hull() -> MeshConverter {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MeshConverter::apply(
+  self : MeshConverter,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
+  ...
+}
+
+///|
+#declaration_only
+pub type ColliderPair
+
+///|
+#declaration_only
+pub fn ColliderPair::new(a : ColliderHandle, b : ColliderHandle) -> ColliderPair {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderPair::collider1(self : ColliderPair) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderPair::collider2(self : ColliderPair) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub type BroadPhasePairEvent
+
+///|
+#declaration_only
+pub type BvhOptimizationStrategy
+
+///|
+#declaration_only
+pub fn BvhOptimizationStrategy::none() -> BvhOptimizationStrategy {
+  ...
+}
+
+///|
+#declaration_only
+pub fn BvhOptimizationStrategy::subtree_optimizer() -> BvhOptimizationStrategy {
+  ...
+}
+
+///|
+#declaration_only
 pub type ColliderBuilder
 
 ///|
@@ -1205,6 +1419,14 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
 
 ///|
 #declaration_only
+pub fn BroadPhaseBvh::with_optimization_strategy(
+  optimization_strategy : BvhOptimizationStrategy,
+) -> BroadPhaseBvh {
+  ...
+}
+
+///|
+#declaration_only
 pub fn BroadPhaseBvh::as_query_pipeline(
   self : BroadPhaseBvh,
   bodies : @dynamics.RigidBodySet,
@@ -1230,6 +1452,14 @@ pub fn BroadPhaseBvh::update(
 pub fn BroadPhaseBvh::pairs(
   self : BroadPhaseBvh,
 ) -> Array[(ColliderHandle, ColliderHandle)] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn BroadPhaseBvh::take_events(
+  self : BroadPhaseBvh,
+) -> Array[BroadPhasePairEvent] {
   ...
 }
 

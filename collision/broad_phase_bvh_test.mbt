@@ -41,6 +41,52 @@ test "broad phase bvh pairs basic" {
 }
 
 ///|
+test "broad phase bvh emits add/delete pair events" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = ColliderSet::new()
+  let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let ch1 = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h1, bodies)
+  let ch2 = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h2, bodies)
+  let broad_phase = BroadPhaseBvh::new()
+
+  broad_phase.update(0.0F, bodies, colliders)
+  let ev1 = broad_phase.take_events()
+  inspect(ev1.length() == 1, content="true")
+  if ev1[0] is BroadPhasePairEvent::AddPair(pair1) {
+    let a = pair1.collider1()
+    let b = pair1.collider2()
+    inspect(
+      (ColliderHandle::equals(a, ch1) && ColliderHandle::equals(b, ch2)) ||
+      (ColliderHandle::equals(a, ch2) && ColliderHandle::equals(b, ch1)),
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+
+  if colliders.get_mut(ch2) is Some(c2) {
+    c2.set_enabled(false) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  broad_phase.update(0.0F, bodies, colliders)
+  let ev2 = broad_phase.take_events()
+  inspect(ev2.length() == 1, content="true")
+  if ev2[0] is BroadPhasePairEvent::DeletePair(pair2) {
+    let a = pair2.collider1()
+    let b = pair2.collider2()
+    inspect(
+      (ColliderHandle::equals(a, ch1) && ColliderHandle::equals(b, ch2)) ||
+      (ColliderHandle::equals(a, ch2) && ColliderHandle::equals(b, ch1)),
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "broad phase bvh skips disabled colliders" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()
