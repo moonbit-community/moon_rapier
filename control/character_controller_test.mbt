@@ -187,6 +187,361 @@ test "character controller utilities: CharacterLength map_* and defaults" {
 }
 
 ///|
+/// Ported from rapier-reference/examples2d/character_controller2.rs (moving platform callback) adapted for 2D.
+test "character controller moving platform keeps grounded and follows platform" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let integration_parameters = @dynamics.IntegrationParameters::default()
+  let inv_dt = integration_parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+
+  // Flat ground.
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(50.0F, ground_height).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  // Moving platform (kinematic velocity based).
+  let platform = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_velocity_based()
+    .translation(@core.Vec2::new(-8.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(2.0F, ground_height).build(),
+    platform,
+    bodies,
+  )
+  |> ignore
+
+  // Character (kinematic position based).
+  let character = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based()
+    // Ball radius is 0.5, platform top is at y=0.1, so grounded center is y=0.6.
+    .translation(@core.Vec2::new(-8.0F, 0.6F))
+    .build(),
+  )
+  let character_collider = @collision.ColliderBuilder::ball(0.5F).build()
+  let character_shape = character_collider.shape()
+  colliders.insert_with_parent(character_collider, character, bodies) |> ignore
+  let controller = KinematicCharacterController::new()
+  let mut last_grounded = true
+  for _ in 0..<240 {
+    // Move platform horizontally.
+    if bodies.get_mut(platform) is Some(rb) {
+      rb.set_linvel(@core.Vec2::new(2.0F, 0.0F), true) |> ignore
+    }
+    pipeline.step(
+      gravity,
+      integration_parameters,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      @pipeline.PhysicsHooks::new(),
+      @pipeline.EventHandler::new(),
+    )
+    if bodies.get(character) is Some(character_body) {
+      let filter_character_controller = @collision.QueryFilter::new().exclude_rigid_body(
+        character,
+      )
+      let query_pipeline = broad_phase.as_query_pipeline(
+        bodies, colliders, filter_character_controller,
+      )
+      let movement = controller.move_shape(
+        dt,
+        query_pipeline,
+        character_shape,
+        character_body.position(),
+        @core.Vec2::new(0.0F, -0.1F),
+        fn(_collision) {  },
+      )
+      last_grounded = movement.is_grounded()
+      inspect(movement.is_grounded(), content="true")
+      // Keep the character following the controller output.
+      let t = character_body.translation()
+      if bodies.get_mut(character) is Some(rb) {
+        rb.set_next_kinematic_translation(t.add(movement.translation()))
+        |> ignore
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  }
+  inspect(last_grounded, content="true")
+  if bodies.get(character) is Some(character_body) {
+    let p = character_body.translation()
+    // The platform moves at +2 m/s for 4 seconds; expect the character to have advanced too.
+    inspect(p.x > -2.0F, content="true")
+    inspect(p.y > -10.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+/// Ported from rapier-reference/examples2d/character_controller2.rs (stairs) adapted for 2D.
+test "character controller autostep climbs stairs" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let integration_parameters = @dynamics.IntegrationParameters::default()
+  let inv_dt = integration_parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+
+  // Ground.
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(50.0F, ground_height).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  // Stairs.
+  let stair_width = 1.0F
+  let stair_height = 0.1F
+  for i in 0..<10 {
+    let x = Float::from_double(i.to_double()) * stair_width / 2.0F
+    let y = Float::from_double(i.to_double()) * stair_height * 1.5F + 0.2F
+    colliders.insert(
+      @collision.ColliderBuilder::cuboid(
+        stair_width / 2.0F,
+        stair_height / 2.0F,
+      )
+      .translation(@core.Vec2::new(x, y))
+      .build(),
+    )
+    |> ignore
+  }
+
+  // Character.
+  let character = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based()
+    .translation(@core.Vec2::new(-2.0F, 1.0F))
+    .build(),
+  )
+  let character_collider = @collision.ColliderBuilder::ball(0.5F).build()
+  let character_shape = character_collider.shape()
+  colliders.insert_with_parent(character_collider, character, bodies) |> ignore
+  // The stairs in this scenario have a relatively large step height, so use
+  // an explicit autostep configuration.
+  let autostep = CharacterAutostep::new(
+    CharacterLength::absolute(0.25F),
+    CharacterLength::absolute(0.2F),
+  )
+  let controller = KinematicCharacterController::new().with_autostep(
+    Some(autostep),
+  )
+  let mut max_y = -1.0F
+  for _ in 0..<300 {
+    pipeline.step(
+      gravity,
+      integration_parameters,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      @pipeline.PhysicsHooks::new(),
+      @pipeline.EventHandler::new(),
+    )
+    if bodies.get(character) is Some(character_body) {
+      let filter_character_controller = @collision.QueryFilter::new().exclude_rigid_body(
+        character,
+      )
+      let query_pipeline = broad_phase.as_query_pipeline(
+        bodies, colliders, filter_character_controller,
+      )
+      let movement = controller.move_shape(
+        dt,
+        query_pipeline,
+        character_shape,
+        character_body.position(),
+        @core.Vec2::new(0.08F, -0.1F),
+        fn(_collision) {  },
+      )
+      let t = character_body.translation()
+      let next_pos = t.add(movement.translation())
+      if next_pos.y > max_y {
+        max_y = next_pos.y
+      }
+      if bodies.get_mut(character) is Some(rb) {
+        rb.set_next_kinematic_translation(next_pos) |> ignore
+      }
+    }
+  }
+  if bodies.get(character) is Some(character_body) {
+    let p = character_body.translation()
+    inspect(p.x > 1.0F, content="true")
+    // Must have climbed at least a few steps.
+    inspect(max_y > 0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+/// Derived from rapier-reference/examples2d/character_controller2.rs controller setup.
+test "character controller reports sliding on steep slope but not on flat ground" {
+  let colliders = @collision.ColliderSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = @pipeline.PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let integration_parameters = @dynamics.IntegrationParameters::default()
+  let inv_dt = integration_parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+
+  // Ground + a steep slope.
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::cuboid(50.0F, ground_height).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  colliders.insert(
+    @collision.ColliderBuilder::cuboid(2.0F, ground_height)
+    .translation(@core.Vec2::new(2.0F, 0.6F))
+    .rotation(0.7F)
+    .build(),
+  )
+  |> ignore
+  let character = bodies.insert(
+    @dynamics.RigidBodyBuilder::kinematic_position_based()
+    .translation(@core.Vec2::new(0.0F, 1.0F))
+    .build(),
+  )
+  let character_collider = @collision.ColliderBuilder::ball(0.5F).build()
+  let character_shape = character_collider.shape()
+  colliders.insert_with_parent(character_collider, character, bodies) |> ignore
+  let controller_flat = KinematicCharacterController::new()
+  let controller_steep = KinematicCharacterController::new()
+    .with_min_slope_slide_angle(0.1F)
+    .with_max_slope_climb_angle(1.2F)
+
+  // Flat ground move should not report sliding.
+  pipeline.step(
+    gravity,
+    integration_parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    @pipeline.PhysicsHooks::new(),
+    @pipeline.EventHandler::new(),
+  )
+  if bodies.get(character) is Some(character_body) {
+    let filter_character_controller = @collision.QueryFilter::new().exclude_rigid_body(
+      character,
+    )
+    let query_pipeline = broad_phase.as_query_pipeline(
+      bodies, colliders, filter_character_controller,
+    )
+    let m = controller_flat.move_shape(
+      dt,
+      query_pipeline,
+      character_shape,
+      character_body.position(),
+      @core.Vec2::new(0.05F, 0.0F),
+      fn(_collision) {  },
+    )
+    inspect(!m.is_sliding_down_slope(), content="true")
+  }
+
+  // Move onto the steep slope.
+  if bodies.get_mut(character) is Some(rb) {
+    rb.set_translation(@core.Vec2::new(1.0F, 1.0F), false) |> ignore
+  }
+  let mut saw_sliding = false
+  for _ in 0..<20 {
+    pipeline.step(
+      gravity,
+      integration_parameters,
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      @dynamics.CCDSolver::new(),
+      @pipeline.PhysicsHooks::new(),
+      @pipeline.EventHandler::new(),
+    )
+    let filter_character_controller = @collision.QueryFilter::new().exclude_rigid_body(
+      character,
+    )
+    let query_pipeline = broad_phase.as_query_pipeline(
+      bodies, colliders, filter_character_controller,
+    )
+    if bodies.get(character) is Some(character_body) {
+      let m = controller_steep.move_shape(
+        dt,
+        query_pipeline,
+        character_shape,
+        character_body.position(),
+        @core.Vec2::new(0.1F, -0.1F),
+        fn(_collision) {  },
+      )
+      saw_sliding = saw_sliding || m.is_sliding_down_slope()
+      let t = character_body.translation()
+      if bodies.get_mut(character) is Some(rb) {
+        rb.set_next_kinematic_translation(t.add(m.translation())) |> ignore
+      }
+    }
+  }
+  inspect(saw_sliding, content="true")
+}
+
+///|
 test "character controller slides along wall" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
