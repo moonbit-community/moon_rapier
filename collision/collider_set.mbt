@@ -32,6 +32,24 @@ pub fn ColliderHandle::equals(
 }
 
 ///|
+pub fn ColliderHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> ColliderHandle {
+  ColliderHandle::new(id, generation)
+}
+
+///|
+pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int, Int) {
+  (self.id, self.generation)
+}
+
+///|
+pub fn ColliderHandle::invalid() -> ColliderHandle {
+  ColliderHandle::new(-1, -1)
+}
+
+///|
 const COLLIDER_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
 
 ///|
@@ -1490,6 +1508,725 @@ pub struct ColliderSet {
 ///|
 pub fn ColliderSet::new() -> ColliderSet {
   { colliders: [], generations: [], free_list: [], modified_colliders: [] }
+}
+
+///|
+fn split_values(text : String, sep : String) -> Array[String] {
+  let values : Array[String] = []
+  for part in text.split(sep[:]) {
+    let value = part.to_string()
+    if value.length() > 0 {
+      values.push(value)
+    }
+  }
+  values
+}
+
+///|
+fn parse_int_value(text : String) -> Int {
+  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
+    text[:],
+    base=10,
+  )
+  if result is Ok(value) {
+    value
+  } else {
+    0
+  }
+}
+
+///|
+fn parse_real_value(text : String) -> @core.Real {
+  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
+    text[:],
+  )
+  if result is Ok(value) {
+    Float::from_double(value)
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn parse_bool_value(text : String) -> Bool {
+  text == "1"
+}
+
+///|
+fn split_top_level(text : String, sep : Char) -> Array[String] {
+  let parts : Array[String] = []
+  let mut depth = 0
+  let mut cur = StringBuilder::new()
+  for c in text {
+    if c == '(' {
+      depth = depth + 1
+    } else if c == ')' {
+      depth = depth - 1
+      if depth < 0 {
+        depth = 0
+      }
+    }
+    if c == sep && depth == 0 {
+      let s = cur.to_string()
+      if s.length() > 0 {
+        parts.push(s)
+      }
+      cur = StringBuilder::new()
+    } else {
+      cur.write_char(c)
+    }
+  }
+  let last = cur.to_string()
+  if last.length() > 0 {
+    parts.push(last)
+  }
+  parts
+}
+
+///|
+fn combine_rule_to_int(value : @dynamics.CoefficientCombineRule) -> Int {
+  match value {
+    @dynamics.CoefficientCombineRule::Average => 0
+    @dynamics.CoefficientCombineRule::Min => 1
+    @dynamics.CoefficientCombineRule::Multiply => 2
+    @dynamics.CoefficientCombineRule::Max => 3
+    @dynamics.CoefficientCombineRule::ClampedSum => 4
+  }
+}
+
+///|
+fn combine_rule_from_int(value : Int) -> @dynamics.CoefficientCombineRule {
+  if value == 1 {
+    @dynamics.CoefficientCombineRule::Min
+  } else if value == 2 {
+    @dynamics.CoefficientCombineRule::Multiply
+  } else if value == 3 {
+    @dynamics.CoefficientCombineRule::Max
+  } else if value == 4 {
+    @dynamics.CoefficientCombineRule::ClampedSum
+  } else {
+    @dynamics.CoefficientCombineRule::Average
+  }
+}
+
+///|
+fn interaction_test_mode_to_int(value : @dynamics.InteractionTestMode) -> Int {
+  match value {
+    @dynamics.InteractionTestMode::And => 0
+    @dynamics.InteractionTestMode::Or => 1
+  }
+}
+
+///|
+fn interaction_test_mode_from_int(value : Int) -> @dynamics.InteractionTestMode {
+  if value == 1 {
+    @dynamics.InteractionTestMode::Or
+  } else {
+    @dynamics.InteractionTestMode::And
+  }
+}
+
+///|
+fn collider_enabled_to_int(value : ColliderEnabled) -> Int {
+  match value {
+    ColliderEnabled::Enabled => 0
+    ColliderEnabled::Disabled => 1
+    ColliderEnabled::DisabledByParent => 2
+  }
+}
+
+///|
+fn collider_enabled_from_int(value : Int) -> ColliderEnabled {
+  if value == 1 {
+    ColliderEnabled::Disabled
+  } else if value == 2 {
+    ColliderEnabled::DisabledByParent
+  } else {
+    ColliderEnabled::Enabled
+  }
+}
+
+///|
+fn write_vec2(sb : StringBuilder, v : @core.Vec2) -> Unit {
+  sb.write_object(v.x)
+  sb.write_char(',')
+  sb.write_object(v.y)
+}
+
+///|
+fn write_isometry2(sb : StringBuilder, iso : @core.Isometry2) -> Unit {
+  write_vec2(sb, iso.translation)
+  sb.write_char(',')
+  sb.write_object(iso.rotation.angle())
+}
+
+///|
+fn write_points(sb : StringBuilder, points : Array[@core.Vec2]) -> Unit {
+  sb.write_object(points.length())
+  for i in 0..<points.length() {
+    sb.write_char(';')
+    write_vec2(sb, points[i])
+  }
+}
+
+///|
+fn write_pairs(sb : StringBuilder, pairs : Array[(Int, Int)]) -> Unit {
+  sb.write_object(pairs.length())
+  for i in 0..<pairs.length() {
+    let p = pairs[i]
+    sb.write_char(';')
+    sb.write_object(p.0)
+    sb.write_char(',')
+    sb.write_object(p.1)
+  }
+}
+
+///|
+fn write_triples(sb : StringBuilder, triples : Array[(Int, Int, Int)]) -> Unit {
+  sb.write_object(triples.length())
+  for i in 0..<triples.length() {
+    let t = triples[i]
+    sb.write_char(';')
+    sb.write_object(t.0)
+    sb.write_char(',')
+    sb.write_object(t.1)
+    sb.write_char(',')
+    sb.write_object(t.2)
+  }
+}
+
+///|
+fn write_shape(sb : StringBuilder, shape : Shape) -> Unit {
+  match shape {
+    Shape::Ball(r) => {
+      sb.write_string("b(")
+      sb.write_object(r)
+      sb.write_char(')')
+    }
+    Shape::Cuboid(hw, hh) => {
+      sb.write_string("c(")
+      sb.write_object(hw)
+      sb.write_char(',')
+      sb.write_object(hh)
+      sb.write_char(')')
+    }
+    Shape::CapsuleX(half_height, radius) => {
+      sb.write_string("x(")
+      sb.write_object(half_height)
+      sb.write_char(',')
+      sb.write_object(radius)
+      sb.write_char(')')
+    }
+    Shape::CapsuleY(half_height, radius) => {
+      sb.write_string("y(")
+      sb.write_object(half_height)
+      sb.write_char(',')
+      sb.write_object(radius)
+      sb.write_char(')')
+    }
+    Shape::Segment(a, b) => {
+      sb.write_string("s(")
+      write_vec2(sb, a)
+      sb.write_char(',')
+      write_vec2(sb, b)
+      sb.write_char(')')
+    }
+    Shape::Polyline(points, indices) => {
+      sb.write_string("p(")
+      write_points(sb, points)
+      sb.write_char('|')
+      if indices is Some(ids) {
+        write_pairs(sb, ids)
+      } else {
+        sb.write_char('-')
+      }
+      sb.write_char(')')
+    }
+    Shape::ConvexPolygon(points) => {
+      sb.write_string("v(")
+      write_points(sb, points)
+      sb.write_char(')')
+    }
+    Shape::TriMesh(vertices, indices) => {
+      sb.write_string("t(")
+      write_points(sb, vertices)
+      sb.write_char('|')
+      write_triples(sb, indices)
+      sb.write_char(')')
+    }
+    Shape::Compound(items) => {
+      sb.write_string("o(")
+      sb.write_object(items.length())
+      for i in 0..<items.length() {
+        let item = items[i]
+        sb.write_char(';')
+        write_isometry2(sb, item.0)
+        sb.write_char(',')
+        write_shape(sb, item.1)
+      }
+      sb.write_char(')')
+    }
+  }
+}
+
+///|
+fn shape_to_string(shape : Shape) -> String {
+  let sb = StringBuilder::new()
+  write_shape(sb, shape)
+  sb.to_string()
+}
+
+///|
+fn parse_vec2(text : String) -> @core.Vec2 {
+  let parts = split_values(text, ",")
+  let x = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
+  let y = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
+  @core.Vec2::new(x, y)
+}
+
+///|
+fn parse_isometry2(text : String) -> @core.Isometry2 {
+  let parts = split_values(text, ",")
+  let x = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
+  let y = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
+  let angle = if parts.length() > 2 { parse_real_value(parts[2]) } else { 0.0F }
+  @core.Isometry2::new(@core.Vec2::new(x, y), @core.Rot2::from_angle(angle))
+}
+
+///|
+fn parse_points(text : String) -> Array[@core.Vec2] {
+  let parts = split_values(text, ";")
+  let points : Array[@core.Vec2] = []
+  // parts[0] is the count; keep parsing whatever is present.
+  if parts.length() > 1 {
+    for i in 1..<parts.length() {
+      points.push(parse_vec2(parts[i]))
+    }
+  }
+  points
+}
+
+///|
+fn parse_pairs(text : String) -> Array[(Int, Int)] {
+  let parts = split_values(text, ";")
+  let pairs : Array[(Int, Int)] = []
+  if parts.length() > 1 {
+    for i in 1..<parts.length() {
+      let fields = split_values(parts[i], ",")
+      let a = if fields.length() > 0 { parse_int_value(fields[0]) } else { 0 }
+      let b = if fields.length() > 1 { parse_int_value(fields[1]) } else { 0 }
+      pairs.push((a, b))
+    }
+  }
+  pairs
+}
+
+///|
+fn parse_triples(text : String) -> Array[(Int, Int, Int)] {
+  let parts = split_values(text, ";")
+  let triples : Array[(Int, Int, Int)] = []
+  if parts.length() > 1 {
+    for i in 1..<parts.length() {
+      let fields = split_values(parts[i], ",")
+      let a = if fields.length() > 0 { parse_int_value(fields[0]) } else { 0 }
+      let b = if fields.length() > 1 { parse_int_value(fields[1]) } else { 0 }
+      let c = if fields.length() > 2 { parse_int_value(fields[2]) } else { 0 }
+      triples.push((a, b, c))
+    }
+  }
+  triples
+}
+
+///|
+fn parse_shape(text : String) -> Shape {
+  if text.strip_prefix("b("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    Shape::Ball(parse_real_value(inner.to_string()))
+  } else if text.strip_prefix("c("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), ",")
+    let hw = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
+    let hh = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
+    Shape::Cuboid(hw, hh)
+  } else if text.strip_prefix("x("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), ",")
+    let h = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
+    let r = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
+    Shape::CapsuleX(h, r)
+  } else if text.strip_prefix("y("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), ",")
+    let h = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
+    let r = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
+    Shape::CapsuleY(h, r)
+  } else if text.strip_prefix("s("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), ",")
+    let a = if parts.length() > 1 {
+      @core.Vec2::new(parse_real_value(parts[0]), parse_real_value(parts[1]))
+    } else {
+      @core.Vec2::zero()
+    }
+    let b = if parts.length() > 3 {
+      @core.Vec2::new(parse_real_value(parts[2]), parse_real_value(parts[3]))
+    } else {
+      @core.Vec2::zero()
+    }
+    Shape::Segment(a, b)
+  } else if text.strip_prefix("p("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), "|")
+    let points = if parts.length() > 0 { parse_points(parts[0]) } else { [] }
+    let indices : Array[(Int, Int)]? = if parts.length() > 1 {
+      if parts[1] == "-" {
+        None
+      } else {
+        Some(parse_pairs(parts[1]))
+      }
+    } else {
+      None
+    }
+    Shape::Polyline(points, indices)
+  } else if text.strip_prefix("v("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    Shape::ConvexPolygon(parse_points(inner.to_string()))
+  } else if text.strip_prefix("t("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), "|")
+    let vertices = if parts.length() > 0 { parse_points(parts[0]) } else { [] }
+    let indices = if parts.length() > 1 { parse_triples(parts[1]) } else { [] }
+    Shape::TriMesh(vertices, indices)
+  } else if text.strip_prefix("o("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_top_level(inner.to_string(), ';')
+    let items : Array[(@core.Isometry2, Shape)] = []
+    if parts.length() > 1 {
+      for i in 1..<parts.length() {
+        let entry = parts[i]
+        let fields = split_top_level(entry, ',')
+        if fields.length() >= 4 {
+          let iso_text = fields[0] + "," + fields[1] + "," + fields[2]
+          let iso = parse_isometry2(iso_text)
+          let shape = parse_shape(fields[3])
+          items.push((iso, shape))
+        }
+      }
+    }
+    Shape::Compound(items)
+  } else {
+    Shape::Ball(0.0F)
+  }
+}
+
+///|
+pub fn ColliderSet::serialize(self : ColliderSet) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("len=")
+  sb.write_object(self.colliders.length())
+  sb.write_char(';')
+  sb.write_string("gens=")
+  for i in 0..<self.generations.length() {
+    if i > 0 {
+      sb.write_char(',')
+    }
+    sb.write_object(self.generations[i])
+  }
+  sb.write_char(';')
+  sb.write_string("free=")
+  for i in 0..<self.free_list.length() {
+    if i > 0 {
+      sb.write_char(',')
+    }
+    sb.write_object(self.free_list[i])
+  }
+  sb.write_char(';')
+  sb.write_string("colliders=")
+  for i in 0..<self.colliders.length() {
+    if i > 0 {
+      sb.write_char('|')
+    }
+    if self.colliders[i] is Some(collider) {
+      let (pid, pgen) = if collider.parent is Some(parent) {
+        parent.into_raw_parts()
+      } else {
+        (-1, -1)
+      }
+      sb.write_string("C^")
+      sb.write_string(shape_to_string(collider.shape))
+      sb.write_char('^')
+      write_vec2(sb, collider.local_translation)
+      sb.write_char('^')
+      sb.write_object(collider.local_rotation)
+      sb.write_char('^')
+      write_vec2(sb, collider.world_translation)
+      sb.write_char('^')
+      sb.write_object(collider.world_rotation)
+      sb.write_char('^')
+      sb.write_object(collider.active_collision_types.value)
+      sb.write_char('^')
+      sb.write_object(if collider.sensor { 1 } else { 0 })
+      sb.write_char('^')
+      sb.write_object(collider.active_events.bits)
+      sb.write_char('^')
+      sb.write_object(collider.active_hooks.value)
+      sb.write_char('^')
+      sb.write_object(collider.collision_groups.memberships().bits())
+      sb.write_char('^')
+      sb.write_object(collider.collision_groups.filter().bits())
+      sb.write_char('^')
+      sb.write_object(
+        interaction_test_mode_to_int(collider.collision_groups.test_mode()),
+      )
+      sb.write_char('^')
+      sb.write_object(collider.solver_groups.memberships().bits())
+      sb.write_char('^')
+      sb.write_object(collider.solver_groups.filter().bits())
+      sb.write_char('^')
+      sb.write_object(
+        interaction_test_mode_to_int(collider.solver_groups.test_mode()),
+      )
+      sb.write_char('^')
+      sb.write_object(collider.density)
+      sb.write_char('^')
+      sb.write_object(collider.friction)
+      sb.write_char('^')
+      sb.write_object(combine_rule_to_int(collider.friction_combine_rule))
+      sb.write_char('^')
+      sb.write_object(collider.restitution)
+      sb.write_char('^')
+      sb.write_object(combine_rule_to_int(collider.restitution_combine_rule))
+      sb.write_char('^')
+      sb.write_object(collider.contact_skin)
+      sb.write_char('^')
+      sb.write_object(collider.contact_force_event_threshold)
+      sb.write_char('^')
+      sb.write_object(collider.user_data)
+      sb.write_char('^')
+      sb.write_object(pid)
+      sb.write_char('^')
+      sb.write_object(pgen)
+      sb.write_char('^')
+      sb.write_object(collider_enabled_to_int(collider.enabled))
+    } else {
+      sb.write_char('N')
+    }
+  }
+  sb.to_string()
+}
+
+///|
+pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
+  let mut len = 0
+  let generations : Array[Int] = []
+  let free_list : Array[Int] = []
+  let colliders : Array[Collider?] = []
+  let modified_colliders : Array[ColliderHandle] = []
+  for part in data.split(";"[:]) {
+    let value = part.to_string()
+    if value.strip_prefix("len="[:]) is Some(raw_view) {
+      len = parse_int_value(raw_view.to_string())
+    } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
+      let items = split_values(raw_view.to_string(), ",")
+      for item in items {
+        generations.push(parse_int_value(item))
+      }
+    } else if value.strip_prefix("free="[:]) is Some(raw_view) {
+      let items = split_values(raw_view.to_string(), ",")
+      for item in items {
+        free_list.push(parse_int_value(item))
+      }
+    } else if value.strip_prefix("colliders="[:]) is Some(raw_view) {
+      let entries = split_values(raw_view.to_string(), "|")
+      for entry in entries {
+        if entry == "N" {
+          colliders.push(None)
+        } else if entry.strip_prefix("C^"[:]) is Some(rest_view) {
+          let fields = split_values(rest_view.to_string(), "^")
+          let shape = if fields.length() > 0 {
+            parse_shape(fields[0])
+          } else {
+            Shape::Ball(0.0F)
+          }
+          let local_t = if fields.length() > 1 {
+            parse_vec2(fields[1])
+          } else {
+            @core.Vec2::zero()
+          }
+          let local_r = if fields.length() > 2 {
+            parse_real_value(fields[2])
+          } else {
+            0.0F
+          }
+          let world_t = if fields.length() > 3 {
+            parse_vec2(fields[3])
+          } else {
+            local_t
+          }
+          let world_r = if fields.length() > 4 {
+            parse_real_value(fields[4])
+          } else {
+            local_r
+          }
+          let active_collision_types = if fields.length() > 5 {
+            ActiveCollisionTypes::{ value: parse_int_value(fields[5]) }
+          } else {
+            ActiveCollisionTypes::default()
+          }
+          let sensor = if fields.length() > 6 {
+            parse_bool_value(fields[6])
+          } else {
+            false
+          }
+          let active_events = if fields.length() > 7 {
+            ActiveEvents::{ bits: parse_int_value(fields[7]) }
+          } else {
+            ActiveEvents::empty()
+          }
+          let active_hooks = if fields.length() > 8 {
+            ActiveHooks::{ value: parse_int_value(fields[8]) }
+          } else {
+            ActiveHooks::empty()
+          }
+          let collision_memberships = if fields.length() > 9 {
+            @dynamics.Group::new(parse_int_value(fields[9]))
+          } else {
+            @dynamics.Group::all()
+          }
+          let collision_filter = if fields.length() > 10 {
+            @dynamics.Group::new(parse_int_value(fields[10]))
+          } else {
+            @dynamics.Group::all()
+          }
+          let collision_test_mode = if fields.length() > 11 {
+            interaction_test_mode_from_int(parse_int_value(fields[11]))
+          } else {
+            @dynamics.InteractionTestMode::And
+          }
+          let solver_memberships = if fields.length() > 12 {
+            @dynamics.Group::new(parse_int_value(fields[12]))
+          } else {
+            @dynamics.Group::all()
+          }
+          let solver_filter = if fields.length() > 13 {
+            @dynamics.Group::new(parse_int_value(fields[13]))
+          } else {
+            @dynamics.Group::all()
+          }
+          let solver_test_mode = if fields.length() > 14 {
+            interaction_test_mode_from_int(parse_int_value(fields[14]))
+          } else {
+            @dynamics.InteractionTestMode::And
+          }
+          let density = if fields.length() > 15 {
+            parse_real_value(fields[15])
+          } else {
+            1.0F
+          }
+          let friction = if fields.length() > 16 {
+            parse_real_value(fields[16])
+          } else {
+            0.5F
+          }
+          let friction_rule = if fields.length() > 17 {
+            combine_rule_from_int(parse_int_value(fields[17]))
+          } else {
+            @dynamics.CoefficientCombineRule::Average
+          }
+          let restitution = if fields.length() > 18 {
+            parse_real_value(fields[18])
+          } else {
+            0.0F
+          }
+          let restitution_rule = if fields.length() > 19 {
+            combine_rule_from_int(parse_int_value(fields[19]))
+          } else {
+            @dynamics.CoefficientCombineRule::Average
+          }
+          let contact_skin = if fields.length() > 20 {
+            parse_real_value(fields[20])
+          } else {
+            0.0F
+          }
+          let contact_force_event_threshold = if fields.length() > 21 {
+            parse_real_value(fields[21])
+          } else {
+            0.0F
+          }
+          let user_data = if fields.length() > 22 {
+            parse_int_value(fields[22])
+          } else {
+            0
+          }
+          let parent_id = if fields.length() > 23 {
+            parse_int_value(fields[23])
+          } else {
+            -1
+          }
+          let parent_gen = if fields.length() > 24 {
+            parse_int_value(fields[24])
+          } else {
+            -1
+          }
+          let parent = if parent_id >= 0 && parent_gen >= 0 {
+            Some(
+              @dynamics.RigidBodyHandle::from_raw_parts(parent_id, parent_gen),
+            )
+          } else {
+            None
+          }
+          let enabled = if fields.length() > 25 {
+            collider_enabled_from_int(parse_int_value(fields[25]))
+          } else {
+            ColliderEnabled::Enabled
+          }
+          let collider : Collider = {
+            shape,
+            local_translation: local_t,
+            local_rotation: local_r,
+            world_translation: world_t,
+            world_rotation: world_r,
+            active_collision_types,
+            sensor,
+            active_events,
+            active_hooks,
+            collision_groups: @dynamics.InteractionGroups::new(
+              collision_memberships, collision_filter, collision_test_mode,
+            ),
+            solver_groups: @dynamics.InteractionGroups::new(
+              solver_memberships, solver_filter, solver_test_mode,
+            ),
+            density,
+            friction,
+            friction_combine_rule: friction_rule,
+            restitution,
+            restitution_combine_rule: restitution_rule,
+            contact_skin,
+            contact_force_event_threshold,
+            user_data,
+            parent,
+            enabled,
+            changes: ColliderChanges::all(),
+          }
+          colliders.push(Some(collider))
+        } else {
+          colliders.push(None)
+        }
+      }
+    }
+  }
+  while generations.length() < len {
+    generations.push(0)
+  }
+  while colliders.length() < len {
+    colliders.push(None)
+  }
+  for i in 0..<colliders.length() {
+    if colliders[i] is Some(_) {
+      modified_colliders.push(ColliderHandle::new(i, generations[i]))
+    }
+  }
+  { colliders, generations, free_list, modified_colliders }
 }
 
 ///|
@@ -5844,11 +6581,7 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
 pub fn BroadPhaseBvh::with_optimization_strategy(
   optimization_strategy : BvhOptimizationStrategy,
 ) -> BroadPhaseBvh {
-  {
-    optimization_strategy,
-    pairs: [],
-    events: [],
-  }
+  { optimization_strategy, pairs: [], events: [] }
 }
 
 ///|
@@ -5906,7 +6639,6 @@ pub fn BroadPhaseBvh::update(
   // Update pair list and generate deterministic pair events.
   self.pairs.clear()
   self.pairs.append(next_pairs[:])
-
   self.events.clear()
   let mut i = 0
   let mut j = 0
@@ -5930,7 +6662,9 @@ pub fn BroadPhaseBvh::update(
   }
   while i < prev_pairs.length() {
     let a = prev_pairs[i]
-    self.events.push(BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)))
+    self.events.push(
+      BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)),
+    )
     i = i + 1
   }
   while j < next_pairs.length() {

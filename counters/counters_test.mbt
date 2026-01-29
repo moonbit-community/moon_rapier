@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 test "timer is deterministic by default" {
   let t = Timer::new()
   t.start()
@@ -20,13 +21,13 @@ test "timer is deterministic by default" {
   inspect(t.to_string().has_suffix("ms"[:]), content="true")
 }
 
+///|
 test "counters gating + setters + formatting" {
   let c = Counters::new(false)
   inspect(!c.enabled(), content="true")
   c.step_started()
   c.step_completed()
   inspect(c.step_time_ms() == 0.0, content="true")
-
   c.enable()
   inspect(c.enabled(), content="true")
   c.set_nconstraints(12)
@@ -34,7 +35,6 @@ test "counters gating + setters + formatting" {
   c.set_ncontact_pairs(56)
   c.step_started()
   c.step_completed()
-
   let s = c.to_string()
   inspect(s.contains("Total timestep time:"), content="true")
   inspect(s.contains("Update time:"), content="true")

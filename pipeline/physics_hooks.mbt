@@ -33,6 +33,15 @@ pub struct PhysicsHooks {
     @collision.ColliderHandle,
     @collision.ContactManifold,
   ) -> (Bool, @core.Vec2))?
+  mut modify_solver_contacts_with_solver_contacts : ((
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+    Array[@collision.SolverContact],
+    @collision.SolverFlags,
+  ) -> @collision.SolverFlags)?
 }
 
 ///|
@@ -41,6 +50,7 @@ pub fn PhysicsHooks::new() -> PhysicsHooks {
     filter_contact_pair: None,
     filter_intersection_pair: None,
     modify_solver_contacts: None,
+    modify_solver_contacts_with_solver_contacts: None,
   }
 }
 
@@ -88,6 +98,23 @@ pub fn PhysicsHooks::modify_solver_contacts(
 }
 
 ///|
+pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+    Array[@collision.SolverContact],
+    @collision.SolverFlags,
+  ) -> @collision.SolverFlags,
+) -> PhysicsHooks {
+  self.modify_solver_contacts_with_solver_contacts = Some(callback)
+  self
+}
+
+///|
 fn PhysicsHooks::test_contact_pair(
   self : PhysicsHooks,
   bodies : @dynamics.RigidBodySet,
@@ -130,5 +157,25 @@ fn PhysicsHooks::modify_solver_contacts_internal(
     callback(bodies, colliders, collider1, collider2, manifold)
   } else {
     (true, @core.Vec2::zero())
+  }
+}
+
+///|
+fn PhysicsHooks::modify_solver_contacts_with_solver_contacts_internal(
+  self : PhysicsHooks,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  manifold : @collision.ContactManifold,
+  solver_contacts : Array[@collision.SolverContact],
+  solver_flags : @collision.SolverFlags,
+) -> @collision.SolverFlags {
+  if self.modify_solver_contacts_with_solver_contacts is Some(callback) {
+    callback(
+      bodies, colliders, collider1, collider2, manifold, solver_contacts, solver_flags,
+    )
+  } else {
+    solver_flags
   }
 }

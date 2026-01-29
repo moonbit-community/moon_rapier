@@ -1010,6 +1010,281 @@ pub fn MultibodyJointSet::new() -> MultibodyJointSet {
 }
 
 ///|
+fn mb_split_values(text : String, sep : String) -> Array[String] {
+  let values : Array[String] = []
+  for part in text.split(sep[:]) {
+    let value = part.to_string()
+    if value.length() > 0 {
+      values.push(value)
+    }
+  }
+  values
+}
+
+///|
+fn mb_parse_int_value(text : String) -> Int {
+  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
+    text[:],
+    base=10,
+  )
+  if result is Ok(value) {
+    value
+  } else {
+    0
+  }
+}
+
+///|
+fn mb_parse_real_value(text : String) -> @core.Real {
+  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
+    text[:],
+  )
+  if result is Ok(value) {
+    Float::from_double(value)
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn mb_parse_bool_value(text : String) -> Bool {
+  text == "1"
+}
+
+///|
+fn mb_motor_model_to_int(model : MotorModel) -> Int {
+  match model {
+    MotorModel::AccelerationBased => 0
+    MotorModel::ForceBased => 1
+  }
+}
+
+///|
+fn mb_motor_model_from_int(value : Int) -> MotorModel {
+  if value == 1 {
+    MotorModel::ForceBased
+  } else {
+    MotorModel::AccelerationBased
+  }
+}
+
+///|
+fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
+  // L^parent^rbid^rbgen^a1x^a1y^a2x^a2y^snat^sdamp^menabled^m...^lenabled^l...^solx^soly^jangle
+  let (rbid, rbgen) = link.rigid_body.into_raw_parts()
+  sb.write_string("L^")
+  sb.write_object(link.parent_internal_id)
+  sb.write_char('^')
+  sb.write_object(rbid)
+  sb.write_char('^')
+  sb.write_object(rbgen)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor1.x)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor1.y)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor2.x)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor2.y)
+  sb.write_char('^')
+  sb.write_object(link.joint.softness.natural_frequency)
+  sb.write_char('^')
+  sb.write_object(link.joint.softness.damping_ratio)
+  sb.write_char('^')
+  sb.write_object(if link.joint.motor_enabled { 1 } else { 0 })
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.target_vel)
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.target_pos)
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.stiffness)
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.damping)
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.max_force)
+  sb.write_char('^')
+  sb.write_object(link.joint.motor.impulse)
+  sb.write_char('^')
+  sb.write_object(mb_motor_model_to_int(link.joint.motor.model))
+  sb.write_char('^')
+  sb.write_object(if link.joint.limits_enabled { 1 } else { 0 })
+  sb.write_char('^')
+  sb.write_object(link.joint.limits.min)
+  sb.write_char('^')
+  sb.write_object(link.joint.limits.max)
+  sb.write_char('^')
+  sb.write_object(link.joint.limits.impulse)
+  sb.write_char('^')
+  sb.write_object(link.joint.solver_lin_impulses.x)
+  sb.write_char('^')
+  sb.write_object(link.joint.solver_lin_impulses.y)
+  sb.write_char('^')
+  sb.write_object(link.joint_angle)
+}
+
+///|
+fn parse_link(text : String) -> MultibodyLink? {
+  if text.strip_prefix("L^"[:]) is Some(view) {
+    let fields = mb_split_values(view.to_string(), "^")
+    if fields.length() < 24 {
+      return None
+    }
+    let parent_id = mb_parse_int_value(fields[0])
+    let rbid = mb_parse_int_value(fields[1])
+    let rbgen = mb_parse_int_value(fields[2])
+    let a1x = mb_parse_real_value(fields[3])
+    let a1y = mb_parse_real_value(fields[4])
+    let a2x = mb_parse_real_value(fields[5])
+    let a2y = mb_parse_real_value(fields[6])
+    let snat = mb_parse_real_value(fields[7])
+    let sdamp = mb_parse_real_value(fields[8])
+    let motor_enabled = mb_parse_bool_value(fields[9])
+    let motor_target_vel = mb_parse_real_value(fields[10])
+    let motor_target_pos = mb_parse_real_value(fields[11])
+    let motor_stiffness = mb_parse_real_value(fields[12])
+    let motor_damping = mb_parse_real_value(fields[13])
+    let motor_max_force = mb_parse_real_value(fields[14])
+    let motor_impulse = mb_parse_real_value(fields[15])
+    let motor_model = mb_motor_model_from_int(mb_parse_int_value(fields[16]))
+    let limits_enabled = mb_parse_bool_value(fields[17])
+    let limit_min = mb_parse_real_value(fields[18])
+    let limit_max = mb_parse_real_value(fields[19])
+    let limit_impulse = mb_parse_real_value(fields[20])
+    let solver_lin_x = mb_parse_real_value(fields[21])
+    let solver_lin_y = mb_parse_real_value(fields[22])
+    let joint_angle = mb_parse_real_value(fields[23])
+    let softness = SpringCoefficients::new(snat, sdamp)
+    let motor = JointMotor::{
+      target_vel: motor_target_vel,
+      target_pos: motor_target_pos,
+      stiffness: motor_stiffness,
+      damping: motor_damping,
+      max_force: motor_max_force,
+      impulse: motor_impulse,
+      model: motor_model,
+    }
+    let limits = JointLimits::new(limit_min, limit_max)
+    limits.impulse = limit_impulse
+    let joint = RevoluteJoint::{
+      local_anchor1: @core.Vec2::new(a1x, a1y),
+      local_anchor2: @core.Vec2::new(a2x, a2y),
+      softness,
+      motor,
+      motor_enabled,
+      limits,
+      limits_enabled,
+      solver_lin_impulses: @core.Vec2::new(solver_lin_x, solver_lin_y),
+    }
+    let handle = RigidBodyHandle::new(rbid, rbgen)
+    Some(MultibodyLink::{
+      internal_id: 0,
+      parent_internal_id: parent_id,
+      assembly_id: 0,
+      rigid_body: handle,
+      joint,
+      joint_angle,
+      local_to_parent: @core.Isometry2::identity(),
+      local_to_world: @core.Isometry2::identity(),
+    })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet::serialize(self : MultibodyJointSet) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("mbs=")
+  for mb_index in 0..<self.multibodies.length() {
+    if mb_index > 0 {
+      sb.write_char('@')
+    }
+    let mb = self.multibodies[mb_index]
+    sb.write_string("MB^")
+    sb.write_object(mb.root_translation.x)
+    sb.write_char('^')
+    sb.write_object(mb.root_translation.y)
+    sb.write_char('^')
+    sb.write_object(mb.root_angle)
+    for i in 0..<mb.links.length() {
+      sb.write_char('|')
+      write_link(sb, mb.links[i])
+    }
+  }
+  sb.to_string()
+}
+
+///|
+pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
+  let set = MultibodyJointSet::new()
+  if data.strip_prefix("mbs="[:]) is Some(view) {
+    let raw = view.to_string()
+    if raw.length() > 0 {
+      for mb_text in raw.split("@"[:]) {
+        let mb_str = mb_text.to_string()
+        if mb_str.length() == 0 {
+          continue
+        }
+        let parts = mb_split_values(mb_str, "|")
+        if parts.length() < 2 {
+          continue
+        }
+        let header = parts[0]
+        if header.strip_prefix("MB^"[:]) is None {
+          continue
+        }
+        let header_fields = mb_split_values(header, "^")
+        // header_fields: ["MB", root_tx, root_ty, root_angle]
+        let root_tx = if header_fields.length() > 1 {
+          mb_parse_real_value(header_fields[1])
+        } else {
+          0.0F
+        }
+        let root_ty = if header_fields.length() > 2 {
+          mb_parse_real_value(header_fields[2])
+        } else {
+          0.0F
+        }
+        let root_angle = if header_fields.length() > 3 {
+          mb_parse_real_value(header_fields[3])
+        } else {
+          0.0F
+        }
+        let links : Array[MultibodyLink] = []
+        for i in 1..<parts.length() {
+          if parse_link(parts[i]) is Some(link) {
+            links.push(link)
+          }
+        }
+        if links.length() == 0 {
+          continue
+        }
+        // Fixup internal ids and ensure the root is self-parented.
+        for i in 0..<links.length() {
+          let link = links[i]
+          link.internal_id = i
+          if i == 0 {
+            link.parent_internal_id = 0
+          }
+          links[i] = link
+        }
+        let mb = Multibody::{
+          links,
+          ndofs: 0,
+          root_is_dynamic: true,
+          root_translation: @core.Vec2::new(root_tx, root_ty),
+          root_angle,
+        }
+        let mb_index = set.multibodies.length()
+        set.multibodies.push(mb)
+        set.update_body_links_for_multibody(mb_index, mb)
+      }
+    }
+  }
+  set
+}
+
+///|
 pub fn MultibodyJointSet::take_wake_up(
   self : MultibodyJointSet,
 ) -> Array[RigidBodyHandle] {

@@ -1805,6 +1805,498 @@ pub fn ImpulseJointSet::new() -> ImpulseJointSet {
 }
 
 ///|
+fn ij_split_values(text : String, sep : String) -> Array[String] {
+  let values : Array[String] = []
+  for part in text.split(sep[:]) {
+    let value = part.to_string()
+    if value.length() > 0 {
+      values.push(value)
+    }
+  }
+  values
+}
+
+///|
+fn ij_parse_int_value(text : String) -> Int {
+  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
+    text[:],
+    base=10,
+  )
+  if result is Ok(value) {
+    value
+  } else {
+    0
+  }
+}
+
+///|
+fn ij_parse_real_value(text : String) -> @core.Real {
+  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
+    text[:],
+  )
+  if result is Ok(value) {
+    Float::from_double(value)
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn ij_parse_bool_value(text : String) -> Bool {
+  text == "1"
+}
+
+///|
+fn motor_model_to_int(model : MotorModel) -> Int {
+  match model {
+    MotorModel::AccelerationBased => 0
+    MotorModel::ForceBased => 1
+  }
+}
+
+///|
+fn motor_model_from_int(value : Int) -> MotorModel {
+  if value == 1 {
+    MotorModel::ForceBased
+  } else {
+    MotorModel::AccelerationBased
+  }
+}
+
+///|
+fn joint_enabled_to_int(value : JointEnabled) -> Int {
+  match value {
+    JointEnabled::Enabled => 0
+    JointEnabled::Disabled => 1
+    JointEnabled::DisabledByAttachedBody => 2
+  }
+}
+
+///|
+fn joint_enabled_from_int(value : Int) -> JointEnabled {
+  if value == 1 {
+    JointEnabled::Disabled
+  } else if value == 2 {
+    JointEnabled::DisabledByAttachedBody
+  } else {
+    JointEnabled::Enabled
+  }
+}
+
+///|
+fn parse_isometry2(fields : Array[String], start : Int) -> @core.Isometry2 {
+  let tx = if fields.length() > start {
+    ij_parse_real_value(fields[start])
+  } else {
+    0.0F
+  }
+  let ty = if fields.length() > start + 1 {
+    ij_parse_real_value(fields[start + 1])
+  } else {
+    0.0F
+  }
+  let rot = if fields.length() > start + 2 {
+    ij_parse_real_value(fields[start + 2])
+  } else {
+    0.0F
+  }
+  @core.Isometry2::new(@core.Vec2::new(tx, ty), @core.Rot2::from_angle(rot))
+}
+
+///|
+fn write_motor_fields(sb : StringBuilder, motor : JointMotor) -> Unit {
+  sb.write_object(motor.target_vel)
+  sb.write_char('^')
+  sb.write_object(motor.target_pos)
+  sb.write_char('^')
+  sb.write_object(motor.stiffness)
+  sb.write_char('^')
+  sb.write_object(motor.damping)
+  sb.write_char('^')
+  sb.write_object(motor.max_force)
+  sb.write_char('^')
+  sb.write_object(motor.impulse)
+  sb.write_char('^')
+  sb.write_object(motor_model_to_int(motor.model))
+}
+
+///|
+fn write_limits_fields(sb : StringBuilder, limits : JointLimits) -> Unit {
+  sb.write_object(limits.min)
+  sb.write_char('^')
+  sb.write_object(limits.max)
+  sb.write_char('^')
+  sb.write_object(limits.impulse)
+}
+
+///|
+fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit {
+  sb.write_object(joint.local_frame1.translation.x)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1.translation.y)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1.rotation.angle())
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2.translation.x)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2.translation.y)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2.rotation.angle())
+  sb.write_char('^')
+  sb.write_object(joint.locked_axes.bits())
+  sb.write_char('^')
+  sb.write_object(joint.limit_axes.bits())
+  sb.write_char('^')
+  sb.write_object(joint.motor_axes.bits())
+  sb.write_char('^')
+  sb.write_object(joint.coupled_axes.bits())
+  sb.write_char('^')
+  // JointLimits3
+  write_limits_fields(sb, joint.limits.lin_x)
+  sb.write_char('^')
+  write_limits_fields(sb, joint.limits.lin_y)
+  sb.write_char('^')
+  write_limits_fields(sb, joint.limits.ang_z)
+  sb.write_char('^')
+  // JointMotors3
+  write_motor_fields(sb, joint.motors.lin_x)
+  sb.write_char('^')
+  write_motor_fields(sb, joint.motors.lin_y)
+  sb.write_char('^')
+  write_motor_fields(sb, joint.motors.ang_z)
+  sb.write_char('^')
+  sb.write_object(joint.softness.natural_frequency)
+  sb.write_char('^')
+  sb.write_object(joint.softness.damping_ratio)
+  sb.write_char('^')
+  sb.write_object(if joint.contacts_enabled { 1 } else { 0 })
+  sb.write_char('^')
+  sb.write_object(joint_enabled_to_int(joint.enabled))
+  sb.write_char('^')
+  sb.write_object(joint.user_data)
+}
+
+///|
+fn parse_motor(fields : Array[String], start : Int) -> JointMotor {
+  let target_vel = if fields.length() > start {
+    ij_parse_real_value(fields[start])
+  } else {
+    0.0F
+  }
+  let target_pos = if fields.length() > start + 1 {
+    ij_parse_real_value(fields[start + 1])
+  } else {
+    0.0F
+  }
+  let stiffness = if fields.length() > start + 2 {
+    ij_parse_real_value(fields[start + 2])
+  } else {
+    0.0F
+  }
+  let damping = if fields.length() > start + 3 {
+    ij_parse_real_value(fields[start + 3])
+  } else {
+    0.0F
+  }
+  let max_force = if fields.length() > start + 4 {
+    ij_parse_real_value(fields[start + 4])
+  } else {
+    REAL_MAX
+  }
+  let impulse = if fields.length() > start + 5 {
+    ij_parse_real_value(fields[start + 5])
+  } else {
+    0.0F
+  }
+  let model = if fields.length() > start + 6 {
+    motor_model_from_int(ij_parse_int_value(fields[start + 6]))
+  } else {
+    MotorModel::AccelerationBased
+  }
+  JointMotor::{
+    target_vel,
+    target_pos,
+    stiffness,
+    damping,
+    max_force,
+    impulse,
+    model,
+  }
+}
+
+///|
+fn parse_limits(fields : Array[String], start : Int) -> JointLimits {
+  let min = if fields.length() > start {
+    ij_parse_real_value(fields[start])
+  } else {
+    -REAL_MAX
+  }
+  let max = if fields.length() > start + 1 {
+    ij_parse_real_value(fields[start + 1])
+  } else {
+    REAL_MAX
+  }
+  let impulse = if fields.length() > start + 2 {
+    ij_parse_real_value(fields[start + 2])
+  } else {
+    0.0F
+  }
+  let limits = JointLimits::new(min, max)
+  limits.impulse = impulse
+  limits
+}
+
+///|
+fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
+  let frame1 = parse_isometry2(fields, start)
+  let frame2 = parse_isometry2(fields, start + 3)
+  let locked_axes = if fields.length() > start + 6 {
+    JointAxesMask::new(ij_parse_int_value(fields[start + 6]))
+  } else {
+    JointAxesMask::empty()
+  }
+  let limit_axes = if fields.length() > start + 7 {
+    JointAxesMask::new(ij_parse_int_value(fields[start + 7]))
+  } else {
+    JointAxesMask::empty()
+  }
+  let motor_axes = if fields.length() > start + 8 {
+    JointAxesMask::new(ij_parse_int_value(fields[start + 8]))
+  } else {
+    JointAxesMask::empty()
+  }
+  let coupled_axes = if fields.length() > start + 9 {
+    JointAxesMask::new(ij_parse_int_value(fields[start + 9]))
+  } else {
+    JointAxesMask::empty()
+  }
+  let lx = parse_limits(fields, start + 10)
+  let ly = parse_limits(fields, start + 13)
+  let az = parse_limits(fields, start + 16)
+  let mx = parse_motor(fields, start + 19)
+  let my = parse_motor(fields, start + 26)
+  let mz = parse_motor(fields, start + 33)
+  let natural_frequency = if fields.length() > start + 40 {
+    ij_parse_real_value(fields[start + 40])
+  } else {
+    SpringCoefficients::joint_defaults().natural_frequency
+  }
+  let damping_ratio = if fields.length() > start + 41 {
+    ij_parse_real_value(fields[start + 41])
+  } else {
+    SpringCoefficients::joint_defaults().damping_ratio
+  }
+  let contacts_enabled = if fields.length() > start + 42 {
+    ij_parse_bool_value(fields[start + 42])
+  } else {
+    true
+  }
+  let enabled = if fields.length() > start + 43 {
+    joint_enabled_from_int(ij_parse_int_value(fields[start + 43]))
+  } else {
+    JointEnabled::Enabled
+  }
+  let user_data = if fields.length() > start + 44 {
+    ij_parse_int_value(fields[start + 44])
+  } else {
+    0
+  }
+  GenericJoint::{
+    local_frame1: frame1,
+    local_frame2: frame2,
+    locked_axes,
+    limit_axes,
+    motor_axes,
+    coupled_axes,
+    limits: JointLimits3::{ lin_x: lx, lin_y: ly, ang_z: az },
+    motors: JointMotors3::{ lin_x: mx, lin_y: my, ang_z: mz },
+    softness: SpringCoefficients::new(natural_frequency, damping_ratio),
+    contacts_enabled,
+    enabled,
+    user_data,
+  }
+}
+
+///|
+pub fn ImpulseJointSet::serialize(self : ImpulseJointSet) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("len=")
+  sb.write_object(self.joint_generations.length())
+  sb.write_char(';')
+  sb.write_string("gens=")
+  for i in 0..<self.joint_generations.length() {
+    if i > 0 {
+      sb.write_char(',')
+    }
+    sb.write_object(self.joint_generations[i])
+  }
+  sb.write_char(';')
+  sb.write_string("free=")
+  for i in 0..<self.free_handles.length() {
+    if i > 0 {
+      sb.write_char(',')
+    }
+    sb.write_object(self.free_handles[i])
+  }
+  sb.write_char(';')
+  sb.write_string("joints=")
+  for i in 0..<self.joint_generations.length() {
+    if i > 0 {
+      sb.write_char('|')
+    }
+    let edge_id = if i < self.joint_edge_ids.length() {
+      self.joint_edge_ids[i]
+    } else {
+      -1
+    }
+    if edge_id >= 0 && edge_id < self.graph_edges.length() {
+      let edge = self.graph_edges[edge_id]
+      let joint = edge.joint
+      let (b1id, b1gen) = joint.body1.into_raw_parts()
+      let (b2id, b2gen) = joint.body2.into_raw_parts()
+      sb.write_string("J^")
+      sb.write_object(i)
+      sb.write_char('^')
+      sb.write_object(self.joint_generations[i])
+      sb.write_char('^')
+      sb.write_object(b1id)
+      sb.write_char('^')
+      sb.write_object(b1gen)
+      sb.write_char('^')
+      sb.write_object(b2id)
+      sb.write_char('^')
+      sb.write_object(b2gen)
+      sb.write_char('^')
+      write_generic_joint_fields(sb, joint.data)
+      sb.write_char('^')
+      sb.write_object(joint.impulses.x)
+      sb.write_char('^')
+      sb.write_object(joint.impulses.y)
+      sb.write_char('^')
+      sb.write_object(joint.ang_impulse)
+    } else {
+      sb.write_char('N')
+    }
+  }
+  sb.to_string()
+}
+
+///|
+pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
+  let mut len = 0
+  let gens : Array[Int] = []
+  let free_handles : Array[Int] = []
+  let entries : Array[String] = []
+  for part in data.split(";"[:]) {
+    let value = part.to_string()
+    if value.strip_prefix("len="[:]) is Some(raw_view) {
+      len = ij_parse_int_value(raw_view.to_string())
+    } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
+      for item in ij_split_values(raw_view.to_string(), ",") {
+        gens.push(ij_parse_int_value(item))
+      }
+    } else if value.strip_prefix("free="[:]) is Some(raw_view) {
+      for item in ij_split_values(raw_view.to_string(), ",") {
+        free_handles.push(ij_parse_int_value(item))
+      }
+    } else if value.strip_prefix("joints="[:]) is Some(raw_view) {
+      for item in ij_split_values(raw_view.to_string(), "|") {
+        entries.push(item)
+      }
+    }
+  }
+  let set = ImpulseJointSet::new()
+  let target_len = if len > 0 { len } else { gens.length() }
+  while gens.length() < target_len {
+    gens.push(0)
+  }
+  set.joint_generations.clear()
+  set.joint_generations.append(gens[:])
+  set.joint_edge_ids.clear()
+  for _ in 0..<target_len {
+    set.joint_edge_ids.push(-1)
+  }
+  set.free_handles.clear()
+  set.free_handles.append(free_handles[:])
+  for i in 0..<entries.length() {
+    let entry = entries[i]
+    if entry.strip_prefix("J^"[:]) is Some(rest_view) {
+      let fields = ij_split_values(rest_view.to_string(), "^")
+      let id = if fields.length() > 0 {
+        ij_parse_int_value(fields[0])
+      } else {
+        i
+      }
+      if id < 0 || id >= target_len {
+        continue
+      }
+      let gen = if fields.length() > 1 {
+        ij_parse_int_value(fields[1])
+      } else {
+        set.joint_generations[id]
+      }
+      set.joint_generations[id] = gen
+      let b1id = if fields.length() > 2 {
+        ij_parse_int_value(fields[2])
+      } else {
+        -1
+      }
+      let b1gen = if fields.length() > 3 {
+        ij_parse_int_value(fields[3])
+      } else {
+        -1
+      }
+      let b2id = if fields.length() > 4 {
+        ij_parse_int_value(fields[4])
+      } else {
+        -1
+      }
+      let b2gen = if fields.length() > 5 {
+        ij_parse_int_value(fields[5])
+      } else {
+        -1
+      }
+      let body1 = RigidBodyHandle::new(b1id, b1gen)
+      let body2 = RigidBodyHandle::new(b2id, b2gen)
+      let joint_data = parse_generic_joint(fields, 6)
+      let impulse_x_index = 6 + 45
+      let impulses_x = if fields.length() > impulse_x_index {
+        ij_parse_real_value(fields[impulse_x_index])
+      } else {
+        0.0F
+      }
+      let impulses_y = if fields.length() > impulse_x_index + 1 {
+        ij_parse_real_value(fields[impulse_x_index + 1])
+      } else {
+        0.0F
+      }
+      let ang_impulse = if fields.length() > impulse_x_index + 2 {
+        ij_parse_real_value(fields[impulse_x_index + 2])
+      } else {
+        0.0F
+      }
+      let handle = ImpulseJointHandle::new(id, gen)
+      let joint = ImpulseJoint::{
+        body1,
+        body2,
+        data: joint_data,
+        impulses: @core.Vec2::new(impulses_x, impulses_y),
+        ang_impulse,
+        handle,
+      }
+      let node1 = set.ensure_graph_node(body1)
+      let node2 = set.ensure_graph_node(body2)
+      let edge_id = set.graph_edges.length()
+      set.graph_edges.push(JointGraphEdge::{ node1, node2, joint })
+      set.adjacency[node1].push(edge_id)
+      set.adjacency[node2].push(edge_id)
+      set.joint_edge_ids[id] = edge_id
+    }
+  }
+  set
+}
+
+///|
 pub fn ImpulseJointSet::take_wake_up(
   self : ImpulseJointSet,
 ) -> Array[RigidBodyHandle] {

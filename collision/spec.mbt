@@ -27,6 +27,27 @@ pub fn ColliderHandle::equals(
 
 ///|
 #declaration_only
+pub fn ColliderHandle::from_raw_parts(
+  id : Int,
+  generation : Int,
+) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int, Int) {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderHandle::invalid() -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
 pub type ActiveCollisionTypes
 
 ///|
@@ -403,7 +424,11 @@ pub type Triangle
 
 ///|
 #declaration_only
-pub fn Triangle::new(a : @core.Vec2, b : @core.Vec2, c : @core.Vec2) -> Triangle {
+pub fn Triangle::new(
+  a : @core.Vec2,
+  b : @core.Vec2,
+  c : @core.Vec2,
+) -> Triangle {
   ...
 }
 
@@ -419,7 +444,10 @@ pub type HeightField
 
 ///|
 #declaration_only
-pub fn HeightField::new(heights : Array[@core.Real], scale : @core.Vec2) -> HeightField {
+pub fn HeightField::new(
+  heights : Array[@core.Real],
+  scale : @core.Vec2,
+) -> HeightField {
   ...
 }
 
@@ -483,7 +511,10 @@ pub type ColliderPair
 
 ///|
 #declaration_only
-pub fn ColliderPair::new(a : ColliderHandle, b : ColliderHandle) -> ColliderPair {
+pub fn ColliderPair::new(
+  a : ColliderHandle,
+  b : ColliderHandle,
+) -> ColliderPair {
   ...
 }
 
@@ -1123,6 +1154,18 @@ pub fn ColliderSet::new() -> ColliderSet {
 
 ///|
 #declaration_only
+pub fn ColliderSet::serialize(self : ColliderSet) -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderSet::len(self : ColliderSet) -> Int {
   ...
 }
@@ -1276,6 +1319,137 @@ pub fn ContactManifold::normal(self : ContactManifold) -> @core.Vec2 {
 pub fn ContactManifold::points(
   self : ContactManifold,
 ) -> Array[ContactManifoldPoint] {
+  ...
+}
+
+///|
+#declaration_only
+pub type SolverFlags
+
+///|
+#declaration_only
+pub fn SolverFlags::empty() -> SolverFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverFlags::compute_impulses() -> SolverFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverFlags::default() -> SolverFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverFlags::contains(self : SolverFlags, other : SolverFlags) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverFlags::insert(
+  self : SolverFlags,
+  other : SolverFlags,
+) -> SolverFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverFlags::remove(
+  self : SolverFlags,
+  other : SolverFlags,
+) -> SolverFlags {
+  ...
+}
+
+///|
+#declaration_only
+pub type SolverContact
+
+///|
+#declaration_only
+pub fn SolverContact::new(
+  point : @core.Vec2,
+  dist : @core.Real,
+) -> SolverContact {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::point(self : SolverContact) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::set_point(
+  self : SolverContact,
+  point : @core.Vec2,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::dist(self : SolverContact) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::set_dist(self : SolverContact, dist : @core.Real) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::friction(self : SolverContact) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::set_friction(
+  self : SolverContact,
+  friction : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::restitution(self : SolverContact) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::set_restitution(
+  self : SolverContact,
+  restitution : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::tangent_velocity(self : SolverContact) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn SolverContact::set_tangent_velocity(
+  self : SolverContact,
+  tangent_velocity : @core.Vec2,
+) -> Unit {
   ...
 }
 

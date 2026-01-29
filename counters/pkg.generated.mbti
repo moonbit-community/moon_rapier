@@ -1,0 +1,135 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/counters"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct CCDCounters {
+  mut num_substeps : Int
+  toi_computation_time : Timer
+  solver_time : Timer
+  broad_phase_time : Timer
+  narrow_phase_time : Timer
+}
+pub fn CCDCounters::new() -> Self
+pub fn CCDCounters::num_substeps(Self) -> Int
+pub fn CCDCounters::reset(Self) -> Unit
+pub fn CCDCounters::set_num_substeps(Self, Int) -> Unit
+pub fn CCDCounters::to_string(Self) -> String
+
+pub struct CollisionDetectionCounters {
+  mut ncontact_pairs : Int
+  broad_phase_time : Timer
+  final_broad_phase_time : Timer
+  narrow_phase_time : Timer
+}
+pub fn CollisionDetectionCounters::ncontact_pairs(Self) -> Int
+pub fn CollisionDetectionCounters::new() -> Self
+pub fn CollisionDetectionCounters::reset(Self) -> Unit
+pub fn CollisionDetectionCounters::set_ncontact_pairs(Self, Int) -> Unit
+pub fn CollisionDetectionCounters::to_string(Self) -> String
+
+pub struct Counters {
+  mut enabled : Bool
+  step_time : Timer
+  custom : Timer
+  stages : StagesCounters
+  cd : CollisionDetectionCounters
+  solver : SolverCounters
+  ccd : CCDCounters
+}
+pub fn Counters::assembly_completed(Self) -> Unit
+pub fn Counters::assembly_started(Self) -> Unit
+pub fn Counters::assembly_time_ms(Self) -> Double
+pub fn Counters::broad_phase_completed(Self) -> Unit
+pub fn Counters::broad_phase_started(Self) -> Unit
+pub fn Counters::broad_phase_time_ms(Self) -> Double
+pub fn Counters::ccd_completed(Self) -> Unit
+pub fn Counters::ccd_started(Self) -> Unit
+pub fn Counters::ccd_time_ms(Self) -> Double
+pub fn Counters::collision_detection_completed(Self) -> Unit
+pub fn Counters::collision_detection_started(Self) -> Unit
+pub fn Counters::collision_detection_time_ms(Self) -> Double
+pub fn Counters::custom_completed(Self) -> Unit
+pub fn Counters::custom_started(Self) -> Unit
+pub fn Counters::custom_time_ms(Self) -> Double
+pub fn Counters::default() -> Self
+pub fn Counters::disable(Self) -> Unit
+pub fn Counters::enable(Self) -> Unit
+pub fn Counters::enabled(Self) -> Bool
+pub fn Counters::island_construction_completed(Self) -> Unit
+pub fn Counters::island_construction_started(Self) -> Unit
+pub fn Counters::island_construction_time_ms(Self) -> Double
+pub fn Counters::narrow_phase_completed(Self) -> Unit
+pub fn Counters::narrow_phase_started(Self) -> Unit
+pub fn Counters::narrow_phase_time_ms(Self) -> Double
+pub fn Counters::new(Bool) -> Self
+pub fn Counters::reset(Self) -> Unit
+pub fn Counters::set_nconstraints(Self, Int) -> Unit
+pub fn Counters::set_ncontact_pairs(Self, Int) -> Unit
+pub fn Counters::set_ncontacts(Self, Int) -> Unit
+pub fn Counters::solver_completed(Self) -> Unit
+pub fn Counters::solver_started(Self) -> Unit
+pub fn Counters::solver_time_ms(Self) -> Double
+pub fn Counters::step_completed(Self) -> Unit
+pub fn Counters::step_started(Self) -> Unit
+pub fn Counters::step_time_ms(Self) -> Double
+pub fn Counters::to_string(Self) -> String
+pub fn Counters::update_completed(Self) -> Unit
+pub fn Counters::update_started(Self) -> Unit
+pub fn Counters::update_time_ms(Self) -> Double
+pub fn Counters::velocity_resolution_completed(Self) -> Unit
+pub fn Counters::velocity_resolution_started(Self) -> Unit
+pub fn Counters::velocity_resolution_time_ms(Self) -> Double
+pub fn Counters::velocity_update_completed(Self) -> Unit
+pub fn Counters::velocity_update_started(Self) -> Unit
+pub fn Counters::velocity_update_time_ms(Self) -> Double
+
+pub struct SolverCounters {
+  mut nconstraints : Int
+  mut ncontacts : Int
+  velocity_resolution_time : Timer
+  velocity_assembly_time : Timer
+  velocity_assembly_time_solver_bodies : Timer
+  velocity_assembly_time_constraints_init : Timer
+  velocity_update_time : Timer
+  velocity_writeback_time : Timer
+}
+pub fn SolverCounters::nconstraints(Self) -> Int
+pub fn SolverCounters::ncontacts(Self) -> Int
+pub fn SolverCounters::new() -> Self
+pub fn SolverCounters::reset(Self) -> Unit
+pub fn SolverCounters::set_nconstraints(Self, Int) -> Unit
+pub fn SolverCounters::set_ncontacts(Self, Int) -> Unit
+pub fn SolverCounters::to_string(Self) -> String
+
+pub struct StagesCounters {
+  update_time : Timer
+  collision_detection_time : Timer
+  island_construction_time : Timer
+  island_constraints_collection_time : Timer
+  solver_time : Timer
+  ccd_time : Timer
+  user_changes : Timer
+}
+pub fn StagesCounters::new() -> Self
+pub fn StagesCounters::reset(Self) -> Unit
+pub fn StagesCounters::to_string(Self) -> String
+
+pub struct Timer {
+  mut time_ms : Double
+}
+pub fn Timer::new() -> Self
+pub fn Timer::pause(Self) -> Unit
+pub fn Timer::reset(Self) -> Unit
+pub fn Timer::resume_timer(Self) -> Unit
+pub fn Timer::start(Self) -> Unit
+pub fn Timer::time_ms(Self) -> Double
+pub fn Timer::to_string(Self) -> String
+
+// Type aliases
+
+// Traits
+

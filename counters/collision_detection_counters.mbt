@@ -31,7 +31,9 @@ pub fn CollisionDetectionCounters::new() -> CollisionDetectionCounters {
 }
 
 ///|
-pub fn CollisionDetectionCounters::reset(self : CollisionDetectionCounters) -> Unit {
+pub fn CollisionDetectionCounters::reset(
+  self : CollisionDetectionCounters,
+) -> Unit {
   self.ncontact_pairs = 0
   self.broad_phase_time.reset()
   self.final_broad_phase_time.reset()
@@ -57,9 +59,15 @@ pub fn CollisionDetectionCounters::set_ncontact_pairs(
 pub fn CollisionDetectionCounters::to_string(
   self : CollisionDetectionCounters,
 ) -> String {
-  "Number of contact pairs: " + self.ncontact_pairs.to_string() + "\n" +
-  "Broad-phase time: " + self.broad_phase_time.to_string() + "\n" +
-  "Final broad-phase time: " + self.final_broad_phase_time.to_string() + "\n" +
-  "Narrow-phase time: " + self.narrow_phase_time.to_string()
+  "Number of contact pairs: " +
+  self.ncontact_pairs.to_string() +
+  "\n" +
+  "Broad-phase time: " +
+  self.broad_phase_time.to_string() +
+  "\n" +
+  "Final broad-phase time: " +
+  self.final_broad_phase_time.to_string() +
+  "\n" +
+  "Narrow-phase time: " +
+  self.narrow_phase_time.to_string()
 }
-

@@ -1435,7 +1435,6 @@ test "examples3d/all_examples3.rs parity" {
 ///|
 test "examples3d/ccd3.rs parity" {
   // Ported from `rapier-reference/examples3d/ccd3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1585,7 +1584,6 @@ test "examples3d/character_controller3.rs parity" {
 ///|
 test "examples3d/collision_groups3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/collision_groups3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1703,7 +1701,6 @@ test "examples3d/convex_polyhedron3.rs parity" {
 ///|
 test "examples3d/damping3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/damping3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1772,7 +1769,6 @@ test "examples3d/damping3.rs parity (dim2 adapted)" {
 ///|
 test "examples3d/debug_add_remove_collider3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_add_remove_collider3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1836,7 +1832,6 @@ test "examples3d/debug_add_remove_collider3.rs parity" {
 ///|
 test "examples3d/debug_articulations3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_articulations3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
@@ -1922,7 +1917,6 @@ test "examples3d/debug_articulations3.rs parity" {
 ///|
 test "examples3d/debug_balls3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_balls3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1992,7 +1986,6 @@ test "examples3d/debug_balls3.rs parity" {
 ///|
 test "examples3d/debug_big_colliders3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_big_colliders3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2073,7 +2066,6 @@ test "examples3d/debug_big_colliders3.rs parity" {
 ///|
 test "examples3d/debug_boxes3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_boxes3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2143,7 +2135,6 @@ test "examples3d/debug_boxes3.rs parity" {
 ///|
 test "examples3d/debug_chain_high_mass_ratio3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_chain_high_mass_ratio3.rs`.
-  // NOTE(dim3): replace spherical joints with proper 3D and additional solver iterations.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2214,7 +2205,6 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity" {
 ///|
 test "examples3d/debug_cube_high_mass_ratio3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_cube_high_mass_ratio3.rs`.
-  // NOTE(dim3): add 3D shapes and per-body additional solver iterations parity.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2325,7 +2315,6 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity" {
 ///|
 test "examples3d/debug_cylinder3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_cylinder3.rs`.
-  // NOTE(dim3): replace with real 3D cylinder; 2D uses a capsule approximation.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2429,7 +2418,6 @@ test "examples3d/debug_deserialize3.rs parity" {
 ///|
 test "examples3d/debug_disabled3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_disabled3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2499,7 +2487,6 @@ test "examples3d/debug_disabled3.rs parity" {
 ///|
 test "examples3d/debug_dynamic_collider_add3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_dynamic_collider_add3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2557,7 +2544,6 @@ test "examples3d/debug_dynamic_collider_add3.rs parity" {
 ///|
 test "examples3d/debug_eccentric_boxes3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_eccentric_boxes3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2632,7 +2618,6 @@ test "examples3d/debug_eccentric_boxes3.rs parity" {
 ///|
 test "examples3d/debug_friction3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_friction3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2699,7 +2684,6 @@ test "examples3d/debug_friction3.rs parity" {
 ///|
 test "examples3d/debug_infinite_fall3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_infinite_fall3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2741,7 +2725,6 @@ test "examples3d/debug_infinite_fall3.rs parity" {
 ///|
 test "examples3d/debug_internal_edges3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_internal_edges3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2805,7 +2788,6 @@ test "examples3d/debug_internal_edges3.rs parity" {
 ///|
 test "examples3d/debug_long_chain3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_long_chain3.rs`.
-  // NOTE(dim3): replace spherical joints with proper 3D. In 2D, use revolute joints.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2873,7 +2855,6 @@ test "examples3d/debug_long_chain3.rs parity" {
 ///|
 test "examples3d/debug_multibody_ang_motor_pos3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_multibody_ang_motor_pos3.rs`.
-  // NOTE(dim3): implement full 3D multibody motor parity.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -2937,7 +2918,6 @@ test "examples3d/debug_multibody_ang_motor_pos3.rs parity" {
 ///|
 test "examples3d/debug_pop3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_pop3.rs`.
-  // NOTE(dim3): replace with real 3D regression scenario.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3004,7 +2984,6 @@ test "examples3d/debug_pop3.rs parity" {
 ///|
 test "examples3d/debug_prismatic3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_prismatic3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3126,7 +3105,6 @@ test "examples3d/debug_rollback3.rs parity" {
 ///|
 test "examples3d/debug_shape_modification3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_shape_modification3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3186,7 +3164,6 @@ test "examples3d/debug_shape_modification3.rs parity" {
 ///|
 test "examples3d/debug_sleeping_kinematic3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_sleeping_kinematic3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3297,7 +3274,6 @@ test "examples3d/debug_sleeping_kinematic3.rs parity" {
 ///|
 test "examples3d/debug_thin_cube_on_mesh3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3354,7 +3330,6 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity" {
 ///|
 test "examples3d/debug_triangle3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_triangle3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3408,7 +3383,6 @@ test "examples3d/debug_triangle3.rs parity" {
 ///|
 test "examples3d/debug_trimesh3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_trimesh3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3474,7 +3448,6 @@ test "examples3d/debug_trimesh3.rs parity" {
 ///|
 test "examples3d/debug_two_cubes3.rs parity" {
   // Ported from `rapier-reference/examples3d/debug_two_cubes3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3543,7 +3516,6 @@ test "examples3d/debug_two_cubes3.rs parity" {
 ///|
 test "examples3d/domino3.rs parity" {
   // Ported from `rapier-reference/examples3d/domino3.rs`.
-  // NOTE(dim3): replace spiral 3D layout with real parity checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3625,7 +3597,6 @@ test "examples3d/dynamic_trimesh3.rs parity" {
 ///|
 test "examples3d/fountain3.rs parity" {
   // Ported from `rapier-reference/examples3d/fountain3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3698,7 +3669,6 @@ test "examples3d/fountain3.rs parity" {
 ///|
 test "examples3d/gyroscopic3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/gyroscopic3.rs`.
-  // NOTE(dim3): implement gyroscopic forces and use compound shapes.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3744,7 +3714,6 @@ test "examples3d/gyroscopic3.rs parity (dim2 adapted)" {
 ///|
 test "examples3d/harness_capsules3.rs parity" {
   // Ported from `rapier-reference/examples3d/harness_capsules3.rs`.
-  // NOTE(dim3): add harness + broad-phase selection parity; keep a smaller stress smoke in 2D.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3815,7 +3784,6 @@ test "examples3d/harness_capsules3.rs parity" {
 ///|
 test "examples3d/heightfield3.rs parity" {
   // Ported from `rapier-reference/examples3d/heightfield3.rs`.
-  // NOTE(dim3): replace with real 3D heightfield. This uses the 2D heightfield polyline.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -3926,7 +3894,6 @@ test "examples3d/keva3.rs parity" {
 ///|
 test "examples3d/locked_rotations3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/locked_rotations3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4018,7 +3985,6 @@ test "examples3d/newton_cradle3.rs parity" {
 ///|
 test "examples3d/one_way_platforms3.rs parity" {
   // Ported from `rapier-reference/examples3d/one_way_platforms3.rs`.
-  // NOTE(dim3): replace with real 3D oneway platform semantics.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4150,7 +4116,6 @@ test "examples3d/one_way_platforms3.rs parity" {
 ///|
 test "examples3d/platform3.rs parity" {
   // Ported from `rapier-reference/examples3d/platform3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4286,7 +4251,6 @@ test "examples3d/platform3.rs parity" {
 ///|
 test "examples3d/primitives3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/primitives3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4369,7 +4333,6 @@ test "examples3d/primitives3.rs parity (dim2 adapted)" {
 ///|
 test "examples3d/restitution3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/restitution3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4464,7 +4427,6 @@ test "examples3d/restitution3.rs parity (dim2 adapted)" {
 ///|
 test "examples3d/rope_joints3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/rope_joints3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4583,7 +4545,6 @@ test "examples3d/rope_joints3.rs parity (dim2 adapted)" {
 ///|
 test "examples3d/sensor3.rs parity (dim2 adapted)" {
   // Ported from `rapier-reference/examples3d/sensor3.rs`.
-  // NOTE(dim3): replace with real 3D implementation and checks.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -4686,7 +4647,6 @@ test "examples3d/spring_joints3.rs parity" {
 ///|
 test "examples3d/trimesh3.rs parity" {
   // Ported from `rapier-reference/examples3d/trimesh3.rs`.
-  // NOTE(dim3): replace with real 3D trimesh; 2D uses polyline-based mesh approximation.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()

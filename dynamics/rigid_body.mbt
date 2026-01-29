@@ -2100,6 +2100,36 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
       sb.write_object(body.additional_solver_iterations)
       sb.write_char(',')
       sb.write_object(body.dominance.group)
+      sb.write_char(',')
+      sb.write_object(if body.locked_translations { 1 } else { 0 })
+      sb.write_char(',')
+      sb.write_object(if body.locked_rotations { 1 } else { 0 })
+      sb.write_char(',')
+      sb.write_object(body.damping.linear_damping)
+      sb.write_char(',')
+      sb.write_object(body.damping.angular_damping)
+      sb.write_char(',')
+      sb.write_object(body.vels.linvel.x)
+      sb.write_char(',')
+      sb.write_object(body.vels.linvel.y)
+      sb.write_char(',')
+      sb.write_object(body.vels.angvel)
+      sb.write_char(',')
+      sb.write_object(body.forces.gravity_scale)
+      sb.write_char(',')
+      sb.write_object(body.forces.user_force.x)
+      sb.write_char(',')
+      sb.write_object(body.forces.user_force.y)
+      sb.write_char(',')
+      sb.write_object(body.forces.user_torque)
+      sb.write_char(',')
+      sb.write_object(body.ccd.ccd_thickness)
+      sb.write_char(',')
+      sb.write_object(body.ccd.ccd_max_dist)
+      sb.write_char(',')
+      sb.write_object(if body.ccd.ccd_enabled { 1 } else { 0 })
+      sb.write_char(',')
+      sb.write_object(body.ccd.soft_ccd_prediction)
     } else {
       sb.write_char('N')
     }
@@ -2253,6 +2283,82 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             0
           }
+          let extras_start = dominance_index + 1
+          let locked_translations = if fields.length() > extras_start {
+            parse_bool_value(fields[extras_start])
+          } else {
+            false
+          }
+          let locked_rotations = if fields.length() > extras_start + 1 {
+            parse_bool_value(fields[extras_start + 1])
+          } else {
+            false
+          }
+          let linear_damping = if fields.length() > extras_start + 2 {
+            parse_real_value(fields[extras_start + 2])
+          } else {
+            0.0F
+          }
+          let angular_damping = if fields.length() > extras_start + 3 {
+            parse_real_value(fields[extras_start + 3])
+          } else {
+            0.0F
+          }
+          let linvel_x = if fields.length() > extras_start + 4 {
+            parse_real_value(fields[extras_start + 4])
+          } else {
+            0.0F
+          }
+          let linvel_y = if fields.length() > extras_start + 5 {
+            parse_real_value(fields[extras_start + 5])
+          } else {
+            0.0F
+          }
+          let angvel = if fields.length() > extras_start + 6 {
+            parse_real_value(fields[extras_start + 6])
+          } else {
+            0.0F
+          }
+          let gravity_scale = if fields.length() > extras_start + 7 {
+            parse_real_value(fields[extras_start + 7])
+          } else {
+            1.0F
+          }
+          let user_force_x = if fields.length() > extras_start + 8 {
+            parse_real_value(fields[extras_start + 8])
+          } else {
+            0.0F
+          }
+          let user_force_y = if fields.length() > extras_start + 9 {
+            parse_real_value(fields[extras_start + 9])
+          } else {
+            0.0F
+          }
+          let user_torque = if fields.length() > extras_start + 10 {
+            parse_real_value(fields[extras_start + 10])
+          } else {
+            0.0F
+          }
+          let ccd_thickness = if fields.length() > extras_start + 11 {
+            parse_real_value(fields[extras_start + 11])
+          } else {
+            DEFAULT_CCD_THICKNESS
+          }
+          let ccd_max_dist = if fields.length() > extras_start + 12 {
+            parse_real_value(fields[extras_start + 12])
+          } else {
+            0.0F
+          }
+          let ccd_enabled = if fields.length() > extras_start + 13 {
+            parse_bool_value(fields[extras_start + 13])
+          } else {
+            false
+          }
+          let soft_ccd_prediction = if fields.length() > extras_start + 14 {
+            parse_real_value(fields[extras_start + 14])
+          } else {
+            0.0F
+          }
           let position = @core.Isometry2::new(
             @core.Vec2::new(tx, ty),
             @core.Rot2::from_angle(rot),
@@ -2266,15 +2372,30 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             ids: RigidBodyIds::default(),
             position: rb_pos,
             body_type,
-            locked_translations: false,
-            locked_rotations: false,
+            locked_translations,
+            locked_rotations,
             dominance: RigidBodyDominance::new(dominance_group),
             enabled,
             activation,
-            damping: RigidBodyDamping::default(),
-            vels: RigidBodyVelocity::zero(),
-            forces: RigidBodyForces::default(),
-            ccd: RigidBodyCcd::default(),
+            damping: RigidBodyDamping::{ linear_damping, angular_damping },
+            vels: RigidBodyVelocity::new(
+              @core.Vec2::new(linvel_x, linvel_y),
+              angvel,
+            ),
+            forces: RigidBodyForces::{
+              force: @core.Vec2::zero(),
+              torque: 0.0F,
+              gravity_scale,
+              user_force: @core.Vec2::new(user_force_x, user_force_y),
+              user_torque,
+            },
+            ccd: RigidBodyCcd::{
+              ccd_thickness,
+              ccd_max_dist,
+              ccd_active: false,
+              ccd_enabled,
+              soft_ccd_prediction,
+            },
             mass_props: RigidBodyMassProps::default(),
             additional_mass,
             additional_solver_iterations,
@@ -2293,5 +2414,11 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   while bodies.length() < len {
     bodies.push(None)
   }
-  { bodies, generations, free_list, modified_bodies: [] }
+  let modified_bodies : Array[RigidBodyHandle] = []
+  for i in 0..<bodies.length() {
+    if bodies[i] is Some(_) {
+      modified_bodies.push(RigidBodyHandle::new(i, generations[i]))
+    }
+  }
+  { bodies, generations, free_list, modified_bodies }
 }

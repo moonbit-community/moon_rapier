@@ -135,18 +135,21 @@ pub fn Counters::reset(self : Counters) -> Unit {
   }
 }
 
+///|
 fn measure_started(enabled : Bool, timer : Timer) -> Unit {
   if enabled {
     timer.start()
   }
 }
 
+///|
 fn measure_completed(enabled : Bool, timer : Timer) -> Unit {
   if enabled {
     timer.pause()
   }
 }
 
+///|
 fn measure_time_ms(enabled : Bool, timer : Timer) -> Double {
   if enabled {
     timer.time_ms()
@@ -307,11 +310,16 @@ pub fn Counters::narrow_phase_time_ms(self : Counters) -> Double {
 
 ///|
 pub fn Counters::to_string(self : Counters) -> String {
-  let s = "Total timestep time: " + self.step_time.to_string() + "\n" +
-    self.stages.to_string() + "\n" +
-    self.cd.to_string() + "\n" +
-    self.solver.to_string() + "\n" +
-    "Custom timer: " + self.custom.to_string()
+  let s = "Total timestep time: " +
+    self.step_time.to_string() +
+    "\n" +
+    self.stages.to_string() +
+    "\n" +
+    self.cd.to_string() +
+    "\n" +
+    self.solver.to_string() +
+    "\n" +
+    "Custom timer: " +
+    self.custom.to_string()
   s
 }
-

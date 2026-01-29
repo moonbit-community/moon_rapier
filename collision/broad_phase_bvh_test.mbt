@@ -46,10 +46,17 @@ test "broad phase bvh emits add/delete pair events" {
   let colliders = ColliderSet::new()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
-  let ch1 = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h1, bodies)
-  let ch2 = colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h2, bodies)
+  let ch1 = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    h1,
+    bodies,
+  )
+  let ch2 = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.5F).build(),
+    h2,
+    bodies,
+  )
   let broad_phase = BroadPhaseBvh::new()
-
   broad_phase.update(0.0F, bodies, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
@@ -64,7 +71,6 @@ test "broad phase bvh emits add/delete pair events" {
   } else {
     inspect(false, content="true")
   }
-
   if colliders.get_mut(ch2) is Some(c2) {
     c2.set_enabled(false) |> ignore
   } else {

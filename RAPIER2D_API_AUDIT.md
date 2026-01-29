@@ -28,37 +28,25 @@ We then compared the presence of public identifiers by name (token match). This 
 2D parity suites exist and pass for the `examples2d` set and the 2D stress tests.
 This indicates the engine covers the behaviors exercised by those examples.
 
-### 2) Full `rapier2d` Public API Parity: No
+### 2) Full `rapier2d` Public API Parity: Unverified (This Document Is Stale)
 
-Several Rapier public modules/types/features are not implemented (or not exposed) in this MoonBit
-port. The most significant gaps include:
+This document originally captured early gaps in the MoonBit port. Since then (notably on
+**2026-01-29**), the project implemented the initial missing parity buckets referenced by the
+follow-up epic tasks (data/counters/geometry/query pipeline/hooks/features).
 
-- **Missing whole public modules**
-  - `counters::*` (e.g. `Counters`, stage timers/counters).
-  - `data::*` was previously missing, but is now present as the `Milky2018/moon_rapier/data` package
-    (Arena/Index/Coarena/ModifiedObjects/pubsub). Re-run this audit to update the name-based counts.
-- **Geometry/public API gaps**
-  - Missing/unsupported public types (examples): `MeshConverter`, `MeshConverterError`,
-    `BvhOptimizationStrategy`, `BroadPhasePairEvent`.
-  - Missing Parry-style public shape exposure (`SharedShape`, many `parry::shape::*` re-exports).
-  - Missing shape types like `Triangle` and a real `HeightField` type (this port often uses a 2D
-    polyline approximation).
-- **Query pipeline gaps**
-  - No `QueryPipelineMut`-style API.
-  - No persistent query dispatcher surface.
-  - The current query pipeline construction is closer to a snapshot builder than Rapier's incremental
-    updated query pipeline.
-- **Hooks/solver contact APIs**
-  - Missing `SolverContact` / `SolverFlags`-level types used by advanced contact modification.
-- **Feature flags not implemented**
-  - `serde-serialize` (snapshot/restore, serialization).
-  - `parallel` (rayon-based parallelism).
-  - `simd-stable` / `simd-nightly`.
-  - `debug-render` pipeline surface.
+Even with those additions, **full crate-level public API parity is still not mechanically proven**
+here. The only hard evidence captured in this repo remains: parity tests against
+`rapier-reference/examples2d/*` and `rapier-reference/examples2d/stress_tests/*`.
+
+If full public API parity is still a goal, re-run an automated name-based audit (or a stronger
+semantic audit) and update the sections below accordingly.
 
 ## Quantitative Snapshot (Name-Based Heuristic)
 
-From `rapier-reference/src/**`:
+This section is retained for historical context, but the counts below are **stale** and likely
+incorrect after the recent parity work.
+
+From `rapier-reference/src/**` (stale):
 
 - Rapier public identifiers (heuristic dim2/neutral): **943**
 - Present in MoonBit exports by token match: **413**
@@ -68,15 +56,8 @@ This is a directional indicator only; it is not a definitive parity score.
 
 ## Recommended Next Steps (If Full API Parity Is a Goal)
 
-1) Add missing public modules:
-   - Port and expose `counters::*` (Timers and stage counters).
-2) Expand geometry/public surface:
-   - Add missing shapes (e.g. `Triangle`) and clarify/implement `HeightField` semantics.
-   - Add `MeshConverter` surface if desired.
-3) Query pipeline parity:
-   - Provide `QueryPipeline` incremental update semantics and a `QueryPipelineMut`-like API.
-4) Hooks/solver contacts parity:
-   - Expose solver-contact data structures needed for `modify_solver_contacts`-style hooks.
-5) Decide feature-goals:
-   - Serialization support vs. pure runtime simulation.
-   - Parallelism and SIMD: decide if in-scope for MoonBit/targets.
+1) Re-run an API audit:
+   - Regenerate `*/pkg.generated.mbti` with `moon info`.
+   - Recompute missing identifiers vs. `rapier-reference` using an automated script.
+2) For any remaining gaps, create one issue per module/bucket:
+   - Prefer "API + semantics + determinism test" per gap.

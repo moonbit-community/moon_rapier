@@ -186,6 +186,7 @@ pub fn MeshConverter::convex_hull() -> MeshConverter {
   MeshConverter::ConvexHull
 }
 
+///|
 fn compute_aabb(vertices : Array[@core.Vec2]) -> (@core.Vec2, @core.Vec2)? {
   if vertices.length() == 0 {
     return None
@@ -246,7 +247,8 @@ pub fn MeshConverter::apply(
     MeshConverter::ConvexHull =>
       match ColliderBuilder::convex_hull(vertices) {
         None => Err(MeshConverterError::ConvexHullFailed)
-        Some(builder) => Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
+        Some(builder) =>
+          Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
       }
     MeshConverter::ConvexDecomposition =>
       // NOTE: Convex decomposition isn't implemented yet; we approximate with the convex hull
@@ -262,7 +264,10 @@ pub struct ColliderPair {
 }
 
 ///|
-pub fn ColliderPair::new(a : ColliderHandle, b : ColliderHandle) -> ColliderPair {
+pub fn ColliderPair::new(
+  a : ColliderHandle,
+  b : ColliderHandle,
+) -> ColliderPair {
   if handle_less(a, b) {
     { collider1: a, collider2: b }
   } else {

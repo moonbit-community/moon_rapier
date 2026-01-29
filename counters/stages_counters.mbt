@@ -49,13 +49,25 @@ pub fn StagesCounters::reset(self : StagesCounters) -> Unit {
 
 ///|
 pub fn StagesCounters::to_string(self : StagesCounters) -> String {
-  let s = "Update time: " + self.update_time.to_string() + "\n" +
-    "Collision detection time: " + self.collision_detection_time.to_string() + "\n" +
-    "Island construction time: " + self.island_construction_time.to_string() + "\n" +
-    "Island construction time: " + self.island_constraints_collection_time.to_string() + "\n" +
-    "Solver time: " + self.solver_time.to_string() + "\n" +
-    "CCD time: " + self.ccd_time.to_string() + "\n" +
-    "User changes time: " + self.user_changes.to_string()
+  let s = "Update time: " +
+    self.update_time.to_string() +
+    "\n" +
+    "Collision detection time: " +
+    self.collision_detection_time.to_string() +
+    "\n" +
+    "Island construction time: " +
+    self.island_construction_time.to_string() +
+    "\n" +
+    "Island construction time: " +
+    self.island_constraints_collection_time.to_string() +
+    "\n" +
+    "Solver time: " +
+    self.solver_time.to_string() +
+    "\n" +
+    "CCD time: " +
+    self.ccd_time.to_string() +
+    "\n" +
+    "User changes time: " +
+    self.user_changes.to_string()
   s
 }
-

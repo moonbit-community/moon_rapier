@@ -53,10 +53,18 @@ pub fn CCDCounters::set_num_substeps(self : CCDCounters, n : Int) -> Unit {
 
 ///|
 pub fn CCDCounters::to_string(self : CCDCounters) -> String {
-  "Number of substeps: " + self.num_substeps.to_string() + "\n" +
-  "TOI computation time: " + self.toi_computation_time.to_string() + "\n" +
-  "Constraints solver time: " + self.solver_time.to_string() + "\n" +
-  "Broad-phase time: " + self.broad_phase_time.to_string() + "\n" +
-  "Narrow-phase time: " + self.narrow_phase_time.to_string()
+  "Number of substeps: " +
+  self.num_substeps.to_string() +
+  "\n" +
+  "TOI computation time: " +
+  self.toi_computation_time.to_string() +
+  "\n" +
+  "Constraints solver time: " +
+  self.solver_time.to_string() +
+  "\n" +
+  "Broad-phase time: " +
+  self.broad_phase_time.to_string() +
+  "\n" +
+  "Narrow-phase time: " +
+  self.narrow_phase_time.to_string()
 }
-

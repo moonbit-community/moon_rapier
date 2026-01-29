@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+///|
 test "mesh converter aabb returns cuboid + translation pose" {
   let vertices = [
     @core.Vec2::new(0.0F, 0.0F),
@@ -35,6 +36,7 @@ test "mesh converter aabb returns cuboid + translation pose" {
   }
 }
 
+///|
 test "mesh converter convex hull returns convex polygon shape" {
   let vertices = [
     @core.Vec2::new(0.0F, 0.0F),

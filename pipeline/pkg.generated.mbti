@@ -8,7 +8,15 @@ import {
 }
 
 // Values
+pub fn parallel_enabled() -> Bool
+
+pub fn parallel_strategy() -> String
+
 pub fn remove_rigid_body(@dynamics.RigidBodySet, @dynamics.RigidBodyHandle, @dynamics.IslandManager, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, Bool, Bool) -> @dynamics.RigidBody?
+
+pub fn simd_enabled() -> Bool
+
+pub fn simd_strategy() -> String
 
 pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
@@ -28,6 +36,85 @@ pub struct ContactImpulseCacheEntry {
   impulse_n : Float
   impulse_t : Float
 }
+
+pub struct DebugColor {
+  h : Float
+  s : Float
+  l : Float
+  a : Float
+}
+pub fn DebugColor::new(Float, Float, Float, Float) -> Self
+
+pub struct DebugRenderBackend {
+  lines : Array[DebugRenderLine]
+}
+pub fn DebugRenderBackend::draw_line(Self, DebugRenderObject, @core.Vec2, @core.Vec2, DebugColor) -> Unit
+pub fn DebugRenderBackend::lines(Self) -> Array[DebugRenderLine]
+pub fn DebugRenderBackend::new() -> Self
+pub fn DebugRenderBackend::serialize_lines(Self) -> String
+
+pub struct DebugRenderLine {
+  object : DebugRenderObject
+  a : @core.Vec2
+  b : @core.Vec2
+  color : DebugColor
+}
+
+pub struct DebugRenderMode {
+  mut bits : Int
+}
+pub fn DebugRenderMode::all() -> Self
+pub fn DebugRenderMode::collider_aabbs() -> Self
+pub fn DebugRenderMode::collider_shapes() -> Self
+pub fn DebugRenderMode::contacts() -> Self
+pub fn DebugRenderMode::contains(Self, Self) -> Bool
+pub fn DebugRenderMode::default() -> Self
+pub fn DebugRenderMode::empty() -> Self
+pub fn DebugRenderMode::impulse_joints() -> Self
+pub fn DebugRenderMode::insert(Self, Self) -> Self
+pub fn DebugRenderMode::joints() -> Self
+pub fn DebugRenderMode::multibody_joints() -> Self
+pub fn DebugRenderMode::remove(Self, Self) -> Self
+pub fn DebugRenderMode::rigid_body_axes() -> Self
+pub fn DebugRenderMode::solver_contacts() -> Self
+
+pub(all) enum DebugRenderObject {
+  RigidBody(@dynamics.RigidBodyHandle)
+  Collider(@collision.ColliderHandle)
+  ImpulseJoint(@dynamics.ImpulseJointHandle)
+  MultibodyJoint(@dynamics.MultibodyJointHandle)
+  ContactPair(@collision.ColliderHandle, @collision.ColliderHandle)
+}
+
+pub struct DebugRenderPipeline {
+  style : DebugRenderStyle
+  mode : DebugRenderMode
+}
+pub fn DebugRenderPipeline::default() -> Self
+pub fn DebugRenderPipeline::new(DebugRenderStyle, DebugRenderMode) -> Self
+pub fn DebugRenderPipeline::render(Self, DebugRenderBackend, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @collision.NarrowPhase) -> Unit
+pub fn DebugRenderPipeline::render_all(DebugRenderStyle) -> Self
+
+pub struct DebugRenderStyle {
+  subdivisions : Int
+  border_subdivisions : Int
+  collider_dynamic_color : DebugColor
+  collider_fixed_color : DebugColor
+  collider_kinematic_color : DebugColor
+  collider_parentless_color : DebugColor
+  impulse_joint_anchor_color : DebugColor
+  impulse_joint_separation_color : DebugColor
+  multibody_joint_anchor_color : DebugColor
+  multibody_joint_separation_color : DebugColor
+  sleep_color_multiplier : DebugColor
+  disabled_color_multiplier : DebugColor
+  rigid_body_axes_length : Float
+  contact_depth_color : DebugColor
+  contact_normal_color : DebugColor
+  contact_normal_length : Float
+  collider_aabb_color : DebugColor
+}
+pub fn DebugRenderStyle::default() -> Self
 
 pub struct EventHandler {
   collision_events : Array[@collision.CollisionEvent]
@@ -49,10 +136,12 @@ pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut modify_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2))?
+  mut modify_solver_contacts_with_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags)?
 }
 pub fn PhysicsHooks::filter_contact_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
 pub fn PhysicsHooks::filter_intersection_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
 pub fn PhysicsHooks::modify_solver_contacts(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2)) -> Self
+pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Self
 pub fn PhysicsHooks::new() -> Self
 
 pub struct PhysicsPipeline {

@@ -289,28 +289,31 @@ fn build_constraints(
         )
         let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
         let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
-        let mut tangent_velocity = @core.Vec2::zero()
-        if c1
+        let has_modify_hook = c1
           .active_hooks()
           .contains(@collision.ActiveHooks::modify_solver_contacts()) ||
           c2
           .active_hooks()
-          .contains(@collision.ActiveHooks::modify_solver_contacts()) {
+          .contains(@collision.ActiveHooks::modify_solver_contacts())
+        let mut legacy_tangent_velocity = @core.Vec2::zero()
+        if has_modify_hook {
           let (accept, tv) = hooks.modify_solver_contacts_internal(
             bodies, colliders, h1, h2, manifold,
           )
           if !accept {
             continue
           }
-          tangent_velocity = tv
+          legacy_tangent_velocity = tv
         }
-        let tangent_velocity_proj = tangent_velocity.dot(tangent1)
         fn push_constraint(
           fid1 : @collision.FeatureId,
           fid2 : @collision.FeatureId,
           world_p1 : @core.Vec2,
           world_p2 : @core.Vec2,
           dist_in : @core.Real,
+          friction_in : @core.Real,
+          restitution_in : @core.Real,
+          tangent_velocity_proj : @core.Real,
         ) -> Unit {
           let mut dist = dist_in
           // Some manifold generators (notably segment-*) only provide a non-negative distance.
@@ -422,7 +425,7 @@ fn build_constraints(
           let rv = vel1.sub(vel2)
           let vn0 = rv.dot(dir1)
           let restitution_vel = if dist <= 0.0F && vn0 < -1.0e-3F {
-            -restitution * vn0
+            -restitution_in * vn0
           } else {
             0.0F
           }
@@ -444,7 +447,7 @@ fn build_constraints(
             world_p2,
             dist,
             restitution_vel,
-            friction,
+            friction: friction_in,
             inv_mass_n,
             inv_mass_n_nocfm,
             inv_mass_t,
@@ -463,12 +466,47 @@ fn build_constraints(
         if points.length() == 0 {
           continue
         }
-        let start = constraints.length()
+        let world_p1s : Array[@core.Vec2] = []
+        let world_p2s : Array[@core.Vec2] = []
+        let fids : Array[(@collision.FeatureId, @collision.FeatureId)] = []
+        let solver_contacts : Array[@collision.SolverContact] = []
         for pi in 0..<points.length() {
           let p = points[pi]
           let world_p1 = c1.position().transform_point(p.local_p1())
           let world_p2 = c2.position().transform_point(p.local_p2())
-          push_constraint(p.fid1(), p.fid2(), world_p1, world_p2, p.dist())
+          world_p1s.push(world_p1)
+          world_p2s.push(world_p2)
+          fids.push((p.fid1(), p.fid2()))
+          let sc = @collision.SolverContact::new(world_p1, p.dist())
+          sc.set_friction(friction)
+          sc.set_restitution(restitution)
+          sc.set_tangent_velocity(legacy_tangent_velocity)
+          solver_contacts.push(sc)
+        }
+        if has_modify_hook {
+          let mut flags = @collision.SolverFlags::default()
+          flags = hooks.modify_solver_contacts_with_solver_contacts_internal(
+            bodies, colliders, h1, h2, manifold, solver_contacts, flags,
+          )
+          if !flags.contains(@collision.SolverFlags::compute_impulses()) {
+            continue
+          }
+        }
+        let start = constraints.length()
+        for pi in 0..<solver_contacts.length() {
+          let (fid1, fid2) = fids[pi]
+          let sc = solver_contacts[pi]
+          let tangent_velocity_proj = sc.tangent_velocity().dot(tangent1)
+          push_constraint(
+            fid1,
+            fid2,
+            world_p1s[pi],
+            world_p2s[pi],
+            sc.dist(),
+            sc.friction(),
+            sc.restitution(),
+            tangent_velocity_proj,
+          )
         }
         let len = constraints.length() - start
         if len > 0 {

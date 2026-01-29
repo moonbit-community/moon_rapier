@@ -179,6 +179,7 @@ type ImpulseJointSet
 pub fn ImpulseJointSet::attached_enabled_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::contains(Self, ImpulseJointHandle) -> Bool
+pub fn ImpulseJointSet::deserialize(String) -> Self
 pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
@@ -195,6 +196,7 @@ pub fn ImpulseJointSet::new() -> Self
 pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
 pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
+pub fn ImpulseJointSet::serialize(Self) -> String
 pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
 pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float) -> Unit
@@ -426,6 +428,7 @@ type MultibodyJointSet
 pub fn MultibodyJointSet::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
 pub fn MultibodyJointSet::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet::deserialize(String) -> Self
 pub fn MultibodyJointSet::get(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::get_multibody(Self, MultibodyIndex) -> Multibody?
 pub fn MultibodyJointSet::get_multibody_mut(Self, MultibodyIndex) -> Multibody?
@@ -443,6 +446,7 @@ pub fn MultibodyJointSet::remove(Self, MultibodyJointHandle, Bool) -> Unit
 pub fn MultibodyJointSet::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
 pub fn MultibodyJointSet::revolute_joint_descriptors(Self) -> Array[MultibodyRevoluteJointDesc]
 pub fn MultibodyJointSet::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet::serialize(Self) -> String
 pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(Self, MultibodyLinkId, @core.Vec2, Float, Float) -> Unit
 pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet) -> Unit
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]

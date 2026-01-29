@@ -72,11 +72,21 @@ pub fn SolverCounters::set_ncontacts(self : SolverCounters, n : Int) -> Unit {
 
 ///|
 pub fn SolverCounters::to_string(self : SolverCounters) -> String {
-  "Number of contacts: " + self.ncontacts.to_string() + "\n" +
-  "Number of constraints: " + self.nconstraints.to_string() + "\n" +
-  "Velocity assembly time: " + self.velocity_assembly_time.to_string() + "\n" +
-  "Velocity resolution time: " + self.velocity_resolution_time.to_string() + "\n" +
-  "Velocity update time: " + self.velocity_update_time.to_string() + "\n" +
-  "Velocity writeback time: " + self.velocity_writeback_time.to_string()
+  "Number of contacts: " +
+  self.ncontacts.to_string() +
+  "\n" +
+  "Number of constraints: " +
+  self.nconstraints.to_string() +
+  "\n" +
+  "Velocity assembly time: " +
+  self.velocity_assembly_time.to_string() +
+  "\n" +
+  "Velocity resolution time: " +
+  self.velocity_resolution_time.to_string() +
+  "\n" +
+  "Velocity update time: " +
+  self.velocity_update_time.to_string() +
+  "\n" +
+  "Velocity writeback time: " +
+  self.velocity_writeback_time.to_string()
 }
-

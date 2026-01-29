@@ -164,6 +164,23 @@ pub fn PhysicsHooks::modify_solver_contacts(
 
 ///|
 #declaration_only
+pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @collision.ContactManifold,
+    Array[@collision.SolverContact],
+    @collision.SolverFlags,
+  ) -> @collision.SolverFlags,
+) -> PhysicsHooks {
+  ...
+}
+
+///|
+#declaration_only
 pub type CollisionPipeline
 
 ///|
@@ -232,5 +249,241 @@ pub fn remove_rigid_body(
   remove_attached_colliders : Bool,
   wake_up : Bool,
 ) -> @dynamics.RigidBody? {
+  ...
+}
+
+///|
+#declaration_only
+pub type DebugColor
+
+///|
+#declaration_only
+pub fn DebugColor::new(
+  h : @core.Real,
+  s : @core.Real,
+  l : @core.Real,
+  a : @core.Real,
+) -> DebugColor {
+  ...
+}
+
+///|
+#declaration_only
+pub type DebugRenderStyle
+
+///|
+#declaration_only
+pub fn DebugRenderStyle::default() -> DebugRenderStyle {
+  ...
+}
+
+///|
+#declaration_only
+pub type DebugRenderMode
+
+///|
+#declaration_only
+pub fn DebugRenderMode::empty() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::all() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::collider_shapes() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::rigid_body_axes() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::multibody_joints() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::impulse_joints() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::joints() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::solver_contacts() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::contacts() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::collider_aabbs() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::default() -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::contains(
+  self : DebugRenderMode,
+  other : DebugRenderMode,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::insert(
+  self : DebugRenderMode,
+  other : DebugRenderMode,
+) -> DebugRenderMode {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderMode::remove(
+  self : DebugRenderMode,
+  other : DebugRenderMode,
+) -> DebugRenderMode {
+  ...
+}
+
+///|
+pub(all) enum DebugRenderObject {
+  RigidBody(@dynamics.RigidBodyHandle)
+  Collider(@collision.ColliderHandle)
+  ImpulseJoint(@dynamics.ImpulseJointHandle)
+  MultibodyJoint(@dynamics.MultibodyJointHandle)
+  ContactPair(@collision.ColliderHandle, @collision.ColliderHandle)
+}
+
+///|
+#declaration_only
+pub type DebugRenderLine
+
+///|
+#declaration_only
+pub type DebugRenderBackend
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::new() -> DebugRenderBackend {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::draw_line(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+  a : @core.Vec2,
+  b : @core.Vec2,
+  color : DebugColor,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::lines(
+  self : DebugRenderBackend,
+) -> Array[DebugRenderLine] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub type DebugRenderPipeline
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::new(
+  style : DebugRenderStyle,
+  mode : DebugRenderMode,
+) -> DebugRenderPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render_all(
+  style : DebugRenderStyle,
+) -> DebugRenderPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::default() -> DebugRenderPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+  narrow_phase : @collision.NarrowPhase,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn parallel_enabled() -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn simd_enabled() -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn parallel_strategy() -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub fn simd_strategy() -> String {
   ...
 }

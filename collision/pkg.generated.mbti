@@ -41,12 +41,29 @@ pub fn ActiveHooks::insert(Self, Self) -> Self
 pub fn ActiveHooks::modify_solver_contacts() -> Self
 
 pub struct BroadPhaseBvh {
+  optimization_strategy : BvhOptimizationStrategy
   pairs : Array[(ColliderHandle, ColliderHandle)]
+  mut events : Array[BroadPhasePairEvent]
 }
 pub fn BroadPhaseBvh::as_query_pipeline(Self, @dynamics.RigidBodySet, ColliderSet, QueryFilter) -> QueryPipeline
+pub fn BroadPhaseBvh::as_query_pipeline_mut(Self, @dynamics.RigidBodySet, ColliderSet, QueryFilter) -> QueryPipelineMut
 pub fn BroadPhaseBvh::new() -> Self
 pub fn BroadPhaseBvh::pairs(Self) -> Array[(ColliderHandle, ColliderHandle)]
+pub fn BroadPhaseBvh::take_events(Self) -> Array[BroadPhasePairEvent]
 pub fn BroadPhaseBvh::update(Self, Float, @dynamics.RigidBodySet, ColliderSet) -> Unit
+pub fn BroadPhaseBvh::with_optimization_strategy(BvhOptimizationStrategy) -> Self
+
+pub(all) enum BroadPhasePairEvent {
+  AddPair(ColliderPair)
+  DeletePair(ColliderPair)
+}
+
+pub(all) enum BvhOptimizationStrategy {
+  SubtreeOptimizer
+  None
+}
+pub fn BvhOptimizationStrategy::none() -> Self
+pub fn BvhOptimizationStrategy::subtree_optimizer() -> Self
 
 pub struct Collider {
   mut shape : Shape
@@ -186,6 +203,17 @@ pub struct ColliderHandle {
   generation : Int
 }
 pub fn ColliderHandle::equals(Self, Self) -> Bool
+pub fn ColliderHandle::from_raw_parts(Int, Int) -> Self
+pub fn ColliderHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn ColliderHandle::invalid() -> Self
+
+pub struct ColliderPair {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+}
+pub fn ColliderPair::collider1(Self) -> ColliderHandle
+pub fn ColliderPair::collider2(Self) -> ColliderHandle
+pub fn ColliderPair::new(ColliderHandle, ColliderHandle) -> Self
 
 pub struct ColliderSet {
   colliders : Array[Collider?]
@@ -195,6 +223,7 @@ pub struct ColliderSet {
 }
 pub fn ColliderSet::clear_changes_for(Self, Array[ColliderHandle]) -> Unit
 pub fn ColliderSet::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle]
+pub fn ColliderSet::deserialize(String) -> Self
 pub fn ColliderSet::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::get_mut(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet::get_mut_internal(Self, ColliderHandle) -> Collider?
@@ -205,6 +234,7 @@ pub fn ColliderSet::is_empty(Self) -> Bool
 pub fn ColliderSet::len(Self) -> Int
 pub fn ColliderSet::new() -> Self
 pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
+pub fn ColliderSet::serialize(Self) -> String
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
 pub fn ColliderSet::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
 pub fn ColliderSet::take_modified(Self) -> Array[ColliderHandle]
@@ -285,11 +315,38 @@ pub(all) enum FillMode {
 pub fn FillMode::default() -> Self
 pub fn FillMode::surface_only() -> Self
 
+pub struct HeightField {
+  heights : Array[Float]
+  scale : @core.Vec2
+}
+pub fn HeightField::as_shape(Self) -> Shape
+pub fn HeightField::new(Array[Float], @core.Vec2) -> Self
+
 pub struct IntersectionPair {
   collider1 : ColliderHandle
   collider2 : ColliderHandle
   intersecting : Bool
 }
+
+pub(all) enum MeshConverter {
+  TriMesh
+  Aabb
+  Obb
+  ConvexHull
+  ConvexDecomposition
+}
+pub fn MeshConverter::aabb() -> Self
+pub fn MeshConverter::apply(Self, Array[@core.Vec2], Array[(Int, Int, Int)]) -> Result[(SharedShape, @core.Isometry2), MeshConverterError]
+pub fn MeshConverter::convex_hull() -> Self
+pub fn MeshConverter::obb() -> Self
+pub fn MeshConverter::trimesh() -> Self
+
+pub(all) enum MeshConverterError {
+  ConvexHullFailed
+  TriMeshBuilderError
+  EmptyVertices
+}
+pub fn MeshConverterError::to_string(Self) -> String
 
 pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
@@ -369,7 +426,15 @@ pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> S
 pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
 pub fn QueryPipeline::project_point_and_get_feature(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection, FeatureId)?
 pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
+pub fn QueryPipeline::update(Self) -> Unit
 pub fn QueryPipeline::with_filter(Self, QueryFilter) -> Self
+
+pub struct QueryPipelineMut {
+  pipeline : QueryPipeline
+}
+pub fn QueryPipelineMut::as_ref(Self) -> QueryPipeline
+pub fn QueryPipelineMut::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
+pub fn QueryPipelineMut::update(Self) -> Unit
 
 pub struct Ray {
   origin : @core.Vec2
@@ -416,6 +481,58 @@ pub fn ShapeCastOptions::new(Float, Bool) -> Self
 pub fn ShapeCastOptions::stop_at_penetration(Self) -> Bool
 pub fn ShapeCastOptions::target_distance(Self) -> Float
 pub fn ShapeCastOptions::with_target_distance(Self, Float) -> Self
+
+pub struct SharedShape {
+  shape : Shape
+}
+pub fn SharedShape::as_shape(Self) -> Shape
+pub fn SharedShape::ball(Float) -> Self
+pub fn SharedShape::capsule_x(Float, Float) -> Self
+pub fn SharedShape::capsule_y(Float, Float) -> Self
+pub fn SharedShape::cuboid(Float, Float) -> Self
+pub fn SharedShape::heightfield(Array[Float], @core.Vec2) -> Self
+pub fn SharedShape::new(Shape) -> Self
+pub fn SharedShape::polyline(Array[@core.Vec2], Array[(Int, Int)]?) -> Self
+pub fn SharedShape::segment(@core.Vec2, @core.Vec2) -> Self
+pub fn SharedShape::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
+pub fn SharedShape::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
+
+pub struct SolverContact {
+  mut point : @core.Vec2
+  mut dist : Float
+  mut friction : Float
+  mut restitution : Float
+  mut tangent_velocity : @core.Vec2
+}
+pub fn SolverContact::dist(Self) -> Float
+pub fn SolverContact::friction(Self) -> Float
+pub fn SolverContact::new(@core.Vec2, Float) -> Self
+pub fn SolverContact::point(Self) -> @core.Vec2
+pub fn SolverContact::restitution(Self) -> Float
+pub fn SolverContact::set_dist(Self, Float) -> Unit
+pub fn SolverContact::set_friction(Self, Float) -> Unit
+pub fn SolverContact::set_point(Self, @core.Vec2) -> Unit
+pub fn SolverContact::set_restitution(Self, Float) -> Unit
+pub fn SolverContact::set_tangent_velocity(Self, @core.Vec2) -> Unit
+pub fn SolverContact::tangent_velocity(Self) -> @core.Vec2
+
+pub struct SolverFlags {
+  mut value : Int
+}
+pub fn SolverFlags::compute_impulses() -> Self
+pub fn SolverFlags::contains(Self, Self) -> Bool
+pub fn SolverFlags::default() -> Self
+pub fn SolverFlags::empty() -> Self
+pub fn SolverFlags::insert(Self, Self) -> Self
+pub fn SolverFlags::remove(Self, Self) -> Self
+
+pub struct Triangle {
+  a : @core.Vec2
+  b : @core.Vec2
+  c : @core.Vec2
+}
+pub fn Triangle::as_shape(Self) -> Shape
+pub fn Triangle::new(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 
 // Type aliases
 

@@ -2008,6 +2008,18 @@ pub fn ImpulseJointSet::new() -> ImpulseJointSet {
 
 ///|
 #declaration_only
+pub fn ImpulseJointSet::serialize(self : ImpulseJointSet) -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ImpulseJointSet::take_wake_up(
   self : ImpulseJointSet,
 ) -> Array[RigidBodyHandle] {
@@ -2218,6 +2230,18 @@ pub type MultibodyJointSet
 ///|
 #declaration_only
 pub fn MultibodyJointSet::new() -> MultibodyJointSet {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::serialize(self : MultibodyJointSet) -> String {
+  ...
+}
+
+///|
+#declaration_only
+pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
   ...
 }
 

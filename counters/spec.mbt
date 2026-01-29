@@ -96,7 +96,9 @@ pub fn CollisionDetectionCounters::new() -> CollisionDetectionCounters {
 
 ///|
 #declaration_only
-pub fn CollisionDetectionCounters::reset(self : CollisionDetectionCounters) -> Unit {
+pub fn CollisionDetectionCounters::reset(
+  self : CollisionDetectionCounters,
+) -> Unit {
   ...
 }
 
