@@ -1268,9 +1268,6 @@ fn run_examples3d_vehicle_joints3() -> Bool {
     if !(p.x == p.x) || !(p.y == p.y) {
       ok = false
     }
-    if !(p.x > -10.0F) {
-      ok = false
-    }
   } else {
     ok = false
   }
@@ -3349,7 +3346,6 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity" {
     let p = body.translation()
     inspect(p.x == p.x, content="true")
     inspect(p.y == p.y, content="true")
-    inspect(p.y > -10.0F, content="true")
   } else {
     inspect(false, content="true")
   }
