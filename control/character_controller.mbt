@@ -23,6 +23,28 @@ pub fn CharacterLength::absolute(value : @core.Real) -> CharacterLength {
 }
 
 ///|
+pub fn CharacterLength::map_absolute(
+  self : CharacterLength,
+  f : (@core.Real) -> @core.Real,
+) -> CharacterLength {
+  match self {
+    CharacterLength::Absolute(value) => CharacterLength::Absolute(f(value))
+    _ => self
+  }
+}
+
+///|
+pub fn CharacterLength::map_relative(
+  self : CharacterLength,
+  f : (@core.Real) -> @core.Real,
+) -> CharacterLength {
+  match self {
+    CharacterLength::Relative(value) => CharacterLength::Relative(f(value))
+    _ => self
+  }
+}
+
+///|
 fn character_length_eval(
   length : CharacterLength,
   reference : @core.Real,
@@ -91,6 +113,19 @@ pub fn CharacterAutostep::new(
 ) -> CharacterAutostep {
   // Rapier parity: include dynamic bodies by default.
   { max_height, min_width, include_dynamic_bodies: true }
+}
+
+///|
+pub fn CharacterAutostep::default() -> CharacterAutostep {
+  // Rapier parity (v0.32.0):
+  // - max_height: Relative(0.25)
+  // - min_width: Relative(0.5)
+  // - include_dynamic_bodies: true
+  {
+    max_height: CharacterLength::relative(0.25F),
+    min_width: CharacterLength::relative(0.5F),
+    include_dynamic_bodies: true,
+  }
 }
 
 ///|
@@ -174,6 +209,11 @@ pub fn KinematicCharacterController::new() -> KinematicCharacterController {
     autostep: None,
     normal_nudge_factor: 1.0e-4F,
   }
+}
+
+///|
+pub fn KinematicCharacterController::default() -> KinematicCharacterController {
+  KinematicCharacterController::new()
 }
 
 ///|

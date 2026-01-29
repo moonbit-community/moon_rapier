@@ -32,6 +32,24 @@ pub fn CharacterLength::absolute(value : @core.Real) -> CharacterLength {
 
 ///|
 #declaration_only
+pub fn CharacterLength::map_absolute(
+  self : CharacterLength,
+  f : (@core.Real) -> @core.Real,
+) -> CharacterLength {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterLength::map_relative(
+  self : CharacterLength,
+  f : (@core.Real) -> @core.Real,
+) -> CharacterLength {
+  ...
+}
+
+///|
+#declaration_only
 pub type CharacterCollision
 
 ///|
@@ -113,6 +131,12 @@ pub fn CharacterAutostep::new(
 
 ///|
 #declaration_only
+pub fn CharacterAutostep::default() -> CharacterAutostep {
+  ...
+}
+
+///|
+#declaration_only
 pub fn CharacterAutostep::max_height(
   self : CharacterAutostep,
 ) -> CharacterLength {
@@ -151,6 +175,12 @@ pub type KinematicCharacterController
 ///|
 #declaration_only
 pub fn KinematicCharacterController::new() -> KinematicCharacterController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController::default() -> KinematicCharacterController {
   ...
 }
 
@@ -412,5 +442,102 @@ pub fn PidController::correction(
   pose_errors : PdErrors,
   vel_errors : PdErrors,
 ) -> @dynamics.RigidBodyVelocity {
+  ...
+}
+
+///|
+#declaration_only
+pub type WheelTuning
+
+///|
+#declaration_only
+pub fn WheelTuning::default() -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
+pub type RayCastInfo
+
+///|
+#declaration_only
+pub fn RayCastInfo::default() -> RayCastInfo {
+  ...
+}
+
+///|
+#declaration_only
+pub type Wheel
+
+///|
+#declaration_only
+pub fn Wheel::raycast_info(self : Wheel) -> RayCastInfo {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Wheel::center(self : Wheel) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Wheel::suspension(self : Wheel) -> @core.Vec2 {
+  ...
+}
+
+///|
+#declaration_only
+pub type DynamicRayCastVehicleController
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController::new(
+  chassis : @dynamics.RigidBodyHandle,
+) -> DynamicRayCastVehicleController {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController::add_wheel(
+  self : DynamicRayCastVehicleController,
+  chassis_connection_cs : @core.Vec2,
+  direction_cs : @core.Vec2,
+  suspension_rest_length : @core.Real,
+  radius : @core.Real,
+  tuning : WheelTuning,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController::set_engine_force(
+  self : DynamicRayCastVehicleController,
+  wheel_id : Int,
+  force : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController::set_brake(
+  self : DynamicRayCastVehicleController,
+  wheel_id : Int,
+  brake : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController::update_vehicle(
+  self : DynamicRayCastVehicleController,
+  dt : @core.Real,
+  queries : @collision.QueryPipelineMut,
+) -> Unit {
   ...
 }

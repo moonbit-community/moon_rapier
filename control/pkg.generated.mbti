@@ -17,6 +17,7 @@ pub struct CharacterAutostep {
   min_width : CharacterLength
   include_dynamic_bodies : Bool
 }
+pub fn CharacterAutostep::default() -> Self
 pub fn CharacterAutostep::include_dynamic_bodies(Self) -> Bool
 pub fn CharacterAutostep::max_height(Self) -> CharacterLength
 pub fn CharacterAutostep::min_width(Self) -> CharacterLength
@@ -41,7 +42,21 @@ pub(all) enum CharacterLength {
   Absolute(Float)
 }
 pub fn CharacterLength::absolute(Float) -> Self
+pub fn CharacterLength::map_absolute(Self, (Float) -> Float) -> Self
+pub fn CharacterLength::map_relative(Self, (Float) -> Float) -> Self
 pub fn CharacterLength::relative(Float) -> Self
+
+pub struct DynamicRayCastVehicleController {
+  wheels : Array[Wheel]
+  chassis : @dynamics.RigidBodyHandle
+  index_up_axis : Int
+  index_forward_axis : Int
+}
+pub fn DynamicRayCastVehicleController::add_wheel(Self, @core.Vec2, @core.Vec2, Float, Float, WheelTuning) -> Unit
+pub fn DynamicRayCastVehicleController::new(@dynamics.RigidBodyHandle) -> Self
+pub fn DynamicRayCastVehicleController::set_brake(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
 
 pub struct EffectiveMovement {
   translation : @core.Vec2
@@ -62,6 +77,7 @@ pub struct KinematicCharacterController {
   autostep : CharacterAutostep?
   normal_nudge_factor : Float
 }
+pub fn KinematicCharacterController::default() -> Self
 pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
 pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
@@ -110,6 +126,53 @@ pub fn PidController::new(Float, Float, Float, @dynamics.AxesMask) -> Self
 pub fn PidController::reset_integrals(Self) -> Self
 pub fn PidController::rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Isometry2, @dynamics.RigidBodyVelocity) -> @dynamics.RigidBodyVelocity
 pub fn PidController::set_axes(Self, @dynamics.AxesMask) -> Self
+
+pub struct RayCastInfo {
+  mut contact_normal_ws : @core.Vec2
+  mut contact_point_ws : @core.Vec2
+  mut suspension_length : Float
+  mut hard_point_ws : @core.Vec2
+  mut is_in_contact : Bool
+  mut ground_object : @collision.ColliderHandle?
+}
+pub fn RayCastInfo::default() -> Self
+
+pub struct Wheel {
+  raycast_info : RayCastInfo
+  mut center : @core.Vec2
+  mut wheel_direction_ws : @core.Vec2
+  chassis_connection_point_cs : @core.Vec2
+  direction_cs : @core.Vec2
+  suspension_rest_length : Float
+  max_suspension_travel : Float
+  radius : Float
+  suspension_stiffness : Float
+  damping_compression : Float
+  damping_relaxation : Float
+  friction_slip : Float
+  max_suspension_force : Float
+  mut rotation : Float
+  mut delta_rotation : Float
+  mut clipped_inv_contact_dot_suspension : Float
+  mut suspension_relative_velocity : Float
+  mut wheel_suspension_force : Float
+  mut forward_impulse : Float
+  mut engine_force : Float
+  mut brake : Float
+}
+pub fn Wheel::center(Self) -> @core.Vec2
+pub fn Wheel::raycast_info(Self) -> RayCastInfo
+pub fn Wheel::suspension(Self) -> @core.Vec2
+
+pub struct WheelTuning {
+  suspension_stiffness : Float
+  suspension_compression : Float
+  suspension_damping : Float
+  max_suspension_travel : Float
+  friction_slip : Float
+  max_suspension_force : Float
+}
+pub fn WheelTuning::default() -> Self
 
 // Type aliases
 

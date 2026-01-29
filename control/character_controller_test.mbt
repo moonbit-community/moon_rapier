@@ -136,6 +136,57 @@ test "character controller climb" {
 }
 
 ///|
+test "character controller utilities: CharacterLength map_* and defaults" {
+  let a = CharacterLength::absolute(1.0F)
+  let a2 = a.map_absolute(fn(v) { v + 1.0F })
+  if a2 is CharacterLength::Absolute(v) {
+    inspect(@core.abs(v - 2.0F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  // map_absolute should not affect Relative.
+  let r = CharacterLength::relative(0.5F)
+  let r2 = r.map_absolute(fn(v) { v + 1.0F })
+  if r2 is CharacterLength::Relative(v) {
+    inspect(@core.abs(v - 0.5F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  let r3 = r.map_relative(fn(v) { v * 2.0F })
+  if r3 is CharacterLength::Relative(v) {
+    inspect(@core.abs(v - 1.0F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  let auto = CharacterAutostep::default()
+  if auto.max_height() is CharacterLength::Relative(v) {
+    inspect(@core.abs(v - 0.25F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if auto.min_width() is CharacterLength::Relative(v) {
+    inspect(@core.abs(v - 0.5F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  inspect(auto.include_dynamic_bodies(), content="true")
+  let c = KinematicCharacterController::default()
+  inspect(
+    @core.abs(c.max_slope_climb_angle - 0.785398163F) < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    @core.abs(c.min_slope_slide_angle - 0.785398163F) < 1.0e-6F,
+    content="true",
+  )
+  if c.offset is CharacterLength::Relative(v) {
+    inspect(@core.abs(v - 0.01F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "character controller slides along wall" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
