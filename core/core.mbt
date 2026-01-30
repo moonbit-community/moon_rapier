@@ -145,6 +145,22 @@ pub fn abs(value : Real) -> Real {
 }
 
 ///|
+pub fn asin(value : Real) -> Real {
+  Float::from_double(@math.asin(value.to_double()))
+}
+
+///|
+pub fn clamp(value : Real, min_value : Real, max_value : Real) -> Real {
+  if value < min_value {
+    min_value
+  } else if value > max_value {
+    max_value
+  } else {
+    value
+  }
+}
+
+///|
 pub struct Rot2 {
   sin : Real
   cos : Real
@@ -255,6 +271,268 @@ pub fn Aabb::combine(self : Aabb, other : Aabb) -> Aabb {
   Aabb::new(
     Vec2::new(min(self.mins.x, other.mins.x), min(self.mins.y, other.mins.y)),
     Vec2::new(max(self.maxs.x, other.maxs.x), max(self.maxs.y, other.maxs.y)),
+  )
+}
+
+///|
+/// 3D vector. This is the dim3 counterpart of `Vec2`.
+pub struct Vec3 {
+  x : Real
+  y : Real
+  z : Real
+}
+
+///|
+pub fn Vec3::new(x : Real, y : Real, z : Real) -> Vec3 {
+  Vec3::{ x, y, z }
+}
+
+///|
+pub fn Vec3::zero() -> Vec3 {
+  Vec3::new(0.0F, 0.0F, 0.0F)
+}
+
+///|
+pub fn Vec3::add(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+}
+
+///|
+pub fn Vec3::sub(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
+}
+
+///|
+pub fn Vec3::scale(self : Vec3, s : Real) -> Vec3 {
+  Vec3::new(self.x * s, self.y * s, self.z * s)
+}
+
+///|
+pub fn Vec3::dot(self : Vec3, other : Vec3) -> Real {
+  self.x * other.x + self.y * other.y + self.z * other.z
+}
+
+///|
+pub fn Vec3::cross(self : Vec3, other : Vec3) -> Vec3 {
+  Vec3::new(
+    self.y * other.z - self.z * other.y,
+    self.z * other.x - self.x * other.z,
+    self.x * other.y - self.y * other.x,
+  )
+}
+
+///|
+pub fn Vec3::length_squared(self : Vec3) -> Real {
+  self.dot(self)
+}
+
+///|
+pub fn Vec3::length(self : Vec3) -> Real {
+  sqrt(self.length_squared())
+}
+
+///|
+pub fn Vec3::normalize(self : Vec3) -> Vec3 {
+  let len = self.length()
+  if len <= EPSILON {
+    Vec3::zero()
+  } else {
+    self.scale(1.0F / len)
+  }
+}
+
+///|
+/// Unit quaternion used as 3D rotation.
+pub struct Quat {
+  x : Real
+  y : Real
+  z : Real
+  w : Real
+}
+
+///|
+pub fn Quat::new(x : Real, y : Real, z : Real, w : Real) -> Quat {
+  Quat::{ x, y, z, w }
+}
+
+///|
+pub fn Quat::identity() -> Quat {
+  Quat::new(0.0F, 0.0F, 0.0F, 1.0F)
+}
+
+///|
+pub fn Quat::conjugate(self : Quat) -> Quat {
+  Quat::new(-self.x, -self.y, -self.z, self.w)
+}
+
+///|
+pub fn Quat::dot(self : Quat, other : Quat) -> Real {
+  self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+}
+
+///|
+pub fn Quat::norm_squared(self : Quat) -> Real {
+  self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w
+}
+
+///|
+pub fn Quat::normalize(self : Quat) -> Quat {
+  let n2 = self.norm_squared()
+  if n2 <= EPSILON {
+    Quat::identity()
+  } else {
+    let inv_n = 1.0F / sqrt(n2)
+    Quat::new(self.x * inv_n, self.y * inv_n, self.z * inv_n, self.w * inv_n)
+  }
+}
+
+///|
+/// Hamilton product (applies `other` then `self` when used as rotation composition).
+pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
+  Quat::new(
+    self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
+    self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
+    self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
+    self.w * other.w - self.x * other.x - self.y * other.y - self.z * other.z,
+  )
+}
+
+///|
+pub fn Quat::inverse(self : Quat) -> Quat {
+  self.conjugate().normalize()
+}
+
+///|
+/// Construct a rotation from a scaled axis (axis * angle).
+pub fn rotation_from_scaled_axis(axis_angle : Vec3) -> Quat {
+  let angle = axis_angle.length()
+  if angle <= EPSILON {
+    Quat::identity()
+  } else {
+    let half = 0.5F * angle
+    let axis = axis_angle.scale(1.0F / angle)
+    let s = sin(half)
+    Quat::new(axis.x * s, axis.y * s, axis.z * s, cos(half)).normalize()
+  }
+}
+
+///|
+/// Rotate a vector by this quaternion.
+pub fn Quat::rotate_vec3(self : Quat, v : Vec3) -> Vec3 {
+  // For unit quaternion q = (u, s), v' = 2*dot(u,v)*u + (s^2 - dot(u,u))*v + 2*s*cross(u,v).
+  let q = self.normalize()
+  let u = Vec3::new(q.x, q.y, q.z)
+  let s = q.w
+  let uv = u.dot(v)
+  let uu = u.dot(u)
+  u.scale(2.0F * uv).add(v.scale(s * s - uu)).add(u.cross(v).scale(2.0F * s))
+}
+
+///|
+/// Construct a rotation that maps the direction `from` to the direction `to`.
+pub fn rotation_between(from : Vec3, to : Vec3) -> Quat {
+  let f = from.normalize()
+  let t = to.normalize()
+  let d = f.dot(t)
+
+  // Same direction.
+  if d > 1.0F - 1.0e-6F {
+    return Quat::identity()
+  }
+
+  // Opposite directions: pick a deterministic orthogonal axis.
+  if d < -1.0F + 1.0e-6F {
+    let fallback = if abs(f.x) < 0.9F {
+      Vec3::new(1.0F, 0.0F, 0.0F)
+    } else {
+      Vec3::new(0.0F, 1.0F, 0.0F)
+    }
+    let axis = f.cross(fallback).normalize()
+    return rotation_from_scaled_axis(axis.scale(pi()))
+  }
+  let c = f.cross(t)
+  Quat::new(c.x, c.y, c.z, 1.0F + d).normalize()
+}
+
+///|
+pub struct Isometry3 {
+  translation : Vec3
+  rotation : Quat
+}
+
+///|
+pub fn Isometry3::identity() -> Isometry3 {
+  Isometry3::{ translation: Vec3::zero(), rotation: Quat::identity() }
+}
+
+///|
+pub fn Isometry3::new(translation : Vec3, rotation : Quat) -> Isometry3 {
+  Isometry3::{ translation, rotation }
+}
+
+///|
+pub fn Isometry3::from_translation(translation : Vec3) -> Isometry3 {
+  Isometry3::new(translation, Quat::identity())
+}
+
+///|
+pub fn Isometry3::mul(self : Isometry3, other : Isometry3) -> Isometry3 {
+  let rotated = self.rotation.rotate_vec3(other.translation)
+  Isometry3::new(
+    self.translation.add(rotated),
+    self.rotation.mul(other.rotation),
+  )
+}
+
+///|
+pub fn Isometry3::inverse(self : Isometry3) -> Isometry3 {
+  let inv_rot = self.rotation.conjugate().normalize()
+  let neg_translation = Vec3::new(
+    -self.translation.x,
+    -self.translation.y,
+    -self.translation.z,
+  )
+  let inv_translation = inv_rot.rotate_vec3(neg_translation)
+  Isometry3::new(inv_translation, inv_rot)
+}
+
+///|
+pub fn Isometry3::transform_point(self : Isometry3, point : Vec3) -> Vec3 {
+  self.rotation.rotate_vec3(point).add(self.translation)
+}
+
+///|
+pub struct Aabb3 {
+  mins : Vec3
+  maxs : Vec3
+}
+
+///|
+pub fn Aabb3::new(mins : Vec3, maxs : Vec3) -> Aabb3 {
+  Aabb3::{ mins, maxs }
+}
+
+///|
+pub fn Aabb3::from_points(a : Vec3, b : Vec3) -> Aabb3 {
+  Aabb3::new(
+    Vec3::new(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)),
+    Vec3::new(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)),
+  )
+}
+
+///|
+pub fn Aabb3::combine(self : Aabb3, other : Aabb3) -> Aabb3 {
+  Aabb3::new(
+    Vec3::new(
+      min(self.mins.x, other.mins.x),
+      min(self.mins.y, other.mins.y),
+      min(self.mins.z, other.mins.z),
+    ),
+    Vec3::new(
+      max(self.maxs.x, other.maxs.x),
+      max(self.maxs.y, other.maxs.y),
+      max(self.maxs.z, other.maxs.z),
+    ),
   )
 }
 

@@ -500,6 +500,20 @@ pub fn RevoluteJoint::local_anchor2(Self) -> @core.Vec2
 pub fn RevoluteJoint::motor(Self) -> JointMotor?
 pub fn RevoluteJoint::softness(Self) -> SpringCoefficients
 
+pub struct RevoluteJoint3 {
+  axis : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+}
+pub fn RevoluteJoint3::angle(Self, @core.Quat, @core.Quat) -> Float
+pub fn RevoluteJoint3::new(@core.Vec3) -> Self
+
+pub struct RevoluteJoint3Builder(RevoluteJoint3)
+pub fn RevoluteJoint3Builder::build(Self) -> RevoluteJoint3
+#deprecated
+pub fn RevoluteJoint3Builder::inner(Self) -> RevoluteJoint3
+pub fn RevoluteJoint3Builder::new(@core.Vec3) -> Self
+
 type RevoluteJointBuilder
 pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint
 pub fn RevoluteJointBuilder::limits(Self, Float, Float) -> Self

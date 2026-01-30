@@ -45,3 +45,40 @@ test "isometry identity" {
   inspect(transformed.x.to_int(), content="2")
   inspect(transformed.y.to_int(), content="-3")
 }
+
+///|
+test "vec3 basics" {
+  let v = Vec3::new(1.0F, 2.0F, 3.0F)
+  let w = Vec3::new(4.0F, 5.0F, 6.0F)
+  let sum = v.add(w)
+  inspect(sum.x.to_int(), content="5")
+  inspect(sum.y.to_int(), content="7")
+  inspect(sum.z.to_int(), content="9")
+  inspect(v.dot(w).to_int(), content="32")
+  let c = v.cross(w)
+  inspect(c.x.to_int(), content="-3")
+  inspect(c.y.to_int(), content="6")
+  inspect(c.z.to_int(), content="-3")
+}
+
+///|
+test "quat rotation from scaled axis (y, +pi/2)" {
+  let q = rotation_from_scaled_axis(Vec3::new(0.0F, pi() * 0.5F, 0.0F))
+  let v = Vec3::new(1.0F, 0.0F, 0.0F)
+  let r = q.rotate_vec3(v)
+  inspect(abs(r.x - 0.0F) < 1.0e-5F, content="true")
+  inspect(abs(r.y - 0.0F) < 1.0e-5F, content="true")
+  inspect(abs(r.z - -1.0F) < 1.0e-5F, content="true")
+}
+
+///|
+test "isometry3 inverse roundtrip" {
+  let rot = rotation_from_scaled_axis(Vec3::new(0.0F, pi() * 0.3F, 0.0F))
+  let iso = Isometry3::new(Vec3::new(1.0F, 2.0F, 3.0F), rot)
+  let p = Vec3::new(-4.0F, 5.0F, -6.0F)
+  let moved = iso.transform_point(p)
+  let back = iso.inverse().transform_point(moved)
+  inspect(abs(back.x - p.x) < 1.0e-5F, content="true")
+  inspect(abs(back.y - p.y) < 1.0e-5F, content="true")
+  inspect(abs(back.z - p.z) < 1.0e-5F, content="true")
+}
