@@ -1927,6 +1927,17 @@ pub fn QueryPipeline::new(
 }
 
 ///|
+/// Convenience constructor for dim3 wrapper sets (`RigidBodySet3`/`ColliderSet3`).
+#declaration_only
+pub fn QueryPipeline::new3(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+) -> QueryPipeline {
+  ...
+}
+
+///|
 #declaration_only
 pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
   ...
@@ -1951,6 +1962,17 @@ pub fn QueryPipelineMut::new(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
+) -> QueryPipelineMut {
+  ...
+}
+
+///|
+/// Convenience constructor for dim3 wrapper sets (`RigidBodySet3`/`ColliderSet3`).
+#declaration_only
+pub fn QueryPipelineMut::new3(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
 ) -> QueryPipelineMut {
   ...
 }

@@ -58,6 +58,23 @@ pub fn DynamicRayCastVehicleController::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
 
+pub struct DynamicRayCastVehicleController3 {
+  wheels : Array[Wheel3]
+  forward_ws : Array[@core.Vec3]
+  axle_ws : Array[@core.Vec3]
+  mut current_vehicle_speed : Float
+  chassis : @dynamics.RigidBodyHandle
+  index_up_axis : Int
+  index_forward_axis : Int
+}
+pub fn DynamicRayCastVehicleController3::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
+pub fn DynamicRayCastVehicleController3::new(@dynamics.RigidBodyHandle) -> Self
+pub fn DynamicRayCastVehicleController3::set_brake(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::set_engine_force(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
+pub fn DynamicRayCastVehicleController3::wheels(Self) -> Array[Wheel3]
+
 pub struct EffectiveMovement {
   translation : @core.Vec2
   grounded : Bool
@@ -137,6 +154,16 @@ pub struct RayCastInfo {
 }
 pub fn RayCastInfo::default() -> Self
 
+pub struct RayCastInfo3 {
+  mut contact_normal_ws : @core.Vec3
+  mut contact_point_ws : @core.Vec3
+  mut suspension_length : Float
+  mut hard_point_ws : @core.Vec3
+  mut is_in_contact : Bool
+  mut ground_object : @collision.ColliderHandle?
+}
+pub fn RayCastInfo3::default() -> Self
+
 pub struct Wheel {
   raycast_info : RayCastInfo
   mut center : @core.Vec2
@@ -164,11 +191,47 @@ pub fn Wheel::center(Self) -> @core.Vec2
 pub fn Wheel::raycast_info(Self) -> RayCastInfo
 pub fn Wheel::suspension(Self) -> @core.Vec2
 
+pub struct Wheel3 {
+  raycast_info : RayCastInfo3
+  mut center : @core.Vec3
+  mut wheel_direction_ws : @core.Vec3
+  mut wheel_axle_ws : @core.Vec3
+  chassis_connection_point_cs : @core.Vec3
+  direction_cs : @core.Vec3
+  axle_cs : @core.Vec3
+  suspension_rest_length : Float
+  max_suspension_travel : Float
+  radius : Float
+  suspension_stiffness : Float
+  damping_compression : Float
+  damping_relaxation : Float
+  friction_slip : Float
+  side_friction_stiffness : Float
+  max_suspension_force : Float
+  mut rotation : Float
+  mut delta_rotation : Float
+  roll_influence : Float
+  mut clipped_inv_contact_dot_suspension : Float
+  mut suspension_relative_velocity : Float
+  mut wheel_suspension_force : Float
+  mut skid_info : Float
+  mut forward_impulse : Float
+  mut side_impulse : Float
+  mut steering : Float
+  mut engine_force : Float
+  mut brake : Float
+}
+pub fn Wheel3::axle(Self) -> @core.Vec3
+pub fn Wheel3::center(Self) -> @core.Vec3
+pub fn Wheel3::raycast_info(Self) -> RayCastInfo3
+pub fn Wheel3::suspension(Self) -> @core.Vec3
+
 pub struct WheelTuning {
   suspension_stiffness : Float
   suspension_compression : Float
   suspension_damping : Float
   max_suspension_travel : Float
+  side_friction_stiffness : Float
   friction_slip : Float
   max_suspension_force : Float
 }
@@ -176,6 +239,7 @@ pub fn WheelTuning::default() -> Self
 pub fn WheelTuning::with_friction_slip(Self, Float) -> Self
 pub fn WheelTuning::with_max_suspension_force(Self, Float) -> Self
 pub fn WheelTuning::with_max_suspension_travel(Self, Float) -> Self
+pub fn WheelTuning::with_side_friction_stiffness(Self, Float) -> Self
 pub fn WheelTuning::with_suspension_compression(Self, Float) -> Self
 pub fn WheelTuning::with_suspension_damping(Self, Float) -> Self
 pub fn WheelTuning::with_suspension_stiffness(Self, Float) -> Self

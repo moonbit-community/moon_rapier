@@ -446,6 +446,15 @@ pub fn QueryPipeline::new(
 }
 
 ///|
+pub fn QueryPipeline::new3(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+) -> QueryPipeline {
+  QueryPipeline::new(filter, bodies.as_2d(), colliders.as_2d())
+}
+
+///|
 pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
   // Refresh collider world-space state and cached AABBs so scene queries see the latest positions.
   self.colliders.sync_with_bodies(self.bodies)
@@ -474,6 +483,15 @@ pub fn QueryPipelineMut::new(
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
   { pipeline: QueryPipeline::new(filter, bodies, colliders) }
+}
+
+///|
+pub fn QueryPipelineMut::new3(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+) -> QueryPipelineMut {
+  QueryPipelineMut::new(filter, bodies.as_2d(), colliders.as_2d())
 }
 
 ///|

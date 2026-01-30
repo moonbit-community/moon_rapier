@@ -468,6 +468,7 @@ pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_ray(Self, Ray, Float, Bool) -> Array[(ColliderHandle, RayIntersection)]
 pub fn QueryPipeline::intersect_shape(Self, @core.Isometry2, Shape) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
+pub fn QueryPipeline::new3(QueryFilter, @dynamics.RigidBodySet3, ColliderSet3) -> Self
 pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
 pub fn QueryPipeline::project_point_and_get_feature(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection, FeatureId)?
 pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
@@ -479,6 +480,7 @@ pub struct QueryPipelineMut {
 }
 pub fn QueryPipelineMut::as_ref(Self) -> QueryPipeline
 pub fn QueryPipelineMut::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
+pub fn QueryPipelineMut::new3(QueryFilter, @dynamics.RigidBodySet3, ColliderSet3) -> Self
 pub fn QueryPipelineMut::update(Self) -> Unit
 
 pub struct Ray {

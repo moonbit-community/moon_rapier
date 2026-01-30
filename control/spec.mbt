@@ -493,6 +493,15 @@ pub fn WheelTuning::with_max_suspension_travel(
 
 ///|
 #declaration_only
+pub fn WheelTuning::with_side_friction_stiffness(
+  self : WheelTuning,
+  side_friction_stiffness : @core.Real,
+) -> WheelTuning {
+  ...
+}
+
+///|
+#declaration_only
 pub fn WheelTuning::with_friction_slip(
   self : WheelTuning,
   friction_slip : @core.Real,
@@ -590,6 +599,119 @@ pub fn DynamicRayCastVehicleController::set_brake(
 #declaration_only
 pub fn DynamicRayCastVehicleController::update_vehicle(
   self : DynamicRayCastVehicleController,
+  dt : @core.Real,
+  queries : @collision.QueryPipelineMut,
+) -> Unit {
+  ...
+}
+
+///|
+/// Dim3-flavored raycast vehicle controller.
+#declaration_only
+pub type RayCastInfo3
+
+///|
+#declaration_only
+pub fn RayCastInfo3::default() -> RayCastInfo3 {
+  ...
+}
+
+///|
+#declaration_only
+pub type Wheel3
+
+///|
+#declaration_only
+pub fn Wheel3::raycast_info(self : Wheel3) -> RayCastInfo3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Wheel3::center(self : Wheel3) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Wheel3::suspension(self : Wheel3) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Wheel3::axle(self : Wheel3) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub type DynamicRayCastVehicleController3
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::new(
+  chassis : @dynamics.RigidBodyHandle,
+) -> DynamicRayCastVehicleController3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::add_wheel(
+  self : DynamicRayCastVehicleController3,
+  chassis_connection_cs : @core.Vec3,
+  direction_cs : @core.Vec3,
+  axle_cs : @core.Vec3,
+  suspension_rest_length : @core.Real,
+  radius : @core.Real,
+  tuning : WheelTuning,
+) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::set_engine_force(
+  self : DynamicRayCastVehicleController3,
+  wheel_id : Int,
+  force : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::set_brake(
+  self : DynamicRayCastVehicleController3,
+  wheel_id : Int,
+  brake : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::set_steering_value(
+  self : DynamicRayCastVehicleController3,
+  wheel_id : Int,
+  steering : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::wheels(
+  self : DynamicRayCastVehicleController3,
+) -> Array[Wheel3] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3::update_vehicle(
+  self : DynamicRayCastVehicleController3,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut,
 ) -> Unit {

@@ -1221,9 +1221,6 @@ fn run_examples3d_urdf3() -> Bool {
 ///|
 fn run_examples3d_vehicle_controller3() -> Bool {
   // Adapted from `rapier-reference/examples3d/vehicle_controller3.rs` (headless).
-  //
-  // The full 3D raycast vehicle controller isn't available in this port yet. We still validate
-  // a chassis moving over uneven ground without producing NaNs, using dim3 wrappers.
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1237,16 +1234,128 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let ccd_solver = @dynamics.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
-  fn step_n(steps : Int) -> Unit {
-    for _ in 0..<steps {
-      pipeline.step(
-        gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-        impulse_joints, multibody_joints, ccd_solver, hooks, events,
-      )
+  let inv_dt = parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+
+  // Flat ground.
+  let ground_size = 5.0F
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  // Vehicle chassis.
+  let hw = 0.3F
+  let hh = 0.15F
+  let chassis = bodies.insert(
+    @dynamics.RigidBodyBuilder3::dynamic()
+    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3::cuboid(hw * 2.0F, hh, hw)
+    .density(100.0F)
+    .build(),
+    chassis,
+    bodies,
+  )
+  |> ignore
+
+  // Vehicle controller.
+  let tuning = @control.WheelTuning::default()
+    .with_suspension_stiffness(100.0F)
+    .with_suspension_damping(10.0F)
+  let vehicle = @control.DynamicRayCastVehicleController3::new(chassis)
+  let wheel_positions = [
+    @core.Vec3::new(hw * 1.5F, -hh, hw),
+    @core.Vec3::new(hw * 1.5F, -hh, -hw),
+    @core.Vec3::new(-hw * 1.5F, -hh, hw),
+    @core.Vec3::new(-hw * 1.5F, -hh, -hw),
+  ]
+  for pos in wheel_positions {
+    vehicle.add_wheel(
+      pos,
+      @core.Vec3::new(0.0F, -1.0F, 0.0F),
+      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+      hh,
+      hh / 4.0F,
+      tuning,
+    )
+    |> ignore
+  }
+  for i in 0..<vehicle.wheels().length() {
+    vehicle.set_engine_force(i, 20.0F)
+  }
+
+  // Some dynamic cubes to push around (projected).
+  let num = 8
+  let rad = 0.1F
+  let shift = rad * 2.0F
+  let centerx = shift * Float::from_int(num / 2)
+  let centery = rad
+  for j in 0..<1 {
+    for k in 0..<4 {
+      for i in 0..<num {
+        let x = Float::from_int(i) * shift - centerx
+        let y = Float::from_int(j) * shift + centery
+        let z = Float::from_int(k) * shift + centerx
+        let h = bodies.insert(
+          @dynamics.RigidBodyBuilder3::dynamic()
+          .translation(@core.Vec3::new(x, y, z))
+          .build(),
+        )
+        colliders.insert_with_parent(
+          @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+          h,
+          bodies,
+        )
+        |> ignore
+      }
     }
   }
 
-  // Ground heightfield (1D profile; projected).
+  // A slope we can climb.
+  let slope_angle = 0.2F
+  let slope_size = 2.0F
+  colliders.insert(
+    @collision.ColliderBuilder3::cuboid(slope_size, ground_height, ground_size)
+    .translation(
+      @core.Vec3::new(ground_size + slope_size, -ground_height + 0.4F, 0.0F),
+    )
+    .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, slope_angle))
+    .build(),
+  )
+  |> ignore
+
+  // A slope we can't climb.
+  let impossible_slope_angle = 0.9F
+  let impossible_slope_size = 2.0F
+  colliders.insert(
+    @collision.ColliderBuilder3::cuboid(
+      impossible_slope_size, ground_height, ground_size,
+    )
+    .translation(
+      @core.Vec3::new(
+        ground_size + slope_size * 2.0F + impossible_slope_size - 0.9F,
+        -ground_height + 2.3F,
+        0.0F,
+      ),
+    )
+    .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, impossible_slope_angle))
+    .build(),
+  )
+  |> ignore
+
+  // Heightfield ground (1D profile; projected).
   let n = 201
   let heights : Array[@core.Real] = []
   for i in 0..<n {
@@ -1256,28 +1365,25 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   colliders.insert(
     @collision.ColliderBuilder3::heightfield(
       heights,
-      @core.Vec3::new(60.0F, 1.0F, 0.0F),
-    ).build(),
-  )
-  |> ignore
-  let chassis = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
-    .translation(@core.Vec3::new(-20.0F, 5.0F, 0.0F))
-    .linvel(@core.Vec3::new(10.0F, 0.0F, 0.0F))
-    .can_sleep(false)
+      @core.Vec3::new(10.0F, 0.4F, 0.0F),
+    )
+    .translation(@core.Vec3::new(-7.0F, 0.0F, 0.0F))
     .build(),
   )
-  colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(0.9F, 0.3F, 0.3F)
-    .density(100.0F)
-    .build(),
-    chassis,
-    bodies,
-  )
   |> ignore
-  step_n(240)
+
+  // Run simulation with controller impulses applied before each pipeline step.
+  for _ in 0..<240 {
+    let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
+    let queries = @collision.QueryPipelineMut::new3(filter, bodies, colliders)
+    vehicle.update_vehicle(dt, queries)
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      impulse_joints, multibody_joints, ccd_solver, hooks, events,
+    )
+  }
   let p = bodies.translation(chassis)
-  p.x == p.x && p.y == p.y && p.x > -30.0F
+  p.x == p.x && p.y == p.y && p.x > -10.0F
 }
 
 ///|

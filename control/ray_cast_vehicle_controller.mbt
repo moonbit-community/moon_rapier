@@ -27,6 +27,7 @@ pub struct WheelTuning {
   suspension_compression : @core.Real
   suspension_damping : @core.Real
   max_suspension_travel : @core.Real
+  side_friction_stiffness : @core.Real
   friction_slip : @core.Real
   max_suspension_force : @core.Real
 }
@@ -38,6 +39,7 @@ pub fn WheelTuning::default() -> WheelTuning {
     suspension_compression: 0.83F,
     suspension_damping: 0.88F,
     max_suspension_travel: 5.0F,
+    side_friction_stiffness: 1.0F,
     friction_slip: 10.5F,
     max_suspension_force: 6000.0F,
   }
@@ -53,6 +55,7 @@ pub fn WheelTuning::with_suspension_stiffness(
     suspension_compression: self.suspension_compression,
     suspension_damping: self.suspension_damping,
     max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
     friction_slip: self.friction_slip,
     max_suspension_force: self.max_suspension_force,
   }
@@ -68,6 +71,7 @@ pub fn WheelTuning::with_suspension_compression(
     suspension_compression,
     suspension_damping: self.suspension_damping,
     max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
     friction_slip: self.friction_slip,
     max_suspension_force: self.max_suspension_force,
   }
@@ -83,6 +87,7 @@ pub fn WheelTuning::with_suspension_damping(
     suspension_compression: self.suspension_compression,
     suspension_damping,
     max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
     friction_slip: self.friction_slip,
     max_suspension_force: self.max_suspension_force,
   }
@@ -98,6 +103,23 @@ pub fn WheelTuning::with_max_suspension_travel(
     suspension_compression: self.suspension_compression,
     suspension_damping: self.suspension_damping,
     max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
+    friction_slip: self.friction_slip,
+    max_suspension_force: self.max_suspension_force,
+  }
+}
+
+///|
+pub fn WheelTuning::with_side_friction_stiffness(
+  self : WheelTuning,
+  side_friction_stiffness : @core.Real,
+) -> WheelTuning {
+  {
+    suspension_stiffness: self.suspension_stiffness,
+    suspension_compression: self.suspension_compression,
+    suspension_damping: self.suspension_damping,
+    max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness,
     friction_slip: self.friction_slip,
     max_suspension_force: self.max_suspension_force,
   }
@@ -113,6 +135,7 @@ pub fn WheelTuning::with_friction_slip(
     suspension_compression: self.suspension_compression,
     suspension_damping: self.suspension_damping,
     max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
     friction_slip,
     max_suspension_force: self.max_suspension_force,
   }
@@ -128,6 +151,7 @@ pub fn WheelTuning::with_max_suspension_force(
     suspension_compression: self.suspension_compression,
     suspension_damping: self.suspension_damping,
     max_suspension_travel: self.max_suspension_travel,
+    side_friction_stiffness: self.side_friction_stiffness,
     friction_slip: self.friction_slip,
     max_suspension_force,
   }
