@@ -24,9 +24,11 @@
 ///|
 priv struct VelocitySolver {
   solver_bodies : SolverBodies
+  island_stamps : Array[Int]
+  mut stamp : Int
 }
 
 ///|
 fn VelocitySolver::new() -> VelocitySolver {
-  { solver_bodies: SolverBodies::default() }
+  { solver_bodies: SolverBodies::default(), island_stamps: [], stamp: 0 }
 }

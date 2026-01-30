@@ -206,6 +206,8 @@ fn build_constraints(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
 ) -> (Array[SolverConstraint], Array[SolverManifold]) {
   let allowed_error = parameters.allowed_linear_error()
   let max_corrective_velocity = parameters.max_corrective_velocity()
@@ -230,6 +232,24 @@ fn build_constraints(
       }
       let body1 = c1.parent()
       let body2 = c2.parent()
+      if island_stamps is Some(stamps) {
+        let mut in_island = false
+        if body1 is Some(bh1) {
+          let id = bh1.id
+          if id >= 0 && id < stamps.length() && stamps[id] == stamp {
+            in_island = true
+          }
+        }
+        if body2 is Some(bh2) {
+          let id = bh2.id
+          if id >= 0 && id < stamps.length() && stamps[id] == stamp {
+            in_island = true
+          }
+        }
+        if !in_island {
+          continue
+        }
+      }
 
       // Like Rapier: only solve if at least one body is dynamic.
       let mut any_dynamic = false
@@ -1036,9 +1056,12 @@ fn ContactConstraintsSet::init(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
 ) -> Unit {
   let (constraints, manifolds) = build_constraints(
     parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
+    island_stamps, stamp,
   )
   self.constraints = constraints
   self.manifolds = manifolds
@@ -1524,7 +1547,16 @@ pub fn solve_contacts(
     parameters.warmstart_coefficient
   }
   let (constraints, manifolds) = build_constraints(
-    parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
+    parameters,
+    bodies,
+    colliders,
+    hooks,
+    narrow_phase,
+    dt,
+    cache,
+    warmstart_coefficient,
+    None,
+    0,
   )
   // Standalone entry-point: build a solver-side snapshot so the solver implementation can use
   // cached poses/velocities consistently.

@@ -797,13 +797,15 @@ fn solve_joints_and_contacts_interleaved(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   solver_bodies : SolverBodies,
+  island_stamps : Array[Int]?,
+  stamp : Int,
   dt : @core.Real,
   event_handler : EventHandler,
   contact_cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
   let joint_constraints = JointConstraintsSet::new()
   joint_constraints.init(
-    parameters, bodies, impulse_joints, multibody_joints, dt,
+    parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
   )
   let contact_constraints = ContactConstraintsSet::new()
   contact_constraints.init(
@@ -815,6 +817,8 @@ fn solve_joints_and_contacts_interleaved(
     dt,
     contact_cache,
     parameters.warmstart_coefficient,
+    island_stamps,
+    stamp,
   )
   joint_constraints.warmstart(bodies, solver_bodies)
   if contact_constraints.constraints.length() > 0 {
@@ -1170,6 +1174,7 @@ pub fn PhysicsPipeline::step(
     let island_solver = IslandSolver::new()
     island_solver.solve(
       parameters,
+      islands,
       bodies,
       colliders,
       physics_hooks,
@@ -1246,6 +1251,8 @@ pub fn PhysicsPipeline::step(
       dt,
       self.contact_solver_cache,
       0.0F,
+      None,
+      0,
     )
     if post_constraints.length() > 0 {
       // Ensure deep segment-* penetrations get fully depenetrated in one step.
@@ -1265,7 +1272,13 @@ pub fn PhysicsPipeline::step(
       )
     }
     let post_joint_constraints = build_joint_constraints(
-      parameters, bodies, impulse_joints, multibody_joints, dt,
+      parameters,
+      bodies,
+      impulse_joints,
+      multibody_joints,
+      dt,
+      None,
+      0,
     )
     if post_joint_constraints.length() > 0 {
       position_correction_joints(bodies, post_joint_constraints)

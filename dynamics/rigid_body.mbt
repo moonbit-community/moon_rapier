@@ -702,6 +702,11 @@ pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
 }
 
 ///|
+pub fn RigidBody::active_island_id(self : RigidBody) -> Int {
+  self.ids.active_island_id
+}
+
+///|
 pub fn RigidBody::locked_translations(self : RigidBody) -> Bool {
   self.locked_translations
 }

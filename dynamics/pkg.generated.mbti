@@ -613,6 +613,7 @@ pub struct RigidBody {
   mut changes : RigidBodyChanges
 }
 pub fn RigidBody::activation(Self) -> RigidBodyActivation
+pub fn RigidBody::active_island_id(Self) -> Int
 pub fn RigidBody::add_force(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_force_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_torque(Self, Float, Bool) -> Self

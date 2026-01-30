@@ -274,6 +274,8 @@ fn build_joint_constraints(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
 ) -> Array[JointConstraint] {
   let constraints : Array[JointConstraint] = []
   let joints = impulse_joints.iter()
@@ -282,6 +284,15 @@ fn build_joint_constraints(
     let (handle, joint) = joints[i]
     if !joint.is_enabled() {
       continue
+    }
+    if island_stamps is Some(stamps) {
+      let id1 = joint.body1.id
+      let id2 = joint.body2.id
+      let in1 = id1 >= 0 && id1 < stamps.length() && stamps[id1] == stamp
+      let in2 = id2 >= 0 && id2 < stamps.length() && stamps[id2] == stamp
+      if !in1 && !in2 {
+        continue
+      }
     }
     if bodies.get(joint.body1) is None || bodies.get(joint.body2) is None {
       continue
@@ -1867,9 +1878,11 @@ fn JointConstraintsSet::init(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
 ) -> Unit {
   self.constraints = build_joint_constraints(
-    parameters, bodies, impulse_joints, multibody_joints, dt,
+    parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
   )
 }
 

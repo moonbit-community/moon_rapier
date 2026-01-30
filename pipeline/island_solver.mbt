@@ -36,6 +36,7 @@ fn IslandSolver::new() -> IslandSolver {
 fn IslandSolver::solve(
   self : IslandSolver,
   parameters : IntegrationParameters,
+  islands : @dynamics.IslandManager,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   physics_hooks : PhysicsHooks,
@@ -51,24 +52,63 @@ fn IslandSolver::solve(
   let n = bodies.bodies.length()
   self.velocity_solver.solver_bodies.clear()
   self.velocity_solver.solver_bodies.resize(n)
+  while self.velocity_solver.island_stamps.length() < n {
+    self.velocity_solver.island_stamps.push(0)
+  }
   for i in 0..<n {
     if bodies.bodies[i] is Some(rb) {
       self.velocity_solver.solver_bodies.copy_from(i, rb)
     }
   }
-  solve_joints_and_contacts_interleaved(
-    parameters,
-    bodies,
-    colliders,
-    physics_hooks,
-    narrow_phase,
-    impulse_joints,
-    multibody_joints,
-    self.velocity_solver.solver_bodies,
-    dt,
-    event_handler,
-    contact_cache,
-  )
+  let active_bodies = islands.active_bodies()
+  let mut start = 0
+  while start < active_bodies.length() {
+    let start_handle = active_bodies[start]
+    let island_id = if bodies.get(start_handle) is Some(rb) {
+      rb.active_island_id()
+    } else {
+      -1
+    }
+    let mut end = start + 1
+    while end < active_bodies.length() {
+      let h = active_bodies[end]
+      let id = if bodies.get(h) is Some(rb) {
+        rb.active_island_id()
+      } else {
+        -2
+      }
+      if id != island_id {
+        break
+      }
+      end = end + 1
+    }
+    // Stamp bodies in this island so constraint generation can filter interactions.
+    self.velocity_solver.stamp = self.velocity_solver.stamp + 1
+    let stamp = self.velocity_solver.stamp
+    for i in start..<end {
+      let h = active_bodies[i]
+      let id = h.id
+      if id >= 0 && id < self.velocity_solver.island_stamps.length() {
+        self.velocity_solver.island_stamps[id] = stamp
+      }
+    }
+    solve_joints_and_contacts_interleaved(
+      parameters,
+      bodies,
+      colliders,
+      physics_hooks,
+      narrow_phase,
+      impulse_joints,
+      multibody_joints,
+      self.velocity_solver.solver_bodies,
+      Some(self.velocity_solver.island_stamps),
+      stamp,
+      dt,
+      event_handler,
+      contact_cache,
+    )
+    start = end
+  }
   // Scatter updated velocities back into the rigid-body set for integration.
   self.velocity_solver.solver_bodies.writeback_vels(bodies)
 }

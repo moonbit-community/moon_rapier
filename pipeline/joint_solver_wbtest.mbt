@@ -39,7 +39,13 @@ test "joint solver motor applies angular impulse (wbtest)" {
     .set_warmstart_coefficient(0.0F)
     .set_num_solver_iterations(1)
   let constraints = build_joint_constraints(
-    params, bodies, impulse_joints, multibody_joints, dt,
+    params,
+    bodies,
+    impulse_joints,
+    multibody_joints,
+    dt,
+    None,
+    0,
   )
   inspect(constraints.length() == 1, content="true")
   let solver_bodies = SolverBodies::default()
