@@ -4,6 +4,8 @@ package "Milky2018/moon_rapier/core"
 // Values
 pub fn abs(Float) -> Float
 
+pub fn acos(Float) -> Float
+
 pub fn asin(Float) -> Float
 
 pub fn atan2(Float, Float) -> Float
@@ -91,6 +93,7 @@ pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::norm_squared(Self) -> Float
 pub fn Quat::normalize(Self) -> Self
 pub fn Quat::rotate_vec3(Self, Vec3) -> Vec3
+pub fn Quat::to_scaled_axis(Self) -> Vec3
 
 pub struct Rot2 {
   sin : Float

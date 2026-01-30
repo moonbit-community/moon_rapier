@@ -468,6 +468,11 @@ pub struct MultibodyRevoluteJointDesc {
   solver_lin_impulses : @core.Vec2
 }
 
+pub struct PdErrors3 {
+  linear : @core.Vec3
+  angular : @core.Vec3
+}
+
 type PinSlotJoint
 
 type PinSlotJointBuilder
@@ -755,6 +760,14 @@ pub fn RigidBodyPosition::integrate_forces_and_velocities(Self, Float, RigidBody
 pub fn RigidBodyPosition::interpolate_velocity(Self, Float, @core.Vec2) -> RigidBodyVelocity
 pub fn RigidBodyPosition::new(@core.Isometry2, @core.Isometry2) -> Self
 
+pub struct RigidBodyPosition3 {
+  position : @core.Isometry3
+  next_position : @core.Isometry3
+}
+pub fn RigidBodyPosition3::interpolate_velocity(Self, Float, @core.Vec3) -> RigidBodyVelocity3
+pub fn RigidBodyPosition3::new(@core.Isometry3, @core.Isometry3) -> Self
+pub fn RigidBodyPosition3::pose_errors(Self, @core.Vec3) -> PdErrors3
+
 pub struct RigidBodySet {
   bodies : Array[RigidBody?]
   generations : Array[Int]
@@ -802,6 +815,12 @@ pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) ->
 pub fn RigidBodyVelocity::linvel(Self) -> @core.Vec2
 pub fn RigidBodyVelocity::new(@core.Vec2, Float) -> Self
 pub fn RigidBodyVelocity::zero() -> Self
+
+pub struct RigidBodyVelocity3 {
+  linvel : @core.Vec3
+  angvel : @core.Vec3
+}
+pub fn RigidBodyVelocity3::integrate(Self, Float, @core.Isometry3, @core.Vec3) -> @core.Isometry3
 
 type RopeJoint
 pub fn RopeJoint::max_length(Self) -> Float

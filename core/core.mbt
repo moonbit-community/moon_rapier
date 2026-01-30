@@ -150,6 +150,11 @@ pub fn asin(value : Real) -> Real {
 }
 
 ///|
+pub fn acos(value : Real) -> Real {
+  Float::from_double(@math.acos(value.to_double()))
+}
+
+///|
 pub fn clamp(value : Real, min_value : Real, max_value : Real) -> Real {
   if value < min_value {
     min_value
@@ -426,6 +431,25 @@ pub fn Quat::rotate_vec3(self : Quat, v : Vec3) -> Vec3 {
   let uv = u.dot(v)
   let uu = u.dot(u)
   u.scale(2.0F * uv).add(v.scale(s * s - uu)).add(u.cross(v).scale(2.0F * s))
+}
+
+///|
+/// Convert this quaternion to a scaled axis representation (axis * angle).
+/// This always returns the shortest representation (angle in [0, pi]).
+pub fn Quat::to_scaled_axis(self : Quat) -> Vec3 {
+  let mut q = self.normalize()
+  if q.w < 0.0F {
+    q = Quat::new(-q.x, -q.y, -q.z, -q.w)
+  }
+  let w = clamp(q.w, -1.0F, 1.0F)
+  let angle = 2.0F * acos(w)
+  let s = sqrt(1.0F - w * w) // sin(angle/2)
+  if s <= 1.0e-6F {
+    // Small-angle approximation: scaled axis ~= 2 * (x,y,z).
+    Vec3::new(q.x * 2.0F, q.y * 2.0F, q.z * 2.0F)
+  } else {
+    Vec3::new(q.x / s, q.y / s, q.z / s).scale(angle)
+  }
 }
 
 ///|
