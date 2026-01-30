@@ -127,23 +127,30 @@ fn cache_find(
 ///|
 fn apply_impulse_delta_dynamic(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle?,
   impulse : @core.Vec2,
   point : @core.Vec2,
 ) -> Unit {
   if handle is Some(h) {
-    if bodies.get_mut(h) is Some(body) {
+    let idx = h.id
+    let (inv_m, inv_i) = get_body_inv_mass_inertia(
+      bodies, solver_bodies, handle,
+    )
+    if inv_m == 0.0F && inv_i == 0.0F {
+      return
+    }
+    if idx >= 0 && idx < solver_bodies.vels.length() {
+      let vel = solver_bodies.vels[idx]
+      vel.linear = vel.linear.add(solver_vec2_scale(impulse, inv_m))
+      let com = solver_bodies.poses[idx].translation
+      let r = point.sub(com)
+      let torque_impulse = cross_vec2(r, impulse)
+      vel.angular = vel.angular + torque_impulse * inv_i
+      solver_bodies.vels[idx] = vel
+      // Fallback for rare handle/id mismatch.
+    } else if bodies.get_mut(h) is Some(body) {
       if body.is_dynamic() && body.is_enabled() {
-        let inv_m = if body.locked_translations {
-          0.0F
-        } else {
-          body.inv_mass()
-        }
-        let inv_i = if body.locked_rotations {
-          0.0F
-        } else {
-          body.inv_inertia()
-        }
         body.set_linvel(
           body.linvel().add(solver_vec2_scale(impulse, inv_m)),
           true,
@@ -521,6 +528,7 @@ fn build_constraints(
 ///|
 fn warmstart(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   constraints : Array[SolverConstraint],
 ) -> Unit {
   for i in 0..<constraints.length() {
@@ -528,9 +536,16 @@ fn warmstart(
     let impulse = solver_vec2_scale(c.dir1, c.impulse_n).add(
       solver_vec2_scale(c.tangent1, c.impulse_t),
     )
-    apply_impulse_delta_dynamic(bodies, c.body1, impulse, c.world_p1)
     apply_impulse_delta_dynamic(
       bodies,
+      solver_bodies,
+      c.body1,
+      impulse,
+      c.world_p1,
+    )
+    apply_impulse_delta_dynamic(
+      bodies,
+      solver_bodies,
       c.body2,
       @core.Vec2::new(-impulse.x, -impulse.y),
       c.world_p2,
@@ -541,11 +556,24 @@ fn warmstart(
 ///|
 fn get_body_kinematic_state(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle?,
 ) -> (@core.Vec2, @core.Real, @core.Vec2) {
   if handle is Some(h) {
+    let idx = h.id
     if bodies.get(h) is Some(rb) {
-      (rb.linvel(), rb.angvel(), rb.world_com())
+      let com = if idx >= 0 && idx < solver_bodies.poses.length() {
+        solver_bodies.poses[idx].translation
+      } else {
+        rb.world_com()
+      }
+      let (v, w) = if idx >= 0 && idx < solver_bodies.vels.length() {
+        let vel = solver_bodies.vels[idx]
+        (vel.linear, vel.angular)
+      } else {
+        (rb.linvel(), rb.angvel())
+      }
+      (v, w, com)
     } else {
       (@core.Vec2::zero(), 0.0F, @core.Vec2::zero())
     }
@@ -557,13 +585,22 @@ fn get_body_kinematic_state(
 ///|
 fn get_body_inv_mass_inertia(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle?,
 ) -> (@core.Real, @core.Real) {
   if handle is Some(h) {
     if bodies.get(h) is Some(rb) {
       if rb.is_dynamic() && rb.is_enabled() {
-        let inv_m = if rb.locked_translations { 0.0F } else { rb.inv_mass() }
-        let inv_i = if rb.locked_rotations { 0.0F } else { rb.inv_inertia() }
+        let idx = h.id
+        let (im, ii) = if idx >= 0 && idx < solver_bodies.poses.length() {
+          let p = solver_bodies.poses[idx]
+          // For dim2, effective inv mass is uniform across axes.
+          (p.im.x, p.ii)
+        } else {
+          (rb.inv_mass(), rb.inv_inertia())
+        }
+        let inv_m = if rb.locked_translations { 0.0F } else { im }
+        let inv_i = if rb.locked_rotations { 0.0F } else { ii }
         (inv_m, inv_i)
       } else {
         (0.0F, 0.0F)
@@ -579,6 +616,7 @@ fn get_body_inv_mass_inertia(
 ///|
 fn solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   dt : @core.Real,
   constraints : Array[SolverConstraint],
   manifolds : Array[SolverManifold],
@@ -599,10 +637,26 @@ fn solve_velocity_constraints(
         let c1 = constraints[i1]
         let c2 = constraints[i2]
         let n = c1.dir1
-        let (v1, w1, com1) = get_body_kinematic_state(bodies, c1.body1)
-        let (v2, w2, com2) = get_body_kinematic_state(bodies, c1.body2)
-        let (inv_m1, inv_i1) = get_body_inv_mass_inertia(bodies, c1.body1)
-        let (inv_m2, inv_i2) = get_body_inv_mass_inertia(bodies, c1.body2)
+        let (v1, w1, com1) = get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c1.body1,
+        )
+        let (v2, w2, com2) = get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c1.body2,
+        )
+        let (inv_m1, inv_i1) = get_body_inv_mass_inertia(
+          bodies,
+          solver_bodies,
+          c1.body1,
+        )
+        let (inv_m2, inv_i2) = get_body_inv_mass_inertia(
+          bodies,
+          solver_bodies,
+          c1.body2,
+        )
         let r1a = c1.world_p1.sub(com1)
         let r2a = c1.world_p2.sub(com2)
         let r1b = c2.world_p1.sub(com1)
@@ -728,16 +782,30 @@ fn solve_velocity_constraints(
           constraints[i2].impulse_n = new2
           let impulse1 = solver_vec2_scale(n, delta1)
           let impulse2 = solver_vec2_scale(n, delta2)
-          apply_impulse_delta_dynamic(bodies, c1.body1, impulse1, c1.world_p1)
           apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
+            c1.body1,
+            impulse1,
+            c1.world_p1,
+          )
+          apply_impulse_delta_dynamic(
+            bodies,
+            solver_bodies,
             c1.body2,
             @core.Vec2::new(-impulse1.x, -impulse1.y),
             c1.world_p2,
           )
-          apply_impulse_delta_dynamic(bodies, c2.body1, impulse2, c2.world_p1)
           apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
+            c2.body1,
+            impulse2,
+            c2.world_p1,
+          )
+          apply_impulse_delta_dynamic(
+            bodies,
+            solver_bodies,
             c2.body2,
             @core.Vec2::new(-impulse2.x, -impulse2.y),
             c2.world_p2,
@@ -747,8 +815,16 @@ fn solve_velocity_constraints(
           for k in 0..<2 {
             let i = if k == 0 { i1 } else { i2 }
             let c = constraints[i]
-            let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-            let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+            let (v1, w1, com1) = get_body_kinematic_state(
+              bodies,
+              solver_bodies,
+              c.body1,
+            )
+            let (v2, w2, com2) = get_body_kinematic_state(
+              bodies,
+              solver_bodies,
+              c.body2,
+            )
             let r1 = c.world_p1.sub(com1)
             let r2 = c.world_p2.sub(com2)
             let vel1 = v1.add(cross_z_scalar(w1, r1))
@@ -767,12 +843,14 @@ fn solve_velocity_constraints(
             let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
             apply_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               c.body1,
               impulse_n_vec,
               c.world_p1,
             )
             apply_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               c.body2,
               @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
               c.world_p2,
@@ -783,8 +861,16 @@ fn solve_velocity_constraints(
         for j in 0..<m.len {
           let i = m.start + j
           let c = constraints[i]
-          let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-          let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+          let (v1, w1, com1) = get_body_kinematic_state(
+            bodies,
+            solver_bodies,
+            c.body1,
+          )
+          let (v2, w2, com2) = get_body_kinematic_state(
+            bodies,
+            solver_bodies,
+            c.body2,
+          )
           let r1 = c.world_p1.sub(com1)
           let r2 = c.world_p2.sub(com2)
           let vel1 = v1.add(cross_z_scalar(w1, r1))
@@ -803,12 +889,14 @@ fn solve_velocity_constraints(
           let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
           apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             c.body1,
             impulse_n_vec,
             c.world_p1,
           )
           apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             c.body2,
             @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
             c.world_p2,
@@ -823,8 +911,16 @@ fn solve_velocity_constraints(
       for j in 0..<m.len {
         let i = m.start + j
         let c = constraints[i]
-        let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-        let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+        let (v1, w1, com1) = get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body1,
+        )
+        let (v2, w2, com2) = get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body2,
+        )
         let r1 = c.world_p1.sub(com1)
         let r2 = c.world_p2.sub(com2)
         let vel1 = v1.add(cross_z_scalar(w1, r1))
@@ -841,9 +937,16 @@ fn solve_velocity_constraints(
         let delta_t = new_impulse_t - constraints[i].impulse_t
         constraints[i].impulse_t = new_impulse_t
         let impulse_t_vec = solver_vec2_scale(c.tangent1, delta_t)
-        apply_impulse_delta_dynamic(bodies, c.body1, impulse_t_vec, c.world_p1)
         apply_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
+          c.body1,
+          impulse_t_vec,
+          c.world_p1,
+        )
+        apply_impulse_delta_dynamic(
+          bodies,
+          solver_bodies,
           c.body2,
           @core.Vec2::new(-impulse_t_vec.x, -impulse_t_vec.y),
           c.world_p2,
@@ -856,6 +959,7 @@ fn solve_velocity_constraints(
 ///|
 fn solve_restitution_constraints(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   constraints : Array[SolverConstraint],
 ) -> Unit {
   for i in 0..<constraints.length() {
@@ -863,8 +967,16 @@ fn solve_restitution_constraints(
     if c.restitution_vel == 0.0F {
       continue
     }
-    let (v1, w1, com1) = get_body_kinematic_state(bodies, c.body1)
-    let (v2, w2, com2) = get_body_kinematic_state(bodies, c.body2)
+    let (v1, w1, com1) = get_body_kinematic_state(
+      bodies,
+      solver_bodies,
+      c.body1,
+    )
+    let (v2, w2, com2) = get_body_kinematic_state(
+      bodies,
+      solver_bodies,
+      c.body2,
+    )
     let r1 = c.world_p1.sub(com1)
     let r2 = c.world_p2.sub(com2)
     let vel1 = v1.add(cross_z_scalar(w1, r1))
@@ -880,14 +992,127 @@ fn solve_restitution_constraints(
     let delta_n = new_impulse_n - constraints[i].impulse_n
     constraints[i].impulse_n = new_impulse_n
     let impulse_n_vec = solver_vec2_scale(c.dir1, delta_n)
-    apply_impulse_delta_dynamic(bodies, c.body1, impulse_n_vec, c.world_p1)
     apply_impulse_delta_dynamic(
       bodies,
+      solver_bodies,
+      c.body1,
+      impulse_n_vec,
+      c.world_p1,
+    )
+    apply_impulse_delta_dynamic(
+      bodies,
+      solver_bodies,
       c.body2,
       @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
       c.world_p2,
     )
   }
+}
+
+///|
+/// A Rapier-like container for per-island (or global, in this port) contact constraints.
+///
+/// This is a lightweight wrapper over `SolverConstraint` + `SolverManifold` produced by
+/// `build_constraints`. Follow-up work will align it more closely with Rapier's
+/// `ContactConstraintsSet` (interaction grouping, SIMD, generic Jacobians).
+priv struct ContactConstraintsSet {
+  mut constraints : Array[SolverConstraint]
+  mut manifolds : Array[SolverManifold]
+}
+
+///|
+fn ContactConstraintsSet::new() -> ContactConstraintsSet {
+  { constraints: [], manifolds: [] }
+}
+
+///|
+fn ContactConstraintsSet::init(
+  self : ContactConstraintsSet,
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  hooks : PhysicsHooks,
+  narrow_phase : @collision.NarrowPhase,
+  dt : @core.Real,
+  cache : Array[ContactImpulseCacheEntry],
+  warmstart_coefficient : @core.Real,
+) -> Unit {
+  let (constraints, manifolds) = build_constraints(
+    parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
+  )
+  self.constraints = constraints
+  self.manifolds = manifolds
+}
+
+///|
+fn ContactConstraintsSet::warmstart(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+) -> Unit {
+  warmstart(bodies, solver_bodies, self.constraints)
+}
+
+///|
+fn ContactConstraintsSet::solve_velocity_constraints(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+  iterations : Int,
+) -> Unit {
+  solve_velocity_constraints(
+    bodies,
+    solver_bodies,
+    dt,
+    self.constraints,
+    self.manifolds,
+    iterations,
+  )
+}
+
+///|
+fn ContactConstraintsSet::solve_restitution_constraints(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+) -> Unit {
+  solve_restitution_constraints(bodies, solver_bodies, self.constraints)
+}
+
+///|
+fn ContactConstraintsSet::position_correction(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  allowed_linear_error : @core.Real,
+) -> Unit {
+  position_correction(
+    bodies,
+    colliders,
+    self.constraints,
+    self.manifolds,
+    allowed_linear_error,
+  )
+}
+
+///|
+fn ContactConstraintsSet::emit_contact_force_events(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  dt : @core.Real,
+  events : EventHandler,
+) -> Unit {
+  emit_contact_force_events(bodies, colliders, dt, events, self.constraints)
+}
+
+///|
+fn ContactConstraintsSet::update_cache(
+  self : ContactConstraintsSet,
+  cache : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  update_cache(cache, self.constraints)
 }
 
 ///|
@@ -1301,15 +1526,29 @@ pub fn solve_contacts(
   let (constraints, manifolds) = build_constraints(
     parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
   )
-  warmstart(bodies, constraints)
+  // Standalone entry-point: build a solver-side snapshot so the solver implementation can use
+  // cached poses/velocities consistently.
+  let solver_bodies = SolverBodies::default()
+  let n = bodies.bodies.length()
+  solver_bodies.resize(n)
+  for i in 0..<n {
+    if bodies.bodies[i] is Some(rb) {
+      solver_bodies.copy_from(i, rb)
+    }
+  }
+  warmstart(bodies, solver_bodies, constraints)
   solve_velocity_constraints(
     bodies,
+    solver_bodies,
     dt,
     constraints,
     manifolds,
     parameters.num_solver_iterations,
   )
-  solve_restitution_constraints(bodies, constraints)
+  solve_restitution_constraints(bodies, solver_bodies, constraints)
+  // Write back solver velocities into the live rigid bodies so downstream integration uses the
+  // updated results (Rapier parity: impulses apply to solver velocity state, then scatter).
+  solver_bodies.writeback_vels(bodies)
   position_correction(
     bodies,
     colliders,

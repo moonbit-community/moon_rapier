@@ -42,7 +42,16 @@ test "joint solver motor applies angular impulse (wbtest)" {
     params, bodies, impulse_joints, multibody_joints, dt,
   )
   inspect(constraints.length() == 1, content="true")
-  solve_joint_velocity_constraints(bodies, constraints, dt, 1)
+  let solver_bodies = SolverBodies::default()
+  let n = bodies.bodies.length()
+  solver_bodies.resize(n)
+  for i in 0..<n {
+    if bodies.bodies[i] is Some(rb) {
+      solver_bodies.copy_from(i, rb)
+    }
+  }
+  solve_joint_velocity_constraints(bodies, solver_bodies, constraints, dt, 1)
+  solver_bodies.writeback_vels(bodies)
   if bodies.get(dynamic) is Some(rb) {
     inspect(@core.abs(rb.angvel()) > 1.0e-6F, content="true")
   } else {

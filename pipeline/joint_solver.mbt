@@ -56,31 +56,56 @@ fn joint_cross_z_scalar(w : @core.Real, v : @core.Vec2) -> @core.Vec2 {
 ///|
 fn joint_apply_impulse_delta_dynamic(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle?,
   impulse : @core.Vec2,
   point : @core.Vec2,
 ) -> Unit {
   if handle is Some(h) {
-    if bodies.get_mut(h) is Some(body) {
-      if body.is_dynamic() && body.is_enabled() {
-        let inv_m = if body.locked_translations {
-          0.0F
+    let idx = h.id
+    if bodies.get(h) is Some(body) {
+      if !body.is_dynamic() || !body.is_enabled() {
+        return
+      }
+      let inv_m = if body.locked_translations {
+        0.0F
+      } else if idx >= 0 && idx < solver_bodies.poses.length() {
+        solver_bodies.poses[idx].im.x
+      } else {
+        body.inv_mass()
+      }
+      let inv_i = if body.locked_rotations {
+        0.0F
+      } else if idx >= 0 && idx < solver_bodies.poses.length() {
+        solver_bodies.poses[idx].ii
+      } else {
+        body.inv_inertia()
+      }
+      if inv_m == 0.0F && inv_i == 0.0F {
+        return
+      }
+      if idx >= 0 && idx < solver_bodies.vels.length() {
+        let vel = solver_bodies.vels[idx]
+        vel.linear = vel.linear.add(joint_vec2_scale(impulse, inv_m))
+        let com = if idx >= 0 && idx < solver_bodies.poses.length() {
+          solver_bodies.poses[idx].translation
         } else {
-          body.inv_mass()
+          body.world_com()
         }
-        let inv_i = if body.locked_rotations {
-          0.0F
-        } else {
-          body.inv_inertia()
-        }
-        body.set_linvel(
-          body.linvel().add(joint_vec2_scale(impulse, inv_m)),
+        let r = point.sub(com)
+        let torque_impulse = r.cross(impulse)
+        vel.angular = vel.angular + torque_impulse * inv_i
+        solver_bodies.vels[idx] = vel
+      } else if bodies.get_mut(h) is Some(mbody) {
+        mbody.set_linvel(
+          mbody.linvel().add(joint_vec2_scale(impulse, inv_m)),
           true,
         )
         |> ignore
-        let r = point.sub(body.world_com())
+        let r = point.sub(mbody.world_com())
         let torque_impulse = r.cross(impulse)
-        body.set_angvel(body.angvel() + torque_impulse * inv_i, true) |> ignore
+        mbody.set_angvel(mbody.angvel() + torque_impulse * inv_i, true)
+        |> ignore
       }
     }
   }
@@ -89,10 +114,23 @@ fn joint_apply_impulse_delta_dynamic(
 ///|
 fn joint_get_body_kinematic_state(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle,
 ) -> (@core.Vec2, @core.Real, @core.Vec2) {
+  let idx = handle.id
   if bodies.get(handle) is Some(rb) {
-    (rb.linvel(), rb.angvel(), rb.world_com())
+    let com = if idx >= 0 && idx < solver_bodies.poses.length() {
+      solver_bodies.poses[idx].translation
+    } else {
+      rb.world_com()
+    }
+    let (v, w) = if idx >= 0 && idx < solver_bodies.vels.length() {
+      let vel = solver_bodies.vels[idx]
+      (vel.linear, vel.angular)
+    } else {
+      (rb.linvel(), rb.angvel())
+    }
+    (v, w, com)
   } else {
     (@core.Vec2::zero(), 0.0F, @core.Vec2::zero())
   }
@@ -101,9 +139,13 @@ fn joint_get_body_kinematic_state(
 ///|
 fn joint_get_body_rotation(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle,
 ) -> @core.Rot2 {
-  if bodies.get(handle) is Some(rb) {
+  let idx = handle.id
+  if idx >= 0 && idx < solver_bodies.poses.length() {
+    solver_bodies.poses[idx].rotation
+  } else if bodies.get(handle) is Some(rb) {
     rb.rotation()
   } else {
     @core.Rot2::identity()
@@ -113,18 +155,32 @@ fn joint_get_body_rotation(
 ///|
 fn joint_apply_angular_impulse_delta_dynamic(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   handle : @dynamics.RigidBodyHandle?,
   impulse : @core.Real,
 ) -> Unit {
   if handle is Some(h) {
-    if bodies.get_mut(h) is Some(body) {
-      if body.is_dynamic() && body.is_enabled() {
-        let inv_i = if body.locked_rotations {
-          0.0F
-        } else {
-          body.inv_inertia()
-        }
-        body.set_angvel(body.angvel() + impulse * inv_i, true) |> ignore
+    let idx = h.id
+    if bodies.get(h) is Some(body) {
+      if !body.is_dynamic() || !body.is_enabled() {
+        return
+      }
+      let inv_i = if body.locked_rotations {
+        0.0F
+      } else if idx >= 0 && idx < solver_bodies.poses.length() {
+        solver_bodies.poses[idx].ii
+      } else {
+        body.inv_inertia()
+      }
+      if inv_i == 0.0F {
+        return
+      }
+      if idx >= 0 && idx < solver_bodies.vels.length() {
+        let vel = solver_bodies.vels[idx]
+        vel.angular = vel.angular + impulse * inv_i
+        solver_bodies.vels[idx] = vel
+      } else if bodies.get_mut(h) is Some(mbody) {
+        mbody.set_angvel(mbody.angvel() + impulse * inv_i, true) |> ignore
       }
     }
   }
@@ -277,8 +333,9 @@ fn build_joint_constraints(
     }
 
     // Effective mass denominators (joint-frame X/Y with a 2x2 solve when both axes are locked).
-    let (_, _, com1) = joint_get_body_kinematic_state(bodies, joint.body1)
-    let (_, _, com2) = joint_get_body_kinematic_state(bodies, joint.body2)
+    // Use the current rigid-body COM for pre-solve mass/moment computations.
+    let com1 = rb1.world_com()
+    let com2 = rb2.world_com()
     let r1 = world1.sub(com1)
     let r2 = world2.sub(com2)
     let mut inv_mass1 = 0.0F
@@ -815,6 +872,7 @@ fn build_joint_constraints(
 ///|
 fn warmstart_joints(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   constraints : Array[JointConstraint],
 ) -> Unit {
   for i in 0..<constraints.length() {
@@ -843,9 +901,16 @@ fn warmstart_joints(
       .add(coupled_limit)
       .add(coupled_motor)
       .add(lin_motor)
-    joint_apply_impulse_delta_dynamic(bodies, Some(c.body1), impulse, c.anchor1)
     joint_apply_impulse_delta_dynamic(
       bodies,
+      solver_bodies,
+      Some(c.body1),
+      impulse,
+      c.anchor1,
+    )
+    joint_apply_impulse_delta_dynamic(
+      bodies,
+      solver_bodies,
       Some(c.body2),
       @core.Vec2::new(-impulse.x, -impulse.y),
       c.anchor2,
@@ -854,11 +919,13 @@ fn warmstart_joints(
       if c.lock_ang && c.ang_impulse != 0.0F {
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body1),
           c.ang_impulse,
         )
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body2),
           -c.ang_impulse,
         )
@@ -866,11 +933,13 @@ fn warmstart_joints(
       if c.motor_enabled && c.motor_impulse != 0.0F {
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body1),
           c.motor_impulse,
         )
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body2),
           -c.motor_impulse,
         )
@@ -878,11 +947,13 @@ fn warmstart_joints(
       if c.limits_enabled && c.limit_impulse != 0.0F {
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body1),
           -c.limit_impulse,
         )
         joint_apply_angular_impulse_delta_dynamic(
           bodies,
+          solver_bodies,
           Some(c.body2),
           c.limit_impulse,
         )
@@ -894,6 +965,7 @@ fn warmstart_joints(
 ///|
 fn solve_joint_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
   constraints : Array[JointConstraint],
   dt : @core.Real,
   iterations : Int,
@@ -905,8 +977,16 @@ fn solve_joint_velocity_constraints(
   for _ in 0..<iters {
     for i in 0..<constraints.length() {
       let c = constraints[i]
-      let (v1, w1, com1) = joint_get_body_kinematic_state(bodies, c.body1)
-      let (v2, w2, com2) = joint_get_body_kinematic_state(bodies, c.body2)
+      let (v1, w1, com1) = joint_get_body_kinematic_state(
+        bodies,
+        solver_bodies,
+        c.body1,
+      )
+      let (v2, w2, com2) = joint_get_body_kinematic_state(
+        bodies,
+        solver_bodies,
+        c.body2,
+      )
       let r1 = c.anchor1.sub(com1)
       let r2 = c.anchor2.sub(com2)
       let vel1 = v1.add(joint_cross_z_scalar(w1, r1))
@@ -928,12 +1008,14 @@ fn solve_joint_velocity_constraints(
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -948,12 +1030,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_x, lambda)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -968,12 +1052,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_y, lambda)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1002,12 +1088,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.coupled_dir, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1034,12 +1122,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_x, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1064,12 +1154,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_y, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1079,8 +1171,16 @@ fn solve_joint_velocity_constraints(
 
       // Coupled linear motor (distance motor).
       if c.coupled_motor_enabled && c.coupled_inv_mass > 0.0F {
-        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(bodies, c.body1)
-        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(bodies, c.body2)
+        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body1,
+        )
+        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body2,
+        )
         let r1m = c.anchor1.sub(com1m)
         let r2m = c.anchor2.sub(com2m)
         let vel1m = v1m.add(joint_cross_z_scalar(w1m, r1m))
@@ -1118,12 +1218,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.coupled_dir, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1133,8 +1235,16 @@ fn solve_joint_velocity_constraints(
 
       // Solve linear motors along joint-frame X/Y.
       if c.motor_lin_x_enabled && c.inv_mass_x > 0.0F {
-        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(bodies, c.body1)
-        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(bodies, c.body2)
+        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body1,
+        )
+        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body2,
+        )
         let r1m = c.anchor1.sub(com1m)
         let r2m = c.anchor2.sub(com2m)
         let vel1m = v1m.add(joint_cross_z_scalar(w1m, r1m))
@@ -1173,12 +1283,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_x, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1186,8 +1298,16 @@ fn solve_joint_velocity_constraints(
         }
       }
       if c.motor_lin_y_enabled && c.inv_mass_y > 0.0F {
-        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(bodies, c.body1)
-        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(bodies, c.body2)
+        let (v1m, w1m, com1m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body1,
+        )
+        let (v2m, w2m, com2m) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body2,
+        )
         let r1m = c.anchor1.sub(com1m)
         let r2m = c.anchor2.sub(com2m)
         let vel1m = v1m.add(joint_cross_z_scalar(w1m, r1m))
@@ -1225,12 +1345,14 @@ fn solve_joint_velocity_constraints(
           let impulse = joint_vec2_scale(c.basis_y, applied)
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             impulse,
             c.anchor1,
           )
           joint_apply_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             @core.Vec2::new(-impulse.x, -impulse.y),
             c.anchor2,
@@ -1240,19 +1362,21 @@ fn solve_joint_velocity_constraints(
 
       // Solve angular motor and limits around Z (2D).
       if c.inv_mass_ang > 0.0F {
-        let mut w1a = if bodies.get(c.body1) is Some(rb) {
-          rb.angvel()
-        } else {
-          0.0F
-        }
-        let mut w2a = if bodies.get(c.body2) is Some(rb) {
-          rb.angvel()
-        } else {
-          0.0F
-        }
+        let (_, w1_init, _) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body1,
+        )
+        let (_, w2_init, _) = joint_get_body_kinematic_state(
+          bodies,
+          solver_bodies,
+          c.body2,
+        )
+        let mut w1a = w1_init
+        let mut w2a = w2_init
         let mut rel_w = w2a - w1a
-        let rot1 = joint_get_body_rotation(bodies, c.body1)
-        let rot2 = joint_get_body_rotation(bodies, c.body2)
+        let rot1 = joint_get_body_rotation(bodies, solver_bodies, c.body1)
+        let rot2 = joint_get_body_rotation(bodies, solver_bodies, c.body2)
         let joint_rot1 = rot1.mul(c.local_rot1)
         let joint_rot2 = rot2.mul(c.local_rot2)
         let rel_rot = joint_rot1.inverse().mul(joint_rot2)
@@ -1266,17 +1390,29 @@ fn solve_joint_velocity_constraints(
           constraints[i].ang_impulse = constraints[i].ang_impulse + lambda
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             lambda,
           )
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             -lambda,
           )
           // Refresh angular velocity for subsequent motor/limit solves.
-          w1a = if bodies.get(c.body1) is Some(rb) { rb.angvel() } else { 0.0F }
-          w2a = if bodies.get(c.body2) is Some(rb) { rb.angvel() } else { 0.0F }
+          let (_, w1_new, _) = joint_get_body_kinematic_state(
+            bodies,
+            solver_bodies,
+            c.body1,
+          )
+          let (_, w2_new, _) = joint_get_body_kinematic_state(
+            bodies,
+            solver_bodies,
+            c.body2,
+          )
+          w1a = w1_new
+          w2a = w2_new
           rel_w = w2a - w1a
         }
         if c.motor_enabled {
@@ -1311,11 +1447,13 @@ fn solve_joint_velocity_constraints(
           // Positive impulses reduce `rel_w = w2 - w1`.
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body1),
             applied,
           )
           joint_apply_angular_impulse_delta_dynamic(
             bodies,
+            solver_bodies,
             Some(c.body2),
             -applied,
           )
@@ -1334,11 +1472,13 @@ fn solve_joint_velocity_constraints(
             constraints[i].limit_impulse = new_impulse
             joint_apply_angular_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               Some(c.body1),
               -applied,
             )
             joint_apply_angular_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               Some(c.body2),
               applied,
             )
@@ -1355,11 +1495,13 @@ fn solve_joint_velocity_constraints(
             constraints[i].limit_impulse = new_impulse
             joint_apply_angular_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               Some(c.body1),
               -applied,
             )
             joint_apply_angular_impulse_delta_dynamic(
               bodies,
+              solver_bodies,
               Some(c.body2),
               applied,
             )
@@ -1388,8 +1530,8 @@ fn position_correction_joints(
     let world1 = rb1.position().transform_point(c.local_anchor1)
     let world2 = rb2.position().transform_point(c.local_anchor2)
     let error = world1.sub(world2)
-    let (_, _, com1) = joint_get_body_kinematic_state(bodies, c.body1)
-    let (_, _, com2) = joint_get_body_kinematic_state(bodies, c.body2)
+    let com1 = rb1.world_com()
+    let com2 = rb2.world_com()
     let r1 = world1.sub(com1)
     let r2 = world2.sub(com2)
     let mut inv_m1 = 0.0F
@@ -1701,4 +1843,87 @@ fn writeback_joint_impulses(
       )
     }
   }
+}
+
+///|
+/// A Rapier-like container for per-island (or global, in this port) joint constraints.
+///
+/// This mirrors the role of Rapier's `JointConstraintsSet`, but uses the existing MoonBit joint
+/// solver implementation as its backing store.
+priv struct JointConstraintsSet {
+  mut constraints : Array[JointConstraint]
+}
+
+///|
+fn JointConstraintsSet::new() -> JointConstraintsSet {
+  { constraints: [] }
+}
+
+///|
+fn JointConstraintsSet::init(
+  self : JointConstraintsSet,
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+  dt : @core.Real,
+) -> Unit {
+  self.constraints = build_joint_constraints(
+    parameters, bodies, impulse_joints, multibody_joints, dt,
+  )
+}
+
+///|
+fn JointConstraintsSet::warmstart(
+  self : JointConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+) -> Unit {
+  if self.constraints.length() == 0 {
+    return
+  }
+  warmstart_joints(bodies, solver_bodies, self.constraints)
+}
+
+///|
+fn JointConstraintsSet::solve_velocity_constraints(
+  self : JointConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+  iterations : Int,
+) -> Unit {
+  if self.constraints.length() == 0 {
+    return
+  }
+  solve_joint_velocity_constraints(
+    bodies,
+    solver_bodies,
+    self.constraints,
+    dt,
+    iterations,
+  )
+}
+
+///|
+fn JointConstraintsSet::position_correction(
+  self : JointConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  if self.constraints.length() == 0 {
+    return
+  }
+  position_correction_joints(bodies, self.constraints)
+}
+
+///|
+fn JointConstraintsSet::writeback_impulses(
+  self : JointConstraintsSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+) -> Unit {
+  if self.constraints.length() == 0 {
+    return
+  }
+  writeback_joint_impulses(impulse_joints, multibody_joints, self.constraints)
 }

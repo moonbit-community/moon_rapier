@@ -796,14 +796,17 @@ fn solve_joints_and_contacts_interleaved(
   narrow_phase : @collision.NarrowPhase,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
+  solver_bodies : SolverBodies,
   dt : @core.Real,
   event_handler : EventHandler,
   contact_cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  let joint_constraints = build_joint_constraints(
+  let joint_constraints = JointConstraintsSet::new()
+  joint_constraints.init(
     parameters, bodies, impulse_joints, multibody_joints, dt,
   )
-  let (contact_constraints, contact_manifolds) = build_constraints(
+  let contact_constraints = ContactConstraintsSet::new()
+  contact_constraints.init(
     parameters,
     bodies,
     colliders,
@@ -813,19 +816,17 @@ fn solve_joints_and_contacts_interleaved(
     contact_cache,
     parameters.warmstart_coefficient,
   )
-  if joint_constraints.length() > 0 {
-    warmstart_joints(bodies, joint_constraints)
-  }
-  if contact_constraints.length() > 0 {
-    warmstart(bodies, contact_constraints)
+  joint_constraints.warmstart(bodies, solver_bodies)
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.warmstart(bodies, solver_bodies)
   }
   let base_iters = if parameters.num_solver_iterations <= 0 {
     1
   } else {
     parameters.num_solver_iterations
   }
-  // Our contact solver is simpler than Rapier's (no block solver, no SIMD),
-  // so we give contacts more iterations to improve stacking stability.
+  // This solver loop is simpler than Rapier's (no island-parallelism, no SIMD).
+  // Keep iteration counts aligned with `num_solver_iterations` for determinism/parity.
   let joint_iters = base_iters
   let contact_iters = base_iters
   let iters = if contact_iters > joint_iters {
@@ -834,36 +835,30 @@ fn solve_joints_and_contacts_interleaved(
     joint_iters
   }
   for i in 0..<iters {
-    if joint_constraints.length() > 0 && i < joint_iters {
-      solve_joint_velocity_constraints(bodies, joint_constraints, dt, 1)
+    if joint_constraints.constraints.length() > 0 && i < joint_iters {
+      joint_constraints.solve_velocity_constraints(bodies, solver_bodies, dt, 1)
     }
-    if contact_constraints.length() > 0 {
-      solve_velocity_constraints(
-        bodies, dt, contact_constraints, contact_manifolds, 1,
+    if contact_constraints.constraints.length() > 0 {
+      contact_constraints.solve_velocity_constraints(
+        bodies, solver_bodies, dt, 1,
       )
     }
   }
-  if contact_constraints.length() > 0 {
-    solve_restitution_constraints(bodies, contact_constraints)
-    position_correction(
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.solve_restitution_constraints(bodies, solver_bodies)
+    contact_constraints.position_correction(
       bodies,
       colliders,
-      contact_constraints,
-      contact_manifolds,
       parameters.allowed_linear_error(),
     )
   }
-  if joint_constraints.length() > 0 {
-    position_correction_joints(bodies, joint_constraints)
-    writeback_joint_impulses(
-      impulse_joints, multibody_joints, joint_constraints,
+  joint_constraints.position_correction(bodies)
+  joint_constraints.writeback_impulses(impulse_joints, multibody_joints)
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.emit_contact_force_events(
+      bodies, colliders, dt, event_handler,
     )
-  }
-  if contact_constraints.length() > 0 {
-    emit_contact_force_events(
-      bodies, colliders, dt, event_handler, contact_constraints,
-    )
-    update_cache(contact_cache, contact_constraints)
+    contact_constraints.update_cache(contact_cache)
   }
 }
 
@@ -1172,7 +1167,8 @@ pub fn PhysicsPipeline::step(
         }
       }
     }
-    solve_joints_and_contacts_interleaved(
+    let island_solver = IslandSolver::new()
+    island_solver.solve(
       parameters,
       bodies,
       colliders,
