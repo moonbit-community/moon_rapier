@@ -84,6 +84,12 @@ pub fn ColliderBuilder3::build(self : ColliderBuilder3) -> Collider {
 }
 
 ///|
+pub fn Collider::translation3(self : Collider) -> @core.Vec3 {
+  let t = self.translation()
+  @core.Vec3::new(t.x, t.y, 0.0F)
+}
+
+///|
 /// 3D-flavored collider set (dim3,f32).
 pub struct ColliderSet3 {
   inner : ColliderSet
@@ -126,4 +132,22 @@ pub fn ColliderSet3::remove(
   wake_up : Bool,
 ) -> Unit {
   self.inner.remove(handle, islands.as_2d(), bodies.as_2d(), wake_up)
+}
+
+///|
+pub fn ColliderSet3::get(
+  self : ColliderSet3,
+  handle : ColliderHandle,
+) -> Collider? {
+  self.inner.get(handle)
+}
+
+///|
+pub fn ColliderSet3::set_parent(
+  self : ColliderSet3,
+  handle : ColliderHandle,
+  parent : @dynamics.RigidBodyHandle?,
+  bodies : @dynamics.RigidBodySet3,
+) -> Unit {
+  self.inner.set_parent(handle, parent, bodies.as_2d())
 }

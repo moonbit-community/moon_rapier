@@ -131,6 +131,7 @@ pub fn Collider::set_user_data(Self, Int) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::translation(Self) -> @core.Vec2
+pub fn Collider::translation3(Self) -> @core.Vec3
 pub fn Collider::user_data(Self) -> Int
 
 pub struct ColliderBuilder {
@@ -255,10 +256,12 @@ pub struct ColliderSet3 {
   inner : ColliderSet
 }
 pub fn ColliderSet3::as_2d(Self) -> ColliderSet
+pub fn ColliderSet3::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet3::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3) -> ColliderHandle
 pub fn ColliderSet3::new() -> Self
 pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
+pub fn ColliderSet3::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3) -> Unit
 
 pub(all) enum CollisionEvent {
   Started(ColliderHandle, ColliderHandle, CollisionEventFlags)
