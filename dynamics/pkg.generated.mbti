@@ -318,6 +318,7 @@ pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
 pub struct IslandManager3 {
   inner : IslandManager
 }
+pub fn IslandManager3::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3::as_2d(Self) -> IslandManager
 pub fn IslandManager3::new() -> Self
 
@@ -441,6 +442,7 @@ pub fn Multibody3::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody3::body_jacobian(Self, LinkId) -> Jacobian3
 pub fn Multibody3::forward_kinematics(Self, RigidBodySet3, Bool) -> Unit
 pub fn Multibody3::forward_kinematics_single_link(Self, RigidBodySet3, LinkId, Array[Float]?, Jacobian3?) -> @core.Isometry3
+pub fn Multibody3::inverse_kinematics(Self, RigidBodySet3, LinkId, InverseKinematicsOption, @core.Isometry3, (MultibodyLink) -> Bool, DVector) -> Unit
 pub fn Multibody3::link_pose(Self, LinkId) -> @core.Isometry3?
 pub fn Multibody3::ndofs(Self) -> Int
 
@@ -536,6 +538,15 @@ pub fn PrismaticJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn PrismaticJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn PrismaticJointBuilder::new(@core.Vec2) -> Self
 
+pub struct PrismaticJointBuilder3 {
+  inner : PrismaticJointBuilder
+}
+pub fn PrismaticJointBuilder3::build(Self) -> PrismaticJoint
+pub fn PrismaticJointBuilder3::limits(Self, Float, Float) -> Self
+pub fn PrismaticJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
+pub fn PrismaticJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn PrismaticJointBuilder3::new(@core.Vec3) -> Self
+
 type RevoluteJoint
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
 pub fn RevoluteJoint::limits(Self) -> JointLimits?
@@ -574,9 +585,14 @@ pub struct RevoluteJointBuilder3 {
   inner : RevoluteJointBuilder
 }
 pub fn RevoluteJointBuilder3::build(Self) -> RevoluteJoint
+pub fn RevoluteJointBuilder3::limits(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
 pub fn RevoluteJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn RevoluteJointBuilder3::motor_max_force(Self, Float) -> Self
+pub fn RevoluteJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
+pub fn RevoluteJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder3::new(@core.Vec3) -> Self
+pub fn RevoluteJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
 pub struct RigidBody {
   mut ids : RigidBodyIds
@@ -743,11 +759,25 @@ pub struct RigidBodyBuilder3 {
   inner : RigidBodyBuilder
 }
 pub fn RigidBodyBuilder3::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder3::angular_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder3::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3::build(Self) -> RigidBody
 pub fn RigidBodyBuilder3::can_sleep(Self, Bool) -> Self
+pub fn RigidBodyBuilder3::ccd_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder3::dynamic() -> Self
+pub fn RigidBodyBuilder3::enabled_rotations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3::fixed() -> Self
+pub fn RigidBodyBuilder3::gravity_scale(Self, Float) -> Self
+pub fn RigidBodyBuilder3::gyroscopic_forces_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder3::kinematic_position_based() -> Self
+pub fn RigidBodyBuilder3::kinematic_velocity_based() -> Self
+pub fn RigidBodyBuilder3::linear_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder3::linvel(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3::lock_rotations(Self) -> Self
+pub fn RigidBodyBuilder3::lock_translations(Self) -> Self
+pub fn RigidBodyBuilder3::rotation(Self, @core.Quat) -> Self
+pub fn RigidBodyBuilder3::rotation_scaled_axis(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3::translation(Self, @core.Vec3) -> Self
 
 pub struct RigidBodyCcd {
@@ -859,6 +889,7 @@ pub fn RigidBodySet3::as_2d(Self) -> RigidBodySet
 pub fn RigidBodySet3::get(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet3::get_mut(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet3::insert(Self, RigidBody) -> RigidBodyHandle
+pub fn RigidBodySet3::len(Self) -> Int
 pub fn RigidBodySet3::new() -> Self
 pub fn RigidBodySet3::remove(Self, RigidBodyHandle, IslandManager3, Unit, ImpulseJointSet3, MultibodyJointSet3, Bool) -> RigidBody?
 pub fn RigidBodySet3::rotation(Self, RigidBodyHandle) -> @core.Quat
@@ -900,6 +931,14 @@ pub fn RopeJointBuilder::build(Self) -> RopeJoint
 pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn RopeJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn RopeJointBuilder::new(Float) -> Self
+
+pub struct RopeJointBuilder3 {
+  inner : RopeJointBuilder
+}
+pub fn RopeJointBuilder3::build(Self) -> RopeJoint
+pub fn RopeJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
+pub fn RopeJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn RopeJointBuilder3::new(Float) -> Self
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool

@@ -43,6 +43,50 @@ pub fn RevoluteJointBuilder3::local_anchor2(
 }
 
 ///|
+pub fn RevoluteJointBuilder3::softness(
+  self : RevoluteJointBuilder3,
+  softness : SpringCoefficients,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.softness(softness) }
+}
+
+///|
+pub fn RevoluteJointBuilder3::motor_velocity(
+  self : RevoluteJointBuilder3,
+  target_vel : @core.Real,
+  factor : @core.Real,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.motor_velocity(target_vel, factor) }
+}
+
+///|
+pub fn RevoluteJointBuilder3::motor_position(
+  self : RevoluteJointBuilder3,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.motor_position(target_pos, stiffness, damping) }
+}
+
+///|
+pub fn RevoluteJointBuilder3::motor_max_force(
+  self : RevoluteJointBuilder3,
+  max_force : @core.Real,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.motor_max_force(max_force) }
+}
+
+///|
+pub fn RevoluteJointBuilder3::limits(
+  self : RevoluteJointBuilder3,
+  min : @core.Real,
+  max : @core.Real,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.limits(min, max) }
+}
+
+///|
 pub fn RevoluteJointBuilder3::build(
   self : RevoluteJointBuilder3,
 ) -> RevoluteJoint {

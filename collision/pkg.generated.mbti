@@ -199,9 +199,29 @@ pub fn ColliderBuilder3::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder3::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder3::ball(Float) -> Self
 pub fn ColliderBuilder3::build(Self) -> Collider
+pub fn ColliderBuilder3::capsule_x(Float, Float) -> Self
+pub fn ColliderBuilder3::capsule_y(Float, Float) -> Self
+pub fn ColliderBuilder3::collision_groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn ColliderBuilder3::compound(Array[(@core.Isometry3, SharedShape)]) -> Self
+pub fn ColliderBuilder3::cone(Float, Float) -> Self
+pub fn ColliderBuilder3::contact_skin(Self, Float) -> Self
+pub fn ColliderBuilder3::convex_hull(Array[@core.Vec3]) -> Self?
 pub fn ColliderBuilder3::cuboid(Float, Float, Float) -> Self
+pub fn ColliderBuilder3::density(Self, Float) -> Self
+pub fn ColliderBuilder3::friction(Self, Float) -> Self
+pub fn ColliderBuilder3::heightfield(Array[Float], @core.Vec3) -> Self
+pub fn ColliderBuilder3::restitution(Self, Float) -> Self
+pub fn ColliderBuilder3::rotation(Self, @core.Quat) -> Self
+pub fn ColliderBuilder3::rotation_scaled_axis(Self, @core.Vec3) -> Self
+pub fn ColliderBuilder3::round_convex_hull(Array[@core.Vec3], Float) -> Self?
+pub fn ColliderBuilder3::round_cylinder(Float, Float, Float) -> Self
+pub fn ColliderBuilder3::segment(@core.Vec3, @core.Vec3) -> Self
 pub fn ColliderBuilder3::sensor(Self, Bool) -> Self
+pub fn ColliderBuilder3::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3::translation(Self, @core.Vec3) -> Self
+pub fn ColliderBuilder3::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3::voxelized_mesh(Array[@core.Vec3], Array[(Int, Int)], Float, FillMode) -> Self
+pub fn ColliderBuilder3::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self
 
 type ColliderChanges
 
@@ -259,6 +279,7 @@ pub fn ColliderSet3::as_2d(Self) -> ColliderSet
 pub fn ColliderSet3::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet3::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3) -> ColliderHandle
+pub fn ColliderSet3::len(Self) -> Int
 pub fn ColliderSet3::new() -> Self
 pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
 pub fn ColliderSet3::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3) -> Unit

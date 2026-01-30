@@ -14,6 +14,8 @@ pub fn parallel_strategy() -> String
 
 pub fn remove_rigid_body(@dynamics.RigidBodySet, @dynamics.RigidBodyHandle, @dynamics.IslandManager, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, Bool, Bool) -> @dynamics.RigidBody?
 
+pub fn remove_rigid_body3(@dynamics.RigidBodySet3, @dynamics.RigidBodyHandle, @dynamics.IslandManager3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, Bool, Bool) -> @dynamics.RigidBody?
+
 pub fn simd_enabled() -> Bool
 
 pub fn simd_strategy() -> String

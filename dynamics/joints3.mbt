@@ -153,6 +153,17 @@ fn iso3_from_iso2(iso : @core.Isometry2) -> @core.Isometry3 {
 }
 
 ///|
+fn iso2_from_iso3(iso : @core.Isometry3) -> @core.Isometry2 {
+  // 2D compatibility: project 3D translation to XY, keep only the Z component of the scaled axis
+  // (yaw) as the 2D rotation.
+  let axis = iso.rotation.to_scaled_axis()
+  @core.Isometry2::new(
+    @core.Vec2::new(iso.translation.x, iso.translation.y),
+    @core.Rot2::from_angle(axis.z),
+  )
+}
+
+///|
 pub fn Multibody3::forward_kinematics(
   self : Multibody3,
   bodies : RigidBodySet3,
@@ -202,5 +213,25 @@ pub fn Multibody3::forward_kinematics_single_link(
       displacements,
       jac2,
     ),
+  )
+}
+
+///|
+pub fn Multibody3::inverse_kinematics(
+  self : Multibody3,
+  bodies : RigidBodySet3,
+  id : LinkId,
+  options : InverseKinematicsOption,
+  target : @core.Isometry3,
+  can_move : (MultibodyLink) -> Bool,
+  displacements : DVector,
+) -> Unit {
+  self.inner.inverse_kinematics(
+    bodies.as_2d(),
+    id,
+    options,
+    iso2_from_iso3(target),
+    can_move,
+    displacements,
   )
 }

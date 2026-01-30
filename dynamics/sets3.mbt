@@ -29,6 +29,13 @@ pub fn IslandManager3::as_2d(self : IslandManager3) -> IslandManager {
 }
 
 ///|
+pub fn IslandManager3::active_bodies(
+  self : IslandManager3,
+) -> Array[RigidBodyHandle] {
+  self.inner.active_bodies()
+}
+
+///|
 /// 3D-flavored rigid-body set.
 pub struct RigidBodySet3 {
   inner : RigidBodySet
@@ -42,6 +49,11 @@ pub fn RigidBodySet3::new() -> RigidBodySet3 {
 ///|
 pub fn RigidBodySet3::as_2d(self : RigidBodySet3) -> RigidBodySet {
   self.inner
+}
+
+///|
+pub fn RigidBodySet3::len(self : RigidBodySet3) -> Int {
+  self.inner.len()
 }
 
 ///|

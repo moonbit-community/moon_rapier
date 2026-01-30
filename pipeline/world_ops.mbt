@@ -40,3 +40,26 @@ pub fn remove_rigid_body(
     remove_attached_colliders,
   )
 }
+
+///|
+pub fn remove_rigid_body3(
+  bodies : @dynamics.RigidBodySet3,
+  handle : @dynamics.RigidBodyHandle,
+  islands : @dynamics.IslandManager3,
+  colliders : @collision.ColliderSet3,
+  impulse_joints : @dynamics.ImpulseJointSet3,
+  multibody_joints : @dynamics.MultibodyJointSet3,
+  remove_attached_colliders : Bool,
+  wake_up : Bool,
+) -> @dynamics.RigidBody? {
+  remove_rigid_body(
+    bodies.as_2d(),
+    handle,
+    islands.as_2d(),
+    colliders.as_2d(),
+    impulse_joints.as_2d(),
+    multibody_joints.as_2d(),
+    remove_attached_colliders,
+    wake_up,
+  )
+}
