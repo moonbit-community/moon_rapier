@@ -330,6 +330,13 @@ pub fn Jacobian::spatial_dim() -> Int
 pub fn Jacobian::value_at(Self, Int, Int) -> Float
 pub fn Jacobian::zeros(Int) -> Self
 
+pub struct Jacobian3 {
+  inner : Jacobian
+}
+pub fn Jacobian3::cols(Self) -> Int
+pub fn Jacobian3::value_at(Self, Int, Int) -> Float
+pub fn Jacobian3::zeros(Int) -> Self
+
 pub struct JointAxesMask {
   bits : Int
 }
@@ -430,6 +437,11 @@ pub fn Multibody::update_rigid_bodies(Self, RigidBodySet) -> Unit
 pub struct Multibody3 {
   inner : Multibody
 }
+pub fn Multibody3::apply_displacements(Self, Array[Float]) -> Unit
+pub fn Multibody3::body_jacobian(Self, LinkId) -> Jacobian3
+pub fn Multibody3::forward_kinematics(Self, RigidBodySet3, Bool) -> Unit
+pub fn Multibody3::forward_kinematics_single_link(Self, RigidBodySet3, LinkId, Array[Float]?, Jacobian3?) -> @core.Isometry3
+pub fn Multibody3::link_pose(Self, LinkId) -> @core.Isometry3?
 pub fn Multibody3::ndofs(Self) -> Int
 
 pub struct MultibodyIndex {
@@ -475,6 +487,7 @@ pub struct MultibodyJointSet3 {
 }
 pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
 pub fn MultibodyJointSet3::get(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
+pub fn MultibodyJointSet3::get_mut(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
 pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3::new() -> Self
 
