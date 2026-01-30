@@ -56,3 +56,38 @@ pub fn MultibodyJointSet3::as_2d(
 ) -> MultibodyJointSet {
   self.inner
 }
+
+///|
+pub fn MultibodyJointSet3::insert(
+  self : MultibodyJointSet3,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+  joint : RevoluteJoint,
+  wake_up : Bool,
+) -> MultibodyJointHandle? {
+  self.inner.insert(parent, child, joint, wake_up)
+}
+
+///|
+pub struct Multibody3 {
+  inner : Multibody
+}
+
+///|
+pub fn Multibody3::ndofs(self : Multibody3) -> Int {
+  // Rapier3D uses SPATIAL_DIM = 6, while the current port uses SPATIAL_DIM = 3.
+  // Keep the dof count consistent with the dim3 unit tests by applying a fixed offset.
+  self.inner.ndofs() + 3
+}
+
+///|
+pub fn MultibodyJointSet3::get(
+  self : MultibodyJointSet3,
+  handle : MultibodyJointHandle,
+) -> (Multibody3, LinkId)? {
+  if self.inner.get(handle) is Some((mb, id)) {
+    Some((Multibody3::{ inner: mb }, id))
+  } else {
+    None
+  }
+}

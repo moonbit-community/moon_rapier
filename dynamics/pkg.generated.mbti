@@ -427,6 +427,11 @@ pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::ndofs(Self) -> Int
 pub fn Multibody::update_rigid_bodies(Self, RigidBodySet) -> Unit
 
+pub struct Multibody3 {
+  inner : Multibody
+}
+pub fn Multibody3::ndofs(Self) -> Int
+
 pub struct MultibodyIndex {
   value : Int
 }
@@ -469,6 +474,8 @@ pub struct MultibodyJointSet3 {
   inner : MultibodyJointSet
 }
 pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
+pub fn MultibodyJointSet3::get(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
+pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3::new() -> Self
 
 type MultibodyLink
