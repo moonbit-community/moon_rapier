@@ -190,6 +190,18 @@ pub fn ColliderBuilder::user_data(Self, Int) -> Self
 pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
 pub fn ColliderBuilder::voxels_from_points(@core.Vec2, Array[@core.Vec2]) -> Self
 
+pub struct ColliderBuilder3 {
+  inner : ColliderBuilder
+}
+pub fn ColliderBuilder3::active_collision_types(Self, ActiveCollisionTypes) -> Self
+pub fn ColliderBuilder3::active_events(Self, ActiveEvents) -> Self
+pub fn ColliderBuilder3::active_hooks(Self, ActiveHooks) -> Self
+pub fn ColliderBuilder3::ball(Float) -> Self
+pub fn ColliderBuilder3::build(Self) -> Collider
+pub fn ColliderBuilder3::cuboid(Float, Float, Float) -> Self
+pub fn ColliderBuilder3::sensor(Self, Bool) -> Self
+pub fn ColliderBuilder3::translation(Self, @core.Vec3) -> Self
+
 type ColliderChanges
 
 pub(all) enum ColliderEnabled {
@@ -238,6 +250,15 @@ pub fn ColliderSet::serialize(Self) -> String
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
 pub fn ColliderSet::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
 pub fn ColliderSet::take_modified(Self) -> Array[ColliderHandle]
+
+pub struct ColliderSet3 {
+  inner : ColliderSet
+}
+pub fn ColliderSet3::as_2d(Self) -> ColliderSet
+pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
+pub fn ColliderSet3::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3) -> ColliderHandle
+pub fn ColliderSet3::new() -> Self
+pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
 
 pub(all) enum CollisionEvent {
   Started(ColliderHandle, ColliderHandle, CollisionEventFlags)

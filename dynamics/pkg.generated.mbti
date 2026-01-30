@@ -203,6 +203,13 @@ pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
+pub struct ImpulseJointSet3 {
+  inner : ImpulseJointSet
+}
+pub fn ImpulseJointSet3::as_2d(Self) -> ImpulseJointSet
+pub fn ImpulseJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
+pub fn ImpulseJointSet3::new() -> Self
+
 type IndexSequence
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
 pub fn IndexSequence::keep(Self, Int) -> Unit
@@ -307,6 +314,12 @@ pub fn IslandManager::rigid_body_removed_or_disabled(Self, RigidBodyHandle, Rigi
 pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::update_islands(Self, Float, Float, RigidBodySet, ContactGraph, ImpulseJointSet, MultibodyJointSet) -> Unit
 pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
+
+pub struct IslandManager3 {
+  inner : IslandManager
+}
+pub fn IslandManager3::as_2d(Self) -> IslandManager
+pub fn IslandManager3::new() -> Self
 
 type IslandsOptimizer
 
@@ -452,6 +465,12 @@ pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet)
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
+pub struct MultibodyJointSet3 {
+  inner : MultibodyJointSet
+}
+pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
+pub fn MultibodyJointSet3::new() -> Self
+
 type MultibodyLink
 pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
 
@@ -530,6 +549,14 @@ pub fn RevoluteJointBuilder::motor_position(Self, Float, Float, Float) -> Self
 pub fn RevoluteJointBuilder::motor_velocity(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder::new() -> Self
 pub fn RevoluteJointBuilder::softness(Self, SpringCoefficients) -> Self
+
+pub struct RevoluteJointBuilder3 {
+  inner : RevoluteJointBuilder
+}
+pub fn RevoluteJointBuilder3::build(Self) -> RevoluteJoint
+pub fn RevoluteJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
+pub fn RevoluteJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn RevoluteJointBuilder3::new(@core.Vec3) -> Self
 
 pub struct RigidBody {
   mut ids : RigidBodyIds
@@ -692,6 +719,17 @@ pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
 
+pub struct RigidBodyBuilder3 {
+  inner : RigidBodyBuilder
+}
+pub fn RigidBodyBuilder3::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder3::build(Self) -> RigidBody
+pub fn RigidBodyBuilder3::can_sleep(Self, Bool) -> Self
+pub fn RigidBodyBuilder3::dynamic() -> Self
+pub fn RigidBodyBuilder3::fixed() -> Self
+pub fn RigidBodyBuilder3::kinematic_position_based() -> Self
+pub fn RigidBodyBuilder3::translation(Self, @core.Vec3) -> Self
+
 pub struct RigidBodyCcd {
   ccd_thickness : Float
   ccd_max_dist : Float
@@ -793,6 +831,18 @@ pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJ
 pub fn RigidBodySet::serialize(Self) -> String
 pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
 pub fn RigidBodySet::with_capacity(Int) -> Self
+
+pub struct RigidBodySet3 {
+  inner : RigidBodySet
+}
+pub fn RigidBodySet3::as_2d(Self) -> RigidBodySet
+pub fn RigidBodySet3::get(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet3::get_mut(Self, RigidBodyHandle) -> RigidBody?
+pub fn RigidBodySet3::insert(Self, RigidBody) -> RigidBodyHandle
+pub fn RigidBodySet3::new() -> Self
+pub fn RigidBodySet3::remove(Self, RigidBodyHandle, IslandManager3, Unit, ImpulseJointSet3, MultibodyJointSet3, Bool) -> RigidBody?
+pub fn RigidBodySet3::rotation(Self, RigidBodyHandle) -> @core.Quat
+pub fn RigidBodySet3::translation(Self, RigidBodyHandle) -> @core.Vec3
 
 pub(all) enum RigidBodyType {
   Dynamic
