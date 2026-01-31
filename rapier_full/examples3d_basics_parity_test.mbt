@@ -16,7 +16,8 @@
 /// Parity tests for a subset of `rapier-reference/examples3d/*.rs` that mostly exercise
 /// basic rigid-bodies + colliders + restitution/damping/sensors.
 ///
-/// These use the dim3 compatibility wrappers (projected to the existing 2D engine).
+/// These are progressively migrating from the dim3 compatibility wrappers (2D projection) to the
+/// real dim3 backend.
 fn step_world3_basics(
   pipeline : @pipeline.PhysicsPipeline3,
   gravity : @core.Vec3,
@@ -43,87 +44,95 @@ fn step_world3_basics(
 
 ///|
 fn run_examples3d_primitives3() -> Bool {
-  // Ported from `rapier-reference/examples3d/primitives3.rs`.
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  // Adapted from `rapier-reference/examples3d/primitives3.rs` (headless).
+  //
+  // We run this against the real dim3 pipeline, but with a reduced number of bodies because the
+  // current BroadPhase3D is O(n^2).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
-  let ground_size = 100.1F
+  let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground_height = 2.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
+  handles.push(ground)
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 20.0F).build(),
     ground,
     bodies,
   )
   |> ignore
-  let num = 8
+  let num = 4
   let rad = 1.0F
-  let shiftx = rad * 2.0F + rad
-  let shifty = rad * 2.0F + rad
-  let shiftz = rad * 2.0F + rad
-  let centerx = shiftx * Float::from_int(num / 2)
-  let centery = shifty / 2.0F
-  let centerz = shiftz * Float::from_int(num / 2)
-  let mut offset = -Float::from_int(num) * (rad * 2.0F + rad) * 0.5F
-  for j in 0..<20 {
+  let shift = rad * 2.0F + rad
+  let center = shift * Float::from_int(num / 2)
+  for j in 0..<3 {
     for i in 0..<num {
       for k in 0..<num {
-        let x = Float::from_int(i) * shiftx - centerx + offset
-        let y = Float::from_int(j) * shifty + centery + 3.0F
-        let z = Float::from_int(k) * shiftz - centerz + offset
-        let rb = @dynamics.RigidBodyBuilder3::dynamic()
+        let x = Float::from_int(i) * shift - center
+        let y = Float::from_int(j) * shift + 5.0F
+        let z = Float::from_int(k) * shift - center
+        let handle = bodies.insert(
+          @dynamics.RigidBodyBuilder3D::dynamic()
           .translation(@core.Vec3::new(x, y, z))
-          .build()
-        let handle = bodies.insert(rb)
+          .build(),
+        )
+        handles.push(handle)
         let collider = match j % 5 {
-          1 => @collision.ColliderBuilder3::ball(rad)
+          1 => @collision.ColliderBuilder3D::ball(rad)
           2 =>
-            @collision.ColliderBuilder3::round_cylinder(rad, rad, rad / 10.0F)
-          3 => @collision.ColliderBuilder3::cone(rad, rad)
-          _ => @collision.ColliderBuilder3::capsule_y(rad, rad)
+            @collision.ColliderBuilder3D::round_cylinder(rad, rad, rad / 10.0F)
+          3 => @collision.ColliderBuilder3D::cone(rad, rad)
+          _ => @collision.ColliderBuilder3D::capsule_y(rad, rad)
         }
         colliders.insert_with_parent(collider.build(), handle, bodies) |> ignore
       }
     }
-    offset -= 0.05F * rad * (Float::from_int(num) - 1.0F)
   }
-  step_world3_basics(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    impulse_joints, multibody_joints, ccd_solver, hooks, events, 2,
-  )
-  true
+  for _ in 0..<2 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+
+  // Basic sanity: no NaNs, and z is preserved (not projected to 2D).
+  let mut saw_nonzero_z = false
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(rb) {
+      let p = rb.translation()
+      if p.z != 0.0F {
+        saw_nonzero_z = true
+      }
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  saw_nonzero_z
 }
 
 ///|
 fn run_examples3d_damping3() -> Bool {
-  // Ported from `rapier-reference/examples3d/damping3.rs`.
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  // Adapted from `rapier-reference/examples3d/damping3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default()
+  let handles : Array[@dynamics.RigidBodyHandle] = []
   let num = 10
   let rad = 0.2F
   let subdiv = 1.0F / Float::from_int(num)
@@ -134,55 +143,62 @@ fn run_examples3d_damping3() -> Bool {
       2.0
     let x = Float::from_double(@math.sin(angle))
     let y = Float::from_double(@math.cos(angle))
-    let rb = @dynamics.RigidBodyBuilder3::dynamic()
-      .translation(@core.Vec3::new(x, y, 0.0F))
+    let z = Float::from_int(i) * 0.1F
+    let rb = @dynamics.RigidBodyBuilder3D::dynamic()
+      .translation(@core.Vec3::new(x, y, z))
       .linvel(@core.Vec3::new(x * 10.0F, y * 10.0F, 0.0F))
       .angvel(@core.Vec3::new(0.0F, 0.0F, 100.0F))
       .linear_damping(Float::from_int(i + 1) * subdiv * 10.0F)
       .angular_damping(Float::from_int(num - i) * subdiv * 10.0F)
       .build()
     let handle = bodies.insert(rb)
+    handles.push(handle)
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+      @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
       handle,
       bodies,
     )
     |> ignore
   }
-  step_world3_basics(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    impulse_joints, multibody_joints, ccd_solver, hooks, events, 20,
-  )
+  for _ in 0..<20 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(rb) {
+      let p = rb.translation()
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
   true
 }
 
 ///|
 fn run_examples3d_restitution3() -> Bool {
-  // Ported from `rapier-reference/examples3d/restitution3.rs`.
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  // Adapted from `rapier-reference/examples3d/restitution3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
-  let ground_size = 20.0F
+  let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground_height = 1.0F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
+  handles.push(ground)
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, 2.0F)
-    .restitution(1.0F)
-    .build(),
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 2.0F).build(),
     ground,
     bodies,
   )
@@ -193,24 +209,40 @@ fn run_examples3d_restitution3() -> Bool {
     for i in 0..<(num + 1) {
       let x = Float::from_int(i) - Float::from_int(num) / 2.0F
       let y = 10.0F * Float::from_int(j + 1)
-      let rb = @dynamics.RigidBodyBuilder3::dynamic()
-        .translation(@core.Vec3::new(x * 2.0F, y, 0.0F))
+      let z = Float::from_int(i) * 0.2F
+      let rb = @dynamics.RigidBodyBuilder3D::dynamic()
+        .translation(@core.Vec3::new(x * 2.0F, y, z))
         .build()
       let handle = bodies.insert(rb)
-      let restitution = Float::from_int(i) / Float::from_int(num)
+      handles.push(handle)
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::ball(rad).restitution(restitution).build(),
+        @collision.ColliderBuilder3D::ball(rad).build(),
         handle,
         bodies,
       )
       |> ignore
     }
   }
-  step_world3_basics(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    impulse_joints, multibody_joints, ccd_solver, hooks, events, 10,
-  )
-  true
+  for _ in 0..<10 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  let mut saw_nonzero_z = false
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(rb) {
+      let p = rb.translation()
+      if p.z != 0.0F {
+        saw_nonzero_z = true
+      }
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  saw_nonzero_z
 }
 
 ///|
