@@ -272,11 +272,15 @@ pub struct ColliderBuilder3D {
 }
 pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
+pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
+pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
+pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
+pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 
 type ColliderChanges
@@ -623,10 +627,18 @@ pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMo
 pub(all) enum Shape3D {
   Ball(Float)
   Cuboid(@core.Vec3)
+  CapsuleY(Float, Float)
+  Cylinder(Float, Float)
+  RoundCylinder(Float, Float, Float)
+  Cone(Float, Float)
 }
 pub fn Shape3D::ball(Float) -> Self
+pub fn Shape3D::capsule_y(Float, Float) -> Self
+pub fn Shape3D::cone(Float, Float) -> Self
 pub fn Shape3D::cuboid(Float, Float, Float) -> Self
+pub fn Shape3D::cylinder(Float, Float) -> Self
 pub fn Shape3D::local_aabb(Self) -> @core.Aabb3
+pub fn Shape3D::round_cylinder(Float, Float, Float) -> Self
 
 pub struct ShapeCastHit {
   toi : Float

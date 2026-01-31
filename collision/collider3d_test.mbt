@@ -53,3 +53,29 @@ test "collider3d cuboid aabb rotated around y swaps x/z extents" {
   inspect(@core.abs(aabb.maxs.y - 2.0F) < 1.0e-5F, content="true")
   inspect(@core.abs(aabb.maxs.z - 1.0F) < 1.0e-5F, content="true")
 }
+
+///|
+test "collider3d capsule_y aabb" {
+  let co = ColliderBuilder3D::capsule_y(0.5F, 1.0F)
+    .translation(@core.Vec3::new(1.0F, 2.0F, 3.0F))
+    .build()
+  let aabb = co.compute_aabb()
+  inspect(@core.abs(aabb.mins.x - 0.5F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.mins.y - 0.5F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.mins.z - 2.5F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.x - 1.5F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.y - 3.5F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.z - 3.5F) < 1.0e-6F, content="true")
+}
+
+///|
+test "collider3d round_cylinder aabb" {
+  let co = ColliderBuilder3D::round_cylinder(1.0F, 2.0F, 0.25F).build()
+  let aabb = co.compute_aabb()
+  inspect(@core.abs(aabb.mins.x - -1.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.mins.y - -2.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.mins.z - -1.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.x - 1.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.y - 2.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(aabb.maxs.z - 1.25F) < 1.0e-6F, content="true")
+}

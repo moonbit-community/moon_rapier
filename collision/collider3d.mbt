@@ -17,6 +17,10 @@
 pub(all) enum Shape3D {
   Ball(@core.Real)
   Cuboid(@core.Vec3) // half extents
+  CapsuleY(@core.Real, @core.Real) // radius, half_height
+  Cylinder(@core.Real, @core.Real) // radius, half_height (aligned with Y)
+  RoundCylinder(@core.Real, @core.Real, @core.Real) // radius, half_height, border_radius
+  Cone(@core.Real, @core.Real) // radius, half_height (aligned with Y)
 }
 
 ///|
@@ -34,6 +38,36 @@ pub fn Shape3D::cuboid(
 }
 
 ///|
+pub fn Shape3D::capsule_y(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> Shape3D {
+  Shape3D::CapsuleY(radius, half_height)
+}
+
+///|
+pub fn Shape3D::cylinder(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> Shape3D {
+  Shape3D::Cylinder(radius, half_height)
+}
+
+///|
+pub fn Shape3D::round_cylinder(
+  radius : @core.Real,
+  half_height : @core.Real,
+  border_radius : @core.Real,
+) -> Shape3D {
+  Shape3D::RoundCylinder(radius, half_height, border_radius)
+}
+
+///|
+pub fn Shape3D::cone(radius : @core.Real, half_height : @core.Real) -> Shape3D {
+  Shape3D::Cone(radius, half_height)
+}
+
+///|
 pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
   match self {
     Shape3D::Ball(r) =>
@@ -43,6 +77,23 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         @core.Vec3::new(-he.x, -he.y, -he.z),
         @core.Vec3::new(he.x, he.y, he.z),
       )
+    Shape3D::CapsuleY(r, hh) =>
+      @core.Aabb3::new(
+        @core.Vec3::new(-r, -(hh + r), -r),
+        @core.Vec3::new(r, hh + r, r),
+      )
+    Shape3D::Cylinder(r, hh) =>
+      @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Shape3D::RoundCylinder(r, hh, br) => {
+      let rr = r + br
+      let yy = hh + br
+      @core.Aabb3::new(
+        @core.Vec3::new(-rr, -yy, -rr),
+        @core.Vec3::new(rr, yy, rr),
+      )
+    }
+    Shape3D::Cone(r, hh) =>
+      @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
   }
 }
 
@@ -180,6 +231,63 @@ pub fn ColliderBuilder3D::cuboid(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::cuboid(hx, hy, hz),
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::capsule_y(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::capsule_y(radius, half_height),
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::cylinder(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::cylinder(radius, half_height),
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::round_cylinder(
+  radius : @core.Real,
+  half_height : @core.Real,
+  border_radius : @core.Real,
+) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::round_cylinder(radius, half_height, border_radius),
+    enabled: true,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::cone(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::cone(radius, half_height),
     enabled: true,
   }
 }

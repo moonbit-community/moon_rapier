@@ -150,6 +150,7 @@ pub fn NarrowPhase3D::update(
           if compute_cuboid_cuboid_contact(p1, he1, p2, he2) is Some(cp) {
             contacts.push(cp)
           }
+        _ => ()
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))
     }
