@@ -165,17 +165,22 @@ fn run_examples3d_damping3() -> Bool {
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
   }
+  let mut saw_rotation = false
   for i in 0..<handles.length() {
     if bodies.get(handles[i]) is Some(rb) {
       let p = rb.translation()
       if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
         return false
       }
+      let axis = rb.rotation().to_scaled_axis()
+      if axis.length_squared() > 1.0e-6F {
+        saw_rotation = true
+      }
     } else {
       return false
     }
   }
-  true
+  saw_rotation
 }
 
 ///|
