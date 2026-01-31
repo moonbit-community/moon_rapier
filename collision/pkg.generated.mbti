@@ -171,10 +171,14 @@ pub struct Collider3D {
   mut parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
+  sensor : Bool
+  active_events : ActiveEvents
 }
+pub fn Collider3D::active_events(Self) -> ActiveEvents
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
 pub fn Collider3D::enabled(Self) -> Bool
+pub fn Collider3D::is_sensor(Self) -> Bool
 pub fn Collider3D::local_position(Self) -> @core.Isometry3
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
@@ -279,7 +283,10 @@ pub struct ColliderBuilder3D {
   parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
+  mut sensor : Bool
+  mut active_events : ActiveEvents
 }
+pub fn ColliderBuilder3D::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
 pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
@@ -291,6 +298,7 @@ pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
+pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 
 type ColliderChanges
@@ -396,6 +404,17 @@ pub fn CollisionEvent::removed(Self) -> Bool
 pub fn CollisionEvent::sensor(Self) -> Bool
 pub fn CollisionEvent::started(Self) -> Bool
 pub fn CollisionEvent::stopped(Self) -> Bool
+
+pub(all) enum CollisionEvent3D {
+  Started(ColliderHandle3D, ColliderHandle3D, CollisionEventFlags)
+  Stopped(ColliderHandle3D, ColliderHandle3D, CollisionEventFlags)
+}
+pub fn CollisionEvent3D::collider1(Self) -> ColliderHandle3D
+pub fn CollisionEvent3D::collider2(Self) -> ColliderHandle3D
+pub fn CollisionEvent3D::removed(Self) -> Bool
+pub fn CollisionEvent3D::sensor(Self) -> Bool
+pub fn CollisionEvent3D::started(Self) -> Bool
+pub fn CollisionEvent3D::stopped(Self) -> Bool
 
 pub struct CollisionEventFlags {
   mut bits : Int

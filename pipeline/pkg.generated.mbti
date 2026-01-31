@@ -155,6 +155,13 @@ pub fn EventHandler::push_contact_force_event(Self, @collision.ContactForceEvent
 pub fn EventHandler::take_collision_events(Self) -> Array[@collision.CollisionEvent]
 pub fn EventHandler::take_contact_force_events(Self) -> Array[@collision.ContactForceEvent]
 
+pub struct EventHandler3D {
+  collision_events : Array[@collision.CollisionEvent3D]
+}
+pub fn EventHandler3D::new() -> Self
+pub fn EventHandler3D::push_collision_event(Self, @collision.CollisionEvent3D) -> Unit
+pub fn EventHandler3D::take_collision_events(Self) -> Array[@collision.CollisionEvent3D]
+
 pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
@@ -187,9 +194,11 @@ pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters
 
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
+  sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
 }
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
 
 // Type aliases
 pub using @dynamics {type IntegrationParameters}

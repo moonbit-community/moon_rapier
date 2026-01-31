@@ -158,6 +158,9 @@ pub fn solve_contacts_3d(
       let contacts = cp.manifolds()
       let c0 = contacts[0]
       if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+        if co1.is_sensor() || co2.is_sensor() {
+          continue
+        }
         let p1 = co1.parent()
         let p2 = co2.parent()
         // Skip warmstarting contacts between sleeping dynamic bodies.
@@ -214,6 +217,9 @@ pub fn solve_contacts_3d(
       let a = pair.0
       let b = pair.1
       if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+        if co1.is_sensor() || co2.is_sensor() {
+          continue
+        }
         let c0 = cp.manifolds()[0]
         let n = c0.normal
         let (t1, t2) = orthonormal_basis(n)

@@ -18,29 +18,6 @@
 ///
 /// These are progressively migrating from the dim3 compatibility wrappers (2D projection) to the
 /// real dim3 backend.
-fn step_world3_basics(
-  pipeline : @pipeline.PhysicsPipeline3,
-  gravity : @core.Vec3,
-  parameters : @dynamics.IntegrationParameters,
-  islands : @dynamics.IslandManager3,
-  broad_phase : @collision.BroadPhaseBvh,
-  narrow_phase : @collision.NarrowPhase,
-  bodies : @dynamics.RigidBodySet3,
-  colliders : @collision.ColliderSet3,
-  impulse_joints : @dynamics.ImpulseJointSet3,
-  multibody_joints : @dynamics.MultibodyJointSet3,
-  ccd_solver : @dynamics.CCDSolver,
-  hooks : @pipeline.PhysicsHooks,
-  events : @pipeline.EventHandler,
-  steps : Int,
-) -> Unit {
-  for _ in 0..<steps {
-    pipeline.step(
-      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-      impulse_joints, multibody_joints, ccd_solver, hooks, events,
-    )
-  }
-}
 
 ///|
 fn run_examples3d_primitives3() -> Bool {
@@ -252,29 +229,27 @@ fn run_examples3d_restitution3() -> Bool {
 
 ///|
 fn run_examples3d_sensor3() -> Bool {
-  // Ported from `rapier-reference/examples3d/sensor3.rs` (physics + collision-events only).
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  // Adapted from `rapier-reference/examples3d/sensor3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let events = @pipeline.EventHandler3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_size = 10.1F
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3D::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
     ground,
     bodies,
   )
@@ -289,12 +264,12 @@ fn run_examples3d_sensor3() -> Bool {
       let x = Float::from_int(i) * shift - centerx
       let y = 3.0F
       let z = Float::from_int(k) * shift - centerz
-      let rb = @dynamics.RigidBodyBuilder3::dynamic()
+      let rb = @dynamics.RigidBodyBuilder3D::dynamic()
         .translation(@core.Vec3::new(x, y, z))
         .build()
       let handle = bodies.insert(rb)
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+        @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
         handle,
         bodies,
       )
@@ -302,19 +277,18 @@ fn run_examples3d_sensor3() -> Bool {
     }
   }
   let sensor = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+    @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
     sensor,
     bodies,
   )
   |> ignore
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(rad * 5.0F)
-    .density(0.0F)
+    @collision.ColliderBuilder3D::ball(rad * 5.0F)
     .sensor(true)
     .active_events(@collision.ActiveEvents::collision_events())
     .build(),
@@ -322,10 +296,12 @@ fn run_examples3d_sensor3() -> Bool {
     bodies,
   )
   |> ignore
-  step_world3_basics(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    impulse_joints, multibody_joints, ccd_solver, hooks, events, 120,
-  )
+  for _ in 0..<120 {
+    pipeline.step_with_events(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      events,
+    )
+  }
   events.take_collision_events().length() > 0
 }
 

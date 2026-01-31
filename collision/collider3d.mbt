@@ -130,6 +130,8 @@ pub struct Collider3D {
   mut parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
+  sensor : Bool
+  active_events : ActiveEvents
 }
 
 ///|
@@ -177,6 +179,16 @@ pub fn Collider3D::shape(self : Collider3D) -> Shape3D {
 }
 
 ///|
+pub fn Collider3D::is_sensor(self : Collider3D) -> Bool {
+  self.sensor
+}
+
+///|
+pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
+  self.active_events
+}
+
+///|
 pub fn Collider3D::compute_aabb(self : Collider3D) -> @core.Aabb3 {
   aabb3_transform(self.position, self.shape.local_aabb())
 }
@@ -207,6 +219,8 @@ pub struct ColliderBuilder3D {
   parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
+  mut sensor : Bool
+  mut active_events : ActiveEvents
 }
 
 ///|
@@ -217,6 +231,8 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     parent: None,
     shape: Shape3D::ball(radius),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -232,6 +248,8 @@ pub fn ColliderBuilder3D::cuboid(
     parent: None,
     shape: Shape3D::cuboid(hx, hy, hz),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -246,6 +264,8 @@ pub fn ColliderBuilder3D::capsule_y(
     parent: None,
     shape: Shape3D::capsule_y(radius, half_height),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -260,6 +280,8 @@ pub fn ColliderBuilder3D::cylinder(
     parent: None,
     shape: Shape3D::cylinder(radius, half_height),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -275,6 +297,8 @@ pub fn ColliderBuilder3D::round_cylinder(
     parent: None,
     shape: Shape3D::round_cylinder(radius, half_height, border_radius),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -289,6 +313,8 @@ pub fn ColliderBuilder3D::cone(
     parent: None,
     shape: Shape3D::cone(radius, half_height),
     enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
   }
 }
 
@@ -338,6 +364,24 @@ pub fn ColliderBuilder3D::enabled(
 }
 
 ///|
+pub fn ColliderBuilder3D::sensor(
+  self : ColliderBuilder3D,
+  sensor : Bool,
+) -> ColliderBuilder3D {
+  self.sensor = sensor
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::active_events(
+  self : ColliderBuilder3D,
+  active_events : ActiveEvents,
+) -> ColliderBuilder3D {
+  self.active_events = active_events
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
   {
     position: self.position,
@@ -345,5 +389,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     parent: self.parent,
     shape: self.shape,
     enabled: self.enabled,
+    sensor: self.sensor,
+    active_events: self.active_events,
   }
 }
