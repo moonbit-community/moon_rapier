@@ -119,6 +119,11 @@ pub fn RigidBody3D::rotation(self : RigidBody3D) -> @core.Quat {
 }
 
 ///|
+pub fn RigidBody3D::position(self : RigidBody3D) -> @core.Isometry3 {
+  self.position
+}
+
+///|
 pub fn RigidBody3D::linvel(self : RigidBody3D) -> @core.Vec3 {
   self.velocity.linvel
 }
@@ -126,6 +131,33 @@ pub fn RigidBody3D::linvel(self : RigidBody3D) -> @core.Vec3 {
 ///|
 pub fn RigidBody3D::angvel(self : RigidBody3D) -> @core.Vec3 {
   self.velocity.angvel
+}
+
+///|
+pub fn RigidBody3D::set_linvel(self : RigidBody3D, v : @core.Vec3) -> Unit {
+  self.velocity = { linvel: v, angvel: self.velocity.angvel }
+}
+
+///|
+pub fn RigidBody3D::set_angvel(self : RigidBody3D, w : @core.Vec3) -> Unit {
+  self.velocity = { linvel: self.velocity.linvel, angvel: w }
+}
+
+///|
+pub fn RigidBody3D::body_type(self : RigidBody3D) -> RigidBodyType {
+  self.body_type
+}
+
+///|
+pub fn RigidBody3D::mass_properties(
+  self : RigidBody3D,
+) -> @core.MassProperties3 {
+  self.mass_properties
+}
+
+///|
+pub fn RigidBody3D::world_com(self : RigidBody3D) -> @core.Vec3 {
+  self.position.transform_point(self.mass_properties.center_of_mass)
 }
 
 ///|
@@ -139,7 +171,7 @@ pub fn RigidBody3D::set_rotation(self : RigidBody3D, r : @core.Quat) -> Unit {
 }
 
 ///|
-pub fn RigidBody3D::integrate(
+pub fn RigidBody3D::apply_gravity(
   self : RigidBody3D,
   gravity : @core.Vec3,
   dt : @core.Real,
@@ -151,16 +183,44 @@ pub fn RigidBody3D::integrate(
     linvel: self.velocity.linvel.add(gravity.scale(self.gravity_scale * dt)),
     angvel: self.velocity.angvel,
   }
+}
+
+///|
+pub fn RigidBody3D::apply_damping(self : RigidBody3D, dt : @core.Real) -> Unit {
+  if !self.body_type.is_dynamic() {
+    return
+  }
   self.velocity = self.velocity.apply_damping(
     dt,
     self.linear_damping,
     self.angular_damping,
   )
+}
+
+///|
+pub fn RigidBody3D::advance_position(
+  self : RigidBody3D,
+  dt : @core.Real,
+) -> Unit {
+  if !self.body_type.is_dynamic() {
+    return
+  }
   self.position = self.velocity.integrate(
     dt,
     self.position,
     self.mass_properties.center_of_mass,
   )
+}
+
+///|
+pub fn RigidBody3D::integrate(
+  self : RigidBody3D,
+  gravity : @core.Vec3,
+  dt : @core.Real,
+) -> Unit {
+  self.apply_gravity(gravity, dt)
+  self.apply_damping(dt)
+  self.advance_position(dt)
 }
 
 ///|
@@ -360,6 +420,43 @@ pub fn RigidBodySet3D::integrate_all(
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(body) {
       body.integrate(gravity, dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::apply_gravity_all(
+  self : RigidBodySet3D,
+  gravity : @core.Vec3,
+  dt : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.apply_gravity(gravity, dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::apply_damping_all(
+  self : RigidBodySet3D,
+  dt : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.apply_damping(dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::advance_positions_all(
+  self : RigidBodySet3D,
+  dt : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.advance_position(dt)
     }
   }
 }

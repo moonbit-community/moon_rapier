@@ -703,13 +703,22 @@ pub struct RigidBody3D {
   gravity_scale : Float
   mass_properties : @core.MassProperties3
 }
+pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
+pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
+pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBody3D::body_type(Self) -> RigidBodyType
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
+pub fn RigidBody3D::mass_properties(Self) -> @core.MassProperties3
+pub fn RigidBody3D::position(Self) -> @core.Isometry3
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
+pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_linvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::translation(Self) -> @core.Vec3
+pub fn RigidBody3D::world_com(Self) -> @core.Vec3
 
 pub struct RigidBodyActivation {
   mut normalized_linear_threshold : Float
@@ -951,6 +960,9 @@ pub struct RigidBodySet3D {
   generations : Array[Int]
   free_list : Array[Int]
 }
+pub fn RigidBodySet3D::advance_positions_all(Self, Float) -> Unit
+pub fn RigidBodySet3D::apply_damping_all(Self, Float) -> Unit
+pub fn RigidBodySet3D::apply_gravity_all(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBodySet3D::get(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::get_mut(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::insert(Self, RigidBody3D) -> RigidBodyHandle

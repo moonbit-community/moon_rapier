@@ -157,14 +157,20 @@ pub fn Collider::user_data(Self) -> Int
 
 pub struct Collider3D {
   mut position : @core.Isometry3
+  mut local_position : @core.Isometry3
+  mut parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
 }
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
 pub fn Collider3D::enabled(Self) -> Bool
+pub fn Collider3D::local_position(Self) -> @core.Isometry3
+pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
+pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
+pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
 pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::shape(Self) -> Shape3D
 
@@ -259,6 +265,8 @@ pub fn ColliderBuilder3::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Se
 
 pub struct ColliderBuilder3D {
   mut position : @core.Isometry3
+  mut local_position : @core.Isometry3
+  parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
 }
@@ -266,6 +274,7 @@ pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
+pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
@@ -356,9 +365,12 @@ pub struct ColliderSet3D {
 pub fn ColliderSet3D::get(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::get_mut(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::insert(Self, Collider3D) -> ColliderHandle3D
+pub fn ColliderSet3D::insert_with_parent(Self, Collider3D, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3D) -> ColliderHandle3D
 pub fn ColliderSet3D::len(Self) -> Int
 pub fn ColliderSet3D::new() -> Self
 pub fn ColliderSet3D::remove(Self, ColliderHandle3D) -> Collider3D?
+pub fn ColliderSet3D::set_parent(Self, ColliderHandle3D, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3D) -> Unit
+pub fn ColliderSet3D::sync_with_bodies(Self, @dynamics.RigidBodySet3D) -> Unit
 
 pub(all) enum CollisionEvent {
   Started(ColliderHandle, ColliderHandle, CollisionEventFlags)
@@ -421,6 +433,12 @@ pub struct ContactPair {
 }
 pub fn ContactPair::manifold_count(Self) -> Int
 pub fn ContactPair::manifolds(Self) -> Array[ContactManifold]
+
+pub struct ContactPair3D {
+  manifolds : Array[ContactPoint3D]
+}
+pub fn ContactPair3D::manifolds(Self) -> Array[ContactPoint3D]
+pub fn ContactPair3D::manifolds_len(Self) -> Int
 
 pub struct ContactPoint3D {
   point1 : @core.Vec3
@@ -489,6 +507,16 @@ pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[Inter
 pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Float, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
+
+pub struct NarrowPhase3D {
+  contact_pairs : Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
+}
+pub fn NarrowPhase3D::all_contact_pairs(Self) -> Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
+pub fn NarrowPhase3D::clear(Self) -> Unit
+pub fn NarrowPhase3D::contact_pair(Self, ColliderHandle3D, ColliderHandle3D) -> ContactPair3D?
+pub fn NarrowPhase3D::intersection_pair(Self, ColliderHandle3D, ColliderHandle3D) -> Unit?
+pub fn NarrowPhase3D::new() -> Self
+pub fn NarrowPhase3D::update(Self, Array[(ColliderHandle3D, ColliderHandle3D)], @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
 
 pub struct NonlinearRigidMotion {
   start_pos : @core.Isometry2

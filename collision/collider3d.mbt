@@ -75,6 +75,8 @@ fn aabb3_transform(iso : @core.Isometry3, aabb : @core.Aabb3) -> @core.Aabb3 {
 ///|
 pub struct Collider3D {
   mut position : @core.Isometry3
+  mut local_position : @core.Isometry3
+  mut parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
 }
@@ -90,6 +92,32 @@ pub fn Collider3D::set_position(
   pos : @core.Isometry3,
 ) -> Unit {
   self.position = pos
+}
+
+///|
+pub fn Collider3D::local_position(self : Collider3D) -> @core.Isometry3 {
+  self.local_position
+}
+
+///|
+pub fn Collider3D::set_local_position(
+  self : Collider3D,
+  pos : @core.Isometry3,
+) -> Unit {
+  self.local_position = pos
+}
+
+///|
+pub fn Collider3D::parent(self : Collider3D) -> @dynamics.RigidBodyHandle? {
+  self.parent
+}
+
+///|
+pub fn Collider3D::set_parent(
+  self : Collider3D,
+  parent : @dynamics.RigidBodyHandle?,
+) -> Unit {
+  self.parent = parent
 }
 
 ///|
@@ -124,6 +152,8 @@ pub fn Collider3D::set_enabled(self : Collider3D, enabled : Bool) -> Collider3D 
 ///|
 pub struct ColliderBuilder3D {
   mut position : @core.Isometry3
+  mut local_position : @core.Isometry3
+  parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
   mut enabled : Bool
 }
@@ -132,6 +162,8 @@ pub struct ColliderBuilder3D {
 pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
   {
     position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
     shape: Shape3D::ball(radius),
     enabled: true,
   }
@@ -145,6 +177,8 @@ pub fn ColliderBuilder3D::cuboid(
 ) -> ColliderBuilder3D {
   {
     position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
     shape: Shape3D::cuboid(hx, hy, hz),
     enabled: true,
   }
@@ -178,6 +212,15 @@ pub fn ColliderBuilder3D::rotation(
 }
 
 ///|
+pub fn ColliderBuilder3D::local_position(
+  self : ColliderBuilder3D,
+  pos : @core.Isometry3,
+) -> ColliderBuilder3D {
+  self.local_position = pos
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::enabled(
   self : ColliderBuilder3D,
   enabled : Bool,
@@ -188,5 +231,11 @@ pub fn ColliderBuilder3D::enabled(
 
 ///|
 pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
-  { position: self.position, shape: self.shape, enabled: self.enabled }
+  {
+    position: self.position,
+    local_position: self.local_position,
+    parent: self.parent,
+    shape: self.shape,
+    enabled: self.enabled,
+  }
 }

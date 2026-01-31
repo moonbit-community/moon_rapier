@@ -22,6 +22,8 @@ pub fn simd_strategy() -> String
 
 pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
+pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.NarrowPhase3D, ContactSolverCache3D, ContactSolverCache3D) -> Unit
+
 // Errors
 
 // Types and methods
@@ -36,6 +38,13 @@ pub struct CollisionPipeline3 {
 pub fn CollisionPipeline3::new() -> Self
 pub fn CollisionPipeline3::step(Self, Float, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, PhysicsHooks, EventHandler) -> Unit
 
+pub struct ContactImpulse3D {
+  normal : Float
+  tangent1 : Float
+  tangent2 : Float
+}
+pub fn ContactImpulse3D::zero() -> Self
+
 pub struct ContactImpulseCacheEntry {
   collider1 : @collision.ColliderHandle
   collider2 : @collision.ColliderHandle
@@ -44,6 +53,12 @@ pub struct ContactImpulseCacheEntry {
   impulse_n : Float
   impulse_t : Float
 }
+
+pub struct ContactSolverCache3D {
+  entries : Array[((@collision.ColliderHandle3D, @collision.ColliderHandle3D), ContactImpulse3D)]
+}
+pub fn ContactSolverCache3D::clear(Self) -> Unit
+pub fn ContactSolverCache3D::new() -> Self
 
 pub struct DebugColor {
   h : Float
@@ -169,6 +184,12 @@ pub struct PhysicsPipeline3D {
 }
 pub fn PhysicsPipeline3D::new() -> Self
 pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.RigidBodySet3D) -> Unit
+
+pub struct PhysicsPipeline3DReal {
+  mut contact_cache : ContactSolverCache3D
+}
+pub fn PhysicsPipeline3DReal::new() -> Self
+pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 
 // Type aliases
 pub using @dynamics {type IntegrationParameters}
