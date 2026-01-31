@@ -799,9 +799,11 @@ fn solve_joints_and_contacts_interleaved(
   solver_bodies : SolverBodies,
   island_stamps : Array[Int]?,
   stamp : Int,
+  additional_solver_iterations : Int,
   dt : @core.Real,
   event_handler : EventHandler,
-  contact_cache : Array[ContactImpulseCacheEntry],
+  contact_cache_in : Array[ContactImpulseCacheEntry],
+  contact_cache_out : Array[ContactImpulseCacheEntry],
 ) -> Unit {
   let joint_constraints = JointConstraintsSet::new()
   joint_constraints.init(
@@ -815,7 +817,7 @@ fn solve_joints_and_contacts_interleaved(
     physics_hooks,
     narrow_phase,
     dt,
-    contact_cache,
+    contact_cache_in,
     parameters.warmstart_coefficient,
     island_stamps,
     stamp,
@@ -824,11 +826,17 @@ fn solve_joints_and_contacts_interleaved(
   if contact_constraints.constraints.length() > 0 {
     contact_constraints.warmstart(bodies, solver_bodies)
   }
-  let base_iters = if parameters.num_solver_iterations <= 0 {
+  let base_iters0 = if parameters.num_solver_iterations <= 0 {
     1
   } else {
     parameters.num_solver_iterations
   }
+  let extra_iters = if additional_solver_iterations <= 0 {
+    0
+  } else {
+    additional_solver_iterations
+  }
+  let base_iters = base_iters0 + extra_iters
   // This solver loop is simpler than Rapier's (no island-parallelism, no SIMD).
   // Keep iteration counts aligned with `num_solver_iterations` for determinism/parity.
   let joint_iters = base_iters
@@ -862,7 +870,7 @@ fn solve_joints_and_contacts_interleaved(
     contact_constraints.emit_contact_force_events(
       bodies, colliders, dt, event_handler,
     )
-    contact_constraints.update_cache(contact_cache)
+    contact_constraints.append_cache_entries(contact_cache_out)
   }
 }
 
@@ -1172,6 +1180,13 @@ pub fn PhysicsPipeline::step(
       }
     }
     let island_solver = IslandSolver::new()
+    // The per-pipeline impulse cache is used for warmstarting across frames. When solving
+    // per-island we need to rebuild it incrementally; keep a snapshot of the previous cache.
+    let contact_cache_prev : Array[ContactImpulseCacheEntry] = []
+    for i in 0..<self.contact_solver_cache.length() {
+      contact_cache_prev.push(self.contact_solver_cache[i])
+    }
+    self.contact_solver_cache.clear()
     island_solver.solve(
       parameters,
       islands,
@@ -1183,6 +1198,7 @@ pub fn PhysicsPipeline::step(
       multibody_joints,
       dt,
       event_handler,
+      contact_cache_prev,
       self.contact_solver_cache,
     )
 

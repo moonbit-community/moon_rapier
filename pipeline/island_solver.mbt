@@ -45,7 +45,8 @@ fn IslandSolver::solve(
   multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
   event_handler : EventHandler,
-  contact_cache : Array[ContactImpulseCacheEntry],
+  contact_cache_in : Array[ContactImpulseCacheEntry],
+  contact_cache_out : Array[ContactImpulseCacheEntry],
 ) -> Unit {
   // Keep a solver-side snapshot of body poses/vels. This is currently used only as a
   // compatibility scaffold: later steps will build constraints from this cache.
@@ -60,38 +61,24 @@ fn IslandSolver::solve(
       self.velocity_solver.solver_bodies.copy_from(i, rb)
     }
   }
-  let active_bodies = islands.active_bodies()
-  let mut start = 0
-  while start < active_bodies.length() {
-    let start_handle = active_bodies[start]
-    let island_id = if bodies.get(start_handle) is Some(rb) {
-      rb.active_island_id()
-    } else {
-      -1
-    }
-    let mut end = start + 1
-    while end < active_bodies.length() {
-      let h = active_bodies[end]
-      let id = if bodies.get(h) is Some(rb) {
-        rb.active_island_id()
-      } else {
-        -2
-      }
-      if id != island_id {
-        break
-      }
-      end = end + 1
+  let active_islands = islands.active_islands()
+  for ai in 0..<active_islands.length() {
+    let island_id = active_islands[ai]
+    let island_bodies = islands.island_bodies(island_id)
+    if island_bodies.length() == 0 {
+      continue
     }
     // Stamp bodies in this island so constraint generation can filter interactions.
     self.velocity_solver.stamp = self.velocity_solver.stamp + 1
     let stamp = self.velocity_solver.stamp
-    for i in start..<end {
-      let h = active_bodies[i]
+    for i in 0..<island_bodies.length() {
+      let h = island_bodies[i]
       let id = h.id
       if id >= 0 && id < self.velocity_solver.island_stamps.length() {
         self.velocity_solver.island_stamps[id] = stamp
       }
     }
+    let extra_iters = islands.island_additional_solver_iterations(island_id)
     solve_joints_and_contacts_interleaved(
       parameters,
       bodies,
@@ -103,11 +90,12 @@ fn IslandSolver::solve(
       self.velocity_solver.solver_bodies,
       Some(self.velocity_solver.island_stamps),
       stamp,
+      extra_iters,
       dt,
       event_handler,
-      contact_cache,
+      contact_cache_in,
+      contact_cache_out,
     )
-    start = end
   }
   // Scatter updated velocities back into the rigid-body set for integration.
   self.velocity_solver.solver_bodies.writeback_vels(bodies)

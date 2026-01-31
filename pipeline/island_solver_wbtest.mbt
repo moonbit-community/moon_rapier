@@ -106,8 +106,10 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
   let collision_pipeline = CollisionPipeline::new()
   let params = IntegrationParameters::default().set_num_solver_iterations(4)
   let dt = 1.0F / 60.0F
-  let cache_a : Array[ContactImpulseCacheEntry] = []
-  let cache_b : Array[ContactImpulseCacheEntry] = []
+  let cache_a_in : Array[ContactImpulseCacheEntry] = []
+  let cache_a_out : Array[ContactImpulseCacheEntry] = []
+  let cache_b_in : Array[ContactImpulseCacheEntry] = []
+  let cache_b_out : Array[ContactImpulseCacheEntry] = []
   collision_pipeline.step(
     0.0F, islands_a, broad_a, narrow_a, bodies_a, colliders_a, impulse_a, multibody_a,
     hooks, events,
@@ -136,9 +138,11 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     solver_bodies_a,
     None,
     0,
+    0,
     dt,
     events,
-    cache_a,
+    cache_a_in,
+    cache_a_out,
   )
   solver_bodies_a.writeback_vels(bodies_a)
 
@@ -146,7 +150,7 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
   let island_solver = IslandSolver::new()
   island_solver.solve(
     params, islands_b, bodies_b, colliders_b, hooks, narrow_b, impulse_b, multibody_b,
-    dt, events, cache_b,
+    dt, events, cache_b_in, cache_b_out,
   )
   let p_a1 = bodies_a.get(a1).unwrap().translation()
   let p_a2 = bodies_a.get(a2).unwrap().translation()

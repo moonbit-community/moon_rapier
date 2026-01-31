@@ -484,6 +484,49 @@ pub fn IslandManager::active_bodies(
 }
 
 ///|
+pub fn IslandManager::active_islands(self : IslandManager) -> Array[Int] {
+  let result : Array[Int] = []
+  for i in 0..<self.awake_islands.length() {
+    result.push(self.awake_islands[i])
+  }
+  result
+}
+
+///|
+pub fn IslandManager::island_bodies(
+  self : IslandManager,
+  island_id : Int,
+) -> Array[RigidBodyHandle] {
+  if island_id < 0 || island_id >= self.islands.length() {
+    return []
+  }
+  if self.islands[island_id] is Some(island) {
+    let result : Array[RigidBodyHandle] = []
+    for i in 0..<island.bodies.length() {
+      result.push(island.bodies[i])
+    }
+    result
+  } else {
+    []
+  }
+}
+
+///|
+pub fn IslandManager::island_additional_solver_iterations(
+  self : IslandManager,
+  island_id : Int,
+) -> Int {
+  if island_id < 0 || island_id >= self.islands.length() {
+    return 0
+  }
+  if self.islands[island_id] is Some(island) {
+    island.additional_solver_iterations
+  } else {
+    0
+  }
+}
+
+///|
 fn IslandManager::wake_up_island(
   self : IslandManager,
   bodies : RigidBodySet,

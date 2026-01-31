@@ -308,7 +308,10 @@ pub struct IslandManager {
   body_state_generations : Array[Int]
 }
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
+pub fn IslandManager::active_islands(Self) -> Array[Int]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
+pub fn IslandManager::island_additional_solver_iterations(Self, Int) -> Int
+pub fn IslandManager::island_bodies(Self, Int) -> Array[RigidBodyHandle]
 pub fn IslandManager::new() -> Self
 pub fn IslandManager::rigid_body_removed_or_disabled(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit

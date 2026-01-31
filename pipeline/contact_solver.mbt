@@ -1131,11 +1131,11 @@ fn ContactConstraintsSet::emit_contact_force_events(
 }
 
 ///|
-fn ContactConstraintsSet::update_cache(
+fn ContactConstraintsSet::append_cache_entries(
   self : ContactConstraintsSet,
   cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  update_cache(cache, self.constraints)
+  append_cache_entries(cache, self.constraints)
 }
 
 ///|
@@ -1512,11 +1512,10 @@ fn emit_contact_force_events(
 }
 
 ///|
-fn update_cache(
+fn append_cache_entries(
   cache : Array[ContactImpulseCacheEntry],
   constraints : Array[SolverConstraint],
 ) -> Unit {
-  cache.clear()
   for i in 0..<constraints.length() {
     let c = constraints[i]
     cache.push(ContactImpulseCacheEntry::{
@@ -1528,6 +1527,15 @@ fn update_cache(
       impulse_t: c.impulse_t,
     })
   }
+}
+
+///|
+fn reset_cache(
+  cache : Array[ContactImpulseCacheEntry],
+  constraints : Array[SolverConstraint],
+) -> Unit {
+  cache.clear()
+  append_cache_entries(cache, constraints)
 }
 
 ///|
@@ -1589,5 +1597,5 @@ pub fn solve_contacts(
     parameters.allowed_linear_error(),
   )
   emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)
-  update_cache(cache, constraints)
+  reset_cache(cache, constraints)
 }
