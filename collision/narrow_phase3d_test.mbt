@@ -105,3 +105,54 @@ test "cuboid-cuboid contact: separated" {
   let c = compute_cuboid_cuboid_contact(a, he, b, he)
   inspect(c is None, content="true")
 }
+
+///|
+test "ball-capsule contact: overlap on side" {
+  let capsule = @core.Isometry3::identity()
+  let c = compute_ball_capsule_contact(
+    @core.Vec3::new(0.9F, 0.0F, 0.0F),
+    0.5F,
+    capsule,
+    0.5F,
+    1.0F,
+  )
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x - -1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.penetration - 0.1F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.point2.x - 0.5F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.point1.x - 0.4F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "capsule-cuboid contact: face overlap" {
+  let capsule = @core.Isometry3::from_translation(
+    @core.Vec3::new(1.4F, 0.0F, 0.0F),
+  )
+  let cuboid = @core.Isometry3::identity()
+  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let c = compute_capsule_cuboid_contact(capsule, 0.5F, 1.0F, cuboid, he)
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x - -1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.penetration - 0.1F) < 2.0e-4F, content="true")
+    inspect(@core.abs(cp.point2.x - 1.0F) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.point1.x - 0.9F) < 1.0e-5F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "capsule-capsule contact: overlap" {
+  let a = @core.Isometry3::identity()
+  let b = @core.Isometry3::from_translation(@core.Vec3::new(0.8F, 0.0F, 0.0F))
+  let c = compute_capsule_capsule_contact(a, 0.5F, 1.0F, b, 0.5F, 1.0F)
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x - 1.0F) < 1.0e-5F, content="true")
+    inspect(cp.penetration > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

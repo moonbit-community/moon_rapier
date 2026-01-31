@@ -41,6 +41,24 @@ fn local_sqrt(value : @core.Real) -> @core.Real {
 }
 
 ///|
+fn local_max(a : @core.Real, b : @core.Real) -> @core.Real {
+  if a > b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
+fn local_min(a : @core.Real, b : @core.Real) -> @core.Real {
+  if a < b {
+    a
+  } else {
+    b
+  }
+}
+
+///|
 pub fn compute_ball_ball_contact(
   center1 : @core.Vec3,
   radius1 : @core.Real,
@@ -155,6 +173,518 @@ pub fn compute_ball_cuboid_contact(
       dz
     }
     ball_radius + face_dist
+  }
+  Some({ point1, point2, normal, penetration })
+}
+
+///|
+fn closest_point_on_segment3d(
+  p : @core.Vec3,
+  a : @core.Vec3,
+  b : @core.Vec3,
+) -> @core.Vec3 {
+  let ab = b.sub(a)
+  let denom = ab.length_squared()
+  if denom <= 1.0e-12F {
+    return a
+  }
+  let t = @core.clamp(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
+  a.add(ab.scale(t))
+}
+
+///|
+fn capsule_segment_endpoints(
+  pos : @core.Isometry3,
+  half_height : @core.Real,
+) -> (@core.Vec3, @core.Vec3) {
+  let a = pos.transform_point(@core.Vec3::new(0.0F, -half_height, 0.0F))
+  let b = pos.transform_point(@core.Vec3::new(0.0F, half_height, 0.0F))
+  (a, b)
+}
+
+///|
+fn axis_interval(
+  p0 : @core.Real,
+  d : @core.Real,
+  he : @core.Real,
+  state : Int,
+) -> (@core.Real, @core.Real, Bool) {
+  // state: 0=inside, 1=below, 2=above
+  let neg_inf = -1.0e30F
+  let pos_inf = 1.0e30F
+  if @core.abs(d) <= 1.0e-12F {
+    match state {
+      0 =>
+        if p0 >= -he && p0 <= he {
+          (neg_inf, pos_inf, true)
+        } else {
+          (0.0F, 0.0F, false)
+        }
+      1 =>
+        if p0 <= -he {
+          (neg_inf, pos_inf, true)
+        } else {
+          (0.0F, 0.0F, false)
+        }
+      _ => if p0 >= he { (neg_inf, pos_inf, true) } else { (0.0F, 0.0F, false) }
+    }
+  } else {
+    let t_neg = (-he - p0) / d
+    let t_pos = (he - p0) / d
+    let t_min = if t_neg < t_pos { t_neg } else { t_pos }
+    let t_max = if t_neg < t_pos { t_pos } else { t_neg }
+    match state {
+      0 => (t_min, t_max, true)
+      1 =>
+        if d > 0.0F {
+          (neg_inf, t_neg, true)
+        } else {
+          (t_neg, pos_inf, true)
+        }
+      _ =>
+        if d > 0.0F {
+          (t_pos, pos_inf, true)
+        } else {
+          (neg_inf, t_pos, true)
+        }
+    }
+  }
+}
+
+///|
+fn segment_aabb_closest_points(
+  a : @core.Vec3,
+  b : @core.Vec3,
+  he : @core.Vec3,
+) -> (@core.Vec3, @core.Vec3) {
+  let p0 = a
+  let d = b.sub(a)
+  let mut best_t = 0.0F
+  let mut best_dist2 = 1.0e30F
+  let mut best_p = a
+  let mut best_q = @core.Vec3::new(
+    @core.clamp(a.x, -he.x, he.x),
+    @core.clamp(a.y, -he.y, he.y),
+    @core.clamp(a.z, -he.z, he.z),
+  )
+  for sx in 0..<3 {
+    let (x_lo, x_hi, x_ok) = axis_interval(p0.x, d.x, he.x, sx)
+    if !x_ok {
+      continue
+    }
+    for sy in 0..<3 {
+      let (y_lo, y_hi, y_ok) = axis_interval(p0.y, d.y, he.y, sy)
+      if !y_ok {
+        continue
+      }
+      for sz in 0..<3 {
+        let (z_lo, z_hi, z_ok) = axis_interval(p0.z, d.z, he.z, sz)
+        if !z_ok {
+          continue
+        }
+        let lo = local_max(local_max(local_max(x_lo, y_lo), z_lo), 0.0F)
+        let hi = local_min(local_min(local_min(x_hi, y_hi), z_hi), 1.0F)
+        if lo > hi {
+          continue
+        }
+        let mut a2 = 0.0F
+        let mut b2 = 0.0F
+        let mut c2 = 0.0F
+        if sx != 0 {
+          let bound = if sx == 1 { -he.x } else { he.x }
+          let k0 = p0.x - bound
+          a2 = a2 + d.x * d.x
+          b2 = b2 + 2.0F * d.x * k0
+          c2 = c2 + k0 * k0
+        }
+        if sy != 0 {
+          let bound = if sy == 1 { -he.y } else { he.y }
+          let k0 = p0.y - bound
+          a2 = a2 + d.y * d.y
+          b2 = b2 + 2.0F * d.y * k0
+          c2 = c2 + k0 * k0
+        }
+        if sz != 0 {
+          let bound = if sz == 1 { -he.z } else { he.z }
+          let k0 = p0.z - bound
+          a2 = a2 + d.z * d.z
+          b2 = b2 + 2.0F * d.z * k0
+          c2 = c2 + k0 * k0
+        }
+        let mut t = lo
+        if a2 > 1.0e-12F {
+          t = @core.clamp(-b2 / (2.0F * a2), lo, hi)
+        } else if hi > lo {
+          let f_lo = b2 * lo + c2
+          let f_hi = b2 * hi + c2
+          t = if f_hi < f_lo { hi } else { lo }
+        }
+        let p = p0.add(d.scale(t))
+        let q = @core.Vec3::new(
+          @core.clamp(p.x, -he.x, he.x),
+          @core.clamp(p.y, -he.y, he.y),
+          @core.clamp(p.z, -he.z, he.z),
+        )
+        let dist2 = p.sub(q).length_squared()
+        if dist2 < best_dist2 - 1.0e-12F ||
+          (@core.abs(dist2 - best_dist2) <= 1.0e-12F && t < best_t) {
+          best_dist2 = dist2
+          best_t = t
+          best_p = p
+          best_q = q
+        }
+      }
+    }
+  }
+  (best_p, best_q)
+}
+
+///|
+pub fn compute_ball_capsule_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  capsule_pos : @core.Isometry3,
+  capsule_radius : @core.Real,
+  capsule_half_height : @core.Real,
+) -> ContactPoint3D? {
+  let (a, b) = capsule_segment_endpoints(capsule_pos, capsule_half_height)
+  let axis_pt = closest_point_on_segment3d(ball_center, a, b)
+  let delta = axis_pt.sub(ball_center)
+  let dist2 = delta.length_squared()
+  let r = ball_radius + capsule_radius
+  if dist2 > r * r {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let normal = if dist <= 1.0e-6F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    delta.scale(1.0F / dist)
+  }
+  let point1 = ball_center.add(normal.scale(ball_radius))
+  let point2 = axis_pt.sub(normal.scale(capsule_radius))
+  Some({ point1, point2, normal, penetration: r - dist })
+}
+
+///|
+fn closest_points_segment_segment3d(
+  p1 : @core.Vec3,
+  q1 : @core.Vec3,
+  p2 : @core.Vec3,
+  q2 : @core.Vec3,
+) -> (@core.Vec3, @core.Vec3) {
+  let d1 = q1.sub(p1)
+  let d2 = q2.sub(p2)
+  let r = p1.sub(p2)
+  let a = d1.dot(d1)
+  let e = d2.dot(d2)
+  let f = d2.dot(r)
+  let eps = 1.0e-12F
+  let mut s = 0.0F
+  let mut t = 0.0F
+  if a <= eps && e <= eps {
+    return (p1, p2)
+  }
+  if a <= eps {
+    s = 0.0F
+    t = @core.clamp(f / e, 0.0F, 1.0F)
+  } else {
+    let c = d1.dot(r)
+    if e <= eps {
+      t = 0.0F
+      s = @core.clamp(-c / a, 0.0F, 1.0F)
+    } else {
+      let b = d1.dot(d2)
+      let denom = a * e - b * b
+      if denom != 0.0F {
+        s = @core.clamp((b * f - c * e) / denom, 0.0F, 1.0F)
+      } else {
+        s = 0.0F
+      }
+      t = (b * s + f) / e
+      if t < 0.0F {
+        t = 0.0F
+        s = @core.clamp(-c / a, 0.0F, 1.0F)
+      } else if t > 1.0F {
+        t = 1.0F
+        s = @core.clamp((b - c) / a, 0.0F, 1.0F)
+      }
+    }
+  }
+  (p1.add(d1.scale(s)), p2.add(d2.scale(t)))
+}
+
+///|
+pub fn compute_capsule_capsule_contact(
+  pos1 : @core.Isometry3,
+  r1 : @core.Real,
+  hh1 : @core.Real,
+  pos2 : @core.Isometry3,
+  r2 : @core.Real,
+  hh2 : @core.Real,
+) -> ContactPoint3D? {
+  let (a1, b1) = capsule_segment_endpoints(pos1, hh1)
+  let (a2, b2) = capsule_segment_endpoints(pos2, hh2)
+  let (p1, p2) = closest_points_segment_segment3d(a1, b1, a2, b2)
+  let delta = p2.sub(p1)
+  let dist2 = delta.length_squared()
+  let r = r1 + r2
+  if dist2 > r * r {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let normal = if dist <= 1.0e-6F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    delta.scale(1.0F / dist)
+  }
+  let point1 = p1.add(normal.scale(r1))
+  let point2 = p2.sub(normal.scale(r2))
+  Some({ point1, point2, normal, penetration: r - dist })
+}
+
+///|
+pub fn compute_capsule_cuboid_contact(
+  capsule_pos : @core.Isometry3,
+  capsule_radius : @core.Real,
+  capsule_half_height : @core.Real,
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
+) -> ContactPoint3D? {
+  let (a_world, b_world) = capsule_segment_endpoints(
+    capsule_pos, capsule_half_height,
+  )
+  let inv = cuboid_pos.inverse()
+  let a_local = inv.transform_point(a_world)
+  let b_local = inv.transform_point(b_world)
+  let he = cuboid_half_extents
+  let (axis_local, box_local) = segment_aabb_closest_points(
+    a_local, b_local, he,
+  )
+  let delta = box_local.sub(axis_local)
+  let dist2 = delta.length_squared()
+  if dist2 > capsule_radius * capsule_radius {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let mut normal_local = @core.Vec3::zero()
+  let mut point2_local = box_local
+  let penetration = if dist > 1.0e-6F {
+    normal_local = delta.scale(1.0F / dist)
+    capsule_radius - dist
+  } else {
+    // Segment passes through (or extremely close to) the box: pick a deterministic face normal.
+    let dx = he.x - @core.abs(axis_local.x)
+    let dy = he.y - @core.abs(axis_local.y)
+    let dz = he.z - @core.abs(axis_local.z)
+    if dx <= dy && dx <= dz {
+      normal_local = @core.Vec3::new(
+        if axis_local.x >= 0.0F {
+          1.0F
+        } else {
+          -1.0F
+        },
+        0.0F,
+        0.0F,
+      )
+      point2_local = @core.Vec3::new(
+        normal_local.x * he.x,
+        axis_local.y,
+        axis_local.z,
+      )
+      capsule_radius + dx
+    } else if dy <= dz {
+      normal_local = @core.Vec3::new(
+        0.0F,
+        if axis_local.y >= 0.0F {
+          1.0F
+        } else {
+          -1.0F
+        },
+        0.0F,
+      )
+      point2_local = @core.Vec3::new(
+        axis_local.x,
+        normal_local.y * he.y,
+        axis_local.z,
+      )
+      capsule_radius + dy
+    } else {
+      normal_local = @core.Vec3::new(
+        0.0F,
+        0.0F,
+        if axis_local.z >= 0.0F {
+          1.0F
+        } else {
+          -1.0F
+        },
+      )
+      point2_local = @core.Vec3::new(
+        axis_local.x,
+        axis_local.y,
+        normal_local.z * he.z,
+      )
+      capsule_radius + dz
+    }
+  }
+  let normal = cuboid_pos.rotation.rotate_vec3(normal_local)
+  let axis_world = cuboid_pos.transform_point(axis_local)
+  let point2 = cuboid_pos.transform_point(point2_local)
+  let point1 = axis_world.add(normal.scale(capsule_radius))
+  Some({ point1, point2, normal, penetration })
+}
+
+///|
+pub fn compute_ball_cylinder_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+) -> ContactPoint3D? {
+  let inv = cyl_pos.inverse()
+  let local_center = inv.transform_point(ball_center)
+  let hh = cyl_half_height
+  let r = cyl_radius
+  let y = @core.clamp(local_center.y, -hh, hh)
+  let mut x = local_center.x
+  let mut z = local_center.z
+  let s2 = x * x + z * z
+  if s2 > 1.0e-12F {
+    let s = local_sqrt(s2)
+    if s > r {
+      let k = r / s
+      x = x * k
+      z = z * k
+    }
+  } else {
+    x = 0.0F
+    z = 0.0F
+  }
+  let point2_local = @core.Vec3::new(x, y, z)
+  let delta = local_center.sub(point2_local)
+  let dist2 = delta.length_squared()
+  if dist2 > ball_radius * ball_radius {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let normal_local = if dist > 1.0e-6F {
+    delta.scale(-1.0F / dist)
+  } else {
+    // Inside: choose the nearest surface.
+    let radial = local_sqrt(s2)
+    let dr = r - radial
+    let dy = hh - @core.abs(local_center.y)
+    if dy <= dr {
+      @core.Vec3::new(
+        0.0F,
+        if local_center.y >= 0.0F {
+          1.0F
+        } else {
+          -1.0F
+        },
+        0.0F,
+      )
+    } else if radial > 1.0e-6F {
+      @core.Vec3::new(local_center.x / radial, 0.0F, local_center.z / radial)
+    } else {
+      @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    }
+  }
+  let normal = cyl_pos.rotation.rotate_vec3(normal_local)
+  let point2 = cyl_pos.transform_point(point2_local)
+  let point1 = ball_center.add(normal.scale(ball_radius))
+  let penetration = if dist > 1.0e-6F {
+    ball_radius - dist
+  } else {
+    let radial = local_sqrt(s2)
+    let dr = r - radial
+    let dy = hh - @core.abs(local_center.y)
+    let min_dist = if dy <= dr { dy } else { dr }
+    ball_radius + min_dist
+  }
+  Some({ point1, point2, normal, penetration })
+}
+
+///|
+pub fn compute_ball_cone_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  cone_pos : @core.Isometry3,
+  cone_radius : @core.Real,
+  cone_half_height : @core.Real,
+) -> ContactPoint3D? {
+  let inv = cone_pos.inverse()
+  let local_center = inv.transform_point(ball_center)
+  let hh = cone_half_height
+  let r = cone_radius
+  let s2 = local_center.x * local_center.x + local_center.z * local_center.z
+  let s = local_sqrt(s2)
+  // Reduce to 2D in (s, y).
+  let ax = 0.0F
+  let ay = hh
+  let bx = r
+  let by = -hh
+  let px = s
+  let py = local_center.y
+  let abx = bx - ax
+  let aby = by - ay
+  let denom = abx * abx + aby * aby
+  let mut t = 0.0F
+  if denom > 1.0e-12F {
+    t = @core.clamp(((px - ax) * abx + (py - ay) * aby) / denom, 0.0F, 1.0F)
+  }
+  let qx = ax + abx * t
+  let qy = ay + aby * t
+  let base_x = if px > r { r } else { px }
+  let base_y = -hh
+  let dist2_lateral = (px - qx) * (px - qx) + (py - qy) * (py - qy)
+  let dist2_base = (px - base_x) * (px - base_x) + (py - base_y) * (py - base_y)
+  let use_base = dist2_base < dist2_lateral
+  let target_x = if use_base { base_x } else { qx }
+  let target_y = if use_base { base_y } else { qy }
+  // Map back to 3D.
+  let (tx, tz) = if s > 1.0e-6F {
+    let k = target_x / s
+    (local_center.x * k, local_center.z * k)
+  } else {
+    (target_x, 0.0F)
+  }
+  let point2_local = @core.Vec3::new(tx, target_y, tz)
+  let delta = local_center.sub(point2_local)
+  let dist2 = delta.length_squared()
+  if dist2 > ball_radius * ball_radius {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let normal_local = if dist > 1.0e-6F {
+    delta.scale(-1.0F / dist)
+  } else {
+    // Inside: nearest between base and lateral surface (approx).
+    let dist_base = local_center.y + hh
+    let slope = r / (2.0F * hh)
+    let radius_y = (hh - local_center.y) * slope
+    let dist_side = radius_y - s
+    if dist_base <= dist_side {
+      @core.Vec3::new(0.0F, -1.0F, 0.0F)
+    } else if s > 1.0e-6F {
+      @core.Vec3::new(local_center.x / s, slope, local_center.z / s).normalize()
+    } else {
+      @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    }
+  }
+  let normal = cone_pos.rotation.rotate_vec3(normal_local)
+  let point2 = cone_pos.transform_point(point2_local)
+  let point1 = ball_center.add(normal.scale(ball_radius))
+  let penetration = if dist > 1.0e-6F {
+    ball_radius - dist
+  } else {
+    let dist_base = local_center.y + hh
+    let slope = r / (2.0F * hh)
+    let radius_y = (hh - local_center.y) * slope
+    let dist_side = radius_y - s
+    let min_dist = if dist_base <= dist_side { dist_base } else { dist_side }
+    ball_radius + min_dist
   }
   Some({ point1, point2, normal, penetration })
 }
