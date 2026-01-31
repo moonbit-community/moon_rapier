@@ -98,6 +98,81 @@ pub fn RigidBodyPosition3D::interpolate_velocity(
 }
 
 ///|
+const DEFAULT_SLEEP_LINEAR_THRESHOLD_3D : @core.Real = 0.4F
+
+///|
+const DEFAULT_SLEEP_ANGULAR_THRESHOLD_3D : @core.Real = 0.5F
+
+///|
+const DEFAULT_TIME_UNTIL_SLEEP_3D : @core.Real = 2.0F
+
+///|
+pub struct RigidBodyActivation3D {
+  normalized_linear_threshold : @core.Real
+  angular_threshold : @core.Real
+  time_until_sleep : @core.Real
+  mut time_since_can_sleep : @core.Real
+  mut sleeping : Bool
+}
+
+///|
+pub fn RigidBodyActivation3D::active() -> RigidBodyActivation3D {
+  {
+    normalized_linear_threshold: DEFAULT_SLEEP_LINEAR_THRESHOLD_3D,
+    angular_threshold: DEFAULT_SLEEP_ANGULAR_THRESHOLD_3D,
+    time_until_sleep: DEFAULT_TIME_UNTIL_SLEEP_3D,
+    time_since_can_sleep: 0.0F,
+    sleeping: false,
+  }
+}
+
+///|
+pub fn RigidBodyActivation3D::is_sleeping(self : RigidBodyActivation3D) -> Bool {
+  self.sleeping
+}
+
+///|
+pub fn RigidBodyActivation3D::wake_up(self : RigidBodyActivation3D) -> Unit {
+  self.sleeping = false
+  self.time_since_can_sleep = 0.0F
+}
+
+///|
+pub fn RigidBodyActivation3D::update(
+  self : RigidBodyActivation3D,
+  dt : @core.Real,
+  length_unit : @core.Real,
+  body_type : RigidBodyType,
+  vels : RigidBodyVelocity3D,
+) -> Unit {
+  if self.sleeping {
+    return
+  }
+  let sq_linvel = vels.linvel().length_squared()
+  let sq_angvel = vels.angvel().length_squared()
+  let can_sleep = match body_type {
+    RigidBodyType::Dynamic => {
+      let linear_threshold = self.normalized_linear_threshold * length_unit
+      sq_linvel < linear_threshold * linear_threshold &&
+      sq_angvel < self.angular_threshold * self.angular_threshold
+    }
+    RigidBodyType::KinematicPositionBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::KinematicVelocityBased =>
+      sq_linvel == 0.0F && sq_angvel == 0.0F
+    RigidBodyType::Fixed => true
+  }
+  if can_sleep {
+    self.time_since_can_sleep = self.time_since_can_sleep + dt
+    if self.time_since_can_sleep >= self.time_until_sleep {
+      self.sleeping = true
+    }
+  } else {
+    self.time_since_can_sleep = 0.0F
+  }
+}
+
+///|
 pub struct RigidBody3D {
   body_type : RigidBodyType
   mut position : @core.Isometry3
@@ -106,6 +181,8 @@ pub struct RigidBody3D {
   angular_damping : @core.Real
   gravity_scale : @core.Real
   mass_properties : @core.MassProperties3
+  activation : RigidBodyActivation3D
+  can_sleep : Bool
 }
 
 ///|
@@ -161,6 +238,28 @@ pub fn RigidBody3D::world_com(self : RigidBody3D) -> @core.Vec3 {
 }
 
 ///|
+pub fn RigidBody3D::is_active(self : RigidBody3D) -> Bool {
+  !self.activation.is_sleeping()
+}
+
+///|
+pub fn RigidBody3D::wake_up(self : RigidBody3D) -> Unit {
+  self.activation.wake_up()
+}
+
+///|
+pub fn RigidBody3D::update_sleep(
+  self : RigidBody3D,
+  dt : @core.Real,
+  length_unit : @core.Real,
+) -> Unit {
+  if !self.can_sleep {
+    return
+  }
+  self.activation.update(dt, length_unit, self.body_type, self.velocity)
+}
+
+///|
 pub fn RigidBody3D::set_translation(self : RigidBody3D, t : @core.Vec3) -> Unit {
   self.position = @core.Isometry3::new(t, self.position.rotation)
 }
@@ -179,6 +278,9 @@ pub fn RigidBody3D::apply_gravity(
   if !self.body_type.is_dynamic() {
     return
   }
+  if self.activation.is_sleeping() {
+    return
+  }
   self.velocity = {
     linvel: self.velocity.linvel.add(gravity.scale(self.gravity_scale * dt)),
     angvel: self.velocity.angvel,
@@ -188,6 +290,9 @@ pub fn RigidBody3D::apply_gravity(
 ///|
 pub fn RigidBody3D::apply_damping(self : RigidBody3D, dt : @core.Real) -> Unit {
   if !self.body_type.is_dynamic() {
+    return
+  }
+  if self.activation.is_sleeping() {
     return
   }
   self.velocity = self.velocity.apply_damping(
@@ -203,6 +308,9 @@ pub fn RigidBody3D::advance_position(
   dt : @core.Real,
 ) -> Unit {
   if !self.body_type.is_dynamic() {
+    return
+  }
+  if self.activation.is_sleeping() {
     return
   }
   self.position = self.velocity.integrate(
@@ -234,6 +342,7 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : @core.Real
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
+  mut can_sleep : Bool
 }
 
 ///|
@@ -252,6 +361,7 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
       @core.SdpMat3::from_diagonal(@core.Vec3::new(1.0F, 1.0F, 1.0F)),
       @core.Vec3::zero(),
     ),
+    can_sleep: true,
   }
 }
 
@@ -260,7 +370,35 @@ pub fn RigidBodyBuilder3D::fixed() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
   b.body_type = RigidBodyType::Fixed
   b.mass_properties = @core.MassProperties3::default()
+  b.can_sleep = false
   b
+}
+
+///|
+pub fn RigidBodyBuilder3D::kinematic_position_based() -> RigidBodyBuilder3D {
+  let b = RigidBodyBuilder3D::dynamic()
+  b.body_type = RigidBodyType::KinematicPositionBased
+  b.mass_properties = @core.MassProperties3::default()
+  b.can_sleep = false
+  b
+}
+
+///|
+pub fn RigidBodyBuilder3D::kinematic_velocity_based() -> RigidBodyBuilder3D {
+  let b = RigidBodyBuilder3D::dynamic()
+  b.body_type = RigidBodyType::KinematicVelocityBased
+  b.mass_properties = @core.MassProperties3::default()
+  b.can_sleep = false
+  b
+}
+
+///|
+pub fn RigidBodyBuilder3D::can_sleep(
+  self : RigidBodyBuilder3D,
+  can_sleep : Bool,
+) -> RigidBodyBuilder3D {
+  self.can_sleep = can_sleep
+  self
 }
 
 ///|
@@ -345,6 +483,8 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
     angular_damping: self.angular_damping,
     gravity_scale: self.gravity_scale,
     mass_properties: self.mass_properties,
+    activation: RigidBodyActivation3D::active(),
+    can_sleep: self.can_sleep,
   }
 }
 
@@ -457,6 +597,19 @@ pub fn RigidBodySet3D::advance_positions_all(
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(body) {
       body.advance_position(dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::update_sleep_all(
+  self : RigidBodySet3D,
+  dt : @core.Real,
+  length_unit : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.update_sleep(dt, length_unit)
     }
   }
 }

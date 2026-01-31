@@ -17,6 +17,7 @@ test "physics_pipeline3d_real: ball rests on ground" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let bodies = @dynamics.RigidBodySet3D::new()
   let colliders = @collision.ColliderSet3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
@@ -45,7 +46,7 @@ test "physics_pipeline3d_real: ball rests on ground" {
   )
   for _ in 0..<240 {
     pipeline.step(
-      gravity, parameters, broad_phase, narrow_phase, bodies, colliders,
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
   }
 
@@ -61,6 +62,68 @@ test "physics_pipeline3d_real: ball rests on ground" {
     inspect(pair.manifolds_len() > 0, content="true")
   } else {
     // The simulation is expected to reach the ground; treat missing pair as failure.
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "physics_pipeline3d_real: sleeping and wake-up" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let ball1 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F).build(),
+    ball1,
+    bodies,
+  )
+  |> ignore
+
+  // Let ball1 go to sleep (default time_until_sleep is 2s).
+  for _ in 0..<240 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(ball1) is Some(rb1) {
+    inspect(!rb1.is_active(), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // A moving ball collides with ball1 and should wake it up.
+  let ball2 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(-3.0F, 0.0F, 0.0F))
+    .linvel(@core.Vec3::new(10.0F, 0.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F).build(),
+    ball2,
+    bodies,
+  )
+  |> ignore
+  for _ in 0..<60 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(ball1) is Some(rb1b) {
+    inspect(rb1b.is_active(), content="true")
+  } else {
     inspect(false, content="true")
   }
 }

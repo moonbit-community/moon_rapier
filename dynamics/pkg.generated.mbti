@@ -325,6 +325,13 @@ pub fn IslandManager3::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3::as_2d(Self) -> IslandManager
 pub fn IslandManager3::new() -> Self
 
+pub struct IslandManager3D {
+  active_bodies : Array[RigidBodyHandle]
+}
+pub fn IslandManager3D::active_bodies(Self) -> Array[RigidBodyHandle]
+pub fn IslandManager3D::new() -> Self
+pub fn IslandManager3D::update(Self, RigidBodySet3D) -> Unit
+
 type IslandsOptimizer
 
 type Jacobian
@@ -702,6 +709,8 @@ pub struct RigidBody3D {
   angular_damping : Float
   gravity_scale : Float
   mass_properties : @core.MassProperties3
+  activation : RigidBodyActivation3D
+  can_sleep : Bool
 }
 pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
@@ -709,6 +718,7 @@ pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
 pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBody3D::is_active(Self) -> Bool
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
 pub fn RigidBody3D::mass_properties(Self) -> @core.MassProperties3
 pub fn RigidBody3D::position(Self) -> @core.Isometry3
@@ -718,6 +728,8 @@ pub fn RigidBody3D::set_linvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::translation(Self) -> @core.Vec3
+pub fn RigidBody3D::update_sleep(Self, Float, Float) -> Unit
+pub fn RigidBody3D::wake_up(Self) -> Unit
 pub fn RigidBody3D::world_com(Self) -> @core.Vec3
 
 pub struct RigidBodyActivation {
@@ -740,6 +752,18 @@ pub fn RigidBodyActivation::is_eligible_for_sleep(Self) -> Bool
 pub fn RigidBodyActivation::sleep(Self) -> Self
 pub fn RigidBodyActivation::update_energy(Self, RigidBodyType, Float, Float, Float, Float) -> Self
 pub fn RigidBodyActivation::wake_up(Self, Bool) -> Self
+
+pub struct RigidBodyActivation3D {
+  normalized_linear_threshold : Float
+  angular_threshold : Float
+  time_until_sleep : Float
+  mut time_since_can_sleep : Float
+  mut sleeping : Bool
+}
+pub fn RigidBodyActivation3D::active() -> Self
+pub fn RigidBodyActivation3D::is_sleeping(Self) -> Bool
+pub fn RigidBodyActivation3D::update(Self, Float, Float, RigidBodyType, RigidBodyVelocity3D) -> Unit
+pub fn RigidBodyActivation3D::wake_up(Self) -> Unit
 
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
@@ -820,13 +844,17 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : Float
   mut gravity_scale : Float
   mut mass_properties : @core.MassProperties3
+  mut can_sleep : Bool
 }
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
+pub fn RigidBodyBuilder3D::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::dynamic() -> Self
 pub fn RigidBodyBuilder3D::fixed() -> Self
 pub fn RigidBodyBuilder3D::gravity_scale(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::kinematic_position_based() -> Self
+pub fn RigidBodyBuilder3D::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder3D::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::linvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::mass_properties(Self, @core.MassProperties3) -> Self
@@ -969,6 +997,7 @@ pub fn RigidBodySet3D::insert(Self, RigidBody3D) -> RigidBodyHandle
 pub fn RigidBodySet3D::integrate_all(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBodySet3D::len(Self) -> Int
 pub fn RigidBodySet3D::new() -> Self
+pub fn RigidBodySet3D::update_sleep_all(Self, Float, Float) -> Unit
 
 pub(all) enum RigidBodyType {
   Dynamic

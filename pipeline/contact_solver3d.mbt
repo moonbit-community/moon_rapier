@@ -123,6 +123,10 @@ fn apply_impulse(
   if mprops.inv_mass <= 0.0F {
     return
   }
+  // Any non-trivial impulse should wake up a sleeping dynamic body.
+  if !body.is_active() && impulse.length_squared() > 1.0e-12F {
+    body.wake_up()
+  }
   body.set_linvel(body.linvel().add(impulse.scale(mprops.inv_mass)))
   let r = point.sub(body.world_com())
   let ang_imp = r.cross(impulse)
@@ -156,6 +160,22 @@ pub fn solve_contacts_3d(
       if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
         let p1 = co1.parent()
         let p2 = co2.parent()
+        // Skip warmstarting contacts between sleeping dynamic bodies.
+        let mut dyn_sleeping1 = false
+        let mut dyn_sleeping2 = false
+        if p1 is Some(h1) {
+          if bodies.get(h1) is Some(rb1) && rb1.body_type().is_dynamic() {
+            dyn_sleeping1 = !rb1.is_active()
+          }
+        }
+        if p2 is Some(h2) {
+          if bodies.get(h2) is Some(rb2) && rb2.body_type().is_dynamic() {
+            dyn_sleeping2 = !rb2.is_active()
+          }
+        }
+        if dyn_sleeping1 && dyn_sleeping2 {
+          continue
+        }
         let jn = imp.normal * warmstart_coeff
         let (t1, t2) = orthonormal_basis(c0.normal)
         let jt = t1
@@ -206,6 +226,15 @@ pub fn solve_contacts_3d(
         }
         if co2.parent() is Some(h2) {
           rb2 = bodies.get(h2)
+        }
+        // Don't waste solver work on contacts between sleeping dynamic bodies.
+        if rb1 is Some(b1) &&
+          rb2 is Some(b2) &&
+          b1.body_type().is_dynamic() &&
+          b2.body_type().is_dynamic() &&
+          !b1.is_active() &&
+          !b2.is_active() {
+          continue
         }
         fn vel_at(
           body : @dynamics.RigidBody3D,

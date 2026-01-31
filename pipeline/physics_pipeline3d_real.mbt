@@ -30,6 +30,7 @@ pub fn PhysicsPipeline3DReal::step(
   self : PhysicsPipeline3DReal,
   gravity : @core.Vec3,
   parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
   broad_phase : @collision.BroadPhase3D,
   narrow_phase : @collision.NarrowPhase3D,
   bodies : @dynamics.RigidBodySet3D,
@@ -56,4 +57,6 @@ pub fn PhysicsPipeline3DReal::step(
   self.contact_cache = cache_out
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
+  bodies.update_sleep_all(dt, parameters.length_unit)
+  islands.update(bodies)
 }

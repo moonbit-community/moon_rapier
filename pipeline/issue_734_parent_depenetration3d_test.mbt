@@ -18,6 +18,7 @@ test "issue #734: collider_set parent depenetration (3D)" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let bodies = @dynamics.RigidBodySet3D::new()
   let colliders = @collision.ColliderSet3D::new()
   let gravity = @core.Vec3::zero()
@@ -43,7 +44,7 @@ test "issue #734: collider_set parent depenetration (3D)" {
 
   // Initial step: same-parent pair exists but no manifolds.
   pipeline.step(
-    gravity, parameters, broad_phase, narrow_phase, bodies, colliders,
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
   )
   if colliders.get(c1) is Some(co1) && colliders.get(c2) is Some(co2) {
     let d = co1.position().translation.sub(co2.position().translation).length()
@@ -60,7 +61,7 @@ test "issue #734: collider_set parent depenetration (3D)" {
   // Re-parent collider2 to body2 and ensure we now have a manifold.
   colliders.set_parent(c2, Some(body2), bodies)
   pipeline.step(
-    gravity, parameters, broad_phase, narrow_phase, bodies, colliders,
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
   )
   if narrow_phase.contact_pair(c1, c2) is Some(pair1) {
     inspect(pair1.manifolds_len() == 1, content="true")
@@ -71,7 +72,7 @@ test "issue #734: collider_set parent depenetration (3D)" {
   // Let the solver depenetrate.
   for _ in 0..<200 {
     pipeline.step(
-      gravity, parameters, broad_phase, narrow_phase, bodies, colliders,
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
   }
   if colliders.get(c1) is Some(co1) && colliders.get(c2) is Some(co2) {
