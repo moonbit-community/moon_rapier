@@ -78,6 +78,43 @@ pub fn MassProperties::new(Float, Float, Vec2) -> Self
 pub fn MassProperties::set_mass(Self, Float, Bool) -> Self
 pub fn MassProperties::transform_by(Self, Isometry2) -> Self
 
+pub struct MassProperties3 {
+  mass : Float
+  inv_mass : Float
+  inertia : SdpMat3
+  inv_inertia : SdpMat3
+  center_of_mass : Vec3
+}
+pub fn MassProperties3::add(Self, Self) -> Self
+pub fn MassProperties3::default() -> Self
+pub fn MassProperties3::new(Float, SdpMat3, Vec3) -> Self
+pub fn MassProperties3::set_mass(Self, Float, Bool) -> Self
+pub fn MassProperties3::transform_by(Self, Isometry3) -> Self
+
+pub struct Mat3 {
+  m00 : Float
+  m01 : Float
+  m02 : Float
+  m10 : Float
+  m11 : Float
+  m12 : Float
+  m20 : Float
+  m21 : Float
+  m22 : Float
+}
+pub fn Mat3::add(Self, Self) -> Self
+pub fn Mat3::determinant(Self) -> Float
+pub fn Mat3::from_diagonal(Vec3) -> Self
+pub fn Mat3::identity() -> Self
+pub fn Mat3::inverse(Self) -> Self
+pub fn Mat3::mul(Self, Self) -> Self
+pub fn Mat3::mul_vec3(Self, Vec3) -> Vec3
+pub fn Mat3::new(Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Self
+pub fn Mat3::scale(Self, Float) -> Self
+pub fn Mat3::sub(Self, Self) -> Self
+pub fn Mat3::transpose(Self) -> Self
+pub fn Mat3::zero() -> Self
+
 pub struct Quat {
   x : Float
   y : Float
@@ -93,6 +130,7 @@ pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::norm_squared(Self) -> Float
 pub fn Quat::normalize(Self) -> Self
 pub fn Quat::rotate_vec3(Self, Vec3) -> Vec3
+pub fn Quat::to_mat3(Self) -> Mat3
 pub fn Quat::to_scaled_axis(Self) -> Vec3
 
 pub struct Rot2 {
@@ -105,6 +143,21 @@ pub fn Rot2::identity() -> Self
 pub fn Rot2::inverse(Self) -> Self
 pub fn Rot2::mul(Self, Self) -> Self
 pub fn Rot2::rotate_vec2(Self, Vec2) -> Vec2
+
+pub struct SdpMat3 {
+  m11 : Float
+  m12 : Float
+  m13 : Float
+  m22 : Float
+  m23 : Float
+  m33 : Float
+}
+pub fn SdpMat3::from_diagonal(Vec3) -> Self
+pub fn SdpMat3::into_mat3(Self) -> Mat3
+pub fn SdpMat3::inverse(Self) -> Self
+pub fn SdpMat3::new(Float, Float, Float, Float, Float, Float) -> Self
+pub fn SdpMat3::transform_vec3(Self, Vec3) -> Vec3
+pub fn SdpMat3::zero() -> Self
 
 pub struct Vec2 {
   x : Float

@@ -694,6 +694,23 @@ pub fn RigidBody::vels(Self) -> RigidBodyVelocity
 pub fn RigidBody::wake_up(Self, Bool) -> Self
 pub fn RigidBody::world_com(Self) -> @core.Vec2
 
+pub struct RigidBody3D {
+  body_type : RigidBodyType
+  mut position : @core.Isometry3
+  mut velocity : RigidBodyVelocity3D
+  linear_damping : Float
+  angular_damping : Float
+  gravity_scale : Float
+  mass_properties : @core.MassProperties3
+}
+pub fn RigidBody3D::angvel(Self) -> @core.Vec3
+pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBody3D::linvel(Self) -> @core.Vec3
+pub fn RigidBody3D::rotation(Self) -> @core.Quat
+pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
+pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::translation(Self) -> @core.Vec3
+
 pub struct RigidBodyActivation {
   mut normalized_linear_threshold : Float
   mut angular_threshold : Float
@@ -783,6 +800,29 @@ pub fn RigidBodyBuilder3::rotation(Self, @core.Quat) -> Self
 pub fn RigidBodyBuilder3::rotation_scaled_axis(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3::translation(Self, @core.Vec3) -> Self
+
+pub struct RigidBodyBuilder3D {
+  mut body_type : RigidBodyType
+  mut translation : @core.Vec3
+  mut rotation : @core.Quat
+  mut linvel : @core.Vec3
+  mut angvel : @core.Vec3
+  mut linear_damping : Float
+  mut angular_damping : Float
+  mut gravity_scale : Float
+  mut mass_properties : @core.MassProperties3
+}
+pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
+pub fn RigidBodyBuilder3D::dynamic() -> Self
+pub fn RigidBodyBuilder3D::fixed() -> Self
+pub fn RigidBodyBuilder3D::gravity_scale(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::linear_damping(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::linvel(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::mass_properties(Self, @core.MassProperties3) -> Self
+pub fn RigidBodyBuilder3D::rotation(Self, @core.Quat) -> Self
+pub fn RigidBodyBuilder3D::translation(Self, @core.Vec3) -> Self
 
 pub struct RigidBodyCcd {
   ccd_thickness : Float
@@ -899,6 +939,18 @@ pub fn RigidBodySet3::remove(Self, RigidBodyHandle, IslandManager3, Unit, Impuls
 pub fn RigidBodySet3::rotation(Self, RigidBodyHandle) -> @core.Quat
 pub fn RigidBodySet3::translation(Self, RigidBodyHandle) -> @core.Vec3
 
+pub struct RigidBodySet3D {
+  bodies : Array[RigidBody3D?]
+  generations : Array[Int]
+  free_list : Array[Int]
+}
+pub fn RigidBodySet3D::get(Self, RigidBodyHandle) -> RigidBody3D?
+pub fn RigidBodySet3D::get_mut(Self, RigidBodyHandle) -> RigidBody3D?
+pub fn RigidBodySet3D::insert(Self, RigidBody3D) -> RigidBodyHandle
+pub fn RigidBodySet3D::integrate_all(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBodySet3D::len(Self) -> Int
+pub fn RigidBodySet3D::new() -> Self
+
 pub(all) enum RigidBodyType {
   Dynamic
   Fixed
@@ -926,6 +978,14 @@ pub struct RigidBodyVelocity3 {
   angvel : @core.Vec3
 }
 pub fn RigidBodyVelocity3::integrate(Self, Float, @core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub struct RigidBodyVelocity3D {
+  linvel : @core.Vec3
+  angvel : @core.Vec3
+}
+pub fn RigidBodyVelocity3D::apply_damping(Self, Float, Float, Float) -> Self
+pub fn RigidBodyVelocity3D::integrate(Self, Float, @core.Isometry3, @core.Vec3) -> @core.Isometry3
+pub fn RigidBodyVelocity3D::zero() -> Self
 
 type RopeJoint
 pub fn RopeJoint::max_length(Self) -> Float

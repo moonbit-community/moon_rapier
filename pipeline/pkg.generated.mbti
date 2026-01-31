@@ -165,6 +165,11 @@ pub struct PhysicsPipeline3 {
 pub fn PhysicsPipeline3::new() -> Self
 pub fn PhysicsPipeline3::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
+pub struct PhysicsPipeline3D {
+}
+pub fn PhysicsPipeline3D::new() -> Self
+pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.RigidBodySet3D) -> Unit
+
 // Type aliases
 pub using @dynamics {type IntegrationParameters}
 
