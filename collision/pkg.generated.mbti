@@ -11,6 +11,8 @@ pub fn compute_ball_ball_contact(@core.Vec3, Float, @core.Vec3, Float) -> Contac
 
 pub fn compute_ball_cuboid_contact(@core.Vec3, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
+pub fn compute_cuboid_cuboid_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
+
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
 // Errors
