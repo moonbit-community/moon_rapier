@@ -82,3 +82,17 @@ test "isometry3 inverse roundtrip" {
   inspect(abs(back.y - p.y) < 1.0e-5F, content="true")
   inspect(abs(back.z - p.z) < 1.0e-5F, content="true")
 }
+
+///|
+test "aabb3 intersects + dilated" {
+  let a = Aabb3::from_points(
+    Vec3::new(-1.0F, -1.0F, -1.0F),
+    Vec3::new(1.0F, 1.0F, 1.0F),
+  )
+  let b = Aabb3::from_points(
+    Vec3::new(2.0F, 0.0F, 0.0F),
+    Vec3::new(3.0F, 1.0F, 1.0F),
+  )
+  inspect(a.intersects(b), content="false")
+  inspect(a.dilated(1.1F).intersects(b), content="true")
+}

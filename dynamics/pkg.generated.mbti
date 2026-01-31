@@ -900,6 +900,13 @@ pub fn RigidBodyPosition3::interpolate_velocity(Self, Float, @core.Vec3) -> Rigi
 pub fn RigidBodyPosition3::new(@core.Isometry3, @core.Isometry3) -> Self
 pub fn RigidBodyPosition3::pose_errors(Self, @core.Vec3) -> PdErrors3
 
+pub struct RigidBodyPosition3D {
+  position : @core.Isometry3
+  next_position : @core.Isometry3
+}
+pub fn RigidBodyPosition3D::interpolate_velocity(Self, Float, @core.Vec3) -> RigidBodyVelocity3D
+pub fn RigidBodyPosition3D::new(@core.Isometry3, @core.Isometry3) -> Self
+
 pub struct RigidBodySet {
   bodies : Array[RigidBody?]
   generations : Array[Int]
@@ -983,8 +990,10 @@ pub struct RigidBodyVelocity3D {
   linvel : @core.Vec3
   angvel : @core.Vec3
 }
+pub fn RigidBodyVelocity3D::angvel(Self) -> @core.Vec3
 pub fn RigidBodyVelocity3D::apply_damping(Self, Float, Float, Float) -> Self
 pub fn RigidBodyVelocity3D::integrate(Self, Float, @core.Isometry3, @core.Vec3) -> @core.Isometry3
+pub fn RigidBodyVelocity3D::linvel(Self) -> @core.Vec3
 pub fn RigidBodyVelocity3D::zero() -> Self
 
 type RopeJoint

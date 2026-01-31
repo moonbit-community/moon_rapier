@@ -40,7 +40,9 @@ pub struct Aabb3 {
   maxs : Vec3
 }
 pub fn Aabb3::combine(Self, Self) -> Self
+pub fn Aabb3::dilated(Self, Float) -> Self
 pub fn Aabb3::from_points(Vec3, Vec3) -> Self
+pub fn Aabb3::intersects(Self, Self) -> Bool
 pub fn Aabb3::new(Vec3, Vec3) -> Self
 
 pub struct Isometry2 {

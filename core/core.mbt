@@ -561,6 +561,36 @@ pub fn Aabb3::combine(self : Aabb3, other : Aabb3) -> Aabb3 {
 }
 
 ///|
+pub fn Aabb3::intersects(self : Aabb3, other : Aabb3) -> Bool {
+  !(self.maxs.x < other.mins.x ||
+  self.mins.x > other.maxs.x ||
+  self.maxs.y < other.mins.y ||
+  self.mins.y > other.maxs.y ||
+  self.maxs.z < other.mins.z ||
+  self.mins.z > other.maxs.z)
+}
+
+///|
+pub fn Aabb3::dilated(self : Aabb3, amount : Real) -> Aabb3 {
+  if amount <= 0.0F {
+    self
+  } else {
+    Aabb3::new(
+      Vec3::new(
+        self.mins.x - amount,
+        self.mins.y - amount,
+        self.mins.z - amount,
+      ),
+      Vec3::new(
+        self.maxs.x + amount,
+        self.maxs.y + amount,
+        self.maxs.z + amount,
+      ),
+    )
+  }
+}
+
+///|
 pub fn Aabb::contains_point(self : Aabb, point : Vec2) -> Bool {
   point.x >= self.mins.x &&
   point.x <= self.maxs.x &&

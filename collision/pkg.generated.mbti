@@ -7,6 +7,10 @@ import {
 }
 
 // Values
+pub fn compute_ball_ball_contact(@core.Vec3, Float, @core.Vec3, Float) -> ContactPoint3D?
+
+pub fn compute_ball_cuboid_contact(@core.Vec3, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
+
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
 // Errors
@@ -40,6 +44,16 @@ pub fn ActiveHooks::filter_intersection_pair() -> Self
 pub fn ActiveHooks::insert(Self, Self) -> Self
 pub fn ActiveHooks::modify_solver_contacts() -> Self
 
+pub struct BroadPhase3D {
+  pairs : Array[(ColliderHandle3D, ColliderHandle3D)]
+  prev_pairs : Array[(ColliderHandle3D, ColliderHandle3D)]
+  events : Array[BroadPhasePairEvent3D]
+}
+pub fn BroadPhase3D::new() -> Self
+pub fn BroadPhase3D::pairs(Self) -> Array[(ColliderHandle3D, ColliderHandle3D)]
+pub fn BroadPhase3D::take_events(Self) -> Array[BroadPhasePairEvent3D]
+pub fn BroadPhase3D::update(Self, Float, ColliderSet3D) -> Unit
+
 pub struct BroadPhaseBvh {
   optimization_strategy : BvhOptimizationStrategy
   pairs : Array[(ColliderHandle, ColliderHandle)]
@@ -56,6 +70,11 @@ pub fn BroadPhaseBvh::with_optimization_strategy(BvhOptimizationStrategy) -> Sel
 pub(all) enum BroadPhasePairEvent {
   AddPair(ColliderPair)
   DeletePair(ColliderPair)
+}
+
+pub(all) enum BroadPhasePairEvent3D {
+  AddPair(ColliderPair3D)
+  DeletePair(ColliderPair3D)
 }
 
 pub(all) enum BvhOptimizationStrategy {
@@ -133,6 +152,19 @@ pub fn Collider::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::translation(Self) -> @core.Vec2
 pub fn Collider::translation3(Self) -> @core.Vec3
 pub fn Collider::user_data(Self) -> Int
+
+pub struct Collider3D {
+  mut position : @core.Isometry3
+  shape : Shape3D
+  mut enabled : Bool
+}
+pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
+pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
+pub fn Collider3D::enabled(Self) -> Bool
+pub fn Collider3D::position(Self) -> @core.Isometry3
+pub fn Collider3D::set_enabled(Self, Bool) -> Self
+pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
+pub fn Collider3D::shape(Self) -> Shape3D
 
 pub struct ColliderBuilder {
   shape : Shape
@@ -223,6 +255,19 @@ pub fn ColliderBuilder3::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> S
 pub fn ColliderBuilder3::voxelized_mesh(Array[@core.Vec3], Array[(Int, Int)], Float, FillMode) -> Self
 pub fn ColliderBuilder3::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self
 
+pub struct ColliderBuilder3D {
+  mut position : @core.Isometry3
+  shape : Shape3D
+  mut enabled : Bool
+}
+pub fn ColliderBuilder3D::ball(Float) -> Self
+pub fn ColliderBuilder3D::build(Self) -> Collider3D
+pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
+pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
+pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
+pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
+pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
+
 type ColliderChanges
 
 pub(all) enum ColliderEnabled {
@@ -240,6 +285,15 @@ pub fn ColliderHandle::from_raw_parts(Int, Int) -> Self
 pub fn ColliderHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn ColliderHandle::invalid() -> Self
 
+pub struct ColliderHandle3D {
+  id : Int
+  generation : Int
+}
+pub fn ColliderHandle3D::equals(Self, Self) -> Bool
+pub fn ColliderHandle3D::from_raw_parts(Int, Int) -> Self
+pub fn ColliderHandle3D::into_raw_parts(Self) -> (Int, Int)
+pub fn ColliderHandle3D::invalid() -> Self
+
 pub struct ColliderPair {
   collider1 : ColliderHandle
   collider2 : ColliderHandle
@@ -247,6 +301,14 @@ pub struct ColliderPair {
 pub fn ColliderPair::collider1(Self) -> ColliderHandle
 pub fn ColliderPair::collider2(Self) -> ColliderHandle
 pub fn ColliderPair::new(ColliderHandle, ColliderHandle) -> Self
+
+pub struct ColliderPair3D {
+  collider1 : ColliderHandle3D
+  collider2 : ColliderHandle3D
+}
+pub fn ColliderPair3D::collider1(Self) -> ColliderHandle3D
+pub fn ColliderPair3D::collider2(Self) -> ColliderHandle3D
+pub fn ColliderPair3D::new(ColliderHandle3D, ColliderHandle3D) -> Self
 
 pub struct ColliderSet {
   colliders : Array[Collider?]
@@ -283,6 +345,18 @@ pub fn ColliderSet3::len(Self) -> Int
 pub fn ColliderSet3::new() -> Self
 pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
 pub fn ColliderSet3::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3) -> Unit
+
+pub struct ColliderSet3D {
+  colliders : Array[Collider3D?]
+  generations : Array[Int]
+  free_list : Array[Int]
+}
+pub fn ColliderSet3D::get(Self, ColliderHandle3D) -> Collider3D?
+pub fn ColliderSet3D::get_mut(Self, ColliderHandle3D) -> Collider3D?
+pub fn ColliderSet3D::insert(Self, Collider3D) -> ColliderHandle3D
+pub fn ColliderSet3D::len(Self) -> Int
+pub fn ColliderSet3D::new() -> Self
+pub fn ColliderSet3D::remove(Self, ColliderHandle3D) -> Collider3D?
 
 pub(all) enum CollisionEvent {
   Started(ColliderHandle, ColliderHandle, CollisionEventFlags)
@@ -345,6 +419,13 @@ pub struct ContactPair {
 }
 pub fn ContactPair::manifold_count(Self) -> Int
 pub fn ContactPair::manifolds(Self) -> Array[ContactManifold]
+
+pub struct ContactPoint3D {
+  point1 : @core.Vec3
+  point2 : @core.Vec3
+  normal : @core.Vec3
+  penetration : Float
+}
 
 pub(all) enum FeatureId {
   Unknown
@@ -508,6 +589,14 @@ pub(all) enum Shape {
   Compound(Array[(@core.Isometry2, Shape)])
 }
 pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
+
+pub(all) enum Shape3D {
+  Ball(Float)
+  Cuboid(@core.Vec3)
+}
+pub fn Shape3D::ball(Float) -> Self
+pub fn Shape3D::cuboid(Float, Float, Float) -> Self
+pub fn Shape3D::local_aabb(Self) -> @core.Aabb3
 
 pub struct ShapeCastHit {
   toi : Float

@@ -20,6 +20,16 @@ pub struct RigidBodyVelocity3D {
 }
 
 ///|
+pub fn RigidBodyVelocity3D::linvel(self : RigidBodyVelocity3D) -> @core.Vec3 {
+  self.linvel
+}
+
+///|
+pub fn RigidBodyVelocity3D::angvel(self : RigidBodyVelocity3D) -> @core.Vec3 {
+  self.angvel
+}
+
+///|
 pub fn RigidBodyVelocity3D::zero() -> RigidBodyVelocity3D {
   { linvel: @core.Vec3::zero(), angvel: @core.Vec3::zero() }
 }
@@ -54,6 +64,37 @@ pub fn RigidBodyVelocity3D::integrate(
   let translation = self.linvel.scale(dt)
   let unshift = @core.Isometry3::from_translation(com.add(translation))
   unshift.mul(rot).mul(shift).mul(curr_pos)
+}
+
+///|
+/// 3D rigid-body position state with interpolation support.
+pub struct RigidBodyPosition3D {
+  position : @core.Isometry3
+  next_position : @core.Isometry3
+}
+
+///|
+pub fn RigidBodyPosition3D::new(
+  position : @core.Isometry3,
+  next_position : @core.Isometry3,
+) -> RigidBodyPosition3D {
+  { position, next_position }
+}
+
+///|
+pub fn RigidBodyPosition3D::interpolate_velocity(
+  self : RigidBodyPosition3D,
+  inv_dt : @core.Real,
+  local_com : @core.Vec3,
+) -> RigidBodyVelocity3D {
+  let curr_com = self.position.transform_point(local_com)
+  let next_com = self.next_position.transform_point(local_com)
+  let linvel = next_com.sub(curr_com).scale(inv_dt)
+  let curr_rot = self.position.rotation
+  let next_rot = self.next_position.rotation
+  let delta_rot = next_rot.mul(curr_rot.inverse())
+  let angvel = delta_rot.to_scaled_axis().scale(inv_dt)
+  { linvel, angvel }
 }
 
 ///|
