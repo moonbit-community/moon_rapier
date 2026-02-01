@@ -180,7 +180,9 @@ fn run_examples3d_restitution3() -> Bool {
   )
   handles.push(ground)
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 2.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 2.0F)
+    .restitution(1.0F)
+    .build(),
     ground,
     bodies,
   )
@@ -197,8 +199,9 @@ fn run_examples3d_restitution3() -> Bool {
         .build()
       let handle = bodies.insert(rb)
       handles.push(handle)
+      let restitution = Float::from_int(i) / Float::from_int(num)
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3D::ball(rad).build(),
+        @collision.ColliderBuilder3D::ball(rad).restitution(restitution).build(),
         handle,
         bodies,
       )

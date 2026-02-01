@@ -132,6 +132,8 @@ pub struct Collider3D {
   mut enabled : Bool
   sensor : Bool
   active_events : ActiveEvents
+  friction : @core.Real
+  restitution : @core.Real
 }
 
 ///|
@@ -189,6 +191,16 @@ pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
 }
 
 ///|
+pub fn Collider3D::friction(self : Collider3D) -> @core.Real {
+  self.friction
+}
+
+///|
+pub fn Collider3D::restitution(self : Collider3D) -> @core.Real {
+  self.restitution
+}
+
+///|
 pub fn Collider3D::compute_aabb(self : Collider3D) -> @core.Aabb3 {
   aabb3_transform(self.position, self.shape.local_aabb())
 }
@@ -221,6 +233,8 @@ pub struct ColliderBuilder3D {
   mut enabled : Bool
   mut sensor : Bool
   mut active_events : ActiveEvents
+  mut friction : @core.Real
+  mut restitution : @core.Real
 }
 
 ///|
@@ -233,6 +247,8 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -250,6 +266,8 @@ pub fn ColliderBuilder3D::cuboid(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -266,6 +284,8 @@ pub fn ColliderBuilder3D::capsule_y(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -282,6 +302,8 @@ pub fn ColliderBuilder3D::cylinder(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -299,6 +321,8 @@ pub fn ColliderBuilder3D::round_cylinder(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -315,6 +339,8 @@ pub fn ColliderBuilder3D::cone(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    friction: 0.7F,
+    restitution: 0.0F,
   }
 }
 
@@ -382,6 +408,24 @@ pub fn ColliderBuilder3D::active_events(
 }
 
 ///|
+pub fn ColliderBuilder3D::friction(
+  self : ColliderBuilder3D,
+  friction : @core.Real,
+) -> ColliderBuilder3D {
+  self.friction = friction
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::restitution(
+  self : ColliderBuilder3D,
+  restitution : @core.Real,
+) -> ColliderBuilder3D {
+  self.restitution = restitution
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
   {
     position: self.position,
@@ -391,5 +435,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     enabled: self.enabled,
     sensor: self.sensor,
     active_events: self.active_events,
+    friction: self.friction,
+    restitution: self.restitution,
   }
 }

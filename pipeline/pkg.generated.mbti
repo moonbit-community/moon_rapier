@@ -43,6 +43,7 @@ pub struct ContactImpulse3D {
   tangent1 : Float
   tangent2 : Float
 }
+pub fn ContactImpulse3D::scaled(Self, Float) -> Self
 pub fn ContactImpulse3D::zero() -> Self
 
 pub struct ContactImpulseCacheEntry {

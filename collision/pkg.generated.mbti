@@ -173,15 +173,19 @@ pub struct Collider3D {
   mut enabled : Bool
   sensor : Bool
   active_events : ActiveEvents
+  friction : Float
+  restitution : Float
 }
 pub fn Collider3D::active_events(Self) -> ActiveEvents
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
 pub fn Collider3D::enabled(Self) -> Bool
+pub fn Collider3D::friction(Self) -> Float
 pub fn Collider3D::is_sensor(Self) -> Bool
 pub fn Collider3D::local_position(Self) -> @core.Isometry3
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
+pub fn Collider3D::restitution(Self) -> Float
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
@@ -285,6 +289,8 @@ pub struct ColliderBuilder3D {
   mut enabled : Bool
   mut sensor : Bool
   mut active_events : ActiveEvents
+  mut friction : Float
+  mut restitution : Float
 }
 pub fn ColliderBuilder3D::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder3D::ball(Float) -> Self
@@ -294,8 +300,10 @@ pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
+pub fn ColliderBuilder3D::friction(Self, Float) -> Self
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
+pub fn ColliderBuilder3D::restitution(Self, Float) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self

@@ -25,6 +25,18 @@ pub fn ContactImpulse3D::zero() -> ContactImpulse3D {
 }
 
 ///|
+pub fn ContactImpulse3D::scaled(
+  self : ContactImpulse3D,
+  coeff : @core.Real,
+) -> ContactImpulse3D {
+  {
+    normal: self.normal * coeff,
+    tangent1: self.tangent1 * coeff,
+    tangent2: self.tangent2 * coeff,
+  }
+}
+
+///|
 pub struct ContactSolverCache3D {
   entries : Array[
     (
@@ -107,6 +119,19 @@ fn orthonormal_basis(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
 }
 
 ///|
+fn local_sqrt(value : @core.Real) -> @core.Real {
+  if value <= 0.0F {
+    0.0F
+  } else {
+    let mut x = value
+    for _ in 0..<8 {
+      x = 0.5F * (x + value / x)
+    }
+    x
+  }
+}
+
+///|
 fn world_inv_inertia(body : @dynamics.RigidBody3D) -> @core.Mat3 {
   let rot = body.rotation().to_mat3()
   let inv_local = body.mass_properties().inv_inertia.into_mat3()
@@ -143,6 +168,8 @@ pub fn solve_contacts_3d(
   cache_in : ContactSolverCache3D,
   cache_out : ContactSolverCache3D,
 ) -> Unit {
+  cache_out.clear()
+
   // Warmstart.
   let warmstart_coeff = parameters.warmstart_coefficient
   for i in 0..<narrow_phase.all_contact_pairs().length() {
@@ -179,12 +206,13 @@ pub fn solve_contacts_3d(
         if dyn_sleeping1 && dyn_sleeping2 {
           continue
         }
-        let jn = imp.normal * warmstart_coeff
+        let ws = imp.scaled(warmstart_coeff)
         let (t1, t2) = orthonormal_basis(c0.normal)
-        let jt = t1
-          .scale(imp.tangent1 * warmstart_coeff)
-          .add(t2.scale(imp.tangent2 * warmstart_coeff))
-        let total = c0.normal.scale(jn).add(jt)
+        let total = c0.normal
+          .scale(ws.normal)
+          .add(t1.scale(ws.tangent1))
+          .add(t2.scale(ws.tangent2))
+        cache_set(cache_out, a, b, ws)
         if p1 is Some(h1) {
           if bodies.get(h1) is Some(rb1) && rb1.body_type().is_dynamic() {
             apply_impulse(rb1, total.scale(-1.0F), c0.point1)
@@ -199,12 +227,97 @@ pub fn solve_contacts_3d(
     }
   }
 
+  // Precompute restitution target velocity along the normal (after warmstart).
+  //
+  // We keep this constant during the solver iterations; otherwise the solver will progressively
+  // damp the bounce back to zero relative normal velocity.
+  let restitution_targets : Array[
+    ((@collision.ColliderHandle3D, @collision.ColliderHandle3D), @core.Real),
+  ] = []
+  fn restitution_target_get(
+    targets : Array[
+      ((@collision.ColliderHandle3D, @collision.ColliderHandle3D), @core.Real),
+    ],
+    a : @collision.ColliderHandle3D,
+    b : @collision.ColliderHandle3D,
+  ) -> @core.Real {
+    let key = canonical_pair(a, b)
+    for i in 0..<targets.length() {
+      let entry = targets[i]
+      if entry.0.0.equals(key.0) && entry.0.1.equals(key.1) {
+        return entry.1
+      }
+    }
+    0.0F
+  }
+  // Small impacts don't bounce (matches Rapier's restitution velocity threshold).
+  let restitution_threshold = 1.0F
+  for i in 0..<narrow_phase.all_contact_pairs().length() {
+    let entry = narrow_phase.all_contact_pairs()[i]
+    let pair = entry.0
+    let cp = entry.1
+    if cp.manifolds_len() == 0 {
+      continue
+    }
+    let a = pair.0
+    let b = pair.1
+    if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      if co1.is_sensor() || co2.is_sensor() {
+        continue
+      }
+      let c0 = cp.manifolds()[0]
+
+      // Gather bodies.
+      let mut rb1 : @dynamics.RigidBody3D? = None
+      let mut rb2 : @dynamics.RigidBody3D? = None
+      if co1.parent() is Some(h1) {
+        rb1 = bodies.get(h1)
+      }
+      if co2.parent() is Some(h2) {
+        rb2 = bodies.get(h2)
+      }
+      if rb1 is Some(b1) &&
+        rb2 is Some(b2) &&
+        b1.body_type().is_dynamic() &&
+        b2.body_type().is_dynamic() &&
+        !b1.is_active() &&
+        !b2.is_active() {
+        continue
+      }
+      fn vel_at(
+        body : @dynamics.RigidBody3D,
+        point : @core.Vec3,
+      ) -> @core.Vec3 {
+        let r = point.sub(body.world_com())
+        body.linvel().add(body.angvel().cross(r))
+      }
+
+      let v1 = if rb1 is Some(b1) {
+        vel_at(b1, c0.point1)
+      } else {
+        @core.Vec3::zero()
+      }
+      let v2 = if rb2 is Some(b2) {
+        vel_at(b2, c0.point2)
+      } else {
+        @core.Vec3::zero()
+      }
+      let vn0 = v2.sub(v1).dot(c0.normal)
+      let restitution = 0.5F * (co1.restitution() + co2.restitution())
+      let target_vn = if restitution > 0.0F && vn0 <= -restitution_threshold {
+        -restitution * vn0
+      } else {
+        0.0F
+      }
+      restitution_targets.push((canonical_pair(a, b), target_vn))
+    }
+  }
+
   // Solve.
   let dt = parameters.dt
   let iters = parameters.num_solver_iterations
   let slop = 1.0e-3F
   let beta = 0.2F
-  let friction = 0.0F
   for _ in 0..<iters {
     let all = narrow_phase.all_contact_pairs()
     for i in 0..<all.length() {
@@ -242,6 +355,13 @@ pub fn solve_contacts_3d(
           !b2.is_active() {
           continue
         }
+        let mut acc = if cache_get(cache_out, a, b) is Some(existing) {
+          existing
+        } else {
+          ContactImpulse3D::zero()
+        }
+        let friction = 0.5F * (co1.friction() + co2.friction())
+        let target_vn = restitution_target_get(restitution_targets, a, b)
         fn vel_at(
           body : @dynamics.RigidBody3D,
           point : @core.Vec3,
@@ -314,9 +434,12 @@ pub fn solve_contacts_3d(
         }
         let kn = inv_m1 + inv_m2 + k_term(i1, r1, n) + k_term(i2, r2, n)
         if kn > 0.0F {
-          let jn = -(vn + bias) / kn
-          if jn != 0.0F {
-            let p = n.scale(jn)
+          let jn = -(vn - target_vn + bias) / kn
+          let prev = acc.normal
+          let next = if prev + jn < 0.0F { 0.0F } else { prev + jn }
+          let delta = next - prev
+          if delta != 0.0F {
+            let p = n.scale(delta)
             if rb1 is Some(b1) && b1.body_type().is_dynamic() {
               apply_impulse(b1, p.scale(-1.0F), c0.point1)
             }
@@ -324,10 +447,9 @@ pub fn solve_contacts_3d(
               apply_impulse(b2, p, c0.point2)
             }
           }
+          acc = { normal: next, tangent1: acc.tangent1, tangent2: acc.tangent2 }
         }
-
-        // Friction (optional; default disabled for now).
-        if friction > 0.0F {
+        if friction > 0.0F && acc.normal > 0.0F {
           // Recompute after normal impulse.
           let v1b = if rb1 is Some(b1) {
             vel_at(b1, c0.point1)
@@ -344,51 +466,35 @@ pub fn solve_contacts_3d(
           let vt2 = rvb.dot(t2)
           let kt1 = inv_m1 + inv_m2 + k_term(i1, r1, t1) + k_term(i2, r2, t1)
           let kt2 = inv_m1 + inv_m2 + k_term(i1, r1, t2) + k_term(i2, r2, t2)
-          if kt1 > 0.0F {
-            let jt1 = -vt1 / kt1
-            let p = t1.scale(jt1)
-            if rb1 is Some(b1) && b1.body_type().is_dynamic() {
-              apply_impulse(b1, p.scale(-1.0F), c0.point1)
+          if kt1 > 0.0F && kt2 > 0.0F {
+            let prev_t1 = acc.tangent1
+            let prev_t2 = acc.tangent2
+            let cand_t1 = prev_t1 + -vt1 / kt1
+            let cand_t2 = prev_t2 + -vt2 / kt2
+            let max_t = friction * acc.normal
+            let mag2 = cand_t1 * cand_t1 + cand_t2 * cand_t2
+            let max2 = max_t * max_t
+            let (next_t1, next_t2) = if mag2 > max2 && mag2 > 1.0e-12F {
+              let k = max_t / local_sqrt(mag2)
+              (cand_t1 * k, cand_t2 * k)
+            } else {
+              (cand_t1, cand_t2)
             }
-            if rb2 is Some(b2) && b2.body_type().is_dynamic() {
-              apply_impulse(b2, p, c0.point2)
+            let delta_t1 = next_t1 - prev_t1
+            let delta_t2 = next_t2 - prev_t2
+            if delta_t1 != 0.0F || delta_t2 != 0.0F {
+              let p = t1.scale(delta_t1).add(t2.scale(delta_t2))
+              if rb1 is Some(b1) && b1.body_type().is_dynamic() {
+                apply_impulse(b1, p.scale(-1.0F), c0.point1)
+              }
+              if rb2 is Some(b2) && b2.body_type().is_dynamic() {
+                apply_impulse(b2, p, c0.point2)
+              }
             }
+            acc = { normal: acc.normal, tangent1: next_t1, tangent2: next_t2 }
           }
-          if kt2 > 0.0F {
-            let jt2 = -vt2 / kt2
-            let p = t2.scale(jt2)
-            if rb1 is Some(b1) && b1.body_type().is_dynamic() {
-              apply_impulse(b1, p.scale(-1.0F), c0.point1)
-            }
-            if rb2 is Some(b2) && b2.body_type().is_dynamic() {
-              apply_impulse(b2, p, c0.point2)
-            }
-          }
         }
-
-        // Cache the last normal impulse approximation based on the current relative velocity.
-        // (This is a simplification; full Rapier caches per-manifold point impulses.)
-        let v1c = if rb1 is Some(b1) {
-          vel_at(b1, c0.point1)
-        } else {
-          @core.Vec3::zero()
-        }
-        let v2c = if rb2 is Some(b2) {
-          vel_at(b2, c0.point2)
-        } else {
-          @core.Vec3::zero()
-        }
-        let vnc = v2c.sub(v1c).dot(n)
-        let jn_cached = if vnc < 0.0F {
-          -vnc / (inv_m1 + inv_m2 + 1.0e-6F)
-        } else {
-          0.0F
-        }
-        cache_set(cache_out, a, b, {
-          normal: jn_cached,
-          tangent1: 0.0F,
-          tangent2: 0.0F,
-        })
+        cache_set(cache_out, a, b, acc)
       }
     }
   }
