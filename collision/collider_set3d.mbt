@@ -138,11 +138,22 @@ pub fn ColliderSet3D::insert_with_parent(
   bodies : @dynamics.RigidBodySet3D,
 ) -> ColliderHandle3D {
   if bodies.get(parent) is Some(body) {
-    // Interpret `collider.position` as a transform local to the parent (Rapier-style).
-    let local_pos = collider.position()
-    collider.set_local_position(local_pos)
-    collider.set_parent(Some(parent))
-    collider.set_position(body.position().mul(local_pos))
+    // When reinserting a collider that was previously attached to a body, keep its world pose
+    // and recompute its local position. This matches the remove+reinsert patterns exercised by
+    // a number of rapier-reference debug scenes.
+    if collider.parent() is Some(_) {
+      let world = collider.position()
+      let local_pos = body.position().inverse().mul(world)
+      collider.set_local_position(local_pos)
+      collider.set_parent(Some(parent))
+      collider.set_position(world)
+    } else {
+      // Interpret `collider.position` as a transform local to the parent (Rapier-style).
+      let local_pos = collider.position()
+      collider.set_local_position(local_pos)
+      collider.set_parent(Some(parent))
+      collider.set_position(body.position().mul(local_pos))
+    }
   } else {
     collider.set_parent(Some(parent))
     collider.set_local_position(collider.position())

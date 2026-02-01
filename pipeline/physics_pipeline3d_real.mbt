@@ -341,6 +341,7 @@ pub fn PhysicsPipeline3DReal::step(
     bodies,
     colliders,
     None,
+    None,
   )
 }
 
@@ -366,6 +367,33 @@ pub fn PhysicsPipeline3DReal::step_with_events(
     bodies,
     colliders,
     Some(events),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_rope_joints(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    Some(rope_joints),
   )
 }
 
@@ -380,6 +408,7 @@ fn PhysicsPipeline3DReal::step_impl(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   events : EventHandler3D?,
+  rope_joints : @dynamics.RopeJointSet3DReal?,
 ) -> Unit {
   fn ceil_pos(x : @core.Real) -> Int {
     let i = x.to_int()
@@ -428,20 +457,20 @@ fn PhysicsPipeline3DReal::step_impl(
       let p1 = parameters.with_dt(toi)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, p1, islands, broad_phase, narrow_phase, bodies, colliders,
-        events,
+        events, rope_joints,
       )
       let rem = sub_dt - toi
       if rem > 0.0F {
         let p2 = parameters.with_dt(rem)
         PhysicsPipeline3DReal::step_impl_one(
           self, gravity, p2, islands, broad_phase, narrow_phase, bodies, colliders,
-          events,
+          events, rope_joints,
         )
       }
     } else {
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
-        events,
+        events, rope_joints,
       )
     }
   }
@@ -458,6 +487,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   events : EventHandler3D?,
+  rope_joints : @dynamics.RopeJointSet3DReal?,
 ) -> Unit {
   let dt = parameters.dt
   bodies.apply_gravity_all(gravity, dt)
@@ -481,6 +511,13 @@ fn PhysicsPipeline3DReal::step_impl_one(
   )
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
+
+  // Joint constraints are applied after integrating positions so they can clamp fast motion
+  // deterministically (sufficient for the current parity tests).
+  if rope_joints is Some(rj) {
+    rj.solve(bodies, dt)
+    colliders.sync_with_bodies(bodies)
+  }
 
   // Update the collision state after integrating positions so queries and sensor events reflect
   // the end-of-step configuration.

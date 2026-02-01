@@ -717,7 +717,7 @@ pub struct RigidBody3D {
   gyroscopic_forces_enabled : Bool
   linear_damping : Float
   angular_damping : Float
-  gravity_scale : Float
+  mut gravity_scale : Float
   mass_properties : @core.MassProperties3
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
@@ -728,6 +728,7 @@ pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
 pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::apply_gyroscopic_forces(Self, Float) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
+pub fn RigidBody3D::gravity_scale(Self) -> Float
 pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::is_active(Self) -> Bool
@@ -740,6 +741,7 @@ pub fn RigidBody3D::next_position(Self) -> @core.Isometry3
 pub fn RigidBody3D::position(Self) -> @core.Isometry3
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_gravity_scale(Self, Float, Bool) -> Unit
 pub fn RigidBody3D::set_linvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_next_kinematic_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_next_kinematic_translation(Self, @core.Vec3) -> Unit
@@ -1081,6 +1083,12 @@ pub fn RigidBodyVelocity3D::zero() -> Self
 type RopeJoint
 pub fn RopeJoint::max_length(Self) -> Float
 
+pub struct RopeJoint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  max_length : Float
+}
+
 type RopeJointBuilder
 pub fn RopeJointBuilder::build(Self) -> RopeJoint
 pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
@@ -1094,6 +1102,13 @@ pub fn RopeJointBuilder3::build(Self) -> RopeJoint
 pub fn RopeJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
 pub fn RopeJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
 pub fn RopeJointBuilder3::new(Float) -> Self
+
+pub struct RopeJointSet3DReal {
+  joints : Array[RopeJoint3DReal]
+}
+pub fn RopeJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, Float) -> Unit
+pub fn RopeJointSet3DReal::new() -> Self
+pub fn RopeJointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool

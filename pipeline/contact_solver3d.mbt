@@ -169,6 +169,22 @@ pub fn solve_contacts_3d(
   cache_out : ContactSolverCache3D,
 ) -> Unit {
   cache_out.clear()
+  fn accept_one_way(
+    platform : @collision.Collider3D,
+    other : @collision.Collider3D,
+  ) -> Bool {
+    if platform.one_way() is Some((offset, dir)) {
+      let dy = other.position().translation.y -
+        platform.position().translation.y
+      if dir > 0 {
+        dy > offset
+      } else {
+        dy < -offset
+      }
+    } else {
+      true
+    }
+  }
 
   // Warmstart.
   let warmstart_coeff = parameters.warmstart_coefficient
@@ -186,6 +202,9 @@ pub fn solve_contacts_3d(
       let c0 = contacts[0]
       if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
         if co1.is_sensor() || co2.is_sensor() {
+          continue
+        }
+        if !accept_one_way(co1, co2) || !accept_one_way(co2, co1) {
           continue
         }
         let p1 = co1.parent()
@@ -262,6 +281,9 @@ pub fn solve_contacts_3d(
     let a = pair.0
     let b = pair.1
     if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      if !accept_one_way(co1, co2) || !accept_one_way(co2, co1) {
+        continue
+      }
       if co1.is_sensor() || co2.is_sensor() {
         continue
       }
@@ -333,6 +355,9 @@ pub fn solve_contacts_3d(
         if co1.is_sensor() || co2.is_sensor() {
           continue
         }
+        if !accept_one_way(co1, co2) || !accept_one_way(co2, co1) {
+          continue
+        }
         let c0 = cp.manifolds()[0]
         let n = c0.normal
         let (t1, t2) = orthonormal_basis(n)
@@ -361,6 +386,7 @@ pub fn solve_contacts_3d(
           ContactImpulse3D::zero()
         }
         let friction = 0.5F * (co1.friction() + co2.friction())
+        let surface_vel = co2.surface_velocity().sub(co1.surface_velocity())
         let target_vn = restitution_target_get(restitution_targets, a, b)
         fn vel_at(
           body : @dynamics.RigidBody3D,
@@ -467,7 +493,7 @@ pub fn solve_contacts_3d(
           } else {
             @core.Vec3::zero()
           }
-          let rvb = v2b.sub(v1b)
+          let rvb = v2b.sub(v1b).add(surface_vel)
           let vt1 = rvb.dot(t1)
           let vt2 = rvb.dot(t2)
           let kt1 = inv_m1 + inv_m2 + k_term(i1, r1, t1) + k_term(i2, r2, t1)

@@ -16,11 +16,8 @@
 /// Trimesh parity tests (subset) for the real dim3 backend.
 
 ///|
-fn run_examples3d_debug_trimesh3_ball() -> Bool {
-  // Ported from `rapier-reference/examples3d/debug_trimesh3.rs` (headless; ball-only).
-  //
-  // We validate that a ball collides with a simple trimesh "cube shell" instead of tunneling
-  // through it. Cuboid-vs-trimesh contact will be added later.
+fn run_examples3d_debug_trimesh3() -> Bool {
+  // Ported from `rapier-reference/examples3d/debug_trimesh3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -32,7 +29,7 @@ fn run_examples3d_debug_trimesh3_ball() -> Bool {
     16,
   )
 
-  // Trimesh "cube" (12 triangles).
+  // Trimesh "cube shell" (12 triangles).
   let w = 0.5F
   let vtx = [
     @core.Vec3::new(-w, 0.0F, -w),
@@ -62,34 +59,33 @@ fn run_examples3d_debug_trimesh3_ball() -> Bool {
   let mesh = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
   let mesh_h = colliders.insert_with_parent(mesh, ground, bodies)
 
-  // Falling ball.
-  let ball = bodies.insert(
+  // Dynamic box rigid-body.
+  let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(@core.Vec3::new(0.0F, 35.0F, 0.0F))
+    .can_sleep(false)
     .build(),
   )
-  let ball_h = colliders.insert_with_parent(
-    @collision.ColliderBuilder3D::ball(0.25F).build(),
-    ball,
+  let box_h = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(1.0F, 2.0F, 1.0F).build(),
+    body,
     bodies,
   )
   let mut found_contact = false
-  for _ in 0..<240 {
+  for _ in 0..<480 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
-    if narrow_phase.contact_pair(ball_h, mesh_h) is Some(pair) &&
+    if narrow_phase.contact_pair(box_h, mesh_h) is Some(pair) &&
       pair.manifolds_len() > 0 {
       found_contact = true
-    }
-    if found_contact {
       break
     }
   }
   if !found_contact {
     return false
   }
-  if bodies.get(ball) is Some(rb) {
+  if bodies.get(body) is Some(rb) {
     rb.translation().y > -10.0F
   } else {
     false
@@ -97,15 +93,13 @@ fn run_examples3d_debug_trimesh3_ball() -> Bool {
 }
 
 ///|
-test "examples3d/debug_trimesh3.rs parity (ball-only headless)" {
-  inspect(run_examples3d_debug_trimesh3_ball(), content="true")
+test "examples3d/debug_trimesh3.rs parity (headless)" {
+  inspect(run_examples3d_debug_trimesh3(), content="true")
 }
 
 ///|
-fn run_examples3d_trimesh3_balls_only() -> Bool {
-  // Adapted from `rapier-reference/examples3d/trimesh3.rs` (headless; balls only).
-  //
-  // This validates a larger trimesh built from a heightfield-like grid.
+fn run_examples3d_trimesh3() -> Bool {
+  // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless; reduced counts).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -116,7 +110,9 @@ fn run_examples3d_trimesh3_balls_only() -> Bool {
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
-  let nsubdivs = 20
+
+  // Ground mesh built from a heightfield-like grid (same sin/cos pattern as rapier-reference).
+  let nsubdivs = 10
   let size_x = 100.0F
   let size_z = 100.0F
   let dx = size_x / Float::from_int(nsubdivs)
@@ -158,28 +154,90 @@ fn run_examples3d_trimesh3_balls_only() -> Bool {
     .build()
   colliders.insert_with_parent(mesh, ground, bodies) |> ignore
 
-  // Drop a few balls over the mesh.
+  // Reduced stack.
+  let num = 3
+  let numy = 5
   let rad = 1.0F
+  let shift = rad * 2.0F + rad
+  let center = shift * Float::from_int(num / 2)
   let handles : Array[@dynamics.RigidBodyHandle] = []
-  for i in 0..<5 {
-    for j in 0..<5 {
-      let x = -20.0F + Float::from_int(i) * 10.0F
-      let z = -20.0F + Float::from_int(j) * 10.0F
-      let h = bodies.insert(
-        @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x, 30.0F, z))
-        .build(),
-      )
-      handles.push(h)
-      colliders.insert_with_parent(
-        @collision.ColliderBuilder3D::ball(rad).build(),
-        h,
-        bodies,
-      )
-      |> ignore
+  for j in 0..<numy {
+    for i in 0..<num {
+      for k in 0..<num {
+        let x = Float::from_int(i) * shift - center
+        let y = Float::from_int(j) * shift + shift / 2.0F + 3.0F
+        let z = Float::from_int(k) * shift - center
+        let h = bodies.insert(
+          @dynamics.RigidBodyBuilder3D::dynamic()
+          .translation(@core.Vec3::new(x, y, z))
+          .build(),
+        )
+        handles.push(h)
+        let m = j % 6
+        if m == 0 {
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
+            h,
+            bodies,
+          )
+          |> ignore
+        } else if m == 1 {
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::ball(rad).build(),
+            h,
+            bodies,
+          )
+          |> ignore
+        } else if m == 2 {
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::round_cylinder(rad, rad, rad / 10.0F).build(),
+            h,
+            bodies,
+          )
+          |> ignore
+        } else if m == 3 {
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::cone(rad, rad).build(),
+            h,
+            bodies,
+          )
+          |> ignore
+        } else if m == 4 {
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::capsule_y(rad, rad).build(),
+            h,
+            bodies,
+          )
+          |> ignore
+        } else {
+          // Stand-in for `ColliderBuilder::compound`: multiple colliders attached to one body.
+          let c1 = @collision.ColliderBuilder3D::cuboid(
+            rad,
+            rad / 2.0F,
+            rad / 2.0F,
+          ).build()
+          let c2 = @collision.ColliderBuilder3D::cuboid(
+              rad / 2.0F,
+              rad,
+              rad / 2.0F,
+            )
+            .translation(@core.Vec3::new(rad, 0.0F, 0.0F))
+            .build()
+          let c3 = @collision.ColliderBuilder3D::cuboid(
+              rad / 2.0F,
+              rad,
+              rad / 2.0F,
+            )
+            .translation(@core.Vec3::new(-rad, 0.0F, 0.0F))
+            .build()
+          colliders.insert_with_parent(c1, h, bodies) |> ignore
+          colliders.insert_with_parent(c2, h, bodies) |> ignore
+          colliders.insert_with_parent(c3, h, bodies) |> ignore
+        }
+      }
     }
   }
-  for _ in 0..<600 {
+  for _ in 0..<360 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -201,6 +259,73 @@ fn run_examples3d_trimesh3_balls_only() -> Bool {
 }
 
 ///|
-test "examples3d/trimesh3.rs parity (balls-only headless)" {
-  inspect(run_examples3d_trimesh3_balls_only(), content="true")
+test "examples3d/trimesh3.rs parity (headless; reduced counts)" {
+  inspect(run_examples3d_trimesh3(), content="true")
+}
+
+///|
+test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
+  // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless).
+  //
+  // The upstream example uses a heightfield. For the real dim3 backend we use a flat trimesh
+  // ground to validate thin cuboid stability with fast velocities.
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+
+  // Ground plane as trimesh.
+  let hw = 50.0F
+  let vtx = [
+    @core.Vec3::new(-hw, 0.0F, -hw),
+    @core.Vec3::new(-hw, 0.0F, hw),
+    @core.Vec3::new(hw, 0.0F, hw),
+    @core.Vec3::new(hw, 0.0F, -hw),
+  ]
+  let idx = [(0, 1, 2), (0, 2, 3)]
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let mesh = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
+  let mesh_h = colliders.insert_with_parent(mesh, ground, bodies)
+
+  // Thin cuboid.
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .rotation(
+      @core.rotation_from_scaled_axis(@core.Vec3::new(0.5F, 0.0F, 0.5F)),
+    )
+    .linvel(@core.Vec3::new(0.0F, -100.0F, 0.0F))
+    .soft_ccd_prediction(10.0F)
+    .can_sleep(false)
+    .build(),
+  )
+  let co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(5.0F, 0.015F, 5.0F).build(),
+    body,
+    bodies,
+  )
+  let mut saw_contact = false
+  for _ in 0..<360 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if narrow_phase.contact_pair(co, mesh_h) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      saw_contact = true
+    }
+  }
+  inspect(saw_contact, content="true")
+  if bodies.get(body) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > -5.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
 }

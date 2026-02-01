@@ -164,6 +164,10 @@ pub struct Collider3D {
   shape : Shape3D
   mut enabled : Bool
   sensor : Bool
+  // Solver-only features used by a subset of examples/tests (e.g. one-way platforms).
+  mut surface_velocity : @core.Vec3
+  mut one_way_offset : @core.Real?
+  mut one_way_direction : Int // 1 = allow from above, -1 = allow from below, 0 = disabled
   active_events : ActiveEvents
   collision_groups : @dynamics.InteractionGroups
   friction : @core.Real
@@ -220,6 +224,54 @@ pub fn Collider3D::is_sensor(self : Collider3D) -> Bool {
 }
 
 ///|
+pub fn Collider3D::surface_velocity(self : Collider3D) -> @core.Vec3 {
+  self.surface_velocity
+}
+
+///|
+pub fn Collider3D::set_surface_velocity(
+  self : Collider3D,
+  v : @core.Vec3,
+) -> Unit {
+  self.surface_velocity = v
+}
+
+///|
+pub fn Collider3D::one_way(self : Collider3D) -> (@core.Real, Int)? {
+  if self.one_way_direction == 0 || self.one_way_offset is None {
+    None
+  } else if self.one_way_offset is Some(offset) {
+    Some((offset, self.one_way_direction))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn Collider3D::set_one_way_above(
+  self : Collider3D,
+  offset : @core.Real,
+) -> Unit {
+  self.one_way_offset = Some(offset)
+  self.one_way_direction = 1
+}
+
+///|
+pub fn Collider3D::set_one_way_below(
+  self : Collider3D,
+  offset : @core.Real,
+) -> Unit {
+  self.one_way_offset = Some(offset)
+  self.one_way_direction = -1
+}
+
+///|
+pub fn Collider3D::clear_one_way(self : Collider3D) -> Unit {
+  self.one_way_offset = None
+  self.one_way_direction = 0
+}
+
+///|
 pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
   self.active_events
 }
@@ -273,6 +325,9 @@ pub struct ColliderBuilder3D {
   shape : Shape3D
   mut enabled : Bool
   mut sensor : Bool
+  mut surface_velocity : @core.Vec3
+  mut one_way_offset : @core.Real?
+  mut one_way_direction : Int
   mut active_events : ActiveEvents
   mut collision_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
@@ -288,6 +343,9 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     shape: Shape3D::ball(radius),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -308,6 +366,9 @@ pub fn ColliderBuilder3D::cuboid(
     shape: Shape3D::cuboid(hx, hy, hz),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -327,6 +388,9 @@ pub fn ColliderBuilder3D::capsule_y(
     shape: Shape3D::capsule_y(radius, half_height),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -356,6 +420,9 @@ pub fn ColliderBuilder3D::cylinder(
     shape: Shape3D::cylinder(radius, half_height),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -376,6 +443,9 @@ pub fn ColliderBuilder3D::round_cylinder(
     shape: Shape3D::round_cylinder(radius, half_height, border_radius),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -395,6 +465,9 @@ pub fn ColliderBuilder3D::cone(
     shape: Shape3D::cone(radius, half_height),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -443,6 +516,9 @@ pub fn ColliderBuilder3D::trimesh(
     shape: Shape3D::TriMesh(vertices, valid),
     enabled: true,
     sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
     active_events: ActiveEvents::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
@@ -505,6 +581,35 @@ pub fn ColliderBuilder3D::sensor(
 }
 
 ///|
+pub fn ColliderBuilder3D::surface_velocity(
+  self : ColliderBuilder3D,
+  v : @core.Vec3,
+) -> ColliderBuilder3D {
+  self.surface_velocity = v
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::one_way_above(
+  self : ColliderBuilder3D,
+  offset : @core.Real,
+) -> ColliderBuilder3D {
+  self.one_way_offset = Some(offset)
+  self.one_way_direction = 1
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::one_way_below(
+  self : ColliderBuilder3D,
+  offset : @core.Real,
+) -> ColliderBuilder3D {
+  self.one_way_offset = Some(offset)
+  self.one_way_direction = -1
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::active_events(
   self : ColliderBuilder3D,
   active_events : ActiveEvents,
@@ -558,6 +663,9 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     shape: self.shape,
     enabled: self.enabled,
     sensor: self.sensor,
+    surface_velocity: self.surface_velocity,
+    one_way_offset: self.one_way_offset,
+    one_way_direction: self.one_way_direction,
     active_events: self.active_events,
     collision_groups: self.collision_groups,
     friction: self.friction,

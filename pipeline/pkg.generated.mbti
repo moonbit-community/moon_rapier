@@ -200,6 +200,7 @@ pub struct PhysicsPipeline3DReal {
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
 
 // Type aliases
 pub using @dynamics {type IntegrationParameters}

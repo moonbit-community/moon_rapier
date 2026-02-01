@@ -195,7 +195,7 @@ pub struct RigidBody3D {
   gyroscopic_forces_enabled : Bool
   linear_damping : @core.Real
   angular_damping : @core.Real
-  gravity_scale : @core.Real
+  mut gravity_scale : @core.Real
   mass_properties : @core.MassProperties3
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
@@ -291,6 +291,23 @@ pub fn RigidBody3D::soft_ccd_prediction(self : RigidBody3D) -> @core.Real {
 ///|
 pub fn RigidBody3D::gyroscopic_forces_enabled(self : RigidBody3D) -> Bool {
   self.gyroscopic_forces_enabled
+}
+
+///|
+pub fn RigidBody3D::gravity_scale(self : RigidBody3D) -> @core.Real {
+  self.gravity_scale
+}
+
+///|
+pub fn RigidBody3D::set_gravity_scale(
+  self : RigidBody3D,
+  scale : @core.Real,
+  wake_up : Bool,
+) -> Unit {
+  self.gravity_scale = scale
+  if wake_up {
+    self.wake_up()
+  }
 }
 
 ///|

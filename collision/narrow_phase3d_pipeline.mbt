@@ -270,6 +270,85 @@ pub fn NarrowPhase3D::update(
               penetration: cp.penetration,
             })
           }
+        (Shape3D::Cuboid(he), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_cuboid_trimesh_contact(p1, he, p2, vertices, indices)
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::Cuboid(he)) =>
+          if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::CapsuleY(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_capsule_trimesh_contact(p1, r, hh, p2, vertices, indices)
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::CapsuleY(r, hh)) =>
+          if compute_capsule_trimesh_contact(p2, r, hh, p1, vertices, indices)
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::Cylinder(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_cylinder_trimesh_contact(p1, r, hh, p2, vertices, indices)
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::Cylinder(r, hh)) =>
+          if compute_cylinder_trimesh_contact(p2, r, hh, p1, vertices, indices)
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::RoundCylinder(r, hh, br), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_round_cylinder_trimesh_contact(
+              p1, r, hh, br, p2, vertices, indices,
+            )
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::RoundCylinder(r, hh, br)) =>
+          if compute_round_cylinder_trimesh_contact(
+              p2, r, hh, br, p1, vertices, indices,
+            )
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::Cone(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_cone_trimesh_contact(p1, r, hh, p2, vertices, indices)
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::Cone(r, hh)) =>
+          if compute_cone_trimesh_contact(p2, r, hh, p1, vertices, indices)
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
         _ => ()
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))
