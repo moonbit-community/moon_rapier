@@ -406,6 +406,7 @@ pub fn ColliderSet3D::insert_with_parent(Self, Collider3D, @dynamics.RigidBodyHa
 pub fn ColliderSet3D::len(Self) -> Int
 pub fn ColliderSet3D::new() -> Self
 pub fn ColliderSet3D::remove(Self, ColliderHandle3D) -> Collider3D?
+pub fn ColliderSet3D::remove_attached_to(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle3D]
 pub fn ColliderSet3D::set_parent(Self, ColliderHandle3D, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3D) -> Unit
 pub fn ColliderSet3D::sync_with_bodies(Self, @dynamics.RigidBodySet3D) -> Unit
 

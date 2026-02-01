@@ -86,6 +86,24 @@ pub fn ColliderSet3D::all_handles(
 }
 
 ///|
+pub fn ColliderSet3D::remove_attached_to(
+  self : ColliderSet3D,
+  parent : @dynamics.RigidBodyHandle,
+) -> Array[ColliderHandle3D] {
+  let removed : Array[ColliderHandle3D] = []
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(co) {
+      if co.parent() is Some(p) && p.equals(parent) {
+        let h = ColliderHandle3D::from_raw_parts(i, self.generations[i])
+        self.remove(h) |> ignore
+        removed.push(h)
+      }
+    }
+  }
+  removed
+}
+
+///|
 pub fn ColliderSet3D::insert(
   self : ColliderSet3D,
   collider : Collider3D,

@@ -827,6 +827,40 @@ pub fn RigidBodySet3D::insert(
 }
 
 ///|
+pub fn RigidBodySet3D::all_handles(
+  self : RigidBodySet3D,
+) -> Array[RigidBodyHandle] {
+  let out : Array[RigidBodyHandle] = []
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(_) {
+      out.push(RigidBodyHandle::from_raw_parts(i, self.generations[i]))
+    }
+  }
+  out
+}
+
+///|
+pub fn RigidBodySet3D::remove(
+  self : RigidBodySet3D,
+  handle : RigidBodyHandle,
+) -> RigidBody3D? {
+  let (id, gen) = handle.into_raw_parts()
+  if id < 0 || id >= self.bodies.length() {
+    return None
+  }
+  if self.generations[id] != gen {
+    return None
+  }
+  let removed = self.bodies[id]
+  if removed is Some(_) {
+    self.bodies[id] = None
+    self.free_list.push(id)
+    self.generations[id] = self.generations[id] + 1
+  }
+  removed
+}
+
+///|
 pub fn RigidBodySet3D::get(
   self : RigidBodySet3D,
   handle : RigidBodyHandle,

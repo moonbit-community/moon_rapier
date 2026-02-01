@@ -1024,6 +1024,7 @@ pub struct RigidBodySet3D {
   free_list : Array[Int]
 }
 pub fn RigidBodySet3D::advance_positions_all(Self, Float) -> Unit
+pub fn RigidBodySet3D::all_handles(Self) -> Array[RigidBodyHandle]
 pub fn RigidBodySet3D::apply_damping_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::apply_gravity_all(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBodySet3D::apply_gyroscopic_forces_all(Self, Float) -> Unit
@@ -1035,6 +1036,7 @@ pub fn RigidBodySet3D::integrate_all(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBodySet3D::len(Self) -> Int
 pub fn RigidBodySet3D::max_linvel_len(Self) -> Float
 pub fn RigidBodySet3D::new() -> Self
+pub fn RigidBodySet3D::remove(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::update_kinematic_velocities_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::update_sleep_all(Self, Float, Float) -> Unit
 
