@@ -280,18 +280,18 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" 
     16,
   )
 
-  // Ground plane as trimesh.
-  let hw = 50.0F
-  let vtx = [
-    @core.Vec3::new(-hw, 0.0F, -hw),
-    @core.Vec3::new(-hw, 0.0F, hw),
-    @core.Vec3::new(hw, 0.0F, hw),
-    @core.Vec3::new(hw, 0.0F, -hw),
-  ]
-  let idx = [(0, 1, 2), (0, 2, 3)]
+  // Flat heightfield (2x2) like the upstream example.
+  let heights = [0.0F, 0.0F, 0.0F, 0.0F]
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
-  let mesh = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
-  let mesh_h = colliders.insert_with_parent(mesh, ground, bodies)
+  let hf = @collision.ColliderBuilder3D::heightfield(
+      heights,
+      2,
+      2,
+      @core.Vec3::new(50.0F, 1.0F, 50.0F),
+    )
+    .unwrap()
+    .build()
+  let mesh_h = colliders.insert_with_parent(hf, ground, bodies)
 
   // Thin cuboid.
   let body = bodies.insert(

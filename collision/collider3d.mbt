@@ -527,6 +527,50 @@ pub fn ColliderBuilder3D::trimesh(
 }
 
 ///|
+pub fn ColliderBuilder3D::heightfield(
+  heights : Array[@core.Real],
+  nrows : Int,
+  ncols : Int,
+  scale : @core.Vec3,
+) -> ColliderBuilder3D? {
+  if nrows <= 1 || ncols <= 1 {
+    return None
+  }
+  if heights.length() != nrows * ncols {
+    return None
+  }
+  let dx = scale.x / Float::from_int(nrows - 1)
+  let dz = scale.z / Float::from_int(ncols - 1)
+  let origin_x = -scale.x / 2.0F
+  let origin_z = -scale.z / 2.0F
+  let vertices : Array[@core.Vec3] = []
+  for i in 0..<nrows {
+    for j in 0..<ncols {
+      let x = origin_x + Float::from_int(i) * dx
+      let z = origin_z + Float::from_int(j) * dz
+      let y = heights[i * ncols + j] * scale.y
+      vertices.push(@core.Vec3::new(x, y, z))
+    }
+  }
+  fn vid(i : Int, j : Int, ncols : Int) -> Int {
+    i * ncols + j
+  }
+
+  let indices : Array[(Int, Int, Int)] = []
+  for i in 0..<(nrows - 1) {
+    for j in 0..<(ncols - 1) {
+      let a = vid(i, j, ncols)
+      let b = vid(i + 1, j, ncols)
+      let c = vid(i + 1, j + 1, ncols)
+      let d = vid(i, j + 1, ncols)
+      indices.push((a, c, b))
+      indices.push((a, d, c))
+    }
+  }
+  ColliderBuilder3D::trimesh(vertices, indices)
+}
+
+///|
 pub fn ColliderBuilder3D::position(
   self : ColliderBuilder3D,
   pos : @core.Isometry3,

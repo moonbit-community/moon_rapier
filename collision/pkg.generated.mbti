@@ -331,6 +331,7 @@ pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::density(Self, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
+pub fn ColliderBuilder3D::heightfield(Array[Float], Int, Int, @core.Vec3) -> Self?
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::one_way_above(Self, Float) -> Self
 pub fn ColliderBuilder3D::one_way_below(Self, Float) -> Self
