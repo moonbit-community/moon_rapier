@@ -178,3 +178,136 @@ test "examples3d/primitives3.rs round_cylinder-vs-ground parity (3DReal headless
     inspect(false, content="true")
   }
 }
+
+///|
+test "contacts: cylinder-vs-cylinder (3DReal headless)" {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let hh = 1.0F
+  let r = 0.6F
+  let fixed = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let fixed_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cylinder(r, hh).build(),
+    fixed,
+    bodies,
+  )
+  let dyn_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.2F, 1.8F, 0.1F))
+    .can_sleep(false)
+    .build(),
+  )
+  let dyn_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cylinder(r, hh).build(),
+    dyn_body,
+    bodies,
+  )
+  let mut saw_contact = false
+  for _ in 0..<20 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if narrow_phase.contact_pair(dyn_co, fixed_co) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      saw_contact = true
+    }
+  }
+  inspect(saw_contact, content="true")
+}
+
+///|
+test "contacts: cone-vs-cylinder (3DReal headless)" {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let hh = 1.0F
+  let r = 0.6F
+  let fixed = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let fixed_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cylinder(r, hh).build(),
+    fixed,
+    bodies,
+  )
+  let dyn_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.15F, 1.8F, -0.1F))
+    .can_sleep(false)
+    .build(),
+  )
+  let dyn_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cone(r, hh).build(),
+    dyn_body,
+    bodies,
+  )
+  let mut saw_contact = false
+  for _ in 0..<20 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if narrow_phase.contact_pair(dyn_co, fixed_co) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      saw_contact = true
+    }
+  }
+  inspect(saw_contact, content="true")
+}
+
+///|
+test "contacts: cone-vs-cone (3DReal headless)" {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let hh = 1.0F
+  let r = 0.6F
+  let fixed = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let fixed_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cone(r, hh).build(),
+    fixed,
+    bodies,
+  )
+  let dyn_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    // Place it deeply overlapping to avoid missing contacts due to the sampling approximation.
+    .translation(@core.Vec3::new(0.1F, 0.2F, 0.05F))
+    .can_sleep(false)
+    .build(),
+  )
+  let dyn_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cone(r, hh).build(),
+    dyn_body,
+    bodies,
+  )
+  let mut saw_contact = false
+  for _ in 0..<20 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if narrow_phase.contact_pair(dyn_co, fixed_co) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      saw_contact = true
+    }
+  }
+  inspect(saw_contact, content="true")
+}

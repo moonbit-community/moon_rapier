@@ -427,6 +427,17 @@ pub struct JointMotors3 {
 }
 pub fn JointMotors3::default() -> Self
 
+pub struct JointSet3DReal {
+  spherical : Array[SphericalJoint3DReal]
+  prismatic : Array[PrismaticJoint3DReal]
+  spherical_motors : Array[SphericalMotor3DReal]
+}
+pub fn JointSet3DReal::insert_prismatic_motor_position(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, Float) -> Unit
+pub fn JointSet3DReal::insert_spherical(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3) -> Unit
+pub fn JointSet3DReal::insert_spherical_motor_rotation(Self, RigidBodyHandle, RigidBodyHandle, @core.Quat, Float, Float) -> Unit
+pub fn JointSet3DReal::new() -> Self
+pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
+
 pub struct LinkId {
   value : Int
 }
@@ -541,6 +552,18 @@ pub(all) enum PredictedImpacts {
 }
 
 type PrismaticJoint
+
+pub struct PrismaticJoint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  local_anchor1 : @core.Vec3
+  local_anchor2 : @core.Vec3
+  local_axis1 : @core.Vec3
+  motor_target : Float
+  motor_stiffness : Float
+  motor_damping : Float
+  motor_enabled : Bool
+}
 
 type PrismaticJointBuilder
 pub fn PrismaticJointBuilder::build(Self) -> PrismaticJoint
@@ -1121,6 +1144,21 @@ pub fn RowDVector::scale(Self, Float) -> Self
 type SleepCandidate
 
 type SleepRootState
+
+pub struct SphericalJoint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  local_anchor1 : @core.Vec3
+  local_anchor2 : @core.Vec3
+}
+
+pub struct SphericalMotor3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  target_rel_rotation : @core.Quat
+  stiffness : Float
+  damping : Float
+}
 
 pub struct SpringCoefficients {
   natural_frequency : Float

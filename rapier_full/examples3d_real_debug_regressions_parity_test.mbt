@@ -232,3 +232,85 @@ test "examples3d/debug_infinite_fall3.rs parity (3DReal headless)" {
     }
   }
 }
+
+///|
+test "examples3d/debug_rollback3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_rollback3.rs` (headless; reduced).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+
+  // Ground.
+  let ground_size = 20.0F
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(ground_size, ground_height, 0.4F)
+    .friction(0.15F)
+    .build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  // Rolling ball.
+  let ball_rad = 0.1F
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 0.2F, 0.0F))
+    .linvel(@core.Vec3::new(10.0F, 0.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(ball_rad).density(100.0F).build(),
+    ball,
+    bodies,
+  )
+  |> ignore
+  let snapped_frame = 51
+  let mut step = 0
+  let mut snap_linvel = @core.Vec3::zero()
+  let mut snap_angvel = @core.Vec3::zero()
+  let mut snap_pos = @core.Isometry3::identity()
+  for _ in 0..<200 {
+    step = step + 1
+    if bodies.get(ball) is Some(rb) {
+      if step == snapped_frame {
+        snap_linvel = rb.linvel()
+        snap_angvel = rb.angvel()
+        snap_pos = rb.position()
+      }
+      if step == 100 {
+        rb.set_linvel(snap_linvel)
+        rb.set_angvel(snap_angvel)
+        rb.set_translation(snap_pos.translation)
+        rb.set_rotation(snap_pos.rotation)
+        step = snapped_frame
+      }
+    } else {
+      inspect(false, content="true")
+    }
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(ball) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > -50.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
