@@ -185,7 +185,7 @@ pub struct Collider3D {
   mut position : @core.Isometry3
   mut local_position : @core.Isometry3
   mut parent : @dynamics.RigidBodyHandle?
-  shape : Shape3D
+  mut shape : Shape3D
   mut enabled : Bool
   sensor : Bool
   mut surface_velocity : @core.Vec3
@@ -215,6 +215,7 @@ pub fn Collider3D::set_one_way_above(Self, Float) -> Unit
 pub fn Collider3D::set_one_way_below(Self, Float) -> Unit
 pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
 pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
+pub fn Collider3D::set_shape(Self, Shape3D) -> Unit
 pub fn Collider3D::set_surface_velocity(Self, @core.Vec3) -> Unit
 pub fn Collider3D::shape(Self) -> Shape3D
 pub fn Collider3D::surface_velocity(Self) -> @core.Vec3

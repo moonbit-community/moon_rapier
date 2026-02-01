@@ -161,7 +161,7 @@ pub struct Collider3D {
   mut position : @core.Isometry3
   mut local_position : @core.Isometry3
   mut parent : @dynamics.RigidBodyHandle?
-  shape : Shape3D
+  mut shape : Shape3D
   mut enabled : Bool
   sensor : Bool
   // Solver-only features used by a subset of examples/tests (e.g. one-way platforms).
@@ -216,6 +216,11 @@ pub fn Collider3D::set_parent(
 ///|
 pub fn Collider3D::shape(self : Collider3D) -> Shape3D {
   self.shape
+}
+
+///|
+pub fn Collider3D::set_shape(self : Collider3D, shape : Shape3D) -> Unit {
+  self.shape = shape
 }
 
 ///|
