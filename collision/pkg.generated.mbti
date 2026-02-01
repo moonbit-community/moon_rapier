@@ -17,6 +17,8 @@ pub fn compute_ball_cuboid_contact(@core.Vec3, Float, @core.Isometry3, @core.Vec
 
 pub fn compute_ball_cylinder_contact(@core.Vec3, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
+pub fn compute_ball_trimesh_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
 pub fn compute_capsule_capsule_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
 pub fn compute_capsule_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
@@ -314,6 +316,7 @@ pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
+pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 
 type ColliderChanges
 
@@ -676,6 +679,7 @@ pub(all) enum Shape3D {
   Cylinder(Float, Float)
   RoundCylinder(Float, Float, Float)
   Cone(Float, Float)
+  TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 pub fn Shape3D::ball(Float) -> Self
 pub fn Shape3D::capsule_y(Float, Float) -> Self

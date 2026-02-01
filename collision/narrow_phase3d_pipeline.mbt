@@ -243,6 +243,33 @@ pub fn NarrowPhase3D::update(
               penetration: cp.penetration,
             })
           }
+        (Shape3D::Ball(r), Shape3D::TriMesh(vertices, indices)) =>
+          if compute_ball_trimesh_contact(
+              p1.translation,
+              r,
+              p2,
+              vertices,
+              indices,
+            )
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::TriMesh(vertices, indices), Shape3D::Ball(r)) =>
+          if compute_ball_trimesh_contact(
+              p2.translation,
+              r,
+              p1,
+              vertices,
+              indices,
+            )
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
         _ => ()
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))

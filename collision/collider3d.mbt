@@ -21,6 +21,7 @@ pub(all) enum Shape3D {
   Cylinder(@core.Real, @core.Real) // radius, half_height (aligned with Y)
   RoundCylinder(@core.Real, @core.Real, @core.Real) // radius, half_height, border_radius
   Cone(@core.Real, @core.Real) // radius, half_height (aligned with Y)
+  TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 
 ///|
@@ -97,6 +98,35 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
     }
     Shape3D::Cone(r, hh) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Shape3D::TriMesh(vertices, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+      } else {
+        let mut min = vertices[0]
+        let mut max = vertices[0]
+        for i in 1..<vertices.length() {
+          let v = vertices[i]
+          if v.x < min.x {
+            min = @core.Vec3::new(v.x, min.y, min.z)
+          }
+          if v.y < min.y {
+            min = @core.Vec3::new(min.x, v.y, min.z)
+          }
+          if v.z < min.z {
+            min = @core.Vec3::new(min.x, min.y, v.z)
+          }
+          if v.x > max.x {
+            max = @core.Vec3::new(v.x, max.y, max.z)
+          }
+          if v.y > max.y {
+            max = @core.Vec3::new(max.x, v.y, max.z)
+          }
+          if v.z > max.z {
+            max = @core.Vec3::new(max.x, max.y, v.z)
+          }
+        }
+        @core.Aabb3::new(min, max)
+      }
   }
 }
 
@@ -370,6 +400,54 @@ pub fn ColliderBuilder3D::cone(
     friction: 0.7F,
     restitution: 0.0F,
   }
+}
+
+///|
+pub fn ColliderBuilder3D::trimesh(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder3D? {
+  if vertices.length() == 0 || indices.length() == 0 {
+    return None
+  }
+  let valid : Array[(Int, Int, Int)] = []
+  for i in 0..<indices.length() {
+    let (i0, i1, i2) = indices[i]
+    if i0 < 0 || i1 < 0 || i2 < 0 {
+      continue
+    }
+    if i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    if i0 == i1 || i1 == i2 || i2 == i0 {
+      continue
+    }
+    let a = vertices[i0]
+    let b = vertices[i1]
+    let c = vertices[i2]
+    let area2 = b.sub(a).cross(c.sub(a)).length_squared()
+    if area2 <= 1.0e-12F {
+      continue
+    }
+    valid.push((i0, i1, i2))
+  }
+  if valid.length() == 0 {
+    return None
+  }
+  Some({
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::TriMesh(vertices, valid),
+    enabled: true,
+    sensor: false,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  })
 }
 
 ///|

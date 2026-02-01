@@ -59,6 +59,110 @@ fn local_min(a : @core.Real, b : @core.Real) -> @core.Real {
 }
 
 ///|
+fn closest_point_on_triangle3d(
+  p : @core.Vec3,
+  a : @core.Vec3,
+  b : @core.Vec3,
+  c : @core.Vec3,
+) -> @core.Vec3 {
+  // Real-Time Collision Detection (Christer Ericson), 5.1.5.
+  let ab = b.sub(a)
+  let ac = c.sub(a)
+  let ap = p.sub(a)
+  let d1 = ab.dot(ap)
+  let d2 = ac.dot(ap)
+  if d1 <= 0.0F && d2 <= 0.0F {
+    return a
+  }
+  let bp = p.sub(b)
+  let d3 = ab.dot(bp)
+  let d4 = ac.dot(bp)
+  if d3 >= 0.0F && d4 <= d3 {
+    return b
+  }
+  let vc = d1 * d4 - d3 * d2
+  if vc <= 0.0F && d1 >= 0.0F && d3 <= 0.0F {
+    let v = d1 / (d1 - d3)
+    return a.add(ab.scale(v))
+  }
+  let cp = p.sub(c)
+  let d5 = ab.dot(cp)
+  let d6 = ac.dot(cp)
+  if d6 >= 0.0F && d5 <= d6 {
+    return c
+  }
+  let vb = d5 * d2 - d1 * d6
+  if vb <= 0.0F && d2 >= 0.0F && d6 <= 0.0F {
+    let w = d2 / (d2 - d6)
+    return a.add(ac.scale(w))
+  }
+  let va = d3 * d6 - d5 * d4
+  if va <= 0.0F && d4 - d3 >= 0.0F && d5 - d6 >= 0.0F {
+    let w = (d4 - d3) / (d4 - d3 + (d5 - d6))
+    return b.add(c.sub(b).scale(w))
+  }
+  let denom = 1.0F / (va + vb + vc)
+  let v = vb * denom
+  let w = vc * denom
+  a.add(ab.scale(v)).add(ac.scale(w))
+}
+
+///|
+pub fn compute_ball_trimesh_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ContactPoint3D? {
+  if indices.length() == 0 || vertices.length() == 0 {
+    return None
+  }
+  let mut best_dist2 = 1.0e30F
+  let mut best_point = @core.Vec3::zero()
+  let mut best_normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  for i in 0..<indices.length() {
+    let (i0, i1, i2) = indices[i]
+    if i0 < 0 ||
+      i1 < 0 ||
+      i2 < 0 ||
+      i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    let a = mesh_pos.transform_point(vertices[i0])
+    let b = mesh_pos.transform_point(vertices[i1])
+    let c = mesh_pos.transform_point(vertices[i2])
+    let q = closest_point_on_triangle3d(ball_center, a, b, c)
+    let d2 = q.sub(ball_center).length_squared()
+    if d2 < best_dist2 {
+      best_dist2 = d2
+      best_point = q
+      let n = b.sub(a).cross(c.sub(a))
+      if n.length_squared() > 1.0e-12F {
+        best_normal = n.normalize()
+      }
+    }
+  }
+  let r2 = ball_radius * ball_radius
+  if best_dist2 > r2 {
+    return None
+  }
+  let dist = local_sqrt(best_dist2)
+  let normal = if dist > 1.0e-6F {
+    // Pointing from the ball center toward the mesh surface.
+    best_point.sub(ball_center).scale(1.0F / dist)
+  } else {
+    // Fallback to triangle normal.
+    best_normal
+  }
+  let point1 = ball_center.add(normal.scale(ball_radius))
+  let point2 = best_point
+  Some({ point1, point2, normal, penetration: ball_radius - dist })
+}
+
+///|
 pub fn compute_ball_ball_contact(
   center1 : @core.Vec3,
   radius1 : @core.Real,
