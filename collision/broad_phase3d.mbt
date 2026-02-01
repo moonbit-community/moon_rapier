@@ -106,6 +106,31 @@ fn pair_less_3d(
 }
 
 ///|
+fn handle_less_3d(a : ColliderHandle3D, b : ColliderHandle3D) -> Bool {
+  let (ai, ag) = a.into_raw_parts()
+  let (bi, bg) = b.into_raw_parts()
+  if ai < bi {
+    true
+  } else if ai > bi {
+    false
+  } else {
+    ag < bg
+  }
+}
+
+///|
+fn sorted_pair_3d(
+  a : ColliderHandle3D,
+  b : ColliderHandle3D,
+) -> (ColliderHandle3D, ColliderHandle3D) {
+  if handle_less_3d(a, b) {
+    (a, b)
+  } else {
+    (b, a)
+  }
+}
+
+///|
 fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
   // Simple insertion sort (small N in tests; can be replaced with a faster sort later).
   for i in 1..<pairs.length() {
@@ -116,6 +141,193 @@ fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
       pairs[j] = tmp
       j = j - 1
     }
+  }
+}
+
+///|
+priv struct BvhLeaf3D {
+  handle : ColliderHandle3D
+  aabb : @core.Aabb3
+  center : @core.Vec3
+}
+
+///|
+priv struct BvhNode3D {
+  aabb : @core.Aabb3
+  left : Int?
+  right : Int?
+  leaf : ColliderHandle3D?
+}
+
+///|
+fn swap_leaves_3d(leaves : Array[BvhLeaf3D], i : Int, j : Int) -> Unit {
+  if i == j {
+    return
+  }
+  let tmp = leaves[i]
+  leaves[i] = leaves[j]
+  leaves[j] = tmp
+}
+
+///|
+fn leaf_key_3d(leaf : BvhLeaf3D, axis : Int) -> @core.Real {
+  match axis {
+    0 => leaf.center.x
+    1 => leaf.center.y
+    _ => leaf.center.z
+  }
+}
+
+///|
+fn quicksort_leaves_3d(
+  leaves : Array[BvhLeaf3D],
+  start : Int,
+  end : Int,
+  axis : Int,
+) -> Unit {
+  if end - start <= 1 {
+    return
+  }
+  let pivot = leaf_key_3d(leaves[(start + end) / 2], axis)
+  let mut i = start
+  let mut j = end - 1
+  while i <= j {
+    while leaf_key_3d(leaves[i], axis) < pivot {
+      i = i + 1
+    }
+    while leaf_key_3d(leaves[j], axis) > pivot {
+      j = j - 1
+    }
+    if i <= j {
+      swap_leaves_3d(leaves, i, j)
+      i = i + 1
+      j = j - 1
+    }
+  }
+  if start < j + 1 {
+    quicksort_leaves_3d(leaves, start, j + 1, axis)
+  }
+  if i < end {
+    quicksort_leaves_3d(leaves, i, end, axis)
+  }
+}
+
+///|
+fn build_bvh_3d(
+  nodes : Array[BvhNode3D],
+  leaves : Array[BvhLeaf3D],
+  start : Int,
+  end : Int,
+) -> Int {
+  let count = end - start
+  if count == 1 {
+    let leaf = leaves[start]
+    let index = nodes.length()
+    nodes.push(BvhNode3D::{
+      aabb: leaf.aabb,
+      left: None,
+      right: None,
+      leaf: Some(leaf.handle),
+    })
+    return index
+  }
+
+  // Choose split axis based on the spread of centers.
+  let mut min_x = leaves[start].center.x
+  let mut max_x = min_x
+  let mut min_y = leaves[start].center.y
+  let mut max_y = min_y
+  let mut min_z = leaves[start].center.z
+  let mut max_z = min_z
+  for i in (start + 1)..<end {
+    let c = leaves[i].center
+    if c.x < min_x {
+      min_x = c.x
+    }
+    if c.x > max_x {
+      max_x = c.x
+    }
+    if c.y < min_y {
+      min_y = c.y
+    }
+    if c.y > max_y {
+      max_y = c.y
+    }
+    if c.z < min_z {
+      min_z = c.z
+    }
+    if c.z > max_z {
+      max_z = c.z
+    }
+  }
+  let sx = max_x - min_x
+  let sy = max_y - min_y
+  let sz = max_z - min_z
+  let axis = if sx >= sy && sx >= sz { 0 } else if sy >= sz { 1 } else { 2 }
+  quicksort_leaves_3d(leaves, start, end, axis)
+  let mid = start + count / 2
+  let left = build_bvh_3d(nodes, leaves, start, mid)
+  let right = build_bvh_3d(nodes, leaves, mid, end)
+  let node_aabb = nodes[left].aabb.combine(nodes[right].aabb)
+  let index = nodes.length()
+  nodes.push(BvhNode3D::{
+    aabb: node_aabb,
+    left: Some(left),
+    right: Some(right),
+    leaf: None,
+  })
+  index
+}
+
+///|
+fn collect_bvh_pairs_3d(
+  nodes : Array[BvhNode3D],
+  a : Int,
+  b : Int,
+  out : Array[(ColliderHandle3D, ColliderHandle3D)],
+) -> Unit {
+  let node_a = nodes[a]
+  let node_b = nodes[b]
+  if !node_a.aabb.intersects(node_b.aabb) {
+    return
+  }
+  if node_a.leaf is Some(handle_a) && node_b.leaf is Some(handle_b) {
+    if handle_a.equals(handle_b) {
+      return
+    }
+    out.push(sorted_pair_3d(handle_a, handle_b))
+    return
+  }
+  if a == b {
+    if node_a.left is Some(left) && node_a.right is Some(right) {
+      collect_bvh_pairs_3d(nodes, left, left, out)
+      collect_bvh_pairs_3d(nodes, left, right, out)
+      collect_bvh_pairs_3d(nodes, right, right, out)
+    }
+    return
+  }
+  if node_a.leaf is Some(_) {
+    if node_b.left is Some(left) && node_b.right is Some(right) {
+      collect_bvh_pairs_3d(nodes, a, left, out)
+      collect_bvh_pairs_3d(nodes, a, right, out)
+    }
+    return
+  }
+  if node_b.leaf is Some(_) {
+    if node_a.left is Some(left) && node_a.right is Some(right) {
+      collect_bvh_pairs_3d(nodes, left, b, out)
+      collect_bvh_pairs_3d(nodes, right, b, out)
+    }
+    return
+  }
+  if node_a.left is Some(al) &&
+    node_a.right is Some(ar) &&
+    node_b.left is Some(bl) &&
+    node_b.right is Some(br) {
+    collect_bvh_pairs_3d(nodes, al, bl, out)
+    collect_bvh_pairs_3d(nodes, al, br, out)
+    collect_bvh_pairs_3d(nodes, ar, bl, out)
+    collect_bvh_pairs_3d(nodes, ar, br, out)
   }
 }
 
@@ -131,8 +343,6 @@ pub fn BroadPhase3D::update(
   }
   self.pairs.clear()
   self.events.clear()
-
-  // Naive O(n^2) broadphase for now. This is used only by the real dim3 backend.
   let handles : Array[ColliderHandle3D] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(_) {
@@ -141,26 +351,24 @@ pub fn BroadPhase3D::update(
       )
     }
   }
+
+  // BVH broadphase (replaces the old naive O(n^2) scan).
+  let leaves : Array[BvhLeaf3D] = []
   for i in 0..<handles.length() {
-    let hi = handles[i]
-    if colliders.get(hi) is Some(ci) {
-      if !ci.enabled() {
+    let h = handles[i]
+    if colliders.get(h) is Some(c) {
+      if !c.enabled() {
         continue
       }
-      let ai = ci.compute_collision_aabb(prediction_distance)
-      for j in (i + 1)..<handles.length() {
-        let hj = handles[j]
-        if colliders.get(hj) is Some(cj) {
-          if !cj.enabled() {
-            continue
-          }
-          let aj = cj.compute_collision_aabb(prediction_distance)
-          if ai.intersects(aj) {
-            self.pairs.push((hi, hj))
-          }
-        }
-      }
+      let aabb = c.compute_collision_aabb(prediction_distance)
+      let center = aabb.mins.add(aabb.maxs).scale(0.5F)
+      leaves.push(BvhLeaf3D::{ handle: h, aabb, center })
     }
+  }
+  if leaves.length() > 1 {
+    let nodes : Array[BvhNode3D] = []
+    let root = build_bvh_3d(nodes, leaves, 0, leaves.length())
+    collect_bvh_pairs_3d(nodes, root, root, self.pairs)
   }
   sort_pairs_3d(self.pairs)
   sort_pairs_3d(self.prev_pairs)
