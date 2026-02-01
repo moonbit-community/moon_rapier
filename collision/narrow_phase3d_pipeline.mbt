@@ -186,6 +186,47 @@ pub fn NarrowPhase3D::update(
               penetration: cp.penetration,
             })
           }
+        (Shape3D::Cylinder(cr, ch), Shape3D::Cuboid(he)) =>
+          if compute_cylinder_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::Cuboid(he), Shape3D::Cylinder(cr, ch)) =>
+          if compute_cylinder_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Cuboid(he)) =>
+          if compute_cylinder_cuboid_contact(p1, cr + br, ch + br, p2, he)
+            is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::Cuboid(he), Shape3D::RoundCylinder(cr, ch, br)) =>
+          if compute_cylinder_cuboid_contact(p2, cr + br, ch + br, p1, he)
+            is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
+        (Shape3D::Cone(cr, ch), Shape3D::Cuboid(he)) =>
+          if compute_cone_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
+            contacts.push(cp)
+          }
+        (Shape3D::Cuboid(he), Shape3D::Cone(cr, ch)) =>
+          if compute_cone_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
+            contacts.push({
+              point1: cp.point2,
+              point2: cp.point1,
+              normal: cp.normal.scale(-1.0F),
+              penetration: cp.penetration,
+            })
+          }
         (Shape3D::Ball(r), Shape3D::Cylinder(cr, ch)) =>
           if compute_ball_cylinder_contact(p1.translation, r, p2, cr, ch)
             is Some(cp) {

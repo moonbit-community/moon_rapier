@@ -1,0 +1,180 @@
+// Copyright 2025 International Digital Economy Academy
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+///|
+/// Parity tests for missing primitive contact pairs in the real dim3 backend.
+
+///|
+test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_cylinder3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+
+  // Ground.
+  let ground_size = 100.1F
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  // Cylinder.
+  let rad = 1.0F
+  let y = (rad * 2.0F + rad) / 2.0F + 3.0F
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, y, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cylinder(rad, rad).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  for _ in 0..<360 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(body) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > -10.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "examples3d/primitives3.rs cone-vs-ground parity (3DReal headless)" {
+  // Derived from `rapier-reference/examples3d/primitives3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let ground_height = 1.0F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 20.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let rad = 1.0F
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cone(rad, rad).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  for _ in 0..<360 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(body) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > -10.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "examples3d/primitives3.rs round_cylinder-vs-ground parity (3DReal headless)" {
+  // Derived from `rapier-reference/examples3d/primitives3.rs` (headless).
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+  let ground_height = 1.0F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 20.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let rad = 1.0F
+  let body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::round_cylinder(rad, rad, rad / 10.0F).build(),
+    body,
+    bodies,
+  )
+  |> ignore
+  for _ in 0..<360 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(body) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > -10.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

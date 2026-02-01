@@ -25,11 +25,15 @@ pub fn compute_capsule_cuboid_contact(@core.Isometry3, Float, Float, @core.Isome
 
 pub fn compute_capsule_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
+pub fn compute_cone_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
+
 pub fn compute_cone_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn compute_cuboid_cuboid_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
+pub fn compute_cylinder_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
