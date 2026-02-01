@@ -338,6 +338,38 @@ pub fn RigidBody3D::wake_up(self : RigidBody3D) -> Unit {
 }
 
 ///|
+pub fn RigidBody3D::apply_impulse_at_point(
+  self : RigidBody3D,
+  impulse : @core.Vec3,
+  point : @core.Vec3,
+  wake_up : Bool,
+) -> Unit {
+  if !self.body_type.is_dynamic() {
+    return
+  }
+  if wake_up {
+    self.wake_up()
+  }
+  if self.activation.is_sleeping() {
+    return
+  }
+  let inv_m = self.mass_properties.inv_mass
+  if inv_m > 0.0F && !self.locked_translations {
+    self.set_linvel(self.linvel().add(impulse.scale(inv_m)))
+  }
+  if self.locked_rotations {
+    return
+  }
+  let r = point.sub(self.world_com())
+  let torque_impulse = r.cross(impulse)
+  let rot = self.rotation().to_mat3()
+  let inv_i_local = self.mass_properties.inv_inertia.into_mat3()
+  let inv_i_world = rot.mul(inv_i_local).mul(rot.transpose())
+  let dw = inv_i_world.mul_vec3(torque_impulse)
+  self.set_angvel(self.angvel().add(dw))
+}
+
+///|
 pub fn RigidBody3D::update_sleep(
   self : RigidBody3D,
   dt : @core.Real,

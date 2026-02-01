@@ -75,6 +75,18 @@ pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int, Float) ->
 pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
 pub fn DynamicRayCastVehicleController3::wheels(Self) -> Array[Wheel3]
 
+pub struct DynamicRayCastVehicleController3DReal {
+  chassis : @dynamics.RigidBodyHandle
+  wheels : Array[Wheel3DReal]
+}
+pub fn DynamicRayCastVehicleController3DReal::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
+pub fn DynamicRayCastVehicleController3DReal::new(@dynamics.RigidBodyHandle) -> Self
+pub fn DynamicRayCastVehicleController3DReal::set_brake(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::update_vehicle(Self, Float, @collision.QueryPipelineMut3DReal) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::wheels(Self) -> Array[Wheel3DReal]
+
 pub struct EffectiveMovement {
   translation : @core.Vec2
   grounded : Bool
@@ -83,6 +95,15 @@ pub struct EffectiveMovement {
 pub fn EffectiveMovement::is_grounded(Self) -> Bool
 pub fn EffectiveMovement::is_sliding_down_slope(Self) -> Bool
 pub fn EffectiveMovement::translation(Self) -> @core.Vec2
+
+pub struct EffectiveMovement3DReal {
+  translation : @core.Vec3
+  grounded : Bool
+  is_sliding_down_slope : Bool
+}
+pub fn EffectiveMovement3DReal::is_grounded(Self) -> Bool
+pub fn EffectiveMovement3DReal::is_sliding_down_slope(Self) -> Bool
+pub fn EffectiveMovement3DReal::translation(Self) -> @core.Vec3
 
 pub struct KinematicCharacterController {
   up : @core.Vec2
@@ -106,6 +127,20 @@ pub fn KinematicCharacterController::with_offset(Self, CharacterLength) -> Self
 pub fn KinematicCharacterController::with_slide(Self, Bool) -> Self
 pub fn KinematicCharacterController::with_snap_to_ground(Self, CharacterLength?) -> Self
 pub fn KinematicCharacterController::with_up(Self, @core.Vec2) -> Self
+
+pub struct KinematicCharacterController3DReal {
+  up : @core.Vec3
+  offset : Float
+  max_slope_climb_angle : Float
+  min_slope_slide_angle : Float
+  slide : Bool
+}
+pub fn KinematicCharacterController3DReal::default() -> Self
+pub fn KinematicCharacterController3DReal::move_character(Self, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.QueryPipelineMut3DReal, @dynamics.RigidBodyHandle, @core.Vec3) -> EffectiveMovement3DReal
+pub fn KinematicCharacterController3DReal::new() -> Self
+pub fn KinematicCharacterController3DReal::with_max_slope_climb_angle(Self, Float) -> Self
+pub fn KinematicCharacterController3DReal::with_min_slope_slide_angle(Self, Float) -> Self
+pub fn KinematicCharacterController3DReal::with_offset(Self, Float) -> Self
 
 pub(all) struct PdController {
   lin_kp : @core.Vec2
@@ -225,6 +260,22 @@ pub fn Wheel3::axle(Self) -> @core.Vec3
 pub fn Wheel3::center(Self) -> @core.Vec3
 pub fn Wheel3::raycast_info(Self) -> RayCastInfo3
 pub fn Wheel3::suspension(Self) -> @core.Vec3
+
+pub struct Wheel3DReal {
+  connection_point_cs : @core.Vec3
+  direction_cs : @core.Vec3
+  axle_cs : @core.Vec3
+  suspension_rest_length : Float
+  radius : Float
+  tuning : WheelTuning
+  mut engine_force : Float
+  mut brake : Float
+  mut steering : Float
+  mut is_in_contact : Bool
+  mut contact_point_ws : @core.Vec3
+  mut contact_normal_ws : @core.Vec3
+  mut suspension_length : Float
+}
 
 pub struct WheelTuning {
   suspension_stiffness : Float

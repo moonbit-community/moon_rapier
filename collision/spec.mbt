@@ -1814,13 +1814,76 @@ pub struct Ray {
 
 ///|
 #declaration_only
+pub type Ray3
+
+///|
+#declaration_only
 pub fn Ray::new(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
   ...
 }
 
 ///|
 #declaration_only
+pub fn Ray3::new(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
+  ...
+}
+
+///|
+#declaration_only
 pub fn QueryFilter::new() -> QueryFilter {
+  ...
+}
+
+///|
+#declaration_only
+pub type QueryFilter3DReal
+
+///|
+#declaration_only
+pub fn QueryFilter3DReal::new() -> QueryFilter3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter3DReal::exclude_rigid_body(
+  self : QueryFilter3DReal,
+  handle : @dynamics.RigidBodyHandle,
+) -> QueryFilter3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter3DReal::exclude_collider(
+  self : QueryFilter3DReal,
+  handle : ColliderHandle3D,
+) -> QueryFilter3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryFilter3DReal::groups(
+  self : QueryFilter3DReal,
+  groups : @dynamics.InteractionGroups,
+) -> QueryFilter3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub type RayIntersection3
+
+///|
+#declaration_only
+pub fn RayIntersection3::toi(self : RayIntersection3) -> @core.Real {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RayIntersection3::normal(self : RayIntersection3) -> @core.Vec3 {
   ...
 }
 
@@ -2008,6 +2071,101 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, RayIntersection)? {
+  ...
+}
+
+///|
+#declaration_only
+pub type QueryPipeline3DReal
+
+///|
+#declaration_only
+pub type QueryPipelineMut3DReal
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::new(
+  filter : QueryFilter3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> QueryPipeline3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::update(self : QueryPipeline3DReal) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::with_filter(
+  self : QueryPipeline3DReal,
+  filter : QueryFilter3DReal,
+) -> QueryPipeline3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
+  self : QueryPipeline3DReal,
+  ray : Ray3,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle3D, RayIntersection3)? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::rigid_body(
+  self : QueryPipeline3DReal,
+  handle : @dynamics.RigidBodyHandle,
+) -> @dynamics.RigidBody3D? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::rigid_body_mut(
+  self : QueryPipeline3DReal,
+  handle : @dynamics.RigidBodyHandle,
+) -> @dynamics.RigidBody3D? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipeline3DReal::collider(
+  self : QueryPipeline3DReal,
+  handle : ColliderHandle3D,
+) -> Collider3D? {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipelineMut3DReal::new(
+  filter : QueryFilter3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> QueryPipelineMut3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipelineMut3DReal::as_ref(
+  self : QueryPipelineMut3DReal,
+) -> QueryPipeline3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn QueryPipelineMut3DReal::update(self : QueryPipelineMut3DReal) -> Unit {
   ...
 }
 

@@ -717,3 +717,165 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
 ) -> Unit {
   ...
 }
+
+///|
+#declaration_only
+pub type Wheel3DReal
+
+///|
+#declaration_only
+pub type DynamicRayCastVehicleController3DReal
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::new(
+  chassis : @dynamics.RigidBodyHandle,
+) -> DynamicRayCastVehicleController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::add_wheel(
+  self : DynamicRayCastVehicleController3DReal,
+  connection_point_cs : @core.Vec3,
+  direction_cs : @core.Vec3,
+  axle_cs : @core.Vec3,
+  suspension_rest_length : @core.Real,
+  radius : @core.Real,
+  tuning : WheelTuning,
+) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::set_engine_force(
+  self : DynamicRayCastVehicleController3DReal,
+  wheel : Int,
+  value : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::set_brake(
+  self : DynamicRayCastVehicleController3DReal,
+  wheel : Int,
+  value : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::set_steering_value(
+  self : DynamicRayCastVehicleController3DReal,
+  wheel : Int,
+  value : @core.Real,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::wheels(
+  self : DynamicRayCastVehicleController3DReal,
+) -> Array[Wheel3DReal] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
+  self : DynamicRayCastVehicleController3DReal,
+  dt : @core.Real,
+  queries : @collision.QueryPipelineMut3DReal,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub type EffectiveMovement3DReal
+
+///|
+#declaration_only
+pub fn EffectiveMovement3DReal::translation(
+  self : EffectiveMovement3DReal,
+) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EffectiveMovement3DReal::is_grounded(
+  self : EffectiveMovement3DReal,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EffectiveMovement3DReal::is_sliding_down_slope(
+  self : EffectiveMovement3DReal,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub type KinematicCharacterController3DReal
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::new() -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::default() -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_offset(
+  self : KinematicCharacterController3DReal,
+  offset : @core.Real,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_max_slope_climb_angle(
+  self : KinematicCharacterController3DReal,
+  angle : @core.Real,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_min_slope_slide_angle(
+  self : KinematicCharacterController3DReal,
+  angle : @core.Real,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::move_character(
+  self : KinematicCharacterController3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  queries : @collision.QueryPipelineMut3DReal,
+  character : @dynamics.RigidBodyHandle,
+  desired_translation : @core.Vec3,
+) -> EffectiveMovement3DReal {
+  ...
+}

@@ -337,6 +337,8 @@ pub fn ColliderBuilder3D::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
+pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::density(Self, Float) -> Self
@@ -349,11 +351,14 @@ pub fn ColliderBuilder3D::one_way_below(Self, Float) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::restitution(Self, Float) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
+pub fn ColliderBuilder3D::round_convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)], Float) -> Self?
+pub fn ColliderBuilder3D::round_convex_hull(Array[@core.Vec3], Float) -> Self?
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder3D::surface_velocity(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3D::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self?
 
 type ColliderChanges
 
@@ -644,6 +649,16 @@ pub fn QueryFilter::only_fixed() -> Self
 pub fn QueryFilter::only_kinematic() -> Self
 pub fn QueryFilter::predicate(Self, (ColliderHandle, Collider) -> Bool) -> Self
 
+pub struct QueryFilter3DReal {
+  exclude_rigid_body : @dynamics.RigidBodyHandle?
+  exclude_collider : ColliderHandle3D?
+  groups : @dynamics.InteractionGroups
+}
+pub fn QueryFilter3DReal::exclude_collider(Self, ColliderHandle3D) -> Self
+pub fn QueryFilter3DReal::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
+pub fn QueryFilter3DReal::groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn QueryFilter3DReal::new() -> Self
+
 pub struct QueryFilterFlags {
   mut bits : Int
 }
@@ -675,6 +690,19 @@ pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.R
 pub fn QueryPipeline::update(Self) -> Unit
 pub fn QueryPipeline::with_filter(Self, QueryFilter) -> Self
 
+pub struct QueryPipeline3DReal {
+  filter : QueryFilter3DReal
+  bodies : @dynamics.RigidBodySet3D
+  colliders : ColliderSet3D
+}
+pub fn QueryPipeline3DReal::cast_ray_and_get_normal(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3)?
+pub fn QueryPipeline3DReal::collider(Self, ColliderHandle3D) -> Collider3D?
+pub fn QueryPipeline3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
+pub fn QueryPipeline3DReal::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
+pub fn QueryPipeline3DReal::rigid_body_mut(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
+pub fn QueryPipeline3DReal::update(Self) -> Unit
+pub fn QueryPipeline3DReal::with_filter(Self, QueryFilter3DReal) -> Self
+
 pub struct QueryPipelineMut {
   pipeline : QueryPipeline
 }
@@ -683,11 +711,24 @@ pub fn QueryPipelineMut::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -
 pub fn QueryPipelineMut::new3(QueryFilter, @dynamics.RigidBodySet3, ColliderSet3) -> Self
 pub fn QueryPipelineMut::update(Self) -> Unit
 
+pub struct QueryPipelineMut3DReal {
+  pipeline : QueryPipeline3DReal
+}
+pub fn QueryPipelineMut3DReal::as_ref(Self) -> QueryPipeline3DReal
+pub fn QueryPipelineMut3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
+pub fn QueryPipelineMut3DReal::update(Self) -> Unit
+
 pub struct Ray {
   origin : @core.Vec2
   dir : @core.Vec2
 }
 pub fn Ray::new(@core.Vec2, @core.Vec2) -> Self
+
+pub struct Ray3 {
+  origin : @core.Vec3
+  dir : @core.Vec3
+}
+pub fn Ray3::new(@core.Vec3, @core.Vec3) -> Self
 
 pub struct RayIntersection {
   toi : Float
@@ -695,6 +736,13 @@ pub struct RayIntersection {
 }
 pub fn RayIntersection::normal(Self) -> @core.Vec2
 pub fn RayIntersection::toi(Self) -> Float
+
+pub struct RayIntersection3 {
+  toi : Float
+  normal : @core.Vec3
+}
+pub fn RayIntersection3::normal(Self) -> @core.Vec3
+pub fn RayIntersection3::toi(Self) -> Float
 
 pub(all) enum Shape {
   Ball(Float)

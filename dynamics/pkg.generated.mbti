@@ -26,6 +26,12 @@ pub fn AxesMask::lin_y() -> Self
 pub fn AxesMask::new(Int) -> Self
 pub fn AxesMask::remove(Self, Self) -> Self
 
+pub(all) enum AxisState3DReal {
+  Free
+  Locked
+  Limited(Float, Float)
+}
+
 pub struct CCDSolver {
 }
 pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit
@@ -120,6 +126,41 @@ pub fn GenericJoint::set_motor_velocity(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_motors(Self, JointMotors3) -> Self
 pub fn GenericJoint::set_softness(Self, SpringCoefficients) -> Self
 pub fn GenericJoint::softness(Self) -> SpringCoefficients
+
+pub struct GenericJoint3DReal {
+  local_frame1 : @core.Isometry3
+  local_frame2 : @core.Isometry3
+  axis_states : Array[AxisState3DReal]
+  motors : Array[MotorState3DReal]
+  coupled_axes : JointAxesMask3DReal
+}
+
+pub struct GenericJoint3DRealBuilder {
+  locked_axes : JointAxesMask3DReal
+  mut coupled_axes : JointAxesMask3DReal
+  mut local_anchor1 : @core.Vec3
+  mut local_anchor2 : @core.Vec3
+  mut local_basis1 : @core.Quat
+  mut local_basis2 : @core.Quat
+  axis_states : Array[AxisState3DReal]
+  motors : Array[MotorState3DReal]
+}
+pub fn GenericJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn GenericJoint3DRealBuilder::coupled_axes(Self, JointAxesMask3DReal) -> Self
+pub fn GenericJoint3DRealBuilder::limits(Self, JointAxis3DReal, Float, Float) -> Self
+pub fn GenericJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
+pub fn GenericJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn GenericJoint3DRealBuilder::local_basis1(Self, @core.Quat) -> Self
+pub fn GenericJoint3DRealBuilder::local_basis2(Self, @core.Quat) -> Self
+pub fn GenericJoint3DRealBuilder::motor_position(Self, JointAxis3DReal, Float, Float, Float) -> Self
+pub fn GenericJoint3DRealBuilder::motor_velocity(Self, JointAxis3DReal, Float, Float) -> Self
+pub fn GenericJoint3DRealBuilder::new(JointAxesMask3DReal) -> Self
+
+pub struct GenericJointConstraint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  data : GenericJoint3DReal
+}
 
 pub struct Group {
   value : Int
@@ -366,9 +407,36 @@ pub fn JointAxesMask::locked_revolute_axes() -> Self
 pub fn JointAxesMask::new(Int) -> Self
 pub fn JointAxesMask::or(Self, Self) -> Self
 
+pub struct JointAxesMask3DReal {
+  bits : Int
+}
+pub fn JointAxesMask3DReal::all() -> Self
+pub fn JointAxesMask3DReal::ang_axes() -> Self
+pub fn JointAxesMask3DReal::ang_x() -> Self
+pub fn JointAxesMask3DReal::ang_y() -> Self
+pub fn JointAxesMask3DReal::ang_z() -> Self
+pub fn JointAxesMask3DReal::bits(Self) -> Int
+pub fn JointAxesMask3DReal::contains(Self, Self) -> Bool
+pub fn JointAxesMask3DReal::empty() -> Self
+pub fn JointAxesMask3DReal::lin_axes() -> Self
+pub fn JointAxesMask3DReal::lin_x() -> Self
+pub fn JointAxesMask3DReal::lin_y() -> Self
+pub fn JointAxesMask3DReal::lin_z() -> Self
+pub fn JointAxesMask3DReal::new(Int) -> Self
+pub fn JointAxesMask3DReal::or(Self, Self) -> Self
+
 pub(all) enum JointAxis {
   LinX
   LinY
+  AngZ
+}
+
+pub(all) enum JointAxis3DReal {
+  LinX
+  LinY
+  LinZ
+  AngX
+  AngY
   AngZ
 }
 
@@ -376,6 +444,10 @@ pub(all) enum JointEnabled {
   Enabled
   DisabledByAttachedBody
   Disabled
+}
+
+pub struct JointHandle3DReal {
+  index : Int
 }
 
 pub struct JointLimits {
@@ -431,11 +503,18 @@ pub struct JointSet3DReal {
   spherical : Array[SphericalJoint3DReal]
   prismatic : Array[PrismaticJoint3DReal]
   spherical_motors : Array[SphericalMotor3DReal]
+  generic : Array[GenericJointConstraint3DReal]
+  springs : Array[SpringJoint3DReal]
 }
+pub fn JointSet3DReal::insert_generic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> JointHandle3DReal
 pub fn JointSet3DReal::insert_prismatic_motor_position(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, Float) -> Unit
+pub fn JointSet3DReal::insert_revolute(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, @core.Vec3, Bool) -> JointHandle3DReal
 pub fn JointSet3DReal::insert_spherical(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3) -> Unit
 pub fn JointSet3DReal::insert_spherical_motor_rotation(Self, RigidBodyHandle, RigidBodyHandle, @core.Quat, Float, Float) -> Unit
+pub fn JointSet3DReal::insert_spring(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, Float, Float, Float, Bool) -> Unit
 pub fn JointSet3DReal::new() -> Self
+pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float, Float) -> Unit
+pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
 
 pub struct LinkId {
@@ -445,6 +524,12 @@ pub struct LinkId {
 pub(all) enum MotorModel {
   AccelerationBased
   ForceBased
+}
+
+pub(all) enum MotorState3DReal {
+  Disabled
+  Velocity(Float, Float, Float)
+  Position(Float, Float, Float, Float)
 }
 
 type Multibody
@@ -750,6 +835,7 @@ pub fn RigidBody3D::angvel(Self) -> @core.Vec3
 pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
 pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::apply_gyroscopic_forces(Self, Float) -> Unit
+pub fn RigidBody3D::apply_impulse_at_point(Self, @core.Vec3, @core.Vec3, Bool) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
 pub fn RigidBody3D::gravity_scale(Self) -> Float
 pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
@@ -1172,6 +1258,16 @@ pub fn SpringCoefficients::erp(Self, Float) -> Float
 pub fn SpringCoefficients::erp_inv_dt(Self, Float) -> Float
 pub fn SpringCoefficients::joint_defaults() -> Self
 pub fn SpringCoefficients::new(Float, Float) -> Self
+
+pub struct SpringJoint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  local_anchor1 : @core.Vec3
+  local_anchor2 : @core.Vec3
+  rest_length : Float
+  stiffness : Float
+  damping : Float
+}
 
 // Type aliases
 

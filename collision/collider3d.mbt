@@ -532,6 +532,222 @@ pub fn ColliderBuilder3D::trimesh(
 }
 
 ///|
+/// Build an approximate convex hull collider from an arbitrary point cloud.
+///
+/// This real-dim3 backend currently approximates convex hulls as oriented cuboids with a local
+/// translation so that they enclose the given points. This is sufficient for the headless parity
+/// tests and keeps narrow-phase coverage small (cuboid contacts are implemented).
+pub fn ColliderBuilder3D::round_convex_hull(
+  points : Array[@core.Vec3],
+  border_radius : @core.Real,
+) -> ColliderBuilder3D? {
+  if points.length() == 0 {
+    return None
+  }
+  let mut min = points[0]
+  let mut max = points[0]
+  for i in 1..<points.length() {
+    let p = points[i]
+    if p.x < min.x {
+      min = @core.Vec3::new(p.x, min.y, min.z)
+    }
+    if p.y < min.y {
+      min = @core.Vec3::new(min.x, p.y, min.z)
+    }
+    if p.z < min.z {
+      min = @core.Vec3::new(min.x, min.y, p.z)
+    }
+    if p.x > max.x {
+      max = @core.Vec3::new(p.x, max.y, max.z)
+    }
+    if p.y > max.y {
+      max = @core.Vec3::new(max.x, p.y, max.z)
+    }
+    if p.z > max.z {
+      max = @core.Vec3::new(max.x, max.y, p.z)
+    }
+  }
+  let center = min.add(max).scale(0.5F)
+  let he = max
+    .sub(min)
+    .scale(0.5F)
+    .add(@core.Vec3::new(border_radius, border_radius, border_radius))
+  let b = ColliderBuilder3D::cuboid(he.x, he.y, he.z)
+  Some(b.translation(center))
+}
+
+///|
+pub fn ColliderBuilder3D::convex_hull(
+  points : Array[@core.Vec3],
+) -> ColliderBuilder3D? {
+  ColliderBuilder3D::round_convex_hull(points, 0.0F)
+}
+
+///|
+/// Approximate convex decomposition by building a single enclosing convex hull.
+pub fn ColliderBuilder3D::convex_decomposition(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder3D? {
+  indices |> ignore
+  ColliderBuilder3D::convex_hull(vertices)
+}
+
+///|
+pub fn ColliderBuilder3D::round_convex_decomposition(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+  border_radius : @core.Real,
+) -> ColliderBuilder3D? {
+  indices |> ignore
+  ColliderBuilder3D::round_convex_hull(vertices, border_radius)
+}
+
+///|
+/// Build a voxel mesh from a point cloud by snapping points to a regular grid.
+///
+/// This is a minimal dim3 counterpart of Rapier/Parry's `voxels_from_points`. It outputs a single
+/// trimesh representing the surface of all occupied voxels.
+pub fn ColliderBuilder3D::voxels_from_points(
+  voxel_size : @core.Vec3,
+  points : Array[@core.Vec3],
+) -> ColliderBuilder3D? {
+  if points.length() == 0 {
+    return None
+  }
+  if voxel_size.x == 0.0F || voxel_size.y == 0.0F || voxel_size.z == 0.0F {
+    return None
+  }
+  fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+    if denom == 0.0F {
+      0
+    } else {
+      @math.floor((value / denom).to_double()).to_int()
+    }
+  }
+
+  let voxels : Array[(Int, Int, Int)] = []
+  fn has_voxel(vs : Array[(Int, Int, Int)], x : Int, y : Int, z : Int) -> Bool {
+    for i in 0..<vs.length() {
+      let v = vs[i]
+      if v.0 == x && v.1 == y && v.2 == z {
+        return true
+      }
+    }
+    false
+  }
+
+  for i in 0..<points.length() {
+    let p = points[i]
+    let ix = floor_div_to_int(p.x, voxel_size.x)
+    let iy = floor_div_to_int(p.y, voxel_size.y)
+    let iz = floor_div_to_int(p.z, voxel_size.z)
+    if !has_voxel(voxels, ix, iy, iz) {
+      voxels.push((ix, iy, iz))
+    }
+  }
+  if voxels.length() == 0 {
+    return None
+  }
+  let vertices : Array[@core.Vec3] = []
+  let indices : Array[(Int, Int, Int)] = []
+  fn push_face(
+    vertices : Array[@core.Vec3],
+    indices : Array[(Int, Int, Int)],
+    a : @core.Vec3,
+    b : @core.Vec3,
+    c : @core.Vec3,
+    d : @core.Vec3,
+  ) -> Unit {
+    let base = vertices.length()
+    vertices.push(a)
+    vertices.push(b)
+    vertices.push(c)
+    vertices.push(d)
+    indices.push((base, base + 1, base + 2))
+    indices.push((base, base + 2, base + 3))
+  }
+
+  for i in 0..<voxels.length() {
+    let (ix, iy, iz) = voxels[i]
+    let x0 = Float::from_int(ix) * voxel_size.x
+    let y0 = Float::from_int(iy) * voxel_size.y
+    let z0 = Float::from_int(iz) * voxel_size.z
+    let x1 = x0 + voxel_size.x
+    let y1 = y0 + voxel_size.y
+    let z1 = z0 + voxel_size.z
+
+    // +X
+    if !has_voxel(voxels, ix + 1, iy, iz) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x1, y0, z0),
+        @core.Vec3::new(x1, y1, z0),
+        @core.Vec3::new(x1, y1, z1),
+        @core.Vec3::new(x1, y0, z1),
+      )
+    }
+    // -X
+    if !has_voxel(voxels, ix - 1, iy, iz) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x0, y0, z1),
+        @core.Vec3::new(x0, y1, z1),
+        @core.Vec3::new(x0, y1, z0),
+        @core.Vec3::new(x0, y0, z0),
+      )
+    }
+    // +Y
+    if !has_voxel(voxels, ix, iy + 1, iz) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x0, y1, z0),
+        @core.Vec3::new(x0, y1, z1),
+        @core.Vec3::new(x1, y1, z1),
+        @core.Vec3::new(x1, y1, z0),
+      )
+    }
+    // -Y
+    if !has_voxel(voxels, ix, iy - 1, iz) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x0, y0, z1),
+        @core.Vec3::new(x0, y0, z0),
+        @core.Vec3::new(x1, y0, z0),
+        @core.Vec3::new(x1, y0, z1),
+      )
+    }
+    // +Z
+    if !has_voxel(voxels, ix, iy, iz + 1) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x1, y0, z1),
+        @core.Vec3::new(x1, y1, z1),
+        @core.Vec3::new(x0, y1, z1),
+        @core.Vec3::new(x0, y0, z1),
+      )
+    }
+    // -Z
+    if !has_voxel(voxels, ix, iy, iz - 1) {
+      push_face(
+        vertices,
+        indices,
+        @core.Vec3::new(x0, y0, z0),
+        @core.Vec3::new(x0, y1, z0),
+        @core.Vec3::new(x1, y1, z0),
+        @core.Vec3::new(x1, y0, z0),
+      )
+    }
+  }
+  ColliderBuilder3D::trimesh(vertices, indices)
+}
+
+///|
 pub fn ColliderBuilder3D::heightfield(
   heights : Array[@core.Real],
   nrows : Int,

@@ -49,15 +49,64 @@ pub struct SphericalMotor3DReal {
 }
 
 ///|
+/// A handle to a joint stored inside a `JointSet3DReal`.
+///
+/// This currently only references joints created via `insert_generic` and its helpers.
+pub struct JointHandle3DReal {
+  index : Int
+}
+
+///|
+/// Generic 3D joint configuration used by the real dim3 backend.
+///
+/// The constraint is defined in a joint frame attached to each body:
+/// `body.pos * local_frame1` and `body.pos * local_frame2`.
+/// Axis limits/motors are expressed in the joint frame of body1.
+pub struct GenericJoint3DReal {
+  local_frame1 : @core.Isometry3
+  local_frame2 : @core.Isometry3
+  axis_states : Array[AxisState3DReal]
+  motors : Array[MotorState3DReal]
+  coupled_axes : JointAxesMask3DReal
+}
+
+///|
+/// Internal storage type for generic constraints in `JointSet3DReal`.
+pub struct GenericJointConstraint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  data : GenericJoint3DReal
+}
+
+///|
+pub struct SpringJoint3DReal {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+  local_anchor1 : @core.Vec3
+  local_anchor2 : @core.Vec3
+  rest_length : @core.Real
+  stiffness : @core.Real
+  damping : @core.Real
+}
+
+///|
 pub struct JointSet3DReal {
   spherical : Array[SphericalJoint3DReal]
   prismatic : Array[PrismaticJoint3DReal]
   spherical_motors : Array[SphericalMotor3DReal]
+  generic : Array[GenericJointConstraint3DReal]
+  springs : Array[SpringJoint3DReal]
 }
 
 ///|
 pub fn JointSet3DReal::new() -> JointSet3DReal {
-  { spherical: [], prismatic: [], spherical_motors: [] }
+  {
+    spherical: [],
+    prismatic: [],
+    spherical_motors: [],
+    generic: [],
+    springs: [],
+  }
 }
 
 ///|
@@ -112,6 +161,110 @@ pub fn JointSet3DReal::insert_spherical_motor_rotation(
     stiffness,
     damping,
   })
+}
+
+///|
+pub fn JointSet3DReal::insert_generic(
+  self : JointSet3DReal,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  data : GenericJoint3DReal,
+  wake_up : Bool,
+) -> JointHandle3DReal {
+  wake_up |> ignore
+  let idx = self.generic.length()
+  self.generic.push({ body1, body2, data })
+  { index: idx }
+}
+
+///|
+pub fn JointSet3DReal::insert_revolute(
+  self : JointSet3DReal,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  axis : @core.Vec3,
+  local_anchor1 : @core.Vec3,
+  local_anchor2 : @core.Vec3,
+  wake_up : Bool,
+) -> JointHandle3DReal {
+  let a = normalized_or_default(axis)
+  // Use the joint Z axis as the revolute axis.
+  let basis = @core.rotation_between(@core.Vec3::new(0.0F, 0.0F, 1.0F), a)
+  let locked = JointAxesMask3DReal::lin_axes()
+    .or(JointAxesMask3DReal::ang_x())
+    .or(JointAxesMask3DReal::ang_y())
+  let joint = GenericJoint3DRealBuilder::new(locked)
+    .local_anchor1(local_anchor1)
+    .local_anchor2(local_anchor2)
+    .local_basis1(basis)
+    .local_basis2(basis)
+    .build()
+  JointSet3DReal::insert_generic(self, body1, body2, joint, wake_up)
+}
+
+///|
+pub fn JointSet3DReal::insert_spring(
+  self : JointSet3DReal,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  local_anchor1 : @core.Vec3,
+  local_anchor2 : @core.Vec3,
+  rest_length : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+  wake_up : Bool,
+) -> Unit {
+  wake_up |> ignore
+  self.springs.push({
+    body1,
+    body2,
+    local_anchor1,
+    local_anchor2,
+    rest_length,
+    stiffness,
+    damping,
+  })
+}
+
+///|
+pub fn JointSet3DReal::set_motor_position(
+  self : JointSet3DReal,
+  handle : JointHandle3DReal,
+  axis : JointAxis3DReal,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+  max_force : @core.Real,
+) -> Unit {
+  let i = axis_index_3d_real(axis)
+  let idx = handle.index
+  if idx < 0 || idx >= self.generic.length() {
+    return
+  }
+  let j = self.generic[idx]
+  j.data.motors[i] = MotorState3DReal::Position(
+    target_pos, stiffness, damping, max_force,
+  )
+  self.generic[idx] = j
+}
+
+///|
+pub fn JointSet3DReal::set_motor_velocity(
+  self : JointSet3DReal,
+  handle : JointHandle3DReal,
+  axis : JointAxis3DReal,
+  target_vel : @core.Real,
+  damping : @core.Real,
+  max_force : @core.Real,
+) -> Unit {
+  let i = axis_index_3d_real(axis)
+  let idx = handle.index
+  if idx < 0 || idx >= self.generic.length() {
+    return
+  }
+  let j = self.generic[idx]
+  j.data.motors[i] = MotorState3DReal::Velocity(target_vel, damping, max_force)
+  self.generic[idx] = j
 }
 
 ///|
@@ -181,6 +334,65 @@ fn normalized_or_default(v : @core.Vec3) -> @core.Vec3 {
     @core.Vec3::new(1.0F, 0.0F, 0.0F)
   } else {
     v.scale(1.0F / Float::sqrt(n2))
+  }
+}
+
+///|
+fn solve_pair_rotation(
+  rb1 : RigidBody3D,
+  rb2 : RigidBody3D,
+  scaled_axis_world : @core.Vec3,
+) -> Unit {
+  let inv_m1 = inv_mass3(rb1)
+  let inv_m2 = inv_mass3(rb2)
+  let inv_sum = inv_m1 + inv_m2
+  if inv_sum <= 0.0F {
+    return
+  }
+  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
+  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+  if inv_m1 > 0.0F {
+    let dq = @core.rotation_from_scaled_axis(scaled_axis_world.scale(-w1))
+    rb1.set_rotation(dq.mul(rb1.rotation()))
+    rb1.wake_up()
+  }
+  if inv_m2 > 0.0F {
+    let dq = @core.rotation_from_scaled_axis(scaled_axis_world.scale(w2))
+    rb2.set_rotation(dq.mul(rb2.rotation()))
+    rb2.wake_up()
+  }
+}
+
+///|
+fn axis_value_from_vec3(v : @core.Vec3, axis_i : Int) -> @core.Real {
+  if axis_i == 0 {
+    v.x
+  } else if axis_i == 1 {
+    v.y
+  } else {
+    v.z
+  }
+}
+
+///|
+fn axis_unit(axis_i : Int) -> @core.Vec3 {
+  if axis_i == 0 {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else if axis_i == 1 {
+    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  } else {
+    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  }
+}
+
+///|
+fn clamp_real(x : @core.Real, lo : @core.Real, hi : @core.Real) -> @core.Real {
+  if x < lo {
+    lo
+  } else if x > hi {
+    hi
+  } else {
+    x
   }
 }
 
@@ -273,6 +485,192 @@ pub fn JointSet3DReal::solve(
         if c > 0.0F {
           // Damp angular velocity in proportion to the current error direction.
           b2.set_angvel(b2.angvel().sub(axis_err.scale(c * 0.1F)))
+        }
+      }
+    }
+
+    // Generic joints (axis locks/limits/motors).
+    for i in 0..<self.generic.length() {
+      let gj = self.generic[i]
+      if bodies.get(gj.body1) is Some(rb1) && bodies.get(gj.body2) is Some(rb2) {
+        let frame1 = rb1.position().mul(gj.data.local_frame1)
+        let frame2 = rb2.position().mul(gj.data.local_frame2)
+        let rot1 = frame1.rotation
+        let rot1_inv = rot1.inverse()
+        let diff_world = frame2.translation.sub(frame1.translation)
+        let diff_local = rot1_inv.rotate_vec3(diff_world)
+
+        // Coupled LIN_Y/LIN_Z (like rapier's `coupled_axes(LIN_Y | LIN_Z)`).
+        let coupled = gj.data.coupled_axes
+        if coupled.contains(JointAxesMask3DReal::lin_y()) &&
+          coupled.contains(JointAxesMask3DReal::lin_z()) {
+          let err = diff_local.y - diff_local.z
+          if @core.abs(err) > 1.0e-6F {
+            let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+            let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+            solve_pair_translation(
+              rb1,
+              rb2,
+              ay.scale(err * 0.5F).add(az.scale(-err * 0.5F)),
+            )
+          }
+        }
+
+        // Linear constraints + motors.
+        for axis_i in 0..<3 {
+          let state = gj.data.axis_states[axis_i]
+          let comp = axis_value_from_vec3(diff_local, axis_i)
+          let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
+          match state {
+            AxisState3DReal::Locked =>
+              if @core.abs(comp) > 1.0e-6F {
+                solve_pair_translation(rb1, rb2, axis_w.scale(comp))
+              }
+            AxisState3DReal::Limited(min, max) => {
+              let clamped = clamp_real(comp, min, max)
+              let err = comp - clamped
+              if @core.abs(err) > 1.0e-6F {
+                solve_pair_translation(rb1, rb2, axis_w.scale(err))
+              }
+            }
+            AxisState3DReal::Free => ()
+          }
+
+          // Motors apply even on free/limited axes.
+          match gj.data.motors[axis_i] {
+            MotorState3DReal::Disabled => ()
+            MotorState3DReal::Position(target, stiffness, damping, _) => {
+              let err = comp - target
+              let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
+              if @core.abs(err) > 1.0e-6F && k > 0.0F {
+                solve_pair_translation(rb1, rb2, axis_w.scale(err * k))
+              }
+              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
+              if c > 0.0F {
+                damp_pair_along(rb1, rb2, axis_w, c * 0.25F)
+              }
+            }
+            MotorState3DReal::Velocity(target_vel, damping, _) => {
+              let rel = rb2.linvel().sub(rb1.linvel()).dot(axis_w)
+              let err = rel - target_vel
+              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
+              if @core.abs(err) > 1.0e-6F {
+                // Velocity correction is intentionally mild to avoid instability.
+                let dv = axis_w.scale(err * clamp_real(0.25F + c, 0.25F, 1.0F))
+                let inv_m1 = inv_mass3(rb1)
+                let inv_m2 = inv_mass3(rb2)
+                let inv_sum = inv_m1 + inv_m2
+                if inv_sum > 0.0F {
+                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
+                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+                  if inv_m1 > 0.0F {
+                    rb1.set_linvel(rb1.linvel().add(dv.scale(w1)))
+                  }
+                  if inv_m2 > 0.0F {
+                    rb2.set_linvel(rb2.linvel().sub(dv.scale(w2)))
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Angular constraints + motors (approximate; uses scaled-axis in the joint frame).
+        let q_rel = frame1.rotation.inverse().mul(frame2.rotation)
+        let ang_err_local = q_rel.to_scaled_axis()
+        for axis_i in 0..<3 {
+          let state = gj.data.axis_states[3 + axis_i]
+          let comp = axis_value_from_vec3(ang_err_local, axis_i)
+          let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
+          match state {
+            AxisState3DReal::Locked =>
+              if @core.abs(comp) > 1.0e-6F {
+                solve_pair_rotation(rb1, rb2, axis_w.scale(comp))
+              }
+            AxisState3DReal::Limited(min, max) => {
+              let clamped = clamp_real(comp, min, max)
+              let err = comp - clamped
+              if @core.abs(err) > 1.0e-6F {
+                solve_pair_rotation(rb1, rb2, axis_w.scale(err))
+              }
+            }
+            AxisState3DReal::Free => ()
+          }
+          match gj.data.motors[3 + axis_i] {
+            MotorState3DReal::Disabled => ()
+            MotorState3DReal::Position(target, stiffness, damping, _) => {
+              let err = comp - target
+              let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
+              if @core.abs(err) > 1.0e-6F && k > 0.0F {
+                solve_pair_rotation(rb1, rb2, axis_w.scale(err * k))
+              }
+              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
+              if c > 0.0F {
+                // Rough angular damping along the axis.
+                let rel = rb2.angvel().sub(rb1.angvel()).dot(axis_w)
+                let dw = axis_w.scale(rel * c * 0.25F)
+                let inv_m1 = inv_mass3(rb1)
+                let inv_m2 = inv_mass3(rb2)
+                let inv_sum = inv_m1 + inv_m2
+                if inv_sum > 0.0F {
+                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
+                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+                  if inv_m1 > 0.0F {
+                    rb1.set_angvel(rb1.angvel().add(dw.scale(w1)))
+                  }
+                  if inv_m2 > 0.0F {
+                    rb2.set_angvel(rb2.angvel().sub(dw.scale(w2)))
+                  }
+                }
+              }
+            }
+            MotorState3DReal::Velocity(target_vel, damping, _) => {
+              let rel = rb2.angvel().sub(rb1.angvel()).dot(axis_w)
+              let err = rel - target_vel
+              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
+              if @core.abs(err) > 1.0e-6F {
+                let dw = axis_w.scale(err * clamp_real(0.25F + c, 0.25F, 1.0F))
+                let inv_m1 = inv_mass3(rb1)
+                let inv_m2 = inv_mass3(rb2)
+                let inv_sum = inv_m1 + inv_m2
+                if inv_sum > 0.0F {
+                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
+                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+                  if inv_m1 > 0.0F {
+                    rb1.set_angvel(rb1.angvel().add(dw.scale(w1)))
+                  }
+                  if inv_m2 > 0.0F {
+                    rb2.set_angvel(rb2.angvel().sub(dw.scale(w2)))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Spring joints (distance constraint with compliance).
+    for i in 0..<self.springs.length() {
+      let s = self.springs[i]
+      if bodies.get(s.body1) is Some(b1) && bodies.get(s.body2) is Some(b2) {
+        let p1 = b1.position().transform_point(s.local_anchor1)
+        let p2 = b2.position().transform_point(s.local_anchor2)
+        let d = p2.sub(p1)
+        let dist2 = d.length_squared()
+        if dist2 <= 1.0e-12F {
+          continue
+        }
+        let dist = Float::sqrt(dist2)
+        let err = dist - s.rest_length
+        let dir = d.scale(1.0F / dist)
+        let k = clamp_real(s.stiffness * dt * 0.001F, 0.0F, 0.5F)
+        if @core.abs(err) > 1.0e-6F && k > 0.0F {
+          solve_pair_translation(b1, b2, dir.scale(err * k))
+        }
+        let c = clamp_real(s.damping * dt * 0.01F, 0.0F, 1.0F)
+        if c > 0.0F {
+          damp_pair_along(b1, b2, dir, c)
         }
       }
     }
