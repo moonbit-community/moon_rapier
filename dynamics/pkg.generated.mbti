@@ -733,6 +733,7 @@ pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::is_active(Self) -> Bool
 pub fn RigidBody3D::is_ccd_active(Self) -> Bool
+pub fn RigidBody3D::is_sleeping(Self) -> Bool
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
 pub fn RigidBody3D::locked_rotations(Self) -> Bool
 pub fn RigidBody3D::locked_translations(Self) -> Bool

@@ -328,6 +328,11 @@ pub fn RigidBody3D::is_active(self : RigidBody3D) -> Bool {
 }
 
 ///|
+pub fn RigidBody3D::is_sleeping(self : RigidBody3D) -> Bool {
+  self.activation.is_sleeping()
+}
+
+///|
 pub fn RigidBody3D::wake_up(self : RigidBody3D) -> Unit {
   self.activation = self.activation.wake_up()
 }
@@ -615,7 +620,7 @@ pub fn RigidBodyBuilder3D::kinematic_position_based() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
   b.body_type = RigidBodyType::KinematicPositionBased
   b.mass_properties = @core.MassProperties3::default()
-  b.can_sleep = false
+  b.can_sleep = true
   b
 }
 
@@ -624,7 +629,7 @@ pub fn RigidBodyBuilder3D::kinematic_velocity_based() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
   b.body_type = RigidBodyType::KinematicVelocityBased
   b.mass_properties = @core.MassProperties3::default()
-  b.can_sleep = false
+  b.can_sleep = true
   b
 }
 
