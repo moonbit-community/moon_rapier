@@ -132,9 +132,12 @@ pub fn RigidBodyActivation3D::is_sleeping(self : RigidBodyActivation3D) -> Bool 
 }
 
 ///|
-pub fn RigidBodyActivation3D::wake_up(self : RigidBodyActivation3D) -> Unit {
+pub fn RigidBodyActivation3D::wake_up(
+  self : RigidBodyActivation3D,
+) -> RigidBodyActivation3D {
   self.sleeping = false
   self.time_since_can_sleep = 0.0F
+  self
 }
 
 ///|
@@ -144,9 +147,9 @@ pub fn RigidBodyActivation3D::update(
   length_unit : @core.Real,
   body_type : RigidBodyType,
   vels : RigidBodyVelocity3D,
-) -> Unit {
+) -> RigidBodyActivation3D {
   if self.sleeping {
-    return
+    return self
   }
   let sq_linvel = vels.linvel().length_squared()
   let sq_angvel = vels.angvel().length_squared()
@@ -170,18 +173,31 @@ pub fn RigidBodyActivation3D::update(
   } else {
     self.time_since_can_sleep = 0.0F
   }
+  self
 }
 
 ///|
 pub struct RigidBody3D {
   body_type : RigidBodyType
   mut position : @core.Isometry3
+  // Target pose used by kinematic position-based bodies.
+  mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
+  // Locks/flags (subset of Rapier's LockedAxes API).
+  locked_translations : Bool
+  locked_rotations : Bool
+  rot_x_enabled : Bool
+  rot_y_enabled : Bool
+  rot_z_enabled : Bool
+  // CCD/solver-related flags.
+  ccd_enabled : Bool
+  soft_ccd_prediction : @core.Real
+  gyroscopic_forces_enabled : Bool
   linear_damping : @core.Real
   angular_damping : @core.Real
   gravity_scale : @core.Real
   mass_properties : @core.MassProperties3
-  activation : RigidBodyActivation3D
+  mut activation : RigidBodyActivation3D
   can_sleep : Bool
 }
 
@@ -201,6 +217,11 @@ pub fn RigidBody3D::position(self : RigidBody3D) -> @core.Isometry3 {
 }
 
 ///|
+pub fn RigidBody3D::next_position(self : RigidBody3D) -> @core.Isometry3 {
+  self.next_position
+}
+
+///|
 pub fn RigidBody3D::linvel(self : RigidBody3D) -> @core.Vec3 {
   self.velocity.linvel
 }
@@ -212,17 +233,64 @@ pub fn RigidBody3D::angvel(self : RigidBody3D) -> @core.Vec3 {
 
 ///|
 pub fn RigidBody3D::set_linvel(self : RigidBody3D, v : @core.Vec3) -> Unit {
-  self.velocity = { linvel: v, angvel: self.velocity.angvel }
+  let vv = if self.locked_translations { @core.Vec3::zero() } else { v }
+  self.velocity = { linvel: vv, angvel: self.velocity.angvel }
 }
 
 ///|
 pub fn RigidBody3D::set_angvel(self : RigidBody3D, w : @core.Vec3) -> Unit {
-  self.velocity = { linvel: self.velocity.linvel, angvel: w }
+  let ww = if self.locked_rotations {
+    @core.Vec3::zero()
+  } else {
+    @core.Vec3::new(
+      if self.rot_x_enabled {
+        w.x
+      } else {
+        0.0F
+      },
+      if self.rot_y_enabled {
+        w.y
+      } else {
+        0.0F
+      },
+      if self.rot_z_enabled {
+        w.z
+      } else {
+        0.0F
+      },
+    )
+  }
+  self.velocity = { linvel: self.velocity.linvel, angvel: ww }
 }
 
 ///|
 pub fn RigidBody3D::body_type(self : RigidBody3D) -> RigidBodyType {
   self.body_type
+}
+
+///|
+pub fn RigidBody3D::locked_translations(self : RigidBody3D) -> Bool {
+  self.locked_translations
+}
+
+///|
+pub fn RigidBody3D::locked_rotations(self : RigidBody3D) -> Bool {
+  self.locked_rotations
+}
+
+///|
+pub fn RigidBody3D::is_ccd_active(self : RigidBody3D) -> Bool {
+  self.ccd_enabled
+}
+
+///|
+pub fn RigidBody3D::soft_ccd_prediction(self : RigidBody3D) -> @core.Real {
+  self.soft_ccd_prediction
+}
+
+///|
+pub fn RigidBody3D::gyroscopic_forces_enabled(self : RigidBody3D) -> Bool {
+  self.gyroscopic_forces_enabled
 }
 
 ///|
@@ -244,7 +312,7 @@ pub fn RigidBody3D::is_active(self : RigidBody3D) -> Bool {
 
 ///|
 pub fn RigidBody3D::wake_up(self : RigidBody3D) -> Unit {
-  self.activation.wake_up()
+  self.activation = self.activation.wake_up()
 }
 
 ///|
@@ -256,7 +324,12 @@ pub fn RigidBody3D::update_sleep(
   if !self.can_sleep {
     return
   }
-  self.activation.update(dt, length_unit, self.body_type, self.velocity)
+  self.activation = self.activation.update(
+    dt,
+    length_unit,
+    self.body_type,
+    self.velocity,
+  )
 }
 
 ///|
@@ -270,6 +343,46 @@ pub fn RigidBody3D::set_rotation(self : RigidBody3D, r : @core.Quat) -> Unit {
 }
 
 ///|
+pub fn RigidBody3D::set_next_kinematic_translation(
+  self : RigidBody3D,
+  t : @core.Vec3,
+) -> Unit {
+  self.next_position = @core.Isometry3::new(t, self.next_position.rotation)
+}
+
+///|
+pub fn RigidBody3D::set_next_kinematic_rotation(
+  self : RigidBody3D,
+  r : @core.Quat,
+) -> Unit {
+  self.next_position = @core.Isometry3::new(self.next_position.translation, r)
+}
+
+///|
+pub fn RigidBody3D::update_kinematic_velocities(
+  self : RigidBody3D,
+  dt : @core.Real,
+) -> Unit {
+  if self.body_type is RigidBodyType::KinematicPositionBased {
+    if dt <= 0.0F {
+      self.set_linvel(@core.Vec3::zero())
+      self.set_angvel(@core.Vec3::zero())
+      return
+    }
+    let inv_dt = 1.0F / dt
+    let linvel = self.next_position.translation
+      .sub(self.position.translation)
+      .scale(inv_dt)
+    let delta_rot = self.next_position.rotation.mul(
+      self.position.rotation.inverse(),
+    )
+    let angvel = delta_rot.to_scaled_axis().scale(inv_dt)
+    self.set_linvel(linvel)
+    self.set_angvel(angvel)
+  }
+}
+
+///|
 pub fn RigidBody3D::apply_gravity(
   self : RigidBody3D,
   gravity : @core.Vec3,
@@ -279,6 +392,10 @@ pub fn RigidBody3D::apply_gravity(
     return
   }
   if self.activation.is_sleeping() {
+    return
+  }
+  if self.locked_translations {
+    self.set_linvel(@core.Vec3::zero())
     return
   }
   self.velocity = {
@@ -300,10 +417,15 @@ pub fn RigidBody3D::apply_damping(self : RigidBody3D, dt : @core.Real) -> Unit {
     self.linear_damping,
     self.angular_damping,
   )
+  // Enforce locks after damping.
+  if self.locked_translations {
+    self.set_linvel(@core.Vec3::zero())
+  }
+  self.set_angvel(self.velocity.angvel())
 }
 
 ///|
-pub fn RigidBody3D::advance_position(
+pub fn RigidBody3D::apply_gyroscopic_forces(
   self : RigidBody3D,
   dt : @core.Real,
 ) -> Unit {
@@ -313,11 +435,91 @@ pub fn RigidBody3D::advance_position(
   if self.activation.is_sleeping() {
     return
   }
-  self.position = self.velocity.integrate(
-    dt,
-    self.position,
-    self.mass_properties.center_of_mass,
-  )
+  if !self.gyroscopic_forces_enabled {
+    return
+  }
+  if self.locked_rotations {
+    self.set_angvel(@core.Vec3::zero())
+    return
+  }
+  let w_world = self.angvel()
+  if w_world.length_squared() <= 1.0e-12F {
+    return
+  }
+  let rot = self.rotation().to_mat3()
+  let w_local = rot.transpose().mul_vec3(w_world)
+  let inv_i_local = self.mass_properties.inv_inertia.into_mat3()
+  let i_local = inv_i_local.inverse()
+  // Singular inertia: no meaningful gyroscopic effects.
+  if i_local.determinant() == 0.0F {
+    return
+  }
+  let l_local = i_local.mul_vec3(w_local)
+  // Euler equation with no external torque: dw/dt = -I^{-1}(w x (I w)).
+  let gyro = w_local.cross(l_local)
+  let dw_local = inv_i_local.mul_vec3(gyro).scale(-dt)
+  let w_local2 = w_local.add(dw_local)
+  let w_world2 = rot.mul_vec3(w_local2)
+  self.set_angvel(w_world2)
+}
+
+///|
+pub fn RigidBody3D::advance_position(
+  self : RigidBody3D,
+  dt : @core.Real,
+) -> Unit {
+  match self.body_type {
+    RigidBodyType::Dynamic => {
+      if self.activation.is_sleeping() {
+        return
+      }
+      let linvel = if self.locked_translations {
+        @core.Vec3::zero()
+      } else {
+        self.velocity.linvel()
+      }
+      let angvel = if self.locked_rotations {
+        @core.Vec3::zero()
+      } else {
+        self.velocity.angvel()
+      }
+      let vels : RigidBodyVelocity3D = { linvel, angvel }
+      self.position = vels.integrate(
+        dt,
+        self.position,
+        self.mass_properties.center_of_mass,
+      )
+    }
+    RigidBodyType::KinematicVelocityBased => {
+      let linvel = if self.locked_translations {
+        @core.Vec3::zero()
+      } else {
+        self.velocity.linvel()
+      }
+      let angvel = if self.locked_rotations {
+        @core.Vec3::zero()
+      } else {
+        self.velocity.angvel()
+      }
+      let vels : RigidBodyVelocity3D = { linvel, angvel }
+      self.position = vels.integrate(
+        dt,
+        self.position,
+        self.mass_properties.center_of_mass,
+      )
+    }
+    RigidBodyType::KinematicPositionBased => {
+      let mut next = self.next_position
+      if self.locked_translations {
+        next = @core.Isometry3::new(self.position.translation, next.rotation)
+      }
+      if self.locked_rotations {
+        next = @core.Isometry3::new(next.translation, self.position.rotation)
+      }
+      self.position = next
+    }
+    RigidBodyType::Fixed => ()
+  }
 }
 
 ///|
@@ -328,6 +530,7 @@ pub fn RigidBody3D::integrate(
 ) -> Unit {
   self.apply_gravity(gravity, dt)
   self.apply_damping(dt)
+  self.apply_gyroscopic_forces(dt)
   self.advance_position(dt)
 }
 
@@ -338,6 +541,14 @@ pub struct RigidBodyBuilder3D {
   mut rotation : @core.Quat
   mut linvel : @core.Vec3
   mut angvel : @core.Vec3
+  mut locked_translations : Bool
+  mut locked_rotations : Bool
+  mut rot_x_enabled : Bool
+  mut rot_y_enabled : Bool
+  mut rot_z_enabled : Bool
+  mut ccd_enabled : Bool
+  mut soft_ccd_prediction : @core.Real
+  mut gyroscopic_forces_enabled : Bool
   mut linear_damping : @core.Real
   mut angular_damping : @core.Real
   mut gravity_scale : @core.Real
@@ -353,6 +564,14 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
     rotation: @core.Quat::identity(),
     linvel: @core.Vec3::zero(),
     angvel: @core.Vec3::zero(),
+    locked_translations: false,
+    locked_rotations: false,
+    rot_x_enabled: true,
+    rot_y_enabled: true,
+    rot_z_enabled: true,
+    ccd_enabled: false,
+    soft_ccd_prediction: 0.0F,
+    gyroscopic_forces_enabled: false,
     linear_damping: 0.0F,
     angular_damping: 0.0F,
     gravity_scale: 1.0F,
@@ -420,6 +639,15 @@ pub fn RigidBodyBuilder3D::rotation(
 }
 
 ///|
+pub fn RigidBodyBuilder3D::rotation_scaled_axis(
+  self : RigidBodyBuilder3D,
+  scaled_axis : @core.Vec3,
+) -> RigidBodyBuilder3D {
+  self.rotation = @core.rotation_from_scaled_axis(scaled_axis)
+  self
+}
+
+///|
 pub fn RigidBodyBuilder3D::linvel(
   self : RigidBodyBuilder3D,
   v : @core.Vec3,
@@ -465,6 +693,66 @@ pub fn RigidBodyBuilder3D::gravity_scale(
 }
 
 ///|
+pub fn RigidBodyBuilder3D::lock_translations(
+  self : RigidBodyBuilder3D,
+) -> RigidBodyBuilder3D {
+  self.locked_translations = true
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::lock_rotations(
+  self : RigidBodyBuilder3D,
+) -> RigidBodyBuilder3D {
+  self.locked_rotations = true
+  self.rot_x_enabled = false
+  self.rot_y_enabled = false
+  self.rot_z_enabled = false
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::enabled_rotations(
+  self : RigidBodyBuilder3D,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> RigidBodyBuilder3D {
+  self.locked_rotations = false
+  self.rot_x_enabled = x
+  self.rot_y_enabled = y
+  self.rot_z_enabled = z
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::ccd_enabled(
+  self : RigidBodyBuilder3D,
+  enabled : Bool,
+) -> RigidBodyBuilder3D {
+  self.ccd_enabled = enabled
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::soft_ccd_prediction(
+  self : RigidBodyBuilder3D,
+  prediction : @core.Real,
+) -> RigidBodyBuilder3D {
+  self.soft_ccd_prediction = prediction
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::gyroscopic_forces_enabled(
+  self : RigidBodyBuilder3D,
+  enabled : Bool,
+) -> RigidBodyBuilder3D {
+  self.gyroscopic_forces_enabled = enabled
+  self
+}
+
+///|
 pub fn RigidBodyBuilder3D::mass_properties(
   self : RigidBodyBuilder3D,
   props : @core.MassProperties3,
@@ -475,10 +763,20 @@ pub fn RigidBodyBuilder3D::mass_properties(
 
 ///|
 pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
+  let pos = @core.Isometry3::new(self.translation, self.rotation)
   {
     body_type: self.body_type,
-    position: @core.Isometry3::new(self.translation, self.rotation),
+    position: pos,
+    next_position: pos,
     velocity: { linvel: self.linvel, angvel: self.angvel },
+    locked_translations: self.locked_translations,
+    locked_rotations: self.locked_rotations,
+    rot_x_enabled: self.rot_x_enabled,
+    rot_y_enabled: self.rot_y_enabled,
+    rot_z_enabled: self.rot_z_enabled,
+    ccd_enabled: self.ccd_enabled,
+    soft_ccd_prediction: self.soft_ccd_prediction,
+    gyroscopic_forces_enabled: self.gyroscopic_forces_enabled,
     linear_damping: self.linear_damping,
     angular_damping: self.angular_damping,
     gravity_scale: self.gravity_scale,
@@ -586,6 +884,58 @@ pub fn RigidBodySet3D::apply_damping_all(
     if self.bodies[i] is Some(body) {
       body.apply_damping(dt)
     }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::apply_gyroscopic_forces_all(
+  self : RigidBodySet3D,
+  dt : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.apply_gyroscopic_forces(dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::update_kinematic_velocities_all(
+  self : RigidBodySet3D,
+  dt : @core.Real,
+) -> Unit {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      body.update_kinematic_velocities(dt)
+    }
+  }
+}
+
+///|
+pub fn RigidBodySet3D::has_ccd_enabled(self : RigidBodySet3D) -> Bool {
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) && body.is_ccd_active() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn RigidBodySet3D::max_linvel_len(self : RigidBodySet3D) -> @core.Real {
+  let mut best2 = 0.0F
+  for i in 0..<self.bodies.length() {
+    if self.bodies[i] is Some(body) {
+      let v2 = body.linvel().length_squared()
+      if v2 > best2 {
+        best2 = v2
+      }
+    }
+  }
+  if best2 <= 0.0F {
+    0.0F
+  } else {
+    Float::sqrt(best2)
   }
 }
 

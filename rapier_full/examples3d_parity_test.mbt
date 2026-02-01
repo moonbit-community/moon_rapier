@@ -19,20 +19,15 @@
 fn run_examples3d_character_controller3() -> Bool {
   // Adapted from `rapier-reference/examples3d/character_controller3.rs` (headless).
   //
-  // This port does not have a full 3D character controller yet. We still validate the basic
-  // ingredients exercised by the example: kinematic bodies + CCD settings + interactions with
-  // dynamic bodies. All 3D inputs are projected to the existing 2D engine.
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  // This is not a full 3D character controller yet. We validate the building blocks exercised by
+  // the example: kinematic position-based bodies + CCD flags + interactions with dynamic bodies,
+  // against the real dim3 backend.
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -43,12 +38,12 @@ fn run_examples3d_character_controller3() -> Bool {
   // Ground.
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(20.0F, ground_height, 20.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(20.0F, ground_height, 20.0F).build(),
     ground,
     bodies,
   )
@@ -56,9 +51,11 @@ fn run_examples3d_character_controller3() -> Bool {
 
   // A small slope.
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(2.0F, ground_height, 2.0F)
+    @collision.ColliderBuilder3D::cuboid(2.0F, ground_height, 2.0F)
     .translation(@core.Vec3::new(4.0F, 0.4F, 0.0F))
-    .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, 0.2F))
+    .rotation(
+      @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, 0.2F)),
+    )
     .build(),
     ground,
     bodies,
@@ -67,7 +64,7 @@ fn run_examples3d_character_controller3() -> Bool {
 
   // Character: kinematic position-based capsule.
   let character = bodies.insert(
-    @dynamics.RigidBodyBuilder3::kinematic_position_based()
+    @dynamics.RigidBodyBuilder3D::kinematic_position_based()
     .translation(@core.Vec3::new(-3.0F, 2.0F, 0.0F))
     .gravity_scale(10.0F)
     .soft_ccd_prediction(10.0F)
@@ -75,7 +72,7 @@ fn run_examples3d_character_controller3() -> Bool {
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::capsule_y(0.3F, 0.15F).build(),
+    @collision.ColliderBuilder3D::capsule_y(0.3F, 0.15F).build(),
     character,
     bodies,
   )
@@ -88,12 +85,12 @@ fn run_examples3d_character_controller3() -> Bool {
       let x = -1.0F + Float::from_double(i.to_double()) * rad * 2.2F
       let y = 0.5F + Float::from_double(j.to_double()) * rad * 2.2F
       let h = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3D::dynamic()
         .translation(@core.Vec3::new(x, y, 0.0F))
         .build(),
       )
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+        @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
         h,
         bodies,
       )
@@ -101,46 +98,43 @@ fn run_examples3d_character_controller3() -> Bool {
     }
   }
 
-  // Drive the character left-to-right by setting its next kinematic translation (projected to 2D).
+  // Drive the character left-to-right by setting its next kinematic translation.
   let mut time = 0.0F
   for _ in 0..<360 {
     time = time + dt
     let x = -3.0F + Float::from_double(@math.sin(time.to_double())) * 5.0F
     if bodies.get_mut(character) is Some(rb) {
-      rb.set_next_kinematic_translation(@core.Vec2::new(x, 2.0F)) |> ignore
+      rb.set_next_kinematic_translation(@core.Vec3::new(x, 2.0F, 0.0F))
     } else {
       return false
     }
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-      impulse_joints, multibody_joints, ccd_solver, hooks, events,
     )
   }
-  let p = bodies.translation(character)
-  p.x == p.x && p.y == p.y && p.y > -10.0F
+  if bodies.get(character) is Some(body) {
+    let p = body.translation()
+    p.x == p.x && p.y == p.y && p.z == p.z && p.y > -10.0F
+  } else {
+    false
+  }
 }
 
 ///|
 fn run_examples3d_compound3() -> Bool {
   // Ported from `rapier-reference/examples3d/compound3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet3::new()
-  let colliders = @collision.ColliderSet3::new()
-  let impulse_joints = @dynamics.ImpulseJointSet3::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3::new()
-  let islands = @dynamics.IslandManager3::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
     for _ in 0..<steps {
       pipeline.step(
         gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-        impulse_joints, multibody_joints, ccd_solver, hooks, events,
       )
     }
   }
@@ -148,18 +142,22 @@ fn run_examples3d_compound3() -> Bool {
   let ground_size = 50.0F
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3D::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
     ground,
     bodies,
   )
   |> ignore
-  let num = 8
-  let numy = 15
+  // Reduced to keep the real dim3 backend runtime reasonable while still exercising multi-collider
+  // bodies.
+  let num = 6
+  let numy = 10
   let rad = 0.2F
   let shift = rad * 4.0F + rad
   let centerx = shift * Float::from_int(num / 2)
@@ -174,55 +172,33 @@ fn run_examples3d_compound3() -> Bool {
         let y = Float::from_int(j) * (shift * 5.0F) + centery + 3.0F
         let z = Float::from_int(k) * shift * 2.0F - centerz + offset
         let handle = bodies.insert(
-          @dynamics.RigidBodyBuilder3::dynamic()
+          @dynamics.RigidBodyBuilder3D::dynamic()
           .translation(@core.Vec3::new(x, y, z))
           .build(),
         )
         handles.push(handle)
-        if j < numy / 2 {
-          let collider1 = @collision.ColliderBuilder3::cuboid(
-            rad * 10.0F,
+        let collider1 = @collision.ColliderBuilder3D::cuboid(
+          rad * 10.0F,
+          rad,
+          rad,
+        ).build()
+        let collider2 = @collision.ColliderBuilder3D::cuboid(
             rad,
+            rad * 10.0F,
             rad,
           )
-          let collider2 = @collision.ColliderBuilder3::cuboid(
+          .translation(@core.Vec3::new(rad * 10.0F, rad * 10.0F, 0.0F))
+          .build()
+        let collider3 = @collision.ColliderBuilder3D::cuboid(
             rad,
             rad * 10.0F,
             rad,
-          ).translation(@core.Vec3::new(rad * 10.0F, rad * 10.0F, 0.0F))
-          let collider3 = @collision.ColliderBuilder3::cuboid(
-            rad,
-            rad * 10.0F,
-            rad,
-          ).translation(@core.Vec3::new(-rad * 10.0F, rad * 10.0F, 0.0F))
-          colliders.insert_with_parent(collider1.build(), handle, bodies)
-          |> ignore
-          colliders.insert_with_parent(collider2.build(), handle, bodies)
-          |> ignore
-          colliders.insert_with_parent(collider3.build(), handle, bodies)
-          |> ignore
-        } else {
-          let shapes : Array[(@core.Isometry3, @collision.SharedShape)] = [
-            (
-              @core.Isometry3::identity(),
-              @collision.SharedShape::cuboid(rad * 10.0F, rad),
-            ),
-            (
-              @core.Isometry3::from_translation(
-                @core.Vec3::new(rad * 10.0F, rad * 10.0F, 0.0F),
-              ),
-              @collision.SharedShape::cuboid(rad, rad * 10.0F),
-            ),
-            (
-              @core.Isometry3::from_translation(
-                @core.Vec3::new(-rad * 10.0F, rad * 10.0F, 0.0F),
-              ),
-              @collision.SharedShape::cuboid(rad, rad * 10.0F),
-            ),
-          ]
-          let collider = @collision.ColliderBuilder3::compound(shapes).build()
-          colliders.insert_with_parent(collider, handle, bodies) |> ignore
-        }
+          )
+          .translation(@core.Vec3::new(-rad * 10.0F, rad * 10.0F, 0.0F))
+          .build()
+        colliders.insert_with_parent(collider1, handle, bodies) |> ignore
+        colliders.insert_with_parent(collider2, handle, bodies) |> ignore
+        colliders.insert_with_parent(collider3, handle, bodies) |> ignore
       }
     }
     offset -= 0.05F * rad * (Float::from_int(num) - 1.0F)

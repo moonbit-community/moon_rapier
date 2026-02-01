@@ -254,6 +254,7 @@ pub fn IntegrationParameters::set_num_internal_pgs_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_num_internal_stabilization_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_num_solver_iterations(Self, Int) -> Self
 pub fn IntegrationParameters::set_warmstart_coefficient(Self, Float) -> Self
+pub fn IntegrationParameters::with_dt(Self, Float) -> Self
 
 pub struct InteractionGroups {
   mut memberships : Group
@@ -704,30 +705,49 @@ pub fn RigidBody::world_com(Self) -> @core.Vec2
 pub struct RigidBody3D {
   body_type : RigidBodyType
   mut position : @core.Isometry3
+  mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
+  locked_translations : Bool
+  locked_rotations : Bool
+  rot_x_enabled : Bool
+  rot_y_enabled : Bool
+  rot_z_enabled : Bool
+  ccd_enabled : Bool
+  soft_ccd_prediction : Float
+  gyroscopic_forces_enabled : Bool
   linear_damping : Float
   angular_damping : Float
   gravity_scale : Float
   mass_properties : @core.MassProperties3
-  activation : RigidBodyActivation3D
+  mut activation : RigidBodyActivation3D
   can_sleep : Bool
 }
 pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
 pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
 pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBody3D::apply_gyroscopic_forces(Self, Float) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
+pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::is_active(Self) -> Bool
+pub fn RigidBody3D::is_ccd_active(Self) -> Bool
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
+pub fn RigidBody3D::locked_rotations(Self) -> Bool
+pub fn RigidBody3D::locked_translations(Self) -> Bool
 pub fn RigidBody3D::mass_properties(Self) -> @core.MassProperties3
+pub fn RigidBody3D::next_position(Self) -> @core.Isometry3
 pub fn RigidBody3D::position(Self) -> @core.Isometry3
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_linvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_next_kinematic_rotation(Self, @core.Quat) -> Unit
+pub fn RigidBody3D::set_next_kinematic_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody3D::translation(Self) -> @core.Vec3
+pub fn RigidBody3D::update_kinematic_velocities(Self, Float) -> Unit
 pub fn RigidBody3D::update_sleep(Self, Float, Float) -> Unit
 pub fn RigidBody3D::wake_up(Self) -> Unit
 pub fn RigidBody3D::world_com(Self) -> @core.Vec3
@@ -762,8 +782,8 @@ pub struct RigidBodyActivation3D {
 }
 pub fn RigidBodyActivation3D::active() -> Self
 pub fn RigidBodyActivation3D::is_sleeping(Self) -> Bool
-pub fn RigidBodyActivation3D::update(Self, Float, Float, RigidBodyType, RigidBodyVelocity3D) -> Unit
-pub fn RigidBodyActivation3D::wake_up(Self) -> Unit
+pub fn RigidBodyActivation3D::update(Self, Float, Float, RigidBodyType, RigidBodyVelocity3D) -> Self
+pub fn RigidBodyActivation3D::wake_up(Self) -> Self
 
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
@@ -840,6 +860,14 @@ pub struct RigidBodyBuilder3D {
   mut rotation : @core.Quat
   mut linvel : @core.Vec3
   mut angvel : @core.Vec3
+  mut locked_translations : Bool
+  mut locked_rotations : Bool
+  mut rot_x_enabled : Bool
+  mut rot_y_enabled : Bool
+  mut rot_z_enabled : Bool
+  mut ccd_enabled : Bool
+  mut soft_ccd_prediction : Float
+  mut gyroscopic_forces_enabled : Bool
   mut linear_damping : Float
   mut angular_damping : Float
   mut gravity_scale : Float
@@ -850,15 +878,22 @@ pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
 pub fn RigidBodyBuilder3D::can_sleep(Self, Bool) -> Self
+pub fn RigidBodyBuilder3D::ccd_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::dynamic() -> Self
+pub fn RigidBodyBuilder3D::enabled_rotations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::fixed() -> Self
 pub fn RigidBodyBuilder3D::gravity_scale(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::gyroscopic_forces_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::kinematic_position_based() -> Self
 pub fn RigidBodyBuilder3D::kinematic_velocity_based() -> Self
 pub fn RigidBodyBuilder3D::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::linvel(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::lock_rotations(Self) -> Self
+pub fn RigidBodyBuilder3D::lock_translations(Self) -> Self
 pub fn RigidBodyBuilder3D::mass_properties(Self, @core.MassProperties3) -> Self
 pub fn RigidBodyBuilder3D::rotation(Self, @core.Quat) -> Self
+pub fn RigidBodyBuilder3D::rotation_scaled_axis(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::translation(Self, @core.Vec3) -> Self
 
 pub struct RigidBodyCcd {
@@ -991,12 +1026,16 @@ pub struct RigidBodySet3D {
 pub fn RigidBodySet3D::advance_positions_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::apply_damping_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::apply_gravity_all(Self, @core.Vec3, Float) -> Unit
+pub fn RigidBodySet3D::apply_gyroscopic_forces_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::get(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::get_mut(Self, RigidBodyHandle) -> RigidBody3D?
+pub fn RigidBodySet3D::has_ccd_enabled(Self) -> Bool
 pub fn RigidBodySet3D::insert(Self, RigidBody3D) -> RigidBodyHandle
 pub fn RigidBodySet3D::integrate_all(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBodySet3D::len(Self) -> Int
+pub fn RigidBodySet3D::max_linvel_len(Self) -> Float
 pub fn RigidBodySet3D::new() -> Self
+pub fn RigidBodySet3D::update_kinematic_velocities_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::update_sleep_all(Self, Float, Float) -> Unit
 
 pub(all) enum RigidBodyType {

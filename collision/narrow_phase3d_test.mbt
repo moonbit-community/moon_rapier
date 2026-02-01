@@ -98,6 +98,22 @@ test "cuboid-cuboid contact: axis-aligned overlap along x" {
 }
 
 ///|
+test "cuboid-cuboid contact: axis-aligned overlap along y" {
+  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let a = @core.Isometry3::identity()
+  let b = @core.Isometry3::from_translation(@core.Vec3::new(0.0F, 1.9F, 0.0F))
+  let c = compute_cuboid_cuboid_contact(a, he, b, he)
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.normal.y - 1.0F) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.normal.z) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.penetration - 0.1F) < 2.0e-4F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "cuboid-cuboid contact: separated" {
   let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
   let a = @core.Isometry3::identity()

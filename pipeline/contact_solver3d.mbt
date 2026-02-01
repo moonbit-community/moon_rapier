@@ -422,12 +422,18 @@ pub fn solve_contacts_3d(
         }
 
         let vn = rv.dot(n)
+        let max_corr = parameters.max_corrective_velocity()
         let bias = if dt <= 0.0F {
           0.0F
         } else {
           let pen = c0.penetration - slop
           if pen > 0.0F {
-            -beta * pen / dt
+            let raw = -beta * pen / dt
+            if raw < -max_corr {
+              -max_corr
+            } else {
+              raw
+            }
           } else {
             0.0F
           }

@@ -173,10 +173,12 @@ pub struct Collider3D {
   mut enabled : Bool
   sensor : Bool
   active_events : ActiveEvents
+  collision_groups : @dynamics.InteractionGroups
   friction : Float
   restitution : Float
 }
 pub fn Collider3D::active_events(Self) -> ActiveEvents
+pub fn Collider3D::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
 pub fn Collider3D::enabled(Self) -> Bool
@@ -289,16 +291,20 @@ pub struct ColliderBuilder3D {
   mut enabled : Bool
   mut sensor : Bool
   mut active_events : ActiveEvents
+  mut collision_groups : @dynamics.InteractionGroups
   mut friction : Float
   mut restitution : Float
 }
 pub fn ColliderBuilder3D::active_events(Self, ActiveEvents) -> Self
 pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
+pub fn ColliderBuilder3D::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
+pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
+pub fn ColliderBuilder3D::density(Self, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
@@ -392,6 +398,7 @@ pub struct ColliderSet3D {
   generations : Array[Int]
   free_list : Array[Int]
 }
+pub fn ColliderSet3D::all_handles(Self) -> Array[ColliderHandle3D]
 pub fn ColliderSet3D::get(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::get_mut(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::insert(Self, Collider3D) -> ColliderHandle3D

@@ -53,3 +53,48 @@ test "narrow phase 3d: same-parent colliders have empty manifolds; reparent gene
     inspect(false, content="true")
   }
 }
+
+///|
+test "narrow phase 3d: collision groups filter disables contact manifolds" {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = ColliderSet3D::new()
+  let b1 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::zero())
+    .build(),
+  )
+  let b2 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::zero())
+    .build(),
+  )
+  let g1 = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_1(),
+    @dynamics.Group::group_1(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let g2 = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_2(),
+    @dynamics.Group::group_2(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let c1 = colliders.insert_with_parent(
+    ColliderBuilder3D::ball(0.5F).collision_groups(g1).build(),
+    b1,
+    bodies,
+  )
+  let c2 = colliders.insert_with_parent(
+    ColliderBuilder3D::ball(0.5F).collision_groups(g2).build(),
+    b2,
+    bodies,
+  )
+  let broad_phase = BroadPhase3D::new()
+  broad_phase.update(0.0F, colliders)
+  let nf = NarrowPhase3D::new()
+  nf.update(broad_phase.pairs(), bodies, colliders)
+  if nf.contact_pair(c1, c2) is Some(pair) {
+    inspect(pair.manifolds_len() == 0, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

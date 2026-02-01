@@ -73,6 +73,19 @@ pub fn ColliderSet3D::len(self : ColliderSet3D) -> Int {
 }
 
 ///|
+pub fn ColliderSet3D::all_handles(
+  self : ColliderSet3D,
+) -> Array[ColliderHandle3D] {
+  let out : Array[ColliderHandle3D] = []
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(_) {
+      out.push(ColliderHandle3D::from_raw_parts(i, self.generations[i]))
+    }
+  }
+  out
+}
+
+///|
 pub fn ColliderSet3D::insert(
   self : ColliderSet3D,
   collider : Collider3D,

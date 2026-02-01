@@ -24,6 +24,9 @@ pub(all) enum Shape3D {
 }
 
 ///|
+const HALF_PI_3D : @core.Real = 1.5707964F
+
+///|
 pub fn Shape3D::ball(radius : @core.Real) -> Shape3D {
   Shape3D::Ball(radius)
 }
@@ -132,6 +135,7 @@ pub struct Collider3D {
   mut enabled : Bool
   sensor : Bool
   active_events : ActiveEvents
+  collision_groups : @dynamics.InteractionGroups
   friction : @core.Real
   restitution : @core.Real
 }
@@ -191,6 +195,13 @@ pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
 }
 
 ///|
+pub fn Collider3D::collision_groups(
+  self : Collider3D,
+) -> @dynamics.InteractionGroups {
+  self.collision_groups
+}
+
+///|
 pub fn Collider3D::friction(self : Collider3D) -> @core.Real {
   self.friction
 }
@@ -233,6 +244,7 @@ pub struct ColliderBuilder3D {
   mut enabled : Bool
   mut sensor : Bool
   mut active_events : ActiveEvents
+  mut collision_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
   mut restitution : @core.Real
 }
@@ -247,6 +259,7 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -266,6 +279,7 @@ pub fn ColliderBuilder3D::cuboid(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -284,9 +298,20 @@ pub fn ColliderBuilder3D::capsule_y(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
+}
+
+///|
+pub fn ColliderBuilder3D::capsule_x(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder3D {
+  ColliderBuilder3D::capsule_y(radius, half_height).rotation(
+    @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, HALF_PI_3D)),
+  )
 }
 
 ///|
@@ -302,6 +327,7 @@ pub fn ColliderBuilder3D::cylinder(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -321,6 +347,7 @@ pub fn ColliderBuilder3D::round_cylinder(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -339,6 +366,7 @@ pub fn ColliderBuilder3D::cone(
     enabled: true,
     sensor: false,
     active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -408,6 +436,24 @@ pub fn ColliderBuilder3D::active_events(
 }
 
 ///|
+pub fn ColliderBuilder3D::density(
+  self : ColliderBuilder3D,
+  density : @core.Real,
+) -> ColliderBuilder3D {
+  density |> ignore
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::collision_groups(
+  self : ColliderBuilder3D,
+  groups : @dynamics.InteractionGroups,
+) -> ColliderBuilder3D {
+  self.collision_groups = groups
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::friction(
   self : ColliderBuilder3D,
   friction : @core.Real,
@@ -435,6 +481,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     enabled: self.enabled,
     sensor: self.sensor,
     active_events: self.active_events,
+    collision_groups: self.collision_groups,
     friction: self.friction,
     restitution: self.restitution,
   }

@@ -113,6 +113,10 @@ pub fn NarrowPhase3D::update(
       if !co1.enabled() || !co2.enabled() {
         continue
       }
+      if !co1.collision_groups.test_groups(co2.collision_groups) {
+        self.contact_pairs.push(((a, b), { manifolds: [] }))
+        continue
+      }
 
       // Keep the pair, but avoid generating contacts between colliders attached to the same body.
       if co1.parent() is Some(p1) && co2.parent() is Some(p2) {

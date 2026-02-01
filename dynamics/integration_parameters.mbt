@@ -154,6 +154,29 @@ pub fn IntegrationParameters::set_dt(
 }
 
 ///|
+/// Return a copy of these parameters with a different time-step, without mutating `self`.
+pub fn IntegrationParameters::with_dt(
+  self : IntegrationParameters,
+  dt : @core.Real,
+) -> IntegrationParameters {
+  {
+    dt,
+    min_ccd_dt: self.min_ccd_dt,
+    contact_softness: self.contact_softness,
+    warmstart_coefficient: self.warmstart_coefficient,
+    length_unit: self.length_unit,
+    normalized_allowed_linear_error: self.normalized_allowed_linear_error,
+    normalized_max_corrective_velocity: self.normalized_max_corrective_velocity,
+    normalized_prediction_distance: self.normalized_prediction_distance,
+    num_solver_iterations: self.num_solver_iterations,
+    num_internal_pgs_iterations: self.num_internal_pgs_iterations,
+    num_internal_stabilization_iterations: self.num_internal_stabilization_iterations,
+    min_island_size: self.min_island_size,
+    max_ccd_substeps: self.max_ccd_substeps,
+  }
+}
+
+///|
 pub fn IntegrationParameters::set_inv_dt(
   self : IntegrationParameters,
   inv_dt : @core.Real,
