@@ -341,6 +341,7 @@ pub fn ColliderBuilder3D::build(Self) -> Collider3D
 pub fn ColliderBuilder3D::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
 pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) -> Self
+pub fn ColliderBuilder3D::compound(Array[(@core.Isometry3, Self)]) -> Self?
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?

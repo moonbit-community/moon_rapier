@@ -714,6 +714,91 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
   let handles = self.colliders.all_handles()
   let mut best_t = max_toi + 1.0F
   let mut best : (ColliderHandle3D, RayIntersection3Feature)? = None
+  fn hit_shape(
+    ray : Ray3,
+    pos : @core.Isometry3,
+    shape : Shape3D,
+    max_toi : @core.Real,
+  ) -> RayIntersection3Feature? {
+    match shape {
+      Shape3D::Ball(r) =>
+        if ray_sphere_toi_normal(ray, pos.translation, r, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::Cuboid(he) =>
+        if ray_obb_toi_normal(ray, pos, he, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::CapsuleY(r, hh) =>
+        if ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::Cylinder(r, hh) =>
+        if ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::RoundCylinder(r, hh, br) =>
+        if ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
+          is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::Cone(r, hh) =>
+        if ray_cone_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      Shape3D::ConvexHull(_, _) => None
+      Shape3D::Compound(parts) => {
+        let mut best : RayIntersection3Feature? = None
+        let mut best_t = max_toi + 1.0F
+        for i in 0..<parts.length() {
+          let (iso, sh) = parts[i]
+          let child_pos = pos.mul(iso)
+          if hit_shape(ray, child_pos, sh, max_toi) is Some(it) &&
+            it.toi < best_t {
+            best_t = it.toi
+            best = Some(it)
+          }
+        }
+        best
+      }
+      Shape3D::TriMesh(vertices, indices) => {
+        let mut best_local : RayIntersection3? = None
+        let mut best_local_t = max_toi + 1.0F
+        let mut best_tri = -1
+        for j in 0..<indices.length() {
+          let (i0, i1, i2) = indices[j]
+          let a = pos.transform_point(vertices[i0])
+          let b = pos.transform_point(vertices[i1])
+          let c = pos.transform_point(vertices[i2])
+          if ray_triangle_toi_normal(ray, a, b, c, max_toi) is Some(it) {
+            if it.toi < best_local_t {
+              best_local_t = it.toi
+              best_local = Some(it)
+              best_tri = j
+            }
+          }
+        }
+        if best_local is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: best_tri })
+        } else {
+          None
+        }
+      }
+    }
+  }
+
   for i in 0..<handles.length() {
     let h = handles[i]
     if self.colliders.get(h) is Some(co) {
@@ -721,70 +806,7 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
         continue
       }
       let pos = co.position()
-      let hit : RayIntersection3Feature? = match co.shape() {
-        Shape3D::Ball(r) =>
-          if ray_sphere_toi_normal(ray, pos.translation, r, max_toi) is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::Cuboid(he) =>
-          if ray_obb_toi_normal(ray, pos, he, max_toi) is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::CapsuleY(r, hh) =>
-          if ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::Cylinder(r, hh) =>
-          if ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::RoundCylinder(r, hh, br) =>
-          if ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
-            is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::Cone(r, hh) =>
-          if ray_cone_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
-          } else {
-            None
-          }
-        Shape3D::ConvexHull(_, _) => None
-        Shape3D::Compound(_) => None
-        Shape3D::TriMesh(vertices, indices) => {
-          let mut best_local : RayIntersection3? = None
-          let mut best_local_t = max_toi + 1.0F
-          let mut best_tri = -1
-          for j in 0..<indices.length() {
-            let (i0, i1, i2) = indices[j]
-            let a = pos.transform_point(vertices[i0])
-            let b = pos.transform_point(vertices[i1])
-            let c = pos.transform_point(vertices[i2])
-            if ray_triangle_toi_normal(ray, a, b, c, max_toi) is Some(it) {
-              if it.toi < best_local_t {
-                best_local_t = it.toi
-                best_local = Some(it)
-                best_tri = j
-              }
-            }
-          }
-          if best_local is Some(it) {
-            Some({ toi: it.toi, normal: it.normal, feature_id: best_tri })
-          } else {
-            None
-          }
-        }
-      }
+      let hit = hit_shape(ray, pos, co.shape(), max_toi)
       if hit is Some(it) && it.toi < best_t {
         best_t = it.toi
         best = Some((h, it))

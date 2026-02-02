@@ -130,346 +130,424 @@ pub fn NarrowPhase3D::update(
       let s1 = co1.shape()
       let s2 = co2.shape()
       let contacts : Array[ContactPoint3D] = []
-      match (s1, s2) {
-        (Shape3D::Ball(r1), Shape3D::Ball(r2)) =>
-          if compute_ball_ball_contact(p1.translation, r1, p2.translation, r2)
-            is Some(cp) {
-            contacts.push(cp)
+      fn push_contacts_for_pair(
+        p1 : @core.Isometry3,
+        s1 : Shape3D,
+        p2 : @core.Isometry3,
+        s2 : Shape3D,
+        contacts : Array[ContactPoint3D],
+      ) -> Unit {
+        match (s1, s2) {
+          (Shape3D::Compound(parts), _) =>
+            for i in 0..<parts.length() {
+              let (iso, sh) = parts[i]
+              push_contacts_for_pair(p1.mul(iso), sh, p2, s2, contacts)
+            }
+          (_, Shape3D::Compound(parts)) =>
+            for i in 0..<parts.length() {
+              let (iso, sh) = parts[i]
+              push_contacts_for_pair(p1, s1, p2.mul(iso), sh, contacts)
+            }
+          _ =>
+            match (s1, s2) {
+              (Shape3D::Ball(r1), Shape3D::Ball(r2)) =>
+                if compute_ball_ball_contact(
+                    p1.translation,
+                    r1,
+                    p2.translation,
+                    r2,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Ball(r), Shape3D::Cuboid(he)) =>
+                if compute_ball_cuboid_contact(p1.translation, r, p2, he)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cuboid(he), Shape3D::Ball(r)) =>
+                if compute_ball_cuboid_contact(p2.translation, r, p1, he)
+                  is Some(cp) {
+                  // Flip the contact so it matches the (cuboid, ball) ordering.
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cuboid(he1), Shape3D::Cuboid(he2)) =>
+                if compute_cuboid_cuboid_contact(p1, he1, p2, he2) is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Ball(r), Shape3D::CapsuleY(cr, ch)) =>
+                if compute_ball_capsule_contact(p1.translation, r, p2, cr, ch)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::CapsuleY(cr, ch), Shape3D::Ball(r)) =>
+                if compute_ball_capsule_contact(p2.translation, r, p1, cr, ch)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::CapsuleY(r1, h1), Shape3D::CapsuleY(r2, h2)) =>
+                if compute_capsule_capsule_contact(p1, r1, h1, p2, r2, h2)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::CapsuleY(r, h), Shape3D::Cuboid(he)) =>
+                if compute_capsule_cuboid_contact(p1, r, h, p2, he) is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cuboid(he), Shape3D::CapsuleY(r, h)) =>
+                if compute_capsule_cuboid_contact(p2, r, h, p1, he) is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cylinder(cr, ch), Shape3D::Cuboid(he)) =>
+                if compute_cylinder_cuboid_contact(p1, cr, ch, p2, he)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cuboid(he), Shape3D::Cylinder(cr, ch)) =>
+                if compute_cylinder_cuboid_contact(p2, cr, ch, p1, he)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Cuboid(he)) =>
+                if compute_cylinder_cuboid_contact(p1, cr + br, ch + br, p2, he)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cuboid(he), Shape3D::RoundCylinder(cr, ch, br)) =>
+                if compute_cylinder_cuboid_contact(p2, cr + br, ch + br, p1, he)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cylinder(r1, h1), Shape3D::Cylinder(r2, h2)) =>
+                if compute_cylinder_cylinder_contact(p1, r1, h1, p2, r2, h2)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cylinder(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
+                if compute_cylinder_cylinder_contact(
+                    p1,
+                    r1,
+                    h1,
+                    p2,
+                    r2 + br2,
+                    h2 + br2,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cylinder(r2, h2)) =>
+                if compute_cylinder_cylinder_contact(
+                    p1,
+                    r1 + br1,
+                    h1 + br1,
+                    p2,
+                    r2,
+                    h2,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (
+                Shape3D::RoundCylinder(r1, h1, br1),
+                Shape3D::RoundCylinder(r2, h2, br2),
+              ) =>
+                if compute_cylinder_cylinder_contact(
+                    p1,
+                    r1 + br1,
+                    h1 + br1,
+                    p2,
+                    r2 + br2,
+                    h2 + br2,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cone(cr, ch), Shape3D::Cuboid(he)) =>
+                if compute_cone_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cuboid(he), Shape3D::Cone(cr, ch)) =>
+                if compute_cone_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cone(r1, h1), Shape3D::Cylinder(r2, h2)) =>
+                if compute_cone_cylinder_contact(p1, r1, h1, p2, r2, h2)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cone(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
+                if compute_cone_cylinder_contact(
+                    p1,
+                    r1,
+                    h1,
+                    p2,
+                    r2 + br2,
+                    h2 + br2,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cylinder(r1, h1), Shape3D::Cone(r2, h2)) =>
+                if compute_cone_cylinder_contact(p2, r2, h2, p1, r1, h1)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cone(r2, h2)) =>
+                if compute_cone_cylinder_contact(
+                    p2,
+                    r2,
+                    h2,
+                    p1,
+                    r1 + br1,
+                    h1 + br1,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cone(r1, h1), Shape3D::Cone(r2, h2)) =>
+                if compute_cone_cone_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Ball(r), Shape3D::Cylinder(cr, ch)) =>
+                if compute_ball_cylinder_contact(p1.translation, r, p2, cr, ch)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cylinder(cr, ch), Shape3D::Ball(r)) =>
+                if compute_ball_cylinder_contact(p2.translation, r, p1, cr, ch)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Ball(r), Shape3D::RoundCylinder(cr, ch, br)) =>
+                if compute_ball_cylinder_contact(
+                    p1.translation,
+                    r,
+                    p2,
+                    cr + br,
+                    ch + br,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Ball(r)) =>
+                if compute_ball_cylinder_contact(
+                    p2.translation,
+                    r,
+                    p1,
+                    cr + br,
+                    ch + br,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Ball(r), Shape3D::Cone(cr, ch)) =>
+                if compute_ball_cone_contact(p1.translation, r, p2, cr, ch)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::Cone(cr, ch), Shape3D::Ball(r)) =>
+                if compute_ball_cone_contact(p2.translation, r, p1, cr, ch)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Ball(r), Shape3D::TriMesh(vertices, indices)) =>
+                if compute_ball_trimesh_contact(
+                    p1.translation,
+                    r,
+                    p2,
+                    vertices,
+                    indices,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::TriMesh(vertices, indices), Shape3D::Ball(r)) =>
+                if compute_ball_trimesh_contact(
+                    p2.translation,
+                    r,
+                    p1,
+                    vertices,
+                    indices,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cuboid(he), Shape3D::TriMesh(vertices, indices)) =>
+                if compute_cuboid_trimesh_contact(p1, he, p2, vertices, indices)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::TriMesh(vertices, indices), Shape3D::Cuboid(he)) =>
+                if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::CapsuleY(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+                if compute_capsule_trimesh_contact(
+                    p1, r, hh, p2, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::TriMesh(vertices, indices), Shape3D::CapsuleY(r, hh)) =>
+                if compute_capsule_trimesh_contact(
+                    p2, r, hh, p1, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cylinder(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+                if compute_cylinder_trimesh_contact(
+                    p1, r, hh, p2, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::TriMesh(vertices, indices), Shape3D::Cylinder(r, hh)) =>
+                if compute_cylinder_trimesh_contact(
+                    p2, r, hh, p1, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (
+                Shape3D::RoundCylinder(r, hh, br),
+                Shape3D::TriMesh(vertices, indices),
+              ) =>
+                if compute_round_cylinder_trimesh_contact(
+                    p1, r, hh, br, p2, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (
+                Shape3D::TriMesh(vertices, indices),
+                Shape3D::RoundCylinder(r, hh, br),
+              ) =>
+                if compute_round_cylinder_trimesh_contact(
+                    p2, r, hh, br, p1, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Cone(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+                if compute_cone_trimesh_contact(
+                    p1, r, hh, p2, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
+              (Shape3D::TriMesh(vertices, indices), Shape3D::Cone(r, hh)) =>
+                if compute_cone_trimesh_contact(
+                    p2, r, hh, p1, vertices, indices,
+                  )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              _ =>
+                if compute_convex_contact(p1, s1, p2, s2) is Some(cp) {
+                  contacts.push(cp)
+                }
+            }
+        }
+      }
+
+      push_contacts_for_pair(p1, s1, p2, s2, contacts)
+      if contacts.length() > 1 {
+        let mut best = contacts[0]
+        for i in 1..<contacts.length() {
+          let c = contacts[i]
+          if c.penetration > best.penetration {
+            best = c
           }
-        (Shape3D::Ball(r), Shape3D::Cuboid(he)) =>
-          if compute_ball_cuboid_contact(p1.translation, r, p2, he) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cuboid(he), Shape3D::Ball(r)) =>
-          if compute_ball_cuboid_contact(p2.translation, r, p1, he) is Some(cp) {
-            // Flip the contact so it matches the (cuboid, ball) ordering.
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cuboid(he1), Shape3D::Cuboid(he2)) =>
-          if compute_cuboid_cuboid_contact(p1, he1, p2, he2) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Ball(r), Shape3D::CapsuleY(cr, ch)) =>
-          if compute_ball_capsule_contact(p1.translation, r, p2, cr, ch)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::CapsuleY(cr, ch), Shape3D::Ball(r)) =>
-          if compute_ball_capsule_contact(p2.translation, r, p1, cr, ch)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::CapsuleY(r1, h1), Shape3D::CapsuleY(r2, h2)) =>
-          if compute_capsule_capsule_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::CapsuleY(r, h), Shape3D::Cuboid(he)) =>
-          if compute_capsule_cuboid_contact(p1, r, h, p2, he) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cuboid(he), Shape3D::CapsuleY(r, h)) =>
-          if compute_capsule_cuboid_contact(p2, r, h, p1, he) is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cylinder(cr, ch), Shape3D::Cuboid(he)) =>
-          if compute_cylinder_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cuboid(he), Shape3D::Cylinder(cr, ch)) =>
-          if compute_cylinder_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Cuboid(he)) =>
-          if compute_cylinder_cuboid_contact(p1, cr + br, ch + br, p2, he)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cuboid(he), Shape3D::RoundCylinder(cr, ch, br)) =>
-          if compute_cylinder_cuboid_contact(p2, cr + br, ch + br, p1, he)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cylinder(r1, h1), Shape3D::Cylinder(r2, h2)) =>
-          if compute_cylinder_cylinder_contact(p1, r1, h1, p2, r2, h2)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cylinder(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
-          if compute_cylinder_cylinder_contact(
-              p1,
-              r1,
-              h1,
-              p2,
-              r2 + br2,
-              h2 + br2,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cylinder(r2, h2)) =>
-          if compute_cylinder_cylinder_contact(
-              p1,
-              r1 + br1,
-              h1 + br1,
-              p2,
-              r2,
-              h2,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (
-          Shape3D::RoundCylinder(r1, h1, br1),
-          Shape3D::RoundCylinder(r2, h2, br2),
-        ) =>
-          if compute_cylinder_cylinder_contact(
-              p1,
-              r1 + br1,
-              h1 + br1,
-              p2,
-              r2 + br2,
-              h2 + br2,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cone(cr, ch), Shape3D::Cuboid(he)) =>
-          if compute_cone_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cuboid(he), Shape3D::Cone(cr, ch)) =>
-          if compute_cone_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cone(r1, h1), Shape3D::Cylinder(r2, h2)) =>
-          if compute_cone_cylinder_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cone(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
-          if compute_cone_cylinder_contact(p1, r1, h1, p2, r2 + br2, h2 + br2)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cylinder(r1, h1), Shape3D::Cone(r2, h2)) =>
-          if compute_cone_cylinder_contact(p2, r2, h2, p1, r1, h1) is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cone(r2, h2)) =>
-          if compute_cone_cylinder_contact(p2, r2, h2, p1, r1 + br1, h1 + br1)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cone(r1, h1), Shape3D::Cone(r2, h2)) =>
-          if compute_cone_cone_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Ball(r), Shape3D::Cylinder(cr, ch)) =>
-          if compute_ball_cylinder_contact(p1.translation, r, p2, cr, ch)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cylinder(cr, ch), Shape3D::Ball(r)) =>
-          if compute_ball_cylinder_contact(p2.translation, r, p1, cr, ch)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Ball(r), Shape3D::RoundCylinder(cr, ch, br)) =>
-          if compute_ball_cylinder_contact(
-              p1.translation,
-              r,
-              p2,
-              cr + br,
-              ch + br,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Ball(r)) =>
-          if compute_ball_cylinder_contact(
-              p2.translation,
-              r,
-              p1,
-              cr + br,
-              ch + br,
-            )
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Ball(r), Shape3D::Cone(cr, ch)) =>
-          if compute_ball_cone_contact(p1.translation, r, p2, cr, ch)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::Cone(cr, ch), Shape3D::Ball(r)) =>
-          if compute_ball_cone_contact(p2.translation, r, p1, cr, ch)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Ball(r), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_ball_trimesh_contact(
-              p1.translation,
-              r,
-              p2,
-              vertices,
-              indices,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Ball(r)) =>
-          if compute_ball_trimesh_contact(
-              p2.translation,
-              r,
-              p1,
-              vertices,
-              indices,
-            )
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cuboid(he), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_cuboid_trimesh_contact(p1, he, p2, vertices, indices)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cuboid(he)) =>
-          if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::CapsuleY(r, hh), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_capsule_trimesh_contact(p1, r, hh, p2, vertices, indices)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::CapsuleY(r, hh)) =>
-          if compute_capsule_trimesh_contact(p2, r, hh, p1, vertices, indices)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cylinder(r, hh), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_cylinder_trimesh_contact(p1, r, hh, p2, vertices, indices)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cylinder(r, hh)) =>
-          if compute_cylinder_trimesh_contact(p2, r, hh, p1, vertices, indices)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::RoundCylinder(r, hh, br), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_round_cylinder_trimesh_contact(
-              p1, r, hh, br, p2, vertices, indices,
-            )
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::RoundCylinder(r, hh, br)) =>
-          if compute_round_cylinder_trimesh_contact(
-              p2, r, hh, br, p1, vertices, indices,
-            )
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        (Shape3D::Cone(r, hh), Shape3D::TriMesh(vertices, indices)) =>
-          if compute_cone_trimesh_contact(p1, r, hh, p2, vertices, indices)
-            is Some(cp) {
-            contacts.push(cp)
-          }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cone(r, hh)) =>
-          if compute_cone_trimesh_contact(p2, r, hh, p1, vertices, indices)
-            is Some(cp) {
-            contacts.push({
-              point1: cp.point2,
-              point2: cp.point1,
-              normal: cp.normal.scale(-1.0F),
-              penetration: cp.penetration,
-            })
-          }
-        _ =>
-          if compute_convex_contact(p1, s1, p2, s2) is Some(cp) {
-            contacts.push(cp)
-          }
+        }
+        contacts.clear()
+        contacts.push(best)
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))
     }

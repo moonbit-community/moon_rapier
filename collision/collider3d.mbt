@@ -606,6 +606,44 @@ pub fn ColliderBuilder3D::trimesh(
 }
 
 ///|
+/// Build a compound collider from multiple (local pose, child shape) pairs.
+///
+/// This matches Rapier's `ColliderBuilder::compound` pattern: the compound has a single set of
+/// material/flags, while each child contributes its local geometry.
+///
+/// Note: we accept child shapes as `ColliderBuilder3D` so callers can reuse existing constructor
+/// helpers (`ball`, `cuboid`, ...). Only the child's `shape` and `position` are used; all other
+/// fields (friction, events, etc.) are ignored.
+pub fn ColliderBuilder3D::compound(
+  parts : Array[(@core.Isometry3, ColliderBuilder3D)],
+) -> ColliderBuilder3D? {
+  if parts.length() == 0 {
+    return None
+  }
+  let shapes : Array[(@core.Isometry3, Shape3D)] = []
+  for i in 0..<parts.length() {
+    let (iso, part) = parts[i]
+    shapes.push((iso.mul(part.position), part.shape))
+  }
+  Some({
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::Compound(shapes),
+    voxel_tri_map: None,
+    enabled: true,
+    sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  })
+}
+
+///|
 /// Build a convex hull collider from an arbitrary point cloud.
 ///
 /// The hull is represented by its support points (the input points); interior points are allowed

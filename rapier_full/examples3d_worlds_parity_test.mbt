@@ -285,8 +285,7 @@ fn run_examples3d_fountain3() -> Bool {
   // Ported from `rapier-reference/examples3d/fountain3.rs` (headless).
   //
   // Upstream spawns round cylinders + cones + cuboids and removes bodies when the count exceeds a
-  // threshold. Our minimal dim3 backend doesn't yet support all shape pairs, so we focus on the
-  // add/remove behavior and spawn ball/cuboid alternately (both collide with the ground).
+  // threshold. We keep the same shape mix here (but with reduced counts for runtime).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -341,8 +340,10 @@ fn run_examples3d_fountain3() -> Bool {
       .build(),
     )
     spawned.push(h)
-    let co = if step % 2 == 0 {
-      @collision.ColliderBuilder3D::ball(rad).build()
+    let co = if step % 3 == 0 {
+      @collision.ColliderBuilder3D::round_cylinder(rad, rad, rad / 10.0F).build()
+    } else if step % 3 == 1 {
+      @collision.ColliderBuilder3D::cone(rad, rad).build()
     } else {
       @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build()
     }

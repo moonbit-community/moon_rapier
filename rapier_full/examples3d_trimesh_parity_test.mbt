@@ -210,29 +210,35 @@ fn run_examples3d_trimesh3() -> Bool {
           )
           |> ignore
         } else {
-          // Stand-in for `ColliderBuilder::compound`: multiple colliders attached to one body.
-          let c1 = @collision.ColliderBuilder3D::cuboid(
-            rad,
-            rad / 2.0F,
-            rad / 2.0F,
-          ).build()
-          let c2 = @collision.ColliderBuilder3D::cuboid(
-              rad / 2.0F,
-              rad,
-              rad / 2.0F,
-            )
-            .translation(@core.Vec3::new(rad, 0.0F, 0.0F))
+          let compound = @collision.ColliderBuilder3D::compound([
+              (
+                @core.Isometry3::identity(),
+                @collision.ColliderBuilder3D::cuboid(
+                  rad,
+                  rad / 2.0F,
+                  rad / 2.0F,
+                ),
+              ),
+              (
+                @core.Isometry3::identity(),
+                @collision.ColliderBuilder3D::cuboid(
+                  rad / 2.0F,
+                  rad,
+                  rad / 2.0F,
+                ).translation(@core.Vec3::new(rad, 0.0F, 0.0F)),
+              ),
+              (
+                @core.Isometry3::identity(),
+                @collision.ColliderBuilder3D::cuboid(
+                  rad / 2.0F,
+                  rad,
+                  rad / 2.0F,
+                ).translation(@core.Vec3::new(-rad, 0.0F, 0.0F)),
+              ),
+            ])
+            .unwrap()
             .build()
-          let c3 = @collision.ColliderBuilder3D::cuboid(
-              rad / 2.0F,
-              rad,
-              rad / 2.0F,
-            )
-            .translation(@core.Vec3::new(-rad, 0.0F, 0.0F))
-            .build()
-          colliders.insert_with_parent(c1, h, bodies) |> ignore
-          colliders.insert_with_parent(c2, h, bodies) |> ignore
-          colliders.insert_with_parent(c3, h, bodies) |> ignore
+          colliders.insert_with_parent(compound, h, bodies) |> ignore
         }
       }
     }
