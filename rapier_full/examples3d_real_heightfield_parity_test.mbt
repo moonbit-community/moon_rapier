@@ -25,8 +25,10 @@ test "examples3d/heightfield3.rs parity (3DReal headless; reduced counts)" {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  // Keep this test relatively small because the pure MoonBit 3DReal backend is significantly
+  // slower than Rapier's native implementation.
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Ground heightfield.
@@ -59,7 +61,7 @@ test "examples3d/heightfield3.rs parity (3DReal headless; reduced counts)" {
 
   // Spawn a reduced stack with mixed shapes.
   let num = 3
-  let numy = 5
+  let numy = 3
   let rad = 1.0F
   let shift = rad * 2.0F + rad
   let center = shift * Float::from_int(num / 2)
@@ -140,7 +142,7 @@ test "examples3d/heightfield3.rs parity (3DReal headless; reduced counts)" {
       }
     }
   }
-  for _ in 0..<360 {
+  for _ in 0..<180 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )

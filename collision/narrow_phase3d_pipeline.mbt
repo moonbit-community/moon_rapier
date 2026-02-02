@@ -466,7 +466,10 @@ pub fn NarrowPhase3D::update(
               penetration: cp.penetration,
             })
           }
-        _ => ()
+        _ =>
+          if compute_convex_contact(p1, s1, p2, s2) is Some(cp) {
+            contacts.push(cp)
+          }
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))
     }

@@ -397,6 +397,31 @@ fn clamp_real(x : @core.Real, lo : @core.Real, hi : @core.Real) -> @core.Real {
 }
 
 ///|
+fn shortest_angle_diff(curr : @core.Real, target : @core.Real) -> @core.Real {
+  // Returns the signed smallest difference in [-pi, pi] such that curr + diff ~= target.
+  let mut diff = target - curr
+  let pi = @core.pi()
+  let two_pi = @core.two_pi()
+  while diff > pi {
+    diff = diff - two_pi
+  }
+  while diff < -pi {
+    diff = diff + two_pi
+  }
+  diff
+}
+
+///|
+fn shortest_quat(q : @core.Quat) -> @core.Quat {
+  let qq = q.normalize()
+  if qq.real() < 0.0F {
+    qq.negated()
+  } else {
+    qq
+  }
+}
+
+///|
 pub fn JointSet3DReal::solve(
   self : JointSet3DReal,
   bodies : RigidBodySet3D,
@@ -539,18 +564,20 @@ pub fn JointSet3DReal::solve(
           // Motors apply even on free/limited axes.
           match gj.data.motors[axis_i] {
             MotorState3DReal::Disabled => ()
-            MotorState3DReal::Position(target, stiffness, damping, _) => {
+            MotorState3DReal::Position(target, stiffness, damping, max_force) => {
               let err = comp - target
               let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
               if @core.abs(err) > 1.0e-6F && k > 0.0F {
-                solve_pair_translation(rb1, rb2, axis_w.scale(err * k))
+                let max_corr = max_force * dt * 0.001F
+                let corr = clamp_real(err * k, -max_corr, max_corr)
+                solve_pair_translation(rb1, rb2, axis_w.scale(corr))
               }
               let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
               if c > 0.0F {
                 damp_pair_along(rb1, rb2, axis_w, c * 0.25F)
               }
             }
-            MotorState3DReal::Velocity(target_vel, damping, _) => {
+            MotorState3DReal::Velocity(target_vel, damping, max_force) => {
               let rel = rb2.linvel().sub(rb1.linvel()).dot(axis_w)
               let err = rel - target_vel
               let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
@@ -563,11 +590,22 @@ pub fn JointSet3DReal::solve(
                 if inv_sum > 0.0F {
                   let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
                   let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+                  let max_dv = if max_force > 0.0F {
+                    max_force * dt / inv_sum
+                  } else {
+                    0.0F
+                  }
+                  let dv_mag = dv.length()
+                  let dv_clamped = if max_dv > 0.0F && dv_mag > max_dv {
+                    dv.scale(max_dv / dv_mag)
+                  } else {
+                    dv
+                  }
                   if inv_m1 > 0.0F {
-                    rb1.set_linvel(rb1.linvel().add(dv.scale(w1)))
+                    rb1.set_linvel(rb1.linvel().add(dv_clamped.scale(w1)))
                   }
                   if inv_m2 > 0.0F {
-                    rb2.set_linvel(rb2.linvel().sub(dv.scale(w2)))
+                    rb2.set_linvel(rb2.linvel().sub(dv_clamped.scale(w2)))
                   }
                 }
               }
@@ -576,33 +614,44 @@ pub fn JointSet3DReal::solve(
         }
 
         // Angular constraints + motors (approximate; uses scaled-axis in the joint frame).
-        let q_rel = frame1.rotation.inverse().mul(frame2.rotation)
-        let ang_err_local = q_rel.to_scaled_axis()
+        // Follow Rapier's convention: use the quaternion imaginary components (sin(theta/2) * axis)
+        // as the per-axis angular coordinates, and keep the shortest-arc representation.
+        let q_rel = shortest_quat(
+          frame1.rotation.inverse().mul(frame2.rotation),
+        )
+        let ang_sin_local = q_rel.imag()
         for axis_i in 0..<3 {
           let state = gj.data.axis_states[3 + axis_i]
-          let comp = axis_value_from_vec3(ang_err_local, axis_i)
+          let comp_s = axis_value_from_vec3(ang_sin_local, axis_i)
           let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
           match state {
             AxisState3DReal::Locked =>
-              if @core.abs(comp) > 1.0e-6F {
-                solve_pair_rotation(rb1, rb2, axis_w.scale(comp))
+              if @core.abs(comp_s) > 1.0e-6F {
+                // Small-angle: sin(theta/2) ~= theta/2.
+                solve_pair_rotation(rb1, rb2, axis_w.scale(comp_s * 2.0F))
               }
             AxisState3DReal::Limited(min, max) => {
-              let clamped = clamp_real(comp, min, max)
-              let err = comp - clamped
+              let smin = @core.sin(min * 0.5F)
+              let smax = @core.sin(max * 0.5F)
+              let clamped = clamp_real(comp_s, smin, smax)
+              let err = comp_s - clamped
               if @core.abs(err) > 1.0e-6F {
-                solve_pair_rotation(rb1, rb2, axis_w.scale(err))
+                solve_pair_rotation(rb1, rb2, axis_w.scale(err * 2.0F))
               }
             }
             AxisState3DReal::Free => ()
           }
           match gj.data.motors[3 + axis_i] {
             MotorState3DReal::Disabled => ()
-            MotorState3DReal::Position(target, stiffness, damping, _) => {
-              let err = comp - target
+            MotorState3DReal::Position(target, stiffness, damping, max_force) => {
+              let s_clamped = clamp_real(comp_s, -1.0F, 1.0F)
+              let ang_dist = @core.asin(s_clamped) * 2.0F
+              let diff = shortest_angle_diff(ang_dist, target)
               let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
-              if @core.abs(err) > 1.0e-6F && k > 0.0F {
-                solve_pair_rotation(rb1, rb2, axis_w.scale(err * k))
+              if @core.abs(diff) > 1.0e-6F && k > 0.0F {
+                let max_corr = max_force * dt * 0.001F
+                let corr = clamp_real(diff * k, -max_corr, max_corr)
+                solve_pair_rotation(rb1, rb2, axis_w.scale(corr))
               }
               let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
               if c > 0.0F {
@@ -624,7 +673,7 @@ pub fn JointSet3DReal::solve(
                 }
               }
             }
-            MotorState3DReal::Velocity(target_vel, damping, _) => {
+            MotorState3DReal::Velocity(target_vel, damping, max_force) => {
               let rel = rb2.angvel().sub(rb1.angvel()).dot(axis_w)
               let err = rel - target_vel
               let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
@@ -636,11 +685,22 @@ pub fn JointSet3DReal::solve(
                 if inv_sum > 0.0F {
                   let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
                   let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
+                  let max_dw = if max_force > 0.0F {
+                    max_force * dt / inv_sum
+                  } else {
+                    0.0F
+                  }
+                  let dw_mag = dw.length()
+                  let dw_clamped = if max_dw > 0.0F && dw_mag > max_dw {
+                    dw.scale(max_dw / dw_mag)
+                  } else {
+                    dw
+                  }
                   if inv_m1 > 0.0F {
-                    rb1.set_angvel(rb1.angvel().add(dw.scale(w1)))
+                    rb1.set_angvel(rb1.angvel().add(dw_clamped.scale(w1)))
                   }
                   if inv_m2 > 0.0F {
-                    rb2.set_angvel(rb2.angvel().sub(dw.scale(w2)))
+                    rb2.set_angvel(rb2.angvel().sub(dw_clamped.scale(w2)))
                   }
                 }
               }

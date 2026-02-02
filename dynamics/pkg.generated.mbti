@@ -64,6 +64,16 @@ pub fn DVector::scale_in_place(Self, Float) -> Unit
 
 type FixedJoint
 
+pub struct FixedJoint3DRealBuilder {
+  inner : GenericJoint3DRealBuilder
+}
+pub fn FixedJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn FixedJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
+pub fn FixedJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn FixedJoint3DRealBuilder::local_basis1(Self, @core.Quat) -> Self
+pub fn FixedJoint3DRealBuilder::local_basis2(Self, @core.Quat) -> Self
+pub fn FixedJoint3DRealBuilder::new() -> Self
+
 type FixedJointBuilder
 pub fn FixedJointBuilder::build(Self) -> FixedJoint
 pub fn FixedJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
@@ -150,8 +160,11 @@ pub fn GenericJoint3DRealBuilder::coupled_axes(Self, JointAxesMask3DReal) -> Sel
 pub fn GenericJoint3DRealBuilder::limits(Self, JointAxis3DReal, Float, Float) -> Self
 pub fn GenericJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
 pub fn GenericJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn GenericJoint3DRealBuilder::local_axis1(Self, @core.Vec3) -> Self
+pub fn GenericJoint3DRealBuilder::local_axis2(Self, @core.Vec3) -> Self
 pub fn GenericJoint3DRealBuilder::local_basis1(Self, @core.Quat) -> Self
 pub fn GenericJoint3DRealBuilder::local_basis2(Self, @core.Quat) -> Self
+pub fn GenericJoint3DRealBuilder::motor_max_force(Self, JointAxis3DReal, Float) -> Self
 pub fn GenericJoint3DRealBuilder::motor_position(Self, JointAxis3DReal, Float, Float, Float) -> Self
 pub fn GenericJoint3DRealBuilder::motor_velocity(Self, JointAxis3DReal, Float, Float) -> Self
 pub fn GenericJoint3DRealBuilder::new(JointAxesMask3DReal) -> Self
@@ -650,6 +663,18 @@ pub struct PrismaticJoint3DReal {
   motor_enabled : Bool
 }
 
+pub struct PrismaticJoint3DRealBuilder {
+  inner : GenericJoint3DRealBuilder
+}
+pub fn PrismaticJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn PrismaticJoint3DRealBuilder::limits(Self, Float, Float) -> Self
+pub fn PrismaticJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
+pub fn PrismaticJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn PrismaticJoint3DRealBuilder::motor_max_force(Self, Float) -> Self
+pub fn PrismaticJoint3DRealBuilder::motor_position(Self, Float, Float, Float) -> Self
+pub fn PrismaticJoint3DRealBuilder::motor_velocity(Self, Float, Float) -> Self
+pub fn PrismaticJoint3DRealBuilder::new(@core.Vec3) -> Self
+
 type PrismaticJointBuilder
 pub fn PrismaticJointBuilder::build(Self) -> PrismaticJoint
 pub fn PrismaticJointBuilder::limits(Self, Float, Float) -> Self
@@ -687,6 +712,18 @@ pub fn RevoluteJoint3Builder::build(Self) -> RevoluteJoint3
 #deprecated
 pub fn RevoluteJoint3Builder::inner(Self) -> RevoluteJoint3
 pub fn RevoluteJoint3Builder::new(@core.Vec3) -> Self
+
+pub struct RevoluteJoint3DRealBuilder {
+  inner : GenericJoint3DRealBuilder
+}
+pub fn RevoluteJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn RevoluteJoint3DRealBuilder::limits(Self, Float, Float) -> Self
+pub fn RevoluteJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
+pub fn RevoluteJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn RevoluteJoint3DRealBuilder::motor_max_force(Self, Float) -> Self
+pub fn RevoluteJoint3DRealBuilder::motor_position(Self, Float, Float, Float) -> Self
+pub fn RevoluteJoint3DRealBuilder::motor_velocity(Self, Float, Float) -> Self
+pub fn RevoluteJoint3DRealBuilder::new(@core.Vec3) -> Self
 
 type RevoluteJointBuilder
 pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint
@@ -1237,6 +1274,18 @@ pub struct SphericalJoint3DReal {
   local_anchor1 : @core.Vec3
   local_anchor2 : @core.Vec3
 }
+
+pub struct SphericalJoint3DRealBuilder {
+  inner : GenericJoint3DRealBuilder
+}
+pub fn SphericalJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn SphericalJoint3DRealBuilder::limits(Self, JointAxis3DReal, Float, Float) -> Self
+pub fn SphericalJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
+pub fn SphericalJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
+pub fn SphericalJoint3DRealBuilder::motor_max_force(Self, JointAxis3DReal, Float) -> Self
+pub fn SphericalJoint3DRealBuilder::motor_position(Self, JointAxis3DReal, Float, Float, Float) -> Self
+pub fn SphericalJoint3DRealBuilder::motor_velocity(Self, JointAxis3DReal, Float, Float) -> Self
+pub fn SphericalJoint3DRealBuilder::new() -> Self
 
 pub struct SphericalMotor3DReal {
   body1 : RigidBodyHandle

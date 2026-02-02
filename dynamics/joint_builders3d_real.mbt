@@ -119,6 +119,40 @@ pub fn GenericJoint3DRealBuilder::local_basis2(
 }
 
 ///|
+pub fn GenericJoint3DRealBuilder::local_axis1(
+  self : GenericJoint3DRealBuilder,
+  axis : @core.Vec3,
+) -> GenericJoint3DRealBuilder {
+  let a = if axis.length_squared() <= 1.0e-12F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    axis.normalize()
+  }
+  self.local_basis1 = @core.rotation_between(
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    a,
+  )
+  self
+}
+
+///|
+pub fn GenericJoint3DRealBuilder::local_axis2(
+  self : GenericJoint3DRealBuilder,
+  axis : @core.Vec3,
+) -> GenericJoint3DRealBuilder {
+  let a = if axis.length_squared() <= 1.0e-12F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    axis.normalize()
+  }
+  self.local_basis2 = @core.rotation_between(
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    a,
+  )
+  self
+}
+
+///|
 pub fn GenericJoint3DRealBuilder::limits(
   self : GenericJoint3DRealBuilder,
   axis : JointAxis3DReal,
@@ -154,6 +188,27 @@ pub fn GenericJoint3DRealBuilder::motor_velocity(
 ) -> GenericJoint3DRealBuilder {
   let i = axis_index_3d_real(axis)
   self.motors[i] = MotorState3DReal::Velocity(target_vel, damping, 1.0e30F)
+  self
+}
+
+///|
+pub fn GenericJoint3DRealBuilder::motor_max_force(
+  self : GenericJoint3DRealBuilder,
+  axis : JointAxis3DReal,
+  max_force : @core.Real,
+) -> GenericJoint3DRealBuilder {
+  let i = axis_index_3d_real(axis)
+  match self.motors[i] {
+    MotorState3DReal::Disabled => ()
+    MotorState3DReal::Velocity(target_vel, damping, _) =>
+      self.motors[i] = MotorState3DReal::Velocity(
+        target_vel, damping, max_force,
+      )
+    MotorState3DReal::Position(target_pos, stiffness, damping, _) =>
+      self.motors[i] = MotorState3DReal::Position(
+        target_pos, stiffness, damping, max_force,
+      )
+  }
   self
 }
 

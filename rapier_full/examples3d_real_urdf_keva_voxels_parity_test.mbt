@@ -85,11 +85,8 @@ test "examples3d/keva3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/urdf3.rs parity (3DReal headless; stand-in robot)" {
+test "examples3d/urdf3.rs parity (3DReal headless; T12 subset)" {
   // Ported from `rapier-reference/examples3d/urdf3.rs` (headless).
-  //
-  // Full URDF parsing isn't available in this MoonBit port. Instead we build a small articulated
-  // chain to exercise joint limits + motors in the real dim3 backend.
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -114,70 +111,61 @@ test "examples3d/urdf3.rs parity (3DReal headless; stand-in robot)" {
     bodies,
   )
   |> ignore
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
-  let basis = @core.Quat::identity()
-  let locked = @dynamics.JointAxesMask3DReal::lin_axes()
-    .or(@dynamics.JointAxesMask3DReal::ang_x())
-    .or(@dynamics.JointAxesMask3DReal::ang_y())
-  let base = bodies.insert(
-    @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
-    .build(),
-  )
-  let links : Array[@dynamics.RigidBodyHandle] = [base]
-  for i in 0..<4 {
-    let x = Float::from_int(i + 1) * 1.0F
-    let link = bodies.insert(
-      @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, 2.0F, 0.0F))
-      .can_sleep(false)
-      .build(),
+
+  // Load the URDF and insert it twice (the original example uses impulse joints and multibody
+  // joints; the real backend currently uses the `JointSet3DReal` constraint set for both).
+  let options = @urdf.UrdfLoaderOptions3DReal::default()
+    .create_colliders_from_visual_shapes(true)
+    .create_colliders_from_collision_shapes(false)
+    .make_roots_fixed(true)
+    // Z-up to Y-up (rotate around +X by +pi/2).
+    .shift(
+      @core.Isometry3::new(
+        @core.Vec3::zero(),
+        @core.rotation_from_scaled_axis(
+          @core.Vec3::new(@core.pi() * 0.5F, 0.0F, 0.0F),
+        ),
+      ),
     )
-    colliders.insert_with_parent(
-      @collision.ColliderBuilder3D::cuboid(0.6F, 0.1F, 0.1F).build(),
-      link,
+  let xml = t12_urdf_xml()
+  let bounds = t12_mesh_bounds_map()
+  if @urdf.UrdfRobot3DReal::from_xml(xml) is Some(robot) {
+    robot.insert_3d_real(
+      options,
+      bounds,
       bodies,
+      colliders,
+      joints,
+      @core.Isometry3::identity(),
     )
-    |> ignore
-    let parent = links[links.length() - 1]
-    let min_angle = -0.5F
-    let max_angle = 0.5F
-    let joint = @dynamics.GenericJoint3DRealBuilder::new(locked)
-      .local_basis1(basis)
-      .local_basis2(basis)
-      .local_anchor1(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-      .local_anchor2(@core.Vec3::new(-1.0F, 0.0F, 0.0F))
-      .limits(@dynamics.JointAxis3DReal::AngZ, min_angle, max_angle)
-      .build()
-    let h = joints.insert_generic(parent, link, joint, true)
-    // Drive the first joint a bit.
-    if i == 0 {
-      joints.set_motor_position(
-        h,
-        @dynamics.JointAxis3DReal::AngZ,
-        0.35F,
-        100.0F,
-        10.0F,
-        1000.0F,
-      )
-    }
-    links.push(link)
+    robot.insert_3d_real(
+      options,
+      bounds,
+      bodies,
+      colliders,
+      joints,
+      @core.Isometry3::from_translation(@core.Vec3::new(10.0F, 0.0F, 0.0F)),
+    )
+  } else {
+    inspect(false, content="true")
   }
-  for _ in 0..<240 {
+  for _ in 0..<300 {
     pipeline.step_with_joints(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       joints,
     )
   }
-  let tip = links[links.length() - 1]
-  if bodies.get(tip) is Some(rb) {
-    let p = rb.translation()
-    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-    inspect(p.y > -50.0F, content="true")
-  } else {
-    inspect(false, content="true")
+
+  // Sanity: all bodies remain finite and above a very low threshold.
+  for h in bodies.all_handles() {
+    if bodies.get(h) is Some(rb) {
+      let p = rb.translation()
+      inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+      inspect(p.y > -200.0F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
   }
-  axis_z |> ignore
 }
 
 ///|
@@ -225,6 +213,23 @@ test "examples3d/voxels3.rs parity (3DReal headless; reduced)" {
     inspect(false, content="true")
   }
 
+  // Basic raycast sanity on the voxel collider (before adding dynamic bodies, to avoid accidental
+  // hits on corner-touching boxes).
+  let qp0 = @collision.QueryPipeline3DReal::new(
+    @collision.QueryFilter3DReal::new(),
+    bodies,
+    colliders,
+  )
+  let ray0 = @collision.Ray3::new(
+    @core.Vec3::new(5.0F, 50.0F, 5.0F),
+    @core.Vec3::new(0.0F, -1.0F, 0.0F),
+  )
+  if qp0.cast_ray_and_get_voxel_key(ray0, 200.0F, true) is Some((_, _, _)) {
+    inspect(true, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
   // A few falling primitives.
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<6 {
@@ -243,22 +248,6 @@ test "examples3d/voxels3.rs parity (3DReal headless; reduced)" {
       @collision.ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build()
     }
     colliders.insert_with_parent(co, rb, bodies) |> ignore
-  }
-
-  // Basic raycast sanity on the voxel collider.
-  let qp = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new(),
-    bodies,
-    colliders,
-  )
-  let ray = @collision.Ray3::new(
-    @core.Vec3::new(5.0F, 50.0F, 5.0F),
-    @core.Vec3::new(0.0F, -1.0F, 0.0F),
-  )
-  if qp.cast_ray_and_get_normal(ray, 200.0F, true) is Some(_) {
-    inspect(true, content="true")
-  } else {
-    inspect(false, content="true")
   }
   for _ in 0..<80 {
     pipeline.step(

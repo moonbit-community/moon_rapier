@@ -1,0 +1,70 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/urdf"
+
+import {
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/dynamics",
+  "moonbitlang/core/hashmap",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct UrdfJoint {
+  name : String
+  joint_type : UrdfJointType
+  mut parent : String
+  mut child : String
+  mut origin : @core.Isometry3
+  mut axis : @core.Vec3
+  mut limit_lower : Float
+  mut limit_upper : Float
+  mut has_limits : Bool
+}
+
+pub(all) enum UrdfJointType {
+  Fixed
+  Revolute
+  Prismatic
+  Floating
+  Planar
+  Spherical
+}
+
+pub struct UrdfLink {
+  name : String
+  visuals : Array[UrdfVisual]
+  collisions : Array[UrdfVisual]
+}
+
+pub struct UrdfLoaderOptions3DReal {
+  create_colliders_from_visual_shapes : Bool
+  create_colliders_from_collision_shapes : Bool
+  make_roots_fixed : Bool
+  shift : @core.Isometry3
+}
+pub fn UrdfLoaderOptions3DReal::create_colliders_from_collision_shapes(Self, Bool) -> Self
+pub fn UrdfLoaderOptions3DReal::create_colliders_from_visual_shapes(Self, Bool) -> Self
+pub fn UrdfLoaderOptions3DReal::default() -> Self
+pub fn UrdfLoaderOptions3DReal::make_roots_fixed(Self, Bool) -> Self
+pub fn UrdfLoaderOptions3DReal::shift(Self, @core.Isometry3) -> Self
+
+pub struct UrdfRobot3DReal {
+  links : Array[UrdfLink]
+  joints : Array[UrdfJoint]
+}
+pub fn UrdfRobot3DReal::from_xml(String) -> Self?
+pub fn UrdfRobot3DReal::insert_3d_real(Self, UrdfLoaderOptions3DReal, @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)], @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal, @core.Isometry3) -> Unit
+
+pub struct UrdfVisual {
+  origin : @core.Isometry3
+  mesh_filename : String?
+}
+
+// Type aliases
+
+// Traits
+

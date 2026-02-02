@@ -19,12 +19,12 @@ pub type Real = Float
 const EPSILON : Real = 1.0e-6F
 
 ///|
-fn sin(value : Real) -> Real {
+pub fn sin(value : Real) -> Real {
   Float::from_double(@math.sin(value.to_double()))
 }
 
 ///|
-fn cos(value : Real) -> Real {
+pub fn cos(value : Real) -> Real {
   Float::from_double(@math.cos(value.to_double()))
 }
 
@@ -353,6 +353,21 @@ pub struct Quat {
   y : Real
   z : Real
   w : Real
+}
+
+///|
+pub fn Quat::imag(self : Quat) -> Vec3 {
+  Vec3::new(self.x, self.y, self.z)
+}
+
+///|
+pub fn Quat::real(self : Quat) -> Real {
+  self.w
+}
+
+///|
+pub fn Quat::negated(self : Quat) -> Quat {
+  Quat::new(-self.x, -self.y, -self.z, -self.w)
 }
 
 ///|

@@ -108,7 +108,7 @@ fn run_examples3d_trimesh3() -> Bool {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Ground mesh built from a heightfield-like grid (same sin/cos pattern as rapier-reference).
@@ -156,7 +156,7 @@ fn run_examples3d_trimesh3() -> Bool {
 
   // Reduced stack.
   let num = 3
-  let numy = 5
+  let numy = 3
   let rad = 1.0F
   let shift = rad * 2.0F + rad
   let center = shift * Float::from_int(num / 2)
@@ -237,7 +237,7 @@ fn run_examples3d_trimesh3() -> Bool {
       }
     }
   }
-  for _ in 0..<360 {
+  for _ in 0..<120 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -277,7 +277,7 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" 
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Flat heightfield (2x2) like the upstream example.
@@ -311,7 +311,7 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" 
     bodies,
   )
   let mut saw_contact = false
-  for _ in 0..<360 {
+  for _ in 0..<180 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )

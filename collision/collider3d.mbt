@@ -21,6 +21,11 @@ pub(all) enum Shape3D {
   Cylinder(@core.Real, @core.Real) // radius, half_height (aligned with Y)
   RoundCylinder(@core.Real, @core.Real, @core.Real) // radius, half_height, border_radius
   Cone(@core.Real, @core.Real) // radius, half_height (aligned with Y)
+  // Convex hull represented by its support points (may include interior points).
+  // The optional border radius represents the Minkowski sum with a ball.
+  ConvexHull(Array[@core.Vec3], @core.Real)
+  // A compound made of a list of (local pose, shape) pairs.
+  Compound(Array[(@core.Isometry3, Shape3D)])
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 
@@ -98,6 +103,49 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
     }
     Shape3D::Cone(r, hh) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Shape3D::ConvexHull(points, br) =>
+      if points.length() == 0 {
+        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+      } else {
+        let mut min = points[0]
+        let mut max = points[0]
+        for i in 1..<points.length() {
+          let p = points[i]
+          if p.x < min.x {
+            min = @core.Vec3::new(p.x, min.y, min.z)
+          }
+          if p.y < min.y {
+            min = @core.Vec3::new(min.x, p.y, min.z)
+          }
+          if p.z < min.z {
+            min = @core.Vec3::new(min.x, min.y, p.z)
+          }
+          if p.x > max.x {
+            max = @core.Vec3::new(p.x, max.y, max.z)
+          }
+          if p.y > max.y {
+            max = @core.Vec3::new(max.x, p.y, max.z)
+          }
+          if p.z > max.z {
+            max = @core.Vec3::new(max.x, max.y, p.z)
+          }
+        }
+        let pad = @core.Vec3::new(br, br, br)
+        @core.Aabb3::new(min.sub(pad), max.add(pad))
+      }
+    Shape3D::Compound(parts) =>
+      if parts.length() == 0 {
+        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+      } else {
+        // Union all child AABBs transformed into the compound's local space.
+        let mut aabb = aabb3_transform(parts[0].0, parts[0].1.local_aabb())
+        for i in 1..<parts.length() {
+          let (iso, shape) = parts[i]
+          let child = aabb3_transform(iso, shape.local_aabb())
+          aabb = aabb.combine(child)
+        }
+        aabb
+      }
     Shape3D::TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
@@ -162,6 +210,8 @@ pub struct Collider3D {
   mut local_position : @core.Isometry3
   mut parent : @dynamics.RigidBodyHandle?
   mut shape : Shape3D
+  // Optional per-triangle metadata for voxel meshes created with `voxels_from_points`.
+  voxel_tri_map : Array[(Int, Int, Int)]?
   mut enabled : Bool
   sensor : Bool
   // Solver-only features used by a subset of examples/tests (e.g. one-way platforms).
@@ -221,6 +271,22 @@ pub fn Collider3D::shape(self : Collider3D) -> Shape3D {
 ///|
 pub fn Collider3D::set_shape(self : Collider3D, shape : Shape3D) -> Unit {
   self.shape = shape
+}
+
+///|
+pub fn Collider3D::voxel_key_for_triangle(
+  self : Collider3D,
+  triangle_index : Int,
+) -> (Int, Int, Int)? {
+  if self.voxel_tri_map is Some(map) {
+    if triangle_index >= 0 && triangle_index < map.length() {
+      Some(map[triangle_index])
+    } else {
+      None
+    }
+  } else {
+    None
+  }
 }
 
 ///|
@@ -328,6 +394,7 @@ pub struct ColliderBuilder3D {
   mut local_position : @core.Isometry3
   parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
+  voxel_tri_map : Array[(Int, Int, Int)]?
   mut enabled : Bool
   mut sensor : Bool
   mut surface_velocity : @core.Vec3
@@ -346,6 +413,7 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::ball(radius),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -369,6 +437,7 @@ pub fn ColliderBuilder3D::cuboid(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::cuboid(hx, hy, hz),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -391,6 +460,7 @@ pub fn ColliderBuilder3D::capsule_y(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::capsule_y(radius, half_height),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -423,6 +493,7 @@ pub fn ColliderBuilder3D::cylinder(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::cylinder(radius, half_height),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -446,6 +517,7 @@ pub fn ColliderBuilder3D::round_cylinder(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::round_cylinder(radius, half_height, border_radius),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -468,6 +540,7 @@ pub fn ColliderBuilder3D::cone(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::cone(radius, half_height),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -519,6 +592,7 @@ pub fn ColliderBuilder3D::trimesh(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::TriMesh(vertices, valid),
+    voxel_tri_map: None,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -532,11 +606,10 @@ pub fn ColliderBuilder3D::trimesh(
 }
 
 ///|
-/// Build an approximate convex hull collider from an arbitrary point cloud.
+/// Build a convex hull collider from an arbitrary point cloud.
 ///
-/// This real-dim3 backend currently approximates convex hulls as oriented cuboids with a local
-/// translation so that they enclose the given points. This is sufficient for the headless parity
-/// tests and keeps narrow-phase coverage small (cuboid contacts are implemented).
+/// The hull is represented by its support points (the input points); interior points are allowed
+/// and do not affect correctness of support-based collision detection.
 pub fn ColliderBuilder3D::round_convex_hull(
   points : Array[@core.Vec3],
   border_radius : @core.Real,
@@ -544,10 +617,62 @@ pub fn ColliderBuilder3D::round_convex_hull(
   if points.length() == 0 {
     return None
   }
-  let mut min = points[0]
-  let mut max = points[0]
-  for i in 1..<points.length() {
-    let p = points[i]
+  let pts : Array[@core.Vec3] = []
+  for i in 0..<points.length() {
+    pts.push(points[i])
+  }
+  Some({
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::ConvexHull(pts, border_radius),
+    voxel_tri_map: None,
+    enabled: true,
+    sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  })
+}
+
+///|
+pub fn ColliderBuilder3D::convex_hull(
+  points : Array[@core.Vec3],
+) -> ColliderBuilder3D? {
+  ColliderBuilder3D::round_convex_hull(points, 0.0F)
+}
+
+///|
+pub fn ColliderBuilder3D::convex_decomposition(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder3D? {
+  ColliderBuilder3D::round_convex_decomposition(vertices, indices, 0.0F)
+}
+
+///|
+pub fn ColliderBuilder3D::round_convex_decomposition(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+  border_radius : @core.Real,
+) -> ColliderBuilder3D? {
+  if vertices.length() == 0 {
+    return None
+  }
+  if indices.length() == 0 {
+    return ColliderBuilder3D::round_convex_hull(vertices, border_radius)
+  }
+  // Very small, deterministic decomposition: split triangles along the dominant axis of triangle
+  // centroids and build one convex part per chunk.
+  let tris = indices
+  let mut min = vertices[0]
+  let mut max = vertices[0]
+  for i in 1..<vertices.length() {
+    let p = vertices[i]
     if p.x < min.x {
       min = @core.Vec3::new(p.x, min.y, min.z)
     }
@@ -567,40 +692,108 @@ pub fn ColliderBuilder3D::round_convex_hull(
       max = @core.Vec3::new(max.x, max.y, p.z)
     }
   }
-  let center = min.add(max).scale(0.5F)
-  let he = max
-    .sub(min)
-    .scale(0.5F)
-    .add(@core.Vec3::new(border_radius, border_radius, border_radius))
-  let b = ColliderBuilder3D::cuboid(he.x, he.y, he.z)
-  Some(b.translation(center))
-}
+  let ext = max.sub(min)
+  let axis_i = if ext.x >= ext.y && ext.x >= ext.z {
+    0
+  } else if ext.y >= ext.z {
+    1
+  } else {
+    2
+  }
+  fn axis_value(v : @core.Vec3, axis_i : Int) -> @core.Real {
+    if axis_i == 0 {
+      v.x
+    } else if axis_i == 1 {
+      v.y
+    } else {
+      v.z
+    }
+  }
 
-///|
-pub fn ColliderBuilder3D::convex_hull(
-  points : Array[@core.Vec3],
-) -> ColliderBuilder3D? {
-  ColliderBuilder3D::round_convex_hull(points, 0.0F)
-}
-
-///|
-/// Approximate convex decomposition by building a single enclosing convex hull.
-pub fn ColliderBuilder3D::convex_decomposition(
-  vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
-) -> ColliderBuilder3D? {
-  indices |> ignore
-  ColliderBuilder3D::convex_hull(vertices)
-}
-
-///|
-pub fn ColliderBuilder3D::round_convex_decomposition(
-  vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
-  border_radius : @core.Real,
-) -> ColliderBuilder3D? {
-  indices |> ignore
-  ColliderBuilder3D::round_convex_hull(vertices, border_radius)
+  let tri_ids : Array[Int] = []
+  for i in 0..<tris.length() {
+    tri_ids.push(i)
+  }
+  // Sort by centroid coordinate on the chosen axis.
+  for i in 1..<tri_ids.length() {
+    let key = tri_ids[i]
+    let (a0, a1, a2) = tris[key]
+    let ca = vertices[a0].add(vertices[a1]).add(vertices[a2]).scale(1.0F / 3.0F)
+    let key_val = axis_value(ca, axis_i)
+    let mut j = i - 1
+    while j >= 0 {
+      let idj = tri_ids[j]
+      let (b0, b1, b2) = tris[idj]
+      let cb = vertices[b0]
+        .add(vertices[b1])
+        .add(vertices[b2])
+        .scale(1.0F / 3.0F)
+      let vj = axis_value(cb, axis_i)
+      if key_val >= vj {
+        break
+      }
+      tri_ids[j + 1] = tri_ids[j]
+      j = j - 1
+    }
+    tri_ids[j + 1] = key
+  }
+  let tri_count = tri_ids.length()
+  let num_parts = if tri_count >= 24 {
+    4
+  } else if tri_count >= 12 {
+    2
+  } else {
+    1
+  }
+  if num_parts <= 1 {
+    return ColliderBuilder3D::round_convex_hull(vertices, border_radius)
+  }
+  let parts : Array[(@core.Isometry3, Shape3D)] = []
+  let chunk = (tri_count + num_parts - 1) / num_parts
+  for p in 0..<num_parts {
+    let start = p * chunk
+    if start >= tri_count {
+      continue
+    }
+    let end = if start + chunk < tri_count { start + chunk } else { tri_count }
+    let used : @hashset.HashSet[Int] = @hashset.new(capacity=chunk * 3)
+    for ii in start..<end {
+      let tid = tri_ids[ii]
+      let (i0, i1, i2) = tris[tid]
+      used.add(i0)
+      used.add(i1)
+      used.add(i2)
+    }
+    let pts : Array[@core.Vec3] = []
+    for vid in used.to_array() {
+      pts.push(vertices[vid])
+    }
+    if pts.length() > 0 {
+      parts.push(
+        (@core.Isometry3::identity(), Shape3D::ConvexHull(pts, border_radius)),
+      )
+    }
+  }
+  if parts.length() <= 1 {
+    ColliderBuilder3D::round_convex_hull(vertices, border_radius)
+  } else {
+    Some({
+      position: @core.Isometry3::identity(),
+      local_position: @core.Isometry3::identity(),
+      parent: None,
+      shape: Shape3D::Compound(parts),
+      voxel_tri_map: None,
+      enabled: true,
+      sensor: false,
+      surface_velocity: @core.Vec3::zero(),
+      one_way_offset: None,
+      one_way_direction: 0,
+      active_events: ActiveEvents::empty(),
+      collision_groups: @dynamics.InteractionGroups::all(),
+      friction: 0.7F,
+      restitution: 0.0F,
+    })
+  }
 }
 
 ///|
@@ -626,34 +819,48 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  let voxels : Array[(Int, Int, Int)] = []
-  fn has_voxel(vs : Array[(Int, Int, Int)], x : Int, y : Int, z : Int) -> Bool {
-    for i in 0..<vs.length() {
-      let v = vs[i]
-      if v.0 == x && v.1 == y && v.2 == z {
-        return true
-      }
-    }
-    false
-  }
-
+  let occupied : @hashset.HashSet[(Int, Int, Int)] = @hashset.new(
+    capacity=points.length(),
+  )
   for i in 0..<points.length() {
     let p = points[i]
     let ix = floor_div_to_int(p.x, voxel_size.x)
     let iy = floor_div_to_int(p.y, voxel_size.y)
     let iz = floor_div_to_int(p.z, voxel_size.z)
-    if !has_voxel(voxels, ix, iy, iz) {
-      voxels.push((ix, iy, iz))
+    occupied.add((ix, iy, iz))
+  }
+  if occupied.is_empty() {
+    return None
+  }
+  let voxels = occupied.to_array()
+  // Deterministic order for stable triangle->voxel metadata.
+  fn less(a : (Int, Int, Int), b : (Int, Int, Int)) -> Bool {
+    if a.0 != b.0 {
+      a.0 < b.0
+    } else if a.1 != b.1 {
+      a.1 < b.1
+    } else {
+      a.2 < b.2
     }
   }
-  if voxels.length() == 0 {
-    return None
+
+  for i in 1..<voxels.length() {
+    let key = voxels[i]
+    let mut j = i - 1
+    while j >= 0 && less(key, voxels[j]) {
+      voxels[j + 1] = voxels[j]
+      j = j - 1
+    }
+    voxels[j + 1] = key
   }
   let vertices : Array[@core.Vec3] = []
   let indices : Array[(Int, Int, Int)] = []
+  let tri_voxel : Array[(Int, Int, Int)] = []
   fn push_face(
     vertices : Array[@core.Vec3],
     indices : Array[(Int, Int, Int)],
+    tri_voxel : Array[(Int, Int, Int)],
+    vkey : (Int, Int, Int),
     a : @core.Vec3,
     b : @core.Vec3,
     c : @core.Vec3,
@@ -666,6 +873,8 @@ pub fn ColliderBuilder3D::voxels_from_points(
     vertices.push(d)
     indices.push((base, base + 1, base + 2))
     indices.push((base, base + 2, base + 3))
+    tri_voxel.push(vkey)
+    tri_voxel.push(vkey)
   }
 
   for i in 0..<voxels.length() {
@@ -678,10 +887,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
     let z1 = z0 + voxel_size.z
 
     // +X
-    if !has_voxel(voxels, ix + 1, iy, iz) {
+    if !occupied.contains((ix + 1, iy, iz)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x1, y0, z0),
         @core.Vec3::new(x1, y1, z0),
         @core.Vec3::new(x1, y1, z1),
@@ -689,10 +900,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
     // -X
-    if !has_voxel(voxels, ix - 1, iy, iz) {
+    if !occupied.contains((ix - 1, iy, iz)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x0, y0, z1),
         @core.Vec3::new(x0, y1, z1),
         @core.Vec3::new(x0, y1, z0),
@@ -700,10 +913,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
     // +Y
-    if !has_voxel(voxels, ix, iy + 1, iz) {
+    if !occupied.contains((ix, iy + 1, iz)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x0, y1, z0),
         @core.Vec3::new(x0, y1, z1),
         @core.Vec3::new(x1, y1, z1),
@@ -711,10 +926,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
     // -Y
-    if !has_voxel(voxels, ix, iy - 1, iz) {
+    if !occupied.contains((ix, iy - 1, iz)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x0, y0, z1),
         @core.Vec3::new(x0, y0, z0),
         @core.Vec3::new(x1, y0, z0),
@@ -722,10 +939,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
     // +Z
-    if !has_voxel(voxels, ix, iy, iz + 1) {
+    if !occupied.contains((ix, iy, iz + 1)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x1, y0, z1),
         @core.Vec3::new(x1, y1, z1),
         @core.Vec3::new(x0, y1, z1),
@@ -733,10 +952,12 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
     // -Z
-    if !has_voxel(voxels, ix, iy, iz - 1) {
+    if !occupied.contains((ix, iy, iz - 1)) {
       push_face(
         vertices,
         indices,
+        tri_voxel,
+        (ix, iy, iz),
         @core.Vec3::new(x0, y0, z0),
         @core.Vec3::new(x0, y1, z0),
         @core.Vec3::new(x1, y1, z0),
@@ -744,7 +965,54 @@ pub fn ColliderBuilder3D::voxels_from_points(
       )
     }
   }
-  ColliderBuilder3D::trimesh(vertices, indices)
+  // Build the trimesh while filtering invalid triangles, keeping metadata aligned.
+  if vertices.length() == 0 || indices.length() == 0 {
+    return None
+  }
+  let valid : Array[(Int, Int, Int)] = []
+  let valid_map : Array[(Int, Int, Int)] = []
+  for i in 0..<indices.length() {
+    let (i0, i1, i2) = indices[i]
+    if i0 < 0 || i1 < 0 || i2 < 0 {
+      continue
+    }
+    if i0 >= vertices.length() ||
+      i1 >= vertices.length() ||
+      i2 >= vertices.length() {
+      continue
+    }
+    if i0 == i1 || i1 == i2 || i2 == i0 {
+      continue
+    }
+    let a = vertices[i0]
+    let b = vertices[i1]
+    let c = vertices[i2]
+    let area2 = b.sub(a).cross(c.sub(a)).length_squared()
+    if area2 <= 1.0e-12F {
+      continue
+    }
+    valid.push((i0, i1, i2))
+    valid_map.push(tri_voxel[i])
+  }
+  if valid.length() == 0 {
+    return None
+  }
+  Some({
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::TriMesh(vertices, valid),
+    voxel_tri_map: Some(valid_map),
+    enabled: true,
+    sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  })
 }
 
 ///|
@@ -926,6 +1194,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     local_position: self.local_position,
     parent: self.parent,
     shape: self.shape,
+    voxel_tri_map: self.voxel_tri_map,
     enabled: self.enabled,
     sensor: self.sensor,
     surface_velocity: self.surface_velocity,

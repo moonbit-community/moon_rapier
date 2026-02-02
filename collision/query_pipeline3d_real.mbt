@@ -44,6 +44,34 @@ pub fn RayIntersection3::normal(self : RayIntersection3) -> @core.Vec3 {
 }
 
 ///|
+pub struct RayIntersection3Feature {
+  toi : @core.Real
+  normal : @core.Vec3
+  feature_id : Int
+}
+
+///|
+pub fn RayIntersection3Feature::toi(
+  self : RayIntersection3Feature,
+) -> @core.Real {
+  self.toi
+}
+
+///|
+pub fn RayIntersection3Feature::normal(
+  self : RayIntersection3Feature,
+) -> @core.Vec3 {
+  self.normal
+}
+
+///|
+pub fn RayIntersection3Feature::feature_id(
+  self : RayIntersection3Feature,
+) -> Int {
+  self.feature_id
+}
+
+///|
 pub struct QueryFilter3DReal {
   exclude_rigid_body : @dynamics.RigidBodyHandle?
   exclude_collider : ColliderHandle3D?
@@ -665,10 +693,27 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle3D, RayIntersection3)? {
+  if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
+      self, ray, max_toi, solid,
+    )
+    is Some((h, it)) {
+    Some((h, { toi: it.toi, normal: it.normal }))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
+  self : QueryPipeline3DReal,
+  ray : Ray3,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle3D, RayIntersection3Feature)? {
   solid |> ignore
   let handles = self.colliders.all_handles()
   let mut best_t = max_toi + 1.0F
-  let mut best : (ColliderHandle3D, RayIntersection3)? = None
+  let mut best : (ColliderHandle3D, RayIntersection3Feature)? = None
   for i in 0..<handles.length() {
     let h = handles[i]
     if self.colliders.get(h) is Some(co) {
@@ -676,20 +721,50 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
         continue
       }
       let pos = co.position()
-      let hit : RayIntersection3? = match co.shape() {
+      let hit : RayIntersection3Feature? = match co.shape() {
         Shape3D::Ball(r) =>
-          ray_sphere_toi_normal(ray, pos.translation, r, max_toi)
-        Shape3D::Cuboid(he) => ray_obb_toi_normal(ray, pos, he, max_toi)
+          if ray_sphere_toi_normal(ray, pos.translation, r, max_toi) is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
+        Shape3D::Cuboid(he) =>
+          if ray_obb_toi_normal(ray, pos, he, max_toi) is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
         Shape3D::CapsuleY(r, hh) =>
-          ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi)
+          if ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
         Shape3D::Cylinder(r, hh) =>
-          ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi)
+          if ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
         Shape3D::RoundCylinder(r, hh, br) =>
-          ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
-        Shape3D::Cone(r, hh) => ray_cone_y_toi_normal(ray, pos, r, hh, max_toi)
+          if ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
+            is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
+        Shape3D::Cone(r, hh) =>
+          if ray_cone_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+          } else {
+            None
+          }
+        Shape3D::ConvexHull(_, _) => None
+        Shape3D::Compound(_) => None
         Shape3D::TriMesh(vertices, indices) => {
           let mut best_local : RayIntersection3? = None
           let mut best_local_t = max_toi + 1.0F
+          let mut best_tri = -1
           for j in 0..<indices.length() {
             let (i0, i1, i2) = indices[j]
             let a = pos.transform_point(vertices[i0])
@@ -699,19 +774,44 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
               if it.toi < best_local_t {
                 best_local_t = it.toi
                 best_local = Some(it)
+                best_tri = j
               }
             }
           }
-          best_local
+          if best_local is Some(it) {
+            Some({ toi: it.toi, normal: it.normal, feature_id: best_tri })
+          } else {
+            None
+          }
         }
       }
-      if hit is Some(it) {
-        if it.toi < best_t {
-          best_t = it.toi
-          best = Some((h, it))
-        }
+      if hit is Some(it) && it.toi < best_t {
+        best_t = it.toi
+        best = Some((h, it))
       }
     }
   }
   best
+}
+
+///|
+pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(
+  self : QueryPipeline3DReal,
+  ray : Ray3,
+  max_toi : @core.Real,
+  solid : Bool,
+) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))? {
+  if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
+      self, ray, max_toi, solid,
+    )
+    is Some((h, it)) {
+    if it.feature_id >= 0 && self.colliders.get(h) is Some(co) {
+      if co.voxel_key_for_triangle(it.feature_id) is Some(key) {
+        return Some((h, { toi: it.toi, normal: it.normal }, key))
+      }
+    }
+    None
+  } else {
+    None
+  }
 }

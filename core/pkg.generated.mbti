@@ -12,6 +12,8 @@ pub fn atan2(Float, Float) -> Float
 
 pub fn clamp(Float, Float, Float) -> Float
 
+pub fn cos(Float) -> Float
+
 pub fn pi() -> Float
 
 pub fn rotation_between(Vec3, Vec3) -> Quat
@@ -19,6 +21,8 @@ pub fn rotation_between(Vec3, Vec3) -> Quat
 pub fn rotation_from_angle(Float) -> Rot2
 
 pub fn rotation_from_scaled_axis(Vec3) -> Quat
+
+pub fn sin(Float) -> Float
 
 pub fn two_pi() -> Float
 
@@ -126,11 +130,14 @@ pub struct Quat {
 pub fn Quat::conjugate(Self) -> Self
 pub fn Quat::dot(Self, Self) -> Float
 pub fn Quat::identity() -> Self
+pub fn Quat::imag(Self) -> Vec3
 pub fn Quat::inverse(Self) -> Self
 pub fn Quat::mul(Self, Self) -> Self
+pub fn Quat::negated(Self) -> Self
 pub fn Quat::new(Float, Float, Float, Float) -> Self
 pub fn Quat::norm_squared(Self) -> Float
 pub fn Quat::normalize(Self) -> Self
+pub fn Quat::real(Self) -> Float
 pub fn Quat::rotate_vec3(Self, Vec3) -> Vec3
 pub fn Quat::to_mat3(Self) -> Mat3
 pub fn Quat::to_scaled_axis(Self) -> Vec3
