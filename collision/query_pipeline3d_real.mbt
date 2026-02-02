@@ -433,6 +433,25 @@ fn ray_triangle_toi_normal(
 }
 
 ///|
+fn ray_plane_toi_normal(
+  ray : Ray3,
+  point_on_plane : @core.Vec3,
+  normal : @core.Vec3,
+  max_toi : @core.Real,
+) -> RayIntersection3? {
+  let eps = 1.0e-9F
+  let denom = normal.dot(ray.dir)
+  if @core.abs(denom) < eps {
+    return None
+  }
+  let t = -normal.dot(ray.origin.sub(point_on_plane)) / denom
+  if t < 0.0F || t > max_toi {
+    return None
+  }
+  Some({ toi: t, normal: orient_against_ray(normal, ray.dir) })
+}
+
+///|
 fn ray_capsule_y_toi_normal(
   ray : Ray3,
   pos : @core.Isometry3,
@@ -758,6 +777,26 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
         } else {
           None
         }
+      Shape3D::HalfSpace(n_local) => {
+        let n = qp3d_real_normalized_or_default(
+          pos.rotation.rotate_vec3(n_local),
+        )
+        if ray_plane_toi_normal(ray, pos.translation, n, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        } else {
+          None
+        }
+      }
+      Shape3D::Triangle(a, b, c) => {
+        let wa = pos.transform_point(a)
+        let wb = pos.transform_point(b)
+        let wc = pos.transform_point(c)
+        if ray_triangle_toi_normal(ray, wa, wb, wc, max_toi) is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: 0 })
+        } else {
+          None
+        }
+      }
       Shape3D::ConvexHull(_, _) => None
       Shape3D::Compound(parts) => {
         let mut best : RayIntersection3Feature? = None

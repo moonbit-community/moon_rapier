@@ -145,6 +145,24 @@ fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
 }
 
 ///|
+fn dedup_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
+  if pairs.length() <= 1 {
+    return
+  }
+  let mut out = 1
+  for i in 1..<pairs.length() {
+    if pair_less_3d(pairs[out - 1], pairs[i]) ||
+      pair_less_3d(pairs[i], pairs[out - 1]) {
+      pairs[out] = pairs[i]
+      out = out + 1
+    }
+  }
+  while pairs.length() > out {
+    pairs.pop() |> ignore
+  }
+}
+
+///|
 priv struct BvhLeaf3D {
   handle : ColliderHandle3D
   aabb : @core.Aabb3
@@ -353,13 +371,24 @@ pub fn BroadPhase3D::update(
   }
 
   // BVH broadphase (replaces the old naive O(n^2) scan).
-  let leaves : Array[BvhLeaf3D] = []
+  let regular_handles : Array[ColliderHandle3D] = []
+  let infinite_handles : Array[ColliderHandle3D] = []
   for i in 0..<handles.length() {
     let h = handles[i]
     if colliders.get(h) is Some(c) {
       if !c.enabled() {
         continue
       }
+      match c.shape() {
+        Shape3D::HalfSpace(_) => infinite_handles.push(h)
+        _ => regular_handles.push(h)
+      }
+    }
+  }
+  let leaves : Array[BvhLeaf3D] = []
+  for i in 0..<regular_handles.length() {
+    let h = regular_handles[i]
+    if colliders.get(h) is Some(c) {
       let aabb = c.compute_collision_aabb(prediction_distance)
       let center = aabb.mins.add(aabb.maxs).scale(0.5F)
       leaves.push(BvhLeaf3D::{ handle: h, aabb, center })
@@ -370,8 +399,28 @@ pub fn BroadPhase3D::update(
     let root = build_bvh_3d(nodes, leaves, 0, leaves.length())
     collect_bvh_pairs_3d(nodes, root, root, self.pairs)
   }
+
+  // Pair infinite colliders (half-spaces) with everything else.
+  for i in 0..<infinite_handles.length() {
+    let h = infinite_handles[i]
+    for j in 0..<regular_handles.length() {
+      let g = regular_handles[j]
+      if !h.equals(g) {
+        self.pairs.push(sorted_pair_3d(h, g))
+      }
+    }
+    // Also pair between half-spaces (rare, but keeps the pair set consistent).
+    for j in (i + 1)..<infinite_handles.length() {
+      let g = infinite_handles[j]
+      if !h.equals(g) {
+        self.pairs.push(sorted_pair_3d(h, g))
+      }
+    }
+  }
   sort_pairs_3d(self.pairs)
+  dedup_pairs_3d(self.pairs)
   sort_pairs_3d(self.prev_pairs)
+  dedup_pairs_3d(self.prev_pairs)
 
   // Diff old vs new.
   let mut i = 0

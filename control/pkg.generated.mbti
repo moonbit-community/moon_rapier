@@ -76,8 +76,13 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.
 pub fn DynamicRayCastVehicleController3::wheels(Self) -> Array[Wheel3]
 
 pub struct DynamicRayCastVehicleController3DReal {
-  chassis : @dynamics.RigidBodyHandle
   wheels : Array[Wheel3DReal]
+  forward_ws : Array[@core.Vec3]
+  axle_ws : Array[@core.Vec3]
+  mut current_vehicle_speed : Float
+  chassis : @dynamics.RigidBodyHandle
+  index_up_axis : Int
+  index_forward_axis : Int
 }
 pub fn DynamicRayCastVehicleController3DReal::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
 pub fn DynamicRayCastVehicleController3DReal::new(@dynamics.RigidBodyHandle) -> Self
@@ -199,6 +204,16 @@ pub struct RayCastInfo3 {
 }
 pub fn RayCastInfo3::default() -> Self
 
+pub struct RayCastInfo3DReal {
+  mut contact_normal_ws : @core.Vec3
+  mut contact_point_ws : @core.Vec3
+  mut suspension_length : Float
+  mut hard_point_ws : @core.Vec3
+  mut is_in_contact : Bool
+  mut ground_object : @collision.ColliderHandle3D?
+}
+pub fn RayCastInfo3DReal::default() -> Self
+
 pub struct Wheel {
   raycast_info : RayCastInfo
   mut center : @core.Vec2
@@ -262,20 +277,39 @@ pub fn Wheel3::raycast_info(Self) -> RayCastInfo3
 pub fn Wheel3::suspension(Self) -> @core.Vec3
 
 pub struct Wheel3DReal {
-  connection_point_cs : @core.Vec3
+  raycast_info : RayCastInfo3DReal
+  mut center : @core.Vec3
+  mut wheel_direction_ws : @core.Vec3
+  mut wheel_axle_ws : @core.Vec3
+  chassis_connection_point_cs : @core.Vec3
   direction_cs : @core.Vec3
   axle_cs : @core.Vec3
   suspension_rest_length : Float
+  max_suspension_travel : Float
   radius : Float
-  tuning : WheelTuning
+  suspension_stiffness : Float
+  damping_compression : Float
+  damping_relaxation : Float
+  friction_slip : Float
+  side_friction_stiffness : Float
+  max_suspension_force : Float
+  mut rotation : Float
+  mut delta_rotation : Float
+  roll_influence : Float
+  mut clipped_inv_contact_dot_suspension : Float
+  mut suspension_relative_velocity : Float
+  mut wheel_suspension_force : Float
+  mut skid_info : Float
+  mut forward_impulse : Float
+  mut side_impulse : Float
+  mut steering : Float
   mut engine_force : Float
   mut brake : Float
-  mut steering : Float
-  mut is_in_contact : Bool
-  mut contact_point_ws : @core.Vec3
-  mut contact_normal_ws : @core.Vec3
-  mut suspension_length : Float
 }
+pub fn Wheel3DReal::axle(Self) -> @core.Vec3
+pub fn Wheel3DReal::center(Self) -> @core.Vec3
+pub fn Wheel3DReal::raycast_info(Self) -> RayCastInfo3DReal
+pub fn Wheel3DReal::suspension(Self) -> @core.Vec3
 
 pub struct WheelTuning {
   suspension_stiffness : Float

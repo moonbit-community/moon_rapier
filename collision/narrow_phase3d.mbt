@@ -448,6 +448,126 @@ pub fn compute_cone_trimesh_contact(
 }
 
 ///|
+pub fn compute_halfspace_contact(
+  halfspace_pos : @core.Isometry3,
+  halfspace_normal_local : @core.Vec3,
+  other_pos : @core.Isometry3,
+  other_shape : Shape3D,
+) -> ContactPoint3D? {
+  fn normalize_or_default(v : @core.Vec3) -> @core.Vec3 {
+    let n2 = v.length_squared()
+    if n2 <= 1.0e-12F {
+      @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    } else {
+      v.scale(1.0F / local_sqrt(n2))
+    }
+  }
+
+  // Support point of `shape` in world-space along `dir`.
+  fn support_world(
+    p : @core.Isometry3,
+    shape : Shape3D,
+    dir : @core.Vec3,
+  ) -> @core.Vec3? {
+    match shape {
+      Shape3D::Ball(r) => Some(support_world_for_ball(p.translation, r, dir))
+      Shape3D::Cuboid(he) => Some(support_world_for_cuboid(p, he, dir))
+      Shape3D::CapsuleY(r, hh) =>
+        Some(support_world_for_capsule_y(p, r, hh, dir))
+      Shape3D::Cylinder(r, hh) =>
+        Some(support_world_for_cylinder_y(p, r, hh, dir))
+      Shape3D::RoundCylinder(r, hh, br) =>
+        Some(support_world_for_cylinder_y(p, r + br, hh + br, dir))
+      Shape3D::Cone(r, hh) => Some(support_world_for_cone_y(p, r, hh, dir))
+      Shape3D::Triangle(a, b, c) => {
+        let wa = p.transform_point(a)
+        let wb = p.transform_point(b)
+        let wc = p.transform_point(c)
+        let mut best = wa
+        let mut best_d = wa.dot(dir)
+        let db = wb.dot(dir)
+        if db > best_d {
+          best = wb
+          best_d = db
+        }
+        let dc = wc.dot(dir)
+        if dc > best_d {
+          best = wc
+        }
+        Some(best)
+      }
+      Shape3D::ConvexHull(points, br) =>
+        Some(support_world_for_convex(p, points, br, dir))
+      Shape3D::Compound(parts) => {
+        let mut best : @core.Vec3? = None
+        let mut best_d = -1.0e30F
+        for i in 0..<parts.length() {
+          let (iso, sh) = parts[i]
+          if support_world(p.mul(iso), sh, dir) is Some(pt) {
+            let d = pt.dot(dir)
+            if d > best_d {
+              best_d = d
+              best = Some(pt)
+            }
+          }
+        }
+        best
+      }
+      Shape3D::TriMesh(vertices, _) =>
+        if vertices.length() == 0 {
+          None
+        } else {
+          let mut best = p.transform_point(vertices[0])
+          let mut best_d = best.dot(dir)
+          for i in 1..<vertices.length() {
+            let pt = p.transform_point(vertices[i])
+            let d = pt.dot(dir)
+            if d > best_d {
+              best_d = d
+              best = pt
+            }
+          }
+          Some(best)
+        }
+      Shape3D::Heightfield(vertices, _, _, _) =>
+        if vertices.length() == 0 {
+          None
+        } else {
+          let mut best = p.transform_point(vertices[0])
+          let mut best_d = best.dot(dir)
+          for i in 1..<vertices.length() {
+            let pt = p.transform_point(vertices[i])
+            let d = pt.dot(dir)
+            if d > best_d {
+              best_d = d
+              best = pt
+            }
+          }
+          Some(best)
+        }
+      Shape3D::HalfSpace(_) => None
+    }
+  }
+
+  let normal = normalize_or_default(
+    halfspace_pos.rotation.rotate_vec3(halfspace_normal_local),
+  )
+  // Choose the point with minimum projection on the plane normal.
+  if support_world(other_pos, other_shape, normal.scale(-1.0F)) is Some(p2) {
+    let plane_origin = halfspace_pos.translation
+    let dist = normal.dot(p2.sub(plane_origin))
+    if dist >= 0.0F {
+      return None
+    }
+    // Point on the plane directly "below" the witness point.
+    let p1 = p2.sub(normal.scale(dist))
+    Some({ point1: p1, point2: p2, normal, penetration: -dist })
+  } else {
+    None
+  }
+}
+
+///|
 pub fn compute_ball_ball_contact(
   center1 : @core.Vec3,
   radius1 : @core.Real,

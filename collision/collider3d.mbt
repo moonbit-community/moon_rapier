@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal dim3 shape set needed for the real 3D backend.
+/// Dim3 shape set for the real 3D backend.
 pub(all) enum Shape3D {
   Ball(@core.Real)
   Cuboid(@core.Vec3) // half extents
@@ -21,6 +21,11 @@ pub(all) enum Shape3D {
   Cylinder(@core.Real, @core.Real) // radius, half_height (aligned with Y)
   RoundCylinder(@core.Real, @core.Real, @core.Real) // radius, half_height, border_radius
   Cone(@core.Real, @core.Real) // radius, half_height (aligned with Y)
+  // Infinite half-space bounded by a plane passing through the origin of the shape local-space.
+  // The half-space solid is on the side opposite to the normal direction (i.e. points satisfy n·x <= 0).
+  HalfSpace(@core.Vec3)
+  // A single triangle surface.
+  Triangle(@core.Vec3, @core.Vec3, @core.Vec3)
   // Convex hull represented by its support points (may include interior points).
   // The optional border radius represents the Minkowski sum with a ball.
   ConvexHull(Array[@core.Vec3], @core.Real)
@@ -79,6 +84,20 @@ pub fn Shape3D::cone(radius : @core.Real, half_height : @core.Real) -> Shape3D {
 }
 
 ///|
+pub fn Shape3D::halfspace(normal : @core.Vec3) -> Shape3D {
+  Shape3D::HalfSpace(normal)
+}
+
+///|
+pub fn Shape3D::triangle(
+  a : @core.Vec3,
+  b : @core.Vec3,
+  c : @core.Vec3,
+) -> Shape3D {
+  Shape3D::Triangle(a, b, c)
+}
+
+///|
 pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
   match self {
     Shape3D::Ball(r) =>
@@ -105,6 +124,37 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
     }
     Shape3D::Cone(r, hh) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Shape3D::HalfSpace(_) => {
+      // The BVH broad-phase treats half-spaces specially (they are infinite). We still provide
+      // a very large AABB as a defensive fallback for any code-path that expects a finite AABB.
+      let m = 1.0e6F
+      @core.Aabb3::new(@core.Vec3::new(-m, -m, -m), @core.Vec3::new(m, m, m))
+    }
+    Shape3D::Triangle(a, b, c) => {
+      let mut min = a
+      let mut max = a
+      for p in [b, c] {
+        if p.x < min.x {
+          min = @core.Vec3::new(p.x, min.y, min.z)
+        }
+        if p.y < min.y {
+          min = @core.Vec3::new(min.x, p.y, min.z)
+        }
+        if p.z < min.z {
+          min = @core.Vec3::new(min.x, min.y, p.z)
+        }
+        if p.x > max.x {
+          max = @core.Vec3::new(p.x, max.y, max.z)
+        }
+        if p.y > max.y {
+          max = @core.Vec3::new(max.x, p.y, max.z)
+        }
+        if p.z > max.z {
+          max = @core.Vec3::new(max.x, max.y, p.z)
+        }
+      }
+      @core.Aabb3::new(min, max)
+    }
     Shape3D::ConvexHull(points, br) =>
       if points.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
@@ -515,6 +565,17 @@ pub fn ColliderBuilder3D::capsule_x(
 }
 
 ///|
+pub fn ColliderBuilder3D::capsule_z(
+  radius : @core.Real,
+  half_height : @core.Real,
+) -> ColliderBuilder3D {
+  // Rotate +Y into +Z (rotate around +X by -pi/2).
+  ColliderBuilder3D::capsule_y(radius, half_height).rotation(
+    @core.rotation_from_scaled_axis(@core.Vec3::new(-HALF_PI_3D, 0.0F, 0.0F)),
+  )
+}
+
+///|
 pub fn ColliderBuilder3D::cylinder(
   radius : @core.Real,
   half_height : @core.Real,
@@ -571,6 +632,50 @@ pub fn ColliderBuilder3D::cone(
     local_position: @core.Isometry3::identity(),
     parent: None,
     shape: Shape3D::cone(radius, half_height),
+    voxel_tri_map: None,
+    enabled: true,
+    sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::halfspace(normal : @core.Vec3) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::halfspace(normal),
+    voxel_tri_map: None,
+    enabled: true,
+    sensor: false,
+    surface_velocity: @core.Vec3::zero(),
+    one_way_offset: None,
+    one_way_direction: 0,
+    active_events: ActiveEvents::empty(),
+    collision_groups: @dynamics.InteractionGroups::all(),
+    friction: 0.7F,
+    restitution: 0.0F,
+  }
+}
+
+///|
+pub fn ColliderBuilder3D::triangle(
+  a : @core.Vec3,
+  b : @core.Vec3,
+  c : @core.Vec3,
+) -> ColliderBuilder3D {
+  {
+    position: @core.Isometry3::identity(),
+    local_position: @core.Isometry3::identity(),
+    parent: None,
+    shape: Shape3D::triangle(a, b, c),
     voxel_tri_map: None,
     enabled: true,
     sensor: false,

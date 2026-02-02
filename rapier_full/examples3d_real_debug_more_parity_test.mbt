@@ -131,11 +131,8 @@ test "examples3d/debug_boxes3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/debug_triangle3.rs parity (3DReal headless; trimesh triangle)" {
+test "examples3d/debug_triangle3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_triangle3.rs`.
-  //
-  // Rapier uses a dedicated triangle shape; for the real dim3 backend we approximate this with
-  // a trimesh containing a single triangle.
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -153,9 +150,8 @@ test "examples3d/debug_triangle3.rs parity (3DReal headless; trimesh triangle)" 
     @core.Vec3::new(10.0F, 0.0F, -10.0F),
     @core.Vec3::new(0.0F, 0.0F, 10.0F),
   ]
-  let idx = [(0, 1, 2)]
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
-  let tri = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
+  let tri = @collision.ColliderBuilder3D::triangle(vtx[0], vtx[1], vtx[2]).build()
   colliders.insert_with_parent(tri, ground, bodies) |> ignore
 
   // Dynamic "box" (thin cuboid).
@@ -186,10 +182,8 @@ test "examples3d/debug_triangle3.rs parity (3DReal headless; trimesh triangle)" 
 }
 
 ///|
-test "examples3d/debug_big_colliders3.rs parity (3DReal headless; adapted ground)" {
+test "examples3d/debug_big_colliders3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_big_colliders3.rs` (headless).
-  //
-  // Rapier uses a HalfSpace ground; we approximate with a very large cuboid.
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -200,21 +194,16 @@ test "examples3d/debug_big_colliders3.rs parity (3DReal headless; adapted ground
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
-  let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
-    .build(),
-  )
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3D::cuboid(2000.0F, 1.0F, 2000.0F).build(),
+    @collision.ColliderBuilder3D::halfspace(@core.Vec3::new(0.0F, 1.0F, 0.0F)).build(),
     ground,
     bodies,
   )
   |> ignore
   let mut curr_y = 0.0F
-  let mut curr_width = 200.0F
-  // Reduced iterations vs rapier-reference (12) to keep runtime small.
-  for _ in 0..<8 {
+  let mut curr_width = 10000.0F
+  for _ in 0..<12 {
     let curr_height = if 0.1F < curr_width { 0.1F } else { curr_width }
     curr_y = curr_y + curr_height * 4.0F
     let handle = bodies.insert(

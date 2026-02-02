@@ -45,6 +45,8 @@ pub fn compute_cylinder_cylinder_contact(@core.Isometry3, Float, Float, @core.Is
 
 pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
+pub fn compute_halfspace_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Shape3D) -> ContactPoint3D?
+
 pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
@@ -340,6 +342,7 @@ pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
 pub fn ColliderBuilder3D::capsule_x(Float, Float) -> Self
 pub fn ColliderBuilder3D::capsule_y(Float, Float) -> Self
+pub fn ColliderBuilder3D::capsule_z(Float, Float) -> Self
 pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::compound(Array[(@core.Isometry3, Self)]) -> Self?
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
@@ -350,6 +353,7 @@ pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::density(Self, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
+pub fn ColliderBuilder3D::halfspace(@core.Vec3) -> Self
 pub fn ColliderBuilder3D::heightfield(Array[Float], Int, Int, @core.Vec3) -> Self?
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::one_way_above(Self, Float) -> Self
@@ -363,6 +367,7 @@ pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder3D::surface_velocity(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
+pub fn ColliderBuilder3D::triangle(@core.Vec3, @core.Vec3, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder3D::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self?
 
@@ -792,6 +797,8 @@ pub(all) enum Shape3D {
   Cylinder(Float, Float)
   RoundCylinder(Float, Float, Float)
   Cone(Float, Float)
+  HalfSpace(@core.Vec3)
+  Triangle(@core.Vec3, @core.Vec3, @core.Vec3)
   ConvexHull(Array[@core.Vec3], Float)
   Compound(Array[(@core.Isometry3, Shape3D)])
   Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
@@ -802,8 +809,10 @@ pub fn Shape3D::capsule_y(Float, Float) -> Self
 pub fn Shape3D::cone(Float, Float) -> Self
 pub fn Shape3D::cuboid(Float, Float, Float) -> Self
 pub fn Shape3D::cylinder(Float, Float) -> Self
+pub fn Shape3D::halfspace(@core.Vec3) -> Self
 pub fn Shape3D::local_aabb(Self) -> @core.Aabb3
 pub fn Shape3D::round_cylinder(Float, Float, Float) -> Self
+pub fn Shape3D::triangle(@core.Vec3, @core.Vec3, @core.Vec3) -> Self
 
 pub struct ShapeCastHit {
   toi : Float
