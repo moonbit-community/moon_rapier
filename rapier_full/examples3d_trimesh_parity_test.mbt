@@ -273,8 +273,9 @@ test "examples3d/trimesh3.rs parity (headless; reduced counts)" {
 test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
   // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless).
   //
-  // The upstream example uses a heightfield. For the real dim3 backend we use a flat trimesh
-  // ground to validate thin cuboid stability with fast velocities.
+  // The upstream example uses a 2x2 heightfield with internal edge fixing enabled. For the 3DReal
+  // backend we use the same 2x2 heightfield (internal-edge smoothing is handled by the narrow-phase
+  // trimesh/heightfield contact normal selection).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

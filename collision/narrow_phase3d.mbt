@@ -120,6 +120,10 @@ fn trimesh_closest_point(
   let mut best_dist2 = 1.0e30F
   let mut best_point = @core.Vec3::zero()
   let mut best_normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  let mut best_normal_sum = @core.Vec3::zero()
+  let mut best_count = 0
+  let eps_d2 = 1.0e-6F
+  let eps_q2 = 1.0e-8F
   for i in 0..<indices.length() {
     let (i0, i1, i2) = indices[i]
     if i0 < 0 ||
@@ -135,14 +139,27 @@ fn trimesh_closest_point(
     let c = mesh_pos.transform_point(vertices[i2])
     let q = closest_point_on_triangle3d(p, a, b, c)
     let d2 = q.sub(p).length_squared()
-    if d2 < best_dist2 {
+    let n = b.sub(a).cross(c.sub(a))
+    let n_norm = if n.length_squared() > 1.0e-12F {
+      n.normalize()
+    } else {
+      @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    }
+    if d2 + eps_d2 < best_dist2 {
       best_dist2 = d2
       best_point = q
-      let n = b.sub(a).cross(c.sub(a))
-      if n.length_squared() > 1.0e-12F {
-        best_normal = n.normalize()
-      }
+      best_normal_sum = n_norm
+      best_count = 1
+    } else if @core.abs(d2 - best_dist2) <= eps_d2 &&
+      q.sub(best_point).length_squared() <= eps_q2 {
+      // FIX_INTERNAL_EDGES-style smoothing: if multiple triangles are equally close at the same
+      // projection point (common for coplanar splits), average their normals.
+      best_normal_sum = best_normal_sum.add(n_norm)
+      best_count = best_count + 1
     }
+  }
+  if best_count > 0 && best_normal_sum.length_squared() > 1.0e-12F {
+    best_normal = best_normal_sum.normalize()
   }
   (best_point, best_normal, best_dist2, true)
 }
