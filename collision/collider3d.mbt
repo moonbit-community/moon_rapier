@@ -26,6 +26,8 @@ pub(all) enum Shape3D {
   ConvexHull(Array[@core.Vec3], @core.Real)
   // A compound made of a list of (local pose, shape) pairs.
   Compound(Array[(@core.Isometry3, Shape3D)])
+  // Heightfield stored as a triangle mesh plus grid dimensions (rows/cols) for future optimizations.
+  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 
@@ -145,6 +147,35 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
           aabb = aabb.combine(child)
         }
         aabb
+      }
+    Shape3D::Heightfield(vertices, _, _, _) =>
+      if vertices.length() == 0 {
+        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+      } else {
+        let mut min = vertices[0]
+        let mut max = vertices[0]
+        for i in 1..<vertices.length() {
+          let v = vertices[i]
+          if v.x < min.x {
+            min = @core.Vec3::new(v.x, min.y, min.z)
+          }
+          if v.y < min.y {
+            min = @core.Vec3::new(min.x, v.y, min.z)
+          }
+          if v.z < min.z {
+            min = @core.Vec3::new(min.x, min.y, v.z)
+          }
+          if v.x > max.x {
+            max = @core.Vec3::new(v.x, max.y, max.z)
+          }
+          if v.y > max.y {
+            max = @core.Vec3::new(max.x, v.y, max.z)
+          }
+          if v.z > max.z {
+            max = @core.Vec3::new(max.x, max.y, v.z)
+          }
+        }
+        @core.Aabb3::new(min, max)
       }
     Shape3D::TriMesh(vertices, _) =>
       if vertices.length() == 0 {
@@ -1094,7 +1125,30 @@ pub fn ColliderBuilder3D::heightfield(
       indices.push((a, d, c))
     }
   }
-  ColliderBuilder3D::trimesh(vertices, indices)
+  if ColliderBuilder3D::trimesh(vertices, indices) is Some(builder) {
+    match builder.shape {
+      Shape3D::TriMesh(vtx, idx) =>
+        Some({
+          position: @core.Isometry3::identity(),
+          local_position: @core.Isometry3::identity(),
+          parent: None,
+          shape: Shape3D::Heightfield(vtx, idx, nrows, ncols),
+          voxel_tri_map: None,
+          enabled: true,
+          sensor: false,
+          surface_velocity: @core.Vec3::zero(),
+          one_way_offset: None,
+          one_way_direction: 0,
+          active_events: ActiveEvents::empty(),
+          collision_groups: @dynamics.InteractionGroups::all(),
+          friction: 0.7F,
+          restitution: 0.0F,
+        })
+      _ => None
+    }
+  } else {
+    None
+  }
 }
 
 ///|

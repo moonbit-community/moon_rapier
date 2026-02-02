@@ -293,11 +293,11 @@ fn collect_sensor_pairs(
   colliders : @collision.ColliderSet3D,
 ) -> Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] {
   let out : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] = []
-  let all = narrow_phase.all_contact_pairs()
+  let all = narrow_phase.all_intersection_pairs()
   for i in 0..<all.length() {
     let pair = all[i].0
-    let cp = all[i].1
-    if cp.manifolds_len() == 0 {
+    let ip = all[i].1
+    if !ip.intersecting() {
       continue
     }
     let (a, b) = canonical_pair_3d(pair.0, pair.1)

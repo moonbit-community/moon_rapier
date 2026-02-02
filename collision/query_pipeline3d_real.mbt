@@ -773,6 +773,29 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
         }
         best
       }
+      Shape3D::Heightfield(vertices, indices, _, _) => {
+        let mut best_local : RayIntersection3? = None
+        let mut best_local_t = max_toi + 1.0F
+        let mut best_tri = -1
+        for j in 0..<indices.length() {
+          let (i0, i1, i2) = indices[j]
+          let a = pos.transform_point(vertices[i0])
+          let b = pos.transform_point(vertices[i1])
+          let c = pos.transform_point(vertices[i2])
+          if ray_triangle_toi_normal(ray, a, b, c, max_toi) is Some(it) {
+            if it.toi < best_local_t {
+              best_local_t = it.toi
+              best_local = Some(it)
+              best_tri = j
+            }
+          }
+        }
+        if best_local is Some(it) {
+          Some({ toi: it.toi, normal: it.normal, feature_id: best_tri })
+        } else {
+          None
+        }
+      }
       Shape3D::TriMesh(vertices, indices) => {
         let mut best_local : RayIntersection3? = None
         let mut best_local_t = max_toi + 1.0F

@@ -574,6 +574,15 @@ pub struct IntersectionPair {
   intersecting : Bool
 }
 
+pub struct IntersectionPair3D {
+  collider1 : ColliderHandle3D
+  collider2 : ColliderHandle3D
+  intersecting : Bool
+}
+pub fn IntersectionPair3D::collider1(Self) -> ColliderHandle3D
+pub fn IntersectionPair3D::collider2(Self) -> ColliderHandle3D
+pub fn IntersectionPair3D::intersecting(Self) -> Bool
+
 pub(all) enum MeshConverter {
   TriMesh
   Aabb
@@ -610,11 +619,13 @@ pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet,
 
 pub struct NarrowPhase3D {
   contact_pairs : Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
+  intersection_pairs : Array[((ColliderHandle3D, ColliderHandle3D), IntersectionPair3D)]
 }
 pub fn NarrowPhase3D::all_contact_pairs(Self) -> Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
+pub fn NarrowPhase3D::all_intersection_pairs(Self) -> Array[((ColliderHandle3D, ColliderHandle3D), IntersectionPair3D)]
 pub fn NarrowPhase3D::clear(Self) -> Unit
 pub fn NarrowPhase3D::contact_pair(Self, ColliderHandle3D, ColliderHandle3D) -> ContactPair3D?
-pub fn NarrowPhase3D::intersection_pair(Self, ColliderHandle3D, ColliderHandle3D) -> Unit?
+pub fn NarrowPhase3D::intersection_pair(Self, ColliderHandle3D, ColliderHandle3D) -> IntersectionPair3D?
 pub fn NarrowPhase3D::new() -> Self
 pub fn NarrowPhase3D::update(Self, Array[(ColliderHandle3D, ColliderHandle3D)], @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
 
@@ -783,6 +794,7 @@ pub(all) enum Shape3D {
   Cone(Float, Float)
   ConvexHull(Array[@core.Vec3], Float)
   Compound(Array[(@core.Isometry3, Shape3D)])
+  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 pub fn Shape3D::ball(Float) -> Self
