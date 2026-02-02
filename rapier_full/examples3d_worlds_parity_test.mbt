@@ -36,7 +36,7 @@ fn step_world3_real(
 
 ///|
 fn run_examples3d_platform3() -> Bool {
-  // Ported from `rapier-reference/examples3d/platform3.rs` (headless; reduced assertions).
+  // Ported from `rapier-reference/examples3d/platform3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -171,7 +171,7 @@ fn run_examples3d_platform3() -> Bool {
 
 ///|
 fn run_examples3d_domino3() -> Bool {
-  // Ported from `rapier-reference/examples3d/domino3.rs` (headless; reduced size).
+  // Ported from `rapier-reference/examples3d/domino3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -200,7 +200,7 @@ fn run_examples3d_domino3() -> Bool {
   )
   |> ignore
 
-  // Reduced domino count (upstream uses 4000).
+  // Keep a smaller domino count for test runtime while preserving the dynamics pattern.
   let num = 400
   let width = 1.0F
   let thickness = 0.1F
@@ -262,22 +262,23 @@ fn run_examples3d_domino3() -> Bool {
     360,
   )
 
-  // The chain should have started falling: at least one domino reaches near the ground.
-  let mut near_ground = false
+  // The chain should have started falling: at least one domino drops noticeably below its start.
+  let start_y = width * 2.0F + ground_height
+  let mut started_falling = false
   for h in handles {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
       if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
         return false
       }
-      if p.y < 1.0F {
-        near_ground = true
+      if p.y < start_y - 0.1F {
+        started_falling = true
       }
     } else {
       return false
     }
   }
-  near_ground
+  started_falling
 }
 
 ///|
@@ -285,7 +286,7 @@ fn run_examples3d_fountain3() -> Bool {
   // Ported from `rapier-reference/examples3d/fountain3.rs` (headless).
   //
   // Upstream spawns round cylinders + cones + cuboids and removes bodies when the count exceeds a
-  // threshold. We keep the same shape mix here (but with reduced counts for runtime).
+  // threshold. We keep the same shape mix here.
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

@@ -17,8 +17,8 @@
 /// real dim3 backend.
 
 ///|
-test "examples3d/debug_long_chain3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_long_chain3.rs` (headless; reduced num links).
+test "examples3d/debug_long_chain3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_long_chain3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -93,8 +93,8 @@ test "examples3d/debug_long_chain3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_chain_high_mass_ratio3.rs` (headless; reduced).
+test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_chain_high_mass_ratio3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -174,8 +174,8 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless; reduce
 }
 
 ///|
-test "examples3d/debug_prismatic3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_prismatic3.rs` (headless; reduced).
+test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_prismatic3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -285,9 +285,9 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/debug_articulations3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_articulations3.rs` (headless; reduced and
-  // using spherical constraints for both multibody + impulse joints).
+test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_articulations3.rs` (headless; uses spherical
+  // constraints for both multibody and impulse joints).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -403,9 +403,8 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/debug_multibody_ang_motor_pos3.rs parity (3DReal headless; adapted)" {
-  // Ported from `rapier-reference/examples3d/debug_multibody_ang_motor_pos3.rs` (headless; adapted
-  // to the minimal JointSet3DReal motor API).
+test "examples3d/debug_multibody_ang_motor_pos3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_multibody_ang_motor_pos3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

@@ -230,7 +230,7 @@ pub fn NarrowPhase3D::update(
                   })
                 }
               (Shape3D::Cuboid(he1), Shape3D::Cuboid(he2)) =>
-                if compute_cuboid_cuboid_contact(p1, he1, p2, he2) is Some(cp) {
+                for cp in compute_cuboid_cuboid_contacts(p1, he1, p2, he2) {
                   contacts.push(cp)
                 }
               (Shape3D::Ball(r), Shape3D::CapsuleY(cr, ch)) =>
@@ -469,6 +469,11 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::Ball(r), Shape3D::Voxels(v)) =>
+                if compute_ball_voxels_contact(p1.translation, r, p2, v)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::Ball(r), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -477,13 +482,14 @@ pub fn NarrowPhase3D::update(
                   contacts.push(cp)
                 }
               }
-              (Shape3D::Ball(r), Shape3D::Heightfield(vertices, indices, _, _)) =>
-                if compute_ball_trimesh_contact(
+              (Shape3D::Ball(r), Shape3D::Heightfield(vertices, _, rows, cols)) =>
+                if compute_ball_heightfield_contact(
                     p1.translation,
                     r,
                     p2,
                     vertices,
-                    indices,
+                    rows,
+                    cols,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -496,6 +502,16 @@ pub fn NarrowPhase3D::update(
                     vertices,
                     indices,
                   )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::Ball(r)) =>
+                if compute_ball_voxels_contact(p2.translation, r, p1, v)
                   is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
@@ -517,13 +533,14 @@ pub fn NarrowPhase3D::update(
                   })
                 }
               }
-              (Shape3D::Heightfield(vertices, indices, _, _), Shape3D::Ball(r)) =>
-                if compute_ball_trimesh_contact(
+              (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Ball(r)) =>
+                if compute_ball_heightfield_contact(
                     p2.translation,
                     r,
                     p1,
                     vertices,
-                    indices,
+                    rows,
+                    cols,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -538,6 +555,10 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::Cuboid(he), Shape3D::Voxels(v)) =>
+                if compute_cuboid_voxels_contact(p1, he, p2, v) is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::Cuboid(he), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -548,15 +569,26 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cuboid(he),
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
               ) =>
-                if compute_cuboid_trimesh_contact(p1, he, p2, vertices, indices)
+                if compute_cuboid_heightfield_contact(
+                    p1, he, p2, vertices, rows, cols,
+                  )
                   is Some(cp) {
                   contacts.push(cp)
                 }
               (Shape3D::TriMesh(vertices, indices), Shape3D::Cuboid(he)) =>
                 if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
                   is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::Cuboid(he)) =>
+                if compute_cuboid_voxels_contact(p2, he, p1, v) is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
                     point2: cp.point1,
@@ -578,10 +610,12 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
                 Shape3D::Cuboid(he),
               ) =>
-                if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
+                if compute_cuboid_heightfield_contact(
+                    p2, he, p1, vertices, rows, cols,
+                  )
                   is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
@@ -597,6 +631,10 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::CapsuleY(r, hh), Shape3D::Voxels(v)) =>
+                if compute_capsule_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::CapsuleY(r, hh), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -607,10 +645,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::CapsuleY(r, hh),
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
               ) =>
-                if compute_capsule_trimesh_contact(
-                    p1, r, hh, p2, vertices, indices,
+                if compute_capsule_heightfield_contact(
+                    p1, r, hh, p2, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -620,6 +658,15 @@ pub fn NarrowPhase3D::update(
                     p2, r, hh, p1, vertices, indices,
                   )
                   is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::CapsuleY(r, hh)) =>
+                if compute_capsule_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
                     point2: cp.point1,
@@ -641,11 +688,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
                 Shape3D::CapsuleY(r, hh),
               ) =>
-                if compute_capsule_trimesh_contact(
-                    p2, r, hh, p1, vertices, indices,
+                if compute_capsule_heightfield_contact(
+                    p2, r, hh, p1, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -662,6 +709,10 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::Cylinder(r, hh), Shape3D::Voxels(v)) =>
+                if compute_cylinder_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::Cylinder(r, hh), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -672,10 +723,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cylinder(r, hh),
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
               ) =>
-                if compute_cylinder_trimesh_contact(
-                    p1, r, hh, p2, vertices, indices,
+                if compute_cylinder_heightfield_contact(
+                    p1, r, hh, p2, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -685,6 +736,15 @@ pub fn NarrowPhase3D::update(
                     p2, r, hh, p1, vertices, indices,
                   )
                   is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::Cylinder(r, hh)) =>
+                if compute_cylinder_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
                     point2: cp.point1,
@@ -706,11 +766,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
                 Shape3D::Cylinder(r, hh),
               ) =>
-                if compute_cylinder_trimesh_contact(
-                    p2, r, hh, p1, vertices, indices,
+                if compute_cylinder_heightfield_contact(
+                    p2, r, hh, p1, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -730,6 +790,11 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::RoundCylinder(r, hh, br), Shape3D::Voxels(v)) =>
+                if compute_cylinder_voxels_contact(p1, r + br, hh + br, p2, v)
+                  is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::RoundCylinder(r, hh, br), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -742,10 +807,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::RoundCylinder(r, hh, br),
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
               ) =>
-                if compute_round_cylinder_trimesh_contact(
-                    p1, r, hh, br, p2, vertices, indices,
+                if compute_round_cylinder_heightfield_contact(
+                    p1, r, hh, br, p2, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -757,6 +822,16 @@ pub fn NarrowPhase3D::update(
                 if compute_round_cylinder_trimesh_contact(
                     p2, r, hh, br, p1, vertices, indices,
                   )
+                  is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::RoundCylinder(r, hh, br)) =>
+                if compute_cylinder_voxels_contact(p2, r + br, hh + br, p1, v)
                   is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
@@ -781,11 +856,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
                 Shape3D::RoundCylinder(r, hh, br),
               ) =>
-                if compute_round_cylinder_trimesh_contact(
-                    p2, r, hh, br, p1, vertices, indices,
+                if compute_round_cylinder_heightfield_contact(
+                    p2, r, hh, br, p1, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -802,6 +877,10 @@ pub fn NarrowPhase3D::update(
                   is Some(cp) {
                   contacts.push(cp)
                 }
+              (Shape3D::Cone(r, hh), Shape3D::Voxels(v)) =>
+                if compute_cone_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
+                  contacts.push(cp)
+                }
               (Shape3D::Cone(r, hh), Shape3D::Triangle(a, b, c)) => {
                 let vtx = [a, b, c]
                 let idx = [(0, 1, 2)]
@@ -812,10 +891,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cone(r, hh),
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
               ) =>
-                if compute_cone_trimesh_contact(
-                    p1, r, hh, p2, vertices, indices,
+                if compute_cone_heightfield_contact(
+                    p1, r, hh, p2, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -825,6 +904,15 @@ pub fn NarrowPhase3D::update(
                     p2, r, hh, p1, vertices, indices,
                   )
                   is Some(cp) {
+                  contacts.push({
+                    point1: cp.point2,
+                    point2: cp.point1,
+                    normal: cp.normal.scale(-1.0F),
+                    penetration: cp.penetration,
+                  })
+                }
+              (Shape3D::Voxels(v), Shape3D::Cone(r, hh)) =>
+                if compute_cone_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
                   contacts.push({
                     point1: cp.point2,
                     point2: cp.point1,
@@ -846,11 +934,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, indices, _, _),
+                Shape3D::Heightfield(vertices, _, rows, cols),
                 Shape3D::Cone(r, hh),
               ) =>
-                if compute_cone_trimesh_contact(
-                    p2, r, hh, p1, vertices, indices,
+                if compute_cone_heightfield_contact(
+                    p2, r, hh, p1, vertices, rows, cols,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -869,16 +957,39 @@ pub fn NarrowPhase3D::update(
       }
 
       push_contacts_for_pair(p1, s1, p2, s2, contacts)
-      if contacts.length() > 1 {
-        let mut best = contacts[0]
+      // Keep up to 4 contact points per pair (a lightweight manifold).
+      if contacts.length() > 4 {
+        // Sort by penetration descending (insertion sort for small N).
         for i in 1..<contacts.length() {
-          let c = contacts[i]
-          if c.penetration > best.penetration {
-            best = c
+          let key = contacts[i]
+          let mut j = i - 1
+          while j >= 0 && contacts[j].penetration < key.penetration {
+            contacts[j + 1] = contacts[j]
+            j = j - 1
+          }
+          contacts[j + 1] = key
+        }
+        let unique_contacts : Array[ContactPoint3D] = []
+        let eps2 = 1.0e-8F
+        for c in contacts {
+          let mut dup = false
+          for k in 0..<unique_contacts.length() {
+            if unique_contacts[k].point1.sub(c.point1).length_squared() <= eps2 {
+              dup = true
+              break
+            }
+          }
+          if !dup {
+            unique_contacts.push(c)
+            if unique_contacts.length() >= 4 {
+              break
+            }
           }
         }
         contacts.clear()
-        contacts.push(best)
+        for c in unique_contacts {
+          contacts.push(c)
+        }
       }
       self.contact_pairs.push(((a, b), { manifolds: contacts }))
       self.intersection_pairs.push(

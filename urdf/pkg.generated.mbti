@@ -13,6 +13,20 @@ import {
 // Errors
 
 // Types and methods
+pub(all) enum UrdfGeometry3DReal {
+  Box(@core.Vec3)
+  Sphere(Float)
+  Cylinder(Float, Float)
+  Capsule(Float, Float)
+  Mesh(String, @core.Vec3)
+}
+
+pub struct UrdfInertial3DReal {
+  origin : @core.Isometry3
+  mass : Float
+  inertia : @core.SdpMat3
+}
+
 pub struct UrdfJoint {
   name : String
   joint_type : UrdfJointType
@@ -28,6 +42,7 @@ pub struct UrdfJoint {
 pub(all) enum UrdfJointType {
   Fixed
   Revolute
+  Continuous
   Prismatic
   Floating
   Planar
@@ -38,17 +53,22 @@ pub struct UrdfLink {
   name : String
   visuals : Array[UrdfVisual]
   collisions : Array[UrdfVisual]
+  mut inertial : UrdfInertial3DReal?
 }
 
 pub struct UrdfLoaderOptions3DReal {
+  apply_imported_mass_props : Bool
   create_colliders_from_visual_shapes : Bool
   create_colliders_from_collision_shapes : Bool
+  enable_joint_collisions : Bool
   make_roots_fixed : Bool
   shift : @core.Isometry3
 }
+pub fn UrdfLoaderOptions3DReal::apply_imported_mass_props(Self, Bool) -> Self
 pub fn UrdfLoaderOptions3DReal::create_colliders_from_collision_shapes(Self, Bool) -> Self
 pub fn UrdfLoaderOptions3DReal::create_colliders_from_visual_shapes(Self, Bool) -> Self
 pub fn UrdfLoaderOptions3DReal::default() -> Self
+pub fn UrdfLoaderOptions3DReal::enable_joint_collisions(Self, Bool) -> Self
 pub fn UrdfLoaderOptions3DReal::make_roots_fixed(Self, Bool) -> Self
 pub fn UrdfLoaderOptions3DReal::shift(Self, @core.Isometry3) -> Self
 
@@ -61,7 +81,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(Self, UrdfLoaderOptions3DReal, @hashmap.H
 
 pub struct UrdfVisual {
   origin : @core.Isometry3
-  mesh_filename : String?
+  geometry : UrdfGeometry3DReal
 }
 
 // Type aliases

@@ -454,7 +454,7 @@ fn PhysicsPipeline3DReal::step_impl(
   if dt <= 0.0F {
     return
   }
-  // Substep to reduce tunneling in the minimal dim3 backend.
+  // Substep to reduce tunneling in the 3DReal backend.
   //
   // This is NOT a full TOI-based CCD, but it is sufficient for the current parity tests and
   // keeps behavior deterministic.
@@ -480,7 +480,7 @@ fn PhysicsPipeline3DReal::step_impl(
   let sub_dt = dt / Float::from_int(substeps)
   let sub_params = parameters.with_dt(sub_dt)
   for _ in 0..<substeps {
-    // Minimal TOI-based CCD for fast moving balls.
+    // TOI-based CCD for fast moving balls.
     if bodies.has_ccd_enabled() &&
       ccd_min_toi_ball_3d(bodies, colliders, sub_dt) is Some(toi) &&
       toi > 1.0e-6F &&
@@ -521,6 +521,19 @@ fn PhysicsPipeline3DReal::step_impl_one(
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
 ) -> Unit {
+  fn rb_pair_key(
+    a : @dynamics.RigidBodyHandle,
+    b : @dynamics.RigidBodyHandle,
+  ) -> (Int, Int, Int, Int) {
+    let (ai, ag) = a.into_raw_parts()
+    let (bi, bg) = b.into_raw_parts()
+    if ai < bi || (ai == bi && ag <= bg) {
+      (ai, ag, bi, bg)
+    } else {
+      (bi, bg, ai, ag)
+    }
+  }
+
   let dt = parameters.dt
   bodies.apply_gravity_all(gravity, dt)
   bodies.apply_damping_all(dt)
@@ -531,16 +544,45 @@ fn PhysicsPipeline3DReal::step_impl_one(
   colliders.sync_with_bodies(bodies)
   let prediction_distance = parameters.prediction_distance()
   broad_phase.update(prediction_distance, colliders)
-  narrow_phase.update(broad_phase.pairs(), bodies, colliders)
-  let cache_mid = ContactSolverCache3D::new()
+  let mut pairs = broad_phase.pairs()
+  if joints is Some(js) {
+    let disabled_body_pairs = js.disabled_contact_pairs()
+    if disabled_body_pairs.length() > 0 {
+      let disabled : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
+        capacity=disabled_body_pairs.length() * 2,
+      )
+      for p in disabled_body_pairs {
+        disabled.set(rb_pair_key(p.0, p.1), true)
+      }
+      let filtered : Array[
+        (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
+      ] = []
+      for pair in pairs {
+        let c1 = pair.0
+        let c2 = pair.1
+        if colliders.get(c1) is Some(co1) &&
+          colliders.get(c2) is Some(co2) &&
+          co1.parent() is Some(p1) &&
+          co2.parent() is Some(p2) &&
+          disabled.get(rb_pair_key(p1, p2)) is Some(true) {
+          continue
+        }
+        filtered.push((c1, c2))
+      }
+      pairs = filtered
+    }
+  }
+  narrow_phase.update(pairs, bodies, colliders)
+  let cache_out = ContactSolverCache3D::new()
   solve_contacts_3d(
     parameters,
     bodies,
     colliders,
     narrow_phase,
     self.contact_cache,
-    cache_mid,
+    cache_out,
   )
+  self.contact_cache = cache_out
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
 
@@ -559,22 +601,13 @@ fn PhysicsPipeline3DReal::step_impl_one(
     colliders.sync_with_bodies(bodies)
   }
 
-  // Update the collision state after integrating positions so queries and sensor events reflect
-  // the end-of-step configuration.
-  broad_phase.update(prediction_distance, colliders)
-  narrow_phase.update(broad_phase.pairs(), bodies, colliders)
-
-  // Solve contacts once more using the end-of-step contact state so fast-moving bodies don't
-  // wait an extra frame to respond to newly created overlaps.
-  let cache_out = ContactSolverCache3D::new()
-  solve_contacts_3d(
-    parameters, bodies, colliders, narrow_phase, cache_mid, cache_out,
-  )
-  self.contact_cache = cache_out
-
   // Sensor collision events (Started/Stopped) are based on the end-of-step contact pairs.
-  let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
   if events is Some(handler) {
+    // Update the collision state after integrating positions so queries and sensor events reflect
+    // the end-of-step configuration.
+    broad_phase.update(prediction_distance, colliders)
+    narrow_phase.update(broad_phase.pairs(), bodies, colliders)
+    let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
     let prev_pairs = self.sensor_pairs.copy()
     sort_pairs_3d(prev_pairs)
     let mut i = 0
@@ -629,9 +662,9 @@ fn PhysicsPipeline3DReal::step_impl_one(
         j = j + 1
       }
     }
+    self.sensor_pairs.clear()
+    self.sensor_pairs.append(next_sensor_pairs[:])
   }
-  self.sensor_pairs.clear()
-  self.sensor_pairs.append(next_sensor_pairs[:])
   bodies.update_sleep_all(dt, parameters.length_unit)
   islands.update(bodies)
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal joint axis types for the real dim3 backend.
+/// Joint axis types for the real dim3 backend.
 
 ///|
 pub(all) enum JointAxis3DReal {

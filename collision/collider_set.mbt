@@ -4308,7 +4308,7 @@ fn closest_points_segment_segment(
   p2 : @core.Vec2,
   q2 : @core.Vec2,
 ) -> (@core.Vec2, @core.Vec2, @core.Real, @core.Real) {
-  // Algorithm adapted from "Real-Time Collision Detection" (Christer Ericson).
+  // Algorithm based on "Real-Time Collision Detection" (Christer Ericson).
   let d1 = q1.sub(p1)
   let d2 = q2.sub(p2)
   let r = p1.sub(p2)

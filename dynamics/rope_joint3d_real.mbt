@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal rope joint constraint for the real dim3 backend.
+/// Rope joint constraint for the real dim3 backend.
 ///
 /// This only enforces a maximum distance between the bodies' centers of mass.
 

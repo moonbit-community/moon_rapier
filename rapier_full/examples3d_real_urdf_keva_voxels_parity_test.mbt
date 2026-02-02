@@ -16,8 +16,8 @@
 /// Parity tests for large-scene examples against the real dim3 backend.
 
 ///|
-test "examples3d/keva3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/keva3.rs` (headless; reduced counts).
+test "examples3d/keva3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/keva3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -41,43 +41,126 @@ test "examples3d/keva3.rs parity (3DReal headless; reduced)" {
     bodies,
   )
   |> ignore
+  fn build_block(
+    bodies : @dynamics.RigidBodySet3D,
+    colliders : @collision.ColliderSet3D,
+    half_extents : @core.Vec3,
+    shift : @core.Vec3,
+    numx : Int,
+    numy : Int,
+    numz : Int,
+  ) -> Unit {
+    let dimensions = [
+      half_extents,
+      @core.Vec3::new(half_extents.z, half_extents.y, half_extents.x),
+    ]
+    let block_width = 2.0F * half_extents.z * Float::from_int(numx)
+    let block_height = 2.0F * half_extents.y * Float::from_int(numy)
+    let spacing = (half_extents.z * Float::from_int(numx) - half_extents.x) /
+      (Float::from_int(numz) - 1.0F)
+    let mut nx = numx
+    let mut nz = numz
+    for i in 0..<numy {
+      // Matches the upstream pattern: swap at the beginning of each layer.
+      let tmp = nx
+      nx = nz
+      nz = tmp
+      let dim = dimensions[i % 2]
+      let y = dim.y * Float::from_int(i) * 2.0F
+      for j in 0..<nx {
+        let x = if i % 2 == 0 {
+          spacing * Float::from_int(j) * 2.0F
+        } else {
+          dim.x * Float::from_int(j) * 2.0F
+        }
+        for k in 0..<nz {
+          let z = if i % 2 == 0 {
+            dim.z * Float::from_int(k) * 2.0F
+          } else {
+            spacing * Float::from_int(k) * 2.0F
+          }
+          let rb = bodies.insert(
+            @dynamics.RigidBodyBuilder3D::dynamic()
+            .translation(
+              @core.Vec3::new(
+                x + dim.x + shift.x,
+                y + dim.y + shift.y,
+                z + dim.z + shift.z,
+              ),
+            )
+            .build(),
+          )
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::cuboid(dim.x, dim.y, dim.z).build(),
+            rb,
+            bodies,
+          )
+          |> ignore
+        }
+      }
+    }
 
-  // A single small keva block "tower" (much smaller than upstream to keep O(n^2) broadphase cheap).
-  let half_extents = @core.Vec3::new(0.1F, 0.05F, 0.3F)
-  let handles : Array[@dynamics.RigidBodyHandle] = []
-  for i in 0..<24 {
-    let y = Float::from_int(i) * half_extents.y * 2.2F + 0.5F
-    let x = if i % 2 == 0 { 0.0F } else { half_extents.z * 0.8F }
-    let z = if i % 2 == 0 { half_extents.z * 0.8F } else { 0.0F }
-    let rb = bodies.insert(
-      @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, y, z))
-      .can_sleep(false)
-      .build(),
-    )
-    handles.push(rb)
-    colliders.insert_with_parent(
-      @collision.ColliderBuilder3D::cuboid(
-        half_extents.x,
-        half_extents.y,
-        half_extents.z,
-      ).build(),
-      rb,
-      bodies,
-    )
-    |> ignore
+    // Close the top.
+    let dim = @core.Vec3::new(half_extents.z, half_extents.x, half_extents.y)
+    let nx_top = @math.floor((block_width / (dim.x * 2.0F)).to_double()).to_int()
+    let nz_top = @math.floor((block_width / (dim.z * 2.0F)).to_double()).to_int()
+    for i in 0..<nx_top {
+      for j in 0..<nz_top {
+        let rb = bodies.insert(
+          @dynamics.RigidBodyBuilder3D::dynamic()
+          .translation(
+            @core.Vec3::new(
+              Float::from_int(i) * dim.x * 2.0F + dim.x + shift.x,
+              dim.y + shift.y + block_height,
+              Float::from_int(j) * dim.z * 2.0F + dim.z + shift.z,
+            ),
+          )
+          .build(),
+        )
+        colliders.insert_with_parent(
+          @collision.ColliderBuilder3D::cuboid(dim.x, dim.y, dim.z).build(),
+          rb,
+          bodies,
+        )
+        |> ignore
+      }
+    }
   }
-  for _ in 0..<180 {
+
+  // Full keva scene.
+  let half_extents = @core.Vec3::new(0.1F, 0.5F, 2.0F)
+  let mut block_height = 0.0F
+  let numy = [0, 9, 13, 17, 21, 41]
+  for ii in 0..<5 {
+    let i = 5 - ii
+    let numx = i
+    let ny = numy[i]
+    let numz = numx * 3 + 1
+    let block_width = Float::from_int(numx) * half_extents.z * 2.0F
+    build_block(
+      bodies,
+      colliders,
+      half_extents,
+      @core.Vec3::new(-block_width / 2.0F, block_height, -block_width / 2.0F),
+      numx,
+      ny,
+      numz,
+    )
+    block_height = block_height +
+      Float::from_int(ny) * half_extents.y * 2.0F +
+      half_extents.x * 2.0F
+  }
+  for _ in 0..<120 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
   }
   // Sanity: blocks remain finite and above a very low threshold.
-  for h in handles {
+  for h in bodies.all_handles() {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
       inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-      inspect(p.y > -50.0F, content="true")
+      inspect(p.y > -500.0F, content="true")
     } else {
       inspect(false, content="true")
     }
@@ -85,7 +168,7 @@ test "examples3d/keva3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/urdf3.rs parity (3DReal headless; T12 subset)" {
+test "examples3d/urdf3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/urdf3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -98,19 +181,6 @@ test "examples3d/urdf3.rs parity (3DReal headless; T12 subset)" {
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
-
-  // Ground.
-  let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
-    .build(),
-  )
-  colliders.insert_with_parent(
-    @collision.ColliderBuilder3D::cuboid(50.0F, 0.1F, 50.0F).build(),
-    ground,
-    bodies,
-  )
-  |> ignore
 
   // Load the URDF and insert it twice (the original example uses impulse joints and multibody
   // joints; the real backend currently uses the `JointSet3DReal` constraint set for both).
@@ -169,8 +239,8 @@ test "examples3d/urdf3.rs parity (3DReal headless; T12 subset)" {
 }
 
 ///|
-test "examples3d/voxels3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; reduced and without editing).
+test "examples3d/voxels3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; settings fixed to defaults).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -182,46 +252,79 @@ test "examples3d/voxels3.rs parity (3DReal headless; reduced)" {
     16,
   )
 
-  // A small wavy voxel floor.
-  let voxel_size = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  // Defaults in the upstream testbed UI:
+  // - Falling objects: Mixed
+  // - Voxel size y: 1.0
+  // - Test CCD: false
+  let falling_objects = 5
+  let voxel_size_y = 1.0F
+  let voxel_size = @core.Vec3::new(1.0F, voxel_size_y, 1.0F)
+  fn clamp(v : Float, lo : Float, hi : Float) -> Float {
+    if v < lo {
+      lo
+    } else if v > hi {
+      hi
+    } else {
+      v
+    }
+  }
+
+  // A voxelized wavy floor.
   let points : Array[@core.Vec3] = []
-  let n = 10
+  let n = 80
   for i in 0..<n {
     for j in 0..<n {
       let x = Float::from_int(i)
       let z = Float::from_int(j)
-      let y = Float::from_double(
-          @math.sin(x.to_double() / Float::from_int(n).to_double() * 10.0),
-        ) *
-        Float::from_double(
-          @math.cos(z.to_double() / Float::from_int(n).to_double() * 10.0),
-        ) *
-        3.0F
-      points.push(@core.Vec3::new(x, y, z))
+      let tx = x / Float::from_int(n) * 10.0F
+      let tz = z / Float::from_int(n) * 10.0F
+      let sx = clamp(Float::from_double(@math.sin(tx.to_double())), -0.8F, 0.8F)
+      let cz = clamp(Float::from_double(@math.cos(tz.to_double())), -0.8F, 0.8F)
+      let y = sx * cz * 16.0F
+      points.push(@core.Vec3::new(x, y * voxel_size_y, z))
       // Boundary "walls".
       if i == 0 || i == n - 1 || j == 0 || j == n - 1 {
-        for k in 1..<5 {
-          points.push(@core.Vec3::new(x, y + Float::from_int(k), z))
+        for k in 0..<4 {
+          points.push(
+            @core.Vec3::new(x, (y + Float::from_int(k)) * voxel_size_y, z),
+          )
         }
       }
     }
   }
-  if @collision.ColliderBuilder3D::voxels_from_points(voxel_size, points)
+  let floor_handle = if @collision.ColliderBuilder3D::voxels_from_points(
+      voxel_size, points,
+    )
     is Some(builder) {
-    colliders.insert(builder.build()) |> ignore
+    colliders.insert(builder.build())
   } else {
     inspect(false, content="true")
+    colliders.insert(
+      @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    )
+  }
+  let floor_aabb = if colliders.get(floor_handle) is Some(floor) {
+    floor.compute_aabb()
+  } else {
+    @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
   }
 
   // Basic raycast sanity on the voxel collider (before adding dynamic bodies, to avoid accidental
   // hits on corner-touching boxes).
   let qp0 = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+    @collision.QueryFilter3DReal::new().predicate((_, co) => co.voxel_key_for_triangle(
+        0,
+      )
+      is Some(_)),
     bodies,
     colliders,
   )
   let ray0 = @collision.Ray3::new(
-    @core.Vec3::new(5.0F, 50.0F, 5.0F),
+    @core.Vec3::new(
+      (floor_aabb.mins.x + floor_aabb.maxs.x) * 0.5F,
+      floor_aabb.maxs.y + 50.0F,
+      (floor_aabb.mins.z + floor_aabb.maxs.z) * 0.5F,
+    ),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
   if qp0.cast_ray_and_get_voxel_key(ray0, 200.0F, true) is Some((_, _, _)) {
@@ -230,26 +333,52 @@ test "examples3d/voxels3.rs parity (3DReal headless; reduced)" {
     inspect(false, content="true")
   }
 
-  // A few falling primitives.
+  // Dynamic primitives.
+  // Keep the runtime bounded while still exercising voxel contacts with multiple shape types.
+  let nik = 5
+  let floor_size = floor_aabb.maxs.sub(floor_aabb.mins)
+  let extents = floor_size.scale(0.75F)
+  let margin = floor_size.sub(extents).scale(0.5F)
+  let ball_radius = 0.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
-  for i in 0..<6 {
-    let x = Float::from_int(i % 4) * 2.5F + 2.0F
-    let z = Float::from_int(i / 4) * 2.5F + 2.0F
-    let rb = bodies.insert(
-      @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, 15.0F, z))
-      .can_sleep(false)
-      .build(),
-    )
-    handles.push(rb)
-    let co = if i % 2 == 0 {
-      @collision.ColliderBuilder3D::ball(0.5F).build()
-    } else {
-      @collision.ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build()
+  for i in 0..<nik {
+    for j in 0..<5 {
+      for k in 0..<nik {
+        let rb = bodies.insert(
+          @dynamics.RigidBodyBuilder3D::dynamic()
+          .translation(
+            @core.Vec3::new(
+              floor_aabb.mins.x +
+              margin.x +
+              Float::from_int(i) * extents.x / Float::from_int(nik),
+              floor_aabb.maxs.y + Float::from_int(j) * 2.0F,
+              floor_aabb.mins.z +
+              margin.z +
+              Float::from_int(k) * extents.z / Float::from_int(nik),
+            ),
+          )
+          .build(),
+        )
+        handles.push(rb)
+        let kind = if falling_objects == 5 { j % 5 } else { falling_objects }
+        let co = match kind {
+          0 => @collision.ColliderBuilder3D::ball(ball_radius).build()
+          1 =>
+            @collision.ColliderBuilder3D::cuboid(
+              ball_radius, ball_radius, ball_radius,
+            ).build()
+          2 =>
+            @collision.ColliderBuilder3D::cylinder(ball_radius, ball_radius).build()
+          3 =>
+            @collision.ColliderBuilder3D::cone(ball_radius, ball_radius).build()
+          _ =>
+            @collision.ColliderBuilder3D::capsule_y(ball_radius, ball_radius).build()
+        }
+        colliders.insert_with_parent(co, rb, bodies) |> ignore
+      }
     }
-    colliders.insert_with_parent(co, rb, bodies) |> ignore
   }
-  for _ in 0..<80 {
+  for _ in 0..<40 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )

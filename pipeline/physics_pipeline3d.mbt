@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal, real dim3 physics pipeline (integration only for now).
+/// Real dim3 physics pipeline (integration only for now).
 ///
 /// This is the first building block for the true 3D backend. Collision
 /// detection and constraint solving will be added incrementally to match

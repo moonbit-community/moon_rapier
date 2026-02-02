@@ -826,6 +826,50 @@ pub fn EffectiveMovement3DReal::is_sliding_down_slope(
 
 ///|
 #declaration_only
+pub type CharacterCollision3DReal
+
+///|
+#declaration_only
+pub fn CharacterCollision3DReal::handle(
+  self : CharacterCollision3DReal,
+) -> @collision.ColliderHandle3D {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision3DReal::hit(
+  self : CharacterCollision3DReal,
+) -> @collision.ShapeCastHit3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision3DReal::translation_applied(
+  self : CharacterCollision3DReal,
+) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision3DReal::translation_remaining(
+  self : CharacterCollision3DReal,
+) -> @core.Vec3 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn CharacterCollision3DReal::character_pos(
+  self : CharacterCollision3DReal,
+) -> @core.Isometry3 {
+  ...
+}
+
+///|
+#declaration_only
 pub type KinematicCharacterController3DReal
 
 ///|
@@ -842,9 +886,36 @@ pub fn KinematicCharacterController3DReal::default() -> KinematicCharacterContro
 
 ///|
 #declaration_only
+pub fn KinematicCharacterController3DReal::with_up(
+  self : KinematicCharacterController3DReal,
+  up : @core.Vec3,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
 pub fn KinematicCharacterController3DReal::with_offset(
   self : KinematicCharacterController3DReal,
-  offset : @core.Real,
+  offset : CharacterLength,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_slide(
+  self : KinematicCharacterController3DReal,
+  slide : Bool,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_autostep(
+  self : KinematicCharacterController3DReal,
+  autostep : CharacterAutostep?,
 ) -> KinematicCharacterController3DReal {
   ...
 }
@@ -869,13 +940,45 @@ pub fn KinematicCharacterController3DReal::with_min_slope_slide_angle(
 
 ///|
 #declaration_only
-pub fn KinematicCharacterController3DReal::move_character(
+pub fn KinematicCharacterController3DReal::with_snap_to_ground(
   self : KinematicCharacterController3DReal,
-  bodies : @dynamics.RigidBodySet3D,
-  colliders : @collision.ColliderSet3D,
-  queries : @collision.QueryPipelineMut3DReal,
-  character : @dynamics.RigidBodyHandle,
-  desired_translation : @core.Vec3,
+  snap : CharacterLength?,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::with_normal_nudge_factor(
+  self : KinematicCharacterController3DReal,
+  nudge : @core.Real,
+) -> KinematicCharacterController3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::move_shape(
+  self : KinematicCharacterController3DReal,
+  dt : @core.Real,
+  query : @collision.QueryPipeline3DReal,
+  shape : @collision.Shape3D,
+  position : @core.Isometry3,
+  translation : @core.Vec3,
+  handle_collision : (CharacterCollision3DReal) -> Unit,
 ) -> EffectiveMovement3DReal {
+  ...
+}
+
+///|
+#declaration_only
+pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(
+  self : KinematicCharacterController3DReal,
+  dt : @core.Real,
+  query : @collision.QueryPipeline3DReal,
+  character_shape : @collision.Shape3D,
+  character_mass : @core.Real,
+  collisions : Array[CharacterCollision3DReal],
+) -> Unit {
   ...
 }

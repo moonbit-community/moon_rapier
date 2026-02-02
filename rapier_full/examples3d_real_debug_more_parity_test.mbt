@@ -14,7 +14,7 @@
 
 ///|
 /// Additional headless parity tests for `rapier-reference/examples3d/debug_*.rs` against the
-/// real dim3 backend (adapted where Rapier uses shapes not available yet).
+/// real dim3 backend.
 
 ///|
 test "examples3d/debug_two_cubes3.rs parity (3DReal headless)" {
@@ -71,7 +71,7 @@ test "examples3d/debug_two_cubes3.rs parity (3DReal headless)" {
 }
 
 ///|
-test "examples3d/debug_boxes3.rs parity (3DReal headless; reduced)" {
+test "examples3d/debug_boxes3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_boxes3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -235,8 +235,8 @@ test "examples3d/debug_big_colliders3.rs parity (3DReal headless)" {
 }
 
 ///|
-test "examples3d/debug_balls3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_balls3.rs` (headless; reduced).
+test "examples3d/debug_balls3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_balls3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -301,8 +301,8 @@ test "examples3d/debug_balls3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/debug_cube_high_mass_ratio3.rs` (headless; reduced).
+test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/debug_cube_high_mass_ratio3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -414,7 +414,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless; reduced
 
 ///|
 test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offset)" {
-  // Ported from `rapier-reference/examples3d/debug_eccentric_boxes3.rs` (headless; adapted).
+  // Ported from `rapier-reference/examples3d/debug_eccentric_boxes3.rs` (headless).
   //
   // The upstream uses a convex mesh with vertices far from the origin; we approximate with a
   // trimesh cuboid whose vertices are shifted by a large offset.
@@ -501,7 +501,7 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
 
 ///|
 test "examples3d/debug_thin_cube_on_mesh3.rs parity (3DReal headless)" {
-  // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless; adapted).
+  // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

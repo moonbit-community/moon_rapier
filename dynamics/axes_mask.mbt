@@ -50,7 +50,7 @@ pub fn AxesMask::insert(self : AxesMask, other : AxesMask) -> AxesMask {
 ///|
 pub fn AxesMask::remove(self : AxesMask, other : AxesMask) -> AxesMask {
   // MoonBit doesn't have a bitwise-not operator, and we only need the
-  // dim2 subset for now.
+  // dim2 axes set here.
   let mask_values = [
     AxesMask::lin_x().bits(),
     AxesMask::lin_y().bits(),

@@ -14,6 +14,40 @@
 
 ///|
 /// Dim3 shape set for the real 3D backend.
+pub struct Voxels3DReal {
+  voxel_size : @core.Vec3
+  columns : @hashmap.HashMap[(Int, Int), Array[Int]] // (ix, iz) -> sorted ys
+  dense_origin_x : Int
+  dense_origin_z : Int
+  dense_nx : Int
+  dense_nz : Int
+  dense_columns : Array[Array[Int]?]?
+  keys : Array[(Int, Int, Int)] // deterministic feature ids
+  key_to_id : @hashmap.HashMap[(Int, Int, Int), Int]
+  min_key : (Int, Int, Int)
+  max_key : (Int, Int, Int)
+}
+
+///|
+pub fn Voxels3DReal::column_ys(
+  self : Voxels3DReal,
+  ix : Int,
+  iz : Int,
+) -> Array[Int]? {
+  if self.dense_columns is Some(dense) && self.dense_nx > 0 && self.dense_nz > 0 {
+    let dx = ix - self.dense_origin_x
+    let dz = iz - self.dense_origin_z
+    if dx >= 0 && dz >= 0 && dx < self.dense_nx && dz < self.dense_nz {
+      dense[dx + dz * self.dense_nx]
+    } else {
+      self.columns.get((ix, iz))
+    }
+  } else {
+    self.columns.get((ix, iz))
+  }
+}
+
+///|
 pub(all) enum Shape3D {
   Ball(@core.Real)
   Cuboid(@core.Vec3) // half extents
@@ -31,6 +65,8 @@ pub(all) enum Shape3D {
   ConvexHull(Array[@core.Vec3], @core.Real)
   // A compound made of a list of (local pose, shape) pairs.
   Compound(Array[(@core.Isometry3, Shape3D)])
+  // A sparse voxel set representing the union of axis-aligned boxes on a regular grid.
+  Voxels(Voxels3DReal)
   // Heightfield stored as a triangle mesh plus grid dimensions (rows/cols) for future optimizations.
   Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
@@ -198,6 +234,24 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         }
         aabb
       }
+    Shape3D::Voxels(v) => {
+      let (ix0, iy0, iz0) = v.min_key
+      let (ix1, iy1, iz1) = v.max_key
+      let sx = v.voxel_size.x
+      let sy = v.voxel_size.y
+      let sz = v.voxel_size.z
+      let min = @core.Vec3::new(
+        Float::from_int(ix0) * sx,
+        Float::from_int(iy0) * sy,
+        Float::from_int(iz0) * sz,
+      )
+      let max = @core.Vec3::new(
+        Float::from_int(ix1 + 1) * sx,
+        Float::from_int(iy1 + 1) * sy,
+        Float::from_int(iz1 + 1) * sz,
+      )
+      @core.Aabb3::new(min, max)
+    }
     Shape3D::Heightfield(vertices, _, _, _) =>
       if vertices.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
@@ -291,11 +345,12 @@ pub struct Collider3D {
   mut local_position : @core.Isometry3
   mut parent : @dynamics.RigidBodyHandle?
   mut shape : Shape3D
-  // Optional per-triangle metadata for voxel meshes created with `voxels_from_points`.
+  // Optional per-feature metadata for voxel colliders created with `voxels_from_points`.
+  // This maps `RayIntersection3Feature.feature_id` back to a voxel key.
   voxel_tri_map : Array[(Int, Int, Int)]?
   mut enabled : Bool
   sensor : Bool
-  // Solver-only features used by a subset of examples/tests (e.g. one-way platforms).
+  // Solver-only features used by a few examples/tests (e.g. one-way platforms).
   mut surface_velocity : @core.Vec3
   mut one_way_offset : @core.Real?
   mut one_way_direction : Int // 1 = allow from above, -1 = allow from below, 0 = disabled
@@ -357,11 +412,11 @@ pub fn Collider3D::set_shape(self : Collider3D, shape : Shape3D) -> Unit {
 ///|
 pub fn Collider3D::voxel_key_for_triangle(
   self : Collider3D,
-  triangle_index : Int,
+  feature_id : Int,
 ) -> (Int, Int, Int)? {
   if self.voxel_tri_map is Some(map) {
-    if triangle_index >= 0 && triangle_index < map.length() {
-      Some(map[triangle_index])
+    if feature_id >= 0 && feature_id < map.length() {
+      Some(map[feature_id])
     } else {
       None
     }
@@ -973,8 +1028,9 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
 ///|
 /// Build a voxel mesh from a point cloud by snapping points to a regular grid.
 ///
-/// This is a minimal dim3 counterpart of Rapier/Parry's `voxels_from_points`. It outputs a single
-/// trimesh representing the surface of all occupied voxels.
+/// This creates a sparse voxel set where each occupied cell is an axis-aligned box on a regular
+/// grid. The returned collider stores a deterministic voxel id mapping so ray-casts can return the
+/// hit voxel key.
 pub fn ColliderBuilder3D::voxels_from_points(
   voxel_size : @core.Vec3,
   points : Array[@core.Vec3],
@@ -1018,165 +1074,164 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  for i in 1..<voxels.length() {
-    let key = voxels[i]
-    let mut j = i - 1
-    while j >= 0 && less(key, voxels[j]) {
-      voxels[j + 1] = voxels[j]
-      j = j - 1
+  fn sort_keys(keys : Array[(Int, Int, Int)]) -> Unit {
+    if keys.length() <= 1 {
+      return
     }
-    voxels[j + 1] = key
+    fn swap(arr : Array[(Int, Int, Int)], i : Int, j : Int) -> Unit {
+      let tmp = arr[i]
+      arr[i] = arr[j]
+      arr[j] = tmp
+    }
+
+    let stack : Array[(Int, Int)] = [(0, keys.length() - 1)]
+    while stack.length() > 0 {
+      let range = stack[stack.length() - 1]
+      stack.pop() |> ignore
+      let lo = range.0
+      let hi = range.1
+      if lo >= hi {
+        continue
+      }
+      let mid = lo + (hi - lo) / 2
+      let pivot = keys[mid]
+      let mut i = lo
+      let mut j = hi
+      while i <= j {
+        while less(keys[i], pivot) {
+          i = i + 1
+        }
+        while less(pivot, keys[j]) {
+          j = j - 1
+        }
+        if i <= j {
+          swap(keys, i, j)
+          i = i + 1
+          j = j - 1
+        }
+      }
+      if lo < j {
+        stack.push((lo, j))
+      }
+      if i < hi {
+        stack.push((i, hi))
+      }
+    }
   }
-  let vertices : Array[@core.Vec3] = []
-  let indices : Array[(Int, Int, Int)] = []
-  let tri_voxel : Array[(Int, Int, Int)] = []
-  fn push_face(
-    vertices : Array[@core.Vec3],
-    indices : Array[(Int, Int, Int)],
-    tri_voxel : Array[(Int, Int, Int)],
-    vkey : (Int, Int, Int),
-    a : @core.Vec3,
-    b : @core.Vec3,
-    c : @core.Vec3,
-    d : @core.Vec3,
-  ) -> Unit {
-    let base = vertices.length()
-    vertices.push(a)
-    vertices.push(b)
-    vertices.push(c)
-    vertices.push(d)
-    indices.push((base, base + 1, base + 2))
-    indices.push((base, base + 2, base + 3))
-    tri_voxel.push(vkey)
-    tri_voxel.push(vkey)
+
+  sort_keys(voxels)
+  let mut min_key = voxels[0]
+  let mut max_key = voxels[0]
+  for i in 1..<voxels.length() {
+    let (ix, iy, iz) = voxels[i]
+    if ix < min_key.0 {
+      min_key = (ix, min_key.1, min_key.2)
+    }
+    if iy < min_key.1 {
+      min_key = (min_key.0, iy, min_key.2)
+    }
+    if iz < min_key.2 {
+      min_key = (min_key.0, min_key.1, iz)
+    }
+    if ix > max_key.0 {
+      max_key = (ix, max_key.1, max_key.2)
+    }
+    if iy > max_key.1 {
+      max_key = (max_key.0, iy, max_key.2)
+    }
+    if iz > max_key.2 {
+      max_key = (max_key.0, max_key.1, iz)
+    }
+  }
+  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = @hashmap.new(
+    capacity=voxels.length(),
+  )
+  for i in 0..<voxels.length() {
+    key_to_id.set(voxels[i], i)
+  }
+  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = @hashmap.new(
+    capacity=voxels.length(),
+  )
+  fn push_sorted_unique(ys : Array[Int], y : Int) -> Unit {
+    let mut j = 0
+    while j < ys.length() && ys[j] < y {
+      j = j + 1
+    }
+    if j < ys.length() && ys[j] == y {
+      return
+    }
+    ys.push(y)
+    let mut k = ys.length() - 1
+    while k > j {
+      ys[k] = ys[k - 1]
+      k = k - 1
+    }
+    ys[j] = y
   }
 
   for i in 0..<voxels.length() {
     let (ix, iy, iz) = voxels[i]
-    let x0 = Float::from_int(ix) * voxel_size.x
-    let y0 = Float::from_int(iy) * voxel_size.y
-    let z0 = Float::from_int(iz) * voxel_size.z
-    let x1 = x0 + voxel_size.x
-    let y1 = y0 + voxel_size.y
-    let z1 = z0 + voxel_size.z
+    let col = (ix, iz)
+    if columns.get(col) is Some(ys) {
+      push_sorted_unique(ys, iy)
+    } else {
+      let ys : Array[Int] = [iy]
+      columns.set(col, ys)
+    }
+  }
 
-    // +X
-    if !occupied.contains((ix + 1, iy, iz)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x1, y0, z0),
-        @core.Vec3::new(x1, y1, z0),
-        @core.Vec3::new(x1, y1, z1),
-        @core.Vec3::new(x1, y0, z1),
-      )
+  // Optional dense column grid for fast queries on moderately-sized voxel terrains.
+  let origin_x = min_key.0
+  let origin_z = min_key.2
+  let nx = max_key.0 - min_key.0 + 1
+  let nz = max_key.2 - min_key.2 + 1
+  let mut dense_origin_x = 0
+  let mut dense_origin_z = 0
+  let mut dense_nx = 0
+  let mut dense_nz = 0
+  let mut dense_columns : Array[Array[Int]?]? = None
+  // Keep memory bounded: a 512x512 grid (262k cells) is already large enough for common scenes.
+  if nx > 0 && nz > 0 && nx * nz <= 262144 {
+    let dense : Array[Array[Int]?] = []
+    for _ in 0..<(nx * nz) {
+      dense.push(None)
     }
-    // -X
-    if !occupied.contains((ix - 1, iy, iz)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x0, y0, z1),
-        @core.Vec3::new(x0, y1, z1),
-        @core.Vec3::new(x0, y1, z0),
-        @core.Vec3::new(x0, y0, z0),
-      )
+    for i in 0..<voxels.length() {
+      let (ix, iy, iz) = voxels[i]
+      let dx = ix - origin_x
+      let dz = iz - origin_z
+      let idx = dx + dz * nx
+      if dense[idx] is Some(ys) {
+        push_sorted_unique(ys, iy)
+      } else {
+        let ys : Array[Int] = [iy]
+        dense[idx] = Some(ys)
+      }
     }
-    // +Y
-    if !occupied.contains((ix, iy + 1, iz)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x0, y1, z0),
-        @core.Vec3::new(x0, y1, z1),
-        @core.Vec3::new(x1, y1, z1),
-        @core.Vec3::new(x1, y1, z0),
-      )
-    }
-    // -Y
-    if !occupied.contains((ix, iy - 1, iz)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x0, y0, z1),
-        @core.Vec3::new(x0, y0, z0),
-        @core.Vec3::new(x1, y0, z0),
-        @core.Vec3::new(x1, y0, z1),
-      )
-    }
-    // +Z
-    if !occupied.contains((ix, iy, iz + 1)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x1, y0, z1),
-        @core.Vec3::new(x1, y1, z1),
-        @core.Vec3::new(x0, y1, z1),
-        @core.Vec3::new(x0, y0, z1),
-      )
-    }
-    // -Z
-    if !occupied.contains((ix, iy, iz - 1)) {
-      push_face(
-        vertices,
-        indices,
-        tri_voxel,
-        (ix, iy, iz),
-        @core.Vec3::new(x0, y0, z0),
-        @core.Vec3::new(x0, y1, z0),
-        @core.Vec3::new(x1, y1, z0),
-        @core.Vec3::new(x1, y0, z0),
-      )
-    }
-  }
-  // Build the trimesh while filtering invalid triangles, keeping metadata aligned.
-  if vertices.length() == 0 || indices.length() == 0 {
-    return None
-  }
-  let valid : Array[(Int, Int, Int)] = []
-  let valid_map : Array[(Int, Int, Int)] = []
-  for i in 0..<indices.length() {
-    let (i0, i1, i2) = indices[i]
-    if i0 < 0 || i1 < 0 || i2 < 0 {
-      continue
-    }
-    if i0 >= vertices.length() ||
-      i1 >= vertices.length() ||
-      i2 >= vertices.length() {
-      continue
-    }
-    if i0 == i1 || i1 == i2 || i2 == i0 {
-      continue
-    }
-    let a = vertices[i0]
-    let b = vertices[i1]
-    let c = vertices[i2]
-    let area2 = b.sub(a).cross(c.sub(a)).length_squared()
-    if area2 <= 1.0e-12F {
-      continue
-    }
-    valid.push((i0, i1, i2))
-    valid_map.push(tri_voxel[i])
-  }
-  if valid.length() == 0 {
-    return None
+    dense_origin_x = origin_x
+    dense_origin_z = origin_z
+    dense_nx = nx
+    dense_nz = nz
+    dense_columns = Some(dense)
   }
   Some({
     position: @core.Isometry3::identity(),
     local_position: @core.Isometry3::identity(),
     parent: None,
-    shape: Shape3D::TriMesh(vertices, valid),
-    voxel_tri_map: Some(valid_map),
+    shape: Shape3D::Voxels({
+      voxel_size,
+      columns,
+      dense_origin_x,
+      dense_origin_z,
+      dense_nx,
+      dense_nz,
+      dense_columns,
+      keys: voxels,
+      key_to_id,
+      min_key,
+      max_key,
+    }),
+    voxel_tri_map: Some(voxels),
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),

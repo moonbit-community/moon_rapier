@@ -13,18 +13,15 @@
 // limitations under the License.
 
 ///|
-/// Parity tests for a subset of `rapier-reference/examples3d/*.rs` that mostly exercise
-/// basic rigid-bodies + colliders + restitution/damping/sensors.
+/// Parity tests for `rapier-reference/examples3d/*.rs` that mostly exercise basic rigid-bodies +
+/// colliders + restitution/damping/sensors.
 ///
 /// These are progressively migrating from the dim3 compatibility wrappers (2D projection) to the
 /// real dim3 backend.
 
 ///|
 fn run_examples3d_primitives3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/primitives3.rs` (headless).
-  //
-  // We run this against the real dim3 pipeline, but with a reduced number of bodies because the
-  // current BroadPhase3D is O(n^2).
+  // Ported from `rapier-reference/examples3d/primitives3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -80,7 +77,7 @@ fn run_examples3d_primitives3() -> Bool {
     )
   }
 
-  // Basic sanity: no NaNs, and z is preserved (not projected to 2D).
+  // Basic sanity: no NaNs, and z is preserved (not flattened to 2D).
   let mut saw_nonzero_z = false
   for i in 0..<handles.length() {
     if bodies.get(handles[i]) is Some(rb) {
@@ -100,7 +97,7 @@ fn run_examples3d_primitives3() -> Bool {
 
 ///|
 fn run_examples3d_damping3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/damping3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/damping3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -162,7 +159,7 @@ fn run_examples3d_damping3() -> Bool {
 
 ///|
 fn run_examples3d_restitution3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/restitution3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/restitution3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -232,7 +229,7 @@ fn run_examples3d_restitution3() -> Bool {
 
 ///|
 fn run_examples3d_sensor3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/sensor3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/sensor3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

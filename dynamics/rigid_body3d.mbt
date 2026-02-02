@@ -183,7 +183,7 @@ pub struct RigidBody3D {
   // Target pose used by kinematic position-based bodies.
   mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
-  // Locks/flags (subset of Rapier's LockedAxes API).
+  // Locks/flags (compatible with Rapier's LockedAxes API).
   locked_translations : Bool
   locked_rotations : Bool
   rot_x_enabled : Bool

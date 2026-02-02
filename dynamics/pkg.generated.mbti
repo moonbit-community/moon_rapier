@@ -143,10 +143,12 @@ pub struct GenericJoint3DReal {
   axis_states : Array[AxisState3DReal]
   motors : Array[MotorState3DReal]
   coupled_axes : JointAxesMask3DReal
+  contacts_enabled : Bool
 }
 
 pub struct GenericJoint3DRealBuilder {
   locked_axes : JointAxesMask3DReal
+  mut contacts_enabled : Bool
   mut coupled_axes : JointAxesMask3DReal
   mut local_anchor1 : @core.Vec3
   mut local_anchor2 : @core.Vec3
@@ -156,6 +158,7 @@ pub struct GenericJoint3DRealBuilder {
   motors : Array[MotorState3DReal]
 }
 pub fn GenericJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
+pub fn GenericJoint3DRealBuilder::contacts_enabled(Self, Bool) -> Self
 pub fn GenericJoint3DRealBuilder::coupled_axes(Self, JointAxesMask3DReal) -> Self
 pub fn GenericJoint3DRealBuilder::limits(Self, JointAxis3DReal, Float, Float) -> Self
 pub fn GenericJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
@@ -519,6 +522,7 @@ pub struct JointSet3DReal {
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
 }
+pub fn JointSet3DReal::disabled_contact_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn JointSet3DReal::insert_generic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> JointHandle3DReal
 pub fn JointSet3DReal::insert_prismatic_motor_position(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::insert_revolute(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, @core.Vec3, Bool) -> JointHandle3DReal

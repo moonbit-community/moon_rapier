@@ -16,8 +16,8 @@
 /// Parity tests for `rapier-reference/examples3d/joints3.rs` against the real dim3 backend.
 
 ///|
-test "examples3d/joints3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/joints3.rs` (headless; reduced counts).
+test "examples3d/joints3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/joints3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

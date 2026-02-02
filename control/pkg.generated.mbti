@@ -37,6 +37,19 @@ pub fn CharacterCollision::hit(Self) -> @collision.ShapeCastHit
 pub fn CharacterCollision::translation_applied(Self) -> @core.Vec2
 pub fn CharacterCollision::translation_remaining(Self) -> @core.Vec2
 
+pub struct CharacterCollision3DReal {
+  handle : @collision.ColliderHandle3D
+  hit : @collision.ShapeCastHit3
+  translation_applied : @core.Vec3
+  translation_remaining : @core.Vec3
+  character_pos : @core.Isometry3
+}
+pub fn CharacterCollision3DReal::character_pos(Self) -> @core.Isometry3
+pub fn CharacterCollision3DReal::handle(Self) -> @collision.ColliderHandle3D
+pub fn CharacterCollision3DReal::hit(Self) -> @collision.ShapeCastHit3
+pub fn CharacterCollision3DReal::translation_applied(Self) -> @core.Vec3
+pub fn CharacterCollision3DReal::translation_remaining(Self) -> @core.Vec3
+
 pub(all) enum CharacterLength {
   Relative(Float)
   Absolute(Float)
@@ -135,17 +148,26 @@ pub fn KinematicCharacterController::with_up(Self, @core.Vec2) -> Self
 
 pub struct KinematicCharacterController3DReal {
   up : @core.Vec3
-  offset : Float
+  offset : CharacterLength
+  slide : Bool
+  autostep : CharacterAutostep?
   max_slope_climb_angle : Float
   min_slope_slide_angle : Float
-  slide : Bool
+  snap_to_ground : CharacterLength?
+  normal_nudge_factor : Float
 }
 pub fn KinematicCharacterController3DReal::default() -> Self
-pub fn KinematicCharacterController3DReal::move_character(Self, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.QueryPipelineMut3DReal, @dynamics.RigidBodyHandle, @core.Vec3) -> EffectiveMovement3DReal
+pub fn KinematicCharacterController3DReal::move_shape(Self, Float, @collision.QueryPipeline3DReal, @collision.Shape3D, @core.Isometry3, @core.Vec3, (CharacterCollision3DReal) -> Unit) -> EffectiveMovement3DReal
 pub fn KinematicCharacterController3DReal::new() -> Self
+pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline3DReal, @collision.Shape3D, Float, Array[CharacterCollision3DReal]) -> Unit
+pub fn KinematicCharacterController3DReal::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController3DReal::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController3DReal::with_min_slope_slide_angle(Self, Float) -> Self
-pub fn KinematicCharacterController3DReal::with_offset(Self, Float) -> Self
+pub fn KinematicCharacterController3DReal::with_normal_nudge_factor(Self, Float) -> Self
+pub fn KinematicCharacterController3DReal::with_offset(Self, CharacterLength) -> Self
+pub fn KinematicCharacterController3DReal::with_slide(Self, Bool) -> Self
+pub fn KinematicCharacterController3DReal::with_snap_to_ground(Self, CharacterLength?) -> Self
+pub fn KinematicCharacterController3DReal::with_up(Self, @core.Vec3) -> Self
 
 pub(all) struct PdController {
   lin_kp : @core.Vec2

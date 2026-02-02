@@ -100,7 +100,7 @@ test "raycast vehicle controller: accelerates on flat ground (2D)" {
 }
 
 ///|
-test "raycast vehicle controller: climbs a mild slope (2D-adapted)" {
+test "raycast vehicle controller: climbs a mild slope (2D port)" {
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()

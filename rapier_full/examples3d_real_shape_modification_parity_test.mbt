@@ -14,10 +14,10 @@
 
 ///|
 /// Parity tests for `rapier-reference/examples3d/debug_shape_modification3.rs` against the real
-/// dim3 backend (reduced, headless).
+/// dim3 backend (headless).
 
 ///|
-test "examples3d/debug_shape_modification3.rs parity (3DReal headless; reduced)" {
+test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -116,7 +116,7 @@ test "examples3d/debug_shape_modification3.rs parity (3DReal headless; reduced)"
       }
     }
 
-    // Grow the ball collider (reduced growth vs rapier-reference).
+    // Grow the ball collider.
     let new_r = ball_rad * (1.0F + 0.02F * Float::from_int(step))
     if colliders.get_mut(ball_co) is Some(co) {
       co.set_shape(@collision.Shape3D::ball(new_r))

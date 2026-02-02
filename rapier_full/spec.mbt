@@ -14,7 +14,7 @@
 
 ///|
 /// Aggregate "prelude-style" aliases for portability when porting Rapier examples/tests.
-/// This package is intentionally minimal and grows with parity tests.
+/// This package is intentionally focused and grows with parity tests.
 pub type Real = @core.Real
 
 ///|

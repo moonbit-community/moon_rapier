@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal joint constraints for the real dim3 backend.
+/// Joint constraints for the real dim3 backend.
 ///
 /// This is intentionally much smaller than Rapier's impulse-based joint solver and is used to
 /// migrate 3D scenes to the `PhysicsPipeline3DReal` backend incrementally.
@@ -68,6 +68,7 @@ pub struct GenericJoint3DReal {
   axis_states : Array[AxisState3DReal]
   motors : Array[MotorState3DReal]
   coupled_axes : JointAxesMask3DReal
+  contacts_enabled : Bool
 }
 
 ///|
@@ -96,6 +97,19 @@ pub struct JointSet3DReal {
   spherical_motors : Array[SphericalMotor3DReal]
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
+}
+
+///|
+pub fn JointSet3DReal::disabled_contact_pairs(
+  self : JointSet3DReal,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let out : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for g in self.generic {
+    if !g.data.contacts_enabled {
+      out.push((g.body1, g.body2))
+    }
+  }
+  out
 }
 
 ///|

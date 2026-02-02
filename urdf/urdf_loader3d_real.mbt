@@ -13,20 +13,17 @@
 // limitations under the License.
 
 ///|
-/// Minimal URDF loader used by the real dim3 backend parity tests.
+/// URDF loader used by the real dim3 backend parity tests.
 ///
-/// This is a small subset tailored for the Rapier `assets/3d/T12/urdf/T12.URDF` robot:
-/// - Parses `<link>` visuals/collisions with `<mesh filename=...>` and optional `<origin xyz rpy>`.
-/// - Parses `<joint type=\"revolute\">` with `<origin>`, `<axis>`, and `<limit lower upper>`.
-/// - Builds a rigid-body tree and attaches cuboid colliders derived from precomputed mesh AABBs.
-///
-/// The API takes the URDF XML as a `String` and an explicit mesh-bounds map, so it can run in
-/// environments without filesystem I/O.
+/// This parses a URDF into a rigid-body tree with joints and colliders, mirroring the `rapier3d-urdf`
+/// approach. For mesh geometries, this loader relies on an explicit mesh-bounds map so it can run in
+/// environments without filesystem I/O or mesh parsing.
 
 ///|
 pub(all) enum UrdfJointType {
   Fixed
   Revolute
+  Continuous
   Prismatic
   Floating
   Planar
@@ -35,8 +32,10 @@ pub(all) enum UrdfJointType {
 
 ///|
 pub struct UrdfLoaderOptions3DReal {
+  apply_imported_mass_props : Bool
   create_colliders_from_visual_shapes : Bool
   create_colliders_from_collision_shapes : Bool
+  enable_joint_collisions : Bool
   make_roots_fixed : Bool
   shift : @core.Isometry3
 }
@@ -44,10 +43,27 @@ pub struct UrdfLoaderOptions3DReal {
 ///|
 pub fn UrdfLoaderOptions3DReal::default() -> UrdfLoaderOptions3DReal {
   {
-    create_colliders_from_visual_shapes: true,
-    create_colliders_from_collision_shapes: false,
+    apply_imported_mass_props: true,
+    create_colliders_from_visual_shapes: false,
+    create_colliders_from_collision_shapes: true,
+    enable_joint_collisions: false,
     make_roots_fixed: false,
     shift: @core.Isometry3::identity(),
+  }
+}
+
+///|
+pub fn UrdfLoaderOptions3DReal::apply_imported_mass_props(
+  self : UrdfLoaderOptions3DReal,
+  enabled : Bool,
+) -> UrdfLoaderOptions3DReal {
+  {
+    apply_imported_mass_props: enabled,
+    create_colliders_from_visual_shapes: self.create_colliders_from_visual_shapes,
+    create_colliders_from_collision_shapes: self.create_colliders_from_collision_shapes,
+    enable_joint_collisions: self.enable_joint_collisions,
+    make_roots_fixed: self.make_roots_fixed,
+    shift: self.shift,
   }
 }
 
@@ -57,8 +73,10 @@ pub fn UrdfLoaderOptions3DReal::create_colliders_from_visual_shapes(
   enabled : Bool,
 ) -> UrdfLoaderOptions3DReal {
   {
+    apply_imported_mass_props: self.apply_imported_mass_props,
     create_colliders_from_visual_shapes: enabled,
     create_colliders_from_collision_shapes: self.create_colliders_from_collision_shapes,
+    enable_joint_collisions: self.enable_joint_collisions,
     make_roots_fixed: self.make_roots_fixed,
     shift: self.shift,
   }
@@ -70,8 +88,25 @@ pub fn UrdfLoaderOptions3DReal::create_colliders_from_collision_shapes(
   enabled : Bool,
 ) -> UrdfLoaderOptions3DReal {
   {
+    apply_imported_mass_props: self.apply_imported_mass_props,
     create_colliders_from_visual_shapes: self.create_colliders_from_visual_shapes,
     create_colliders_from_collision_shapes: enabled,
+    enable_joint_collisions: self.enable_joint_collisions,
+    make_roots_fixed: self.make_roots_fixed,
+    shift: self.shift,
+  }
+}
+
+///|
+pub fn UrdfLoaderOptions3DReal::enable_joint_collisions(
+  self : UrdfLoaderOptions3DReal,
+  enabled : Bool,
+) -> UrdfLoaderOptions3DReal {
+  {
+    apply_imported_mass_props: self.apply_imported_mass_props,
+    create_colliders_from_visual_shapes: self.create_colliders_from_visual_shapes,
+    create_colliders_from_collision_shapes: self.create_colliders_from_collision_shapes,
+    enable_joint_collisions: enabled,
     make_roots_fixed: self.make_roots_fixed,
     shift: self.shift,
   }
@@ -83,8 +118,10 @@ pub fn UrdfLoaderOptions3DReal::make_roots_fixed(
   enabled : Bool,
 ) -> UrdfLoaderOptions3DReal {
   {
+    apply_imported_mass_props: self.apply_imported_mass_props,
     create_colliders_from_visual_shapes: self.create_colliders_from_visual_shapes,
     create_colliders_from_collision_shapes: self.create_colliders_from_collision_shapes,
+    enable_joint_collisions: self.enable_joint_collisions,
     make_roots_fixed: enabled,
     shift: self.shift,
   }
@@ -96,8 +133,10 @@ pub fn UrdfLoaderOptions3DReal::shift(
   shift : @core.Isometry3,
 ) -> UrdfLoaderOptions3DReal {
   {
+    apply_imported_mass_props: self.apply_imported_mass_props,
     create_colliders_from_visual_shapes: self.create_colliders_from_visual_shapes,
     create_colliders_from_collision_shapes: self.create_colliders_from_collision_shapes,
+    enable_joint_collisions: self.enable_joint_collisions,
     make_roots_fixed: self.make_roots_fixed,
     shift,
   }
@@ -106,7 +145,23 @@ pub fn UrdfLoaderOptions3DReal::shift(
 ///|
 pub struct UrdfVisual {
   origin : @core.Isometry3
-  mesh_filename : String?
+  geometry : UrdfGeometry3DReal
+}
+
+///|
+pub(all) enum UrdfGeometry3DReal {
+  Box(@core.Vec3) // full extents
+  Sphere(@core.Real)
+  Cylinder(@core.Real, @core.Real) // radius, length (along +Z in URDF)
+  Capsule(@core.Real, @core.Real) // radius, length (along +Z in URDF)
+  Mesh(String, @core.Vec3) // basename, scale
+}
+
+///|
+pub struct UrdfInertial3DReal {
+  origin : @core.Isometry3
+  mass : @core.Real
+  inertia : @core.SdpMat3
 }
 
 ///|
@@ -114,6 +169,7 @@ pub struct UrdfLink {
   name : String
   visuals : Array[UrdfVisual]
   collisions : Array[UrdfVisual]
+  mut inertial : UrdfInertial3DReal?
 }
 
 ///|
@@ -359,6 +415,8 @@ fn basename(path : String) -> String {
 fn parse_joint_type(s : String) -> UrdfJointType {
   if s == "revolute" {
     UrdfJointType::Revolute
+  } else if s == "continuous" {
+    UrdfJointType::Continuous
   } else if s == "prismatic" {
     UrdfJointType::Prismatic
   } else if s == "fixed" {
@@ -375,6 +433,15 @@ fn parse_joint_type(s : String) -> UrdfJointType {
 }
 
 ///|
+fn urdf_parse_positive_scale(text : String) -> @core.Vec3 {
+  let s = urdf_parse_vec3(text)
+  let x = if s.x <= 0.0F { 1.0F } else { s.x }
+  let y = if s.y <= 0.0F { 1.0F } else { s.y }
+  let z = if s.z <= 0.0F { 1.0F } else { s.z }
+  @core.Vec3::new(x, y, z)
+}
+
+///|
 pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
   let tags = xml_iter_tags(xml)
   let links : Array[UrdfLink] = []
@@ -383,8 +450,33 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
   let mut cur_joint : UrdfJoint? = None
   let mut in_visual = false
   let mut in_collision = false
-  let mut cur_geom_mesh : String? = None
+  let mut in_inertial = false
+  let mut cur_geom : UrdfGeometry3DReal? = None
   let mut cur_origin = @core.Isometry3::identity()
+  let mut cur_inertial_origin = @core.Isometry3::identity()
+  let mut cur_inertial_mass = 0.0F
+  let mut cur_inertial_inertia = @core.SdpMat3::zero()
+  fn push_shape(
+    cur_link : UrdfLink?,
+    in_visual : Bool,
+    in_collision : Bool,
+    cur_origin : @core.Isometry3,
+    cur_geom : UrdfGeometry3DReal?,
+  ) -> UrdfLink? {
+    if cur_link is Some(l) {
+      if (in_visual || in_collision) && cur_geom is Some(g) {
+        if in_visual {
+          l.visuals.push({ origin: cur_origin, geometry: g })
+        } else {
+          l.collisions.push({ origin: cur_origin, geometry: g })
+        }
+      }
+      Some(l)
+    } else {
+      None
+    }
+  }
+
   for tag in tags {
     if tag.is_end {
       if tag.name == "link" {
@@ -394,39 +486,48 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
         cur_link = None
         in_visual = false
         in_collision = false
-        cur_geom_mesh = None
+        in_inertial = false
+        cur_geom = None
         cur_origin = @core.Isometry3::identity()
+        cur_inertial_origin = @core.Isometry3::identity()
+        cur_inertial_mass = 0.0F
+        cur_inertial_inertia = @core.SdpMat3::zero()
       } else if tag.name == "joint" {
         if cur_joint is Some(j) {
           joints.push(j)
         }
         cur_joint = None
       } else if tag.name == "visual" {
-        if cur_link is Some(l) {
-          if in_visual && cur_geom_mesh is Some(mesh) {
-            l.visuals.push({ origin: cur_origin, mesh_filename: Some(mesh) })
-          }
-          cur_geom_mesh = None
-          cur_origin = @core.Isometry3::identity()
-          cur_link = Some(l)
-        }
+        cur_link = push_shape(cur_link, true, false, cur_origin, cur_geom)
+        cur_geom = None
+        cur_origin = @core.Isometry3::identity()
         in_visual = false
       } else if tag.name == "collision" {
+        cur_link = push_shape(cur_link, false, true, cur_origin, cur_geom)
+        cur_geom = None
+        cur_origin = @core.Isometry3::identity()
+        in_collision = false
+      } else if tag.name == "inertial" {
         if cur_link is Some(l) {
-          if in_collision && cur_geom_mesh is Some(mesh) {
-            l.collisions.push({ origin: cur_origin, mesh_filename: Some(mesh) })
+          if cur_inertial_mass > 0.0F {
+            l.inertial = Some({
+              origin: cur_inertial_origin,
+              mass: cur_inertial_mass,
+              inertia: cur_inertial_inertia,
+            })
           }
-          cur_geom_mesh = None
-          cur_origin = @core.Isometry3::identity()
           cur_link = Some(l)
         }
-        in_collision = false
+        in_inertial = false
+        cur_inertial_origin = @core.Isometry3::identity()
+        cur_inertial_mass = 0.0F
+        cur_inertial_inertia = @core.SdpMat3::zero()
       }
       continue
     }
     if tag.name == "link" {
       if attr_get(tag.attrs, "name") is Some(name) {
-        cur_link = Some({ name, visuals: [], collisions: [] })
+        cur_link = Some({ name, visuals: [], collisions: [], inertial: None })
       }
       continue
     }
@@ -452,14 +553,21 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
     }
     if tag.name == "visual" {
       in_visual = true
-      cur_geom_mesh = None
+      cur_geom = None
       cur_origin = @core.Isometry3::identity()
       continue
     }
     if tag.name == "collision" {
       in_collision = true
-      cur_geom_mesh = None
+      cur_geom = None
       cur_origin = @core.Isometry3::identity()
+      continue
+    }
+    if tag.name == "inertial" {
+      in_inertial = true
+      cur_inertial_origin = @core.Isometry3::identity()
+      cur_inertial_mass = 0.0F
+      cur_inertial_inertia = @core.SdpMat3::zero()
       continue
     }
     if tag.name == "origin" {
@@ -477,15 +585,81 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
       if cur_joint is Some(j) {
         j.origin = pose
         cur_joint = Some(j)
+      } else if in_inertial {
+        cur_inertial_origin = pose
       } else if in_visual || in_collision {
         cur_origin = pose
       }
       continue
     }
+    if tag.name == "mass" && in_inertial {
+      if attr_get(tag.attrs, "value") is Some(v) {
+        cur_inertial_mass = urdf_parse_real(v)
+      }
+      continue
+    }
+    if tag.name == "inertia" && in_inertial {
+      fn a(
+        attrs : @hashmap.HashMap[String, String],
+        key : String,
+      ) -> @core.Real {
+        if attr_get(attrs, key) is Some(v) {
+          urdf_parse_real(v)
+        } else {
+          0.0F
+        }
+      }
+
+      let ixx = a(tag.attrs, "ixx")
+      let ixy = a(tag.attrs, "ixy")
+      let ixz = a(tag.attrs, "ixz")
+      let iyy = a(tag.attrs, "iyy")
+      let iyz = a(tag.attrs, "iyz")
+      let izz = a(tag.attrs, "izz")
+      cur_inertial_inertia = @core.SdpMat3::new(ixx, ixy, ixz, iyy, iyz, izz)
+      continue
+    }
     if tag.name == "mesh" {
       if (in_visual || in_collision) &&
         attr_get(tag.attrs, "filename") is Some(f) {
-        cur_geom_mesh = Some(basename(f))
+        let scale = if attr_get(tag.attrs, "scale") is Some(s) {
+          urdf_parse_positive_scale(s)
+        } else {
+          @core.Vec3::new(1.0F, 1.0F, 1.0F)
+        }
+        cur_geom = Some(UrdfGeometry3DReal::Mesh(basename(f), scale))
+      }
+      continue
+    }
+    if tag.name == "box" {
+      if (in_visual || in_collision) && attr_get(tag.attrs, "size") is Some(v) {
+        cur_geom = Some(UrdfGeometry3DReal::Box(urdf_parse_vec3(v)))
+      }
+      continue
+    }
+    if tag.name == "sphere" {
+      if (in_visual || in_collision) && attr_get(tag.attrs, "radius") is Some(v) {
+        cur_geom = Some(UrdfGeometry3DReal::Sphere(urdf_parse_real(v)))
+      }
+      continue
+    }
+    if tag.name == "cylinder" {
+      if (in_visual || in_collision) &&
+        attr_get(tag.attrs, "radius") is Some(r) &&
+        attr_get(tag.attrs, "length") is Some(l) {
+        cur_geom = Some(
+          UrdfGeometry3DReal::Cylinder(urdf_parse_real(r), urdf_parse_real(l)),
+        )
+      }
+      continue
+    }
+    if tag.name == "capsule" {
+      if (in_visual || in_collision) &&
+        attr_get(tag.attrs, "radius") is Some(r) &&
+        attr_get(tag.attrs, "length") is Some(l) {
+        cur_geom = Some(
+          UrdfGeometry3DReal::Capsule(urdf_parse_real(r), urdf_parse_real(l)),
+        )
       }
       continue
     }
@@ -550,10 +724,14 @@ pub fn UrdfRobot3DReal::insert_3d_real(
   let link_collisions : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.new(
     capacity=self.links.length(),
   )
+  let link_inertials : @hashmap.HashMap[String, UrdfInertial3DReal?] = @hashmap.new(
+    capacity=self.links.length(),
+  )
   for i in 0..<self.links.length() {
     let l = self.links[i]
     link_visuals.set(l.name, l.visuals)
     link_collisions.set(l.name, l.collisions)
+    link_inertials.set(l.name, l.inertial)
   }
   let children : @hashset.HashSet[String] = @hashset.new(
     capacity=self.joints.length(),
@@ -573,12 +751,25 @@ pub fn UrdfRobot3DReal::insert_3d_real(
   // Insert roots.
   for i in 0..<roots.length() {
     let name = roots[i]
-    let rb = if options.make_roots_fixed {
-      @dynamics.RigidBodyBuilder3D::fixed().build()
+    let fixed_root = options.make_roots_fixed
+    let mut rb_builder = if fixed_root {
+      @dynamics.RigidBodyBuilder3D::fixed()
     } else {
-      @dynamics.RigidBodyBuilder3D::dynamic().build()
+      @dynamics.RigidBodyBuilder3D::dynamic()
     }
-    let h = bodies.insert(rb)
+    if !fixed_root &&
+      options.apply_imported_mass_props &&
+      link_inertials.get(name) is Some(inert) &&
+      inert is Some(ine) &&
+      ine.mass > 0.0F {
+      let mp0 = @core.MassProperties3::new(
+        ine.mass,
+        ine.inertia,
+        @core.Vec3::zero(),
+      )
+      rb_builder = rb_builder.mass_properties(mp0.transform_by(ine.origin))
+    }
+    let h = bodies.insert(rb_builder.build())
     if bodies.get(h) is Some(b) {
       // Root pose is `base_transform` in URDF space, then a global `shift` (e.g. Z-up -> Y-up).
       let pose = shift.mul(base_transform)
@@ -608,19 +799,83 @@ pub fn UrdfRobot3DReal::insert_3d_real(
     }
     for i in 0..<list.length() {
       let v = list[i]
-      if v.mesh_filename is Some(mesh) &&
-        mesh_bounds.get(mesh) is Some((mins, maxs)) {
-        let center = mins.add(maxs).scale(0.5F)
-        let he = maxs.sub(mins).scale(0.5F)
-        let local_pose = v.origin.mul(@core.Isometry3::from_translation(center))
-        colliders.insert_with_parent(
-          @collision.ColliderBuilder3D::cuboid(he.x, he.y, he.z)
-          .position(local_pose)
-          .build(),
-          body,
-          bodies,
-        )
-        |> ignore
+      match v.geometry {
+        UrdfGeometry3DReal::Box(size) => {
+          let he = size.scale(0.5F)
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::cuboid(he.x, he.y, he.z)
+            .position(v.origin)
+            .build(),
+            body,
+            bodies,
+          )
+          |> ignore
+        }
+        UrdfGeometry3DReal::Sphere(r) =>
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::ball(r).position(v.origin).build(),
+            body,
+            bodies,
+          )
+          |> ignore
+        UrdfGeometry3DReal::Cylinder(r, len) => {
+          // URDF cylinders are aligned along +Z. Our cylinder is aligned along +Y.
+          let rot = @core.rotation_from_scaled_axis(
+            @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
+          )
+          let extra = @core.Isometry3::new(@core.Vec3::zero(), rot)
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::cylinder(r, len * 0.5F)
+            .position(v.origin.mul(extra))
+            .build(),
+            body,
+            bodies,
+          )
+          |> ignore
+        }
+        UrdfGeometry3DReal::Capsule(r, len) => {
+          // URDF capsules are aligned along +Z. Our capsule is aligned along +Y.
+          let rot = @core.rotation_from_scaled_axis(
+            @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
+          )
+          let extra = @core.Isometry3::new(@core.Vec3::zero(), rot)
+          colliders.insert_with_parent(
+            @collision.ColliderBuilder3D::capsule_y(r, len * 0.5F)
+            .position(v.origin.mul(extra))
+            .build(),
+            body,
+            bodies,
+          )
+          |> ignore
+        }
+        UrdfGeometry3DReal::Mesh(mesh, scale) =>
+          if mesh_bounds.get(mesh) is Some((mins0, maxs0)) {
+            let mins = @core.Vec3::new(
+              mins0.x * scale.x,
+              mins0.y * scale.y,
+              mins0.z * scale.z,
+            )
+            let maxs = @core.Vec3::new(
+              maxs0.x * scale.x,
+              maxs0.y * scale.y,
+              maxs0.z * scale.z,
+            )
+            let center = mins.add(maxs).scale(0.5F)
+            let he = maxs.sub(mins).scale(0.5F)
+            let local_pose = v.origin.mul(
+              @core.Isometry3::from_translation(center),
+            )
+            colliders.insert_with_parent(
+              @collision.ColliderBuilder3D::cuboid(he.x, he.y, he.z)
+              .position(local_pose)
+              .build(),
+              body,
+              bodies,
+            )
+            |> ignore
+          } else {
+            ()
+          }
       }
     }
   }
@@ -653,10 +908,21 @@ pub fn UrdfRobot3DReal::insert_3d_real(
         // Compute child pose in URDF space, then apply the global shift.
         let child_pose_urdf = parent_pose_urdf.mul(j.origin)
         let child_pose = shift.mul(child_pose_urdf)
-        let child_rb = @dynamics.RigidBodyBuilder3D::dynamic()
-          .can_sleep(false)
-          .build()
-        let child_h = bodies.insert(child_rb)
+        let mut child_builder = @dynamics.RigidBodyBuilder3D::dynamic()
+        if options.apply_imported_mass_props &&
+          link_inertials.get(j.child) is Some(inert) &&
+          inert is Some(ine) &&
+          ine.mass > 0.0F {
+          let mp0 = @core.MassProperties3::new(
+            ine.mass,
+            ine.inertia,
+            @core.Vec3::zero(),
+          )
+          child_builder = child_builder.mass_properties(
+            mp0.transform_by(ine.origin),
+          )
+        }
+        let child_h = bodies.insert(child_builder.build())
         if bodies.get(child_h) is Some(rb) {
           rb.set_translation(child_pose.translation)
           rb.set_rotation(child_pose.rotation)
@@ -677,20 +943,27 @@ pub fn UrdfRobot3DReal::insert_3d_real(
             @dynamics.JointAxesMask3DReal::lin_axes()
             .or(@dynamics.JointAxesMask3DReal::ang_y())
             .or(@dynamics.JointAxesMask3DReal::ang_z())
+          UrdfJointType::Continuous =>
+            @dynamics.JointAxesMask3DReal::lin_axes()
+            .or(@dynamics.JointAxesMask3DReal::ang_y())
+            .or(@dynamics.JointAxesMask3DReal::ang_z())
           UrdfJointType::Prismatic =>
             @dynamics.JointAxesMask3DReal::lin_y()
             .or(@dynamics.JointAxesMask3DReal::lin_z())
             .or(@dynamics.JointAxesMask3DReal::ang_axes())
           UrdfJointType::Spherical => @dynamics.JointAxesMask3DReal::lin_axes()
           UrdfJointType::Planar =>
-            @dynamics.JointAxesMask3DReal::ang_axes().or(
-              @dynamics.JointAxesMask3DReal::lin_x(),
-            )
+            @dynamics.JointAxesMask3DReal::lin_x()
+            .or(@dynamics.JointAxesMask3DReal::ang_y())
+            .or(@dynamics.JointAxesMask3DReal::ang_z())
           UrdfJointType::Floating => @dynamics.JointAxesMask3DReal::empty()
         }
         let mut builder = @dynamics.GenericJoint3DRealBuilder::new(locked)
+          .contacts_enabled(options.enable_joint_collisions)
           .local_anchor1(j.origin.translation)
           .local_anchor2(@core.Vec3::zero())
+          .local_basis1(j.origin.rotation)
+          .local_basis2(@core.Quat::identity())
           .local_axis1(axis1)
           .local_axis2(axis)
         match j.joint_type {
@@ -702,6 +975,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
                 j.limit_upper,
               )
             }
+          UrdfJointType::Continuous => ()
           UrdfJointType::Prismatic =>
             if j.has_limits {
               builder = builder.limits(

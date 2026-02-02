@@ -5,6 +5,7 @@ import {
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/core",
   "Milky2018/moon_rapier/dynamics",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -56,7 +57,7 @@ pub struct ContactImpulseCacheEntry {
 }
 
 pub struct ContactSolverCache3D {
-  entries : Array[((@collision.ColliderHandle3D, @collision.ColliderHandle3D), ContactImpulse3D)]
+  entries : @hashmap.HashMap[(Int, Int, Int, Int), Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]]
 }
 pub fn ContactSolverCache3D::clear(Self) -> Unit
 pub fn ContactSolverCache3D::new() -> Self

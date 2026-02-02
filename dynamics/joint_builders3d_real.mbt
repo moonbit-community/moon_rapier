@@ -42,6 +42,7 @@ fn axis_index_3d_real(axis : JointAxis3DReal) -> Int {
 ///|
 pub struct GenericJoint3DRealBuilder {
   locked_axes : JointAxesMask3DReal
+  mut contacts_enabled : Bool
   mut coupled_axes : JointAxesMask3DReal
   mut local_anchor1 : @core.Vec3
   mut local_anchor2 : @core.Vec3
@@ -72,6 +73,7 @@ pub fn GenericJoint3DRealBuilder::new(
   }
   {
     locked_axes,
+    contacts_enabled: true,
     coupled_axes: JointAxesMask3DReal::empty(),
     local_anchor1: @core.Vec3::zero(),
     local_anchor2: @core.Vec3::zero(),
@@ -80,6 +82,15 @@ pub fn GenericJoint3DRealBuilder::new(
     axis_states,
     motors,
   }
+}
+
+///|
+pub fn GenericJoint3DRealBuilder::contacts_enabled(
+  self : GenericJoint3DRealBuilder,
+  enabled : Bool,
+) -> GenericJoint3DRealBuilder {
+  self.contacts_enabled = enabled
+  self
 }
 
 ///|
@@ -231,5 +242,6 @@ pub fn GenericJoint3DRealBuilder::build(
     axis_states: self.axis_states,
     motors: self.motors,
     coupled_axes: self.coupled_axes,
+    contacts_enabled: self.contacts_enabled,
   }
 }

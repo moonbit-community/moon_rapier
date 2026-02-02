@@ -16,8 +16,8 @@
 /// 3DReal parity tests for `rapier-reference/examples3d/vehicle_controller3.rs`.
 
 ///|
-test "examples3d/vehicle_controller3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/vehicle_controller3.rs` (headless; reduced).
+test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/vehicle_controller3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -92,28 +92,30 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless; reduced)" {
     vehicle.set_engine_force(i, 20.0F)
   }
 
-  // A few dynamic cubes to push around (reduced).
-  let num = 4
+  // Dynamic cubes to push around.
+  let num = 8
   let rad = 0.1F
   let shift = rad * 2.0F
   let centerx = shift * Float::from_int(num / 2)
   let centery = rad
-  for k in 0..<2 {
-    for i in 0..<num {
-      let x = Float::from_int(i) * shift - centerx
-      let y = centery
-      let z = Float::from_int(k) * shift + centerx
-      let h = bodies.insert(
-        @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x, y, z))
-        .build(),
-      )
-      colliders.insert_with_parent(
-        @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
-        h,
-        bodies,
-      )
-      |> ignore
+  for j in 0..<1 {
+    for k in 0..<4 {
+      for i in 0..<num {
+        let x = Float::from_int(i) * shift - centerx
+        let y = Float::from_int(j) * shift + centery
+        let z = Float::from_int(k) * shift + centerx
+        let h = bodies.insert(
+          @dynamics.RigidBodyBuilder3D::dynamic()
+          .translation(@core.Vec3::new(x, y, z))
+          .build(),
+        )
+        colliders.insert_with_parent(
+          @collision.ColliderBuilder3D::cuboid(rad, rad, rad).build(),
+          h,
+          bodies,
+        )
+        |> ignore
+      }
     }
   }
 
@@ -153,8 +155,8 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless; reduced)" {
   )
   |> ignore
 
-  // Heightfield ground (reduced resolution).
-  let nsubdivs = 10
+  // Heightfield ground.
+  let nsubdivs = 20
   let ground_scale = @core.Vec3::new(10.0F, 0.4F, 10.0F)
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {

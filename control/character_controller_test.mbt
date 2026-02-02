@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Ported from rapier/src/control/character_controller.rs (character_controller_climb_test) adapted for 2D.
+/// Ported from rapier/src/control/character_controller.rs (character_controller_climb_test) for 2D.
 test "character controller climb" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -187,7 +187,7 @@ test "character controller utilities: CharacterLength map_* and defaults" {
 }
 
 ///|
-/// Ported from rapier-reference/examples2d/character_controller2.rs (moving platform callback) adapted for 2D.
+/// Ported from rapier-reference/examples2d/character_controller2.rs (moving platform callback) for 2D.
 test "character controller moving platform keeps grounded and follows platform" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -299,7 +299,7 @@ test "character controller moving platform keeps grounded and follows platform" 
 }
 
 ///|
-/// Ported from rapier-reference/examples2d/character_controller2.rs (stairs) adapted for 2D.
+/// Ported from rapier-reference/examples2d/character_controller2.rs (stairs) for 2D.
 test "character controller autostep climbs stairs" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -708,7 +708,7 @@ test "character controller autostep moves past obstacle" {
 }
 
 ///|
-/// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) adapted for 2D.
+/// Ported from rapier/src/control/character_controller.rs (character_controller_ground_detection) for 2D.
 test "character controller ground detection" {
   let colliders = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()

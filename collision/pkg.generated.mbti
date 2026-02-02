@@ -4,6 +4,7 @@ package "Milky2018/moon_rapier/collision"
 import {
   "Milky2018/moon_rapier/core",
   "Milky2018/moon_rapier/dynamics",
+  "moonbitlang/core/hashmap",
 }
 
 // Values
@@ -17,13 +18,21 @@ pub fn compute_ball_cuboid_contact(@core.Vec3, Float, @core.Isometry3, @core.Vec
 
 pub fn compute_ball_cylinder_contact(@core.Vec3, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
+pub fn compute_ball_heightfield_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
 pub fn compute_ball_trimesh_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
+pub fn compute_ball_voxels_contact(@core.Vec3, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
 pub fn compute_capsule_capsule_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
 pub fn compute_capsule_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
+pub fn compute_capsule_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
 pub fn compute_capsule_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
+pub fn compute_capsule_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
 pub fn compute_cone_cone_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
@@ -31,25 +40,43 @@ pub fn compute_cone_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry
 
 pub fn compute_cone_cylinder_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
+pub fn compute_cone_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
 pub fn compute_cone_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
+pub fn compute_cone_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
 pub fn compute_convex_contact(@core.Isometry3, Shape3D, @core.Isometry3, Shape3D) -> ContactPoint3D?
 
 pub fn compute_cuboid_cuboid_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
+pub fn compute_cuboid_heightfield_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
 pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+
+pub fn compute_cuboid_voxels_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
 pub fn compute_cylinder_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_cylinder_cylinder_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
+pub fn compute_cylinder_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
 pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
+pub fn compute_cylinder_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
+
 pub fn compute_halfspace_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Shape3D) -> ContactPoint3D?
+
+pub fn compute_round_cylinder_heightfield_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
 
 pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
+
+pub fn heightfield_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
+
+pub fn trimesh_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> (@core.Vec3, @core.Vec3, Float)?
 
 // Errors
 
@@ -649,6 +676,13 @@ pub struct PointProjection {
 pub fn PointProjection::is_inside(Self) -> Bool
 pub fn PointProjection::point(Self) -> @core.Vec2
 
+pub struct PointProjection3 {
+  point : @core.Vec3
+  is_inside : Bool
+}
+pub fn PointProjection3::is_inside(Self) -> Bool
+pub fn PointProjection3::point(Self) -> @core.Vec3
+
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
   excluded_collider : ColliderHandle?
@@ -672,14 +706,25 @@ pub fn QueryFilter::only_kinematic() -> Self
 pub fn QueryFilter::predicate(Self, (ColliderHandle, Collider) -> Bool) -> Self
 
 pub struct QueryFilter3DReal {
-  exclude_rigid_body : @dynamics.RigidBodyHandle?
-  exclude_collider : ColliderHandle3D?
-  groups : @dynamics.InteractionGroups
+  excluded_body : @dynamics.RigidBodyHandle?
+  excluded_collider : ColliderHandle3D?
+  mut groups : @dynamics.InteractionGroups?
+  mut flags : QueryFilterFlags
+  mut predicate : ((ColliderHandle3D, Collider3D) -> Bool)?
 }
 pub fn QueryFilter3DReal::exclude_collider(Self, ColliderHandle3D) -> Self
+pub fn QueryFilter3DReal::exclude_dynamic(Self) -> Self
+pub fn QueryFilter3DReal::exclude_fixed(Self) -> Self
+pub fn QueryFilter3DReal::exclude_kinematic(Self) -> Self
 pub fn QueryFilter3DReal::exclude_rigid_body(Self, @dynamics.RigidBodyHandle) -> Self
+pub fn QueryFilter3DReal::exclude_sensors(Self) -> Self
+pub fn QueryFilter3DReal::exclude_solids(Self) -> Self
 pub fn QueryFilter3DReal::groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn QueryFilter3DReal::new() -> Self
+pub fn QueryFilter3DReal::only_dynamic() -> Self
+pub fn QueryFilter3DReal::only_fixed() -> Self
+pub fn QueryFilter3DReal::only_kinematic() -> Self
+pub fn QueryFilter3DReal::predicate(Self, (ColliderHandle3D, Collider3D) -> Bool) -> Self
 
 pub struct QueryFilterFlags {
   mut bits : Int
@@ -716,12 +761,19 @@ pub struct QueryPipeline3DReal {
   filter : QueryFilter3DReal
   bodies : @dynamics.RigidBodySet3D
   colliders : ColliderSet3D
+  mut cached_aabbs : Array[@core.Aabb3?]
 }
+pub fn QueryPipeline3DReal::cast_ray(Self, Ray3, Float, Bool) -> (ColliderHandle3D, Float)?
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3)?
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3Feature)?
 pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))?
+pub fn QueryPipeline3DReal::cast_shape(Self, @core.Isometry3, @core.Vec3, Shape3D, ShapeCastOptions3) -> (ColliderHandle3D, ShapeCastHit3)?
 pub fn QueryPipeline3DReal::collider(Self, ColliderHandle3D) -> Collider3D?
+pub fn QueryPipeline3DReal::intersect_aabb_conservative(Self, @core.Aabb3) -> Array[ColliderHandle3D]
+pub fn QueryPipeline3DReal::intersect_point(Self, @core.Vec3) -> Array[ColliderHandle3D]
+pub fn QueryPipeline3DReal::intersect_ray(Self, Ray3, Float, Bool) -> Array[(ColliderHandle3D, RayIntersection3Feature)]
 pub fn QueryPipeline3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
+pub fn QueryPipeline3DReal::project_point(Self, @core.Vec3, Float, Bool) -> (ColliderHandle3D, PointProjection3)?
 pub fn QueryPipeline3DReal::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
 pub fn QueryPipeline3DReal::rigid_body_mut(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
 pub fn QueryPipeline3DReal::update(Self) -> Unit
@@ -801,6 +853,7 @@ pub(all) enum Shape3D {
   Triangle(@core.Vec3, @core.Vec3, @core.Vec3)
   ConvexHull(Array[@core.Vec3], Float)
   Compound(Array[(@core.Isometry3, Shape3D)])
+  Voxels(Voxels3DReal)
   Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
@@ -823,6 +876,15 @@ pub fn ShapeCastHit::normal(Self) -> @core.Vec2
 pub fn ShapeCastHit::point(Self) -> @core.Vec2
 pub fn ShapeCastHit::toi(Self) -> Float
 
+pub struct ShapeCastHit3 {
+  toi : Float
+  point : @core.Vec3
+  normal : @core.Vec3
+}
+pub fn ShapeCastHit3::normal(Self) -> @core.Vec3
+pub fn ShapeCastHit3::point(Self) -> @core.Vec3
+pub fn ShapeCastHit3::toi(Self) -> Float
+
 pub struct ShapeCastOptions {
   max_toi : Float
   target_distance : Float
@@ -833,6 +895,17 @@ pub fn ShapeCastOptions::new(Float, Bool) -> Self
 pub fn ShapeCastOptions::stop_at_penetration(Self) -> Bool
 pub fn ShapeCastOptions::target_distance(Self) -> Float
 pub fn ShapeCastOptions::with_target_distance(Self, Float) -> Self
+
+pub struct ShapeCastOptions3 {
+  max_toi : Float
+  target_distance : Float
+  stop_at_penetration : Bool
+}
+pub fn ShapeCastOptions3::max_toi(Self) -> Float
+pub fn ShapeCastOptions3::new(Float, Bool) -> Self
+pub fn ShapeCastOptions3::stop_at_penetration(Self) -> Bool
+pub fn ShapeCastOptions3::target_distance(Self) -> Float
+pub fn ShapeCastOptions3::with_target_distance(Self, Float) -> Self
 
 pub struct SharedShape {
   shape : Shape
@@ -885,6 +958,21 @@ pub struct Triangle {
 }
 pub fn Triangle::as_shape(Self) -> Shape
 pub fn Triangle::new(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
+
+pub struct Voxels3DReal {
+  voxel_size : @core.Vec3
+  columns : @hashmap.HashMap[(Int, Int), Array[Int]]
+  dense_origin_x : Int
+  dense_origin_z : Int
+  dense_nx : Int
+  dense_nz : Int
+  dense_columns : Array[Array[Int]?]?
+  keys : Array[(Int, Int, Int)]
+  key_to_id : @hashmap.HashMap[(Int, Int, Int), Int]
+  min_key : (Int, Int, Int)
+  max_key : (Int, Int, Int)
+}
+pub fn Voxels3DReal::column_ys(Self, Int, Int) -> Array[Int]?
 
 // Type aliases
 

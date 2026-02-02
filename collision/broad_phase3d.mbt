@@ -132,16 +132,55 @@ fn sorted_pair_3d(
 
 ///|
 fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
-  // Simple insertion sort (small N in tests; can be replaced with a faster sort later).
-  for i in 1..<pairs.length() {
-    let mut j = i
-    while j > 0 && pair_less_3d(pairs[j], pairs[j - 1]) {
-      let tmp = pairs[j - 1]
-      pairs[j - 1] = pairs[j]
-      pairs[j] = tmp
-      j = j - 1
+  if pairs.length() <= 1 {
+    return
+  }
+  fn swap_pairs_3d(
+    pairs : Array[(ColliderHandle3D, ColliderHandle3D)],
+    i : Int,
+    j : Int,
+  ) -> Unit {
+    if i == j {
+      return
+    }
+    let tmp = pairs[i]
+    pairs[i] = pairs[j]
+    pairs[j] = tmp
+  }
+
+  fn quicksort_pairs_3d(
+    pairs : Array[(ColliderHandle3D, ColliderHandle3D)],
+    start : Int,
+    end : Int,
+  ) -> Unit {
+    if end - start <= 1 {
+      return
+    }
+    let pivot = pairs[(start + end) / 2]
+    let mut i = start
+    let mut j = end - 1
+    while i <= j {
+      while pair_less_3d(pairs[i], pivot) {
+        i = i + 1
+      }
+      while pair_less_3d(pivot, pairs[j]) {
+        j = j - 1
+      }
+      if i <= j {
+        swap_pairs_3d(pairs, i, j)
+        i = i + 1
+        j = j - 1
+      }
+    }
+    if start < j + 1 {
+      quicksort_pairs_3d(pairs, start, j + 1)
+    }
+    if i < end {
+      quicksort_pairs_3d(pairs, i, end)
     }
   }
+
+  quicksort_pairs_3d(pairs, 0, pairs.length())
 }
 
 ///|
@@ -167,14 +206,6 @@ priv struct BvhLeaf3D {
   handle : ColliderHandle3D
   aabb : @core.Aabb3
   center : @core.Vec3
-}
-
-///|
-priv struct BvhNode3D {
-  aabb : @core.Aabb3
-  left : Int?
-  right : Int?
-  leaf : ColliderHandle3D?
 }
 
 ///|
@@ -231,125 +262,6 @@ fn quicksort_leaves_3d(
 }
 
 ///|
-fn build_bvh_3d(
-  nodes : Array[BvhNode3D],
-  leaves : Array[BvhLeaf3D],
-  start : Int,
-  end : Int,
-) -> Int {
-  let count = end - start
-  if count == 1 {
-    let leaf = leaves[start]
-    let index = nodes.length()
-    nodes.push(BvhNode3D::{
-      aabb: leaf.aabb,
-      left: None,
-      right: None,
-      leaf: Some(leaf.handle),
-    })
-    return index
-  }
-
-  // Choose split axis based on the spread of centers.
-  let mut min_x = leaves[start].center.x
-  let mut max_x = min_x
-  let mut min_y = leaves[start].center.y
-  let mut max_y = min_y
-  let mut min_z = leaves[start].center.z
-  let mut max_z = min_z
-  for i in (start + 1)..<end {
-    let c = leaves[i].center
-    if c.x < min_x {
-      min_x = c.x
-    }
-    if c.x > max_x {
-      max_x = c.x
-    }
-    if c.y < min_y {
-      min_y = c.y
-    }
-    if c.y > max_y {
-      max_y = c.y
-    }
-    if c.z < min_z {
-      min_z = c.z
-    }
-    if c.z > max_z {
-      max_z = c.z
-    }
-  }
-  let sx = max_x - min_x
-  let sy = max_y - min_y
-  let sz = max_z - min_z
-  let axis = if sx >= sy && sx >= sz { 0 } else if sy >= sz { 1 } else { 2 }
-  quicksort_leaves_3d(leaves, start, end, axis)
-  let mid = start + count / 2
-  let left = build_bvh_3d(nodes, leaves, start, mid)
-  let right = build_bvh_3d(nodes, leaves, mid, end)
-  let node_aabb = nodes[left].aabb.combine(nodes[right].aabb)
-  let index = nodes.length()
-  nodes.push(BvhNode3D::{
-    aabb: node_aabb,
-    left: Some(left),
-    right: Some(right),
-    leaf: None,
-  })
-  index
-}
-
-///|
-fn collect_bvh_pairs_3d(
-  nodes : Array[BvhNode3D],
-  a : Int,
-  b : Int,
-  out : Array[(ColliderHandle3D, ColliderHandle3D)],
-) -> Unit {
-  let node_a = nodes[a]
-  let node_b = nodes[b]
-  if !node_a.aabb.intersects(node_b.aabb) {
-    return
-  }
-  if node_a.leaf is Some(handle_a) && node_b.leaf is Some(handle_b) {
-    if handle_a.equals(handle_b) {
-      return
-    }
-    out.push(sorted_pair_3d(handle_a, handle_b))
-    return
-  }
-  if a == b {
-    if node_a.left is Some(left) && node_a.right is Some(right) {
-      collect_bvh_pairs_3d(nodes, left, left, out)
-      collect_bvh_pairs_3d(nodes, left, right, out)
-      collect_bvh_pairs_3d(nodes, right, right, out)
-    }
-    return
-  }
-  if node_a.leaf is Some(_) {
-    if node_b.left is Some(left) && node_b.right is Some(right) {
-      collect_bvh_pairs_3d(nodes, a, left, out)
-      collect_bvh_pairs_3d(nodes, a, right, out)
-    }
-    return
-  }
-  if node_b.leaf is Some(_) {
-    if node_a.left is Some(left) && node_a.right is Some(right) {
-      collect_bvh_pairs_3d(nodes, left, b, out)
-      collect_bvh_pairs_3d(nodes, right, b, out)
-    }
-    return
-  }
-  if node_a.left is Some(al) &&
-    node_a.right is Some(ar) &&
-    node_b.left is Some(bl) &&
-    node_b.right is Some(br) {
-    collect_bvh_pairs_3d(nodes, al, bl, out)
-    collect_bvh_pairs_3d(nodes, al, br, out)
-    collect_bvh_pairs_3d(nodes, ar, bl, out)
-    collect_bvh_pairs_3d(nodes, ar, br, out)
-  }
-}
-
-///|
 pub fn BroadPhase3D::update(
   self : BroadPhase3D,
   prediction_distance : @core.Real,
@@ -370,7 +282,7 @@ pub fn BroadPhase3D::update(
     }
   }
 
-  // BVH broadphase (replaces the old naive O(n^2) scan).
+  // Sweep-and-prune along X.
   let regular_handles : Array[ColliderHandle3D] = []
   let infinite_handles : Array[ColliderHandle3D] = []
   for i in 0..<handles.length() {
@@ -390,14 +302,24 @@ pub fn BroadPhase3D::update(
     let h = regular_handles[i]
     if colliders.get(h) is Some(c) {
       let aabb = c.compute_collision_aabb(prediction_distance)
-      let center = aabb.mins.add(aabb.maxs).scale(0.5F)
-      leaves.push(BvhLeaf3D::{ handle: h, aabb, center })
+      // `center` is only used as a sort key in this sweep-and-prune path.
+      leaves.push(BvhLeaf3D::{ handle: h, aabb, center: aabb.mins })
     }
   }
   if leaves.length() > 1 {
-    let nodes : Array[BvhNode3D] = []
-    let root = build_bvh_3d(nodes, leaves, 0, leaves.length())
-    collect_bvh_pairs_3d(nodes, root, root, self.pairs)
+    quicksort_leaves_3d(leaves, 0, leaves.length(), 0)
+    for i in 0..<leaves.length() {
+      let a = leaves[i]
+      for j in (i + 1)..<leaves.length() {
+        let b = leaves[j]
+        if b.aabb.mins.x > a.aabb.maxs.x {
+          break
+        }
+        if a.aabb.intersects(b.aabb) {
+          self.pairs.push(sorted_pair_3d(a.handle, b.handle))
+        }
+      }
+    }
   }
 
   // Pair infinite colliders (half-spaces) with everything else.
@@ -419,8 +341,8 @@ pub fn BroadPhase3D::update(
   }
   sort_pairs_3d(self.pairs)
   dedup_pairs_3d(self.pairs)
-  sort_pairs_3d(self.prev_pairs)
-  dedup_pairs_3d(self.prev_pairs)
+  // `prev_pairs` is a verbatim copy of `self.pairs` from the previous update, which was already
+  // sorted and deduplicated.
 
   // Diff old vs new.
   let mut i = 0

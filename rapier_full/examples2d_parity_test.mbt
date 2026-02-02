@@ -280,7 +280,7 @@ test "examples2d/add_remove2.rs parity" {
 test "examples2d/all_examples2.rs parity" {
   // all_examples2.rs is a testbed entrypoint that lists demos. For headless parity, we assert the
   // full demo catalog (category + title) matches rapier-reference exactly, and additionally run a
-  // small deterministic smoke subset.
+  // small deterministic smoke suite.
 
   let collisions = "Collisions"
   let dynamics = "Dynamics"

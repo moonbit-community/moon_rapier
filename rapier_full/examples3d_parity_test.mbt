@@ -17,7 +17,7 @@
 
 ///|
 fn run_examples3d_character_controller3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/character_controller3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/character_controller3.rs` (headless).
   //
   // This is not a full 3D character controller yet. We validate the building blocks exercised by
   // the example: kinematic position-based bodies + CCD flags + interactions with dynamic bodies,
@@ -154,8 +154,7 @@ fn run_examples3d_compound3() -> Bool {
     bodies,
   )
   |> ignore
-  // Reduced to keep the real dim3 backend runtime reasonable while still exercising multi-collider
-  // bodies.
+  // Uses a smaller instance count while still exercising multi-collider bodies.
   let num = 6
   let numy = 10
   let rad = 0.2F
@@ -222,7 +221,7 @@ fn run_examples3d_compound3() -> Bool {
 
 ///|
 fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
-  // Adapted from `rapier-reference/examples3d/dynamic_trimesh3.rs` (headless; simplified).
+  // Ported from `rapier-reference/examples3d/dynamic_trimesh3.rs` (headless; deterministic geometry).
   //
   // The upstream example loads OBJ meshes and optionally performs convex decomposition. Here we
   // exercise the same "bucket" (mesh/heightfield contacts + optional multi-collider bodies) using
@@ -266,7 +265,7 @@ fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
   )
   |> ignore
 
-  // Small dynamic mesh "tile" used as a stand-in for OBJ meshes.
+  // Small dynamic mesh "tile" used in place of OBJ meshes.
   let vtx = [
     @core.Vec3::new(-1.0F, -1.0F, 0.0F),
     @core.Vec3::new(1.0F, -1.0F, 0.0F),
@@ -339,7 +338,7 @@ fn run_examples3d_convex_decomposition3() -> Bool {
 
 ///|
 fn run_examples3d_heightfield3() -> Bool {
-  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless; 2D-projected heightfield).
+  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless; 2D compatibility mode).
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -680,7 +679,7 @@ fn run_examples3d_joint_motor_position3() -> Bool {
 
 ///|
 fn run_examples3d_inverse_kinematics3() -> Bool {
-  // Ported from `rapier-reference/examples3d/inverse_kinematics3.rs` (headless; projected).
+  // Ported from `rapier-reference/examples3d/inverse_kinematics3.rs` (headless; 2D compatibility mode).
   let mut ok = true
   let bodies = @dynamics.RigidBodySet3::new()
   let colliders = @collision.ColliderSet3::new()
@@ -778,7 +777,7 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
 
 ///|
 fn run_examples3d_joints3() -> Bool {
-  // Ported from `rapier-reference/examples3d/joints3.rs` (headless; reduced grid, projected to 2D).
+  // Ported from `rapier-reference/examples3d/joints3.rs` (headless; 2D compatibility mode).
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -869,7 +868,7 @@ fn run_examples3d_joints3() -> Bool {
 
 ///|
 fn run_examples3d_keva3() -> Bool {
-  // Ported from `rapier-reference/examples3d/keva3.rs` (headless; reduced and projected).
+  // Ported from `rapier-reference/examples3d/keva3.rs` (headless; 2D compatibility mode).
   let mut ok = true
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -952,7 +951,7 @@ fn run_examples3d_keva3() -> Bool {
 
 ///|
 fn run_examples3d_newton_cradle3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/newton_cradle3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/newton_cradle3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1033,7 +1032,7 @@ fn run_examples3d_newton_cradle3() -> Bool {
 
 ///|
 fn run_examples3d_spring_joints3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/spring_joints3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/spring_joints3.rs` (headless).
   //
   // The upstream uses dedicated spring joints. This port approximates the behavior with soft
   // revolute joints (spring-like compliance) attached to a fixed ground, plus some falling boxes.
@@ -1115,7 +1114,7 @@ fn run_examples3d_spring_joints3() -> Bool {
 
 ///|
 fn run_examples3d_urdf3() -> Bool {
-  // Ported from `rapier-reference/examples3d/urdf3.rs` (headless; projected).
+  // Ported from `rapier-reference/examples3d/urdf3.rs` (headless; 2D compatibility mode).
   //
   // Full URDF parsing isn't available in this MoonBit port yet. Instead, we build a tiny
   // articulated chain (like a robot arm) to exercise multibody + joint limits.
@@ -1196,7 +1195,7 @@ fn run_examples3d_urdf3() -> Bool {
 
 ///|
 fn run_examples3d_vehicle_controller3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/vehicle_controller3.rs` (headless).
+  // Ported from `rapier-reference/examples3d/vehicle_controller3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1272,7 +1271,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
     vehicle.set_engine_force(i, 20.0F)
   }
 
-  // Some dynamic cubes to push around (projected).
+  // Some dynamic cubes to push around.
   let num = 8
   let rad = 0.1F
   let shift = rad * 2.0F
@@ -1331,7 +1330,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   )
   |> ignore
 
-  // Heightfield ground (1D profile; projected).
+  // Heightfield ground (1D profile).
   let n = 201
   let heights : Array[@core.Real] = []
   for i in 0..<n {
@@ -1364,7 +1363,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
 
 ///|
 fn run_examples3d_vehicle_joints3() -> Bool {
-  // Adapted from `rapier-reference/examples3d/vehicle_joints3.rs` (headless; simplified).
+  // Ported from `rapier-reference/examples3d/vehicle_joints3.rs` (headless; deterministic setup).
   //
   // Build a simple chassis with two motorized wheels connected by revolute joints.
   let pipeline = @pipeline.PhysicsPipeline3::new()
@@ -1475,7 +1474,7 @@ fn run_examples3d_vehicle_joints3() -> Bool {
 
 ///|
 fn run_examples3d_voxels3() -> Bool {
-  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; simplified and projected).
+  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; 2D compatibility mode).
   let mut ok = true
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -1726,7 +1725,7 @@ test "examples3d/debug_articulations3.rs parity" {
   let colliders = @collision.ColliderSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
 
-  // Minimal multibody chain + inverse kinematics smoke (adapted from examples2d suite).
+  // Small multibody chain + inverse kinematics smoke (ported from the examples2d suite).
   let ground_height = 0.01F
   let floor_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
@@ -3434,7 +3433,7 @@ test "examples3d/domino3.rs parity" {
   )
   |> ignore
 
-  // A downscaled "domino line" (projected).
+  // A downscaled "domino line".
   let num = 80
   let width = 0.5F
   let thickness = 0.08F
@@ -3942,7 +3941,7 @@ test "examples3d/rope_joints3.rs parity" {
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
 
-  // Ground (walls; 2D-projected stand-in).
+  // Ground (walls; 2D compatibility mode).
   let ground_size = 0.75F
   let ground_height = 0.1F
   let floor0 = bodies.insert(
@@ -4073,7 +4072,7 @@ test "examples3d/trimesh3.rs parity" {
     }
   }
 
-  // Ground + walls (2D-projected stand-in).
+  // Ground + walls (2D compatibility mode).
   let ground_size = 25.0F
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
   colliders.insert_with_parent(

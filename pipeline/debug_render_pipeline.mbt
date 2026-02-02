@@ -439,7 +439,7 @@ pub fn DebugRenderPipeline::render(
       if self.mode.contains(DebugRenderMode::collider_shapes()) {
         match collider.shape() {
           @collision.Shape::Ball(r) => {
-            // Minimal deterministic approximation: draw two diameters.
+            // Deterministic approximation: draw two diameters.
             let c = collider.translation()
             let a = @core.Vec2::new(c.x - r, c.y)
             let b = @core.Vec2::new(c.x + r, c.y)

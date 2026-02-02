@@ -165,6 +165,497 @@ fn trimesh_closest_point(
 }
 
 ///|
+/// Heightfield-specific closest-point query.
+///
+/// Unlike `trimesh_closest_point`, this exploits the regular grid structure:
+/// it performs a best-first search over the heightfield cells, using each cell's AABB
+/// as a lower-bound. This keeps performance reasonable for large heightfields while
+/// still returning the exact closest point.
+fn heightfield_closest_point(
+  p : @core.Vec3,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
+  if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  // Work in the heightfield local-space to avoid per-triangle transforms.
+  let inv = mesh_pos.inverse()
+  let p_local = inv.transform_point(p)
+  let origin_x = vertices[0].x
+  let origin_z = vertices[0].z
+  let dx0 = if nrows >= 2 { vertices[ncols].x - origin_x } else { 1.0F }
+  let dz0 = if ncols >= 2 { vertices[1].z - origin_z } else { 1.0F }
+  let dx = if dx0 < 0.0F { -dx0 } else { dx0 }
+  let dz = if dz0 < 0.0F { -dz0 } else { dz0 }
+  if dx <= 1.0e-12F || dz <= 1.0e-12F {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  let cells_x = nrows - 1
+  let cells_z = ncols - 1
+  fn clamp_int(v : Int, lo : Int, hi : Int) -> Int {
+    if v < lo {
+      lo
+    } else if v > hi {
+      hi
+    } else {
+      v
+    }
+  }
+
+  fn floor_to_int(x : @core.Real) -> Int {
+    // Matches Rust's `floor()` behavior for negative values.
+    let i = x.to_int()
+    if Float::from_int(i) > x {
+      i - 1
+    } else {
+      i
+    }
+  }
+
+  let fx = (p_local.x - origin_x) / dx
+  let fz = (p_local.z - origin_z) / dz
+  let start_i = clamp_int(floor_to_int(fx), 0, cells_x - 1)
+  let start_j = clamp_int(floor_to_int(fz), 0, cells_z - 1)
+  fn cell_id(i : Int, j : Int, cells_z : Int) -> Int {
+    i * cells_z + j
+  }
+
+  fn point_aabb_dist2(
+    p : @core.Vec3,
+    min : @core.Vec3,
+    max : @core.Vec3,
+  ) -> @core.Real {
+    let dx = if p.x < min.x {
+      min.x - p.x
+    } else if p.x > max.x {
+      p.x - max.x
+    } else {
+      0.0F
+    }
+    let dy = if p.y < min.y {
+      min.y - p.y
+    } else if p.y > max.y {
+      p.y - max.y
+    } else {
+      0.0F
+    }
+    let dz = if p.z < min.z {
+      min.z - p.z
+    } else if p.z > max.z {
+      p.z - max.z
+    } else {
+      0.0F
+    }
+    dx * dx + dy * dy + dz * dz
+  }
+
+  fn cell_aabb(
+    vertices : Array[@core.Vec3],
+    ncols : Int,
+    origin_x : @core.Real,
+    origin_z : @core.Real,
+    dx : @core.Real,
+    dz : @core.Real,
+    i : Int,
+    j : Int,
+  ) -> (@core.Vec3, @core.Vec3) {
+    let x0 = origin_x + Float::from_int(i) * dx
+    let x1 = origin_x + Float::from_int(i + 1) * dx
+    let z0 = origin_z + Float::from_int(j) * dz
+    let z1 = origin_z + Float::from_int(j + 1) * dz
+    let minx = if x0 < x1 { x0 } else { x1 }
+    let maxx = if x0 > x1 { x0 } else { x1 }
+    let minz = if z0 < z1 { z0 } else { z1 }
+    let maxz = if z0 > z1 { z0 } else { z1 }
+    let a = vertices[i * ncols + j]
+    let b = vertices[(i + 1) * ncols + j]
+    let c = vertices[(i + 1) * ncols + (j + 1)]
+    let d = vertices[i * ncols + (j + 1)]
+    let mut miny = a.y
+    let mut maxy = a.y
+    for v in [b, c, d] {
+      if v.y < miny {
+        miny = v.y
+      }
+      if v.y > maxy {
+        maxy = v.y
+      }
+    }
+    (@core.Vec3::new(minx, miny, minz), @core.Vec3::new(maxx, maxy, maxz))
+  }
+
+  // Min-heap of (lower_bound_dist2, i, j).
+  let heap : Array[(@core.Real, Int, Int)] = []
+  fn heap_push(
+    heap : Array[(@core.Real, Int, Int)],
+    item : (@core.Real, Int, Int),
+  ) {
+    heap.push(item)
+    let mut k = heap.length() - 1
+    while k > 0 {
+      let p = (k - 1) / 2
+      if heap[p].0 <= heap[k].0 {
+        break
+      }
+      let tmp = heap[p]
+      heap[p] = heap[k]
+      heap[k] = tmp
+      k = p
+    }
+  }
+
+  fn heap_pop_min(
+    heap : Array[(@core.Real, Int, Int)],
+  ) -> (@core.Real, Int, Int)? {
+    if heap.length() == 0 {
+      return None
+    }
+    let out = heap[0]
+    let last_opt = heap.pop()
+    if heap.length() == 0 {
+      return Some(out)
+    }
+    if last_opt is Some(last) {
+      heap[0] = last
+    } else {
+      return Some(out)
+    }
+    let mut k = 0
+    while true {
+      let l = 2 * k + 1
+      if l >= heap.length() {
+        break
+      }
+      let r = l + 1
+      let mut m = l
+      if r < heap.length() && heap[r].0 < heap[l].0 {
+        m = r
+      }
+      if heap[k].0 <= heap[m].0 {
+        break
+      }
+      let tmp = heap[k]
+      heap[k] = heap[m]
+      heap[m] = tmp
+      k = m
+    }
+    Some(out)
+  }
+
+  let visited : Array[Bool] = []
+  for _ in 0..<(cells_x * cells_z) {
+    visited.push(false)
+  }
+  let (bbmin0, bbmax0) = cell_aabb(
+    vertices, ncols, origin_x, origin_z, dx, dz, start_i, start_j,
+  )
+  heap_push(heap, (point_aabb_dist2(p_local, bbmin0, bbmax0), start_i, start_j))
+  let mut best_dist2 = 1.0e30F
+  let mut best_point_local = @core.Vec3::zero()
+  let mut best_normal_sum = @core.Vec3::zero()
+  let mut best_count = 0
+  let eps_d2 = 1.0e-6F
+  let eps_q2 = 1.0e-8F
+  while heap_pop_min(heap) is Some((lb, i, j)) {
+    if lb > best_dist2 {
+      break
+    }
+    let id = cell_id(i, j, cells_z)
+    if visited[id] {
+      continue
+    }
+    visited[id] = true
+
+    // Test the two triangles of this cell in local-space.
+    let a = vertices[i * ncols + j]
+    let b = vertices[(i + 1) * ncols + j]
+    let c = vertices[(i + 1) * ncols + (j + 1)]
+    let d = vertices[i * ncols + (j + 1)]
+    fn update_best_for_triangle(
+      p_local : @core.Vec3,
+      a : @core.Vec3,
+      b : @core.Vec3,
+      c : @core.Vec3,
+      best_dist2 : @core.Real,
+      best_point : @core.Vec3,
+      best_normal_sum : @core.Vec3,
+      best_count : Int,
+      eps_d2 : @core.Real,
+      eps_q2 : @core.Real,
+    ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
+      let q = closest_point_on_triangle3d(p_local, a, b, c)
+      let d2 = q.sub(p_local).length_squared()
+      let n = b.sub(a).cross(c.sub(a))
+      let n_norm = if n.length_squared() > 1.0e-12F {
+        n.normalize()
+      } else {
+        @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      }
+      if d2 + eps_d2 < best_dist2 {
+        (d2, q, n_norm, 1)
+      } else if @core.abs(d2 - best_dist2) <= eps_d2 &&
+        q.sub(best_point).length_squared() <= eps_q2 {
+        (best_dist2, best_point, best_normal_sum.add(n_norm), best_count + 1)
+      } else {
+        (best_dist2, best_point, best_normal_sum, best_count)
+      }
+    }
+
+    let (d2_0, q0, ns0, c0) = update_best_for_triangle(
+      p_local, a, c, b, best_dist2, best_point_local, best_normal_sum, best_count,
+      eps_d2, eps_q2,
+    )
+    best_dist2 = d2_0
+    best_point_local = q0
+    best_normal_sum = ns0
+    best_count = c0
+    let (d2_1, q1, ns1, c1) = update_best_for_triangle(
+      p_local, a, d, c, best_dist2, best_point_local, best_normal_sum, best_count,
+      eps_d2, eps_q2,
+    )
+    best_dist2 = d2_1
+    best_point_local = q1
+    best_normal_sum = ns1
+    best_count = c1
+
+    // Enqueue neighbors (4-neighborhood).
+    if i > 0 {
+      let ni = i - 1
+      let nj = j
+      let (bbmin, bbmax) = cell_aabb(
+        vertices, ncols, origin_x, origin_z, dx, dz, ni, nj,
+      )
+      heap_push(heap, (point_aabb_dist2(p_local, bbmin, bbmax), ni, nj))
+    }
+    if i + 1 < cells_x {
+      let ni = i + 1
+      let nj = j
+      let (bbmin, bbmax) = cell_aabb(
+        vertices, ncols, origin_x, origin_z, dx, dz, ni, nj,
+      )
+      heap_push(heap, (point_aabb_dist2(p_local, bbmin, bbmax), ni, nj))
+    }
+    if j > 0 {
+      let ni = i
+      let nj = j - 1
+      let (bbmin, bbmax) = cell_aabb(
+        vertices, ncols, origin_x, origin_z, dx, dz, ni, nj,
+      )
+      heap_push(heap, (point_aabb_dist2(p_local, bbmin, bbmax), ni, nj))
+    }
+    if j + 1 < cells_z {
+      let ni = i
+      let nj = j + 1
+      let (bbmin, bbmax) = cell_aabb(
+        vertices, ncols, origin_x, origin_z, dx, dz, ni, nj,
+      )
+      heap_push(heap, (point_aabb_dist2(p_local, bbmin, bbmax), ni, nj))
+    }
+  }
+  if best_count == 0 {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  let best_normal_local = if best_normal_sum.length_squared() > 1.0e-12F {
+    best_normal_sum.normalize()
+  } else {
+    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  let best_point = mesh_pos.transform_point(best_point_local)
+  let best_normal = mesh_pos.rotation.rotate_vec3(best_normal_local)
+  (best_point, best_normal, best_dist2, true)
+}
+
+///|
+/// Fast heightfield closest-point query for cases where we only care about hits within
+/// a known maximum distance (typical for contact generation). This avoids allocating
+/// a visited map / priority queue and instead scans only the cells whose xz-range
+/// could contain a closest point within `max_dist`.
+fn heightfield_closest_point_bounded(
+  p : @core.Vec3,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  max_dist : @core.Real,
+) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
+  if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  let inv = mesh_pos.inverse()
+  let p_local = inv.transform_point(p)
+  let origin_x = vertices[0].x
+  let origin_z = vertices[0].z
+  let dx0 = vertices[ncols].x - origin_x
+  let dz0 = vertices[1].z - origin_z
+  let dx = if dx0 < 0.0F { -dx0 } else { dx0 }
+  let dz = if dz0 < 0.0F { -dz0 } else { dz0 }
+  if dx <= 1.0e-12F || dz <= 1.0e-12F {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  let cells_x = nrows - 1
+  let cells_z = ncols - 1
+  fn floor_to_int(x : @core.Real) -> Int {
+    let i = x.to_int()
+    if Float::from_int(i) > x {
+      i - 1
+    } else {
+      i
+    }
+  }
+
+  fn clamp_int(v : Int, lo : Int, hi : Int) -> Int {
+    if v < lo {
+      lo
+    } else if v > hi {
+      hi
+    } else {
+      v
+    }
+  }
+
+  // Any point within `max_dist` implies |dx| <= max_dist and |dz| <= max_dist.
+  let r = if max_dist < 0.0F { 0.0F } else { max_dist }
+  let min_i = clamp_int(
+    floor_to_int((p_local.x - r - origin_x) / dx),
+    0,
+    cells_x - 1,
+  )
+  let max_i = clamp_int(
+    floor_to_int((p_local.x + r - origin_x) / dx),
+    0,
+    cells_x - 1,
+  )
+  let min_j = clamp_int(
+    floor_to_int((p_local.z - r - origin_z) / dz),
+    0,
+    cells_z - 1,
+  )
+  let max_j = clamp_int(
+    floor_to_int((p_local.z + r - origin_z) / dz),
+    0,
+    cells_z - 1,
+  )
+  let mut best_dist2 = 1.0e30F
+  let mut best_point_local = @core.Vec3::zero()
+  let mut best_normal_sum = @core.Vec3::zero()
+  let mut best_count = 0
+  let eps_d2 = 1.0e-6F
+  let eps_q2 = 1.0e-8F
+  for i in min_i..<(max_i + 1) {
+    for j in min_j..<(max_j + 1) {
+      let a = vertices[i * ncols + j]
+      let b = vertices[(i + 1) * ncols + j]
+      let c = vertices[(i + 1) * ncols + (j + 1)]
+      let d = vertices[i * ncols + (j + 1)]
+      fn update_best_for_triangle(
+        p_local : @core.Vec3,
+        a : @core.Vec3,
+        b : @core.Vec3,
+        c : @core.Vec3,
+        best_dist2 : @core.Real,
+        best_point : @core.Vec3,
+        best_normal_sum : @core.Vec3,
+        best_count : Int,
+        eps_d2 : @core.Real,
+        eps_q2 : @core.Real,
+      ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
+        let q = closest_point_on_triangle3d(p_local, a, b, c)
+        let d2 = q.sub(p_local).length_squared()
+        let n = b.sub(a).cross(c.sub(a))
+        let n_norm = if n.length_squared() > 1.0e-12F {
+          n.normalize()
+        } else {
+          @core.Vec3::new(0.0F, 1.0F, 0.0F)
+        }
+        if d2 + eps_d2 < best_dist2 {
+          (d2, q, n_norm, 1)
+        } else if @core.abs(d2 - best_dist2) <= eps_d2 &&
+          q.sub(best_point).length_squared() <= eps_q2 {
+          (best_dist2, best_point, best_normal_sum.add(n_norm), best_count + 1)
+        } else {
+          (best_dist2, best_point, best_normal_sum, best_count)
+        }
+      }
+
+      let (d2_0, q0, ns0, c0) = update_best_for_triangle(
+        p_local, a, c, b, best_dist2, best_point_local, best_normal_sum, best_count,
+        eps_d2, eps_q2,
+      )
+      best_dist2 = d2_0
+      best_point_local = q0
+      best_normal_sum = ns0
+      best_count = c0
+      let (d2_1, q1, ns1, c1) = update_best_for_triangle(
+        p_local, a, d, c, best_dist2, best_point_local, best_normal_sum, best_count,
+        eps_d2, eps_q2,
+      )
+      best_dist2 = d2_1
+      best_point_local = q1
+      best_normal_sum = ns1
+      best_count = c1
+    }
+  }
+  if best_count == 0 {
+    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+  }
+  let best_normal_local = if best_normal_sum.length_squared() > 1.0e-12F {
+    best_normal_sum.normalize()
+  } else {
+    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  (
+    mesh_pos.transform_point(best_point_local),
+    mesh_pos.rotation.rotate_vec3(best_normal_local),
+    best_dist2,
+    true,
+  )
+}
+
+///|
+/// Returns the closest point on a triangle mesh to `p` (in world-space), along with the triangle
+/// normal (world-space) and the squared distance.
+///
+/// This is a building block for query pipeline operations (point projection, swept-sphere
+/// conservative advancement against meshes).
+pub fn trimesh_closest_point_query(
+  p : @core.Vec3,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> (@core.Vec3, @core.Vec3, @core.Real)? {
+  let (best_point, best_normal, best_dist2, ok) = trimesh_closest_point(
+    p, mesh_pos, vertices, indices,
+  )
+  if ok {
+    Some((best_point, best_normal, best_dist2))
+  } else {
+    None
+  }
+}
+
+///|
+/// Heightfield variant of `trimesh_closest_point_query`.
+pub fn heightfield_closest_point_query(
+  p : @core.Vec3,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> (@core.Vec3, @core.Vec3, @core.Real)? {
+  let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point(
+    p, mesh_pos, vertices, nrows, ncols,
+  )
+  if ok {
+    Some((best_point, best_normal, best_dist2))
+  } else {
+    None
+  }
+}
+
+///|
 fn compute_point_trimesh_contact(
   point1 : @core.Vec3,
   radius : @core.Real,
@@ -193,6 +684,354 @@ fn compute_point_trimesh_contact(
   // potentially getting "stuck" below due to unsigned distance queries.
   let normal = if normal0.y > 0.0F { normal0.scale(-1.0F) } else { normal0 }
   Some({ point1, point2: best_point, normal, penetration: radius - dist })
+}
+
+///|
+fn voxels_floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+  if denom == 0.0F {
+    0
+  } else {
+    @math.floor((value / denom).to_double()).to_int()
+  }
+}
+
+///|
+fn voxels_scan_range_local(
+  voxels : Voxels3DReal,
+  center_local : @core.Vec3,
+  radius : @core.Real,
+) -> (Int, Int, Int, Int, Int, Int) {
+  let sx = voxels.voxel_size.x
+  let sy = voxels.voxel_size.y
+  let sz = voxels.voxel_size.z
+  let x0 = center_local.x - radius
+  let x1 = center_local.x + radius
+  let y0 = center_local.y - radius
+  let y1 = center_local.y + radius
+  let z0 = center_local.z - radius
+  let z1 = center_local.z + radius
+  (
+    voxels_floor_div_to_int(x0, sx),
+    voxels_floor_div_to_int(x1, sx),
+    voxels_floor_div_to_int(y0, sy),
+    voxels_floor_div_to_int(y1, sy),
+    voxels_floor_div_to_int(z0, sz),
+    voxels_floor_div_to_int(z1, sz),
+  )
+}
+
+///|
+fn voxel_cell_aabb_local(
+  voxels : Voxels3DReal,
+  key : (Int, Int, Int),
+) -> (@core.Vec3, @core.Vec3) {
+  let sx = voxels.voxel_size.x
+  let sy = voxels.voxel_size.y
+  let sz = voxels.voxel_size.z
+  let mins = @core.Vec3::new(
+    Float::from_int(key.0) * sx,
+    Float::from_int(key.1) * sy,
+    Float::from_int(key.2) * sz,
+  )
+  let maxs = mins.add(@core.Vec3::new(sx, sy, sz))
+  (mins, maxs)
+}
+
+///|
+fn compute_sphere_voxel_contact_local(
+  center_world : @core.Vec3,
+  center_local : @core.Vec3,
+  radius : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+  key : (Int, Int, Int),
+) -> ContactPoint3D? {
+  let (mins, maxs) = voxel_cell_aabb_local(voxels, key)
+  let clamped = @core.Vec3::new(
+    @core.clamp(center_local.x, mins.x, maxs.x),
+    @core.clamp(center_local.y, mins.y, maxs.y),
+    @core.clamp(center_local.z, mins.z, maxs.z),
+  )
+  let delta = center_local.sub(clamped)
+  let dist2 = delta.length_squared()
+  let r2 = radius * radius
+  if dist2 > r2 {
+    return None
+  }
+  let dist = local_sqrt(dist2)
+  let (normal_local, point2_local, penetration) = if dist > 1.0e-6F {
+    (delta.scale(-1.0F / dist), clamped, radius - dist)
+  } else {
+    let dx0 = center_local.x - mins.x
+    let dx1 = maxs.x - center_local.x
+    let dy0 = center_local.y - mins.y
+    let dy1 = maxs.y - center_local.y
+    let dz0 = center_local.z - mins.z
+    let dz1 = maxs.z - center_local.z
+    let mut best_d = dx0
+    let mut normal = @core.Vec3::new(-1.0F, 0.0F, 0.0F)
+    let mut point2 = @core.Vec3::new(mins.x, center_local.y, center_local.z)
+    if dx1 < best_d {
+      best_d = dx1
+      normal = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      point2 = @core.Vec3::new(maxs.x, center_local.y, center_local.z)
+    }
+    if dy0 < best_d {
+      best_d = dy0
+      normal = @core.Vec3::new(0.0F, -1.0F, 0.0F)
+      point2 = @core.Vec3::new(center_local.x, mins.y, center_local.z)
+    }
+    if dy1 < best_d {
+      best_d = dy1
+      normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      point2 = @core.Vec3::new(center_local.x, maxs.y, center_local.z)
+    }
+    if dz0 < best_d {
+      best_d = dz0
+      normal = @core.Vec3::new(0.0F, 0.0F, -1.0F)
+      point2 = @core.Vec3::new(center_local.x, center_local.y, mins.z)
+    }
+    if dz1 < best_d {
+      best_d = dz1
+      normal = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+      point2 = @core.Vec3::new(center_local.x, center_local.y, maxs.z)
+    }
+    (normal, point2, radius + best_d)
+  }
+  let normal_world = voxels_pos.rotation.rotate_vec3(normal_local)
+  let point2_world = voxels_pos.transform_point(point2_local)
+  let point1_world = center_world.add(normal_world.scale(radius))
+  Some({
+    point1: point1_world,
+    point2: point2_world,
+    normal: normal_world,
+    penetration,
+  })
+}
+
+///|
+fn compute_sphere_voxels_contact(
+  center_world : @core.Vec3,
+  center_local : @core.Vec3,
+  radius : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let (ix0, ix1, iy0, iy1, iz0, iz1) = voxels_scan_range_local(
+    voxels, center_local, radius,
+  )
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for ix in ix0..<(ix1 + 1) {
+    for iz in iz0..<(iz1 + 1) {
+      if voxels.column_ys(ix, iz) is Some(ys) {
+        let mut start = 0
+        while start < ys.length() && ys[start] < iy0 {
+          start = start + 1
+        }
+        for i in start..<ys.length() {
+          let iy = ys[i]
+          if iy > iy1 {
+            break
+          }
+          let key = (ix, iy, iz)
+          if compute_sphere_voxel_contact_local(
+              center_world, center_local, radius, voxels_pos, voxels, key,
+            )
+            is Some(cp) {
+            if cp.penetration > best_pen {
+              best_pen = cp.penetration
+              best = Some(cp)
+            }
+          }
+        }
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_ball_voxels_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let inv = voxels_pos.inverse()
+  let center_local = inv.transform_point(ball_center)
+  compute_sphere_voxels_contact(
+    ball_center, center_local, ball_radius, voxels_pos, voxels,
+  )
+}
+
+///|
+pub fn compute_cuboid_voxels_contact(
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let inv = voxels_pos.inverse()
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  let hx = cuboid_half_extents.x
+  let hy = cuboid_half_extents.y
+  let hz = cuboid_half_extents.z
+  let skin = 0.05F
+  let samples = [
+    @core.Vec3::new(-hx, -hy, -hz),
+    @core.Vec3::new(-hx, -hy, hz),
+    @core.Vec3::new(hx, -hy, -hz),
+    @core.Vec3::new(hx, -hy, hz),
+    @core.Vec3::new(0.0F, -hy, 0.0F),
+  ]
+  for i in 0..<samples.length() {
+    let pw = cuboid_pos.transform_point(samples[i])
+    let pl = inv.transform_point(pw)
+    if compute_sphere_voxels_contact(pw, pl, skin, voxels_pos, voxels)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_capsule_voxels_contact(
+  capsule_pos : @core.Isometry3,
+  capsule_radius : @core.Real,
+  capsule_half_height : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let inv = voxels_pos.inverse()
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  let hh = capsule_half_height
+  let centers_local = [
+    @core.Vec3::new(0.0F, -hh, 0.0F),
+    @core.Vec3::new(0.0F, -hh * 0.5F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, hh * 0.5F, 0.0F),
+    @core.Vec3::new(0.0F, hh, 0.0F),
+  ]
+  for i in 0..<centers_local.length() {
+    let pw = capsule_pos.transform_point(centers_local[i])
+    let pl = inv.transform_point(pw)
+    if compute_sphere_voxels_contact(pw, pl, capsule_radius, voxels_pos, voxels)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_cylinder_voxels_contact(
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let inv = voxels_pos.inverse()
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  let skin = 0.05F
+  let hh = cyl_half_height
+  let r = cyl_radius
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  // Bottom cap ring + center.
+  for i in 0..<ring_dirs.length() {
+    let pt_local = ring_dirs[i].scale(r).add(@core.Vec3::new(0.0F, -hh, 0.0F))
+    let pw = cyl_pos.transform_point(pt_local)
+    let pl = inv.transform_point(pw)
+    if compute_sphere_voxels_contact(pw, pl, skin, voxels_pos, voxels)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  let pw0 = cyl_pos.transform_point(@core.Vec3::new(0.0F, -hh, 0.0F))
+  let pl0 = inv.transform_point(pw0)
+  if compute_sphere_voxels_contact(pw0, pl0, skin, voxels_pos, voxels)
+    is Some(cp0) {
+    if cp0.penetration > best_pen {
+      best_pen = cp0.penetration
+      best = Some(cp0)
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_cone_voxels_contact(
+  cone_pos : @core.Isometry3,
+  cone_radius : @core.Real,
+  cone_half_height : @core.Real,
+  voxels_pos : @core.Isometry3,
+  voxels : Voxels3DReal,
+) -> ContactPoint3D? {
+  let inv = voxels_pos.inverse()
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  let skin = 0.05F
+  let hh = cone_half_height
+  let r = cone_radius
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  // Base ring.
+  for i in 0..<ring_dirs.length() {
+    let pt_local = ring_dirs[i].scale(r).add(@core.Vec3::new(0.0F, -hh, 0.0F))
+    let pw = cone_pos.transform_point(pt_local)
+    let pl = inv.transform_point(pw)
+    if compute_sphere_voxels_contact(pw, pl, skin, voxels_pos, voxels)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  // Tip.
+  let pw_tip = cone_pos.transform_point(@core.Vec3::new(0.0F, hh, 0.0F))
+  let pl_tip = inv.transform_point(pw_tip)
+  if compute_sphere_voxels_contact(pw_tip, pl_tip, skin, voxels_pos, voxels)
+    is Some(cp_tip) {
+    if cp_tip.penetration > best_pen {
+      best_pen = cp_tip.penetration
+      best = Some(cp_tip)
+    }
+  }
+  best
 }
 
 ///|
@@ -234,7 +1073,108 @@ pub fn compute_cuboid_trimesh_contact(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
 ) -> ContactPoint3D? {
-  // Approximation: sample points on the cuboid surface and treat them as small spheres.
+  // Approximation:
+  // 1) For terrain-like triangles (non-vertical), project bottom-face sample points onto the
+  //    triangle plane (solves the common "ground mesh" case robustly).
+  // 2) Fallback to point-vs-mesh proximity tests with a small skin radius.
+  fn tri_contains_xz(
+    px : @core.Real,
+    pz : @core.Real,
+    ax : @core.Real,
+    az : @core.Real,
+    bx : @core.Real,
+    bz : @core.Real,
+    cx : @core.Real,
+    cz : @core.Real,
+  ) -> Bool {
+    // 2D barycentric sign test on (x, z).
+    fn sign(
+      px : @core.Real,
+      pz : @core.Real,
+      ax : @core.Real,
+      az : @core.Real,
+      bx : @core.Real,
+      bz : @core.Real,
+    ) -> @core.Real {
+      (px - bx) * (az - bz) - (ax - bx) * (pz - bz)
+    }
+
+    let d1 = sign(px, pz, ax, az, bx, bz)
+    let d2 = sign(px, pz, bx, bz, cx, cz)
+    let d3 = sign(px, pz, cx, cz, ax, az)
+    let has_neg = d1 < 0.0F || d2 < 0.0F || d3 < 0.0F
+    let has_pos = d1 > 0.0F || d2 > 0.0F || d3 > 0.0F
+    !(has_neg && has_pos)
+  }
+
+  fn projected_bottom_contact(
+    cuboid_pos : @core.Isometry3,
+    cuboid_half_extents : @core.Vec3,
+    mesh_pos : @core.Isometry3,
+    vertices : Array[@core.Vec3],
+    indices : Array[(Int, Int, Int)],
+  ) -> ContactPoint3D? {
+    let hx = cuboid_half_extents.x
+    let hy = cuboid_half_extents.y
+    let hz = cuboid_half_extents.z
+    let samples = [
+      @core.Vec3::new(-hx, -hy, -hz),
+      @core.Vec3::new(hx, -hy, -hz),
+      @core.Vec3::new(-hx, -hy, hz),
+      @core.Vec3::new(hx, -hy, hz),
+      @core.Vec3::new(0.0F, -hy, 0.0F),
+    ]
+    let mut best : ContactPoint3D? = None
+    let mut best_pen = -1.0F
+    for si in 0..<samples.length() {
+      let p = cuboid_pos.transform_point(samples[si])
+      for ti in 0..<indices.length() {
+        let tri = indices[ti]
+        let a = mesh_pos.transform_point(vertices[tri.0])
+        let b = mesh_pos.transform_point(vertices[tri.1])
+        let c = mesh_pos.transform_point(vertices[tri.2])
+        let ab = b.sub(a)
+        let ac = c.sub(a)
+        let n = ab.cross(ac)
+        let nlen2 = n.length_squared()
+        if nlen2 <= 1.0e-12F {
+          continue
+        }
+        // Skip near-vertical triangles (y-projection isn't stable).
+        if @core.abs(n.y) * @core.abs(n.y) < 0.04F * nlen2 {
+          continue
+        }
+        if !tri_contains_xz(p.x, p.z, a.x, a.z, b.x, b.z, c.x, c.z) {
+          continue
+        }
+        let y_on_plane = a.y - (n.x * (p.x - a.x) + n.z * (p.z - a.z)) / n.y
+        let pen = y_on_plane - p.y
+        if pen > best_pen && pen > 0.0F {
+          let point2 = @core.Vec3::new(p.x, y_on_plane, p.z)
+          let d = point2.sub(p)
+          let dist2 = d.length_squared()
+          let mut normal = if dist2 > 1.0e-12F {
+            d.scale(1.0F / local_sqrt(dist2))
+          } else {
+            @core.Vec3::new(0.0F, -1.0F, 0.0F)
+          }
+          if normal.y > 0.0F {
+            normal = normal.scale(-1.0F)
+          }
+          best_pen = pen
+          best = Some({ point1: p, point2, normal, penetration: pen })
+        }
+      }
+    }
+    best
+  }
+
+  if projected_bottom_contact(
+      cuboid_pos, cuboid_half_extents, mesh_pos, vertices, indices,
+    )
+    is Some(cp0) {
+    return Some(cp0)
+  }
   let skin = 0.05F
   let hx = cuboid_half_extents.x
   let hy = cuboid_half_extents.y
@@ -448,6 +1388,297 @@ pub fn compute_cone_trimesh_contact(
 }
 
 ///|
+fn compute_point_heightfield_contact(
+  point1 : @core.Vec3,
+  radius : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
+    point1, heightfield_pos, vertices, nrows, ncols, radius,
+  )
+  if !ok {
+    return None
+  }
+  let r2 = radius * radius
+  if best_dist2 > r2 {
+    return None
+  }
+  let dist = local_sqrt(best_dist2)
+  let normal0 = if dist > 1.0e-6F {
+    best_point.sub(point1).scale(1.0F / dist)
+  } else {
+    best_normal
+  }
+  // Keep the same terrain-oriented convention as trimeshes.
+  let normal = if normal0.y > 0.0F { normal0.scale(-1.0F) } else { normal0 }
+  Some({ point1, point2: best_point, normal, penetration: radius - dist })
+}
+
+///|
+pub fn compute_ball_heightfield_contact(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
+    ball_center, heightfield_pos, vertices, nrows, ncols, ball_radius,
+  )
+  if !ok {
+    return None
+  }
+  let r2 = ball_radius * ball_radius
+  if best_dist2 > r2 {
+    return None
+  }
+  let dist = local_sqrt(best_dist2)
+  let normal = if dist > 1.0e-6F {
+    best_point.sub(ball_center).scale(1.0F / dist)
+  } else {
+    best_normal
+  }
+  let point1 = ball_center.add(normal.scale(ball_radius))
+  let point2 = best_point
+  Some({ point1, point2, normal, penetration: ball_radius - dist })
+}
+
+///|
+pub fn compute_cuboid_heightfield_contact(
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let skin = 0.05F
+  let hx = cuboid_half_extents.x
+  let hy = cuboid_half_extents.y
+  let hz = cuboid_half_extents.z
+  let points = [
+    @core.Vec3::new(-hx, -hy, -hz),
+    @core.Vec3::new(hx, -hy, -hz),
+    @core.Vec3::new(-hx, hy, -hz),
+    @core.Vec3::new(hx, hy, -hz),
+    @core.Vec3::new(-hx, -hy, hz),
+    @core.Vec3::new(hx, -hy, hz),
+    @core.Vec3::new(-hx, hy, hz),
+    @core.Vec3::new(hx, hy, hz),
+    @core.Vec3::new(0.0F, -hy, 0.0F),
+    @core.Vec3::new(0.0F, hy, 0.0F),
+    @core.Vec3::new(-hx, 0.0F, 0.0F),
+    @core.Vec3::new(hx, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, -hz),
+    @core.Vec3::new(0.0F, 0.0F, hz),
+    @core.Vec3::new(0.0F, -hy, -hz),
+    @core.Vec3::new(0.0F, -hy, hz),
+    @core.Vec3::new(0.0F, hy, -hz),
+    @core.Vec3::new(0.0F, hy, hz),
+    @core.Vec3::new(-hx, 0.0F, -hz),
+    @core.Vec3::new(-hx, 0.0F, hz),
+    @core.Vec3::new(hx, 0.0F, -hz),
+    @core.Vec3::new(hx, 0.0F, hz),
+    @core.Vec3::new(-hx, -hy, 0.0F),
+    @core.Vec3::new(hx, -hy, 0.0F),
+    @core.Vec3::new(-hx, hy, 0.0F),
+    @core.Vec3::new(hx, hy, 0.0F),
+  ]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for i in 0..<points.length() {
+    let p = cuboid_pos.transform_point(points[i])
+    if compute_point_heightfield_contact(
+        p, skin, heightfield_pos, vertices, nrows, ncols,
+      )
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_capsule_heightfield_contact(
+  capsule_pos : @core.Isometry3,
+  capsule_radius : @core.Real,
+  capsule_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let (a, b) = capsule_segment_endpoints(capsule_pos, capsule_half_height)
+  let centers = [
+    a,
+    b,
+    a.add(b).scale(0.5F),
+    a.scale(0.75F).add(b.scale(0.25F)),
+    a.scale(0.25F).add(b.scale(0.75F)),
+  ]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for i in 0..<centers.length() {
+    if compute_ball_heightfield_contact(
+        centers[i],
+        capsule_radius,
+        heightfield_pos,
+        vertices,
+        nrows,
+        ncols,
+      )
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_cylinder_heightfield_contact(
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let skin = 0.05F
+  let r = cyl_radius
+  let h = cyl_half_height
+  let a = 0.70710677F
+  let ring = [
+    @core.Vec3::new(r, 0.0F, 0.0F),
+    @core.Vec3::new(-r, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, r),
+    @core.Vec3::new(0.0F, 0.0F, -r),
+    @core.Vec3::new(r * a, 0.0F, r * a),
+    @core.Vec3::new(r * a, 0.0F, -r * a),
+    @core.Vec3::new(-r * a, 0.0F, r * a),
+    @core.Vec3::new(-r * a, 0.0F, -r * a),
+  ]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for i in 0..<ring.length() {
+    let p0 = cyl_pos.transform_point(
+      ring[i].add(@core.Vec3::new(0.0F, -h, 0.0F)),
+    )
+    if compute_point_heightfield_contact(
+        p0, skin, heightfield_pos, vertices, nrows, ncols,
+      )
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+    let p1 = cyl_pos.transform_point(
+      ring[i].add(@core.Vec3::new(0.0F, h, 0.0F)),
+    )
+    if compute_point_heightfield_contact(
+        p1, skin, heightfield_pos, vertices, nrows, ncols,
+      )
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+    let pm = cyl_pos.transform_point(ring[i])
+    if compute_point_heightfield_contact(
+        pm, skin, heightfield_pos, vertices, nrows, ncols,
+      )
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
+}
+
+///|
+pub fn compute_round_cylinder_heightfield_contact(
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+  border_radius : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  compute_capsule_heightfield_contact(
+    cyl_pos,
+    cyl_radius + border_radius,
+    cyl_half_height + border_radius,
+    heightfield_pos,
+    vertices,
+    nrows,
+    ncols,
+  )
+}
+
+///|
+pub fn compute_cone_heightfield_contact(
+  cone_pos : @core.Isometry3,
+  cone_radius : @core.Real,
+  cone_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+) -> ContactPoint3D? {
+  let skin = 0.05F
+  let r = cone_radius
+  let hh = cone_half_height
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  let slices = [1.0F, 0.66F, 0.33F]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for s in slices {
+    let y = -hh + (1.0F - s) * (2.0F * hh)
+    let rr = r * s
+    for i in 0..<ring_dirs.length() {
+      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cone_pos.transform_point(pt_local)
+      if compute_point_heightfield_contact(
+          p, skin, heightfield_pos, vertices, nrows, ncols,
+        )
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
+}
+
+///|
 pub fn compute_halfspace_contact(
   halfspace_pos : @core.Isometry3,
   halfspace_normal_local : @core.Vec3,
@@ -512,6 +1743,38 @@ pub fn compute_halfspace_contact(
           }
         }
         best
+      }
+      Shape3D::Voxels(v) => {
+        let (ix0, iy0, iz0) = v.min_key
+        let (ix1, iy1, iz1) = v.max_key
+        let sx = v.voxel_size.x
+        let sy = v.voxel_size.y
+        let sz = v.voxel_size.z
+        let local_dir = p.rotation.inverse().rotate_vec3(dir)
+        let x0 = Float::from_int(ix0) * sx
+        let y0 = Float::from_int(iy0) * sy
+        let z0 = Float::from_int(iz0) * sz
+        let x1 = Float::from_int(ix1 + 1) * sx
+        let y1 = Float::from_int(iy1 + 1) * sy
+        let z1 = Float::from_int(iz1 + 1) * sz
+        let corner = @core.Vec3::new(
+          if local_dir.x >= 0.0F {
+            x1
+          } else {
+            x0
+          },
+          if local_dir.y >= 0.0F {
+            y1
+          } else {
+            y0
+          },
+          if local_dir.z >= 0.0F {
+            z1
+          } else {
+            z0
+          },
+        )
+        Some(p.transform_point(corner))
       }
       Shape3D::TriMesh(vertices, _) =>
         if vertices.length() == 0 {
@@ -1641,6 +2904,571 @@ pub fn compute_cuboid_cuboid_contact(
   let point1 = support(pos1, he1, normal)
   let point2 = support(pos2, he2, normal.scale(-1.0F))
   Some({ point1, point2, normal, penetration: min_overlap })
+}
+
+///|
+/// Generate a contact manifold (up to 4 points) for a cuboid-cuboid contact.
+///
+/// This is a simplified BoxBox manifold generator:
+/// - For face-face contacts (best axis is a face normal), it computes the incident face corners,
+///   clips them against the reference face side planes, and keeps up to 4 extreme points.
+/// - For edge-edge contacts (best axis is a cross product), it falls back to a single support-point
+///   contact.
+fn compute_cuboid_cuboid_contacts(
+  pos1 : @core.Isometry3,
+  he1 : @core.Vec3,
+  pos2 : @core.Isometry3,
+  he2 : @core.Vec3,
+) -> Array[ContactPoint3D] {
+  let out : Array[ContactPoint3D] = []
+  let a0 = he1.x
+  let a1 = he1.y
+  let a2 = he1.z
+  let b0 = he2.x
+  let b1 = he2.y
+  let b2 = he2.z
+  let ra = pos1.rotation.to_mat3()
+  let rb = pos2.rotation.to_mat3()
+  fn col(m : @core.Mat3, i : Int) -> @core.Vec3 {
+    match i {
+      0 => @core.Vec3::new(m.m00, m.m10, m.m20)
+      1 => @core.Vec3::new(m.m01, m.m11, m.m21)
+      _ => @core.Vec3::new(m.m02, m.m12, m.m22)
+    }
+  }
+
+  let a_axis0 = col(ra, 0)
+  let a_axis1 = col(ra, 1)
+  let a_axis2 = col(ra, 2)
+  let b_axis0 = col(rb, 0)
+  let b_axis1 = col(rb, 1)
+  let b_axis2 = col(rb, 2)
+  let d = pos2.translation.sub(pos1.translation)
+  let t0 = d.dot(a_axis0)
+  let t1 = d.dot(a_axis1)
+  let t2 = d.dot(a_axis2)
+  let eps = 1.0e-6F
+  let r00 = a_axis0.dot(b_axis0)
+  let r01 = a_axis0.dot(b_axis1)
+  let r02 = a_axis0.dot(b_axis2)
+  let r10 = a_axis1.dot(b_axis0)
+  let r11 = a_axis1.dot(b_axis1)
+  let r12 = a_axis1.dot(b_axis2)
+  let r20 = a_axis2.dot(b_axis0)
+  let r21 = a_axis2.dot(b_axis1)
+  let r22 = a_axis2.dot(b_axis2)
+  let abs_r00 = @core.abs(r00) + eps
+  let abs_r01 = @core.abs(r01) + eps
+  let abs_r02 = @core.abs(r02) + eps
+  let abs_r10 = @core.abs(r10) + eps
+  let abs_r11 = @core.abs(r11) + eps
+  let abs_r12 = @core.abs(r12) + eps
+  let abs_r20 = @core.abs(r20) + eps
+  let abs_r21 = @core.abs(r21) + eps
+  let abs_r22 = @core.abs(r22) + eps
+  fn a_extent_at(
+    a0 : @core.Real,
+    a1 : @core.Real,
+    a2 : @core.Real,
+    i : Int,
+  ) -> @core.Real {
+    match i {
+      0 => a0
+      1 => a1
+      _ => a2
+    }
+  }
+
+  fn b_extent_at(
+    b0 : @core.Real,
+    b1 : @core.Real,
+    b2 : @core.Real,
+    i : Int,
+  ) -> @core.Real {
+    match i {
+      0 => b0
+      1 => b1
+      _ => b2
+    }
+  }
+
+  fn a_axis_at(
+    a0 : @core.Vec3,
+    a1 : @core.Vec3,
+    a2 : @core.Vec3,
+    i : Int,
+  ) -> @core.Vec3 {
+    match i {
+      0 => a0
+      1 => a1
+      _ => a2
+    }
+  }
+
+  fn b_axis_at(
+    b0 : @core.Vec3,
+    b1 : @core.Vec3,
+    b2 : @core.Vec3,
+    i : Int,
+  ) -> @core.Vec3 {
+    match i {
+      0 => b0
+      1 => b1
+      _ => b2
+    }
+  }
+
+  fn t_at(
+    t0 : @core.Real,
+    t1 : @core.Real,
+    t2 : @core.Real,
+    i : Int,
+  ) -> @core.Real {
+    match i {
+      0 => t0
+      1 => t1
+      _ => t2
+    }
+  }
+
+  fn r_at(
+    r00 : @core.Real,
+    r01 : @core.Real,
+    r02 : @core.Real,
+    r10 : @core.Real,
+    r11 : @core.Real,
+    r12 : @core.Real,
+    r20 : @core.Real,
+    r21 : @core.Real,
+    r22 : @core.Real,
+    i : Int,
+    j : Int,
+  ) -> @core.Real {
+    match (i, j) {
+      (0, 0) => r00
+      (0, 1) => r01
+      (0, 2) => r02
+      (1, 0) => r10
+      (1, 1) => r11
+      (1, 2) => r12
+      (2, 0) => r20
+      (2, 1) => r21
+      _ => r22
+    }
+  }
+
+  fn abs_r_at(
+    r00 : @core.Real,
+    r01 : @core.Real,
+    r02 : @core.Real,
+    r10 : @core.Real,
+    r11 : @core.Real,
+    r12 : @core.Real,
+    r20 : @core.Real,
+    r21 : @core.Real,
+    r22 : @core.Real,
+    i : Int,
+    j : Int,
+  ) -> @core.Real {
+    match (i, j) {
+      (0, 0) => r00
+      (0, 1) => r01
+      (0, 2) => r02
+      (1, 0) => r10
+      (1, 1) => r11
+      (1, 2) => r12
+      (2, 0) => r20
+      (2, 1) => r21
+      _ => r22
+    }
+  }
+
+  let mut best = CuboidBestAxis::A(0)
+  let mut min_overlap = 1.0e30F
+
+  // Test L = A_i.
+  for i in 0..<3 {
+    let ra_i = a_extent_at(a0, a1, a2, i)
+    let rb_i = b0 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        i, 0,
+      ) +
+      b1 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        i, 1,
+      ) +
+      b2 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        i, 2,
+      )
+    let dist = @core.abs(t_at(t0, t1, t2, i))
+    let overlap = ra_i + rb_i - dist
+    if overlap < 0.0F {
+      return out
+    }
+    if overlap < min_overlap {
+      min_overlap = overlap
+      best = CuboidBestAxis::A(i)
+    }
+  }
+
+  // Test L = B_j.
+  for j in 0..<3 {
+    let ra_j = a0 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        0, j,
+      ) +
+      a1 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        1, j,
+      ) +
+      a2 *
+      abs_r_at(
+        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
+        2, j,
+      )
+    let rb_j = b_extent_at(b0, b1, b2, j)
+    let proj = t0 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 0, j) +
+      t1 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 1, j) +
+      t2 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 2, j)
+    let dist = @core.abs(proj)
+    let overlap = ra_j + rb_j - dist
+    if overlap < 0.0F {
+      return out
+    }
+    if overlap < min_overlap {
+      min_overlap = overlap
+      best = CuboidBestAxis::B(j)
+    }
+  }
+
+  // Test L = A_i x B_j.
+  for i in 0..<3 {
+    let i1 = (i + 1) % 3
+    let i2 = (i + 2) % 3
+    for j in 0..<3 {
+      let j1 = (j + 1) % 3
+      let j2 = (j + 2) % 3
+      let ra_c = a_extent_at(a0, a1, a2, i1) *
+        abs_r_at(
+          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
+          abs_r22, i2, j,
+        ) +
+        a_extent_at(a0, a1, a2, i2) *
+        abs_r_at(
+          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
+          abs_r22, i1, j,
+        )
+      let rb_c = b_extent_at(b0, b1, b2, j1) *
+        abs_r_at(
+          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
+          abs_r22, i, j2,
+        ) +
+        b_extent_at(b0, b1, b2, j2) *
+        abs_r_at(
+          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
+          abs_r22, i, j1,
+        )
+      let dist = @core.abs(
+        t_at(t0, t1, t2, i2) *
+        r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, i1, j) -
+        t_at(t0, t1, t2, i1) *
+        r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, i2, j),
+      )
+      let overlap = ra_c + rb_c - dist
+      if overlap < 0.0F {
+        return out
+      }
+      let axis = a_axis_at(a_axis0, a_axis1, a_axis2, i).cross(
+        b_axis_at(b_axis0, b_axis1, b_axis2, j),
+      )
+      if axis.length_squared() > 1.0e-12F {
+        if overlap < min_overlap {
+          min_overlap = overlap
+          best = CuboidBestAxis::Cross(i, j)
+        }
+      }
+    }
+  }
+
+  // Contact normal pointing from box1 to box2.
+  let mut normal = match best {
+    CuboidBestAxis::A(i) => {
+      let s = if t_at(t0, t1, t2, i) < 0.0F { -1.0F } else { 1.0F }
+      a_axis_at(a_axis0, a_axis1, a_axis2, i).scale(s)
+    }
+    CuboidBestAxis::B(j) => {
+      let proj = t0 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 0, j) +
+        t1 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 1, j) +
+        t2 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 2, j)
+      let s = if proj < 0.0F { -1.0F } else { 1.0F }
+      b_axis_at(b_axis0, b_axis1, b_axis2, j).scale(s)
+    }
+    CuboidBestAxis::Cross(i, j) => {
+      let axis = a_axis_at(a_axis0, a_axis1, a_axis2, i).cross(
+        b_axis_at(b_axis0, b_axis1, b_axis2, j),
+      )
+      let len = local_sqrt(axis.length_squared())
+      if len <= 1.0e-6F {
+        @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      } else {
+        axis.scale(1.0F / len)
+      }
+    }
+  }
+  if normal.dot(d) < 0.0F {
+    normal = normal.scale(-1.0F)
+  }
+  fn support(
+    pos : @core.Isometry3,
+    he : @core.Vec3,
+    dir : @core.Vec3,
+  ) -> @core.Vec3 {
+    let local_dir = pos.rotation.inverse().rotate_vec3(dir)
+    let sx = if local_dir.x >= 0.0F { he.x } else { -he.x }
+    let sy = if local_dir.y >= 0.0F { he.y } else { -he.y }
+    let sz = if local_dir.z >= 0.0F { he.z } else { -he.z }
+    pos.transform_point(@core.Vec3::new(sx, sy, sz))
+  }
+
+  // Edge-edge contact: fall back to a single point.
+  match best {
+    CuboidBestAxis::Cross(_, _) => {
+      let point1 = support(pos1, he1, normal)
+      let point2 = support(pos2, he2, normal.scale(-1.0F))
+      out.push({ point1, point2, normal, penetration: min_overlap })
+      return out
+    }
+    _ => ()
+  }
+  fn incident_face_corners(
+    pos : @core.Isometry3,
+    axis0 : @core.Vec3,
+    axis1 : @core.Vec3,
+    axis2 : @core.Vec3,
+    e0 : @core.Real,
+    e1 : @core.Real,
+    e2 : @core.Real,
+    ref_normal : @core.Vec3,
+  ) -> Array[@core.Vec3] {
+    // Choose the face normal most anti-parallel to `ref_normal`.
+    let mut best_k = 0
+    let mut best_abs = @core.abs(axis0.dot(ref_normal))
+    let abs1 = @core.abs(axis1.dot(ref_normal))
+    if abs1 > best_abs {
+      best_abs = abs1
+      best_k = 1
+    }
+    let abs2 = @core.abs(axis2.dot(ref_normal))
+    if abs2 > best_abs {
+      best_abs = abs2
+      best_k = 2
+    }
+    let (best_axis, best_extent, u_axis, u_extent, v_axis, v_extent) = match
+      best_k {
+      0 => (axis0, e0, axis1, e1, axis2, e2)
+      1 => (axis1, e1, axis2, e2, axis0, e0)
+      _ => (axis2, e2, axis0, e0, axis1, e1)
+    }
+    let sign = if best_axis.dot(ref_normal) > 0.0F { -1.0F } else { 1.0F }
+    let face_center = pos.translation.add(best_axis.scale(sign * best_extent))
+    let au = u_axis.scale(u_extent)
+    let av = v_axis.scale(v_extent)
+    [
+      face_center.add(au).add(av),
+      face_center.add(au).sub(av),
+      face_center.sub(au).add(av),
+      face_center.sub(au).sub(av),
+    ]
+  }
+
+  fn clip_polygon_plane(
+    poly : Array[@core.Vec3],
+    plane_point : @core.Vec3,
+    plane_normal : @core.Vec3,
+  ) -> Array[@core.Vec3] {
+    if poly.length() == 0 {
+      return []
+    }
+    let out : Array[@core.Vec3] = []
+    let mut prev = poly[poly.length() - 1]
+    let mut prev_d = prev.sub(plane_point).dot(plane_normal)
+    for i in 0..<poly.length() {
+      let cur = poly[i]
+      let cur_d = cur.sub(plane_point).dot(plane_normal)
+      let prev_in = prev_d <= 0.0F
+      let cur_in = cur_d <= 0.0F
+      if prev_in && cur_in {
+        out.push(cur)
+      } else if prev_in && !cur_in {
+        let denom = prev_d - cur_d
+        if @core.abs(denom) > 1.0e-12F {
+          let t = prev_d / denom
+          out.push(prev.add(cur.sub(prev).scale(t)))
+        }
+      } else if !prev_in && cur_in {
+        let denom = prev_d - cur_d
+        if @core.abs(denom) > 1.0e-12F {
+          let t = prev_d / denom
+          out.push(prev.add(cur.sub(prev).scale(t)))
+        }
+        out.push(cur)
+      }
+      prev = cur
+      prev_d = cur_d
+    }
+    out
+  }
+
+  fn reduce_face_contacts(
+    candidates : Array[@core.Vec3],
+    origin : @core.Vec3,
+    u_axis : @core.Vec3,
+    v_axis : @core.Vec3,
+  ) -> Array[@core.Vec3] {
+    if candidates.length() <= 4 {
+      return candidates
+    }
+    let mut min_u_i = 0
+    let mut max_u_i = 0
+    let mut min_v_i = 0
+    let mut max_v_i = 0
+    let mut min_u = 1.0e30F
+    let mut max_u = -1.0e30F
+    let mut min_v = 1.0e30F
+    let mut max_v = -1.0e30F
+    for i in 0..<candidates.length() {
+      let rel = candidates[i].sub(origin)
+      let u = rel.dot(u_axis)
+      let v = rel.dot(v_axis)
+      if u < min_u {
+        min_u = u
+        min_u_i = i
+      }
+      if u > max_u {
+        max_u = u
+        max_u_i = i
+      }
+      if v < min_v {
+        min_v = v
+        min_v_i = i
+      }
+      if v > max_v {
+        max_v = v
+        max_v_i = i
+      }
+    }
+    let idxs = [min_u_i, max_u_i, min_v_i, max_v_i]
+    let out : Array[@core.Vec3] = []
+    let eps2 = 1.0e-8F
+    for k in 0..<idxs.length() {
+      let p = candidates[idxs[k]]
+      let mut dup = false
+      for j in 0..<out.length() {
+        if out[j].sub(p).length_squared() <= eps2 {
+          dup = true
+          break
+        }
+      }
+      if !dup {
+        out.push(p)
+      }
+    }
+    out
+  }
+
+  fn face_axes(i : Int) -> (Int, Int) {
+    ((i + 1) % 3, (i + 2) % 3)
+  }
+
+  match best {
+    CuboidBestAxis::A(i) => {
+      let (u_i, v_i) = face_axes(i)
+      let u_axis = a_axis_at(a_axis0, a_axis1, a_axis2, u_i)
+      let v_axis = a_axis_at(a_axis0, a_axis1, a_axis2, v_i)
+      let ref_center = pos1.translation.add(
+        normal.scale(a_extent_at(a0, a1, a2, i)),
+      )
+      // Incident face is on box2.
+      let corners = incident_face_corners(
+        pos2, b_axis0, b_axis1, b_axis2, b0, b1, b2, normal,
+      )
+      let mut poly = corners
+      // Clip against the 4 side planes of the reference face.
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.add(u_axis.scale(a_extent_at(a0, a1, a2, u_i))),
+        u_axis,
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.sub(u_axis.scale(a_extent_at(a0, a1, a2, u_i))),
+        u_axis.scale(-1.0F),
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.add(v_axis.scale(a_extent_at(a0, a1, a2, v_i))),
+        v_axis,
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.sub(v_axis.scale(a_extent_at(a0, a1, a2, v_i))),
+        v_axis.scale(-1.0F),
+      )
+      let pts = reduce_face_contacts(poly, ref_center, u_axis, v_axis)
+      for p2 in pts {
+        let p1 = p2.sub(normal.scale(min_overlap))
+        out.push({ point1: p1, point2: p2, normal, penetration: min_overlap })
+      }
+      out
+    }
+    CuboidBestAxis::B(j) => {
+      let (u_j, v_j) = face_axes(j)
+      let u_axis = b_axis_at(b_axis0, b_axis1, b_axis2, u_j)
+      let v_axis = b_axis_at(b_axis0, b_axis1, b_axis2, v_j)
+      let ref_normal = normal.scale(-1.0F)
+      let ref_center = pos2.translation.add(
+        ref_normal.scale(b_extent_at(b0, b1, b2, j)),
+      )
+      // Incident face is on box1.
+      let corners = incident_face_corners(
+        pos1, a_axis0, a_axis1, a_axis2, a0, a1, a2, ref_normal,
+      )
+      let mut poly = corners
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.add(u_axis.scale(b_extent_at(b0, b1, b2, u_j))),
+        u_axis,
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.sub(u_axis.scale(b_extent_at(b0, b1, b2, u_j))),
+        u_axis.scale(-1.0F),
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.add(v_axis.scale(b_extent_at(b0, b1, b2, v_j))),
+        v_axis,
+      )
+      poly = clip_polygon_plane(
+        poly,
+        ref_center.sub(v_axis.scale(b_extent_at(b0, b1, b2, v_j))),
+        v_axis.scale(-1.0F),
+      )
+      let pts = reduce_face_contacts(poly, ref_center, u_axis, v_axis)
+      for p1 in pts {
+        let p2 = p1.add(normal.scale(min_overlap))
+        out.push({ point1: p1, point2: p2, normal, penetration: min_overlap })
+      }
+      out
+    }
+    _ => out
+  }
 }
 
 ///|

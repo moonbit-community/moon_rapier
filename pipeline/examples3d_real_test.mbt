@@ -42,9 +42,6 @@ test "examples3d primitives3: real backend smoke" {
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
-
-  // Reduced instance count vs rapier-reference/examples3d/primitives3.rs because BroadPhase3D is
-  // currently O(n^2).
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(@core.Vec3::new(0.0F, -2.1F, 0.0F))
@@ -89,7 +86,7 @@ test "examples3d primitives3: real backend smoke" {
     2,
   )
 
-  // Basic sanity: no NaNs, and z is preserved (not projected to 2D).
+  // Basic sanity: no NaNs, and z is preserved (not flattened to 2D).
   let mut saw_nonzero_z = false
   for i in 0..<handles.length() {
     if bodies.get(handles[i]) is Some(rb) {

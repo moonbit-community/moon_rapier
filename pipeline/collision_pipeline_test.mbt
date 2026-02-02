@@ -58,8 +58,8 @@ test "collision pipeline no rigid bodies" {
 }
 
 ///|
-/// Ported from rapier/src/pipeline/collision_pipeline.rs (dim3 test_no_rigid_bodies) adapted for 2D.
-test "collision pipeline no rigid bodies (dim3 adapted)" {
+/// Ported from rapier/src/pipeline/collision_pipeline.rs (dim3 test_no_rigid_bodies) for 2D.
+test "collision pipeline no rigid bodies (dim3 port)" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
@@ -103,7 +103,7 @@ test "collision pipeline no rigid bodies (dim3 adapted)" {
 }
 
 ///|
-/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) adapted for 2D.
+/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) for 2D.
 test "collision pipeline physics hooks filter intersection pair" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()
@@ -155,7 +155,7 @@ test "collision pipeline physics hooks filter intersection pair" {
 }
 
 ///|
-/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) adapted for 2D.
+/// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) for 2D.
 test "collision pipeline physics hooks filter contact pair" {
   let rigid_body_set = @dynamics.RigidBodySet::new()
   let collider_set = @collision.ColliderSet::new()

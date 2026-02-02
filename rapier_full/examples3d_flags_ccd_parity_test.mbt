@@ -92,7 +92,7 @@ fn run_examples3d_collision_groups3() -> Bool {
     @dynamics.Group::group_2(),
     @dynamics.InteractionTestMode::And,
   )
-  colliders.insert_with_parent(
+  let green_platform = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(1.0F, 0.1F, 1.0F)
     .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
     .collision_groups(green_group)
@@ -100,8 +100,7 @@ fn run_examples3d_collision_groups3() -> Bool {
     floor,
     bodies,
   )
-  |> ignore
-  colliders.insert_with_parent(
+  let blue_platform = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(1.0F, 0.1F, 1.0F)
     .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
     .collision_groups(blue_group)
@@ -109,7 +108,6 @@ fn run_examples3d_collision_groups3() -> Bool {
     floor,
     bodies,
   )
-  |> ignore
   let green_handles : Array[@dynamics.RigidBodyHandle] = []
   let blue_handles : Array[@dynamics.RigidBodyHandle] = []
   let rad = 0.2F
@@ -118,51 +116,62 @@ fn run_examples3d_collision_groups3() -> Bool {
     .translation(@core.Vec3::new(0.0F, 5.0F, -0.5F))
     .build(),
   )
-  colliders.insert_with_parent(
+  let green_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(rad, rad, rad)
     .collision_groups(green_group)
     .build(),
     green_body,
     bodies,
   )
-  |> ignore
   green_handles.push(green_body)
   let blue_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::new(0.0F, 5.0F, 0.5F))
     .build(),
   )
-  colliders.insert_with_parent(
+  let blue_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(rad, rad, rad)
     .collision_groups(blue_group)
     .build(),
     blue_body,
     bodies,
   )
-  |> ignore
   blue_handles.push(blue_body)
-  step_world3_flags_real(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    240,
-  )
-  fn avg_y(
-    bodies : @dynamics.RigidBodySet3D,
-    handles : Array[@dynamics.RigidBodyHandle],
-  ) -> Float {
-    let mut sum = 0.0F
-    for h in handles {
-      if bodies.get(h) is Some(rb) {
-        sum += rb.translation().y
-      } else {
-        return 0.0F
-      }
+  let mut green_hits_green = false
+  let mut blue_hits_blue = false
+  let mut green_hits_blue = false
+  let mut blue_hits_green = false
+  for _ in 0..<240 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if !green_hits_green &&
+      narrow_phase.contact_pair(green_collider, green_platform) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      green_hits_green = true
     }
-    sum / Float::from_int(handles.length())
+    if !blue_hits_blue &&
+      narrow_phase.contact_pair(blue_collider, blue_platform) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      blue_hits_blue = true
+    }
+    if !green_hits_blue &&
+      narrow_phase.contact_pair(green_collider, blue_platform) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      green_hits_blue = true
+    }
+    if !blue_hits_green &&
+      narrow_phase.contact_pair(blue_collider, green_platform) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      blue_hits_green = true
+    }
   }
-
-  let avg_green = avg_y(bodies, green_handles)
-  let avg_blue = avg_y(bodies, blue_handles)
-  avg_blue - avg_green > 0.5F
+  green_hits_green &&
+  blue_hits_blue &&
+  !green_hits_blue &&
+  !blue_hits_green &&
+  green_handles.length() == 1 &&
+  blue_handles.length() == 1
 }
 
 ///|

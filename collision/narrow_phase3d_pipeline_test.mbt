@@ -13,8 +13,8 @@
 // limitations under the License.
 
 ///|
-/// Ported from `rapier-reference/src/geometry/narrow_phase.rs` issue #734 test,
-/// reduced to just the narrow-phase behavior:
+/// Ported from `rapier-reference/src/geometry/narrow_phase.rs` issue #734 test, focusing on the
+/// narrow-phase behavior:
 /// colliders attached to the same body keep a contact pair but have no manifolds.
 test "narrow phase 3d: same-parent colliders have empty manifolds; reparent generates contact" {
   let bodies = @dynamics.RigidBodySet3D::new()

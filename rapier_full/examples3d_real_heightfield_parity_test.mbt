@@ -16,8 +16,8 @@
 /// Heightfield parity tests for the real dim3 backend.
 
 ///|
-test "examples3d/heightfield3.rs parity (3DReal headless; reduced counts)" {
-  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless; reduced counts).
+test "examples3d/heightfield3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -59,7 +59,7 @@ test "examples3d/heightfield3.rs parity (3DReal headless; reduced counts)" {
     .build()
   colliders.insert_with_parent(hf, ground, bodies) |> ignore
 
-  // Spawn a reduced stack with mixed shapes.
+  // Spawn a stack with mixed shapes.
   let num = 3
   let numy = 3
   let rad = 1.0F

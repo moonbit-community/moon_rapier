@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Minimal dim3 island manager.
+/// Dim3 island manager.
 ///
 /// Rapier's island manager builds connected components of the interaction graph.
 /// The real 3D backend will refine this further, but for now we maintain a list

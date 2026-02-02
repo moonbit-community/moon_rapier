@@ -16,8 +16,8 @@
 /// Parity tests for convex hull/decomposition examples against the real dim3 backend.
 
 ///|
-test "examples3d/convex_polyhedron3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/convex_polyhedron3.rs` (headless; reduced counts).
+test "examples3d/convex_polyhedron3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/convex_polyhedron3.rs` (headless).
   fn rng_next(seed : Int) -> Int {
     (seed * 1103515245 + 12345) & 0x7fffffff
   }
@@ -106,12 +106,12 @@ test "examples3d/convex_polyhedron3.rs parity (3DReal headless; reduced)" {
 }
 
 ///|
-test "examples3d/convex_decomposition3.rs parity (3DReal headless; stand-in mesh)" {
+test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/convex_decomposition3.rs` (headless).
   //
-  // The upstream example loads a number of OBJ meshes and applies parry's convex decomposition.
-  // The real dim3 backend in this port focuses on deterministic headless behavior, so we exercise
-  // the convex-decomposition API on a small concave mesh and ensure the simulation stays stable.
+  // The upstream example loads a number of OBJ meshes and applies convex decomposition.
+  // This port runs a deterministic headless scenario exercising convex decomposition on a small
+  // concave mesh and ensures the simulation stays stable.
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

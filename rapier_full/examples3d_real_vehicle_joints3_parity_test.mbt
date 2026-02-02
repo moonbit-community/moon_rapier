@@ -16,8 +16,8 @@
 /// Parity tests for `rapier-reference/examples3d/vehicle_joints3.rs` against the real dim3 backend.
 
 ///|
-test "examples3d/vehicle_joints3.rs parity (3DReal headless; reduced)" {
-  // Ported from `rapier-reference/examples3d/vehicle_joints3.rs` (headless; reduced).
+test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
+  // Ported from `rapier-reference/examples3d/vehicle_joints3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -30,9 +30,9 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless; reduced)" {
     16,
   )
 
-  // Ground heightfield (converted to trimesh in this port).
-  let ground_size = @core.Vec3::new(60.0F, 1.0F, 60.0F)
-  let nsubdivs = 20
+  // Ground heightfield.
+  let ground_size = @core.Vec3::new(60.0F, 0.4F, 60.0F)
+  let nsubdivs = 100
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
     for j in 0..<(nsubdivs + 1) {

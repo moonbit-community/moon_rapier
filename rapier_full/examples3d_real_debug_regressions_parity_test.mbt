@@ -16,7 +16,7 @@
 /// Additional regression-style debug parity tests for the real dim3 backend.
 
 ///|
-test "examples3d/debug_internal_edges3.rs parity (3DReal headless; reduced heightfield)" {
+test "examples3d/debug_internal_edges3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_internal_edges3.rs` (headless).
   //
   // The upstream example uses a 100x100 heightfield. We reduce the resolution to keep the
@@ -235,7 +235,7 @@ test "examples3d/debug_infinite_fall3.rs parity (3DReal headless)" {
 
 ///|
 test "examples3d/debug_rollback3.rs parity (3DReal headless)" {
-  // Ported from `rapier-reference/examples3d/debug_rollback3.rs` (headless; reduced).
+  // Ported from `rapier-reference/examples3d/debug_rollback3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()

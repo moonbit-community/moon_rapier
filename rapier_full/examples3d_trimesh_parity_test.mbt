@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-/// Trimesh parity tests (subset) for the real dim3 backend.
+/// Trimesh parity tests for the real dim3 backend.
 
 ///|
 fn run_examples3d_debug_trimesh3() -> Bool {
@@ -99,7 +99,7 @@ test "examples3d/debug_trimesh3.rs parity (headless)" {
 
 ///|
 fn run_examples3d_trimesh3() -> Bool {
-  // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless; reduced counts).
+  // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -154,7 +154,7 @@ fn run_examples3d_trimesh3() -> Bool {
     .build()
   colliders.insert_with_parent(mesh, ground, bodies) |> ignore
 
-  // Reduced stack.
+  // Keep a smaller stack for test runtime while exercising the contact paths.
   let num = 3
   let numy = 3
   let rad = 1.0F
@@ -265,7 +265,7 @@ fn run_examples3d_trimesh3() -> Bool {
 }
 
 ///|
-test "examples3d/trimesh3.rs parity (headless; reduced counts)" {
+test "examples3d/trimesh3.rs parity (headless)" {
   inspect(run_examples3d_trimesh3(), content="true")
 }
 

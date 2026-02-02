@@ -13,12 +13,12 @@
 // limitations under the License.
 
 ///|
-/// Headless parity tests for a subset of `rapier-reference/examples3d/debug_*.rs` against the
+/// Headless parity tests for `rapier-reference/examples3d/debug_*.rs` against the
 /// real dim3 backend.
 
 ///|
 test "examples3d/debug_disabled3.rs parity (3DReal headless)" {
-  // Ported from `rapier-reference/examples3d/debug_disabled3.rs` (headless; reduced runtime).
+  // Ported from `rapier-reference/examples3d/debug_disabled3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
@@ -155,7 +155,7 @@ test "examples3d/debug_add_remove_collider3.rs parity (3DReal headless)" {
 
 ///|
 test "examples3d/debug_dynamic_collider_add3.rs parity (3DReal headless)" {
-  // Ported from `rapier-reference/examples3d/debug_dynamic_collider_add3.rs` (headless; reduced).
+  // Ported from `rapier-reference/examples3d/debug_dynamic_collider_add3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
   let narrow_phase = @collision.NarrowPhase3D::new()
