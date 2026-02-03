@@ -297,6 +297,7 @@ MBTI_TYPE_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+(struct|enum|trait|type)\s+(
 MBTI_FN_RE = re.compile(
     r"^\s*pub(?:\([^)]*\))?\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))?"
 )
+MBTI_USING_RE = re.compile(r"^\s*pub\s+using\s+@[^\\s]+\s+\{([^}]*)\}\s*$")
 
 
 def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
@@ -318,6 +319,15 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                 pkg = m.group(1)
                 continue
             if pkg is None:
+                continue
+            m = MBTI_USING_RE.match(line)
+            if m:
+                # Example: pub using @collision {type ColliderBuilder}
+                body = m.group(1)
+                for name in re.findall(r"\btype\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
+                    add(pkg, name, "type", str(fp.relative_to(root)))
+                for name in re.findall(r"\btrait\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
+                    add(pkg, name, "trait", str(fp.relative_to(root)))
                 continue
             m = MBTI_TYPE_RE.match(line)
             if m:
