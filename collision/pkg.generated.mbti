@@ -93,21 +93,43 @@ pub struct ActiveEvents {
   mut bits : Int
 }
 pub fn ActiveEvents::collision_events() -> Self
+pub fn ActiveEvents::complement(Self) -> Self
 pub fn ActiveEvents::contact_force_events() -> Self
 pub fn ActiveEvents::contains(Self, Self) -> Bool
+pub fn ActiveEvents::difference(Self, Self) -> Self
 pub fn ActiveEvents::empty() -> Self
+pub fn ActiveEvents::from_bits(Int) -> Self?
+pub fn ActiveEvents::from_bits_retain(Int) -> Self
+pub fn ActiveEvents::from_bits_truncate(Int) -> Self
+pub fn ActiveEvents::from_name(String) -> Self?
 pub fn ActiveEvents::insert(Self, Self) -> Self
+pub fn ActiveEvents::is_all(Self) -> Bool
+pub fn ActiveEvents::iter_names(Self) -> Array[String]
+pub fn ActiveEvents::symmetric_difference(Self, Self) -> Self
+pub fn ActiveEvents::toggle(Self, Self) -> Self
+pub fn ActiveEvents::union(Self, Self) -> Self
 
 pub struct ActiveHooks {
   mut value : Int
 }
 pub fn ActiveHooks::all() -> Self
+pub fn ActiveHooks::complement(Self) -> Self
 pub fn ActiveHooks::contains(Self, Self) -> Bool
+pub fn ActiveHooks::difference(Self, Self) -> Self
 pub fn ActiveHooks::empty() -> Self
 pub fn ActiveHooks::filter_contact_pairs() -> Self
 pub fn ActiveHooks::filter_intersection_pair() -> Self
+pub fn ActiveHooks::from_bits(Int) -> Self?
+pub fn ActiveHooks::from_bits_retain(Int) -> Self
+pub fn ActiveHooks::from_bits_truncate(Int) -> Self
+pub fn ActiveHooks::from_name(String) -> Self?
 pub fn ActiveHooks::insert(Self, Self) -> Self
+pub fn ActiveHooks::is_all(Self) -> Bool
+pub fn ActiveHooks::iter_names(Self) -> Array[String]
 pub fn ActiveHooks::modify_solver_contacts() -> Self
+pub fn ActiveHooks::symmetric_difference(Self, Self) -> Self
+pub fn ActiveHooks::toggle(Self, Self) -> Self
+pub fn ActiveHooks::union(Self, Self) -> Self
 
 pub struct BroadPhase3D {
   pairs : Array[(ColliderHandle3D, ColliderHandle3D)]
@@ -141,6 +163,12 @@ pub(all) enum BroadPhasePairEvent3D {
   AddPair(ColliderPair3D)
   DeletePair(ColliderPair3D)
 }
+
+pub struct Bvh {
+  aabbs : Array[@core.Aabb?]
+}
+pub fn Bvh::aabbs(Self) -> Array[@core.Aabb?]
+pub fn Bvh::new(Array[@core.Aabb?]) -> Self
 
 pub(all) enum BvhOptimizationStrategy {
   SubtreeOptimizer
@@ -544,6 +572,7 @@ pub struct ContactManifold {
   normal : @core.Vec2
   points : Array[ContactManifoldPoint]
 }
+pub fn ContactManifold::new(@core.Vec2, Array[ContactManifoldPoint]) -> Self
 pub fn ContactManifold::normal(Self) -> @core.Vec2
 pub fn ContactManifold::points(Self) -> Array[ContactManifoldPoint]
 
@@ -703,6 +732,7 @@ pub fn QueryFilter::new() -> Self
 pub fn QueryFilter::only_dynamic() -> Self
 pub fn QueryFilter::only_fixed() -> Self
 pub fn QueryFilter::only_kinematic() -> Self
+pub fn QueryFilter::passes(Self, @dynamics.RigidBodySet, ColliderHandle, Collider) -> Bool
 pub fn QueryFilter::predicate(Self, (ColliderHandle, Collider) -> Bool) -> Self
 
 pub struct QueryFilter3DReal {
@@ -729,16 +759,37 @@ pub fn QueryFilter3DReal::predicate(Self, (ColliderHandle3D, Collider3D) -> Bool
 pub struct QueryFilterFlags {
   mut bits : Int
 }
+pub fn QueryFilterFlags::complement(Self) -> Self
 pub fn QueryFilterFlags::contains(Self, Int) -> Bool
+pub fn QueryFilterFlags::difference(Self, Self) -> Self
 pub fn QueryFilterFlags::empty() -> Self
+pub fn QueryFilterFlags::exclude_dynamic() -> Self
+pub fn QueryFilterFlags::exclude_fixed() -> Self
+pub fn QueryFilterFlags::exclude_kinematic() -> Self
+pub fn QueryFilterFlags::exclude_sensors() -> Self
+pub fn QueryFilterFlags::exclude_solids() -> Self
+pub fn QueryFilterFlags::from_bits(Int) -> Self?
+pub fn QueryFilterFlags::from_bits_retain(Int) -> Self
+pub fn QueryFilterFlags::from_bits_truncate(Int) -> Self
+pub fn QueryFilterFlags::from_name(String) -> Self?
 pub fn QueryFilterFlags::insert(Self, Int) -> Self
+pub fn QueryFilterFlags::is_all(Self) -> Bool
+pub fn QueryFilterFlags::iter_names(Self) -> Array[String]
 pub fn QueryFilterFlags::new(Int) -> Self
+pub fn QueryFilterFlags::only_dynamic() -> Self
+pub fn QueryFilterFlags::only_fixed() -> Self
+pub fn QueryFilterFlags::only_kinematic() -> Self
+pub fn QueryFilterFlags::passes(Self, @dynamics.RigidBodySet, Collider) -> Bool
+pub fn QueryFilterFlags::symmetric_difference(Self, Self) -> Self
+pub fn QueryFilterFlags::toggle(Self, Self) -> Self
+pub fn QueryFilterFlags::union(Self, Self) -> Self
 
 pub struct QueryPipeline {
+  dispatcher : Unit
+  bvh : Bvh
   filter : QueryFilter
   bodies : @dynamics.RigidBodySet
   colliders : ColliderSet
-  aabbs : Array[@core.Aabb?]
 }
 pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
@@ -780,6 +831,8 @@ pub fn QueryPipeline3DReal::update(Self) -> Unit
 pub fn QueryPipeline3DReal::with_filter(Self, QueryFilter3DReal) -> Self
 
 pub struct QueryPipelineMut {
+  mut dispatcher : Unit
+  mut bvh : Bvh
   pipeline : QueryPipeline
 }
 pub fn QueryPipelineMut::as_ref(Self) -> QueryPipeline

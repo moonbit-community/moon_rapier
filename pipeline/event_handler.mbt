@@ -132,3 +132,48 @@ pub fn EventHandler::take_contact_force_events(
   self.contact_force_events.clear()
   result
 }
+
+///|
+pub struct ChannelEventCollector {
+  handler : EventHandler
+}
+
+///|
+pub fn ChannelEventCollector::new() -> ChannelEventCollector {
+  { handler: EventHandler::new() }
+}
+
+///|
+pub fn ChannelEventCollector::handle_collision_event(
+  self : ChannelEventCollector,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.CollisionEvent,
+) -> Unit {
+  self.handler.handle_collision_event(bodies, colliders, event)
+}
+
+///|
+pub fn ChannelEventCollector::handle_contact_force_event(
+  self : ChannelEventCollector,
+  dt : @core.Real,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.ContactForceEvent,
+) -> Unit {
+  self.handler.handle_contact_force_event(dt, bodies, colliders, event)
+}
+
+///|
+pub fn ChannelEventCollector::take_collision_events(
+  self : ChannelEventCollector,
+) -> Array[@collision.CollisionEvent] {
+  self.handler.take_collision_events()
+}
+
+///|
+pub fn ChannelEventCollector::take_contact_force_events(
+  self : ChannelEventCollector,
+) -> Array[@collision.ContactForceEvent] {
+  self.handler.take_contact_force_events()
+}

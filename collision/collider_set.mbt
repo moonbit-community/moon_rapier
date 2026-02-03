@@ -203,17 +203,20 @@ pub struct ActiveHooks {
 }
 
 ///|
+fn active_hooks_all_bits() -> Int {
+  ACTIVE_HOOKS_FILTER_CONTACT_PAIRS |
+  ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR |
+  ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS
+}
+
+///|
 pub fn ActiveHooks::empty() -> ActiveHooks {
   { value: 0 }
 }
 
 ///|
 pub fn ActiveHooks::all() -> ActiveHooks {
-  {
-    value: ACTIVE_HOOKS_FILTER_CONTACT_PAIRS |
-    ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR |
-    ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS,
-  }
+  { value: active_hooks_all_bits() }
 }
 
 ///|
@@ -243,6 +246,95 @@ pub fn ActiveHooks::insert(
 ) -> ActiveHooks {
   self.value = self.value | other.value
   self
+}
+
+///|
+pub fn ActiveHooks::union(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  ActiveHooks::{ value: self.value | other.value }
+}
+
+///|
+pub fn ActiveHooks::difference(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  ActiveHooks::{ value: self.value & Int::lnot(other.value) }
+}
+
+///|
+pub fn ActiveHooks::symmetric_difference(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  ActiveHooks::{ value: self.value ^ other.value }
+}
+
+///|
+pub fn ActiveHooks::toggle(
+  self : ActiveHooks,
+  other : ActiveHooks,
+) -> ActiveHooks {
+  self.symmetric_difference(other)
+}
+
+///|
+pub fn ActiveHooks::complement(self : ActiveHooks) -> ActiveHooks {
+  ActiveHooks::{ value: active_hooks_all_bits() & Int::lnot(self.value) }
+}
+
+///|
+pub fn ActiveHooks::is_all(self : ActiveHooks) -> Bool {
+  (self.value & active_hooks_all_bits()) == active_hooks_all_bits()
+}
+
+///|
+pub fn ActiveHooks::from_bits(bits : Int) -> ActiveHooks? {
+  if (bits & Int::lnot(active_hooks_all_bits())) == 0 {
+    Some(ActiveHooks::{ value: bits })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn ActiveHooks::from_bits_truncate(bits : Int) -> ActiveHooks {
+  ActiveHooks::{ value: bits & active_hooks_all_bits() }
+}
+
+///|
+pub fn ActiveHooks::from_bits_retain(bits : Int) -> ActiveHooks {
+  ActiveHooks::{ value: bits }
+}
+
+///|
+pub fn ActiveHooks::iter_names(self : ActiveHooks) -> Array[String] {
+  let result : Array[String] = []
+  if self.contains(ActiveHooks::filter_contact_pairs()) {
+    result.push("FILTER_CONTACT_PAIRS")
+  }
+  if self.contains(ActiveHooks::filter_intersection_pair()) {
+    result.push("FILTER_INTERSECTION_PAIR")
+  }
+  if self.contains(ActiveHooks::modify_solver_contacts()) {
+    result.push("MODIFY_SOLVER_CONTACTS")
+  }
+  result
+}
+
+///|
+pub fn ActiveHooks::from_name(name : String) -> ActiveHooks? {
+  if name == "FILTER_CONTACT_PAIRS" {
+    Some(ActiveHooks::filter_contact_pairs())
+  } else if name == "FILTER_INTERSECTION_PAIR" {
+    Some(ActiveHooks::filter_intersection_pair())
+  } else if name == "MODIFY_SOLVER_CONTACTS" {
+    Some(ActiveHooks::modify_solver_contacts())
+  } else {
+    None
+  }
 }
 
 ///|
@@ -2652,6 +2744,14 @@ pub fn ContactManifoldPoint::fid2(self : ContactManifoldPoint) -> FeatureId {
 pub struct ContactManifold {
   normal : @core.Vec2
   points : Array[ContactManifoldPoint]
+}
+
+///|
+pub fn ContactManifold::new(
+  normal : @core.Vec2,
+  points : Array[ContactManifoldPoint],
+) -> ContactManifold {
+  { normal, points }
 }
 
 ///|
