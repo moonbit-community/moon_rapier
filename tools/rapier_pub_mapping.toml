@@ -1,0 +1,29 @@
+# Mapping from Rapier rustdoc item paths to MoonBit symbols.
+#
+# Purpose:
+# - Rapier pub surface is audited from rustdoc JSON for rapier2d/rapier3d v0.32.0
+#   (default features only).
+# - MoonBit export surface is audited from */pkg.generated.mbti and */spec.mbt.
+# - API names do NOT need to match. This file lets us declare equivalences so the
+#   audit can focus on remaining semantic gaps.
+#
+# Notes:
+# - Keys MUST be quoted (they contain ::).
+# - Values are either a single quoted string or an array of quoted strings.
+# - Symbols are free-form, but we recommend: "<moonbit package>::<Type>::<method>"
+#
+# Examples:
+# [map]
+# "rapier2d::pipeline::PhysicsPipeline::step" = "Milky2018/moon_rapier/pipeline::PhysicsPipeline::step"
+# "rapier3d::prelude::RigidBodySet" = [
+#   "Milky2018/moon_rapier/dynamics::RigidBodySet3D",
+#   "Milky2018/moon_rapier/dynamics::RigidBodySet3DReal",
+# ]
+#
+# For items we explicitly do not want to track (e.g. Rust ecosystem re-exports),
+# list them under [ignore] with a short reason string.
+
+[map]
+
+[ignore]
+
