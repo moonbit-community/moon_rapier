@@ -1,10 +1,96 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/moon_rapier/utils"
 
+import {
+  "Milky2018/moon_rapier/core",
+}
+
 // Values
+pub const DIM_MINUS_ONE2 : Int = 1
+
+pub const DIM_MINUS_ONE3 : Int = 2
+
+pub fn angular_inertia_into_matrix2(Float) -> Float
+
+pub fn angular_inertia_into_matrix3(@core.SdpMat3) -> @core.Mat3
+
+pub fn angular_inertia_transform_vector2(Float, Float) -> Float
+
+pub fn angular_inertia_transform_vector3(@core.SdpMat3, @core.Vec3) -> @core.Vec3
+
+pub fn component_mul2(@core.Vec2, @core.Vec2) -> @core.Vec2
+
+pub fn component_mul3(@core.Vec3, @core.Vec3) -> @core.Vec3
+
+pub fn copy_sign_to(Float, Float) -> Float
+
 pub fn deserialize_from_vec_tuple(String) -> HashMap
 
+pub fn gcross_matrix2(@core.Vec2) -> @core.Vec2
+
+pub fn gcross_matrix3(@core.Vec3) -> @core.Mat3
+
+pub fn gcross_matrix_tr2(@core.Vec2) -> @core.Vec2
+
+pub fn gcross_matrix_tr3(@core.Vec3) -> @core.Mat3
+
+pub fn[T] index_mut2(Array[T], Int, Int) -> (T?, T?)
+
+pub fn[T] index_mut_const(Array[T], Int, Int) -> (T?, T?)
+
+pub fn mat2_column(@core.Mat2, Int) -> @core.Vec2?
+
+pub fn mat3_column(@core.Mat3, Int) -> @core.Vec3?
+
+pub fn[T] mat_to_na(T) -> T
+
+pub fn orthonormal_basis2(@core.Vec2) -> Array[@core.Vec2]
+
+pub fn orthonormal_basis3(@core.Vec3) -> Array[@core.Vec3]
+
+pub fn orthonormal_vector2(@core.Vec2) -> @core.Vec2
+
+pub fn orthonormal_vector3(@core.Vec3) -> @core.Vec3
+
+pub fn pose_append_rotation2(@core.Isometry2, Float) -> @core.Isometry2
+
+pub fn pose_append_rotation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn pose_append_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
+
+pub fn pose_append_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn pose_prepend_rotation2(@core.Isometry2, Float) -> @core.Isometry2
+
+pub fn pose_prepend_rotation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn pose_prepend_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
+
+pub fn pose_prepend_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn quat_diff_conj1_2(@core.Quat, @core.Quat) -> @core.Mat3
+
+pub fn quat_diff_conj1_2_tr(@core.Quat, @core.Quat) -> @core.Mat3
+
+pub fn quat_mul_assign_unchecked(@core.Quat, Float) -> @core.Quat
+
+pub fn rot2_to_mat(@core.Rot2) -> @core.Mat2
+
+pub fn select_vec2(@core.Vec2, Bool, @core.Vec2) -> @core.Vec2
+
+pub fn select_vec3(@core.Vec3, Bool, @core.Vec3) -> @core.Vec3
+
 pub fn serialize_to_vec_tuple(HashMap) -> String
+
+pub fn smallest_abs_diff_between_angles(Float, Float) -> Float
+
+pub fn smallest_abs_diff_between_sin_angles(Float, Float) -> Float
+
+pub fn try_normalize_and_get_length2(@core.Vec2, Float) -> (@core.Vec2, Float)?
+
+pub fn try_normalize_and_get_length3(@core.Vec3, Float) -> (@core.Vec3, Float)?
+
+pub fn[T] vect_to_na(T) -> T
 
 // Errors
 
@@ -16,6 +102,89 @@ pub fn HashMap::equals(Self, Self) -> Bool
 pub fn HashMap::from_array(Array[(Int, String)]) -> Self
 
 // Type aliases
+pub type AngularInertiaOps = Unit
+
+pub type AngularInertiaOpsAngMatrix2 = Float
+
+pub using @core {type Mat3 as AngularInertiaOpsAngMatrix3}
+
+pub type AngularInertiaOpsAngVector2 = Float
+
+pub using @core {type Vec3 as AngularInertiaOpsAngVector3}
+
+pub type ComponentMul = Unit
+
+pub type CopySign = Unit
+
+pub type CrossProduct = Unit
+
+pub type CrossProductMatrix = Unit
+
+pub using @core {type Vec2 as CrossProductMatrixCrossMat2}
+
+pub using @core {type Mat3 as CrossProductMatrixCrossMat3}
+
+pub using @core {type Vec2 as CrossProductMatrixCrossMatTr2}
+
+pub using @core {type Mat3 as CrossProductMatrixCrossMatTr3}
+
+pub type CrossProductResult2 = Float
+
+pub using @core {type Vec3 as CrossProductResult3}
+
+pub type DotProduct = Unit
+
+pub type DotProductResult = Float
+
+pub type IndexMut2 = Unit
+
+pub type MatrixColumn = Unit
+
+pub using @core {type Vec2 as MatrixColumnColumn2}
+
+pub using @core {type Vec3 as MatrixColumnColumn3}
+
+pub type OrthonormalBasis = Unit
+
+pub type OrthonormalBasisBasis2 = Array[@core.Vec2]
+
+pub type OrthonormalBasisBasis3 = Array[@core.Vec3]
+
+pub type PoseOps = Unit
+
+pub type RotationOps = Unit
+
+pub type ScalarType = Unit
+
+pub type ScalarTypeAngInertia2 = Float
+
+pub using @core {type SdpMat3 as ScalarTypeAngInertia3}
+
+pub type ScalarTypeAngVector2 = Float
+
+pub using @core {type Vec3 as ScalarTypeAngVector3}
+
+pub using @core {type Mat2 as ScalarTypeMatrix2}
+
+pub using @core {type Mat3 as ScalarTypeMatrix3}
+
+pub using @core {type Isometry2 as ScalarTypePose2}
+
+pub using @core {type Isometry3 as ScalarTypePose3}
+
+pub using @core {type Rot2 as ScalarTypeRotation2}
+
+pub using @core {type Quat as ScalarTypeRotation3}
+
+pub using @core {type Vec2 as ScalarTypeVector2}
+
+pub using @core {type Vec3 as ScalarTypeVector3}
+
+pub type SimdLength = Unit
+
+pub type SimdRealCopy = Unit
+
+pub type SimdSelect = Unit
 
 // Traits
 
