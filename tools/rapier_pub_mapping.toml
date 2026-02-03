@@ -25,5 +25,45 @@
 
 [map]
 
-[ignore]
+"rapier2d::VERSION" = "Milky2018/moon_rapier/core::RAPIER_REFERENCE_VERSION"
+"rapier3d::VERSION" = "Milky2018/moon_rapier/core::RAPIER_REFERENCE_VERSION"
 
+"rapier2d::math::SPATIAL_DIM" = "Milky2018/moon_rapier/core::SPATIAL_DIM2"
+"rapier2d::math::ANG_DIM" = "Milky2018/moon_rapier/core::ANG_DIM2"
+"rapier2d::math::MAX_MANIFOLD_POINTS" = "Milky2018/moon_rapier/core::MAX_MANIFOLD_POINTS2"
+
+"rapier3d::math::SPATIAL_DIM" = "Milky2018/moon_rapier/core::SPATIAL_DIM3"
+"rapier3d::math::ANG_DIM" = "Milky2018/moon_rapier/core::ANG_DIM3"
+"rapier3d::math::MAX_MANIFOLD_POINTS" = "Milky2018/moon_rapier/core::MAX_MANIFOLD_POINTS3"
+
+"rapier2d::math::Dim" = "Milky2018/moon_rapier/core::Dim2"
+"rapier2d::math::AngDim" = "Milky2018/moon_rapier/core::AngDim2"
+"rapier3d::math::Dim" = "Milky2018/moon_rapier/core::Dim3"
+"rapier3d::math::AngDim" = "Milky2018/moon_rapier/core::AngDim3"
+
+"rapier2d::math::DMatrix" = "Milky2018/moon_rapier/core::DMatrix"
+"rapier3d::math::DMatrix" = "Milky2018/moon_rapier/core::DMatrix"
+"rapier2d::math::JacobianView" = "Milky2018/moon_rapier/core::DMatrix"
+"rapier2d::math::JacobianViewMut" = "Milky2018/moon_rapier/core::DMatrix"
+"rapier3d::math::JacobianView" = "Milky2018/moon_rapier/core::DMatrix"
+"rapier3d::math::JacobianViewMut" = "Milky2018/moon_rapier/core::DMatrix"
+
+"rapier2d::math::SimdVector" = "Milky2018/moon_rapier/core::Vec2"
+"rapier2d::math::SimdPoint" = "Milky2018/moon_rapier/core::Vec2"
+"rapier2d::math::SimdPose" = "Milky2018/moon_rapier/core::Isometry2"
+"rapier2d::math::SimdRotation" = "Milky2018/moon_rapier/core::Rot2"
+"rapier2d::math::SimdAngVector" = "Milky2018/moon_rapier/core::Real"
+"rapier2d::math::SimdAngularInertia" = "Milky2018/moon_rapier/core::Real"
+"rapier2d::math::SimdMatrix" = "Milky2018/moon_rapier/core::Mat2"
+"rapier2d::math::TangentImpulse" = "Milky2018/moon_rapier/core::TangentImpulse2"
+
+"rapier3d::math::SimdVector" = "Milky2018/moon_rapier/core::Vec3"
+"rapier3d::math::SimdPoint" = "Milky2018/moon_rapier/core::Vec3"
+"rapier3d::math::SimdPose" = "Milky2018/moon_rapier/core::Isometry3"
+"rapier3d::math::SimdRotation" = "Milky2018/moon_rapier/core::Quat"
+"rapier3d::math::SimdAngVector" = "Milky2018/moon_rapier/core::Vec3"
+"rapier3d::math::SimdAngularInertia" = "Milky2018/moon_rapier/core::SdpMat3"
+"rapier3d::math::SimdMatrix" = "Milky2018/moon_rapier/core::Mat3"
+"rapier3d::math::TangentImpulse" = "Milky2018/moon_rapier/core::TangentImpulse3"
+
+[ignore]

@@ -82,14 +82,14 @@ def _parse_mapping_toml(path: pathlib.Path) -> Tuple[Dict[str, List[str]], Dict[
         if s.startswith("[") and s.endswith("]"):
             table = s[1:-1].strip()
             continue
-        m = re.match(r"^\"(?P<key>[^\"]+)\"\\s*=\\s*(?P<val>.+)$", s)
+        m = re.match(r'^"(?P<key>[^"]+)"\s*=\s*(?P<val>.+)$', s)
         if not m or table not in ("map", "ignore"):
             raise ValueError(f"{path}:{ln}: unsupported TOML line: {line}")
         key = m.group("key")
         val = m.group("val").strip()
 
         if table == "ignore":
-            m2 = re.match(r"^\"(?P<reason>[^\"]*)\"\\s*$", val)
+            m2 = re.match(r'^"(?P<reason>[^"]*)"\s*$', val)
             if not m2:
                 raise ValueError(f"{path}:{ln}: ignore values must be quoted strings")
             ignore[key] = m2.group("reason")
@@ -97,10 +97,10 @@ def _parse_mapping_toml(path: pathlib.Path) -> Tuple[Dict[str, List[str]], Dict[
 
         # table == map
         if val.startswith("["):
-            items = re.findall(r"\"([^\"]+)\"", val)
+            items = re.findall(r'"([^"]+)"', val)
             mapping[key] = items
         else:
-            m2 = re.match(r"^\"(?P<v>[^\"]+)\"\\s*$", val)
+            m2 = re.match(r'^"(?P<v>[^"]+)"\s*$', val)
             if not m2:
                 raise ValueError(f"{path}:{ln}: map values must be quoted string or string array")
             mapping[key] = [m2.group("v")]
@@ -297,7 +297,9 @@ MBTI_TYPE_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+(struct|enum|trait|type)\s+(
 MBTI_FN_RE = re.compile(
     r"^\s*pub(?:\([^)]*\))?\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))?"
 )
+MBTI_CONST_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+const\s+([A-Za-z_][A-Za-z0-9_]*)\b")
 MBTI_USING_RE = re.compile(r"^\s*pub\s+using\s+@[^\\s]+\s+\{([^}]*)\}\s*$")
+MBTI_ALIAS_RE = re.compile(r"^\s*#alias\(([A-Za-z_][A-Za-z0-9_]*)\)\s*$")
 
 
 def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
@@ -328,6 +330,14 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                     add(pkg, name, "type", str(fp.relative_to(root)))
                 for name in re.findall(r"\btrait\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
                     add(pkg, name, "trait", str(fp.relative_to(root)))
+                continue
+            m = MBTI_CONST_RE.match(line)
+            if m:
+                add(pkg, m.group(1), "const", str(fp.relative_to(root)))
+                continue
+            m = MBTI_ALIAS_RE.match(line)
+            if m:
+                add(pkg, m.group(1), "type", str(fp.relative_to(root)))
                 continue
             m = MBTI_TYPE_RE.match(line)
             if m:

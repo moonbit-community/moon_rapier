@@ -2,6 +2,20 @@
 package "Milky2018/moon_rapier/core"
 
 // Values
+pub const ANG_DIM2 : Int = 1
+
+pub const ANG_DIM3 : Int = 3
+
+pub const MAX_MANIFOLD_POINTS2 : Int = 2
+
+pub const MAX_MANIFOLD_POINTS3 : Int = 4
+
+pub const RAPIER_REFERENCE_VERSION : String = "0.32.0"
+
+pub const SPATIAL_DIM2 : Int = 3
+
+pub const SPATIAL_DIM3 : Int = 6
+
 pub fn abs(Float) -> Float
 
 pub fn acos(Float) -> Float
@@ -48,6 +62,19 @@ pub fn Aabb3::dilated(Self, Float) -> Self
 pub fn Aabb3::from_points(Vec3, Vec3) -> Self
 pub fn Aabb3::intersects(Self, Self) -> Bool
 pub fn Aabb3::new(Vec3, Vec3) -> Self
+
+pub struct DMatrix {
+  rows : Int
+  cols : Int
+  data : Array[Float]
+}
+pub fn DMatrix::cols(Self) -> Int
+pub fn DMatrix::get(Self, Int, Int) -> Float?
+pub fn DMatrix::identity(Int) -> Self
+pub fn DMatrix::new(Int, Int, Float) -> Self
+pub fn DMatrix::rows(Self) -> Int
+pub fn DMatrix::set(Self, Int, Int, Float) -> Self
+pub fn DMatrix::zeros(Int, Int) -> Self
 
 pub struct Isometry2 {
   translation : Vec2
@@ -96,6 +123,23 @@ pub fn MassProperties3::default() -> Self
 pub fn MassProperties3::new(Float, SdpMat3, Vec3) -> Self
 pub fn MassProperties3::set_mass(Self, Float, Bool) -> Self
 pub fn MassProperties3::transform_by(Self, Isometry3) -> Self
+
+pub struct Mat2 {
+  m00 : Float
+  m01 : Float
+  m10 : Float
+  m11 : Float
+}
+pub fn Mat2::add(Self, Self) -> Self
+pub fn Mat2::determinant(Self) -> Float
+pub fn Mat2::identity() -> Self
+pub fn Mat2::inverse(Self) -> Self
+pub fn Mat2::mul(Self, Self) -> Self
+pub fn Mat2::mul_vec2(Self, Vec2) -> Vec2
+pub fn Mat2::new(Float, Float, Float, Float) -> Self
+pub fn Mat2::sub(Self, Self) -> Self
+pub fn Mat2::transpose(Self) -> Self
+pub fn Mat2::zero() -> Self
 
 pub struct Mat3 {
   m00 : Float
@@ -168,6 +212,7 @@ pub fn SdpMat3::new(Float, Float, Float, Float, Float, Float) -> Self
 pub fn SdpMat3::transform_vec3(Self, Vec3) -> Vec3
 pub fn SdpMat3::zero() -> Self
 
+#alias(TangentImpulse3)
 pub struct Vec2 {
   x : Float
   y : Float
@@ -199,7 +244,17 @@ pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
 
 // Type aliases
+pub type AngDim2 = Int
+
+pub type AngDim3 = Int
+
+pub type Dim2 = Int
+
+pub type Dim3 = Int
+
 pub type Real = Float
+
+pub type TangentImpulse2 = Float
 
 // Traits
 
