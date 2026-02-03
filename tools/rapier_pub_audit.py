@@ -295,9 +295,17 @@ def extract_rapier_pub_surface(rustdoc_json: pathlib.Path, crate_name: str) -> D
 MBTI_PKG_RE = re.compile(r'^\s*package\s+"([^"]+)"\s*$')
 MBTI_TYPE_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+(struct|enum|trait|type)\s+([A-Za-z_][A-Za-z0-9_]*)")
 MBTI_FN_RE = re.compile(
-    r"^\s*pub(?:\([^)]*\))?\s+fn\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))?"
+    # Example:
+    # - pub fn foo(Int) -> Int
+    # - pub fn Foo::bar(Self) -> Unit
+    # - pub fn[T] Foo::bar(Self[T]) -> Unit
+    # - pub fn[T : Default] Foo::bar(Self[T]) -> Unit
+    r"^\s*pub(?:\([^)]*\))?\s+fn(?:\[[^\]]+\])?\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))?"
 )
 MBTI_CONST_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+const\s+([A-Za-z_][A-Za-z0-9_]*)\b")
+MBTI_ASSOC_CONST_RE = re.compile(
+    r"^\s*pub(?:\([^)]*\))?\s+const\s+([A-Za-z_][A-Za-z0-9_]*)(?:::([A-Za-z_][A-Za-z0-9_]*))\b"
+)
 MBTI_USING_RE = re.compile(r"^\s*pub\s+using\s+@[^\\s]+\s+\{([^}]*)\}\s*$")
 MBTI_ALIAS_RE = re.compile(r"^\s*#alias\(([A-Za-z_][A-Za-z0-9_]*)\)\s*$")
 
@@ -317,6 +325,7 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
         pkg = None
         current_struct: Optional[str] = None
         current_enum: Optional[str] = None
+        current_trait: Optional[str] = None
         src = str(fp.relative_to(root))
         for line in fp.read_text(encoding="utf-8", errors="ignore").splitlines():
             m = MBTI_PKG_RE.match(line)
@@ -349,6 +358,19 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                         add(pkg, f"{current_enum}::{mvar.group(1)}", "variant", src)
                 continue
 
+            # Inside a trait block: collect method symbols.
+            if current_trait is not None:
+                if line.strip() == "}":
+                    current_trait = None
+                else:
+                    # Example:
+                    #   foo(Self) -> Unit
+                    #   bar(Self, Int) -> Bool
+                    mth = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(", line)
+                    if mth:
+                        add(pkg, f"{current_trait}::{mth.group(1)}", "trait_method", src)
+                continue
+
             # Block starts.
             mblock = re.match(
                 r"^\s*pub(?:\([^)]*\))?\s+struct\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*$",
@@ -366,6 +388,14 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                 current_enum = mblock.group(1)
                 add(pkg, current_enum, "enum", src)
                 continue
+            mblock = re.match(
+                r"^\s*pub(?:\([^)]*\))?\s+trait\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*$",
+                line,
+            )
+            if mblock:
+                current_trait = mblock.group(1)
+                add(pkg, current_trait, "trait", src)
+                continue
 
             m = MBTI_USING_RE.match(line)
             if m:
@@ -375,6 +405,10 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                     add(pkg, name, "type", src)
                 for name in re.findall(r"\btrait\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
                     add(pkg, name, "trait", src)
+                continue
+            m = MBTI_ASSOC_CONST_RE.match(line)
+            if m:
+                add(pkg, f"{m.group(1)}::{m.group(2)}", "assoc_const", src)
                 continue
             m = MBTI_CONST_RE.match(line)
             if m:
