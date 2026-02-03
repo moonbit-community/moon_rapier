@@ -66,4 +66,11 @@
 "rapier3d::math::SimdMatrix" = "Milky2018/moon_rapier/core::Mat3"
 "rapier3d::math::TangentImpulse" = "Milky2018/moon_rapier/core::TangentImpulse3"
 
+"rapier2d::counters::Counters::custom_time" = "Milky2018/moon_rapier/counters::Counters::custom_time_ms"
+"rapier3d::counters::Counters::custom_time" = "Milky2018/moon_rapier/counters::Counters::custom_time_ms"
+"rapier2d::counters::timer::Timer::resume" = "Milky2018/moon_rapier/counters::Timer::resume_timer"
+"rapier3d::counters::timer::Timer::resume" = "Milky2018/moon_rapier/counters::Timer::resume_timer"
+"rapier2d::counters::timer::Timer::time" = "Milky2018/moon_rapier/counters::Timer::time_ms"
+"rapier3d::counters::timer::Timer::time" = "Milky2018/moon_rapier/counters::Timer::time_ms"
+
 [ignore]

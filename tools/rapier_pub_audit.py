@@ -315,6 +315,9 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
 
     for fp in sorted(root.glob("*/pkg.generated.mbti")):
         pkg = None
+        current_struct: Optional[str] = None
+        current_enum: Optional[str] = None
+        src = str(fp.relative_to(root))
         for line in fp.read_text(encoding="utf-8", errors="ignore").splitlines():
             m = MBTI_PKG_RE.match(line)
             if m:
@@ -322,36 +325,75 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                 continue
             if pkg is None:
                 continue
+
+            # Inside a struct block: collect field symbols.
+            if current_struct is not None:
+                if line.strip() == "}":
+                    current_struct = None
+                else:
+                    mfield = re.match(r"^\s*(?:mut\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:\s*", line)
+                    if mfield:
+                        add(pkg, f"{current_struct}::{mfield.group(1)}", "field", src)
+                continue
+
+            # Inside an enum block: collect variant symbols.
+            if current_enum is not None:
+                if line.strip() == "}":
+                    current_enum = None
+                else:
+                    mvar = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*$", line)
+                    if mvar:
+                        add(pkg, f"{current_enum}::{mvar.group(1)}", "variant", src)
+                continue
+
+            # Block starts.
+            mblock = re.match(
+                r"^\s*pub(?:\([^)]*\))?\s+struct\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*$",
+                line,
+            )
+            if mblock:
+                current_struct = mblock.group(1)
+                add(pkg, current_struct, "struct", src)
+                continue
+            mblock = re.match(
+                r"^\s*pub(?:\([^)]*\))?\s+enum\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*$",
+                line,
+            )
+            if mblock:
+                current_enum = mblock.group(1)
+                add(pkg, current_enum, "enum", src)
+                continue
+
             m = MBTI_USING_RE.match(line)
             if m:
                 # Example: pub using @collision {type ColliderBuilder}
                 body = m.group(1)
                 for name in re.findall(r"\btype\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
-                    add(pkg, name, "type", str(fp.relative_to(root)))
+                    add(pkg, name, "type", src)
                 for name in re.findall(r"\btrait\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
-                    add(pkg, name, "trait", str(fp.relative_to(root)))
+                    add(pkg, name, "trait", src)
                 continue
             m = MBTI_CONST_RE.match(line)
             if m:
-                add(pkg, m.group(1), "const", str(fp.relative_to(root)))
+                add(pkg, m.group(1), "const", src)
                 continue
             m = MBTI_ALIAS_RE.match(line)
             if m:
-                add(pkg, m.group(1), "type", str(fp.relative_to(root)))
+                add(pkg, m.group(1), "type", src)
                 continue
             m = MBTI_TYPE_RE.match(line)
             if m:
                 kind, name = m.group(1), m.group(2)
-                add(pkg, name, kind, str(fp.relative_to(root)))
+                add(pkg, name, kind, src)
                 continue
             m = MBTI_FN_RE.match(line)
             if m:
                 fn_name = m.group(1)
                 method = m.group(2)
                 if method:
-                    add(pkg, f"{fn_name}::{method}", "method", str(fp.relative_to(root)))
+                    add(pkg, f"{fn_name}::{method}", "method", src)
                 else:
-                    add(pkg, fn_name, "fn", str(fp.relative_to(root)))
+                    add(pkg, fn_name, "fn", src)
                 continue
 
     for fp in sorted(root.glob("*/spec.mbt")):
