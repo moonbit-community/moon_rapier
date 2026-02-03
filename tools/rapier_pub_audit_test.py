@@ -47,6 +47,8 @@ pub(open) trait HasModifiedFlag {
 }
 
 pub const ActiveEvents::COLLISION_EVENTS : Int
+
+pub using @core {type Vec2 as AliasVec2}
 """
         (root / "data" / "pkg.generated.mbti").write_text(mbti, encoding="utf-8")
 
@@ -62,6 +64,9 @@ pub const ActiveEvents::COLLISION_EVENTS : Int
         assert (
             "Milky2018/moon_rapier/data::ActiveEvents::COLLISION_EVENTS" in syms
         ), "associated const parsing failed (ActiveEvents::COLLISION_EVENTS)"
+        assert (
+            "Milky2018/moon_rapier/data::AliasVec2" in syms
+        ), "pub using type alias parsing failed (AliasVec2)"
 
     print("ok")
     return 0
@@ -69,4 +74,3 @@ pub const ActiveEvents::COLLISION_EVENTS : Int
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

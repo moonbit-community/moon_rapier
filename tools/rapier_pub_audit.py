@@ -401,7 +401,14 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
             if m:
                 # Example: pub using @collision {type ColliderBuilder}
                 body = m.group(1)
-                for name in re.findall(r"\btype\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
+                # Supports:
+                # - type Foo
+                # - type Foo as Bar
+                for mt in re.finditer(
+                    r"\btype\s+(?P<orig>[A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*))?\b",
+                    body,
+                ):
+                    name = mt.group("alias") or mt.group("orig")
                     add(pkg, name, "type", src)
                 for name in re.findall(r"\btrait\s+([A-Za-z_][A-Za-z0-9_]*)\b", body):
                     add(pkg, name, "trait", src)
