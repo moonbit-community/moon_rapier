@@ -73,4 +73,8 @@
 "rapier2d::counters::timer::Timer::time" = "Milky2018/moon_rapier/counters::Timer::time_ms"
 "rapier3d::counters::timer::Timer::time" = "Milky2018/moon_rapier/counters::Timer::time_ms"
 
+"rapier2d::control::character_controller::EffectiveCharacterMovement" = "Milky2018/moon_rapier/control::EffectiveMovement"
+"rapier3d::control::character_controller::EffectiveCharacterMovement" = "Milky2018/moon_rapier/control::EffectiveMovement3DReal"
+"rapier3d::control::ray_cast_vehicle_controller::DynamicRayCastVehicleController::wheels_mut" = "Milky2018/moon_rapier/control::DynamicRayCastVehicleController3DReal::wheels"
+
 [ignore]

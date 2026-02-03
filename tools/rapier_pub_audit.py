@@ -341,7 +341,10 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                 if line.strip() == "}":
                     current_enum = None
                 else:
-                    mvar = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*$", line)
+                    # Example variants:
+                    # - Foo
+                    # - Bar(Int, String)
+                    mvar = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\b", line)
                     if mvar:
                         add(pkg, f"{current_enum}::{mvar.group(1)}", "variant", src)
                 continue
