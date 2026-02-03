@@ -14,7 +14,7 @@
 
 ///|
 pub struct SolverFlags {
-  mut value : Int
+  value : Int
 }
 
 ///|
@@ -45,8 +45,7 @@ pub fn SolverFlags::insert(
   self : SolverFlags,
   other : SolverFlags,
 ) -> SolverFlags {
-  self.value = self.value | other.value
-  self
+  { value: self.value | other.value }
 }
 
 ///|
@@ -54,8 +53,7 @@ pub fn SolverFlags::remove(
   self : SolverFlags,
   other : SolverFlags,
 ) -> SolverFlags {
-  self.value = self.value & Int::lnot(other.value)
-  self
+  { value: self.value & Int::lnot(other.value) }
 }
 
 ///|

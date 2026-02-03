@@ -53,64 +53,122 @@ pub fn ColliderHandle::invalid() -> ColliderHandle {
 const COLLIDER_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
 
 ///|
-const COLLIDER_CHANGES_POSITION : Int = 1 << 1
+const COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 1
 
 ///|
-const COLLIDER_CHANGES_SHAPE : Int = 1 << 2
+const COLLIDER_CHANGES_PARENT : Int = 1 << 2
 
 ///|
-const COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 3
+const COLLIDER_CHANGES_POSITION : Int = 1 << 3
 
 ///|
-const COLLIDER_CHANGES_PARENT : Int = 1 << 4
+const COLLIDER_CHANGES_GROUPS : Int = 1 << 4
 
 ///|
-const COLLIDER_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 5
+const COLLIDER_CHANGES_SHAPE : Int = 1 << 5
 
 ///|
-const COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE : Int = 1 << 6
+const COLLIDER_CHANGES_TYPE : Int = 1 << 6
+
+///|
+const COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE : Int = 1 << 7
+
+///|
+const COLLIDER_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 8
 
 ///|
 const COLLIDER_CHANGES_ALL : Int = COLLIDER_CHANGES_IN_MODIFIED_SET |
-  COLLIDER_CHANGES_POSITION |
-  COLLIDER_CHANGES_SHAPE |
   COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES |
   COLLIDER_CHANGES_PARENT |
-  COLLIDER_CHANGES_ENABLED_OR_DISABLED |
-  COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE
+  COLLIDER_CHANGES_POSITION |
+  COLLIDER_CHANGES_GROUPS |
+  COLLIDER_CHANGES_SHAPE |
+  COLLIDER_CHANGES_TYPE |
+  COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE |
+  COLLIDER_CHANGES_ENABLED_OR_DISABLED
 
 ///|
-struct ColliderChanges {
-  mut bits : Int
+pub struct ColliderChanges {
+  bits : Int
 }
 
 ///|
-fn ColliderChanges::all() -> ColliderChanges {
+pub const IN_MODIFIED_SET : Int = COLLIDER_CHANGES_IN_MODIFIED_SET
+
+///|
+pub const LOCAL_MASS_PROPERTIES : Int = COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES
+
+///|
+pub const PARENT : Int = COLLIDER_CHANGES_PARENT
+
+///|
+pub const POSITION : Int = COLLIDER_CHANGES_POSITION
+
+///|
+pub const GROUPS : Int = COLLIDER_CHANGES_GROUPS
+
+///|
+pub const SHAPE : Int = COLLIDER_CHANGES_SHAPE
+
+///|
+pub const TYPE : Int = COLLIDER_CHANGES_TYPE
+
+///|
+pub const PARENT_EFFECTIVE_DOMINANCE : Int = COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE
+
+///|
+pub const ENABLED_OR_DISABLED : Int = COLLIDER_CHANGES_ENABLED_OR_DISABLED
+
+///|
+pub fn ColliderChanges::all() -> ColliderChanges {
   { bits: COLLIDER_CHANGES_ALL }
 }
 
 ///|
-fn ColliderChanges::contains(self : ColliderChanges, flag : Int) -> Bool {
+pub fn ColliderChanges::empty() -> ColliderChanges {
+  { bits: 0 }
+}
+
+///|
+pub fn ColliderChanges::contains(self : ColliderChanges, flag : Int) -> Bool {
   (self.bits & flag) != 0
 }
 
 ///|
-fn ColliderChanges::insert(
+pub fn ColliderChanges::insert(
   self : ColliderChanges,
   flag : Int,
 ) -> ColliderChanges {
-  self.bits = self.bits | flag
-  self
+  { bits: self.bits | flag }
 }
 
 ///|
-fn ColliderChanges::remove(
+pub fn ColliderChanges::remove(
   self : ColliderChanges,
   flag : Int,
 ) -> ColliderChanges {
-  let clear_bits = self.bits & flag
-  self.bits = self.bits - clear_bits
-  self
+  { bits: self.bits & Int::lnot(flag) }
+}
+
+///|
+pub fn ColliderChanges::needs_broad_phase_update(
+  self : ColliderChanges,
+) -> Bool {
+  let bf_mask = COLLIDER_CHANGES_PARENT |
+    COLLIDER_CHANGES_POSITION |
+    COLLIDER_CHANGES_SHAPE |
+    COLLIDER_CHANGES_ENABLED_OR_DISABLED
+  (self.bits & bf_mask) != 0
+}
+
+///|
+pub fn ColliderChanges::needs_narrow_phase_update(
+  self : ColliderChanges,
+) -> Bool {
+  // Same rule as Rapier: any flag other than IN_MODIFIED_SET/LOCAL_MASS_PROPERTIES.
+  let mask = COLLIDER_CHANGES_IN_MODIFIED_SET |
+    COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES
+  (self.bits & Int::lnot(mask)) != 0
 }
 
 ///|
@@ -146,6 +204,24 @@ const ACTIVE_COLLISION_ALL : Int = ACTIVE_COLLISION_DEFAULT |
   ACTIVE_COLLISION_KINEMATIC_KINEMATIC |
   ACTIVE_COLLISION_KINEMATIC_FIXED |
   ACTIVE_COLLISION_FIXED_FIXED
+
+///|
+pub const DYNAMIC_DYNAMIC : Int = ACTIVE_COLLISION_DYNAMIC_DYNAMIC
+
+///|
+pub const DYNAMIC_FIXED : Int = ACTIVE_COLLISION_DYNAMIC_FIXED
+
+///|
+pub const DYNAMIC_KINEMATIC : Int = ACTIVE_COLLISION_DYNAMIC_KINEMATIC
+
+///|
+pub const KINEMATIC_KINEMATIC : Int = ACTIVE_COLLISION_KINEMATIC_KINEMATIC
+
+///|
+pub const KINEMATIC_FIXED : Int = ACTIVE_COLLISION_KINEMATIC_FIXED
+
+///|
+pub const FIXED_FIXED : Int = ACTIVE_COLLISION_FIXED_FIXED
 
 ///|
 pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
@@ -338,6 +414,21 @@ pub fn ActiveHooks::from_name(name : String) -> ActiveHooks? {
 }
 
 ///|
+/// Capability-equivalent placeholder for Rapier's `parry::transformation::vhacd::VHACDParameters`.
+///
+/// The actual convex decomposition implementation lives in Rapier/Parry. This port keeps a
+/// minimal public type to avoid blocking pub-surface parity.
+pub struct VHACDParameters {
+  // Reserved for future fields.
+  dummy : Int
+}
+
+///|
+pub fn VHACDParameters::default() -> VHACDParameters {
+  { dummy: 0 }
+}
+
+///|
 pub(all) enum Shape {
   Ball(@core.Real)
   Cuboid(@core.Real, @core.Real)
@@ -348,6 +439,63 @@ pub(all) enum Shape {
   ConvexPolygon(Array[@core.Vec2])
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
+}
+
+///|
+pub(all) enum ColliderType {
+  Solid
+  Sensor
+}
+
+///|
+pub fn ColliderType::is_sensor(self : ColliderType) -> Bool {
+  match self {
+    ColliderType::Sensor => true
+    ColliderType::Solid => false
+  }
+}
+
+///|
+pub type ColliderShape = SharedShape
+
+///|
+pub(all) enum ColliderMassProps {
+  Density(@core.Real)
+  Mass(@core.Real)
+  MassProperties(@core.MassProperties)
+}
+
+///|
+pub fn ColliderMassProps::default() -> ColliderMassProps {
+  ColliderMassProps::Density(1.0F)
+}
+
+///|
+pub struct ColliderMaterial {
+  friction : @core.Real
+  restitution : @core.Real
+  friction_combine_rule : @dynamics.CoefficientCombineRule
+  restitution_combine_rule : @dynamics.CoefficientCombineRule
+}
+
+///|
+pub struct ColliderFlags {
+  collision_groups : @dynamics.InteractionGroups
+  solver_groups : @dynamics.InteractionGroups
+  active_collision_types : ActiveCollisionTypes
+  active_hooks : ActiveHooks
+  active_events : ActiveEvents
+}
+
+///|
+pub struct ColliderParent {
+  handle : @dynamics.RigidBodyHandle
+  pos_wrt_parent : @core.Isometry2
+}
+
+///|
+pub struct ColliderPosition {
+  position : @core.Isometry2
 }
 
 ///|
@@ -364,6 +512,7 @@ pub struct Collider {
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
   mut density : @core.Real
+  mut mass_properties_override : @core.MassProperties?
   mut friction : @core.Real
   mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
@@ -399,6 +548,16 @@ pub struct ColliderBuilder {
 }
 
 ///|
+pub fn ColliderBuilder::default_density() -> @core.Real {
+  1.0F
+}
+
+///|
+pub fn ColliderBuilder::default_friction() -> @core.Real {
+  0.5F
+}
+
+///|
 pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
   {
     shape: Shape::Ball(radius),
@@ -410,8 +569,8 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
-    density: 1.0F,
-    friction: 0.5F,
+    density: ColliderBuilder::default_density(),
+    friction: ColliderBuilder::default_friction(),
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
@@ -437,8 +596,8 @@ pub fn ColliderBuilder::cuboid(
     active_hooks: ActiveHooks::empty(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
-    density: 1.0F,
-    friction: 0.5F,
+    density: ColliderBuilder::default_density(),
+    friction: ColliderBuilder::default_friction(),
     friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
@@ -447,6 +606,15 @@ pub fn ColliderBuilder::cuboid(
     user_data: 0,
     enabled: true,
   }
+}
+
+///|
+pub fn ColliderBuilder::round_cuboid(
+  half_width : @core.Real,
+  half_height : @core.Real,
+  border_radius : @core.Real,
+) -> ColliderBuilder {
+  ColliderBuilder::cuboid(half_width, half_height).contact_skin(border_radius)
 }
 
 ///|
@@ -766,6 +934,126 @@ pub fn ColliderBuilder::trimesh(
 }
 
 ///|
+pub fn ColliderBuilder::trimesh_with_flags(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+  _flags : TriMeshFlags,
+) -> ColliderBuilder? {
+  // This port does not implement TriMesh pre-processing flags yet.
+  ColliderBuilder::trimesh(vertices, indices)
+}
+
+///|
+pub fn ColliderBuilder::converted_trimesh(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+  converter : MeshConverter,
+) -> Result[ColliderBuilder, MeshConverterError] {
+  match converter.convert(vertices, indices) {
+    Err(e) => Err(e)
+    Ok((shape, pose)) => Ok(ColliderBuilder::new(shape.as_shape()).delta(pose))
+  }
+}
+
+///|
+pub fn ColliderBuilder::convex_decomposition_with_params(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)],
+  params : VHACDParameters,
+) -> ColliderBuilder {
+  // Convex decomposition isn't implemented yet; approximate with the convex hull.
+  params |> ignore
+  indices |> ignore
+  match ColliderBuilder::convex_hull(vertices) {
+    Some(builder) => builder
+    None => ColliderBuilder::polyline(vertices, Some(indices))
+  }
+}
+
+///|
+pub fn ColliderBuilder::round_convex_decomposition_with_params(
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int)],
+  params : VHACDParameters,
+  border_radius : @core.Real,
+) -> ColliderBuilder {
+  ColliderBuilder::convex_decomposition_with_params(vertices, indices, params).contact_skin(
+    border_radius,
+  )
+}
+
+///|
+pub fn ColliderBuilder::convex_polyline(
+  points : Array[@core.Vec2],
+) -> ColliderBuilder? {
+  if points.length() < 3 {
+    return None
+  }
+  let pts : Array[@core.Vec2] = []
+  for i in 0..<points.length() {
+    pts.push(points[i])
+  }
+  let eps = 1.0e-6F
+  let mut sign = 0
+  for i in 0..<pts.length() {
+    let a = pts[i]
+    let b = pts[(i + 1) % pts.length()]
+    let c = pts[(i + 2) % pts.length()]
+    let ab = b.sub(a)
+    let bc = c.sub(b)
+    let cross = ab.x * bc.y - ab.y * bc.x
+    if @core.abs(cross) <= eps {
+      continue
+    }
+    if sign == 0 {
+      sign = if cross > 0.0F { 1 } else { -1 }
+    } else if (cross > 0.0F && sign < 0) || (cross < 0.0F && sign > 0) {
+      return None
+    }
+  }
+  if sign == 0 {
+    return None
+  }
+  if sign < 0 {
+    for i in 0..<(pts.length() / 2) {
+      let j = pts.length() - 1 - i
+      let tmp = pts[i]
+      pts[i] = pts[j]
+      pts[j] = tmp
+    }
+  }
+  Some(ColliderBuilder::new(Shape::ConvexPolygon(pts)))
+}
+
+///|
+pub fn ColliderBuilder::round_convex_polyline(
+  points : Array[@core.Vec2],
+  border_radius : @core.Real,
+) -> ColliderBuilder? {
+  match ColliderBuilder::convex_polyline(points) {
+    None => None
+    Some(builder) => Some(builder.contact_skin(border_radius))
+  }
+}
+
+///|
+pub fn ColliderBuilder::voxels(
+  voxel_size : @core.Vec2,
+  voxels : Array[(Int, Int)],
+) -> ColliderBuilder {
+  let shapes : Array[(@core.Isometry2, Shape)] = []
+  let half = @core.Vec2::new(voxel_size.x * 0.5F, voxel_size.y * 0.5F)
+  for i in 0..<voxels.length() {
+    let (ix, iy) = voxels[i]
+    let x = Float::from_double(ix.to_double()) * voxel_size.x
+    let y = Float::from_double(iy.to_double()) * voxel_size.y
+    let iso = @core.Isometry2::from_translation(@core.Vec2::new(x, y))
+    shapes.push((iso, Shape::Cuboid(half.x, half.y)))
+  }
+  ColliderBuilder::compound(shapes)
+}
+
+///|
 pub fn ColliderBuilder::convex_hull(
   points : Array[@core.Vec2],
 ) -> ColliderBuilder? {
@@ -907,6 +1195,16 @@ pub fn ColliderBuilder::rotation(
   rotation : @core.Real,
 ) -> ColliderBuilder {
   self.rotation = rotation
+  self
+}
+
+///|
+pub fn ColliderBuilder::delta(
+  self : ColliderBuilder,
+  delta : @core.Isometry2,
+) -> ColliderBuilder {
+  self.translation = delta.translation
+  self.rotation = delta.rotation.angle()
   self
 }
 
@@ -1060,6 +1358,7 @@ pub fn ColliderBuilder::build(self : ColliderBuilder) -> Collider {
     collision_groups: self.collision_groups,
     solver_groups: self.solver_groups,
     density: self.density,
+    mass_properties_override: None,
     friction: self.friction,
     friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
@@ -1090,6 +1389,46 @@ pub fn Collider::set_shape(self : Collider, shape : Shape) -> Collider {
 }
 
 ///|
+pub fn Collider::shape_mut(self : Collider) -> Shape {
+  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  self.shape
+}
+
+///|
+pub fn Collider::shared_shape(self : Collider) -> SharedShape {
+  SharedShape::new(self.shape)
+}
+
+///|
+pub fn Collider::copy_from(self : Collider, other : Collider) -> Unit {
+  // Mirror Rapier: don't allow copy_from to reparent an attached collider.
+  if self.parent is None {
+    self.local_translation = other.local_translation
+    self.local_rotation = other.local_rotation
+    self.world_translation = other.world_translation
+    self.world_rotation = other.world_rotation
+  }
+  self.shape = other.shape
+  self.active_collision_types = other.active_collision_types
+  self.sensor = other.sensor
+  self.active_events = other.active_events
+  self.active_hooks = other.active_hooks
+  self.collision_groups = other.collision_groups
+  self.solver_groups = other.solver_groups
+  self.density = other.density
+  self.mass_properties_override = other.mass_properties_override
+  self.friction = other.friction
+  self.friction_combine_rule = other.friction_combine_rule
+  self.restitution = other.restitution
+  self.restitution_combine_rule = other.restitution_combine_rule
+  self.contact_skin = other.contact_skin
+  self.contact_force_event_threshold = other.contact_force_event_threshold
+  self.user_data = other.user_data
+  self.enabled = other.enabled
+  self.changes = ColliderChanges::all()
+}
+
+///|
 pub fn Collider::translation(self : Collider) -> @core.Vec2 {
   self.world_translation
 }
@@ -1108,6 +1447,45 @@ pub fn Collider::rotation(self : Collider) -> @core.Real {
 }
 
 ///|
+pub fn Collider::compute_swept_aabb(
+  self : Collider,
+  next_position : @core.Isometry2,
+) -> @core.Aabb {
+  let curr = compute_shape_aabb(
+    self.shape,
+    self.world_translation,
+    self.world_rotation,
+    0.0F,
+  )
+  let next = compute_shape_aabb(
+    self.shape,
+    next_position.translation,
+    next_position.rotation.angle(),
+    0.0F,
+  )
+  internal_aabb_to_core(aabb_union(curr, next))
+}
+
+///|
+pub fn Collider::compute_broad_phase_aabb(
+  self : Collider,
+  params : @dynamics.IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+) -> @core.Aabb {
+  // Approximation of Rapier's logic: include contact skin + prediction distance.
+  bodies |> ignore
+  let prediction = params.prediction_distance()
+  let loosen = self.contact_skin + prediction * 0.5F
+  let aabb = compute_shape_aabb(
+    self.shape,
+    self.world_translation,
+    self.world_rotation,
+    loosen,
+  )
+  internal_aabb_to_core(aabb)
+}
+
+///|
 pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
   if self.parent is Some(_) {
     Some(
@@ -1119,6 +1497,19 @@ pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
   } else {
     None
   }
+}
+
+///|
+pub fn Collider::set_position_wrt_parent(
+  self : Collider,
+  pos_wrt_parent : @core.Isometry2,
+) -> Collider {
+  if self.parent is Some(_) {
+    self.local_translation = pos_wrt_parent.translation
+    self.local_rotation = pos_wrt_parent.rotation.angle()
+    self.changes = self.changes.insert(COLLIDER_CHANGES_PARENT)
+  }
+  self
 }
 
 ///|
@@ -1167,7 +1558,37 @@ pub fn Collider::density(self : Collider) -> @core.Real {
 
 ///|
 pub fn Collider::mass_properties(self : Collider) -> @core.MassProperties {
-  shape_mass_properties(self.shape, self.density)
+  if self.mass_properties_override is Some(mp) {
+    mp
+  } else {
+    shape_mass_properties(self.shape, self.density)
+  }
+}
+
+///|
+pub fn Collider::set_mass_properties(
+  self : Collider,
+  mass_properties : @core.MassProperties,
+) -> Collider {
+  self.mass_properties_override = Some(mass_properties)
+  self.changes = self.changes.insert(COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES)
+  self
+}
+
+///|
+pub fn Collider::material(self : Collider) -> ColliderMaterial {
+  {
+    friction: self.friction,
+    restitution: self.restitution,
+    friction_combine_rule: self.friction_combine_rule,
+    restitution_combine_rule: self.restitution_combine_rule,
+  }
+}
+
+///|
+pub fn Collider::volume(self : Collider) -> @core.Real {
+  // MassProperties computed with density=1.0 gives the volume (3D) or area (2D).
+  shape_mass_properties(self.shape, 1.0F).mass
 }
 
 ///|
@@ -1371,6 +1792,7 @@ fn shape_mass_properties(
 pub fn Collider::set_density(self : Collider, density : @core.Real) -> Collider {
   if self.density != density {
     self.density = density
+    self.mass_properties_override = None
     self.changes = self.changes.insert(COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES)
   }
   self
@@ -1380,7 +1802,7 @@ pub fn Collider::set_density(self : Collider, density : @core.Real) -> Collider 
 pub fn Collider::set_sensor(self : Collider, enabled : Bool) -> Collider {
   if self.sensor != enabled {
     self.sensor = enabled
-    self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+    self.changes = self.changes.insert(COLLIDER_CHANGES_TYPE)
   }
   self
 }
@@ -1391,7 +1813,6 @@ pub fn Collider::set_active_collision_types(
   types : ActiveCollisionTypes,
 ) -> Collider {
   self.active_collision_types = types
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1401,7 +1822,6 @@ pub fn Collider::set_active_events(
   events : ActiveEvents,
 ) -> Collider {
   self.active_events = events
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1411,7 +1831,6 @@ pub fn Collider::set_active_hooks(
   hooks : ActiveHooks,
 ) -> Collider {
   self.active_hooks = hooks
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1420,8 +1839,29 @@ pub fn Collider::set_collision_groups(
   self : Collider,
   groups : @dynamics.InteractionGroups,
 ) -> Collider {
-  self.collision_groups = groups
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  fn test_mode_equal(
+    a : @dynamics.InteractionTestMode,
+    b : @dynamics.InteractionTestMode,
+  ) -> Bool {
+    match (a, b) {
+      (@dynamics.InteractionTestMode::And, @dynamics.InteractionTestMode::And) =>
+        true
+      (@dynamics.InteractionTestMode::Or, @dynamics.InteractionTestMode::Or) =>
+        true
+      _ => false
+    }
+  }
+
+  let same = @dynamics.Group::equals(
+      self.collision_groups.memberships,
+      groups.memberships,
+    ) &&
+    @dynamics.Group::equals(self.collision_groups.filter, groups.filter) &&
+    test_mode_equal(self.collision_groups.test_mode, groups.test_mode)
+  if !same {
+    self.collision_groups = groups
+    self.changes = self.changes.insert(COLLIDER_CHANGES_GROUPS)
+  }
   self
 }
 
@@ -1430,8 +1870,29 @@ pub fn Collider::set_solver_groups(
   self : Collider,
   groups : @dynamics.InteractionGroups,
 ) -> Collider {
-  self.solver_groups = groups
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
+  fn test_mode_equal(
+    a : @dynamics.InteractionTestMode,
+    b : @dynamics.InteractionTestMode,
+  ) -> Bool {
+    match (a, b) {
+      (@dynamics.InteractionTestMode::And, @dynamics.InteractionTestMode::And) =>
+        true
+      (@dynamics.InteractionTestMode::Or, @dynamics.InteractionTestMode::Or) =>
+        true
+      _ => false
+    }
+  }
+
+  let same = @dynamics.Group::equals(
+      self.solver_groups.memberships,
+      groups.memberships,
+    ) &&
+    @dynamics.Group::equals(self.solver_groups.filter, groups.filter) &&
+    test_mode_equal(self.solver_groups.test_mode, groups.test_mode)
+  if !same {
+    self.solver_groups = groups
+    self.changes = self.changes.insert(COLLIDER_CHANGES_GROUPS)
+  }
   self
 }
 
@@ -1441,7 +1902,6 @@ pub fn Collider::set_friction(
   friction : @core.Real,
 ) -> Collider {
   self.friction = friction
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1451,7 +1911,6 @@ pub fn Collider::set_friction_combine_rule(
   rule : @dynamics.CoefficientCombineRule,
 ) -> Collider {
   self.friction_combine_rule = rule
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1461,7 +1920,6 @@ pub fn Collider::set_restitution(
   restitution : @core.Real,
 ) -> Collider {
   self.restitution = restitution
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1471,7 +1929,6 @@ pub fn Collider::set_restitution_combine_rule(
   rule : @dynamics.CoefficientCombineRule,
 ) -> Collider {
   self.restitution_combine_rule = rule
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1481,7 +1938,6 @@ pub fn Collider::set_contact_skin(
   skin : @core.Real,
 ) -> Collider {
   self.contact_skin = skin
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1491,7 +1947,6 @@ pub fn Collider::set_contact_force_event_threshold(
   threshold : @core.Real,
 ) -> Collider {
   self.contact_force_event_threshold = threshold
-  self.changes = self.changes.insert(COLLIDER_CHANGES_SHAPE)
   self
 }
 
@@ -1595,11 +2050,21 @@ pub struct ColliderSet {
   generations : Array[Int]
   free_list : Array[Int]
   modified_colliders : Array[ColliderHandle]
+  mut removed_colliders : Array[ColliderHandle]
 }
 
 ///|
+pub type ModifiedColliders = Array[ColliderHandle]
+
+///|
 pub fn ColliderSet::new() -> ColliderSet {
-  { colliders: [], generations: [], free_list: [], modified_colliders: [] }
+  {
+    colliders: [],
+    generations: [],
+    free_list: [],
+    modified_colliders: [],
+    removed_colliders: [],
+  }
 }
 
 ///|
@@ -2289,6 +2754,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
               solver_memberships, solver_filter, solver_test_mode,
             ),
             density,
+            mass_properties_override: None,
             friction,
             friction_combine_rule: friction_rule,
             restitution,
@@ -2318,7 +2784,13 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
       modified_colliders.push(ColliderHandle::new(i, generations[i]))
     }
   }
-  { colliders, generations, free_list, modified_colliders }
+  {
+    colliders,
+    generations,
+    free_list,
+    modified_colliders,
+    removed_colliders: [],
+  }
 }
 
 ///|
@@ -2335,6 +2807,32 @@ pub fn ColliderSet::len(self : ColliderSet) -> Int {
 ///|
 pub fn ColliderSet::is_empty(self : ColliderSet) -> Bool {
   self.len() == 0
+}
+
+///|
+pub fn ColliderSet::invalid_handle() -> ColliderHandle {
+  ColliderHandle::invalid()
+}
+
+///|
+pub fn ColliderSet::iter_enabled(
+  self : ColliderSet,
+) -> Array[(ColliderHandle, Collider)] {
+  let result : Array[(ColliderHandle, Collider)] = []
+  for i in 0..<self.colliders.length() {
+    if self.colliders[i] is Some(collider) && collider.is_enabled() {
+      result.push((ColliderHandle::new(i, self.generations[i]), collider))
+    }
+  }
+  result
+}
+
+///|
+pub fn ColliderSet::iter_enabled_mut(
+  self : ColliderSet,
+) -> Array[(ColliderHandle, Collider)] {
+  // MoonBit doesn't expose stable `&mut` references; this mirrors `iter_enabled`.
+  self.iter_enabled()
 }
 
 ///|
@@ -2556,6 +3054,7 @@ pub fn ColliderSet::remove(
       }
     }
     self.colliders[handle.id] = None
+    self.removed_colliders.push(handle)
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
   }
@@ -2579,6 +3078,13 @@ pub fn ColliderSet::take_modified(self : ColliderSet) -> Array[ColliderHandle] {
     }
   }
   self.modified_colliders.clear()
+  result
+}
+
+///|
+pub fn ColliderSet::take_removed(self : ColliderSet) -> Array[ColliderHandle] {
+  let result = self.removed_colliders
+  self.removed_colliders = []
   result
 }
 
@@ -6211,6 +6717,16 @@ priv struct Aabb {
 }
 
 ///|
+fn core_aabb_to_internal(aabb : @core.Aabb) -> Aabb {
+  Aabb::{ min: aabb.mins, max: aabb.maxs }
+}
+
+///|
+fn internal_aabb_to_core(aabb : Aabb) -> @core.Aabb {
+  @core.Aabb::new(aabb.min, aabb.max)
+}
+
+///|
 fn aabb_intersects(left : Aabb, right : Aabb) -> Bool {
   !(left.max.x < right.min.x ||
   left.min.x > right.max.x ||
@@ -6666,6 +7182,7 @@ pub struct BroadPhaseBvh {
   optimization_strategy : BvhOptimizationStrategy
   pairs : Array[(ColliderHandle, ColliderHandle)]
   mut events : Array[BroadPhasePairEvent]
+  override_aabbs : Array[(ColliderHandle, @core.Aabb)]
 }
 
 ///|
@@ -6674,6 +7191,7 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
     optimization_strategy: BvhOptimizationStrategy::none(),
     pairs: [],
     events: [],
+    override_aabbs: [],
   }
 }
 
@@ -6681,7 +7199,7 @@ pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
 pub fn BroadPhaseBvh::with_optimization_strategy(
   optimization_strategy : BvhOptimizationStrategy,
 ) -> BroadPhaseBvh {
-  { optimization_strategy, pairs: [], events: [] }
+  { optimization_strategy, pairs: [], events: [], override_aabbs: [] }
 }
 
 ///|
@@ -6719,12 +7237,30 @@ pub fn BroadPhaseBvh::update(
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, colliders.generations[i])
-      let aabb = compute_shape_aabb(
-        collider.shape,
-        collider.world_translation,
-        collider.world_rotation,
-        prediction_distance,
-      )
+      fn find_override(
+        overrides : Array[(ColliderHandle, @core.Aabb)],
+        h : ColliderHandle,
+      ) -> @core.Aabb? {
+        for j in 0..<overrides.length() {
+          let (oh, oaabb) = overrides[j]
+          if ColliderHandle::equals(oh, h) {
+            return Some(oaabb)
+          }
+        }
+        None
+      }
+
+      let aabb = if find_override(self.override_aabbs, handle)
+        is Some(core_aabb) {
+        core_aabb_to_internal(core_aabb)
+      } else {
+        compute_shape_aabb(
+          collider.shape,
+          collider.world_translation,
+          collider.world_rotation,
+          prediction_distance,
+        )
+      }
       leaves.push(BvhLeaf::{ handle, aabb, center: aabb_center(aabb) })
     }
   }
@@ -6772,6 +7308,22 @@ pub fn BroadPhaseBvh::update(
     self.events.push(BroadPhasePairEvent::AddPair(ColliderPair::new(b.0, b.1)))
     j = j + 1
   }
+}
+
+///|
+pub fn BroadPhaseBvh::set_aabb(
+  self : BroadPhaseBvh,
+  handle : ColliderHandle,
+  aabb : @core.Aabb,
+) -> Unit {
+  for i in 0..<self.override_aabbs.length() {
+    let (h, _) = self.override_aabbs[i]
+    if ColliderHandle::equals(h, handle) {
+      self.override_aabbs[i] = (handle, aabb)
+      return
+    }
+  }
+  self.override_aabbs.push((handle, aabb))
 }
 
 ///|
