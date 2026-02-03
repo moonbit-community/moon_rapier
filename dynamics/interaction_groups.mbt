@@ -123,6 +123,86 @@ pub fn Group::group_16() -> Group {
 }
 
 ///|
+pub fn Group::group_17() -> Group {
+  Group::new(1 << 16)
+}
+
+///|
+pub fn Group::group_18() -> Group {
+  Group::new(1 << 17)
+}
+
+///|
+pub fn Group::group_19() -> Group {
+  Group::new(1 << 18)
+}
+
+///|
+pub fn Group::group_20() -> Group {
+  Group::new(1 << 19)
+}
+
+///|
+pub fn Group::group_21() -> Group {
+  Group::new(1 << 20)
+}
+
+///|
+pub fn Group::group_22() -> Group {
+  Group::new(1 << 21)
+}
+
+///|
+pub fn Group::group_23() -> Group {
+  Group::new(1 << 22)
+}
+
+///|
+pub fn Group::group_24() -> Group {
+  Group::new(1 << 23)
+}
+
+///|
+pub fn Group::group_25() -> Group {
+  Group::new(1 << 24)
+}
+
+///|
+pub fn Group::group_26() -> Group {
+  Group::new(1 << 25)
+}
+
+///|
+pub fn Group::group_27() -> Group {
+  Group::new(1 << 26)
+}
+
+///|
+pub fn Group::group_28() -> Group {
+  Group::new(1 << 27)
+}
+
+///|
+pub fn Group::group_29() -> Group {
+  Group::new(1 << 28)
+}
+
+///|
+pub fn Group::group_30() -> Group {
+  Group::new(1 << 29)
+}
+
+///|
+pub fn Group::group_31() -> Group {
+  Group::new(1 << 30)
+}
+
+///|
+pub fn Group::group_32() -> Group {
+  Group::new(1 << 31)
+}
+
+///|
 pub fn Group::or(self : Group, other : Group) -> Group {
   Group::new(self.value | other.value)
 }
