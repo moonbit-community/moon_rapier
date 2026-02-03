@@ -38,3 +38,26 @@ test "arena try_insert respects fixed capacity" {
   let _ = arena.insert(3)
   inspect(arena.len() == 2, content="true")
 }
+
+///|
+test "arena drain removes all occupied elements" {
+  let arena : Arena[String] = Arena::new()
+  let idx1 = arena.insert("hello")
+  let idx2 = arena.insert("world")
+  inspect(arena.get(idx1) is Some(_), content="true")
+  inspect(arena.get(idx2) is Some(_), content="true")
+  let d = arena.drain()
+  let got : Array[String] = []
+  let it = d
+  while true {
+    match it.next() {
+      None => break
+      Some((_idx, v)) => got.push(v)
+    }
+  }
+  got.sort()
+  inspect(got, content="[\"hello\", \"world\"]")
+  inspect(arena.get(idx1) is None, content="true")
+  inspect(arena.get(idx2) is None, content="true")
+  inspect(arena.capacity() == 0, content="true")
+}

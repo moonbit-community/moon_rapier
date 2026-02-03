@@ -319,3 +319,112 @@ pub fn[T] Arena::iter_mut(self : Arena[T]) -> Array[(Index, T)] {
   // MoonBit doesn't expose a stable `&mut` reference, so this mirrors `iter`.
   self.iter()
 }
+
+///|
+/// Iterate over elements of the arena and remove them.
+///
+/// Note: this mirrors Rapier's `Arena::drain` semantics by emptying the internal
+/// `items` array without rebuilding the free list.
+pub fn[T] Arena::drain(self : Arena[T]) -> Drain[T] {
+  let drained : Array[(Index, T)] = []
+  for i in 0..<self.items.length() {
+    match self.items[i] {
+      Entry::Occupied(generation, value) =>
+        drained.push((Index::from_raw_parts(i, generation), value))
+      _ => ()
+    }
+  }
+  self.items.clear()
+  { items: drained, cursor: 0 }
+}
+
+///|
+pub struct Drain[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+
+///|
+pub fn[T] Drain::next(self : Drain[T]) -> (Index, T)? {
+  match self.items.get(self.cursor) {
+    None => None
+    Some(v) => {
+      self.cursor = self.cursor + 1
+      Some(v)
+    }
+  }
+}
+
+///|
+pub struct Iter[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+
+///|
+pub fn[T] Iter::from_arena(arena : Arena[T]) -> Iter[T] {
+  { items: arena.iter(), cursor: 0 }
+}
+
+///|
+pub fn[T] Iter::next(self : Iter[T]) -> (Index, T)? {
+  match self.items.get(self.cursor) {
+    None => None
+    Some(v) => {
+      self.cursor = self.cursor + 1
+      Some(v)
+    }
+  }
+}
+
+///|
+pub struct IterMut[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+
+///|
+pub fn[T] IterMut::from_arena(arena : Arena[T]) -> IterMut[T] {
+  // MoonBit doesn't expose a stable `&mut` reference, so this mirrors `Iter`.
+  { items: arena.iter(), cursor: 0 }
+}
+
+///|
+pub fn[T] IterMut::next(self : IterMut[T]) -> (Index, T)? {
+  match self.items.get(self.cursor) {
+    None => None
+    Some(v) => {
+      self.cursor = self.cursor + 1
+      Some(v)
+    }
+  }
+}
+
+///|
+pub struct IntoIter[T] {
+  items : Array[T]
+  mut cursor : Int
+}
+
+///|
+pub fn[T] IntoIter::from_arena(arena : Arena[T]) -> IntoIter[T] {
+  let values : Array[T] = []
+  for i in 0..<arena.items.length() {
+    match arena.items[i] {
+      Entry::Occupied(_, value) => values.push(value)
+      _ => ()
+    }
+  }
+  { items: values, cursor: 0 }
+}
+
+///|
+pub fn[T] IntoIter::next(self : IntoIter[T]) -> T? {
+  match self.items.get(self.cursor) {
+    None => None
+    Some(v) => {
+      self.cursor = self.cursor + 1
+      Some(v)
+    }
+  }
+}

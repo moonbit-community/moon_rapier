@@ -15,6 +15,7 @@ pub struct Arena[T] {
 pub fn[T] Arena::capacity(Self[T]) -> Int
 pub fn[T] Arena::clear(Self[T]) -> Unit
 pub fn[T] Arena::contains(Self[T], Index) -> Bool
+pub fn[T] Arena::drain(Self[T]) -> Drain[T]
 pub fn[T] Arena::get(Self[T], Index) -> T?
 pub fn[T] Arena::get2_mut(Self[T], Index, Index) -> (T?, T?)
 pub fn[T] Arena::get_mut(Self[T], Index) -> T?
@@ -48,7 +49,82 @@ pub fn[T] Coarena::new() -> Self[T]
 pub fn[T] Coarena::remove(Self[T], Index, T) -> T?
 pub fn[T] Coarena::reserve(Self[T], Int) -> Unit
 
+pub(all) enum Direction {
+  Outgoing
+  Incoming
+}
+pub fn Direction::opposite(Self) -> Self
+
+pub struct Drain[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+pub fn[T] Drain::next(Self[T]) -> (Index, T)?
+
+pub struct Edge[E] {
+  mut weight : E
+  mut next_out : EdgeIndex
+  mut next_in : EdgeIndex
+  mut node0 : NodeIndex
+  mut node1 : NodeIndex
+}
+pub fn[E] Edge::source(Self[E]) -> NodeIndex
+pub fn[E] Edge::target(Self[E]) -> NodeIndex
+
+pub struct EdgeIndex {
+  index : Int
+}
+pub fn EdgeIndex::end() -> Self
+pub fn EdgeIndex::index(Self) -> Int
+pub fn EdgeIndex::new(Int) -> Self
+
+pub struct EdgeReference[E] {
+  index : EdgeIndex
+  weight : E
+}
+pub fn[E] EdgeReference::id(Self[E]) -> EdgeIndex
+pub fn[E] EdgeReference::weight(Self[E]) -> E
+
+pub struct EdgeWeightMut[N, E] {
+  graph : Graph[N, E]
+  edge : EdgeIndex
+}
+pub fn[N, E] EdgeWeightMut::get(Self[N, E]) -> E
+pub fn[N, E] EdgeWeightMut::set(Self[N, E], E) -> Unit
+
+pub struct Edges[N, E] {
+  graph : Graph[N, E]
+  skip_start : NodeIndex
+  direction : Direction
+  mut next_out : EdgeIndex
+  mut next_in : EdgeIndex
+}
+pub fn[N, E] Edges::next(Self[N, E]) -> EdgeReference[E]?
+
 type Entry[T]
+
+pub struct Graph[N, E] {
+  nodes : Array[Node[N]]
+  edges : Array[Edge[E]]
+}
+pub fn[N, E] Graph::add_edge(Self[N, E], NodeIndex, NodeIndex, E) -> EdgeIndex
+pub fn[N, E] Graph::add_node(Self[N, E], N) -> NodeIndex
+pub fn[N, E] Graph::edge_endpoints(Self[N, E], EdgeIndex) -> (NodeIndex, NodeIndex)?
+pub fn[N, E] Graph::edge_weight(Self[N, E], EdgeIndex) -> E?
+pub fn[N, E] Graph::edge_weight_mut(Self[N, E], EdgeIndex) -> EdgeWeightMut[N, E]?
+pub fn[N, E] Graph::edges(Self[N, E], NodeIndex) -> Edges[N, E]
+pub fn[N, E] Graph::edges_directed(Self[N, E], NodeIndex, Direction) -> Edges[N, E]
+pub fn[N, E] Graph::find_edge(Self[N, E], NodeIndex, NodeIndex) -> EdgeIndex?
+pub fn[N, E] Graph::find_edge_undirected(Self[N, E], NodeIndex, NodeIndex) -> (EdgeIndex, Direction)?
+pub fn[N, E] Graph::first_edge(Self[N, E], NodeIndex, Direction) -> EdgeIndex?
+pub fn[N, E] Graph::next_edge(Self[N, E], EdgeIndex, Direction) -> EdgeIndex?
+pub fn[N, E] Graph::node_weight(Self[N, E], NodeIndex) -> N?
+pub fn[N, E] Graph::raw_edges(Self[N, E]) -> Array[Edge[E]]
+pub fn[N, E] Graph::raw_nodes(Self[N, E]) -> Array[Node[N]]
+pub fn[N, E] Graph::remove_edge(Self[N, E], EdgeIndex) -> E?
+pub fn[N, E] Graph::remove_node(Self[N, E], NodeIndex) -> N?
+pub fn[N, E] Graph::set_node_weight(Self[N, E], NodeIndex, N) -> Bool
+pub fn[N, E] Graph::with_capacity(Int, Int) -> Self[N, E]
 
 pub struct Index {
   index : Int
@@ -57,6 +133,27 @@ pub struct Index {
 pub fn Index::default() -> Self
 pub fn Index::from_raw_parts(Int, Int) -> Self
 pub fn Index::into_raw_parts(Self) -> (Int, Int)
+
+pub struct IntoIter[T] {
+  items : Array[T]
+  mut cursor : Int
+}
+pub fn[T] IntoIter::from_arena(Arena[T]) -> Self[T]
+pub fn[T] IntoIter::next(Self[T]) -> T?
+
+pub struct Iter[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+pub fn[T] Iter::from_arena(Arena[T]) -> Self[T]
+pub fn[T] Iter::next(Self[T]) -> (Index, T)?
+
+pub struct IterMut[T] {
+  items : Array[(Index, T)]
+  mut cursor : Int
+}
+pub fn[T] IterMut::from_arena(Arena[T]) -> Self[T]
+pub fn[T] IterMut::next(Self[T]) -> (Index, T)?
 
 pub struct ModifiedObjects[Handle, Object] {
   handles : Array[Handle]
@@ -69,6 +166,19 @@ pub fn[Handle, Object] ModifiedObjects::new() -> Self[Handle, Object]
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_once(Self[Handle, Object], Handle, Object) -> Unit
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_unchecked(Self[Handle, Object], Handle, Object) -> Unit
 pub fn[Handle, Object] ModifiedObjects::with_capacity(Int) -> Self[Handle, Object]
+
+pub struct Node[N] {
+  mut weight : N
+  mut next_out : EdgeIndex
+  mut next_in : EdgeIndex
+}
+
+pub struct NodeIndex {
+  index : Int
+}
+pub fn NodeIndex::end() -> Self
+pub fn NodeIndex::index(Self) -> Int
+pub fn NodeIndex::new(Int) -> Self
 
 pub struct PubSub[T] {
   mut deleted_messages : Int
