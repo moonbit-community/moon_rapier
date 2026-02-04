@@ -378,6 +378,10 @@ fn try_normalize_and_get_length(
 ///|
 fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
   match shape {
+    @collision.Shape::Round(inner, radius) => {
+      let (hw, hh) = compute_extents(inner.val)
+      (hw + radius, hh + radius)
+    }
     @collision.Shape::Ball(r) => (r, r)
     @collision.Shape::Cuboid(hw, hh) => (hw, hh)
     @collision.Shape::CapsuleX(half_height, radius) =>

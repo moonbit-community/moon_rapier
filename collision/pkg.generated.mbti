@@ -1081,6 +1081,7 @@ pub(all) enum Shape {
   ConvexPolygon(Array[@core.Vec2])
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
+  Round(Ref[Shape], Float)
 }
 pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
 

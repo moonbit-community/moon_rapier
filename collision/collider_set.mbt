@@ -439,6 +439,7 @@ pub(all) enum Shape {
   ConvexPolygon(Array[@core.Vec2])
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
+  Round(Ref[Shape], @core.Real)
 }
 
 ///|
@@ -588,6 +589,57 @@ pub fn ColliderBuilder::default_friction() -> @core.Real {
 }
 
 ///|
+fn clamp_nonnegative_radius(radius : @core.Real) -> @core.Real {
+  if radius < 0.0F {
+    0.0F
+  } else {
+    radius
+  }
+}
+
+///|
+fn collider_builder_rebuild_with_shape(
+  builder : ColliderBuilder,
+  shape : Shape,
+) -> ColliderBuilder {
+  {
+    shape,
+    translation: builder.translation,
+    rotation: builder.rotation,
+    active_collision_types: builder.active_collision_types,
+    sensor: builder.sensor,
+    active_events: builder.active_events,
+    active_hooks: builder.active_hooks,
+    collision_groups: builder.collision_groups,
+    solver_groups: builder.solver_groups,
+    density: builder.density,
+    friction: builder.friction,
+    friction_combine_rule: builder.friction_combine_rule,
+    restitution: builder.restitution,
+    restitution_combine_rule: builder.restitution_combine_rule,
+    contact_skin: builder.contact_skin,
+    contact_force_event_threshold: builder.contact_force_event_threshold,
+    user_data: builder.user_data,
+    enabled: builder.enabled,
+  }
+}
+
+///|
+fn collider_builder_rounded(
+  builder : ColliderBuilder,
+  border_radius : @core.Real,
+) -> ColliderBuilder {
+  let r = clamp_nonnegative_radius(border_radius)
+  if r <= 0.0F {
+    return builder
+  }
+  collider_builder_rebuild_with_shape(
+    builder,
+    Shape::Round(Ref::new(builder.shape), r),
+  )
+}
+
+///|
 pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
   {
     shape: Shape::Ball(radius),
@@ -644,7 +696,10 @@ pub fn ColliderBuilder::round_cuboid(
   half_height : @core.Real,
   border_radius : @core.Real,
 ) -> ColliderBuilder {
-  ColliderBuilder::cuboid(half_width, half_height).contact_skin(border_radius)
+  collider_builder_rounded(
+    ColliderBuilder::cuboid(half_width, half_height),
+    border_radius,
+  )
 }
 
 ///|
@@ -773,7 +828,7 @@ pub fn ColliderBuilder::round_triangle(
   c : @core.Vec2,
   border_radius : @core.Real,
 ) -> ColliderBuilder {
-  ColliderBuilder::triangle(a, b, c).contact_skin(border_radius)
+  collider_builder_rounded(ColliderBuilder::triangle(a, b, c), border_radius)
 }
 
 ///|
@@ -808,7 +863,7 @@ pub fn ColliderBuilder::round_convex_hull(
   border_radius : @core.Real,
 ) -> ColliderBuilder? {
   if ColliderBuilder::convex_hull(points) is Some(builder) {
-    Some(builder.contact_skin(border_radius))
+    Some(collider_builder_rounded(builder, border_radius))
   } else {
     None
   }
@@ -1007,7 +1062,8 @@ pub fn ColliderBuilder::round_convex_decomposition_with_params(
   params : VHACDParameters,
   border_radius : @core.Real,
 ) -> ColliderBuilder {
-  ColliderBuilder::convex_decomposition_with_params(vertices, indices, params).contact_skin(
+  collider_builder_rounded(
+    ColliderBuilder::convex_decomposition_with_params(vertices, indices, params),
     border_radius,
   )
 }
@@ -1062,7 +1118,7 @@ pub fn ColliderBuilder::round_convex_polyline(
 ) -> ColliderBuilder? {
   match ColliderBuilder::convex_polyline(points) {
     None => None
-    Some(builder) => Some(builder.contact_skin(border_radius))
+    Some(builder) => Some(collider_builder_rounded(builder, border_radius))
   }
 }
 
@@ -1747,6 +1803,7 @@ fn shape_mass_properties(
       let inertia = inertia_rect + 2.0F * inertia_semi_origin
       @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
     }
+    Shape::Round(inner, _) => shape_mass_properties(inner.val, density)
     Shape::Segment(a, b) => {
       // Like Rapier/Parry: segments have no area, so they don't contribute to mass properties.
       let com = @core.Vec2::new((a.x + b.x) * 0.5F, (a.y + b.y) * 0.5F)
@@ -2321,6 +2378,13 @@ fn write_triples(sb : StringBuilder, triples : Array[(Int, Int, Int)]) -> Unit {
 ///|
 fn write_shape(sb : StringBuilder, shape : Shape) -> Unit {
   match shape {
+    Shape::Round(inner, radius) => {
+      sb.write_string("r(")
+      write_shape(sb, inner.val)
+      sb.write_char(',')
+      sb.write_object(radius)
+      sb.write_char(')')
+    }
     Shape::Ball(r) => {
       sb.write_string("b(")
       sb.write_object(r)
@@ -2462,7 +2526,17 @@ fn parse_triples(text : String) -> Array[(Int, Int, Int)] {
 
 ///|
 fn parse_shape(text : String) -> Shape {
-  if text.strip_prefix("b("[:]) is Some(v) &&
+  if text.strip_prefix("r("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_top_level(inner.to_string(), ',')
+    if parts.length() >= 2 {
+      let base = parse_shape(parts[0])
+      let radius = parse_real_value(parts[1])
+      Shape::Round(Ref::new(base), radius)
+    } else {
+      Shape::Round(Ref::new(parse_shape(inner.to_string())), 0.0F)
+    }
+  } else if text.strip_prefix("b("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
     Shape::Ball(parse_real_value(inner.to_string()))
   } else if text.strip_prefix("c("[:]) is Some(v) &&
@@ -2943,30 +3017,6 @@ fn is_same_parent(left : Collider, right : Collider) -> Bool {
 }
 
 ///|
-fn update_collider_world_pose(
-  collider : Collider,
-  bodies : @dynamics.RigidBodySet,
-) -> Collider {
-  if collider.parent is Some(parent) {
-    if bodies.get(parent) is Some(body) {
-      // Rapier semantics: world_position = body_position * local_position_wrt_parent.
-      let body_pos = body.position()
-      let local_pos = @core.Isometry2::new(
-        collider.local_translation,
-        @core.Rot2::from_angle(collider.local_rotation),
-      )
-      let world_pos = body_pos.mul(local_pos)
-      collider.world_translation = world_pos.translation
-      collider.world_rotation = world_pos.rotation.angle()
-      return collider
-    }
-  }
-  collider.world_translation = collider.local_translation
-  collider.world_rotation = collider.local_rotation
-  collider
-}
-
-///|
 fn ColliderSet::push_modified_unchecked(
   self : ColliderSet,
   handle : ColliderHandle,
@@ -2994,7 +3044,22 @@ fn ColliderSet::sync_with_bodies(
 ) -> Unit {
   for i in 0..<self.colliders.length() {
     if self.colliders[i] is Some(collider) {
-      self.colliders[i] = Some(update_collider_world_pose(collider, bodies))
+      if collider.parent is Some(parent) {
+        if bodies.get(parent) is Some(body) {
+          // Rapier semantics: world_position = body_position * local_position_wrt_parent.
+          let body_pos = body.position()
+          let local_pos = @core.Isometry2::new(
+            collider.local_translation,
+            @core.Rot2::from_angle(collider.local_rotation),
+          )
+          let world_pos = body_pos.mul(local_pos)
+          collider.world_translation = world_pos.translation
+          collider.world_rotation = world_pos.rotation.angle()
+          continue
+        }
+      }
+      collider.world_translation = collider.local_translation
+      collider.world_rotation = collider.local_rotation
     }
   }
 }
@@ -3071,8 +3136,21 @@ pub fn ColliderSet::insert_with_parent(
   let updated = collider
   updated.changes = ColliderChanges::all()
   updated.parent = Some(parent)
-  let updated_world = update_collider_world_pose(updated, bodies)
-  self.colliders[handle.id] = Some(updated_world)
+  if bodies.get(parent) is Some(body) {
+    // Rapier semantics: world_position = body_position * local_position_wrt_parent.
+    let body_pos = body.position()
+    let local_pos = @core.Isometry2::new(
+      updated.local_translation,
+      @core.Rot2::from_angle(updated.local_rotation),
+    )
+    let world_pos = body_pos.mul(local_pos)
+    updated.world_translation = world_pos.translation
+    updated.world_rotation = world_pos.rotation.angle()
+  } else {
+    updated.world_translation = updated.local_translation
+    updated.world_rotation = updated.local_rotation
+  }
+  self.colliders[handle.id] = Some(updated)
   if self.colliders[handle.id] is Some(collider_ref) {
     self.push_modified_unchecked(handle, collider_ref)
   }
@@ -3231,12 +3309,26 @@ pub fn ColliderSet::set_parent(
     let old_parent = collider.parent
     collider.parent = parent
     collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
-    self.colliders[handle.id] = Some(
-      update_collider_world_pose(collider, bodies),
-    )
-    if self.colliders[handle.id] is Some(updated) {
-      self.push_modified(handle, updated)
+    if collider.parent is Some(parent) {
+      if bodies.get(parent) is Some(body) {
+        // Rapier semantics: world_position = body_position * local_position_wrt_parent.
+        let body_pos = body.position()
+        let local_pos = @core.Isometry2::new(
+          collider.local_translation,
+          @core.Rot2::from_angle(collider.local_rotation),
+        )
+        let world_pos = body_pos.mul(local_pos)
+        collider.world_translation = world_pos.translation
+        collider.world_rotation = world_pos.rotation.angle()
+      } else {
+        collider.world_translation = collider.local_translation
+        collider.world_rotation = collider.local_rotation
+      }
+    } else {
+      collider.world_translation = collider.local_translation
+      collider.world_rotation = collider.local_rotation
     }
+    self.push_modified(handle, collider)
     // Update mass properties immediately for both the old and new parent, so impulses applied
     // before the next pipeline step behave like Rapier.
     if old_parent is Some(old_rb) {
@@ -3294,11 +3386,26 @@ pub fn handle_user_changes_to_colliders(
       let changes = collider.changes
       let parent = collider.parent
       if changes.contains(COLLIDER_CHANGES_PARENT) {
-        let updated = update_collider_world_pose(collider, bodies)
-        updated.changes = updated.changes.insert(COLLIDER_CHANGES_POSITION)
-        if handle.id >= 0 && handle.id < colliders.colliders.length() {
-          colliders.colliders[handle.id] = Some(updated)
+        if collider.parent is Some(parent) {
+          if bodies.get(parent) is Some(body) {
+            // Rapier semantics: world_position = body_position * local_position_wrt_parent.
+            let body_pos = body.position()
+            let local_pos = @core.Isometry2::new(
+              collider.local_translation,
+              @core.Rot2::from_angle(collider.local_rotation),
+            )
+            let world_pos = body_pos.mul(local_pos)
+            collider.world_translation = world_pos.translation
+            collider.world_rotation = world_pos.rotation.angle()
+          } else {
+            collider.world_translation = collider.local_translation
+            collider.world_rotation = collider.local_rotation
+          }
+        } else {
+          collider.world_translation = collider.local_translation
+          collider.world_rotation = collider.local_rotation
         }
+        collider.changes = collider.changes.insert(COLLIDER_CHANGES_POSITION)
       }
       if changes.contains(COLLIDER_CHANGES_PARENT) ||
         changes.contains(COLLIDER_CHANGES_SHAPE) ||
@@ -3554,6 +3661,31 @@ fn shapes_intersect(
   pos2 : @core.Vec2,
   rot2 : @core.Real,
 ) -> Bool {
+  match (shape1, shape2) {
+    (Shape::Round(_, _), _) | (_, Shape::Round(_, _)) => {
+      // For rounded shapes, reuse the contact-manifold logic for overlap testing.
+      // This keeps the overlap semantics consistent with `build_contact_pair`.
+      let c1 = ColliderBuilder::new(shape1)
+        .translation(pos1)
+        .rotation(rot1)
+        .build()
+      let c2 = ColliderBuilder::new(shape2)
+        .translation(pos2)
+        .rotation(rot2)
+        .build()
+      let pair = build_contact_pair(0.0F, c1, c2)
+      for mi in 0..<pair.manifolds.length() {
+        let manifold = pair.manifolds[mi]
+        for pi in 0..<manifold.points.length() {
+          if manifold.points[pi].dist <= 0.0F {
+            return true
+          }
+        }
+      }
+      return false
+    }
+    _ => ()
+  }
   fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
     a.x * b.y - a.y * b.x
   }
@@ -6259,56 +6391,117 @@ fn build_contact_pair(
     c1 : Collider,
     c2 : Collider,
   ) -> Array[ContactManifold] {
+    fn unwrap_round_shape(shape : Shape) -> (Shape, @core.Real) {
+      match shape {
+        Shape::Round(inner, radius) => {
+          let (base, r) = unwrap_round_shape(inner.val)
+          (base, r + clamp_nonnegative_radius(radius))
+        }
+        _ => (shape, 0.0F)
+      }
+    }
+
+    fn apply_rounding_to_manifold(
+      manifold : ContactManifold,
+      collider1 : Collider,
+      collider2 : Collider,
+      radius1 : @core.Real,
+      radius2 : @core.Real,
+    ) -> ContactManifold {
+      if radius1 <= 0.0F && radius2 <= 0.0F {
+        return manifold
+      }
+      let p1_inv = collider1.position().inverse()
+      let p2_inv = collider2.position().inverse()
+      let n = manifold.normal
+      let shift1 = vec2_scale(n, radius1)
+      let shift2 = vec2_scale(n, radius2)
+      let out_pts : Array[ContactManifoldPoint] = []
+      for i in 0..<manifold.points.length() {
+        let p = manifold.points[i]
+        let world_p1 = collider1
+          .position()
+          .transform_point(p.local_p1)
+          .add(shift1)
+        let world_p2 = collider2
+          .position()
+          .transform_point(p.local_p2)
+          .sub(shift2)
+        out_pts.push(ContactManifoldPoint::{
+          local_p1: p1_inv.transform_point(world_p1),
+          local_p2: p2_inv.transform_point(world_p2),
+          dist: p.dist - (radius1 + radius2),
+          fid1: p.fid1,
+          fid2: p.fid2,
+        })
+      }
+      ContactManifold::{ normal: n, points: out_pts }
+    }
+
+    let (shape1, radius1) = unwrap_round_shape(c1.shape)
+    let (shape2, radius2) = unwrap_round_shape(c2.shape)
+    let c1_base = c1
+    c1_base.shape = shape1
+    let c2_base = c2
+    c2_base.shape = shape2
     let out : Array[ContactManifold] = []
-    match (c1.shape, c2.shape) {
+    match (shape1, shape2) {
       (Shape::Ball(r1), Shape::Ball(r2)) =>
-        out.push(contact_manifold_ball_ball(c1, r1, c2, r2))
+        out.push(contact_manifold_ball_ball(c1_base, r1, c2_base, r2))
       (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
-        out.push(contact_manifold_ball_cuboid(c1, r, c2, hw, hh))
+        out.push(contact_manifold_ball_cuboid(c1_base, r, c2_base, hw, hh))
       (Shape::Ball(r), Shape::ConvexPolygon(vertices)) =>
-        out.push(contact_manifold_ball_convex_polygon(c1, r, c2, vertices))
+        out.push(
+          contact_manifold_ball_convex_polygon(c1_base, r, c2_base, vertices),
+        )
       (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
-        out.push(contact_manifold_cuboid_ball(c1, hw, hh, c2, r))
+        out.push(contact_manifold_cuboid_ball(c1_base, hw, hh, c2_base, r))
       (Shape::ConvexPolygon(vertices), Shape::Ball(r)) =>
-        out.push(contact_manifold_convex_polygon_ball(c1, vertices, c2, r))
+        out.push(
+          contact_manifold_convex_polygon_ball(c1_base, vertices, c2_base, r),
+        )
       (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
         out.push(
           contact_manifold_cuboid_cuboid(
-            c1, hw1, hh1, c2, hw2, hh2, prediction_distance,
+            c1_base, hw1, hh1, c2_base, hw2, hh2, prediction_distance,
           ),
         )
       (Shape::ConvexPolygon(vertices1), Shape::ConvexPolygon(vertices2)) =>
         out.push(
           contact_manifold_convex_polygon_convex_polygon(
-            c1, vertices1, c2, vertices2, prediction_distance,
+            c1_base, vertices1, c2_base, vertices2, prediction_distance,
           ),
         )
       (Shape::ConvexPolygon(vertices), Shape::Cuboid(hw, hh)) =>
         out.push(
           contact_manifold_convex_polygon_cuboid(
-            c1, vertices, c2, hw, hh, prediction_distance,
+            c1_base, vertices, c2_base, hw, hh, prediction_distance,
           ),
         )
       (Shape::Cuboid(hw, hh), Shape::ConvexPolygon(vertices)) =>
         out.push(
           contact_manifold_cuboid_convex_polygon(
-            c1, hw, hh, c2, vertices, prediction_distance,
+            c1_base, hw, hh, c2_base, vertices, prediction_distance,
           ),
         )
       (Shape::Ball(r), Shape::Segment(a, b)) =>
-        out.push(contact_manifold_ball_segment(c1, r, c2, a, b))
+        out.push(contact_manifold_ball_segment(c1_base, r, c2_base, a, b))
       (Shape::Segment(a, b), Shape::Ball(r)) =>
-        out.push(contact_manifold_segment_ball(c1, a, b, c2, r))
+        out.push(contact_manifold_segment_ball(c1_base, a, b, c2_base, r))
       (Shape::Ball(r), Shape::Polyline(vertices, indices)) =>
-        out.push(contact_manifold_ball_polyline(c1, r, c2, vertices, indices))
+        out.push(
+          contact_manifold_ball_polyline(c1_base, r, c2_base, vertices, indices),
+        )
       (Shape::Polyline(vertices, indices), Shape::Ball(r)) =>
-        out.push(contact_manifold_polyline_ball(c1, vertices, indices, c2, r))
+        out.push(
+          contact_manifold_polyline_ball(c1_base, vertices, indices, c2_base, r),
+        )
       (Shape::Ball(r), Shape::CapsuleX(hh, cr)) =>
         out.push(
           contact_manifold_ball_capsule(
-            c1,
+            c1_base,
             r,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
@@ -6317,9 +6510,9 @@ fn build_contact_pair(
       (Shape::Ball(r), Shape::CapsuleY(hh, cr)) =>
         out.push(
           contact_manifold_ball_capsule(
-            c1,
+            c1_base,
             r,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
@@ -6328,33 +6521,33 @@ fn build_contact_pair(
       (Shape::CapsuleX(hh, cr), Shape::Ball(r)) =>
         out.push(
           contact_manifold_capsule_ball(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
-            c2,
+            c2_base,
             r,
           ),
         )
       (Shape::CapsuleY(hh, cr), Shape::Ball(r)) =>
         out.push(
           contact_manifold_capsule_ball(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
-            c2,
+            c2_base,
             r,
           ),
         )
       (Shape::CapsuleX(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
         out.push(
           contact_manifold_capsule_capsule(
-            c1,
+            c1_base,
             hh1,
             r1,
             @core.Vec2::new(1.0F, 0.0F),
-            c2,
+            c2_base,
             hh2,
             r2,
             @core.Vec2::new(1.0F, 0.0F),
@@ -6363,11 +6556,11 @@ fn build_contact_pair(
       (Shape::CapsuleX(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
         out.push(
           contact_manifold_capsule_capsule(
-            c1,
+            c1_base,
             hh1,
             r1,
             @core.Vec2::new(1.0F, 0.0F),
-            c2,
+            c2_base,
             hh2,
             r2,
             @core.Vec2::new(0.0F, 1.0F),
@@ -6376,11 +6569,11 @@ fn build_contact_pair(
       (Shape::CapsuleY(hh1, r1), Shape::CapsuleX(hh2, r2)) =>
         out.push(
           contact_manifold_capsule_capsule(
-            c1,
+            c1_base,
             hh1,
             r1,
             @core.Vec2::new(0.0F, 1.0F),
-            c2,
+            c2_base,
             hh2,
             r2,
             @core.Vec2::new(1.0F, 0.0F),
@@ -6389,37 +6582,47 @@ fn build_contact_pair(
       (Shape::CapsuleY(hh1, r1), Shape::CapsuleY(hh2, r2)) =>
         out.push(
           contact_manifold_capsule_capsule(
-            c1,
+            c1_base,
             hh1,
             r1,
             @core.Vec2::new(0.0F, 1.0F),
-            c2,
+            c2_base,
             hh2,
             r2,
             @core.Vec2::new(0.0F, 1.0F),
           ),
         )
       (Shape::Segment(a, b), Shape::Cuboid(hw, hh)) =>
-        out.push(contact_manifold_segment_cuboid(c1, a, b, c2, hw, hh))
+        out.push(
+          contact_manifold_segment_cuboid(c1_base, a, b, c2_base, hw, hh),
+        )
       (Shape::Cuboid(hw, hh), Shape::Segment(a, b)) =>
-        out.push(contact_manifold_cuboid_segment(c1, hw, hh, c2, a, b))
+        out.push(
+          contact_manifold_cuboid_segment(c1_base, hw, hh, c2_base, a, b),
+        )
       (Shape::Polyline(vertices, indices), Shape::Cuboid(hw, hh)) =>
         out.push(
-          contact_manifold_polyline_cuboid(c1, vertices, indices, c2, hw, hh),
+          contact_manifold_polyline_cuboid(
+            c1_base, vertices, indices, c2_base, hw, hh,
+          ),
         )
       (Shape::Cuboid(hw, hh), Shape::Polyline(vertices, indices)) =>
         out.push(
-          contact_manifold_cuboid_polyline(c1, hw, hh, c2, vertices, indices),
+          contact_manifold_cuboid_polyline(
+            c1_base, hw, hh, c2_base, vertices, indices,
+          ),
         )
       (Shape::Segment(a1, b1), Shape::Segment(a2, b2)) =>
-        out.push(contact_manifold_segment_segment(c1, a1, b1, c2, a2, b2))
+        out.push(
+          contact_manifold_segment_segment(c1_base, a1, b1, c2_base, a2, b2),
+        )
       (Shape::Segment(a, b), Shape::CapsuleX(hh, cr)) =>
         out.push(
           contact_manifold_segment_capsule(
-            c1,
+            c1_base,
             a,
             b,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
@@ -6428,10 +6631,10 @@ fn build_contact_pair(
       (Shape::Segment(a, b), Shape::CapsuleY(hh, cr)) =>
         out.push(
           contact_manifold_segment_capsule(
-            c1,
+            c1_base,
             a,
             b,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
@@ -6440,11 +6643,11 @@ fn build_contact_pair(
       (Shape::CapsuleX(hh, cr), Shape::Segment(a, b)) =>
         out.push(
           contact_manifold_capsule_segment(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
-            c2,
+            c2_base,
             a,
             b,
           ),
@@ -6452,11 +6655,11 @@ fn build_contact_pair(
       (Shape::CapsuleY(hh, cr), Shape::Segment(a, b)) =>
         out.push(
           contact_manifold_capsule_segment(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
-            c2,
+            c2_base,
             a,
             b,
           ),
@@ -6464,11 +6667,11 @@ fn build_contact_pair(
       (Shape::CapsuleX(hh, cr), Shape::Cuboid(hw, hh2)) =>
         out.push(
           contact_manifold_capsule_cuboid(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
-            c2,
+            c2_base,
             hw,
             hh2,
           ),
@@ -6476,11 +6679,11 @@ fn build_contact_pair(
       (Shape::CapsuleY(hh, cr), Shape::Cuboid(hw, hh2)) =>
         out.push(
           contact_manifold_capsule_cuboid(
-            c1,
+            c1_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
-            c2,
+            c2_base,
             hw,
             hh2,
           ),
@@ -6488,10 +6691,10 @@ fn build_contact_pair(
       (Shape::Cuboid(hw, hh2), Shape::CapsuleX(hh, cr)) =>
         out.push(
           contact_manifold_cuboid_capsule(
-            c1,
+            c1_base,
             hw,
             hh2,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(1.0F, 0.0F),
@@ -6500,10 +6703,10 @@ fn build_contact_pair(
       (Shape::Cuboid(hw, hh2), Shape::CapsuleY(hh, cr)) =>
         out.push(
           contact_manifold_cuboid_capsule(
-            c1,
+            c1_base,
             hw,
             hh2,
-            c2,
+            c2_base,
             hh,
             cr,
             @core.Vec2::new(0.0F, 1.0F),
@@ -6511,7 +6714,17 @@ fn build_contact_pair(
         )
       _ => ()
     }
-    out
+    if radius1 <= 0.0F && radius2 <= 0.0F {
+      out
+    } else {
+      let adjusted : Array[ContactManifold] = []
+      for i in 0..<out.length() {
+        adjusted.push(
+          apply_rounding_to_manifold(out[i], c1_base, c2_base, radius1, radius2),
+        )
+      }
+      adjusted
+    }
   }
 
   fn map_manifold_points(
@@ -7122,6 +7335,13 @@ fn compute_shape_aabb(
 ) -> Aabb {
   let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
   match shape {
+    Shape::Round(inner, radius) =>
+      compute_shape_aabb(
+        inner.val,
+        center,
+        rotation,
+        pd + clamp_nonnegative_radius(radius),
+      )
     Shape::Ball(radius) => {
       let r = radius + pd
       Aabb::{
