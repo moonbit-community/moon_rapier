@@ -19,6 +19,9 @@ const ACTIVE_EVENTS_COLLISION_EVENTS : Int = 1 << 0
 const ACTIVE_EVENTS_CONTACT_FORCE_EVENTS : Int = 1 << 1
 
 ///|
+const ACTIVE_EVENTS_INTERSECTION_EVENTS : Int = 1 << 2
+
+///|
 pub struct ActiveEvents {
   mut bits : Int
 }
@@ -30,7 +33,9 @@ fn ActiveEvents::new(bits : Int) -> ActiveEvents {
 
 ///|
 fn active_events_all_bits() -> Int {
-  ACTIVE_EVENTS_COLLISION_EVENTS | ACTIVE_EVENTS_CONTACT_FORCE_EVENTS
+  ACTIVE_EVENTS_COLLISION_EVENTS |
+  ACTIVE_EVENTS_CONTACT_FORCE_EVENTS |
+  ACTIVE_EVENTS_INTERSECTION_EVENTS
 }
 
 ///|
@@ -46,6 +51,11 @@ pub fn ActiveEvents::collision_events() -> ActiveEvents {
 ///|
 pub fn ActiveEvents::contact_force_events() -> ActiveEvents {
   ActiveEvents::new(ACTIVE_EVENTS_CONTACT_FORCE_EVENTS)
+}
+
+///|
+pub fn ActiveEvents::intersection_events() -> ActiveEvents {
+  ActiveEvents::new(ACTIVE_EVENTS_INTERSECTION_EVENTS)
 }
 
 ///|
@@ -135,6 +145,9 @@ pub fn ActiveEvents::iter_names(self : ActiveEvents) -> Array[String] {
   if self.contains(ActiveEvents::contact_force_events()) {
     result.push("CONTACT_FORCE_EVENTS")
   }
+  if self.contains(ActiveEvents::intersection_events()) {
+    result.push("INTERSECTION_EVENTS")
+  }
   result
 }
 
@@ -144,6 +157,8 @@ pub fn ActiveEvents::from_name(name : String) -> ActiveEvents? {
     Some(ActiveEvents::collision_events())
   } else if name == "CONTACT_FORCE_EVENTS" {
     Some(ActiveEvents::contact_force_events())
+  } else if name == "INTERSECTION_EVENTS" {
+    Some(ActiveEvents::intersection_events())
   } else {
     None
   }
@@ -247,6 +262,37 @@ pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
     CollisionEvent::Stopped(_, _, flags) =>
       flags.contains(CollisionEventFlags::removed())
   }
+}
+
+///|
+pub struct IntersectionEvent {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+  intersecting : Bool
+}
+
+///|
+pub fn IntersectionEvent::new(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  intersecting : Bool,
+) -> IntersectionEvent {
+  { collider1, collider2, intersecting }
+}
+
+///|
+pub fn IntersectionEvent::collider1(self : IntersectionEvent) -> ColliderHandle {
+  self.collider1
+}
+
+///|
+pub fn IntersectionEvent::collider2(self : IntersectionEvent) -> ColliderHandle {
+  self.collider2
+}
+
+///|
+pub fn IntersectionEvent::intersecting(self : IntersectionEvent) -> Bool {
+  self.intersecting
 }
 
 ///|

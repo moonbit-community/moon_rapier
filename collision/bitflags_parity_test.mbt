@@ -16,15 +16,22 @@
 test "ActiveEvents bitflags parity helpers" {
   let a = ActiveEvents::collision_events()
   let b = ActiveEvents::contact_force_events()
+  let c = ActiveEvents::intersection_events()
   let ab = a.union(b)
+  let abc = ab.union(c)
   inspect(ab.contains(a), content="true")
   inspect(ab.contains(b), content="true")
-  inspect(ab.is_all(), content="true")
+  inspect(abc.is_all(), content="true")
   inspect(a.complement().contains(b), content="true")
   inspect(ActiveEvents::from_bits(3) is Some(_), content="true")
-  inspect(ActiveEvents::from_bits(4) is None, content="true")
+  inspect(ActiveEvents::from_bits(4) is Some(_), content="true")
+  inspect(ActiveEvents::from_bits(8) is None, content="true")
   inspect(
     ActiveEvents::from_name("COLLISION_EVENTS") is Some(_),
+    content="true",
+  )
+  inspect(
+    ActiveEvents::from_name("INTERSECTION_EVENTS") is Some(_),
     content="true",
   )
   inspect(ActiveEvents::from_name("NOPE") is None, content="true")

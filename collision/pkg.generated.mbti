@@ -133,6 +133,7 @@ pub fn ActiveEvents::from_bits_retain(Int) -> Self
 pub fn ActiveEvents::from_bits_truncate(Int) -> Self
 pub fn ActiveEvents::from_name(String) -> Self?
 pub fn ActiveEvents::insert(Self, Self) -> Self
+pub fn ActiveEvents::intersection_events() -> Self
 pub fn ActiveEvents::is_all(Self) -> Bool
 pub fn ActiveEvents::iter_names(Self) -> Array[String]
 pub fn ActiveEvents::symmetric_difference(Self, Self) -> Self
@@ -778,6 +779,26 @@ pub fn[T] InteractionGraph::interactions_with_endpoints(Self[T], ColliderHandle,
 pub fn[T] InteractionGraph::interactions_with_mut(Self[T], ColliderHandle) -> Array[(ColliderHandle, ColliderHandle, T)]
 pub fn[T] InteractionGraph::new() -> Self[T]
 pub fn[T] InteractionGraph::raw_graph(Self[T]) -> Array[(ColliderHandle, ColliderHandle, T)]
+
+pub struct IntersectionEvent {
+  collider1 : ColliderHandle
+  collider2 : ColliderHandle
+  intersecting : Bool
+}
+pub fn IntersectionEvent::collider1(Self) -> ColliderHandle
+pub fn IntersectionEvent::collider2(Self) -> ColliderHandle
+pub fn IntersectionEvent::intersecting(Self) -> Bool
+pub fn IntersectionEvent::new(ColliderHandle, ColliderHandle, Bool) -> Self
+
+pub struct IntersectionEvent3D {
+  collider1 : ColliderHandle3D
+  collider2 : ColliderHandle3D
+  intersecting : Bool
+}
+pub fn IntersectionEvent3D::collider1(Self) -> ColliderHandle3D
+pub fn IntersectionEvent3D::collider2(Self) -> ColliderHandle3D
+pub fn IntersectionEvent3D::intersecting(Self) -> Bool
+pub fn IntersectionEvent3D::new(ColliderHandle3D, ColliderHandle3D, Bool) -> Self
 
 pub struct IntersectionPair {
   collider1 : ColliderHandle

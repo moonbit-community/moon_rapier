@@ -52,3 +52,33 @@ test "event handler collects contact force events and invokes callback" {
     content="true",
   )
 }
+
+///|
+test "event handler collects intersection events and invokes callback" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let h1 = colliders.insert(@collision.ColliderBuilder::ball(0.5F).build())
+  let h2 = colliders.insert(@collision.ColliderBuilder::ball(0.5F).build())
+  let event = @collision.IntersectionEvent::new(h1, h2, true)
+  let seen : Array[@collision.IntersectionEvent] = []
+  let handler = EventHandler::new().on_intersection_event(fn(
+    _bodies : @dynamics.RigidBodySet,
+    _colliders : @collision.ColliderSet,
+    event : @collision.IntersectionEvent,
+  ) -> Unit {
+    seen.push(event)
+  })
+  handler.handle_intersection_event(bodies, colliders, event)
+  inspect(seen.length() == 1, content="true")
+  let collected = handler.take_intersection_events()
+  inspect(collected.length() == 1, content="true")
+  inspect(
+    @collision.ColliderHandle::equals(collected[0].collider1(), h1),
+    content="true",
+  )
+  inspect(
+    @collision.ColliderHandle::equals(collected[0].collider2(), h2),
+    content="true",
+  )
+  inspect(collected[0].intersecting(), content="true")
+}

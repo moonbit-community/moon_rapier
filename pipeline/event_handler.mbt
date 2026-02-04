@@ -20,6 +20,12 @@ pub struct EventHandler {
     @collision.ColliderSet,
     @collision.CollisionEvent,
   ) -> Unit)?
+  intersection_events : Array[@collision.IntersectionEvent]
+  mut intersection_callback : ((
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.IntersectionEvent,
+  ) -> Unit)?
   contact_force_events : Array[@collision.ContactForceEvent]
   mut contact_force_callback : ((
     @core.Real,
@@ -34,6 +40,8 @@ pub fn EventHandler::new() -> EventHandler {
   {
     collision_events: [],
     collision_callback: None,
+    intersection_events: [],
+    intersection_callback: None,
     contact_force_events: [],
     contact_force_callback: None,
   }
@@ -63,6 +71,32 @@ pub fn EventHandler::handle_collision_event(
     callback(bodies, colliders, event)
   }
   self.collision_events.push(event)
+}
+
+///|
+pub fn EventHandler::on_intersection_event(
+  self : EventHandler,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.IntersectionEvent,
+  ) -> Unit,
+) -> EventHandler {
+  self.intersection_callback = Some(callback)
+  self
+}
+
+///|
+pub fn EventHandler::handle_intersection_event(
+  self : EventHandler,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.IntersectionEvent,
+) -> Unit {
+  if self.intersection_callback is Some(callback) {
+    callback(bodies, colliders, event)
+  }
+  self.intersection_events.push(event)
 }
 
 ///|
@@ -102,6 +136,14 @@ pub fn EventHandler::push_collision_event(
 }
 
 ///|
+pub fn EventHandler::push_intersection_event(
+  self : EventHandler,
+  event : @collision.IntersectionEvent,
+) -> Unit {
+  self.intersection_events.push(event)
+}
+
+///|
 pub fn EventHandler::push_contact_force_event(
   self : EventHandler,
   event : @collision.ContactForceEvent,
@@ -118,6 +160,18 @@ pub fn EventHandler::take_collision_events(
     result.push(self.collision_events[i])
   }
   self.collision_events.clear()
+  result
+}
+
+///|
+pub fn EventHandler::take_intersection_events(
+  self : EventHandler,
+) -> Array[@collision.IntersectionEvent] {
+  let result : Array[@collision.IntersectionEvent] = []
+  for i in 0..<self.intersection_events.length() {
+    result.push(self.intersection_events[i])
+  }
+  self.intersection_events.clear()
   result
 }
 
@@ -154,6 +208,16 @@ pub fn ChannelEventCollector::handle_collision_event(
 }
 
 ///|
+pub fn ChannelEventCollector::handle_intersection_event(
+  self : ChannelEventCollector,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.IntersectionEvent,
+) -> Unit {
+  self.handler.handle_intersection_event(bodies, colliders, event)
+}
+
+///|
 pub fn ChannelEventCollector::handle_contact_force_event(
   self : ChannelEventCollector,
   dt : @core.Real,
@@ -169,6 +233,13 @@ pub fn ChannelEventCollector::take_collision_events(
   self : ChannelEventCollector,
 ) -> Array[@collision.CollisionEvent] {
   self.handler.take_collision_events()
+}
+
+///|
+pub fn ChannelEventCollector::take_intersection_events(
+  self : ChannelEventCollector,
+) -> Array[@collision.IntersectionEvent] {
+  self.handler.take_intersection_events()
 }
 
 ///|
