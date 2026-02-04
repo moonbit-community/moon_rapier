@@ -1818,6 +1818,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::Round(inner, r) => Shape::Round(inner, r + target_distance)
     Shape::Segment(_, _) => shape
     Shape::Polyline(_, _) => shape
+    Shape::HeightField(_, _) => shape
     Shape::ConvexPolygon(_) => shape
     Shape::TriMesh(_, _) => shape
     Shape::Compound(_) => shape
@@ -1908,6 +1909,7 @@ pub fn QueryPipeline::cast_shape(
             }
           }
           Shape::HalfSpace(_) => None
+          Shape::HeightField(_, _) => None
           Shape::Segment(a, b) => {
             let (sa, sb) = segment_world_endpoints(
               target_center, target_rotation, a, b,
@@ -2261,6 +2263,10 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
+      Shape::HeightField(heights, scale) =>
+        shape_bounding_radius(
+          Shape::Polyline(heightfield_vertices(heights, scale), None),
+        )
       Shape::ConvexPolygon(vertices) => {
         let mut best = 0.0F
         for i in 0..<vertices.length() {
@@ -2336,6 +2342,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
           center,
           rotation,
           Shape::HalfSpace(n),
+          point,
+          false,
+        ).point
+      Shape::HeightField(heights, scale) =>
+        project_point_on_shape(
+          center,
+          rotation,
+          Shape::Polyline(heightfield_vertices(heights, scale), None),
           point,
           false,
         ).point
@@ -2712,6 +2726,13 @@ fn point_in_shape(
       let delta = point.sub(proj.point)
       delta.dot(delta) <= 1.0e-12F
     }
+    Shape::HeightField(heights, scale) =>
+      point_in_shape(
+        Shape::Polyline(heightfield_vertices(heights, scale), None),
+        center,
+        rotation,
+        point,
+      )
     Shape::ConvexPolygon(vertices) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
@@ -2882,6 +2903,11 @@ fn compute_query_shape_aabb(
           @core.Vec2::new(max_x, max_y),
         )
       }
+    Shape::HeightField(heights, scale) =>
+      compute_query_shape_aabb(
+        shape_pos,
+        Shape::Polyline(heightfield_vertices(heights, scale), None),
+      )
     Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
@@ -3705,6 +3731,16 @@ fn ray_intersect_shape_and_get_normal(
       ray_intersect_polyline_and_get_normal(
         ray, center, rotation, vertices, indices, max_dist, solid,
       )
+    Shape::HeightField(heights, scale) =>
+      ray_intersect_polyline_and_get_normal(
+        ray,
+        center,
+        rotation,
+        heightfield_vertices(heights, scale),
+        None,
+        max_dist,
+        solid,
+      )
     Shape::ConvexPolygon(vertices) =>
       ray_intersect_convex_polygon_oriented_and_get_normal(
         ray, center, rotation, vertices, max_dist, solid,
@@ -3865,6 +3901,14 @@ fn project_point_on_shape(
       project_point_on_segment(center, rotation, a, b, point)
     Shape::Polyline(vertices, indices) =>
       project_point_on_polyline(center, rotation, vertices, indices, point)
+    Shape::HeightField(heights, scale) =>
+      project_point_on_polyline(
+        center,
+        rotation,
+        heightfield_vertices(heights, scale),
+        None,
+        point,
+      )
     Shape::ConvexPolygon(vertices) =>
       project_point_on_convex_polygon_oriented(
         center, rotation, vertices, point, solid,
@@ -4051,6 +4095,14 @@ fn project_point_on_shape_and_get_feature(
     Shape::Polyline(vertices, indices) =>
       project_point_on_polyline_and_get_feature(
         center, rotation, vertices, indices, point,
+      )
+    Shape::HeightField(heights, scale) =>
+      project_point_on_polyline_and_get_feature(
+        center,
+        rotation,
+        heightfield_vertices(heights, scale),
+        None,
+        point,
       )
     Shape::ConvexPolygon(vertices) =>
       project_point_on_convex_polygon_oriented_and_get_feature(

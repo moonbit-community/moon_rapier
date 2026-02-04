@@ -1079,6 +1079,7 @@ pub(all) enum Shape {
   CapsuleY(Float, Float)
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  HeightField(Array[Float], @core.Vec2)
   ConvexPolygon(Array[@core.Vec2])
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
