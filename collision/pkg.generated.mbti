@@ -231,7 +231,7 @@ pub struct Collider {
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : Float
   mut contact_force_event_threshold : Float
-  mut user_data : Int
+  mut user_data : @core.UserData128
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -281,6 +281,7 @@ pub fn Collider::set_solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider::set_translation(Self, @core.Vec2) -> Self
 pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
 pub fn Collider::set_user_data(Self, Int) -> Self
+pub fn Collider::set_user_data128(Self, @core.UserData128) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::shape_mut(Self) -> Shape
 pub fn Collider::shared_shape(Self) -> SharedShape
@@ -288,6 +289,7 @@ pub fn Collider::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::translation(Self) -> @core.Vec2
 pub fn Collider::translation3(Self) -> @core.Vec3
 pub fn Collider::user_data(Self) -> Int
+pub fn Collider::user_data128(Self) -> @core.UserData128
 pub fn Collider::volume(Self) -> Float
 
 pub struct Collider3D {
@@ -302,6 +304,7 @@ pub struct Collider3D {
   mut one_way_offset : Float?
   mut one_way_direction : Int
   active_events : ActiveEvents
+  mut user_data : @core.UserData128
   collision_groups : @dynamics.InteractionGroups
   friction : Float
   restitution : Float
@@ -327,8 +330,12 @@ pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
 pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_shape(Self, Shape3D) -> Unit
 pub fn Collider3D::set_surface_velocity(Self, @core.Vec3) -> Unit
+pub fn Collider3D::set_user_data(Self, Int) -> Self
+pub fn Collider3D::set_user_data128(Self, @core.UserData128) -> Self
 pub fn Collider3D::shape(Self) -> Shape3D
 pub fn Collider3D::surface_velocity(Self) -> @core.Vec3
+pub fn Collider3D::user_data(Self) -> Int
+pub fn Collider3D::user_data128(Self) -> @core.UserData128
 pub fn Collider3D::voxel_key_for_triangle(Self, Int) -> (Int, Int, Int)?
 
 pub struct ColliderBuilder {
@@ -348,7 +355,7 @@ pub struct ColliderBuilder {
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : Float
   mut contact_force_event_threshold : Float
-  mut user_data : Int
+  mut user_data : @core.UserData128
   mut enabled : Bool
 }
 pub fn ColliderBuilder::active_collision_types(Self, ActiveCollisionTypes) -> Self
@@ -395,6 +402,7 @@ pub fn ColliderBuilder::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder::trimesh_with_flags(Array[@core.Vec2], Array[(Int, Int, Int)], TriMeshFlags) -> Self?
 pub fn ColliderBuilder::user_data(Self, Int) -> Self
+pub fn ColliderBuilder::user_data128(Self, @core.UserData128) -> Self
 pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
 pub fn ColliderBuilder::voxels(@core.Vec2, Array[(Int, Int)]) -> Self
 pub fn ColliderBuilder::voxels_from_points(@core.Vec2, Array[@core.Vec2]) -> Self
@@ -443,6 +451,7 @@ pub struct ColliderBuilder3D {
   mut one_way_offset : Float?
   mut one_way_direction : Int
   mut active_events : ActiveEvents
+  mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut friction : Float
   mut restitution : Float
@@ -483,6 +492,8 @@ pub fn ColliderBuilder3D::surface_velocity(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::triangle(@core.Vec3, @core.Vec3, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3D::user_data(Self, Int) -> Self
+pub fn ColliderBuilder3D::user_data128(Self, @core.UserData128) -> Self
 pub fn ColliderBuilder3D::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self?
 
 pub struct ColliderChanges {

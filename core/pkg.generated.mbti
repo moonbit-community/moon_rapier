@@ -212,6 +212,20 @@ pub fn SdpMat3::new(Float, Float, Float, Float, Float, Float) -> Self
 pub fn SdpMat3::transform_vec3(Self, Vec3) -> Vec3
 pub fn SdpMat3::zero() -> Self
 
+pub struct UserData128 {
+  hi : UInt64
+  lo : UInt64
+}
+pub fn UserData128::equals(Self, Self) -> Bool
+pub fn UserData128::from_int_truncate(Int) -> Self
+pub fn UserData128::from_parts(UInt64, UInt64) -> Self
+pub fn UserData128::from_u64(UInt64) -> Self
+pub fn UserData128::hi(Self) -> UInt64
+pub fn UserData128::lo(Self) -> UInt64
+pub fn UserData128::to_int_truncate(Self) -> Int
+pub fn UserData128::to_parts(Self) -> (UInt64, UInt64)
+pub fn UserData128::zero() -> Self
+
 #alias(TangentImpulse3)
 pub struct Vec2 {
   x : Float

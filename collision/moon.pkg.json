@@ -5,6 +5,7 @@
     "moonbitlang/core/hashmap",
     "moonbitlang/core/hashset",
     "moonbitlang/core/math",
+    "moonbitlang/core/uint64",
     "moonbitlang/core/strconv"
   ]
 }

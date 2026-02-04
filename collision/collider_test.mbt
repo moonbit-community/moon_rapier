@@ -276,6 +276,22 @@ test "collider material and event accessors" {
 }
 
 ///|
+test "collider user_data128 roundtrip through ColliderSet serialize/deserialize" {
+  let colliders = ColliderSet::new()
+  let data = @core.UserData128::from_parts(1UL, 2UL)
+  let h = colliders.insert(
+    ColliderBuilder::ball(0.5F).user_data128(data).build(),
+  )
+  let snapshot = colliders.serialize()
+  let colliders2 = ColliderSet::deserialize(snapshot)
+  if colliders2.get(h) is Some(c) {
+    inspect(c.user_data128().equals(data), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "convex polygon contacts cuboid" {
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = ColliderSet::new()

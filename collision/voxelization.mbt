@@ -177,7 +177,7 @@ fn collider_builder_with_shape(shape : Shape) -> ColliderBuilder {
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }

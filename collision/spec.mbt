@@ -871,6 +871,15 @@ pub fn ColliderBuilder::user_data(
 
 ///|
 #declaration_only
+pub fn ColliderBuilder::user_data128(
+  self : ColliderBuilder,
+  data : @core.UserData128,
+) -> ColliderBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ColliderBuilder::enabled(
   self : ColliderBuilder,
   enabled : Bool,
@@ -1014,6 +1023,12 @@ pub fn Collider::user_data(self : Collider) -> Int {
 
 ///|
 #declaration_only
+pub fn Collider::user_data128(self : Collider) -> @core.UserData128 {
+  ...
+}
+
+///|
+#declaration_only
 pub fn Collider::is_enabled(self : Collider) -> Bool {
   ...
 }
@@ -1126,6 +1141,15 @@ pub fn Collider::set_contact_force_event_threshold(
 ///|
 #declaration_only
 pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
+  ...
+}
+
+///|
+#declaration_only
+pub fn Collider::set_user_data128(
+  self : Collider,
+  data : @core.UserData128,
+) -> Collider {
   ...
 }
 

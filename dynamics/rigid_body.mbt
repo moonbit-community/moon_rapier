@@ -817,6 +817,7 @@ pub fn RigidBodyAdditionalMassProps::mass_properties(
 ///|
 pub struct RigidBody {
   mut ids : RigidBodyIds
+  mut user_data : @core.UserData128
   position : RigidBodyPosition
   mut body_type : RigidBodyType
   mut locked_translations : Bool
@@ -1626,6 +1627,7 @@ pub struct RigidBodyBuilder {
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : @core.Real
   mut dominance_group : Int
+  mut user_data : @core.UserData128
 }
 
 ///|
@@ -1648,6 +1650,7 @@ pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     ccd_enabled: false,
     soft_ccd_prediction: 0.0F,
     dominance_group: 0,
+    user_data: @core.UserData128::zero(),
   }
 }
 
@@ -1789,6 +1792,24 @@ pub fn RigidBodyBuilder::dominance_group(
 }
 
 ///|
+pub fn RigidBodyBuilder::user_data(
+  self : RigidBodyBuilder,
+  data : Int,
+) -> RigidBodyBuilder {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::user_data128(
+  self : RigidBodyBuilder,
+  data : @core.UserData128,
+) -> RigidBodyBuilder {
+  self.user_data = data
+  self
+}
+
+///|
 pub fn RigidBodyBuilder::can_sleep(
   self : RigidBodyBuilder,
   can_sleep : Bool,
@@ -1924,6 +1945,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   forces.gravity_scale = self.gravity_scale
   let mut rb = {
     ids: RigidBodyIds::default(),
+    user_data: self.user_data,
     position: pos,
     body_type: self.body_type,
     locked_translations: self.lock_translations,
@@ -2294,6 +2316,19 @@ fn parse_real_value(text : String) -> @core.Real {
 }
 
 ///|
+fn parse_u64_value(text : String) -> UInt64 {
+  let result : Result[UInt64, @strconv.StrConvError] = try? @strconv.parse_uint64(
+    text[:],
+    base=10,
+  )
+  if result is Ok(value) {
+    value
+  } else {
+    UInt64::default()
+  }
+}
+
+///|
 fn parse_bool_value(text : String) -> Bool {
   text == "1"
 }
@@ -2400,6 +2435,12 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
       sb.write_object(if body.ccd.ccd_enabled { 1 } else { 0 })
       sb.write_char(',')
       sb.write_object(body.ccd.soft_ccd_prediction)
+      sb.write_char(',')
+      sb.write_object(body.user_data.to_int_truncate())
+      sb.write_char(',')
+      sb.write_string(body.user_data.hi().to_string())
+      sb.write_char(',')
+      sb.write_string(body.user_data.lo().to_string())
     } else {
       sb.write_char('N')
     }
@@ -2629,6 +2670,18 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             0.0F
           }
+          let user_data_int = if fields.length() > extras_start + 15 {
+            parse_int_value(fields[extras_start + 15])
+          } else {
+            0
+          }
+          let user_data = if fields.length() > extras_start + 17 {
+            let hi = parse_u64_value(fields[extras_start + 16])
+            let lo = parse_u64_value(fields[extras_start + 17])
+            @core.UserData128::from_parts(hi, lo)
+          } else {
+            @core.UserData128::from_int_truncate(user_data_int)
+          }
           let position = @core.Isometry2::new(
             @core.Vec2::new(tx, ty),
             @core.Rot2::from_angle(rot),
@@ -2640,6 +2693,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           let rb_pos = RigidBodyPosition::new(position, next_position)
           let body : RigidBody = {
             ids: RigidBodyIds::default(),
+            user_data,
             position: rb_pos,
             body_type,
             locked_translations,
@@ -2702,6 +2756,31 @@ pub fn RigidBody::activation_mut(self : RigidBody) -> RigidBodyActivation {
 ///|
 pub fn RigidBody::effective_active_set_offset(self : RigidBody) -> Int {
   self.ids.active_set_id
+}
+
+///|
+pub fn RigidBody::user_data(self : RigidBody) -> Int {
+  self.user_data.to_int_truncate()
+}
+
+///|
+pub fn RigidBody::user_data128(self : RigidBody) -> @core.UserData128 {
+  self.user_data
+}
+
+///|
+pub fn RigidBody::set_user_data(self : RigidBody, data : Int) -> RigidBody {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn RigidBody::set_user_data128(
+  self : RigidBody,
+  data : @core.UserData128,
+) -> RigidBody {
+  self.user_data = data
+  self
 }
 
 ///|

@@ -79,3 +79,10 @@ test "collider3d round_cylinder aabb" {
   inspect(@core.abs(aabb.maxs.y - 2.25F) < 1.0e-6F, content="true")
   inspect(@core.abs(aabb.maxs.z - 1.25F) < 1.0e-6F, content="true")
 }
+
+///|
+test "collider3d user_data128 stored on build" {
+  let data = @core.UserData128::from_parts(10UL, 20UL)
+  let co = ColliderBuilder3D::ball(0.5F).user_data128(data).build()
+  inspect(co.user_data128().equals(data), content="true")
+}

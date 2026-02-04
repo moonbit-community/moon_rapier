@@ -179,6 +179,7 @@ pub fn RigidBodyActivation3D::update(
 ///|
 pub struct RigidBody3D {
   body_type : RigidBodyType
+  mut user_data : @core.UserData128
   mut position : @core.Isometry3
   // Target pose used by kinematic position-based bodies.
   mut next_position : @core.Isometry3
@@ -266,6 +267,29 @@ pub fn RigidBody3D::set_angvel(self : RigidBody3D, w : @core.Vec3) -> Unit {
 ///|
 pub fn RigidBody3D::body_type(self : RigidBody3D) -> RigidBodyType {
   self.body_type
+}
+
+///|
+pub fn RigidBody3D::user_data(self : RigidBody3D) -> Int {
+  self.user_data.to_int_truncate()
+}
+
+///|
+pub fn RigidBody3D::user_data128(self : RigidBody3D) -> @core.UserData128 {
+  self.user_data
+}
+
+///|
+pub fn RigidBody3D::set_user_data(self : RigidBody3D, data : Int) -> Unit {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+}
+
+///|
+pub fn RigidBody3D::set_user_data128(
+  self : RigidBody3D,
+  data : @core.UserData128,
+) -> Unit {
+  self.user_data = data
 }
 
 ///|
@@ -608,6 +632,7 @@ pub struct RigidBodyBuilder3D {
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
+  mut user_data : @core.UserData128
 }
 
 ///|
@@ -635,6 +660,7 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
       @core.Vec3::zero(),
     ),
     can_sleep: true,
+    user_data: @core.UserData128::zero(),
   }
 }
 
@@ -671,6 +697,24 @@ pub fn RigidBodyBuilder3D::can_sleep(
   can_sleep : Bool,
 ) -> RigidBodyBuilder3D {
   self.can_sleep = can_sleep
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::user_data(
+  self : RigidBodyBuilder3D,
+  data : Int,
+) -> RigidBodyBuilder3D {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::user_data128(
+  self : RigidBodyBuilder3D,
+  data : @core.UserData128,
+) -> RigidBodyBuilder3D {
+  self.user_data = data
   self
 }
 
@@ -820,6 +864,7 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
   let pos = @core.Isometry3::new(self.translation, self.rotation)
   {
     body_type: self.body_type,
+    user_data: self.user_data,
     position: pos,
     next_position: pos,
     velocity: { linvel: self.linvel, angvel: self.angvel },

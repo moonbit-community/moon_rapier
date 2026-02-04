@@ -820,6 +820,24 @@ pub fn RigidBodyBuilder::dominance_group(
 
 ///|
 #declaration_only
+pub fn RigidBodyBuilder::user_data(
+  self : RigidBodyBuilder,
+  data : Int,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBodyBuilder::user_data128(
+  self : RigidBodyBuilder,
+  data : @core.UserData128,
+) -> RigidBodyBuilder {
+  ...
+}
+
+///|
+#declaration_only
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   ...
 }
@@ -2420,6 +2438,33 @@ pub fn RigidBody::set_next_kinematic_rotation(
 pub fn RigidBody::set_next_kinematic_position(
   self : RigidBody,
   position : @core.Isometry2,
+) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::user_data(self : RigidBody) -> Int {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::user_data128(self : RigidBody) -> @core.UserData128 {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_user_data(self : RigidBody, data : Int) -> RigidBody {
+  ...
+}
+
+///|
+#declaration_only
+pub fn RigidBody::set_user_data128(
+  self : RigidBody,
+  data : @core.UserData128,
 ) -> RigidBody {
   ...
 }
