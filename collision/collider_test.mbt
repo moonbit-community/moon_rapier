@@ -140,13 +140,13 @@ test "collider builder: triangle + round_triangle" {
 }
 
 ///|
-test "collider builder: halfspace approximation" {
-  let ground = ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 1.0F)).build()
-  if ground.shape() is Shape::Cuboid(hw, hh) {
-    inspect(hw > 1.0F, content="true")
-    inspect(hh > 1.0F, content="true")
-    // The approximation shifts the cuboid so the supporting face is near the origin.
-    inspect(ground.translation().y < 0.0F, content="true")
+test "collider builder: halfspace" {
+  let ground = ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 2.0F)).build()
+  if ground.shape() is Shape::HalfSpace(n) {
+    inspect(@core.abs(n.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(n.y - 1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(ground.translation().x) < 1.0e-6F, content="true")
+    inspect(@core.abs(ground.translation().y) < 1.0e-6F, content="true")
   } else {
     inspect(false, content="true")
   }

@@ -174,6 +174,11 @@ fn compute_aabb_for_test(
         @core.Vec2::new(center.x + hw, center.y + hh),
       )
     }
+    Shape::HalfSpace(_) =>
+      (
+        @core.Vec2::new(center.x - pd, center.y - pd),
+        @core.Vec2::new(center.x + pd, center.y + pd),
+      )
     Shape::CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))

@@ -384,6 +384,7 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
     }
     @collision.Shape::Ball(r) => (r, r)
     @collision.Shape::Cuboid(hw, hh) => (hw, hh)
+    @collision.Shape::HalfSpace(_) => (0.0F, 0.0F)
     @collision.Shape::CapsuleX(half_height, radius) =>
       (half_height + radius, radius)
     @collision.Shape::CapsuleY(half_height, radius) =>
