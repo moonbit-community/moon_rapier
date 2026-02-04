@@ -154,6 +154,8 @@ fn compute_aabb_for_test(
 ) -> (@core.Vec2, @core.Vec2) {
   let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
   match shape {
+    Shape::Round(inner, radius) =>
+      compute_aabb_for_test(inner.val, center, rotation, pd + radius)
     Shape::Ball(radius) => {
       let r = radius + pd
       (

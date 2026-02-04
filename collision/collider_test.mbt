@@ -132,7 +132,11 @@ test "collider builder: triangle + round_triangle" {
     _ => inspect(false, content="true")
   }
   let round = ColliderBuilder::round_triangle(a, b, c, 0.2F).build()
-  inspect(@core.abs(round.contact_skin() - 0.2F) < 1.0e-6F, content="true")
+  inspect(round.contact_skin() == 0.0F, content="true")
+  match round.shape() {
+    Shape::Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
+    _ => inspect(false, content="true")
+  }
 }
 
 ///|
@@ -178,7 +182,12 @@ test "collider builder: compound + round_convex_hull" {
   ]
   if ColliderBuilder::round_convex_hull(pts, 0.3F) is Some(builder) {
     let collider = builder.build()
-    inspect(@core.abs(collider.contact_skin() - 0.3F) < 1.0e-6F, content="true")
+    inspect(collider.contact_skin() == 0.0F, content="true")
+    match collider.shape() {
+      Shape::Round(_, r) =>
+        inspect(@core.abs(r - 0.3F) < 1.0e-6F, content="true")
+      _ => inspect(false, content="true")
+    }
   } else {
     inspect(false, content="true")
   }

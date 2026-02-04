@@ -15,6 +15,8 @@
 ///|
 fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
   match shape {
+    @collision.Shape::Round(inner, radius) =>
+      shape_ccd_thickness(inner.val) + radius
     @collision.Shape::Ball(radius) => radius
     @collision.Shape::Cuboid(hw, hh) => if hw < hh { hw } else { hh }
     @collision.Shape::CapsuleX(_, radius) => radius
@@ -46,6 +48,8 @@ fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
 ///|
 fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
   match shape {
+    @collision.Shape::Round(inner, radius) =>
+      shape_bounding_radius(inner.val) + radius
     @collision.Shape::Ball(radius) => radius
     @collision.Shape::Cuboid(hw, hh) => Float::sqrt(hw * hw + hh * hh)
     @collision.Shape::CapsuleX(half_height, radius)

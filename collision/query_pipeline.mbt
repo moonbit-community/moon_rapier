@@ -1771,6 +1771,7 @@ pub fn QueryPipeline::cast_shape(
       Shape::Cuboid(hw + target_distance, hh + target_distance)
     Shape::CapsuleX(h, r) => Shape::CapsuleX(h, r + target_distance)
     Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
+    Shape::Round(inner, r) => Shape::Round(inner, r + target_distance)
     Shape::Segment(_, _) => shape
     Shape::Polyline(_, _) => shape
     Shape::ConvexPolygon(_) => shape
@@ -1826,6 +1827,41 @@ pub fn QueryPipeline::cast_shape(
               best = best_hit(best, cast_against_target(p, r, part_shape))
             }
             best
+          }
+          Shape::Round(inner, radius) => {
+            let r = if radius < 0.0F { 0.0F } else { radius }
+            if r <= 0.0F {
+              cast_against_target(target_center, target_rotation, inner.val)
+            } else {
+              match inner.val {
+                Shape::Ball(br) =>
+                  cast_against_target(
+                    target_center,
+                    target_rotation,
+                    Shape::Ball(br + r),
+                  )
+                Shape::Cuboid(hw, hh) =>
+                  cast_against_target(
+                    target_center,
+                    target_rotation,
+                    Shape::Cuboid(hw + r, hh + r),
+                  )
+                Shape::CapsuleX(h, cr) =>
+                  cast_against_target(
+                    target_center,
+                    target_rotation,
+                    Shape::CapsuleX(h, cr + r),
+                  )
+                Shape::CapsuleY(h, cr) =>
+                  cast_against_target(
+                    target_center,
+                    target_rotation,
+                    Shape::CapsuleY(h, cr + r),
+                  )
+                _ =>
+                  cast_against_target(target_center, target_rotation, inner.val)
+              }
+            }
           }
           Shape::Segment(a, b) => {
             let (sa, sb) = segment_world_endpoints(
@@ -2154,6 +2190,8 @@ pub fn QueryPipeline::cast_shape_nonlinear(
   }
   fn shape_bounding_radius(shape : Shape) -> @core.Real {
     match shape {
+      Shape::Round(inner, r) =>
+        shape_bounding_radius(inner.val) + (if r < 0.0F { 0.0F } else { r })
       Shape::Ball(r) => r
       Shape::Cuboid(hw, hh) => sqrt_real(hw * hw + hh * hh)
       Shape::CapsuleX(h, r) => h + r
@@ -2236,6 +2274,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
     point : @core.Vec2,
   ) -> @core.Vec2 {
     match shape {
+      Shape::Round(inner, r) =>
+        project_point_on_shape(
+          center,
+          rotation,
+          Shape::Round(inner, r),
+          point,
+          false,
+        ).point
       Shape::Ball(r) => project_point_on_ball(center, r, point, false).point
       Shape::Cuboid(hw, hh) =>
         project_point_on_cuboid_oriented(center, rotation, hw, hh, point, false).point
@@ -2553,6 +2599,25 @@ fn point_in_shape(
   point : @core.Vec2,
 ) -> Bool {
   match shape {
+    Shape::Round(inner, radius) => {
+      let r = if radius < 0.0F { 0.0F } else { radius }
+      if r <= 0.0F {
+        point_in_shape(inner.val, center, rotation, point)
+      } else {
+        let proj = project_point_on_shape(
+          center,
+          rotation,
+          inner.val,
+          point,
+          true,
+        )
+        if proj.is_inside {
+          true
+        } else {
+          point.sub(proj.point).length_squared() <= r * r
+        }
+      }
+    }
     Shape::Ball(radius) => point.sub(center).length_squared() <= radius * radius
     Shape::Cuboid(hw, hh) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -2646,195 +2711,7 @@ fn point_in_shape(
 
 ///|
 fn compute_collider_aabb(collider : Collider) -> @core.Aabb {
-  match collider.shape {
-    Shape::Ball(radius) => {
-      let c = collider.world_translation
-      @core.Aabb::new(
-        @core.Vec2::new(c.x - radius, c.y - radius),
-        @core.Vec2::new(c.x + radius, c.y + radius),
-      )
-    }
-    Shape::Cuboid(half_width, half_height) => {
-      let rot = @core.Rot2::from_angle(collider.world_rotation)
-      let abs_cos = @core.abs(rot.cos)
-      let abs_sin = @core.abs(rot.sin)
-      let hw = abs_cos * half_width + abs_sin * half_height
-      let hh = abs_sin * half_width + abs_cos * half_height
-      let c = collider.world_translation
-      @core.Aabb::new(
-        @core.Vec2::new(c.x - hw, c.y - hh),
-        @core.Vec2::new(c.x + hw, c.y + hh),
-      )
-    }
-    Shape::CapsuleX(half_height, radius) => {
-      let rot = @core.Rot2::from_angle(collider.world_rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
-      let c = collider.world_translation
-      let a = c.add(offset)
-      let b = c.sub(offset)
-      let min_x = if a.x < b.x { a.x } else { b.x }
-      let max_x = if a.x > b.x { a.x } else { b.x }
-      let min_y = if a.y < b.y { a.y } else { b.y }
-      let max_y = if a.y > b.y { a.y } else { b.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x - radius, min_y - radius),
-        @core.Vec2::new(max_x + radius, max_y + radius),
-      )
-    }
-    Shape::CapsuleY(half_height, radius) => {
-      let rot = @core.Rot2::from_angle(collider.world_rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
-      let c = collider.world_translation
-      let a = c.add(offset)
-      let b = c.sub(offset)
-      let min_x = if a.x < b.x { a.x } else { b.x }
-      let max_x = if a.x > b.x { a.x } else { b.x }
-      let min_y = if a.y < b.y { a.y } else { b.y }
-      let max_y = if a.y > b.y { a.y } else { b.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x - radius, min_y - radius),
-        @core.Vec2::new(max_x + radius, max_y + radius),
-      )
-    }
-    Shape::Segment(a, b) => {
-      let (wa, wb) = segment_world_endpoints(
-        collider.world_translation,
-        collider.world_rotation,
-        a,
-        b,
-      )
-      let min_x = if wa.x < wb.x { wa.x } else { wb.x }
-      let max_x = if wa.x > wb.x { wa.x } else { wb.x }
-      let min_y = if wa.y < wb.y { wa.y } else { wb.y }
-      let max_y = if wa.y > wb.y { wa.y } else { wb.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x, min_y),
-        @core.Vec2::new(max_x, max_y),
-      )
-    }
-    Shape::Polyline(vertices, _) =>
-      if vertices.length() == 0 {
-        @core.Aabb::new(collider.world_translation, collider.world_translation)
-      } else {
-        let rot = @core.Rot2::from_angle(collider.world_rotation)
-        let c = collider.world_translation
-        let mut min_x = 1.0e30F
-        let mut max_x = -1.0e30F
-        let mut min_y = 1.0e30F
-        let mut max_y = -1.0e30F
-        for i in 0..<vertices.length() {
-          let wp = c.add(rot.rotate_vec2(vertices[i]))
-          if wp.x < min_x {
-            min_x = wp.x
-          }
-          if wp.x > max_x {
-            max_x = wp.x
-          }
-          if wp.y < min_y {
-            min_y = wp.y
-          }
-          if wp.y > max_y {
-            max_y = wp.y
-          }
-        }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
-      }
-    Shape::ConvexPolygon(vertices) =>
-      if vertices.length() == 0 {
-        @core.Aabb::new(collider.world_translation, collider.world_translation)
-      } else {
-        let rot = @core.Rot2::from_angle(collider.world_rotation)
-        let c = collider.world_translation
-        let mut min_x = 1.0e30F
-        let mut max_x = -1.0e30F
-        let mut min_y = 1.0e30F
-        let mut max_y = -1.0e30F
-        for i in 0..<vertices.length() {
-          let wp = c.add(rot.rotate_vec2(vertices[i]))
-          if wp.x < min_x {
-            min_x = wp.x
-          }
-          if wp.x > max_x {
-            max_x = wp.x
-          }
-          if wp.y < min_y {
-            min_y = wp.y
-          }
-          if wp.y > max_y {
-            max_y = wp.y
-          }
-        }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
-      }
-    Shape::TriMesh(vertices, _) =>
-      if vertices.length() == 0 {
-        @core.Aabb::new(collider.world_translation, collider.world_translation)
-      } else {
-        let rot = @core.Rot2::from_angle(collider.world_rotation)
-        let c = collider.world_translation
-        let mut min_x = 1.0e30F
-        let mut max_x = -1.0e30F
-        let mut min_y = 1.0e30F
-        let mut max_y = -1.0e30F
-        for i in 0..<vertices.length() {
-          let wp = c.add(rot.rotate_vec2(vertices[i]))
-          if wp.x < min_x {
-            min_x = wp.x
-          }
-          if wp.x > max_x {
-            max_x = wp.x
-          }
-          if wp.y < min_y {
-            min_y = wp.y
-          }
-          if wp.y > max_y {
-            max_y = wp.y
-          }
-        }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
-      }
-    Shape::Compound(parts) =>
-      if parts.length() == 0 {
-        @core.Aabb::new(collider.world_translation, collider.world_translation)
-      } else {
-        let base_iso = @core.Isometry2::new(
-          collider.world_translation,
-          @core.Rot2::from_angle(collider.world_rotation),
-        )
-        let mut acc : @core.Aabb? = None
-        for i in 0..<parts.length() {
-          let (pose, part_shape) = parts[i]
-          let w = base_iso.mul(pose)
-          let part_collider = collider
-          part_collider.shape = part_shape
-          part_collider.world_translation = isometry2_translation(w)
-          part_collider.world_rotation = isometry2_rotation_angle(w)
-          let part_aabb = compute_collider_aabb(part_collider)
-          if acc is Some(existing) {
-            acc = Some(existing.combine(part_aabb))
-          } else {
-            acc = Some(part_aabb)
-          }
-        }
-        if acc is Some(aabb) {
-          aabb
-        } else {
-          @core.Aabb::new(
-            collider.world_translation,
-            collider.world_translation,
-          )
-        }
-      }
-  }
+  compute_query_shape_aabb(collider.position(), collider.shape)
 }
 
 ///|
@@ -2855,6 +2732,14 @@ fn compute_query_shape_aabb(
   let center = shape_pos.translation
   let rot = shape_pos.rotation
   match shape {
+    Shape::Round(inner, radius) => {
+      let r = if radius < 0.0F { 0.0F } else { radius }
+      let aabb = compute_query_shape_aabb(shape_pos, inner.val)
+      @core.Aabb::new(
+        @core.Vec2::new(aabb.mins.x - r, aabb.mins.y - r),
+        @core.Vec2::new(aabb.maxs.x + r, aabb.maxs.y + r),
+      )
+    }
     Shape::Ball(radius) =>
       @core.Aabb::new(
         @core.Vec2::new(center.x - radius, center.y - radius),
@@ -3583,6 +3468,106 @@ fn ray_intersect_shape_and_get_normal(
   solid : Bool,
 ) -> RayIntersection? {
   match shape {
+    Shape::Round(inner, radius) => {
+      let base = inner.val
+      let r = if radius < 0.0F { 0.0F } else { radius }
+      if r <= 0.0F {
+        return ray_intersect_shape_and_get_normal(
+          ray, center, rotation, base, max_dist, solid,
+        )
+      }
+      fn dist_to_inner(
+        inner : Shape,
+        center : @core.Vec2,
+        rotation : @core.Real,
+        point : @core.Vec2,
+      ) -> @core.Real {
+        let proj = project_point_on_shape(center, rotation, inner, point, true)
+        if proj.is_inside {
+          0.0F
+        } else {
+          point.sub(proj.point).length()
+        }
+      }
+
+      let mut start_dist = dist_to_inner(base, center, rotation, ray.origin)
+      if start_dist <= r {
+        if solid {
+          let normal = normalize_or_fallback(
+            @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+            @core.Vec2::new(1.0F, 0.0F),
+          )
+          return Some(RayIntersection::{ toi: 0.0F, normal })
+        }
+        // Treat the ray as starting inside the rounded region; find the first exit.
+        start_dist = r - 1.0e-12F
+      }
+      let steps = 64
+      let step = if max_dist <= 0.0F {
+        0.0F
+      } else {
+        max_dist / Float::from_int(steps)
+      }
+      let mut prev_t = 0.0F
+      let mut prev_f = start_dist - r
+      let mut bracket : (@core.Real, @core.Real)? = None
+      for i in 1..<(steps + 1) {
+        let t = Float::from_int(i) * step
+        let p = ray_point(ray, t)
+        let f = dist_to_inner(base, center, rotation, p) - r
+        if prev_f > 0.0F {
+          if f <= 0.0F {
+            bracket = Some((prev_t, t))
+            break
+          }
+        } else if f >= 0.0F {
+          bracket = Some((prev_t, t))
+          break
+        }
+        prev_t = t
+        prev_f = f
+      }
+      if bracket is None {
+        return None
+      }
+      let (lo0, hi0) = bracket.unwrap()
+      let mut lo = lo0
+      let mut hi = hi0
+      for _ in 0..<60 {
+        let mid = 0.5F * (lo + hi)
+        let p = ray_point(ray, mid)
+        let f = dist_to_inner(base, center, rotation, p) - r
+        if prev_f > 0.0F {
+          if f <= 0.0F {
+            hi = mid
+          } else {
+            lo = mid
+          }
+        } else if f >= 0.0F {
+          hi = mid
+        } else {
+          lo = mid
+        }
+      }
+      let toi = hi
+      if toi < 0.0F || toi > max_dist {
+        return None
+      }
+      let hit_point = ray_point(ray, toi)
+      let proj = project_point_on_shape(
+        center, rotation, base, hit_point, false,
+      )
+      let delta = hit_point.sub(proj.point)
+      let normal = if delta.length_squared() > 1.0e-12F {
+        delta.normalize()
+      } else {
+        normalize_or_fallback(
+          @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+          @core.Vec2::new(1.0F, 0.0F),
+        )
+      }
+      Some(RayIntersection::{ toi, normal })
+    }
     Shape::Ball(radius) =>
       ray_intersect_ball_and_get_normal(ray, center, radius, max_dist, solid)
     Shape::Cuboid(hw, hh) =>
@@ -3708,6 +3693,40 @@ fn project_point_on_shape(
   solid : Bool,
 ) -> PointProjection {
   match shape {
+    Shape::Round(inner, radius) => {
+      let base = inner.val
+      let r = if radius < 0.0F { 0.0F } else { radius }
+      if r <= 0.0F {
+        project_point_on_shape(center, rotation, base, point, solid)
+      } else {
+        let inner_solid = project_point_on_shape(
+          center, rotation, base, point, true,
+        )
+        let inside_inner = inner_solid.is_inside
+        let inner_boundary = project_point_on_shape(
+          center, rotation, base, point, false,
+        )
+        let delta = point.sub(inner_boundary.point)
+        let dist = delta.length()
+        let inside_round = inside_inner || dist <= r
+        if solid && inside_round {
+          PointProjection::{ point, is_inside: true }
+        } else {
+          let mut dir = if inside_inner {
+            @core.Vec2::new(-delta.x, -delta.y)
+          } else {
+            delta
+          }
+          if dir.length_squared() <= 1.0e-12F {
+            dir = @core.Vec2::new(1.0F, 0.0F)
+          }
+          let boundary = inner_boundary.point.add(
+            vec2_scale(dir.normalize(), r),
+          )
+          PointProjection::{ point: boundary, is_inside: inside_round }
+        }
+      }
+    }
     Shape::Ball(radius) => project_point_on_ball(center, radius, point, solid)
     Shape::Cuboid(hw, hh) =>
       project_point_on_cuboid_oriented(center, rotation, hw, hh, point, solid)
@@ -3834,6 +3853,45 @@ fn project_point_on_shape_and_get_feature(
   }
 
   match shape {
+    Shape::Round(inner, radius) => {
+      let base = inner.val
+      let r = if radius < 0.0F { 0.0F } else { radius }
+      if r <= 0.0F {
+        project_point_on_shape_and_get_feature(
+          center, rotation, base, point, solid,
+        )
+      } else {
+        let (inner_solid, fid_solid) = project_point_on_shape_and_get_feature(
+          center, rotation, base, point, true,
+        )
+        let inside_inner = inner_solid.is_inside
+        let (inner_boundary, fid_boundary) = project_point_on_shape_and_get_feature(
+          center, rotation, base, point, false,
+        )
+        let delta = point.sub(inner_boundary.point)
+        let dist = delta.length()
+        let inside_round = inside_inner || dist <= r
+        if solid && inside_round {
+          (PointProjection::{ point, is_inside: true }, fid_solid)
+        } else {
+          let mut dir = if inside_inner {
+            @core.Vec2::new(-delta.x, -delta.y)
+          } else {
+            delta
+          }
+          if dir.length_squared() <= 1.0e-12F {
+            dir = @core.Vec2::new(1.0F, 0.0F)
+          }
+          let boundary = inner_boundary.point.add(
+            vec2_scale(dir.normalize(), r),
+          )
+          (
+            PointProjection::{ point: boundary, is_inside: inside_round },
+            fid_boundary,
+          )
+        }
+      }
+    }
     Shape::Ball(radius) =>
       project_point_on_ball_and_get_feature(center, radius, point, solid)
     Shape::Cuboid(hw, hh) =>
