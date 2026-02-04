@@ -108,6 +108,16 @@ pub fn FrictionModel::default() -> FrictionModel {
 }
 
 ///|
+pub fn FrictionModel::simplified() -> FrictionModel {
+  FrictionModel::Simplified
+}
+
+///|
+pub fn FrictionModel::coulomb() -> FrictionModel {
+  FrictionModel::Coulomb
+}
+
+///|
 pub struct IntegrationParameters {
   mut dt : @core.Real
   mut min_ccd_dt : @core.Real

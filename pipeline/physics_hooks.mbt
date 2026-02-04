@@ -23,6 +23,18 @@ pub struct PairFilterContext {
 }
 
 ///|
+pub fn PairFilterContext::new(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  rigid_body1 : @dynamics.RigidBodyHandle?,
+  rigid_body2 : @dynamics.RigidBodyHandle?,
+) -> PairFilterContext {
+  { bodies, colliders, collider1, collider2, rigid_body1, rigid_body2 }
+}
+
+///|
 pub struct ContactModificationContext {
   bodies : @dynamics.RigidBodySet
   colliders : @collision.ColliderSet

@@ -508,6 +508,7 @@ pub struct ColliderFlags {
   active_hooks : ActiveHooks
   active_events : ActiveEvents
 }
+pub fn ColliderFlags::new(@dynamics.InteractionGroups, @dynamics.InteractionGroups, ActiveCollisionTypes, ActiveHooks, ActiveEvents) -> Self
 
 pub struct ColliderHandle {
   id : Int
@@ -562,10 +563,12 @@ pub struct ColliderParent {
   handle : @dynamics.RigidBodyHandle
   pos_wrt_parent : @core.Isometry2
 }
+pub fn ColliderParent::new(@dynamics.RigidBodyHandle, @core.Isometry2) -> Self
 
 pub struct ColliderPosition {
   position : @core.Isometry2
 }
+pub fn ColliderPosition::new(@core.Isometry2) -> Self
 
 pub struct ColliderSet {
   colliders : Array[Collider?]

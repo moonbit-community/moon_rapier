@@ -101,7 +101,9 @@ pub enum FrictionModel {
   Simplified
   Coulomb
 }
+pub fn FrictionModel::coulomb() -> Self
 pub fn FrictionModel::default() -> Self
+pub fn FrictionModel::simplified() -> Self
 
 pub struct GenericJoint {
   mut local_frame1 : @core.Isometry2
@@ -1143,6 +1145,9 @@ pub enum RigidBodyAdditionalMassProps {
   MassProps(@core.MassProperties)
   MassProperties(@core.MassProperties)
 }
+pub fn RigidBodyAdditionalMassProps::mass(Float) -> Self
+pub fn RigidBodyAdditionalMassProps::mass_properties(@core.MassProperties) -> Self
+pub fn RigidBodyAdditionalMassProps::mass_props(@core.MassProperties) -> Self
 
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
