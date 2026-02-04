@@ -355,6 +355,7 @@ pub struct Collider3D {
   mut one_way_offset : @core.Real?
   mut one_way_direction : Int // 1 = allow from above, -1 = allow from below, 0 = disabled
   active_events : ActiveEvents
+  mut user_data : @core.UserData128
   collision_groups : @dynamics.InteractionGroups
   friction : @core.Real
   restitution : @core.Real
@@ -484,6 +485,31 @@ pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
 }
 
 ///|
+pub fn Collider3D::user_data(self : Collider3D) -> Int {
+  self.user_data.to_int_truncate()
+}
+
+///|
+pub fn Collider3D::user_data128(self : Collider3D) -> @core.UserData128 {
+  self.user_data
+}
+
+///|
+pub fn Collider3D::set_user_data(self : Collider3D, data : Int) -> Collider3D {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn Collider3D::set_user_data128(
+  self : Collider3D,
+  data : @core.UserData128,
+) -> Collider3D {
+  self.user_data = data
+  self
+}
+
+///|
 pub fn Collider3D::collision_groups(
   self : Collider3D,
 ) -> @dynamics.InteractionGroups {
@@ -537,6 +563,7 @@ pub struct ColliderBuilder3D {
   mut one_way_offset : @core.Real?
   mut one_way_direction : Int
   mut active_events : ActiveEvents
+  mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
   mut restitution : @core.Real
@@ -556,6 +583,7 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -580,6 +608,7 @@ pub fn ColliderBuilder3D::cuboid(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -603,6 +632,7 @@ pub fn ColliderBuilder3D::capsule_y(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -647,6 +677,7 @@ pub fn ColliderBuilder3D::cylinder(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -671,6 +702,7 @@ pub fn ColliderBuilder3D::round_cylinder(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -694,6 +726,7 @@ pub fn ColliderBuilder3D::cone(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -725,6 +758,7 @@ pub fn ColliderBuilder3D::halfspace(normal : @core.Vec3) -> ColliderBuilder3D {
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -749,6 +783,7 @@ pub fn ColliderBuilder3D::triangle(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -801,6 +836,7 @@ pub fn ColliderBuilder3D::trimesh(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -859,6 +895,7 @@ pub fn ColliderBuilder3D::compound(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -893,6 +930,7 @@ pub fn ColliderBuilder3D::round_convex_hull(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -1049,6 +1087,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       one_way_offset: None,
       one_way_direction: 0,
       active_events: ActiveEvents::empty(),
+      user_data: @core.UserData128::zero(),
       collision_groups: @dynamics.InteractionGroups::all(),
       friction: 0.7F,
       restitution: 0.0F,
@@ -1269,6 +1308,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
     one_way_offset: None,
     one_way_direction: 0,
     active_events: ActiveEvents::empty(),
+    user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
@@ -1331,6 +1371,7 @@ pub fn ColliderBuilder3D::heightfield(
           one_way_offset: None,
           one_way_direction: 0,
           active_events: ActiveEvents::empty(),
+          user_data: @core.UserData128::zero(),
           collision_groups: @dynamics.InteractionGroups::all(),
           friction: 0.7F,
           restitution: 0.0F,
@@ -1448,6 +1489,24 @@ pub fn ColliderBuilder3D::active_events(
 }
 
 ///|
+pub fn ColliderBuilder3D::user_data(
+  self : ColliderBuilder3D,
+  data : Int,
+) -> ColliderBuilder3D {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::user_data128(
+  self : ColliderBuilder3D,
+  data : @core.UserData128,
+) -> ColliderBuilder3D {
+  self.user_data = data
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::density(
   self : ColliderBuilder3D,
   density : @core.Real,
@@ -1497,6 +1556,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     one_way_offset: self.one_way_offset,
     one_way_direction: self.one_way_direction,
     active_events: self.active_events,
+    user_data: self.user_data,
     collision_groups: self.collision_groups,
     friction: self.friction,
     restitution: self.restitution,

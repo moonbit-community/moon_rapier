@@ -549,7 +549,7 @@ pub struct Collider {
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : @core.Real
   mut contact_force_event_threshold : @core.Real
-  mut user_data : Int
+  mut user_data : @core.UserData128
   mut parent : @dynamics.RigidBodyHandle?
   mut enabled : ColliderEnabled
   mut changes : ColliderChanges
@@ -573,7 +573,7 @@ pub struct ColliderBuilder {
   mut restitution_combine_rule : @dynamics.CoefficientCombineRule
   mut contact_skin : @core.Real
   mut contact_force_event_threshold : @core.Real
-  mut user_data : Int
+  mut user_data : @core.UserData128
   mut enabled : Bool
 }
 
@@ -606,7 +606,7 @@ pub fn ColliderBuilder::ball(radius : @core.Real) -> ColliderBuilder {
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -633,7 +633,7 @@ pub fn ColliderBuilder::cuboid(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -669,7 +669,7 @@ pub fn ColliderBuilder::capsule_x(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -696,7 +696,7 @@ pub fn ColliderBuilder::capsule_y(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -797,7 +797,7 @@ pub fn ColliderBuilder::compound(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -836,7 +836,7 @@ pub fn ColliderBuilder::segment(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -876,7 +876,7 @@ pub fn ColliderBuilder::polyline(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   }
 }
@@ -958,7 +958,7 @@ pub fn ColliderBuilder::trimesh(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   })
 }
@@ -1205,7 +1205,7 @@ pub fn ColliderBuilder::convex_hull(
     restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
-    user_data: 0,
+    user_data: @core.UserData128::zero(),
     enabled: true,
   })
 }
@@ -1359,6 +1359,15 @@ pub fn ColliderBuilder::contact_force_event_threshold(
 pub fn ColliderBuilder::user_data(
   self : ColliderBuilder,
   data : Int,
+) -> ColliderBuilder {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn ColliderBuilder::user_data128(
+  self : ColliderBuilder,
+  data : @core.UserData128,
 ) -> ColliderBuilder {
   self.user_data = data
   self
@@ -1657,6 +1666,11 @@ pub fn Collider::contact_force_event_threshold(self : Collider) -> @core.Real {
 
 ///|
 pub fn Collider::user_data(self : Collider) -> Int {
+  self.user_data.to_int_truncate()
+}
+
+///|
+pub fn Collider::user_data128(self : Collider) -> @core.UserData128 {
   self.user_data
 }
 
@@ -1982,6 +1996,15 @@ pub fn Collider::set_contact_force_event_threshold(
 
 ///|
 pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
+  self.user_data = @core.UserData128::from_int_truncate(data)
+  self
+}
+
+///|
+pub fn Collider::set_user_data128(
+  self : Collider,
+  data : @core.UserData128,
+) -> Collider {
   self.user_data = data
   self
 }
@@ -2131,6 +2154,19 @@ fn parse_real_value(text : String) -> @core.Real {
     Float::from_double(value)
   } else {
     0.0F
+  }
+}
+
+///|
+fn parse_u64_value(text : String) -> UInt64 {
+  let result : Result[UInt64, @strconv.StrConvError] = try? @strconv.parse_uint64(
+    text[:],
+    base=10,
+  )
+  if result is Ok(value) {
+    value
+  } else {
+    UInt64::default()
   }
 }
 
@@ -2588,13 +2624,17 @@ pub fn ColliderSet::serialize(self : ColliderSet) -> String {
       sb.write_char('^')
       sb.write_object(collider.contact_force_event_threshold)
       sb.write_char('^')
-      sb.write_object(collider.user_data)
+      sb.write_object(collider.user_data.to_int_truncate())
       sb.write_char('^')
       sb.write_object(pid)
       sb.write_char('^')
       sb.write_object(pgen)
       sb.write_char('^')
       sb.write_object(collider_enabled_to_int(collider.enabled))
+      sb.write_char('^')
+      sb.write_string(collider.user_data.hi().to_string())
+      sb.write_char('^')
+      sb.write_string(collider.user_data.lo().to_string())
     } else {
       sb.write_char('N')
     }
@@ -2740,7 +2780,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
           } else {
             0.0F
           }
-          let user_data = if fields.length() > 22 {
+          let user_data_int = if fields.length() > 22 {
             parse_int_value(fields[22])
           } else {
             0
@@ -2766,6 +2806,13 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             collider_enabled_from_int(parse_int_value(fields[25]))
           } else {
             ColliderEnabled::Enabled
+          }
+          let user_data = if fields.length() > 27 {
+            let hi = parse_u64_value(fields[26])
+            let lo = parse_u64_value(fields[27])
+            @core.UserData128::from_parts(hi, lo)
+          } else {
+            @core.UserData128::from_int_truncate(user_data_int)
           }
           let collider : Collider = {
             shape,

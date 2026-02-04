@@ -939,6 +939,7 @@ pub fn RevoluteJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
 pub struct RigidBody {
   mut ids : RigidBodyIds
+  mut user_data : @core.UserData128
   position : RigidBodyPosition
   mut body_type : RigidBodyType
   mut locked_translations : Bool
@@ -1043,11 +1044,15 @@ pub fn RigidBody::set_position(Self, @core.Isometry2, Bool) -> Self
 pub fn RigidBody::set_rotation(Self, @core.Rot2, Bool) -> Self
 pub fn RigidBody::set_soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBody::set_translation(Self, @core.Vec2, Bool) -> Self
+pub fn RigidBody::set_user_data(Self, Int) -> Self
+pub fn RigidBody::set_user_data128(Self, @core.UserData128) -> Self
 pub fn RigidBody::set_vels(Self, RigidBodyVelocity, Bool) -> Self
 pub fn RigidBody::sleep(Self) -> Self
 pub fn RigidBody::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody::translation(Self) -> @core.Vec2
 pub fn RigidBody::update_effective_force_and_torque(Self, @core.Vec2) -> Self
+pub fn RigidBody::user_data(Self) -> Int
+pub fn RigidBody::user_data128(Self) -> @core.UserData128
 pub fn RigidBody::velocity_at_point(Self, @core.Vec2) -> @core.Vec2
 pub fn RigidBody::vels(Self) -> RigidBodyVelocity
 pub fn RigidBody::wake_up(Self, Bool) -> Self
@@ -1055,6 +1060,7 @@ pub fn RigidBody::world_com(Self) -> @core.Vec2
 
 pub struct RigidBody3D {
   body_type : RigidBodyType
+  mut user_data : @core.UserData128
   mut position : @core.Isometry3
   mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
@@ -1100,10 +1106,14 @@ pub fn RigidBody3D::set_next_kinematic_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_next_kinematic_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_user_data(Self, Int) -> Unit
+pub fn RigidBody3D::set_user_data128(Self, @core.UserData128) -> Unit
 pub fn RigidBody3D::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody3D::translation(Self) -> @core.Vec3
 pub fn RigidBody3D::update_kinematic_velocities(Self, Float) -> Unit
 pub fn RigidBody3D::update_sleep(Self, Float, Float) -> Unit
+pub fn RigidBody3D::user_data(Self) -> Int
+pub fn RigidBody3D::user_data128(Self) -> @core.UserData128
 pub fn RigidBody3D::wake_up(Self) -> Unit
 pub fn RigidBody3D::world_com(Self) -> @core.Vec3
 
@@ -1167,6 +1177,7 @@ pub struct RigidBodyBuilder {
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : Float
   mut dominance_group : Int
+  mut user_data : @core.UserData128
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder::additional_mass_properties(Self, RigidBodyAdditionalMassProps) -> Self
@@ -1200,6 +1211,8 @@ pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
 pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
+pub fn RigidBodyBuilder::user_data(Self, Int) -> Self
+pub fn RigidBodyBuilder::user_data128(Self, @core.UserData128) -> Self
 
 pub struct RigidBodyBuilder3 {
   inner : RigidBodyBuilder
@@ -1245,6 +1258,7 @@ pub struct RigidBodyBuilder3D {
   mut gravity_scale : Float
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
+  mut user_data : @core.UserData128
 }
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
@@ -1267,6 +1281,8 @@ pub fn RigidBodyBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn RigidBodyBuilder3D::rotation_scaled_axis(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::translation(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::user_data(Self, Int) -> Self
+pub fn RigidBodyBuilder3D::user_data128(Self, @core.UserData128) -> Self
 
 pub struct RigidBodyCcd {
   ccd_thickness : Float
