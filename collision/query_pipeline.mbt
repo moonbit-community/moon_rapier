@@ -620,11 +620,33 @@ pub fn QueryPipeline::new(
 ) -> QueryPipeline {
   colliders.sync_with_bodies(bodies)
   let aabbs : Array[@core.Aabb?] = []
+  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      aabbs.push(Some(compute_collider_aabb(collider)))
+      if collider.shape is Shape::HalfSpace(_) {
+        // Temporary AABB; expanded below once we know global bounds.
+        let p = collider.world_translation
+        halfspaces.push((i, p))
+        aabbs.push(Some(@core.Aabb::new(p, p)))
+      } else {
+        let aabb = compute_collider_aabb(collider)
+        if global_aabb is Some(existing) {
+          global_aabb = Some(existing.combine(aabb))
+        } else {
+          global_aabb = Some(aabb)
+        }
+        aabbs.push(Some(aabb))
+      }
     } else {
       aabbs.push(None)
+    }
+  }
+  if global_aabb is Some(global) {
+    for j in 0..<halfspaces.length() {
+      let (idx, p) = halfspaces[j]
+      let expanded = global.combine(@core.Aabb::new(p, p))
+      aabbs[idx] = Some(expanded)
     }
   }
   { bvh: Bvh::new(aabbs), filter }
@@ -647,11 +669,32 @@ pub fn QueryPipeline::update(
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
   self.bvh.aabbs.clear()
+  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      self.bvh.aabbs.push(Some(compute_collider_aabb(collider)))
+      if collider.shape is Shape::HalfSpace(_) {
+        let p = collider.world_translation
+        halfspaces.push((i, p))
+        self.bvh.aabbs.push(Some(@core.Aabb::new(p, p)))
+      } else {
+        let aabb = compute_collider_aabb(collider)
+        if global_aabb is Some(existing) {
+          global_aabb = Some(existing.combine(aabb))
+        } else {
+          global_aabb = Some(aabb)
+        }
+        self.bvh.aabbs.push(Some(aabb))
+      }
     } else {
       self.bvh.aabbs.push(None)
+    }
+  }
+  if global_aabb is Some(global) {
+    for j in 0..<halfspaces.length() {
+      let (idx, p) = halfspaces[j]
+      let expanded = global.combine(@core.Aabb::new(p, p))
+      self.bvh.aabbs[idx] = Some(expanded)
     }
   }
 }
@@ -1769,6 +1812,7 @@ pub fn QueryPipeline::cast_shape(
     Shape::Ball(r) => Shape::Ball(r + target_distance)
     Shape::Cuboid(hw, hh) =>
       Shape::Cuboid(hw + target_distance, hh + target_distance)
+    Shape::HalfSpace(_) => shape
     Shape::CapsuleX(h, r) => Shape::CapsuleX(h, r + target_distance)
     Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
     Shape::Round(inner, r) => Shape::Round(inner, r + target_distance)
@@ -1863,6 +1907,7 @@ pub fn QueryPipeline::cast_shape(
               }
             }
           }
+          Shape::HalfSpace(_) => None
           Shape::Segment(a, b) => {
             let (sa, sb) = segment_world_endpoints(
               target_center, target_rotation, a, b,
@@ -2194,6 +2239,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         shape_bounding_radius(inner.val) + (if r < 0.0F { 0.0F } else { r })
       Shape::Ball(r) => r
       Shape::Cuboid(hw, hh) => sqrt_real(hw * hw + hh * hh)
+      Shape::HalfSpace(_) => 0.0F
       Shape::CapsuleX(h, r) => h + r
       Shape::CapsuleY(h, r) => h + r
       Shape::Segment(a, b) => {
@@ -2285,6 +2331,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
       Shape::Ball(r) => project_point_on_ball(center, r, point, false).point
       Shape::Cuboid(hw, hh) =>
         project_point_on_cuboid_oriented(center, rotation, hw, hh, point, false).point
+      Shape::HalfSpace(n) =>
+        project_point_on_shape(
+          center,
+          rotation,
+          Shape::HalfSpace(n),
+          point,
+          false,
+        ).point
       Shape::CapsuleX(h, r) =>
         project_point_on_capsule_oriented(
           center,
@@ -2625,6 +2679,11 @@ fn point_in_shape(
       let local_point = inv.rotate_vec2(point.sub(center))
       @core.abs(local_point.x) <= hw && @core.abs(local_point.y) <= hh
     }
+    Shape::HalfSpace(outward_normal) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let n = rot.rotate_vec2(outward_normal)
+      n.dot(point.sub(center)) <= 0.0F
+    }
     Shape::CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
@@ -2755,6 +2814,9 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(center.x + hw, center.y + hh),
       )
     }
+    Shape::HalfSpace(_) =>
+      // Unbounded AABB: QueryPipeline will expand this dynamically based on world extents.
+      @core.Aabb::new(center, center)
     Shape::CapsuleX(half_height, radius) => {
       let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
       let a = center.add(offset)
@@ -3459,6 +3521,37 @@ fn ray_intersect_polyline_and_get_normal(
 }
 
 ///|
+fn ray_intersect_halfspace_and_get_normal(
+  ray : Ray,
+  center : @core.Vec2,
+  rotation : @core.Real,
+  outward_normal : @core.Vec2,
+  max_dist : @core.Real,
+  solid : Bool,
+) -> RayIntersection? {
+  let rot = @core.Rot2::from_angle(rotation)
+  let n = rot.rotate_vec2(outward_normal)
+  let dist0 = n.dot(ray.origin.sub(center))
+  if solid && dist0 <= 0.0F {
+    let normal = normalize_or_fallback(
+      @core.Vec2::new(-ray.dir.x, -ray.dir.y),
+      @core.Vec2::new(1.0F, 0.0F),
+    )
+    return Some(RayIntersection::{ toi: 0.0F, normal })
+  }
+  let denom = n.dot(ray.dir)
+  if @core.abs(denom) <= 1.0e-12F {
+    return None
+  }
+  let toi = -dist0 / denom
+  if toi < 0.0F || toi > max_dist {
+    return None
+  }
+  let normal = if denom < 0.0F { n } else { @core.Vec2::new(-n.x, -n.y) }
+  Some(RayIntersection::{ toi, normal })
+}
+
+///|
 fn ray_intersect_shape_and_get_normal(
   ray : Ray,
   center : @core.Vec2,
@@ -3573,6 +3666,10 @@ fn ray_intersect_shape_and_get_normal(
     Shape::Cuboid(hw, hh) =>
       ray_intersect_cuboid_oriented_and_get_normal(
         ray, center, rotation, hw, hh, max_dist, solid,
+      )
+    Shape::HalfSpace(outward_normal) =>
+      ray_intersect_halfspace_and_get_normal(
+        ray, center, rotation, outward_normal, max_dist, solid,
       )
     Shape::CapsuleX(half_height, radius) =>
       ray_intersect_capsule_oriented_and_get_normal(
@@ -3730,6 +3827,20 @@ fn project_point_on_shape(
     Shape::Ball(radius) => project_point_on_ball(center, radius, point, solid)
     Shape::Cuboid(hw, hh) =>
       project_point_on_cuboid_oriented(center, rotation, hw, hh, point, solid)
+    Shape::HalfSpace(outward_normal) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let n = rot.rotate_vec2(outward_normal)
+      let dist = n.dot(point.sub(center))
+      let inside = dist <= 0.0F
+      if solid && inside {
+        PointProjection::{ point, is_inside: true }
+      } else {
+        PointProjection::{
+          point: point.sub(vec2_scale(n, dist)),
+          is_inside: inside,
+        }
+      }
+    }
     Shape::CapsuleX(half_height, radius) =>
       project_point_on_capsule_oriented(
         center,
@@ -3898,6 +4009,23 @@ fn project_point_on_shape_and_get_feature(
       project_point_on_cuboid_oriented_and_get_feature(
         center, rotation, hw, hh, point, solid,
       )
+    Shape::HalfSpace(outward_normal) => {
+      let rot = @core.Rot2::from_angle(rotation)
+      let n = rot.rotate_vec2(outward_normal)
+      let dist = n.dot(point.sub(center))
+      let inside = dist <= 0.0F
+      if solid && inside {
+        (PointProjection::{ point, is_inside: true }, FeatureId::Face(0))
+      } else {
+        (
+          PointProjection::{
+            point: point.sub(vec2_scale(n, dist)),
+            is_inside: inside,
+          },
+          FeatureId::Face(0),
+        )
+      }
+    }
     Shape::CapsuleX(half_height, radius) =>
       project_point_on_capsule_oriented_and_get_feature(
         center,

@@ -1074,6 +1074,7 @@ pub fn RayIntersection3Feature::toi(Self) -> Float
 pub(all) enum Shape {
   Ball(Float)
   Cuboid(Float, Float)
+  HalfSpace(@core.Vec2)
   CapsuleX(Float, Float)
   CapsuleY(Float, Float)
   Segment(@core.Vec2, @core.Vec2)
