@@ -207,3 +207,85 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = ColliderSet3D::new()
+  let mode = @dynamics.InteractionTestMode::And
+  let group1 = @dynamics.Group::group_1()
+  let group2 = @dynamics.Group::group_2()
+  let upper_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .build(),
+  )
+  let upper = colliders.insert_with_parent(
+    ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
+    .collision_groups(
+      @dynamics.InteractionGroups::new(group1, @dynamics.Group::all(), mode),
+    )
+    .build(),
+    upper_body,
+    bodies,
+  )
+  let lower_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  let lower = colliders.insert_with_parent(
+    ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
+    .collision_groups(
+      @dynamics.InteractionGroups::new(group2, @dynamics.Group::all(), mode),
+    )
+    .build(),
+    lower_body,
+    bodies,
+  )
+  colliders.sync_with_bodies(bodies)
+  let ray = Ray3::new(
+    @core.Vec3::new(0.0F, 5.0F, 0.0F),
+    @core.Vec3::new(0.0F, -1.0F, 0.0F),
+  )
+
+  // No filter: hits the upper collider first.
+  let qp0 = QueryPipeline3DReal::new(
+    QueryFilter3DReal::new(),
+    bodies,
+    colliders,
+  )
+  if qp0.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h0, hit0)) {
+    inspect(h0.equals(upper), content="true")
+    inspect(hit0.toi() > 2.0F && hit0.toi() < 3.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Excluding the upper collider: hits the lower one.
+  let qp1 = QueryPipeline3DReal::new(
+    QueryFilter3DReal::new().exclude_collider(upper),
+    bodies,
+    colliders,
+  )
+  if qp1.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h1, hit1)) {
+    inspect(h1.equals(lower), content="true")
+    inspect(hit1.toi() > 4.0F && hit1.toi() < 5.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  // Groups: select only group_2 collider.
+  let qp2 = QueryPipeline3DReal::new(
+    QueryFilter3DReal::new().groups(
+      @dynamics.InteractionGroups::new(@dynamics.Group::all(), group2, mode),
+    ),
+    bodies,
+    colliders,
+  )
+  if qp2.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h2, _hit2)) {
+    inspect(h2.equals(lower), content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
