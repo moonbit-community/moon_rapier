@@ -2955,6 +2955,35 @@ pub fn ColliderSet::colliders_with_parent(
 }
 
 ///|
+fn recompute_body_mass_properties_from_attached_colliders(
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+  body_handle : @dynamics.RigidBodyHandle,
+) -> Unit {
+  if bodies.get_mut_internal_with_modification_tracking(body_handle)
+    is Some(body) {
+    let attached = colliders.colliders_with_parent(body_handle)
+    let mut mprops = @core.MassProperties::default()
+    for j in 0..<attached.length() {
+      let co_handle = attached[j]
+      if colliders.get(co_handle) is Some(collider) {
+        let local_pos = @core.Isometry2::new(
+          collider.local_translation,
+          @core.Rot2::from_angle(collider.local_rotation),
+        )
+        mprops = mprops.add(collider.mass_properties().transform_by(local_pos))
+      }
+    }
+    let added_mass = body.additional_mass()
+    if added_mass != 0.0F {
+      mprops = mprops.set_mass(mprops.mass + added_mass, true)
+    }
+    body.mark_local_mass_properties_changed() |> ignore
+    body.set_local_mass_properties(mprops) |> ignore
+  }
+}
+
+///|
 pub fn ColliderSet::insert_with_parent(
   self : ColliderSet,
   collider : Collider,
@@ -2970,6 +2999,9 @@ pub fn ColliderSet::insert_with_parent(
   if self.colliders[handle.id] is Some(collider_ref) {
     self.push_modified_unchecked(handle, collider_ref)
   }
+  // Match Rapier behavior: attaching a collider must immediately update the rigid-body
+  // mass properties, so impulses applied before the next pipeline step behave correctly.
+  recompute_body_mass_properties_from_attached_colliders(bodies, self, parent)
   handle
 }
 
@@ -3043,6 +3075,7 @@ pub fn ColliderSet::remove(
     return
   }
   if self.colliders[handle.id] is Some(collider) {
+    let parent = collider.parent
     // Removing a collider must invalidate the parent rigid-body mass-properties like Rapier.
     if collider.parent is Some(parent) {
       if bodies.get_mut_internal_with_modification_tracking(parent)
@@ -3057,6 +3090,9 @@ pub fn ColliderSet::remove(
     self.removed_colliders.push(handle)
     self.generations[handle.id] = self.generations[handle.id] + 1
     self.free_list.push(handle.id)
+    if parent is Some(rb) {
+      recompute_body_mass_properties_from_attached_colliders(bodies, self, rb)
+    }
   }
   islands |> ignore
 }
@@ -3115,6 +3151,7 @@ pub fn ColliderSet::set_parent(
     return
   }
   if self.colliders[handle.id] is Some(collider) {
+    let old_parent = collider.parent
     collider.parent = parent
     collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
     self.colliders[handle.id] = Some(
@@ -3122,6 +3159,18 @@ pub fn ColliderSet::set_parent(
     )
     if self.colliders[handle.id] is Some(updated) {
       self.push_modified(handle, updated)
+    }
+    // Update mass properties immediately for both the old and new parent, so impulses applied
+    // before the next pipeline step behave like Rapier.
+    if old_parent is Some(old_rb) {
+      recompute_body_mass_properties_from_attached_colliders(
+        bodies, self, old_rb,
+      )
+    }
+    if parent is Some(new_rb) {
+      recompute_body_mass_properties_from_attached_colliders(
+        bodies, self, new_rb,
+      )
     }
   }
 }
