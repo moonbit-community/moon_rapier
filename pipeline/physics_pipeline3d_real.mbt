@@ -24,6 +24,9 @@ pub struct PhysicsPipeline3DReal {
   contact_pairs : Array[
     (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
   ]
+  intersection_pairs : Array[
+    (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
+  ]
 }
 
 ///|
@@ -32,6 +35,7 @@ pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
     contact_cache: ContactSolverCache3D::new(),
     sensor_pairs: [],
     contact_pairs: [],
+    intersection_pairs: [],
   }
 }
 
@@ -328,6 +332,41 @@ fn collect_sensor_pairs(
 }
 
 ///|
+fn collect_intersection_pairs(
+  narrow_phase : @collision.NarrowPhase3D,
+  colliders : @collision.ColliderSet3D,
+) -> Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] {
+  let out : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] = []
+  let all = narrow_phase.all_intersection_pairs()
+  for i in 0..<all.length() {
+    let pair = all[i].0
+    let ip = all[i].1
+    if !ip.intersecting() {
+      continue
+    }
+    let (a, b) = canonical_pair_3d(pair.0, pair.1)
+    if colliders.get(a) is Some(ca) && colliders.get(b) is Some(cb) {
+      let sensor = ca.is_sensor() || cb.is_sensor()
+      if !sensor {
+        continue
+      }
+      let wants = ca
+        .active_events()
+        .contains(@collision.ActiveEvents::intersection_events()) ||
+        cb
+        .active_events()
+        .contains(@collision.ActiveEvents::intersection_events())
+      if !wants {
+        continue
+      }
+      out.push((a, b))
+    }
+  }
+  sort_pairs_3d(out)
+  out
+}
+
+///|
 fn collect_contact_pairs(
   narrow_phase : @collision.NarrowPhase3D,
   colliders : @collision.ColliderSet3D,
@@ -397,6 +436,51 @@ fn emit_collision_events_for_pair_diffs(
     } else if pair_less_3d(b, a) {
       handler.push_collision_event(
         @collision.CollisionEvent3D::Started(b.0, b.1, flags),
+      )
+      j = j + 1
+    } else {
+      i = i + 1
+      j = j + 1
+    }
+  }
+}
+
+///|
+fn emit_intersection_events_for_pair_diffs(
+  handler : EventHandler3D,
+  prev_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
+  next_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
+) -> Unit {
+  sort_pairs_3d(prev_pairs)
+  let mut i = 0
+  let mut j = 0
+  while i < prev_pairs.length() || j < next_pairs.length() {
+    if i >= prev_pairs.length() {
+      let p = next_pairs[j]
+      handler.push_intersection_event(
+        @collision.IntersectionEvent3D::new(p.0, p.1, true),
+      )
+      j = j + 1
+      continue
+    }
+    if j >= next_pairs.length() {
+      let p = prev_pairs[i]
+      handler.push_intersection_event(
+        @collision.IntersectionEvent3D::new(p.0, p.1, false),
+      )
+      i = i + 1
+      continue
+    }
+    let a = prev_pairs[i]
+    let b = next_pairs[j]
+    if pair_less_3d(a, b) {
+      handler.push_intersection_event(
+        @collision.IntersectionEvent3D::new(a.0, a.1, false),
+      )
+      i = i + 1
+    } else if pair_less_3d(b, a) {
+      handler.push_intersection_event(
+        @collision.IntersectionEvent3D::new(b.0, b.1, true),
       )
       j = j + 1
     } else {
@@ -711,6 +795,9 @@ fn PhysicsPipeline3DReal::step_impl_one(
     broad_phase.update(prediction_distance, colliders)
     narrow_phase.update(broad_phase.pairs(), bodies, colliders)
     let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
+    let next_intersection_pairs = collect_intersection_pairs(
+      narrow_phase, colliders,
+    )
     let next_contact_pairs = collect_contact_pairs(narrow_phase, colliders)
     let prev_sensor_pairs = self.sensor_pairs.copy()
     emit_collision_events_for_pair_diffs(
@@ -718,6 +805,10 @@ fn PhysicsPipeline3DReal::step_impl_one(
       prev_sensor_pairs,
       next_sensor_pairs,
       @collision.CollisionEventFlags::sensor(),
+    )
+    let prev_intersection_pairs = self.intersection_pairs.copy()
+    emit_intersection_events_for_pair_diffs(
+      handler, prev_intersection_pairs, next_intersection_pairs,
     )
     let prev_contact_pairs = self.contact_pairs.copy()
     emit_collision_events_for_pair_diffs(
@@ -728,6 +819,8 @@ fn PhysicsPipeline3DReal::step_impl_one(
     )
     self.sensor_pairs.clear()
     self.sensor_pairs.append(next_sensor_pairs[:])
+    self.intersection_pairs.clear()
+    self.intersection_pairs.append(next_intersection_pairs[:])
     self.contact_pairs.clear()
     self.contact_pairs.append(next_contact_pairs[:])
   }

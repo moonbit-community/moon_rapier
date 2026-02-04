@@ -51,6 +51,30 @@ pub fn EventHandler::handle_collision_event(
 
 ///|
 #declaration_only
+pub fn EventHandler::on_intersection_event(
+  self : EventHandler,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.IntersectionEvent,
+  ) -> Unit,
+) -> EventHandler {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EventHandler::handle_intersection_event(
+  self : EventHandler,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  event : @collision.IntersectionEvent,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn EventHandler::on_contact_force_event(
   self : EventHandler,
   callback : (
@@ -86,6 +110,15 @@ pub fn EventHandler::push_collision_event(
 
 ///|
 #declaration_only
+pub fn EventHandler::push_intersection_event(
+  self : EventHandler,
+  event : @collision.IntersectionEvent,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
 pub fn EventHandler::push_contact_force_event(
   self : EventHandler,
   event : @collision.ContactForceEvent,
@@ -98,6 +131,14 @@ pub fn EventHandler::push_contact_force_event(
 pub fn EventHandler::take_collision_events(
   self : EventHandler,
 ) -> Array[@collision.CollisionEvent] {
+  ...
+}
+
+///|
+#declaration_only
+pub fn EventHandler::take_intersection_events(
+  self : EventHandler,
+) -> Array[@collision.IntersectionEvent] {
   ...
 }
 

@@ -22,6 +22,9 @@ pub struct PhysicsPipeline {
       Bool,
     ),
   ]
+  prev_intersections : Array[
+    (@collision.ColliderHandle, @collision.ColliderHandle, Bool),
+  ]
   contact_solver_cache : Array[ContactImpulseCacheEntry]
   counters : @counters.Counters
 }
@@ -30,6 +33,7 @@ pub struct PhysicsPipeline {
 pub fn PhysicsPipeline::new() -> PhysicsPipeline {
   {
     prev_collisions: [],
+    prev_intersections: [],
     contact_solver_cache: [],
     counters: @counters.Counters::default(),
   }
@@ -926,6 +930,28 @@ fn should_emit_collision_events(
 }
 
 ///|
+fn should_emit_intersection_events(
+  colliders : @collision.ColliderSet,
+  h1 : @collision.ColliderHandle,
+  h2 : @collision.ColliderHandle,
+) -> Bool {
+  fn has_intersection_events(collider : @collision.Collider) -> Bool {
+    collider
+    .active_events()
+    .contains(@collision.ActiveEvents::intersection_events())
+  }
+
+  let mut enabled = false
+  if colliders.get(h1) is Some(c1) {
+    enabled = enabled || has_intersection_events(c1)
+  }
+  if colliders.get(h2) is Some(c2) {
+    enabled = enabled || has_intersection_events(c2)
+  }
+  enabled
+}
+
+///|
 fn collect_current_collisions(
   narrow_phase : @collision.NarrowPhase,
   colliders : @collision.ColliderSet,
@@ -968,6 +994,38 @@ fn collect_current_collisions(
     let flags = compute_collision_event_flags(colliders, pair.0, pair.1)
     let emit = should_emit_collision_events(colliders, pair.0, pair.1)
     result.push((pair.0, pair.1, flags, emit))
+  }
+  result
+}
+
+///|
+fn collect_current_intersections(
+  narrow_phase : @collision.NarrowPhase,
+  colliders : @collision.ColliderSet,
+) -> Array[(@collision.ColliderHandle, @collision.ColliderHandle, Bool)] {
+  let result : Array[
+    (@collision.ColliderHandle, @collision.ColliderHandle, Bool),
+  ] = []
+  let intersections = narrow_phase.intersection_pairs()
+  for i in 0..<intersections.length() {
+    let pair = intersections[i]
+    if !pair.intersecting {
+      continue
+    }
+    let flags = compute_collision_event_flags(
+      colliders,
+      pair.collider1,
+      pair.collider2,
+    )
+    if !flags.contains(@collision.CollisionEventFlags::sensor()) {
+      continue
+    }
+    let emit = should_emit_intersection_events(
+      colliders,
+      pair.collider1,
+      pair.collider2,
+    )
+    result.push((pair.collider1, pair.collider2, emit))
   }
   result
 }
@@ -1018,6 +1076,51 @@ fn PhysicsPipeline::emit_collision_events(
   self.prev_collisions.clear()
   for i in 0..<current.length() {
     self.prev_collisions.push(current[i])
+  }
+}
+
+///|
+fn PhysicsPipeline::emit_intersection_events(
+  self : PhysicsPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  narrow_phase : @collision.NarrowPhase,
+  event_handler : EventHandler,
+) -> Unit {
+  let current = collect_current_intersections(narrow_phase, colliders)
+  let prev_pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)] = []
+  for i in 0..<self.prev_intersections.length() {
+    let p = self.prev_intersections[i]
+    prev_pairs.push((p.0, p.1))
+  }
+  let cur_pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)] = []
+  for i in 0..<current.length() {
+    let c = current[i]
+    cur_pairs.push((c.0, c.1))
+  }
+  for i in 0..<current.length() {
+    let c = current[i]
+    if !collision_pair_in_list((c.0, c.1), prev_pairs) && c.2 {
+      event_handler.handle_intersection_event(
+        bodies,
+        colliders,
+        @collision.IntersectionEvent::new(c.0, c.1, true),
+      )
+    }
+  }
+  for i in 0..<self.prev_intersections.length() {
+    let p = self.prev_intersections[i]
+    if !collision_pair_in_list((p.0, p.1), cur_pairs) && p.2 {
+      event_handler.handle_intersection_event(
+        bodies,
+        colliders,
+        @collision.IntersectionEvent::new(p.0, p.1, false),
+      )
+    }
+  }
+  self.prev_intersections.clear()
+  for i in 0..<current.length() {
+    self.prev_intersections.push(current[i])
   }
 }
 
@@ -1314,6 +1417,9 @@ pub fn PhysicsPipeline::step(
   }
   // Only emit collision events after the final collision detection pass.
   PhysicsPipeline::emit_collision_events(
+    self, bodies, colliders, narrow_phase, event_handler,
+  )
+  PhysicsPipeline::emit_intersection_events(
     self, bodies, colliders, narrow_phase, event_handler,
   )
   let contacts = @dynamics.ContactGraph::new()

@@ -69,3 +69,38 @@ pub fn CollisionEvent3D::removed(self : CollisionEvent3D) -> Bool {
       flags.contains(CollisionEventFlags::removed())
   }
 }
+
+///|
+pub struct IntersectionEvent3D {
+  collider1 : ColliderHandle3D
+  collider2 : ColliderHandle3D
+  intersecting : Bool
+}
+
+///|
+pub fn IntersectionEvent3D::new(
+  collider1 : ColliderHandle3D,
+  collider2 : ColliderHandle3D,
+  intersecting : Bool,
+) -> IntersectionEvent3D {
+  { collider1, collider2, intersecting }
+}
+
+///|
+pub fn IntersectionEvent3D::collider1(
+  self : IntersectionEvent3D,
+) -> ColliderHandle3D {
+  self.collider1
+}
+
+///|
+pub fn IntersectionEvent3D::collider2(
+  self : IntersectionEvent3D,
+) -> ColliderHandle3D {
+  self.collider2
+}
+
+///|
+pub fn IntersectionEvent3D::intersecting(self : IntersectionEvent3D) -> Bool {
+  self.intersecting
+}

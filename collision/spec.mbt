@@ -105,6 +105,12 @@ pub fn ActiveEvents::contact_force_events() -> ActiveEvents {
 
 ///|
 #declaration_only
+pub fn ActiveEvents::intersection_events() -> ActiveEvents {
+  ...
+}
+
+///|
+#declaration_only
 pub fn ActiveEvents::contains(
   self : ActiveEvents,
   other : ActiveEvents,
@@ -200,6 +206,38 @@ pub fn CollisionEvent::sensor(self : CollisionEvent) -> Bool {
 ///|
 #declaration_only
 pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub type IntersectionEvent
+
+///|
+#declaration_only
+pub fn IntersectionEvent::new(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  intersecting : Bool,
+) -> IntersectionEvent {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntersectionEvent::collider1(self : IntersectionEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntersectionEvent::collider2(self : IntersectionEvent) -> ColliderHandle {
+  ...
+}
+
+///|
+#declaration_only
+pub fn IntersectionEvent::intersecting(self : IntersectionEvent) -> Bool {
   ...
 }
 

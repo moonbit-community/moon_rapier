@@ -15,11 +15,12 @@
 ///|
 pub struct EventHandler3D {
   collision_events : Array[@collision.CollisionEvent3D]
+  intersection_events : Array[@collision.IntersectionEvent3D]
 }
 
 ///|
 pub fn EventHandler3D::new() -> EventHandler3D {
-  { collision_events: [] }
+  { collision_events: [], intersection_events: [] }
 }
 
 ///|
@@ -31,6 +32,14 @@ pub fn EventHandler3D::push_collision_event(
 }
 
 ///|
+pub fn EventHandler3D::push_intersection_event(
+  self : EventHandler3D,
+  event : @collision.IntersectionEvent3D,
+) -> Unit {
+  self.intersection_events.push(event)
+}
+
+///|
 pub fn EventHandler3D::take_collision_events(
   self : EventHandler3D,
 ) -> Array[@collision.CollisionEvent3D] {
@@ -39,5 +48,17 @@ pub fn EventHandler3D::take_collision_events(
     out.push(self.collision_events[i])
   }
   self.collision_events.clear()
+  out
+}
+
+///|
+pub fn EventHandler3D::take_intersection_events(
+  self : EventHandler3D,
+) -> Array[@collision.IntersectionEvent3D] {
+  let out : Array[@collision.IntersectionEvent3D] = []
+  for i in 0..<self.intersection_events.length() {
+    out.push(self.intersection_events[i])
+  }
+  self.intersection_events.clear()
   out
 }

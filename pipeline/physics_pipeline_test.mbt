@@ -1204,3 +1204,168 @@ test "rotated cuboid does not generate false contacts" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "intersection events: sensor overlaps started/stopped (without collision events)" {
+  let pipeline = PhysicsPipeline::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet::new()
+  let islands = @dynamics.IslandManager::new()
+  let impulse_joints = @dynamics.ImpulseJointSet::new()
+  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let params = IntegrationParameters::default()
+  let gravity = @core.Vec2::zero()
+  let handler = EventHandler::new()
+  fn has_event(
+    events : Array[@collision.IntersectionEvent],
+    intersecting : Bool,
+    a : @collision.ColliderHandle,
+    b : @collision.ColliderHandle,
+  ) -> Bool {
+    for e in events {
+      if e.intersecting() != intersecting {
+        continue
+      }
+      let c1 = e.collider1()
+      let c2 = e.collider2()
+      if (
+          @collision.ColliderHandle::equals(c1, a) &&
+          @collision.ColliderHandle::equals(c2, b)
+        ) ||
+        (
+          @collision.ColliderHandle::equals(c1, b) &&
+          @collision.ColliderHandle::equals(c2, a)
+        ) {
+        return true
+      }
+    }
+    false
+  }
+
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder::fixed()
+    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .build(),
+  )
+  let ground_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    ground,
+    bodies,
+  )
+  let mover = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic()
+    .translation(@core.Vec2::new(0.0F, 2.0F))
+    .build(),
+  )
+  let sensor_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::intersection_events())
+    .build(),
+    mover,
+    bodies,
+  )
+
+  // Step once: no intersection, no events.
+  pipeline.step(
+    gravity,
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  inspect(handler.take_collision_events().length() == 0, content="true")
+  inspect(handler.take_intersection_events().length() == 0, content="true")
+
+  // Move into intersection: should emit intersecting=true.
+  if bodies.get_mut(mover) is Some(rb) {
+    rb.set_translation(@core.Vec2::new(0.0F, 0.0F), true) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  pipeline.step(
+    gravity,
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  // Ensure the narrow-phase detected the intersection even when collision events are disabled.
+  inspect(narrow_phase.intersection_pairs().length() > 0, content="true")
+  if colliders.get(sensor_collider) is Some(sc) {
+    inspect(sc.is_sensor(), content="true")
+    inspect(
+      sc
+      .active_events()
+      .contains(@collision.ActiveEvents::intersection_events()),
+      content="true",
+    )
+  } else {
+    inspect(false, content="true")
+  }
+  inspect(handler.take_collision_events().length() == 0, content="true")
+  let ev1 = handler.take_intersection_events()
+  inspect(
+    has_event(ev1, true, sensor_collider, ground_collider),
+    content="true",
+  )
+
+  // Stay intersecting: no repeated event.
+  pipeline.step(
+    gravity,
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  inspect(handler.take_intersection_events().length() == 0, content="true")
+
+  // Move out of intersection: should emit intersecting=false.
+  if bodies.get_mut(mover) is Some(rb2) {
+    rb2.set_translation(@core.Vec2::new(0.0F, 2.0F), true) |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  pipeline.step(
+    gravity,
+    params,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    handler,
+  )
+  let ev2 = handler.take_intersection_events()
+  inspect(
+    has_event(ev2, false, sensor_collider, ground_collider),
+    content="true",
+  )
+}
