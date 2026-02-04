@@ -45,6 +45,37 @@ test "ball-ball contact: overlap penetration and normal" {
 }
 
 ///|
+test "ball-ball contact: symmetry when swapping arguments" {
+  let c12 = compute_ball_ball_contact(
+    @core.Vec3::zero(),
+    1.0F,
+    @core.Vec3::new(1.5F, 0.0F, 0.0F),
+    1.0F,
+  )
+  let c21 = compute_ball_ball_contact(
+    @core.Vec3::new(1.5F, 0.0F, 0.0F),
+    1.0F,
+    @core.Vec3::zero(),
+    1.0F,
+  )
+  if c12 is Some(a) && c21 is Some(b) {
+    inspect(@core.abs(a.penetration - b.penetration) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.normal.x + b.normal.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.normal.y + b.normal.y) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.normal.z + b.normal.z) < 1.0e-6F, content="true")
+    // Contact points swap when swapping shapes.
+    inspect(@core.abs(a.point1.x - b.point2.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.point1.y - b.point2.y) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.point1.z - b.point2.z) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.point2.x - b.point1.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.point2.y - b.point1.y) < 1.0e-6F, content="true")
+    inspect(@core.abs(a.point2.z - b.point1.z) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "ball-ball contact: coincident centers has deterministic normal" {
   let c = compute_ball_ball_contact(
     @core.Vec3::zero(),
@@ -76,6 +107,50 @@ test "ball-cuboid contact: face overlap" {
     inspect(@core.abs(cp.penetration - 0.1F) < 1.0e-6F, content="true")
     inspect(@core.abs(cp.point2.x - 1.0F) < 1.0e-6F, content="true")
     inspect(@core.abs(cp.point1.x - 0.9F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "ball-cuboid contact: ball center inside selects deterministic face normal" {
+  let cuboid_pos = @core.Isometry3::identity()
+  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let c = compute_ball_cuboid_contact(@core.Vec3::zero(), 0.5F, cuboid_pos, he)
+  if c is Some(cp) {
+    inspect(cp.normal.x == 1.0F, content="true")
+    inspect(cp.normal.y == 0.0F, content="true")
+    inspect(cp.normal.z == 0.0F, content="true")
+    inspect(@core.abs(cp.penetration - 1.5F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.point2.x - 1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.point1.x - 0.5F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "ball-trimesh contact: triangle floor overlap" {
+  let mesh_pos = @core.Isometry3::identity()
+  let vertices = [
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+  ]
+  let indices = [(0, 1, 2)]
+  let c = compute_ball_trimesh_contact(
+    @core.Vec3::new(0.2F, 0.4F, 0.2F),
+    0.5F,
+    mesh_pos,
+    vertices,
+    indices,
+  )
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.normal.y - -1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.normal.z) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.penetration - 0.1F) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.point2.y - 0.0F) < 1.0e-6F, content="true")
   } else {
     inspect(false, content="true")
   }
