@@ -564,6 +564,15 @@ fn PhysicsPipeline3DReal::step_impl(
     substeps = 64
   }
   let sub_dt = dt / Float::from_int(substeps)
+  // When splitting a substep at a computed TOI, slightly overshoot the TOI so the next
+  // step begins in a strictly-intersecting configuration. This avoids missing the contact
+  // solve due to broad-phase boundary cases when the shapes are exactly touching.
+  let ccd_overlap_time = if max_speed > 1.0e-12F {
+    let dist_eps = 1.0e-4F * parameters.length_unit
+    dist_eps / max_speed
+  } else {
+    0.0F
+  }
   let sub_params = parameters.with_dt(sub_dt)
   for _ in 0..<substeps {
     // TOI-based CCD for fast moving balls.
@@ -571,12 +580,18 @@ fn PhysicsPipeline3DReal::step_impl(
       ccd_min_toi_ball_3d(bodies, colliders, sub_dt) is Some(toi) &&
       toi > 1.0e-6F &&
       toi < sub_dt {
-      let p1 = parameters.with_dt(toi)
+      let toi_step = if ccd_overlap_time > 0.0F &&
+        toi + ccd_overlap_time < sub_dt {
+        toi + ccd_overlap_time
+      } else {
+        toi
+      }
+      let p1 = parameters.with_dt(toi_step)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, p1, islands, broad_phase, narrow_phase, bodies, colliders,
         events, rope_joints, joints,
       )
-      let rem = sub_dt - toi
+      let rem = sub_dt - toi_step
       if rem > 0.0F {
         let p2 = parameters.with_dt(rem)
         PhysicsPipeline3DReal::step_impl_one(
