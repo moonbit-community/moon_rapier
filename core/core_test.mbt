@@ -96,3 +96,34 @@ test "aabb3 intersects + dilated" {
   inspect(a.intersects(b), content="false")
   inspect(a.dilated(1.1F).intersects(b), content="true")
 }
+
+///|
+test "rapier reference constants" {
+  inspect(RAPIER_REFERENCE_VERSION, content="0.32.0")
+  inspect(SPATIAL_DIM2, content="3")
+  inspect(ANG_DIM2, content="1")
+  inspect(MAX_MANIFOLD_POINTS2, content="2")
+  inspect(SPATIAL_DIM3, content="6")
+  inspect(ANG_DIM3, content="3")
+  inspect(MAX_MANIFOLD_POINTS3, content="4")
+}
+
+///|
+test "dmatrix identity" {
+  let m = DMatrix::identity(3)
+  if m.get(0, 0) is Some(v) {
+    inspect(v.to_int(), content="1")
+  } else {
+    inspect(false, content="true")
+  }
+  if m.get(0, 1) is Some(v) {
+    inspect(v.to_int(), content="0")
+  } else {
+    inspect(false, content="true")
+  }
+  if m.get(2, 2) is Some(v) {
+    inspect(v.to_int(), content="1")
+  } else {
+    inspect(false, content="true")
+  }
+}

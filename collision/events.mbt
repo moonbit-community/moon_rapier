@@ -29,6 +29,11 @@ fn ActiveEvents::new(bits : Int) -> ActiveEvents {
 }
 
 ///|
+fn active_events_all_bits() -> Int {
+  ACTIVE_EVENTS_COLLISION_EVENTS | ACTIVE_EVENTS_CONTACT_FORCE_EVENTS
+}
+
+///|
 pub fn ActiveEvents::empty() -> ActiveEvents {
   ActiveEvents::new(0)
 }
@@ -58,6 +63,90 @@ pub fn ActiveEvents::insert(
 ) -> ActiveEvents {
   self.bits = self.bits | other.bits
   self
+}
+
+///|
+pub fn ActiveEvents::union(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  ActiveEvents::{ bits: self.bits | other.bits }
+}
+
+///|
+pub fn ActiveEvents::difference(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  ActiveEvents::{ bits: self.bits & Int::lnot(other.bits) }
+}
+
+///|
+pub fn ActiveEvents::symmetric_difference(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  ActiveEvents::{ bits: self.bits ^ other.bits }
+}
+
+///|
+pub fn ActiveEvents::toggle(
+  self : ActiveEvents,
+  other : ActiveEvents,
+) -> ActiveEvents {
+  self.symmetric_difference(other)
+}
+
+///|
+pub fn ActiveEvents::complement(self : ActiveEvents) -> ActiveEvents {
+  ActiveEvents::{ bits: active_events_all_bits() & Int::lnot(self.bits) }
+}
+
+///|
+pub fn ActiveEvents::is_all(self : ActiveEvents) -> Bool {
+  (self.bits & active_events_all_bits()) == active_events_all_bits()
+}
+
+///|
+pub fn ActiveEvents::from_bits(bits : Int) -> ActiveEvents? {
+  if (bits & Int::lnot(active_events_all_bits())) == 0 {
+    Some(ActiveEvents::{ bits, })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn ActiveEvents::from_bits_truncate(bits : Int) -> ActiveEvents {
+  ActiveEvents::{ bits: bits & active_events_all_bits() }
+}
+
+///|
+pub fn ActiveEvents::from_bits_retain(bits : Int) -> ActiveEvents {
+  ActiveEvents::{ bits, }
+}
+
+///|
+pub fn ActiveEvents::iter_names(self : ActiveEvents) -> Array[String] {
+  let result : Array[String] = []
+  if self.contains(ActiveEvents::collision_events()) {
+    result.push("COLLISION_EVENTS")
+  }
+  if self.contains(ActiveEvents::contact_force_events()) {
+    result.push("CONTACT_FORCE_EVENTS")
+  }
+  result
+}
+
+///|
+pub fn ActiveEvents::from_name(name : String) -> ActiveEvents? {
+  if name == "COLLISION_EVENTS" {
+    Some(ActiveEvents::collision_events())
+  } else if name == "CONTACT_FORCE_EVENTS" {
+    Some(ActiveEvents::contact_force_events())
+  } else {
+    None
+  }
 }
 
 ///|

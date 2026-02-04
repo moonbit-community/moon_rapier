@@ -16,6 +16,42 @@
 pub type Real = Float
 
 ///|
+pub const RAPIER_REFERENCE_VERSION : String = "0.32.0"
+
+///|
+pub const SPATIAL_DIM2 : Int = 3
+
+///|
+pub const ANG_DIM2 : Int = 1
+
+///|
+pub const MAX_MANIFOLD_POINTS2 : Int = 2
+
+///|
+pub const SPATIAL_DIM3 : Int = 6
+
+///|
+pub const ANG_DIM3 : Int = 3
+
+///|
+pub const MAX_MANIFOLD_POINTS3 : Int = 4
+
+///|
+pub type Dim2 = Int
+
+///|
+pub type AngDim2 = Int
+
+///|
+pub type Dim3 = Int
+
+///|
+pub type AngDim3 = Int
+
+///|
+pub type TangentImpulse2 = Real
+
+///|
 const EPSILON : Real = 1.0e-6F
 
 ///|
@@ -74,6 +110,9 @@ pub struct Vec2 {
   x : Real
   y : Real
 }
+
+///|
+pub type TangentImpulse3 = Vec2
 
 ///|
 pub fn Vec2::new(x : Real, y : Real) -> Vec2 {

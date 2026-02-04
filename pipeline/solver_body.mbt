@@ -16,21 +16,23 @@
 /// Internal solver-side views of rigid bodies.
 ///
 /// Ported from `rapier-reference/src/dynamics/solver/solver_body.rs` (scalar, non-SIMD path).
-/// These types are intentionally **not** exported from the `pipeline` package.
+///
+/// Note: in Rapier these types are public. We keep them public as well to satisfy
+/// crate-level pub parity, even though most users shouldn't need them directly.
 
 ///|
-priv struct SolverVel {
+pub struct SolverVel {
   mut linear : @core.Vec2
   mut angular : @core.Real
 }
 
 ///|
-fn SolverVel::zero() -> SolverVel {
+pub fn SolverVel::zero() -> SolverVel {
   { linear: @core.Vec2::zero(), angular: 0.0F }
 }
 
 ///|
-priv struct SolverPose {
+pub struct SolverPose {
   /// World-space translation of the rigid-body center of mass.
   mut translation : @core.Vec2
   /// World-space rotation.
@@ -39,42 +41,45 @@ priv struct SolverPose {
   mut im : @core.Vec2
   /// Effective world-space inverse inertia (scalar for dim2).
   mut ii : @core.Real
+  /// Extra scalar used by Rapier's dim2 SIMD-friendly layout.
+  padding : @core.Real
 }
 
 ///|
-fn SolverPose::zero() -> SolverPose {
+pub fn SolverPose::zero() -> SolverPose {
   {
     translation: @core.Vec2::zero(),
     rotation: @core.Rot2::identity(),
     im: @core.Vec2::zero(),
     ii: 0.0F,
+    padding: 0.0F,
   }
 }
 
 ///|
-priv struct SolverBodies {
+pub struct SolverBodies {
   vels : Array[SolverVel]
   poses : Array[SolverPose]
 }
 
 ///|
-fn SolverBodies::default() -> SolverBodies {
+pub fn SolverBodies::default() -> SolverBodies {
   { vels: [], poses: [] }
 }
 
 ///|
-fn SolverBodies::clear(self : SolverBodies) -> Unit {
+pub fn SolverBodies::clear(self : SolverBodies) -> Unit {
   self.vels.clear()
   self.poses.clear()
 }
 
 ///|
-fn SolverBodies::len(self : SolverBodies) -> Int {
+pub fn SolverBodies::len(self : SolverBodies) -> Int {
   self.vels.length()
 }
 
 ///|
-fn SolverBodies::resize(self : SolverBodies, sz : Int) -> Unit {
+pub fn SolverBodies::resize(self : SolverBodies, sz : Int) -> Unit {
   let target = if sz < 0 { 0 } else { sz }
   self.vels.clear()
   self.poses.clear()
@@ -89,7 +94,7 @@ fn SolverBodies::resize(self : SolverBodies, sz : Int) -> Unit {
 ///
 /// This mirrors Rapier's "scatter solver vels" step and is required because the sequential impulse
 /// solvers operate on `SolverBodies.vels` rather than mutating `RigidBodySet` directly.
-fn SolverBodies::writeback_vels(
+pub fn SolverBodies::writeback_vels(
   self : SolverBodies,
   bodies : @dynamics.RigidBodySet,
 ) -> Unit {
@@ -114,7 +119,7 @@ fn SolverBodies::writeback_vels(
 
 ///|
 /// Copy the current rigid-body velocity/pose into this solver slot.
-fn SolverBodies::copy_from(
+pub fn SolverBodies::copy_from(
   self : SolverBodies,
   i : Int,
   rb : @dynamics.RigidBody,

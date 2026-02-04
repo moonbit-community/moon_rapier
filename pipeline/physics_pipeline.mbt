@@ -23,11 +23,16 @@ pub struct PhysicsPipeline {
     ),
   ]
   contact_solver_cache : Array[ContactImpulseCacheEntry]
+  counters : @counters.Counters
 }
 
 ///|
 pub fn PhysicsPipeline::new() -> PhysicsPipeline {
-  { prev_collisions: [], contact_solver_cache: [] }
+  {
+    prev_collisions: [],
+    contact_solver_cache: [],
+    counters: @counters.Counters::default(),
+  }
 }
 
 ///|

@@ -82,6 +82,12 @@ pub fn JointAxesMask::ang_z() -> JointAxesMask {
 }
 
 ///|
+pub fn JointAxesMask::ang_x() -> JointAxesMask {
+  // Rapier's dim2 uses ANG_X for the unique angular DOF.
+  JointAxesMask::ang_z()
+}
+
+///|
 pub fn JointAxesMask::lin_axes() -> JointAxesMask {
   JointAxesMask::lin_x().or(JointAxesMask::lin_y())
 }
@@ -100,6 +106,36 @@ pub fn JointAxesMask::all() -> JointAxesMask {
 pub fn JointAxesMask::locked_revolute_axes() -> JointAxesMask {
   // 2D hinge: lock both linear axes; keep angular free.
   JointAxesMask::lin_axes()
+}
+
+///|
+pub fn JointAxesMask::locked_prismatic_axes() -> JointAxesMask {
+  JointAxesMask::new((1 << 1) | (1 << 2))
+}
+
+///|
+pub fn JointAxesMask::locked_pin_slot_axes() -> JointAxesMask {
+  JointAxesMask::new(1 << 1)
+}
+
+///|
+pub fn JointAxesMask::locked_fixed_axes() -> JointAxesMask {
+  JointAxesMask::new((1 << 0) | (1 << 1) | (1 << 2))
+}
+
+///|
+pub fn JointAxesMask::free_revolute_axes() -> JointAxesMask {
+  JointAxesMask::ang_x()
+}
+
+///|
+pub fn JointAxesMask::free_prismatic_axes() -> JointAxesMask {
+  JointAxesMask::lin_x()
+}
+
+///|
+pub fn JointAxesMask::free_fixed_axes() -> JointAxesMask {
+  JointAxesMask::empty()
 }
 
 ///|
@@ -185,6 +221,30 @@ pub fn JointLimits3::default() -> JointLimits3 {
 pub(all) enum MotorModel {
   AccelerationBased
   ForceBased
+}
+
+///|
+pub fn MotorModel::combine_coefficients(
+  self : MotorModel,
+  dt : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> (@core.Real, @core.Real, @core.Real) {
+  fn inv(x : @core.Real) -> @core.Real {
+    if x == 0.0F {
+      0.0F
+    } else {
+      1.0F / x
+    }
+  }
+
+  let denom = dt * stiffness + damping
+  let erp_inv_dt = stiffness * inv(denom)
+  let pgs_denom = dt * dt * stiffness + dt * damping
+  match self {
+    MotorModel::AccelerationBased => (erp_inv_dt, inv(pgs_denom), 0.0F)
+    MotorModel::ForceBased => (erp_inv_dt, 0.0F, inv(pgs_denom))
+  }
 }
 
 ///|

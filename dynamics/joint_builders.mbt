@@ -47,7 +47,7 @@ pub fn FixedJointBuilder::build(self : FixedJointBuilder) -> FixedJoint {
 }
 
 ///|
-struct FixedJoint {
+pub struct FixedJoint {
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
 }
@@ -63,7 +63,7 @@ pub fn GenericJoint::from_fixed(joint : FixedJoint) -> GenericJoint {
 }
 
 ///|
-struct RopeJointBuilder {
+pub struct RopeJointBuilder {
   max_length : @core.Real
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
@@ -106,7 +106,7 @@ pub fn RopeJointBuilder::build(self : RopeJointBuilder) -> RopeJoint {
 }
 
 ///|
-struct RopeJoint {
+pub struct RopeJoint {
   max_length : @core.Real
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
@@ -114,6 +114,28 @@ struct RopeJoint {
 
 ///|
 pub fn RopeJoint::max_length(self : RopeJoint) -> @core.Real {
+  self.max_length
+}
+
+///|
+pub fn RopeJoint::max_distance(self : RopeJoint) -> @core.Real {
+  self.max_length
+}
+
+///|
+pub fn RopeJoint::set_max_distance(
+  self : RopeJoint,
+  max_distance : @core.Real,
+) -> RopeJoint {
+  RopeJoint::{
+    max_length: max_distance,
+    local_anchor1: self.local_anchor1,
+    local_anchor2: self.local_anchor2,
+  }
+}
+
+///|
+pub fn RopeJointBuilder::max_distance(self : RopeJointBuilder) -> @core.Real {
   self.max_length
 }
 
@@ -131,7 +153,7 @@ pub fn GenericJoint::from_rope(joint : RopeJoint) -> GenericJoint {
 }
 
 ///|
-struct PinSlotJointBuilder {
+pub struct PinSlotJointBuilder {
   axis : @core.Vec2
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
@@ -196,12 +218,35 @@ pub fn PinSlotJointBuilder::build(self : PinSlotJointBuilder) -> PinSlotJoint {
 }
 
 ///|
-struct PinSlotJoint {
+pub struct PinSlotJoint {
   axis : @core.Vec2
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
   limits : JointLimits
   limits_enabled : Bool
+}
+
+///|
+pub fn PinSlotJoint::set_local_axis1(
+  self : PinSlotJoint,
+  axis : @core.Vec2,
+) -> PinSlotJoint {
+  PinSlotJoint::{
+    axis,
+    local_anchor1: self.local_anchor1,
+    local_anchor2: self.local_anchor2,
+    limits: self.limits,
+    limits_enabled: self.limits_enabled,
+  }
+}
+
+///|
+pub fn PinSlotJoint::set_local_axis2(
+  self : PinSlotJoint,
+  axis : @core.Vec2,
+) -> PinSlotJoint {
+  // This 2D port stores a single joint axis, so we treat axis1/axis2 identically.
+  self.set_local_axis1(axis)
 }
 
 ///|
@@ -297,12 +342,35 @@ pub fn PrismaticJointBuilder::build(
 }
 
 ///|
-struct PrismaticJoint {
+pub struct PrismaticJoint {
   axis : @core.Vec2
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
   limits : JointLimits
   limits_enabled : Bool
+}
+
+///|
+pub fn PrismaticJoint::set_local_axis1(
+  self : PrismaticJoint,
+  axis : @core.Vec2,
+) -> PrismaticJoint {
+  PrismaticJoint::{
+    axis,
+    local_anchor1: self.local_anchor1,
+    local_anchor2: self.local_anchor2,
+    limits: self.limits,
+    limits_enabled: self.limits_enabled,
+  }
+}
+
+///|
+pub fn PrismaticJoint::set_local_axis2(
+  self : PrismaticJoint,
+  axis : @core.Vec2,
+) -> PrismaticJoint {
+  // This 2D port stores a single joint axis, so we treat axis1/axis2 identically.
+  self.set_local_axis1(axis)
 }
 
 ///|

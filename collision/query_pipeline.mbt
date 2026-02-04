@@ -50,6 +50,15 @@ pub struct QueryFilterFlags {
 }
 
 ///|
+fn query_filter_flags_all_bits() -> Int {
+  QUERY_FILTER_EXCLUDE_FIXED |
+  QUERY_FILTER_EXCLUDE_KINEMATIC |
+  QUERY_FILTER_EXCLUDE_DYNAMIC |
+  QUERY_FILTER_EXCLUDE_SENSORS |
+  QUERY_FILTER_EXCLUDE_SOLIDS
+}
+
+///|
 pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
   { bits, }
 }
@@ -57,6 +66,46 @@ pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
 ///|
 pub fn QueryFilterFlags::empty() -> QueryFilterFlags {
   QueryFilterFlags::new(0)
+}
+
+///|
+pub fn QueryFilterFlags::exclude_fixed() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_FIXED)
+}
+
+///|
+pub fn QueryFilterFlags::exclude_kinematic() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_KINEMATIC)
+}
+
+///|
+pub fn QueryFilterFlags::exclude_dynamic() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_DYNAMIC)
+}
+
+///|
+pub fn QueryFilterFlags::exclude_sensors() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_SENSORS)
+}
+
+///|
+pub fn QueryFilterFlags::exclude_solids() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_SOLIDS)
+}
+
+///|
+pub fn QueryFilterFlags::only_dynamic() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_ONLY_DYNAMIC)
+}
+
+///|
+pub fn QueryFilterFlags::only_kinematic() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_ONLY_KINEMATIC)
+}
+
+///|
+pub fn QueryFilterFlags::only_fixed() -> QueryFilterFlags {
+  QueryFilterFlags::new(QUERY_FILTER_ONLY_FIXED)
 }
 
 ///|
@@ -71,6 +120,147 @@ pub fn QueryFilterFlags::insert(
 ) -> QueryFilterFlags {
   self.bits = self.bits | bits
   self
+}
+
+///|
+pub fn QueryFilterFlags::union(
+  self : QueryFilterFlags,
+  other : QueryFilterFlags,
+) -> QueryFilterFlags {
+  QueryFilterFlags::{ bits: self.bits | other.bits }
+}
+
+///|
+pub fn QueryFilterFlags::difference(
+  self : QueryFilterFlags,
+  other : QueryFilterFlags,
+) -> QueryFilterFlags {
+  QueryFilterFlags::{ bits: self.bits & Int::lnot(other.bits) }
+}
+
+///|
+pub fn QueryFilterFlags::symmetric_difference(
+  self : QueryFilterFlags,
+  other : QueryFilterFlags,
+) -> QueryFilterFlags {
+  QueryFilterFlags::{ bits: self.bits ^ other.bits }
+}
+
+///|
+pub fn QueryFilterFlags::toggle(
+  self : QueryFilterFlags,
+  other : QueryFilterFlags,
+) -> QueryFilterFlags {
+  self.symmetric_difference(other)
+}
+
+///|
+pub fn QueryFilterFlags::complement(
+  self : QueryFilterFlags,
+) -> QueryFilterFlags {
+  QueryFilterFlags::{
+    bits: query_filter_flags_all_bits() & Int::lnot(self.bits),
+  }
+}
+
+///|
+pub fn QueryFilterFlags::is_all(self : QueryFilterFlags) -> Bool {
+  (self.bits & query_filter_flags_all_bits()) == query_filter_flags_all_bits()
+}
+
+///|
+pub fn QueryFilterFlags::from_bits(bits : Int) -> QueryFilterFlags? {
+  if (bits & Int::lnot(query_filter_flags_all_bits())) == 0 {
+    Some(QueryFilterFlags::{ bits, })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn QueryFilterFlags::from_bits_truncate(bits : Int) -> QueryFilterFlags {
+  QueryFilterFlags::{ bits: bits & query_filter_flags_all_bits() }
+}
+
+///|
+pub fn QueryFilterFlags::from_bits_retain(bits : Int) -> QueryFilterFlags {
+  QueryFilterFlags::{ bits, }
+}
+
+///|
+pub fn QueryFilterFlags::iter_names(self : QueryFilterFlags) -> Array[String] {
+  let result : Array[String] = []
+  if self.contains(QUERY_FILTER_EXCLUDE_FIXED) {
+    result.push("EXCLUDE_FIXED")
+  }
+  if self.contains(QUERY_FILTER_EXCLUDE_KINEMATIC) {
+    result.push("EXCLUDE_KINEMATIC")
+  }
+  if self.contains(QUERY_FILTER_EXCLUDE_DYNAMIC) {
+    result.push("EXCLUDE_DYNAMIC")
+  }
+  if self.contains(QUERY_FILTER_EXCLUDE_SENSORS) {
+    result.push("EXCLUDE_SENSORS")
+  }
+  if self.contains(QUERY_FILTER_EXCLUDE_SOLIDS) {
+    result.push("EXCLUDE_SOLIDS")
+  }
+  result
+}
+
+///|
+pub fn QueryFilterFlags::from_name(name : String) -> QueryFilterFlags? {
+  if name == "EXCLUDE_FIXED" {
+    Some(QueryFilterFlags::exclude_fixed())
+  } else if name == "EXCLUDE_KINEMATIC" {
+    Some(QueryFilterFlags::exclude_kinematic())
+  } else if name == "EXCLUDE_DYNAMIC" {
+    Some(QueryFilterFlags::exclude_dynamic())
+  } else if name == "EXCLUDE_SENSORS" {
+    Some(QueryFilterFlags::exclude_sensors())
+  } else if name == "EXCLUDE_SOLIDS" {
+    Some(QueryFilterFlags::exclude_solids())
+  } else if name == "ONLY_DYNAMIC" {
+    Some(QueryFilterFlags::only_dynamic())
+  } else if name == "ONLY_KINEMATIC" {
+    Some(QueryFilterFlags::only_kinematic())
+  } else if name == "ONLY_FIXED" {
+    Some(QueryFilterFlags::only_fixed())
+  } else {
+    None
+  }
+}
+
+///|
+pub fn QueryFilterFlags::passes(
+  self : QueryFilterFlags,
+  bodies : @dynamics.RigidBodySet,
+  collider : Collider,
+) -> Bool {
+  if self.bits == 0 {
+    return true
+  }
+  if (self.contains(QUERY_FILTER_EXCLUDE_SENSORS) && collider.is_sensor()) ||
+    (self.contains(QUERY_FILTER_EXCLUDE_SOLIDS) && !collider.is_sensor()) {
+    return false
+  }
+  if self.contains(QUERY_FILTER_EXCLUDE_FIXED) && collider.parent is None {
+    return false
+  }
+  if collider.parent is Some(parent) {
+    if bodies.get(parent) is Some(body) {
+      let body_type = body.body_type()
+      if (self.contains(QUERY_FILTER_EXCLUDE_FIXED) && body_type.is_fixed()) ||
+        (
+          self.contains(QUERY_FILTER_EXCLUDE_KINEMATIC) &&
+          body_type.is_kinematic()
+        ) ||
+        (self.contains(QUERY_FILTER_EXCLUDE_DYNAMIC) && body_type.is_dynamic()) {
+        return false
+      }
+    }
+  }
+  true
 }
 
 ///|
@@ -200,56 +390,31 @@ pub fn QueryFilter::groups_filter(
 }
 
 ///|
-fn query_filter_test(
-  filter : QueryFilter,
+pub fn QueryFilter::passes(
+  self : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   handle : ColliderHandle,
   collider : Collider,
 ) -> Bool {
-  if filter.excluded_collider is Some(excluded) &&
+  if self.excluded_collider is Some(excluded) &&
     ColliderHandle::equals(excluded, handle) {
     return false
   }
-  if filter.excluded_body is Some(excluded_body) {
+  if self.excluded_body is Some(excluded_body) {
     if collider.parent is Some(parent) &&
       @dynamics.RigidBodyHandle::equals(parent, excluded_body) {
       return false
     }
   }
-  if filter.groups is Some(groups) {
+  if self.groups is Some(groups) {
     if !collider.collision_groups().test_groups(groups) {
       return false
     }
   }
-  if filter.flags.contains(QUERY_FILTER_EXCLUDE_SENSORS) && collider.is_sensor() {
+  if !self.flags.passes(bodies, collider) {
     return false
   }
-  if filter.flags.contains(QUERY_FILTER_EXCLUDE_SOLIDS) && !collider.is_sensor() {
-    return false
-  }
-  if filter.flags.contains(QUERY_FILTER_EXCLUDE_FIXED) {
-    if collider.parent is None {
-      return false
-    }
-  }
-  if collider.parent is Some(parent) {
-    if bodies.get(parent) is Some(body) {
-      let body_type = body.body_type()
-      if filter.flags.contains(QUERY_FILTER_EXCLUDE_FIXED) &&
-        body_type.is_fixed() {
-        return false
-      }
-      if filter.flags.contains(QUERY_FILTER_EXCLUDE_KINEMATIC) &&
-        body_type.is_kinematic() {
-        return false
-      }
-      if filter.flags.contains(QUERY_FILTER_EXCLUDE_DYNAMIC) &&
-        body_type.is_dynamic() {
-        return false
-      }
-    }
-  }
-  if filter.predicate is Some(pred) {
+  if self.predicate is Some(pred) {
     if !pred(handle, collider) {
       return false
     }
@@ -258,17 +423,43 @@ fn query_filter_test(
 }
 
 ///|
-pub struct QueryPipeline {
-  filter : QueryFilter
-  bodies : @dynamics.RigidBodySet
-  colliders : ColliderSet
-  // Cached AABBs at the time this pipeline is created. This matches Rapier's
-  // "conservative" AABB queries which do not recompute the latest collider AABB.
+pub struct Bvh {
+  // Cached collider AABBs at the time this pipeline is created. This matches
+  // Rapier's "conservative" AABB queries which do not recompute the latest
+  // collider AABB.
   aabbs : Array[@core.Aabb?]
 }
 
 ///|
+pub fn Bvh::new(aabbs : Array[@core.Aabb?]) -> Bvh {
+  { aabbs, }
+}
+
+///|
+pub fn Bvh::aabbs(self : Bvh) -> Array[@core.Aabb?] {
+  let result : Array[@core.Aabb?] = []
+  for i in 0..<self.aabbs.length() {
+    result.push(self.aabbs[i])
+  }
+  result
+}
+
+///|
+pub struct QueryPipeline {
+  /// A placeholder query dispatcher. Unlike Rapier, this port hardcodes the supported
+  /// shape queries, so this is currently only provided for pub-surface parity.
+  dispatcher : Unit
+  /// Conservative AABB cache used by this QueryPipeline.
+  bvh : Bvh
+  filter : QueryFilter
+  bodies : @dynamics.RigidBodySet
+  colliders : ColliderSet
+}
+
+///|
 pub struct QueryPipelineMut {
+  mut dispatcher : Unit
+  mut bvh : Bvh
   pipeline : QueryPipeline
 }
 
@@ -442,7 +633,7 @@ pub fn QueryPipeline::new(
       aabbs.push(None)
     }
   }
-  { filter, bodies, colliders, aabbs }
+  { dispatcher: (), bvh: Bvh::new(aabbs), filter, bodies, colliders }
 }
 
 ///|
@@ -458,12 +649,12 @@ pub fn QueryPipeline::new3(
 pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
   // Refresh collider world-space state and cached AABBs so scene queries see the latest positions.
   self.colliders.sync_with_bodies(self.bodies)
-  self.aabbs.clear()
+  self.bvh.aabbs.clear()
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      self.aabbs.push(Some(compute_collider_aabb(collider)))
+      self.bvh.aabbs.push(Some(compute_collider_aabb(collider)))
     } else {
-      self.aabbs.push(None)
+      self.bvh.aabbs.push(None)
     }
   }
 }
@@ -473,7 +664,13 @@ pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
-  { filter, bodies: self.bodies, colliders: self.colliders, aabbs: self.aabbs }
+  {
+    dispatcher: self.dispatcher,
+    bvh: self.bvh,
+    filter,
+    bodies: self.bodies,
+    colliders: self.colliders,
+  }
 }
 
 ///|
@@ -482,7 +679,8 @@ pub fn QueryPipelineMut::new(
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
-  { pipeline: QueryPipeline::new(filter, bodies, colliders) }
+  let pipeline = QueryPipeline::new(filter, bodies, colliders)
+  { dispatcher: pipeline.dispatcher, bvh: pipeline.bvh, pipeline }
 }
 
 ///|
@@ -502,6 +700,8 @@ pub fn QueryPipelineMut::as_ref(self : QueryPipelineMut) -> QueryPipeline {
 ///|
 pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
   self.pipeline.update()
+  self.dispatcher = self.pipeline.dispatcher
+  self.bvh = self.pipeline.bvh
 }
 
 ///|
@@ -981,7 +1181,7 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       let pos = collider.world_translation
@@ -1020,7 +1220,7 @@ pub fn QueryPipeline::intersect_ray(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       let pos = collider.world_translation
@@ -1579,7 +1779,7 @@ pub fn QueryPipeline::cast_shape(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       fn best_hit(
@@ -2252,11 +2452,11 @@ pub fn QueryPipeline::cast_shape_nonlinear(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       // AABB prefilter using the cached collider AABB (Rapier parity).
-      if i < self.aabbs.length() && self.aabbs[i] is Some(co_aabb) {
+      if i < self.bvh.aabbs.length() && self.bvh.aabbs[i] is Some(co_aabb) {
         if !co_aabb.intersects(sweep_aabb) {
           continue
         }
@@ -2818,10 +3018,10 @@ pub fn QueryPipeline::intersect_shape(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
-      if i < self.aabbs.length() && self.aabbs[i] is Some(co_aabb) {
+      if i < self.bvh.aabbs.length() && self.bvh.aabbs[i] is Some(co_aabb) {
         if !co_aabb.intersects(shape_aabb) {
           continue
         }
@@ -2850,12 +3050,12 @@ pub fn QueryPipeline::intersect_aabb_conservative(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       // Use the cached AABB from pipeline creation time (Rapier parity).
-      if i < self.aabbs.length() &&
-        self.aabbs[i] is Some(co_aabb) &&
+      if i < self.bvh.aabbs.length() &&
+        self.bvh.aabbs[i] is Some(co_aabb) &&
         co_aabb.intersects(aabb) {
         result.push(handle)
       }
@@ -3749,7 +3949,7 @@ pub fn QueryPipeline::project_point(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       let projection = project_point_on_shape(
@@ -3790,7 +3990,7 @@ pub fn QueryPipeline::project_point_and_get_feature(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       let (projection, feature) = project_point_on_shape_and_get_feature(
@@ -3827,7 +4027,7 @@ pub fn QueryPipeline::intersect_point(
   for i in 0..<self.colliders.colliders.length() {
     if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !query_filter_test(self.filter, self.bodies, handle, collider) {
+      if !self.filter.passes(self.bodies, handle, collider) {
         continue
       }
       if point_in_shape(

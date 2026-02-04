@@ -6,6 +6,9 @@ import {
 }
 
 // Values
+pub fn unit_joint_limit_constraint(IntegrationParameters, Multibody, MultibodyLink, (Float, Float), Float, Int, Int, DVector, Array[GenericJointConstraint], Int) -> Unit
+
+pub fn unit_joint_motor_constraint(IntegrationParameters, Multibody, MultibodyLink, JointMotor, Float, (Float, Float)?, Int, Int, DVector, Array[GenericJointConstraint], Int) -> Unit
 
 // Errors
 
@@ -15,6 +18,8 @@ pub struct AxesMask {
 }
 pub fn AxesMask::all() -> Self
 pub fn AxesMask::ang_axes() -> Self
+pub fn AxesMask::ang_x() -> Self
+pub fn AxesMask::ang_y() -> Self
 pub fn AxesMask::ang_z() -> Self
 pub fn AxesMask::bits(Self) -> Int
 pub fn AxesMask::contains(Self, Self) -> Bool
@@ -23,6 +28,7 @@ pub fn AxesMask::insert(Self, Self) -> Self
 pub fn AxesMask::lin_axes() -> Self
 pub fn AxesMask::lin_x() -> Self
 pub fn AxesMask::lin_y() -> Self
+pub fn AxesMask::lin_z() -> Self
 pub fn AxesMask::new(Int) -> Self
 pub fn AxesMask::remove(Self, Self) -> Self
 
@@ -32,10 +38,18 @@ pub(all) enum AxisState3DReal {
   Limited(Float, Float)
 }
 
+pub struct BodyPair {
+  body1 : RigidBodyHandle
+  body2 : RigidBodyHandle
+}
+pub fn BodyPair::new(RigidBodyHandle, RigidBodyHandle) -> Self
+
 pub struct CCDSolver {
 }
 pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit
+pub fn CCDSolver::find_first_impact(Self, PredictedImpacts) -> (RigidBodyHandle, Float)?
 pub fn CCDSolver::new() -> Self
+pub fn CCDSolver::predict_impacts_at_next_positions(Self, RigidBodySet, Float) -> PredictedImpacts
 pub fn CCDSolver::update_ccd_active_flags(Self, IslandManager, RigidBodySet, Float, Bool) -> Bool
 
 pub(all) enum CoefficientCombineRule {
@@ -62,7 +76,10 @@ pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
 pub fn DVector::len(Self) -> Int
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
-type FixedJoint
+pub struct FixedJoint {
+  local_anchor1 : @core.Vec2
+  local_anchor2 : @core.Vec2
+}
 
 pub struct FixedJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
@@ -80,6 +97,12 @@ pub fn FixedJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn FixedJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn FixedJointBuilder::new() -> Self
 
+pub enum FrictionModel {
+  Simplified
+  Coulomb
+}
+pub fn FrictionModel::default() -> Self
+
 pub struct GenericJoint {
   mut local_frame1 : @core.Isometry2
   mut local_frame2 : @core.Isometry2
@@ -94,6 +117,16 @@ pub struct GenericJoint {
   mut enabled : JointEnabled
   user_data : Int
 }
+pub fn GenericJoint::as_fixed(Self) -> Self?
+pub fn GenericJoint::as_fixed_mut(Self) -> Self?
+pub fn GenericJoint::as_prismatic(Self) -> Self?
+pub fn GenericJoint::as_prismatic_mut(Self) -> Self?
+pub fn GenericJoint::as_revolute(Self) -> Self?
+pub fn GenericJoint::as_revolute_mut(Self) -> Self?
+pub fn GenericJoint::as_rope(Self) -> Self?
+pub fn GenericJoint::as_rope_mut(Self) -> Self?
+pub fn GenericJoint::as_spherical(Self) -> Self?
+pub fn GenericJoint::as_spherical_mut(Self) -> Self?
 pub fn GenericJoint::contacts_enabled(Self) -> Bool
 pub fn GenericJoint::coupled_axes(Self) -> JointAxesMask
 pub fn GenericJoint::default() -> Self
@@ -111,6 +144,7 @@ pub fn GenericJoint::local_anchor1(Self) -> @core.Vec2
 pub fn GenericJoint::local_anchor2(Self) -> @core.Vec2
 pub fn GenericJoint::local_frame1(Self) -> @core.Isometry2
 pub fn GenericJoint::local_frame2(Self) -> @core.Isometry2
+pub fn GenericJoint::lock_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motor_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motors(Self) -> JointMotors3
@@ -172,6 +206,27 @@ pub fn GenericJoint3DRealBuilder::motor_position(Self, JointAxis3DReal, Float, F
 pub fn GenericJoint3DRealBuilder::motor_velocity(Self, JointAxis3DReal, Float, Float) -> Self
 pub fn GenericJoint3DRealBuilder::new(JointAxesMask3DReal) -> Self
 
+pub struct GenericJointConstraint {
+  is_rigid_body1 : Bool
+  is_rigid_body2 : Bool
+  solver_vel1 : Int
+  solver_vel2 : Int
+  ndofs1 : Int
+  j_id1 : Int
+  ndofs2 : Int
+  j_id2 : Int
+  joint_id : Int
+  impulse : Float
+  impulse_bounds : (Float, Float)
+  inv_lhs : Float
+  rhs : Float
+  rhs_wo_bias : Float
+  cfm_coeff : Float
+  cfm_gain : Float
+  writeback_id : WritebackId
+}
+pub fn GenericJointConstraint::invalid() -> Self
+
 pub struct GenericJointConstraint3DReal {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
@@ -192,8 +247,24 @@ pub fn Group::group_13() -> Self
 pub fn Group::group_14() -> Self
 pub fn Group::group_15() -> Self
 pub fn Group::group_16() -> Self
+pub fn Group::group_17() -> Self
+pub fn Group::group_18() -> Self
+pub fn Group::group_19() -> Self
 pub fn Group::group_2() -> Self
+pub fn Group::group_20() -> Self
+pub fn Group::group_21() -> Self
+pub fn Group::group_22() -> Self
+pub fn Group::group_23() -> Self
+pub fn Group::group_24() -> Self
+pub fn Group::group_25() -> Self
+pub fn Group::group_26() -> Self
+pub fn Group::group_27() -> Self
+pub fn Group::group_28() -> Self
+pub fn Group::group_29() -> Self
 pub fn Group::group_3() -> Self
+pub fn Group::group_30() -> Self
+pub fn Group::group_31() -> Self
+pub fn Group::group_32() -> Self
 pub fn Group::group_4() -> Self
 pub fn Group::group_5() -> Self
 pub fn Group::group_6() -> Self
@@ -290,6 +361,7 @@ pub struct IntegrationParameters {
   mut num_internal_stabilization_iterations : Int
   mut min_island_size : Int
   mut max_ccd_substeps : Int
+  friction_model : FrictionModel
 }
 pub fn IntegrationParameters::allowed_linear_error(Self) -> Float
 pub fn IntegrationParameters::default() -> Self
@@ -411,14 +483,21 @@ pub struct JointAxesMask {
 }
 pub fn JointAxesMask::all() -> Self
 pub fn JointAxesMask::ang_axes() -> Self
+pub fn JointAxesMask::ang_x() -> Self
 pub fn JointAxesMask::ang_z() -> Self
 pub fn JointAxesMask::bits(Self) -> Int
 pub fn JointAxesMask::contains(Self, Self) -> Bool
 pub fn JointAxesMask::empty() -> Self
+pub fn JointAxesMask::free_fixed_axes() -> Self
+pub fn JointAxesMask::free_prismatic_axes() -> Self
+pub fn JointAxesMask::free_revolute_axes() -> Self
 pub fn JointAxesMask::intersection(Self, Self) -> Self
 pub fn JointAxesMask::lin_axes() -> Self
 pub fn JointAxesMask::lin_x() -> Self
 pub fn JointAxesMask::lin_y() -> Self
+pub fn JointAxesMask::locked_fixed_axes() -> Self
+pub fn JointAxesMask::locked_pin_slot_axes() -> Self
+pub fn JointAxesMask::locked_prismatic_axes() -> Self
 pub fn JointAxesMask::locked_revolute_axes() -> Self
 pub fn JointAxesMask::new(Int) -> Self
 pub fn JointAxesMask::or(Self, Self) -> Self
@@ -434,10 +513,19 @@ pub fn JointAxesMask3DReal::ang_z() -> Self
 pub fn JointAxesMask3DReal::bits(Self) -> Int
 pub fn JointAxesMask3DReal::contains(Self, Self) -> Bool
 pub fn JointAxesMask3DReal::empty() -> Self
+pub fn JointAxesMask3DReal::free_fixed_axes() -> Self
+pub fn JointAxesMask3DReal::free_prismatic_axes() -> Self
+pub fn JointAxesMask3DReal::free_revolute_axes() -> Self
+pub fn JointAxesMask3DReal::free_spherical_axes() -> Self
+pub fn JointAxesMask3DReal::intersection(Self, Self) -> Self
 pub fn JointAxesMask3DReal::lin_axes() -> Self
 pub fn JointAxesMask3DReal::lin_x() -> Self
 pub fn JointAxesMask3DReal::lin_y() -> Self
 pub fn JointAxesMask3DReal::lin_z() -> Self
+pub fn JointAxesMask3DReal::locked_fixed_axes() -> Self
+pub fn JointAxesMask3DReal::locked_prismatic_axes() -> Self
+pub fn JointAxesMask3DReal::locked_revolute_axes() -> Self
+pub fn JointAxesMask3DReal::locked_spherical_axes() -> Self
 pub fn JointAxesMask3DReal::new(Int) -> Self
 pub fn JointAxesMask3DReal::or(Self, Self) -> Self
 
@@ -534,14 +622,47 @@ pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DRe
 pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
 
+pub struct JointSolverBody {
+  im : @core.Vec2
+  ii : Float
+  world_com : @core.Vec2
+  solver_vel : Int
+}
+pub fn JointSolverBody::invalid() -> Self
+
 pub struct LinkId {
   value : Int
 }
+
+pub(all) enum LinkOrBodyRef {
+  Link(MultibodyLinkId)
+  Body(Int)
+  Fixed
+}
+
+pub struct LockedAxes {
+  bits : Int
+}
+pub fn LockedAxes::bits(Self) -> Int
+pub fn LockedAxes::contains(Self, Self) -> Bool
+pub fn LockedAxes::empty() -> Self
+pub fn LockedAxes::insert(Self, Self) -> Self
+pub fn LockedAxes::new(Int) -> Self
+pub fn LockedAxes::remove(Self, Self) -> Self
+pub fn LockedAxes::rotation_locked() -> Self
+pub fn LockedAxes::rotation_locked_x() -> Self
+pub fn LockedAxes::rotation_locked_y() -> Self
+pub fn LockedAxes::rotation_locked_z() -> Self
+pub fn LockedAxes::translation_locked() -> Self
+pub fn LockedAxes::translation_locked_x() -> Self
+pub fn LockedAxes::translation_locked_y() -> Self
+pub fn LockedAxes::translation_locked_z() -> Self
 
 pub(all) enum MotorModel {
   AccelerationBased
   ForceBased
 }
+pub fn MotorModel::combine_coefficients(Self, Float, Float, Float) -> (Float, Float, Float)
 
 pub(all) enum MotorState3DReal {
   Disabled
@@ -552,11 +673,28 @@ pub(all) enum MotorState3DReal {
 type Multibody
 pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
+pub fn Multibody::damping_mut(Self) -> DVector
 pub fn Multibody::forward_kinematics(Self, RigidBodySet, Bool) -> Unit
+pub fn Multibody::forward_kinematics_single_branch(Self, RigidBodySet, Array[Int], Array[Float]?, Jacobian?) -> @core.Isometry2
 pub fn Multibody::forward_kinematics_single_link(Self, RigidBodySet, LinkId, Array[Float]?, Jacobian?) -> @core.Isometry2
+pub fn Multibody::generalized_acceleration(Self) -> DVector
+pub fn Multibody::generalized_velocity(Self) -> DVector
+pub fn Multibody::generalized_velocity_mut(Self) -> DVector
+pub fn Multibody::inv_augmented_mass(Self) -> @core.DMatrix
 pub fn Multibody::inverse_kinematics(Self, RigidBodySet, LinkId, InverseKinematicsOption, @core.Isometry2, (MultibodyLink) -> Bool, DVector) -> Unit
+pub fn Multibody::inverse_kinematics_delta(Self, LinkId, Float, Float, Float, Float, DVector) -> Unit
+pub fn Multibody::inverse_kinematics_delta_with_jacobian(Jacobian, Float, Float, Float, Float, DVector) -> Unit
+pub fn Multibody::joint_velocity(Self, MultibodyLink) -> DVector
+pub fn Multibody::kinematic_branch(Self, Int) -> Array[Int]
 pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
+pub fn Multibody::link_mut(Self, LinkId) -> MultibodyLink?
+pub fn Multibody::links_mut(Self) -> Array[MultibodyLink]
 pub fn Multibody::ndofs(Self) -> Int
+pub fn Multibody::num_links(Self) -> Int
+pub fn Multibody::root(Self) -> MultibodyLink?
+pub fn Multibody::root_mut(Self) -> MultibodyLink?
+pub fn Multibody::self_contacts_enabled(Self) -> Bool
+pub fn Multibody::set_self_contacts_enabled(Self, Bool) -> Unit
 pub fn Multibody::update_rigid_bodies(Self, RigidBodySet) -> Unit
 
 pub struct Multibody3 {
@@ -574,6 +712,22 @@ pub struct MultibodyIndex {
   value : Int
 }
 pub fn MultibodyIndex::invalid() -> Self
+
+pub struct MultibodyJoint {
+  data : GenericJoint
+  kinematic : Bool
+  mut coords : @core.Vec2
+  mut angle : Float
+  mut joint_rot : @core.Rot2
+}
+pub fn MultibodyJoint::apply_displacement(Self, Array[Float]) -> Unit
+pub fn MultibodyJoint::body_to_parent(Self) -> @core.Isometry2
+pub fn MultibodyJoint::default_damping(Self, DVector) -> Unit
+pub fn MultibodyJoint::jacobian(Self, @core.Rot2, Jacobian) -> Unit
+pub fn MultibodyJoint::jacobian_mul_coordinates(Self, Array[Float]) -> RigidBodyVelocity
+pub fn MultibodyJoint::new(GenericJoint, Bool) -> Self
+pub fn MultibodyJoint::num_velocity_constraints(Self) -> Int
+pub fn MultibodyJoint::velocity_constraints(Self, IntegrationParameters, Multibody, MultibodyLink, Int, DVector, Array[GenericJointConstraint]) -> Int
 
 type MultibodyJointHandle
 pub fn MultibodyJointHandle::from_raw_parts(Int, Int) -> Self
@@ -618,7 +772,12 @@ pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, Revolu
 pub fn MultibodyJointSet3::new() -> Self
 
 type MultibodyLink
+pub fn MultibodyLink::is_root(Self) -> Bool
+pub fn MultibodyLink::link_id(Self) -> LinkId
+pub fn MultibodyLink::local_to_parent(Self) -> @core.Isometry2
 pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
+pub fn MultibodyLink::parent_id(Self) -> LinkId
+pub fn MultibodyLink::rigid_body_handle(Self) -> RigidBodyHandle
 
 pub struct MultibodyLinkId {
   multibody : MultibodyIndex
@@ -638,9 +797,23 @@ pub struct PdErrors3 {
   angular : @core.Vec3
 }
 
-type PinSlotJoint
+pub struct PinSlotJoint {
+  axis : @core.Vec2
+  local_anchor1 : @core.Vec2
+  local_anchor2 : @core.Vec2
+  limits : JointLimits
+  limits_enabled : Bool
+}
+pub fn PinSlotJoint::set_local_axis1(Self, @core.Vec2) -> Self
+pub fn PinSlotJoint::set_local_axis2(Self, @core.Vec2) -> Self
 
-type PinSlotJointBuilder
+pub struct PinSlotJointBuilder {
+  axis : @core.Vec2
+  mut local_anchor1 : @core.Vec2
+  mut local_anchor2 : @core.Vec2
+  mut limits : JointLimits
+  mut limits_enabled : Bool
+}
 pub fn PinSlotJointBuilder::build(Self) -> PinSlotJoint
 pub fn PinSlotJointBuilder::limits(Self, Float, Float) -> Self
 pub fn PinSlotJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
@@ -653,7 +826,15 @@ pub(all) enum PredictedImpacts {
   NoImpacts
 }
 
-type PrismaticJoint
+pub struct PrismaticJoint {
+  axis : @core.Vec2
+  local_anchor1 : @core.Vec2
+  local_anchor2 : @core.Vec2
+  limits : JointLimits
+  limits_enabled : Bool
+}
+pub fn PrismaticJoint::set_local_axis1(Self, @core.Vec2) -> Self
+pub fn PrismaticJoint::set_local_axis2(Self, @core.Vec2) -> Self
 
 pub struct PrismaticJoint3DReal {
   body1 : RigidBodyHandle
@@ -773,6 +954,7 @@ pub struct RigidBody {
   mut changes : RigidBodyChanges
 }
 pub fn RigidBody::activation(Self) -> RigidBodyActivation
+pub fn RigidBody::activation_mut(Self) -> RigidBodyActivation
 pub fn RigidBody::active_island_id(Self) -> Int
 pub fn RigidBody::add_force(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_force_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
@@ -781,6 +963,7 @@ pub fn RigidBody::additional_mass(Self) -> Float
 pub fn RigidBody::additional_solver_iterations(Self) -> Int
 pub fn RigidBody::angular_damping(Self) -> Float
 pub fn RigidBody::angvel(Self) -> Float
+pub fn RigidBody::angvel_with_gyroscopic_forces(Self, Float) -> Float
 pub fn RigidBody::apply_impulse(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_impulse_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_torque_impulse(Self, Float, Bool) -> Self
@@ -790,9 +973,12 @@ pub fn RigidBody::center_of_mass(Self) -> @core.Vec2
 pub fn RigidBody::clear_changes(Self) -> Self
 pub fn RigidBody::damping(Self) -> RigidBodyDamping
 pub fn RigidBody::dominance_group(Self) -> Int
+pub fn RigidBody::effective_active_set_offset(Self) -> Int
 pub fn RigidBody::effective_dominance_group(Self) -> Int
 pub fn RigidBody::enable_ccd(Self, Bool) -> Self
+pub fn RigidBody::enable_gyroscopic_forces(Self, Bool) -> Self
 pub fn RigidBody::forces(Self) -> RigidBodyForces
+pub fn RigidBody::gravitational_potential_energy(Self, Float, @core.Vec2) -> Float
 pub fn RigidBody::gravity_scale(Self) -> Float
 pub fn RigidBody::inertia(Self) -> Float
 pub fn RigidBody::inv_inertia(Self) -> Float
@@ -804,9 +990,14 @@ pub fn RigidBody::is_dynamic_or_kinematic(Self) -> Bool
 pub fn RigidBody::is_enabled(Self) -> Bool
 pub fn RigidBody::is_fixed(Self) -> Bool
 pub fn RigidBody::is_kinematic(Self) -> Bool
+pub fn RigidBody::is_moving(Self) -> Bool
+pub fn RigidBody::is_rotation_locked(Self) -> Bool
 pub fn RigidBody::is_sleeping(Self) -> Bool
+pub fn RigidBody::is_translation_locked(Self) -> Bool
+pub fn RigidBody::kinetic_energy(Self) -> Float
 pub fn RigidBody::linear_damping(Self) -> Float
 pub fn RigidBody::linvel(Self) -> @core.Vec2
+pub fn RigidBody::local_center_of_mass(Self) -> @core.Vec2
 pub fn RigidBody::lock_rotations(Self) -> Self
 pub fn RigidBody::lock_translations(Self) -> Self
 pub fn RigidBody::locked_rotations(Self) -> Bool
@@ -816,10 +1007,16 @@ pub fn RigidBody::mass(Self) -> Float
 pub fn RigidBody::mass_props(Self) -> RigidBodyMassProps
 pub fn RigidBody::next_position(Self) -> @core.Isometry2
 pub fn RigidBody::position(Self) -> @core.Isometry2
+pub fn RigidBody::predict_position_using_velocity(Self, Float) -> @core.Isometry2
+pub fn RigidBody::predict_position_using_velocity_and_forces(Self, Float) -> @core.Isometry2
+pub fn RigidBody::recompute_mass_properties_from_colliders(Self) -> Self
 pub fn RigidBody::reset_forces(Self, Bool) -> Self
 pub fn RigidBody::reset_torques(Self, Bool) -> Self
+pub fn RigidBody::restrict_rotations(Self, Bool, Bool, Bool, Bool) -> Self
+pub fn RigidBody::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Self
 pub fn RigidBody::rotation(Self) -> @core.Rot2
 pub fn RigidBody::set_additional_mass(Self, Float, Bool) -> Self
+pub fn RigidBody::set_additional_mass_properties(Self, RigidBodyAdditionalMassProps, Bool) -> Self
 pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
@@ -827,6 +1024,8 @@ pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
 pub fn RigidBody::set_ccd_properties(Self, Float, Float) -> Self
 pub fn RigidBody::set_dominance_group(Self, Int) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
+pub fn RigidBody::set_enabled_rotations(Self, Bool, Bool, Bool, Bool) -> Self
+pub fn RigidBody::set_enabled_translations(Self, Bool, Bool, Bool, Bool) -> Self
 pub fn RigidBody::set_gravity_scale(Self, Float, Bool) -> Self
 pub fn RigidBody::set_kinematic_position_based_vels(Self, RigidBodyVelocity) -> Self
 pub fn RigidBody::set_linear_damping(Self, Float) -> Self
@@ -847,6 +1046,7 @@ pub fn RigidBody::sleep(Self) -> Self
 pub fn RigidBody::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody::translation(Self) -> @core.Vec2
 pub fn RigidBody::update_effective_force_and_torque(Self, @core.Vec2) -> Self
+pub fn RigidBody::velocity_at_point(Self, @core.Vec2) -> @core.Vec2
 pub fn RigidBody::vels(Self) -> RigidBodyVelocity
 pub fn RigidBody::wake_up(Self, Bool) -> Self
 pub fn RigidBody::world_com(Self) -> @core.Vec2
@@ -938,6 +1138,12 @@ pub fn RigidBodyActivation3D::is_sleeping(Self) -> Bool
 pub fn RigidBodyActivation3D::update(Self, Float, Float, RigidBodyType, RigidBodyVelocity3D) -> Self
 pub fn RigidBodyActivation3D::wake_up(Self) -> Self
 
+pub enum RigidBodyAdditionalMassProps {
+  Mass(Float)
+  MassProps(@core.MassProperties)
+  MassProperties(@core.MassProperties)
+}
+
 pub struct RigidBodyBuilder {
   mut position : @core.Isometry2
   mut linvel : @core.Vec2
@@ -958,6 +1164,7 @@ pub struct RigidBodyBuilder {
   mut dominance_group : Int
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder::additional_mass_properties(Self, RigidBodyAdditionalMassProps) -> Self
 pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBodyBuilder::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder::angvel(Self, Float) -> Self
@@ -967,6 +1174,7 @@ pub fn RigidBodyBuilder::ccd_enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder::dominance_group(Self, Int) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self
 pub fn RigidBodyBuilder::enabled(Self, Bool) -> Self
+pub fn RigidBodyBuilder::enabled_translations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder::fixed() -> Self
 pub fn RigidBodyBuilder::gravity_scale(Self, Float) -> Self
 pub fn RigidBodyBuilder::kinematic_position_based() -> Self
@@ -976,7 +1184,13 @@ pub fn RigidBodyBuilder::linvel(Self, @core.Vec2) -> Self
 pub fn RigidBodyBuilder::lock_rotations(Self) -> Self
 pub fn RigidBodyBuilder::lock_translations(Self) -> Self
 pub fn RigidBodyBuilder::new(RigidBodyType) -> Self
+pub fn RigidBodyBuilder::new_kinematic_position_based() -> Self
+pub fn RigidBodyBuilder::new_kinematic_velocity_based() -> Self
+pub fn RigidBodyBuilder::new_static() -> Self
+pub fn RigidBodyBuilder::pose(Self, @core.Isometry2) -> Self
 pub fn RigidBodyBuilder::position(Self, @core.Isometry2) -> Self
+pub fn RigidBodyBuilder::restrict_rotations(Self, Bool, Bool, Bool) -> Self
+pub fn RigidBodyBuilder::restrict_translations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
 pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self
@@ -1060,7 +1274,24 @@ pub fn RigidBodyCcd::default() -> Self
 pub fn RigidBodyCcd::is_moving_fast(Self, Float, RigidBodyVelocity, RigidBodyForces?) -> Bool
 pub fn RigidBodyCcd::max_point_velocity(Self, RigidBodyVelocity) -> Float
 
-type RigidBodyChanges
+pub struct RigidBodyChanges {
+  bits : Int
+}
+pub fn RigidBodyChanges::all() -> Self
+pub fn RigidBodyChanges::colliders_flag() -> Int
+pub fn RigidBodyChanges::contains(Self, Int) -> Bool
+pub fn RigidBodyChanges::dominance_flag() -> Int
+pub fn RigidBodyChanges::empty() -> Self
+pub fn RigidBodyChanges::insert(Self, Int) -> Self
+pub fn RigidBodyChanges::remove(Self, Int) -> Self
+pub fn RigidBodyChanges::sleep_flag() -> Int
+
+pub struct RigidBodyColliders {
+  colliders : Array[Int]
+}
+pub fn RigidBodyColliders::attach_collider(Self, Int) -> Self
+pub fn RigidBodyColliders::detach_collider(Self, Int) -> Self
+pub fn RigidBodyColliders::new() -> Self
 
 pub struct RigidBodyDamping {
   mut linear_damping : Float
@@ -1096,15 +1327,24 @@ pub fn RigidBodyHandle::from_raw_parts(Int, Int) -> Self
 pub fn RigidBodyHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn RigidBodyHandle::invalid() -> Self
 
-type RigidBodyIds
+pub struct RigidBodyIds {
+  mut active_island_id : Int
+  mut active_set_id : Int
+  mut active_set_timestamp : Int
+}
+pub fn RigidBodyIds::default() -> Self
 
 pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : Float
   mut local_mprops : @core.MassProperties
+  additional_local_mprops : @core.MassProperties
 }
 pub fn RigidBodyMassProps::default() -> Self
+pub fn RigidBodyMassProps::effective_angular_inertia(Self) -> Float
+pub fn RigidBodyMassProps::effective_mass(Self) -> @core.Vec2
+pub fn RigidBodyMassProps::recompute_mass_properties_from_colliders(Self) -> Self
 pub fn RigidBodyMassProps::set_effective_inv_mass(Self, @core.Vec2) -> Self
 pub fn RigidBodyMassProps::set_effective_world_inv_inertia(Self, Float) -> Self
 pub fn RigidBodyMassProps::update_world_mass_properties(Self, RigidBodyType, @core.Isometry2) -> Self
@@ -1153,6 +1393,7 @@ pub fn RigidBodySet::iter(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet::iter_mut(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet::len(Self) -> Int
 pub fn RigidBodySet::new() -> Self
+pub fn RigidBodySet::propagate_modified_body_positions_to_colliders(Self) -> Unit
 pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> RigidBody?
 pub fn RigidBodySet::serialize(Self) -> String
 pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
@@ -1193,6 +1434,7 @@ pub fn RigidBodySet3D::remove(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::update_kinematic_velocities_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::update_sleep_all(Self, Float, Float) -> Unit
 
+#alias(BodyStatus)
 pub(all) enum RigidBodyType {
   Dynamic
   Fixed
@@ -1210,9 +1452,19 @@ pub struct RigidBodyVelocity {
 }
 pub fn RigidBodyVelocity::angvel(Self) -> Float
 pub fn RigidBodyVelocity::apply_damping(Self, Float, RigidBodyDamping) -> Self
+pub fn RigidBodyVelocity::as_mut_slice(Self) -> Array[Float]
+pub fn RigidBodyVelocity::as_slice(Self) -> Array[Float]
+pub fn RigidBodyVelocity::as_vector(Self) -> @core.Vec3
+pub fn RigidBodyVelocity::as_vector_mut(Self) -> @core.Vec3
+pub fn RigidBodyVelocity::from_slice(Array[Float]) -> Self
 pub fn RigidBodyVelocity::integrate(Self, Float, @core.Isometry2, @core.Vec2) -> @core.Isometry2
+pub fn RigidBodyVelocity::is_zero(Self) -> Bool
+pub fn RigidBodyVelocity::kinetic_energy(Self, RigidBodyMassProps) -> Float
 pub fn RigidBodyVelocity::linvel(Self) -> @core.Vec2
 pub fn RigidBodyVelocity::new(@core.Vec2, Float) -> Self
+pub fn RigidBodyVelocity::pseudo_kinetic_energy(Self) -> Float
+pub fn RigidBodyVelocity::transformed(Self, @core.Rot2) -> Self
+pub fn RigidBodyVelocity::velocity_at_point(Self, @core.Vec2, @core.Vec2) -> @core.Vec2
 pub fn RigidBodyVelocity::zero() -> Self
 
 pub struct RigidBodyVelocity3 {
@@ -1231,8 +1483,14 @@ pub fn RigidBodyVelocity3D::integrate(Self, Float, @core.Isometry3, @core.Vec3) 
 pub fn RigidBodyVelocity3D::linvel(Self) -> @core.Vec3
 pub fn RigidBodyVelocity3D::zero() -> Self
 
-type RopeJoint
+pub struct RopeJoint {
+  max_length : Float
+  local_anchor1 : @core.Vec2
+  local_anchor2 : @core.Vec2
+}
+pub fn RopeJoint::max_distance(Self) -> Float
 pub fn RopeJoint::max_length(Self) -> Float
+pub fn RopeJoint::set_max_distance(Self, Float) -> Self
 
 pub struct RopeJoint3DReal {
   body1 : RigidBodyHandle
@@ -1240,10 +1498,15 @@ pub struct RopeJoint3DReal {
   max_length : Float
 }
 
-type RopeJointBuilder
+pub struct RopeJointBuilder {
+  max_length : Float
+  mut local_anchor1 : @core.Vec2
+  mut local_anchor2 : @core.Vec2
+}
 pub fn RopeJointBuilder::build(Self) -> RopeJoint
 pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn RopeJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn RopeJointBuilder::max_distance(Self) -> Float
 pub fn RopeJointBuilder::new(Float) -> Self
 
 pub struct RopeJointBuilder3 {
@@ -1312,6 +1575,19 @@ pub fn SpringCoefficients::erp_inv_dt(Self, Float) -> Float
 pub fn SpringCoefficients::joint_defaults() -> Self
 pub fn SpringCoefficients::new(Float, Float) -> Self
 
+pub struct SpringJoint {
+  mut data : GenericJoint
+}
+pub fn SpringJoint::contacts_enabled(Self) -> Bool
+pub fn SpringJoint::data(Self) -> GenericJoint
+pub fn SpringJoint::local_anchor1(Self) -> @core.Vec2
+pub fn SpringJoint::local_anchor2(Self) -> @core.Vec2
+pub fn SpringJoint::new(Float, Float, Float) -> Self
+pub fn SpringJoint::set_contacts_enabled(Self, Bool) -> Self
+pub fn SpringJoint::set_local_anchor1(Self, @core.Vec2) -> Self
+pub fn SpringJoint::set_local_anchor2(Self, @core.Vec2) -> Self
+pub fn SpringJoint::set_spring_model(Self, MotorModel) -> Self
+
 pub struct SpringJoint3DReal {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
@@ -1320,6 +1596,22 @@ pub struct SpringJoint3DReal {
   rest_length : Float
   stiffness : Float
   damping : Float
+}
+
+pub struct SpringJointBuilder {
+  mut inner : SpringJoint
+}
+pub fn SpringJointBuilder::build(Self) -> SpringJoint
+pub fn SpringJointBuilder::contacts_enabled(Self, Bool) -> Self
+pub fn SpringJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
+pub fn SpringJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn SpringJointBuilder::new(Float, Float, Float) -> Self
+pub fn SpringJointBuilder::spring_model(Self, MotorModel) -> Self
+
+pub(all) enum WritebackId {
+  Dof(Int)
+  Limit(Int)
+  Motor(Int)
 }
 
 // Type aliases

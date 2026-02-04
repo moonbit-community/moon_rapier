@@ -92,3 +92,45 @@ pub fn CCDSolver::update_ccd_active_flags(
   }
   any_active
 }
+
+///|
+/// Predicts potential impacts if all bodies moved to their `next_position`.
+///
+/// This port currently does not perform CCD shape-casts against colliders here, so it returns
+/// `NoImpacts`. It is still exposed for pub parity.
+pub fn CCDSolver::predict_impacts_at_next_positions(
+  self : CCDSolver,
+  _bodies : RigidBodySet,
+  _dt : @core.Real,
+) -> PredictedImpacts {
+  self |> ignore
+  PredictedImpacts::NoImpacts
+}
+
+///|
+/// Find the first time-of-impact among the predicted impacts.
+///
+/// This port currently does not compute CCD impacts, so this always returns `None`.
+pub fn CCDSolver::find_first_impact(
+  self : CCDSolver,
+  impacts : PredictedImpacts,
+) -> (RigidBodyHandle, @core.Real)? {
+  self |> ignore
+  match impacts {
+    PredictedImpacts::Impacts(tois) =>
+      if tois.length() == 0 {
+        None
+      } else {
+        // Keep the earliest toi.
+        let mut best = tois[0]
+        for i in 1..<tois.length() {
+          let cand = tois[i]
+          if cand.1 < best.1 {
+            best = cand
+          }
+        }
+        Some(best)
+      }
+    _ => None
+  }
+}

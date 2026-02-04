@@ -158,17 +158,44 @@ pub fn MeshConverterError::to_string(self : MeshConverterError) -> String {
 }
 
 ///|
+pub struct TriMeshFlags {
+  value : Int
+}
+
+///|
+pub fn TriMeshFlags::empty() -> TriMeshFlags {
+  { value: 0 }
+}
+
+///|
+pub fn TriMeshFlags::from_bits(bits : Int) -> TriMeshFlags {
+  { value: bits }
+}
+
+///|
+pub fn TriMeshFlags::bits(self : TriMeshFlags) -> Int {
+  self.value
+}
+
+///|
 pub(all) enum MeshConverter {
   TriMesh
+  TriMeshWithFlags(TriMeshFlags)
   Aabb
   Obb
   ConvexHull
   ConvexDecomposition
+  ConvexDecompositionWithParams(VHACDParameters)
 }
 
 ///|
 pub fn MeshConverter::trimesh() -> MeshConverter {
   MeshConverter::TriMesh
+}
+
+///|
+pub fn MeshConverter::trimesh_with_flags(flags : TriMeshFlags) -> MeshConverter {
+  MeshConverter::TriMeshWithFlags(flags)
 }
 
 ///|
@@ -225,6 +252,12 @@ pub fn MeshConverter::apply(
         None => Err(MeshConverterError::TriMeshBuilderError)
         Some(shape) => Ok((shape, @core.Isometry2::identity()))
       }
+    MeshConverter::TriMeshWithFlags(_) =>
+      // This port does not implement TriMesh pre-processing flags; treat as regular trimesh.
+      match SharedShape::trimesh(vertices, indices) {
+        None => Err(MeshConverterError::TriMeshBuilderError)
+        Some(shape) => Ok((shape, @core.Isometry2::identity()))
+      }
     MeshConverter::Aabb =>
       match compute_aabb(vertices) {
         None => Err(MeshConverterError::EmptyVertices)
@@ -254,7 +287,21 @@ pub fn MeshConverter::apply(
       // NOTE: Convex decomposition isn't implemented yet; we approximate with the convex hull
       // for determinism and a usable fallback.
       MeshConverter::ConvexHull.apply(vertices, indices)
+    MeshConverter::ConvexDecompositionWithParams(params) => {
+      // Parameters are ignored for now; we keep the enum variant for pub parity.
+      params |> ignore
+      MeshConverter::ConvexHull.apply(vertices, indices)
+    }
   }
+}
+
+///|
+pub fn MeshConverter::convert(
+  self : MeshConverter,
+  vertices : Array[@core.Vec2],
+  indices : Array[(Int, Int, Int)],
+) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
+  self.apply(vertices, indices)
 }
 
 ///|
@@ -268,11 +315,7 @@ pub fn ColliderPair::new(
   a : ColliderHandle,
   b : ColliderHandle,
 ) -> ColliderPair {
-  if handle_less(a, b) {
-    { collider1: a, collider2: b }
-  } else {
-    { collider1: b, collider2: a }
-  }
+  { collider1: a, collider2: b }
 }
 
 ///|
@@ -283,6 +326,11 @@ pub fn ColliderPair::collider1(self : ColliderPair) -> ColliderHandle {
 ///|
 pub fn ColliderPair::collider2(self : ColliderPair) -> ColliderHandle {
   self.collider2
+}
+
+///|
+pub fn ColliderPair::swap(self : ColliderPair) -> ColliderPair {
+  ColliderPair::new(self.collider2, self.collider1)
 }
 
 ///|

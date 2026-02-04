@@ -93,6 +93,21 @@ pub fn SpringCoefficients::cfm_factor(
 }
 
 ///|
+/// Friction models for contact constraints.
+///
+/// Rapier exposes this in 3D; we include it unconditionally for pub parity.
+pub enum FrictionModel {
+  Simplified
+  Coulomb
+}
+
+///|
+pub fn FrictionModel::default() -> FrictionModel {
+  // Rapier's 3D default is `Simplified`.
+  FrictionModel::Simplified
+}
+
+///|
 pub struct IntegrationParameters {
   mut dt : @core.Real
   mut min_ccd_dt : @core.Real
@@ -107,6 +122,7 @@ pub struct IntegrationParameters {
   mut num_internal_stabilization_iterations : Int
   mut min_island_size : Int
   mut max_ccd_substeps : Int
+  friction_model : FrictionModel
 }
 
 ///|
@@ -124,6 +140,7 @@ pub fn IntegrationParameters::default() -> IntegrationParameters {
     normalized_max_corrective_velocity: 10.0F,
     normalized_prediction_distance: 0.002F,
     max_ccd_substeps: 1,
+    friction_model: FrictionModel::default(),
     length_unit: 1.0F,
   }
 }
@@ -173,6 +190,7 @@ pub fn IntegrationParameters::with_dt(
     num_internal_stabilization_iterations: self.num_internal_stabilization_iterations,
     min_island_size: self.min_island_size,
     max_ccd_substeps: self.max_ccd_substeps,
+    friction_model: self.friction_model,
   }
 }
 

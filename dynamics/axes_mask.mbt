@@ -49,21 +49,7 @@ pub fn AxesMask::insert(self : AxesMask, other : AxesMask) -> AxesMask {
 
 ///|
 pub fn AxesMask::remove(self : AxesMask, other : AxesMask) -> AxesMask {
-  // MoonBit doesn't have a bitwise-not operator, and we only need the
-  // dim2 axes set here.
-  let mask_values = [
-    AxesMask::lin_x().bits(),
-    AxesMask::lin_y().bits(),
-    AxesMask::ang_z().bits(),
-  ]
-  let mut bits = 0
-  for i in 0..<mask_values.length() {
-    let bit = mask_values[i]
-    if (self.bits & bit) != 0 && (other.bits & bit) == 0 {
-      bits = bits | bit
-    }
-  }
-  AxesMask::new(bits)
+  AxesMask::new(self.bits & Int::lnot(other.bits))
 }
 
 ///|
@@ -77,16 +63,31 @@ pub fn AxesMask::lin_y() -> AxesMask {
 }
 
 ///|
+pub fn AxesMask::lin_z() -> AxesMask {
+  AxesMask::new(1 << 2)
+}
+
+///|
+pub fn AxesMask::ang_x() -> AxesMask {
+  AxesMask::new(1 << 3)
+}
+
+///|
+pub fn AxesMask::ang_y() -> AxesMask {
+  AxesMask::new(1 << 4)
+}
+
+///|
 pub fn AxesMask::ang_z() -> AxesMask {
   AxesMask::new(1 << 5)
 }
 
 ///|
 pub fn AxesMask::lin_axes() -> AxesMask {
-  AxesMask::lin_x().insert(AxesMask::lin_y())
+  AxesMask::lin_x().insert(AxesMask::lin_y()).insert(AxesMask::lin_z())
 }
 
 ///|
 pub fn AxesMask::ang_axes() -> AxesMask {
-  AxesMask::ang_z()
+  AxesMask::ang_x().insert(AxesMask::ang_y()).insert(AxesMask::ang_z())
 }

@@ -701,6 +701,17 @@ pub fn ColliderBuilder3D::cone(
 }
 
 ///|
+pub fn ColliderBuilder3D::round_cone(
+  radius : @core.Real,
+  half_height : @core.Real,
+  border_radius : @core.Real,
+) -> ColliderBuilder3D {
+  // This port doesn't have a dedicated round-cone primitive yet.
+  // Approximate by inflating the cone dimensions.
+  ColliderBuilder3D::cone(radius + border_radius, half_height + border_radius)
+}
+
+///|
 pub fn ColliderBuilder3D::halfspace(normal : @core.Vec3) -> ColliderBuilder3D {
   {
     position: @core.Isometry3::identity(),
@@ -794,6 +805,26 @@ pub fn ColliderBuilder3D::trimesh(
     friction: 0.7F,
     restitution: 0.0F,
   })
+}
+
+///|
+pub fn ColliderBuilder3D::convex_mesh(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ColliderBuilder3D? {
+  // This port uses support-mapping convex hulls; indices are accepted for API parity.
+  indices |> ignore
+  ColliderBuilder3D::round_convex_hull(vertices, 0.0F)
+}
+
+///|
+pub fn ColliderBuilder3D::round_convex_mesh(
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+  border_radius : @core.Real,
+) -> ColliderBuilder3D? {
+  indices |> ignore
+  ColliderBuilder3D::round_convex_hull(vertices, border_radius)
 }
 
 ///|
@@ -1309,6 +1340,19 @@ pub fn ColliderBuilder3D::heightfield(
   } else {
     None
   }
+}
+
+///|
+pub fn ColliderBuilder3D::heightfield_with_flags(
+  heights : Array[@core.Real],
+  nrows : Int,
+  ncols : Int,
+  scale : @core.Vec3,
+  flags : Int,
+) -> ColliderBuilder3D? {
+  // Heightfield flags are not implemented yet; accept for pub parity.
+  flags |> ignore
+  ColliderBuilder3D::heightfield(heights, nrows, ncols, scale)
 }
 
 ///|

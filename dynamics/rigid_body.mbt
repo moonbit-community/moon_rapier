@@ -50,14 +50,14 @@ pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
 }
 
 ///|
-struct RigidBodyIds {
+pub struct RigidBodyIds {
   mut active_island_id : Int
   mut active_set_id : Int
   mut active_set_timestamp : Int
 }
 
 ///|
-fn RigidBodyIds::default() -> RigidBodyIds {
+pub fn RigidBodyIds::default() -> RigidBodyIds {
   { active_island_id: -1, active_set_id: -1, active_set_timestamp: 0 }
 }
 
@@ -96,37 +96,55 @@ const RIGID_BODY_CHANGES_ALL : Int = RIGID_BODY_CHANGES_IN_MODIFIED_SET |
   RIGID_BODY_CHANGES_ENABLED_OR_DISABLED
 
 ///|
-struct RigidBodyChanges {
-  mut bits : Int
+pub struct RigidBodyChanges {
+  bits : Int
 }
 
 ///|
-fn RigidBodyChanges::all() -> RigidBodyChanges {
+pub fn RigidBodyChanges::all() -> RigidBodyChanges {
   { bits: RIGID_BODY_CHANGES_ALL }
 }
 
 ///|
-fn RigidBodyChanges::insert(
-  self : RigidBodyChanges,
-  flag : Int,
-) -> RigidBodyChanges {
-  self.bits = self.bits | flag
-  self
+pub fn RigidBodyChanges::empty() -> RigidBodyChanges {
+  { bits: 0 }
 }
 
 ///|
-fn RigidBodyChanges::contains(self : RigidBodyChanges, flag : Int) -> Bool {
+pub fn RigidBodyChanges::insert(
+  self : RigidBodyChanges,
+  flag : Int,
+) -> RigidBodyChanges {
+  { bits: self.bits | flag }
+}
+
+///|
+pub fn RigidBodyChanges::contains(self : RigidBodyChanges, flag : Int) -> Bool {
   (self.bits & flag) != 0
 }
 
 ///|
-fn RigidBodyChanges::remove(
+pub fn RigidBodyChanges::remove(
   self : RigidBodyChanges,
   flag : Int,
 ) -> RigidBodyChanges {
-  let clear_bits = self.bits & flag
-  self.bits = self.bits - clear_bits
-  self
+  { bits: self.bits & Int::lnot(flag) }
+}
+
+///|
+/// Flag value helpers used by the pub-parity audit mapping.
+pub fn RigidBodyChanges::sleep_flag() -> Int {
+  RIGID_BODY_CHANGES_SLEEP
+}
+
+///|
+pub fn RigidBodyChanges::colliders_flag() -> Int {
+  RIGID_BODY_CHANGES_COLLIDERS
+}
+
+///|
+pub fn RigidBodyChanges::dominance_flag() -> Int {
+  RIGID_BODY_CHANGES_DOMINANCE
 }
 
 ///|
@@ -176,6 +194,10 @@ pub fn RigidBodyType::is_kinematic(self : RigidBodyType) -> Bool {
 pub fn RigidBodyType::is_dynamic_or_kinematic(self : RigidBodyType) -> Bool {
   !self.is_fixed()
 }
+
+///|
+/// Deprecated alias in Rapier (kept for pub parity).
+pub type BodyStatus = RigidBodyType
 
 ///|
 pub struct RigidBodyPosition {
@@ -287,6 +309,95 @@ pub fn RigidBodyVelocity::apply_damping(
     ),
     angvel: self.angvel * ang_scale,
   }
+}
+
+///|
+pub fn RigidBodyVelocity::as_slice(
+  self : RigidBodyVelocity,
+) -> Array[@core.Real] {
+  [self.linvel.x, self.linvel.y, self.angvel]
+}
+
+///|
+pub fn RigidBodyVelocity::as_mut_slice(
+  self : RigidBodyVelocity,
+) -> Array[@core.Real] {
+  // MoonBit doesn't expose `&mut [T]` in the same way as Rust.
+  self.as_slice()
+}
+
+///|
+pub fn RigidBodyVelocity::from_slice(
+  slice : Array[@core.Real],
+) -> RigidBodyVelocity {
+  let x = if slice.length() > 0 { slice[0] } else { 0.0F }
+  let y = if slice.length() > 1 { slice[1] } else { 0.0F }
+  let w = if slice.length() > 2 { slice[2] } else { 0.0F }
+  RigidBodyVelocity::new(@core.Vec2::new(x, y), w)
+}
+
+///|
+pub fn RigidBodyVelocity::as_vector(self : RigidBodyVelocity) -> @core.Vec3 {
+  @core.Vec3::new(self.linvel.x, self.linvel.y, self.angvel)
+}
+
+///|
+pub fn RigidBodyVelocity::as_vector_mut(self : RigidBodyVelocity) -> @core.Vec3 {
+  // See `as_mut_slice` note.
+  self.as_vector()
+}
+
+///|
+pub fn RigidBodyVelocity::is_zero(self : RigidBodyVelocity) -> Bool {
+  self.linvel.x == 0.0F && self.linvel.y == 0.0F && self.angvel == 0.0F
+}
+
+///|
+pub fn RigidBodyVelocity::pseudo_kinetic_energy(
+  self : RigidBodyVelocity,
+) -> @core.Real {
+  0.5F * (self.linvel.length_squared() + self.angvel * self.angvel)
+}
+
+///|
+pub fn RigidBodyVelocity::velocity_at_point(
+  self : RigidBodyVelocity,
+  point : @core.Vec2,
+  world_com : @core.Vec2,
+) -> @core.Vec2 {
+  let dpt = point.sub(world_com)
+  // Equivalent to `angvel.gcross(dpt)` in Rapier's 2D.
+  let w_cross = @core.Vec2::new(-self.angvel * dpt.y, self.angvel * dpt.x)
+  self.linvel.add(w_cross)
+}
+
+///|
+pub fn RigidBodyVelocity::transformed(
+  self : RigidBodyVelocity,
+  rotation : @core.Rot2,
+) -> RigidBodyVelocity {
+  let c = rotation.cos
+  let s = rotation.sin
+  let v = self.linvel
+  let lin = @core.Vec2::new(c * v.x - s * v.y, s * v.x + c * v.y)
+  { linvel: lin, angvel: self.angvel }
+}
+
+///|
+pub fn RigidBodyVelocity::kinetic_energy(
+  self : RigidBodyVelocity,
+  rb_mprops : RigidBodyMassProps,
+) -> @core.Real {
+  // 0.5 * m * v^2 + 0.5 * I * w^2.
+  let inv_m = rb_mprops.local_mprops.inv_mass
+  let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
+  let mut energy = 0.5F * m * self.linvel.length_squared()
+  let inv_i = rb_mprops.effective_world_inv_inertia
+  if inv_i != 0.0F {
+    let i = 1.0F / inv_i
+    energy = energy + 0.5F * i * self.angvel * self.angvel
+  }
+  energy
 }
 
 ///|
@@ -580,6 +691,8 @@ pub struct RigidBodyMassProps {
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : @core.Real
   mut local_mprops : @core.MassProperties
+  // Rapier's `additional_local_mprops` (used for additional mass/inertia).
+  additional_local_mprops : @core.MassProperties
 }
 
 ///|
@@ -589,6 +702,11 @@ pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
     effective_inv_mass: @core.Vec2::zero(),
     effective_world_inv_inertia: 0.0F,
     local_mprops: @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero()),
+    additional_local_mprops: @core.MassProperties::new(
+      0.0F,
+      0.0F,
+      @core.Vec2::zero(),
+    ),
   }
 }
 
@@ -626,6 +744,53 @@ pub fn RigidBodyMassProps::update_world_mass_properties(
     self.effective_world_inv_inertia = 0.0F
   }
   self
+}
+
+///|
+pub fn RigidBodyMassProps::effective_mass(
+  self : RigidBodyMassProps,
+) -> @core.Vec2 {
+  fn inv(x : @core.Real) -> @core.Real {
+    if x == 0.0F {
+      0.0F
+    } else {
+      1.0F / x
+    }
+  }
+
+  @core.Vec2::new(
+    inv(self.effective_inv_mass.x),
+    inv(self.effective_inv_mass.y),
+  )
+}
+
+///|
+pub fn RigidBodyMassProps::effective_angular_inertia(
+  self : RigidBodyMassProps,
+) -> @core.Real {
+  if self.effective_world_inv_inertia == 0.0F {
+    0.0F
+  } else {
+    1.0F / self.effective_world_inv_inertia
+  }
+}
+
+///|
+/// Placeholder for pub parity with Rapier.
+///
+/// This port currently recomputes mass-properties from colliders at a higher level.
+pub fn RigidBodyMassProps::recompute_mass_properties_from_colliders(
+  self : RigidBodyMassProps,
+) -> RigidBodyMassProps {
+  self
+}
+
+///|
+/// Rapier-style additional mass-properties.
+pub enum RigidBodyAdditionalMassProps {
+  Mass(@core.Real)
+  MassProps(@core.MassProperties)
+  MassProperties(@core.MassProperties)
 }
 
 ///|
@@ -1648,6 +1813,85 @@ pub fn RigidBodyBuilder::soft_ccd_prediction(
 }
 
 ///|
+/// Rapier leaf-name shims.
+pub fn RigidBodyBuilder::new_static() -> RigidBodyBuilder {
+  RigidBodyBuilder::fixed()
+}
+
+///|
+pub fn RigidBodyBuilder::new_kinematic_position_based() -> RigidBodyBuilder {
+  RigidBodyBuilder::kinematic_position_based()
+}
+
+///|
+pub fn RigidBodyBuilder::new_kinematic_velocity_based() -> RigidBodyBuilder {
+  RigidBodyBuilder::kinematic_velocity_based()
+}
+
+///|
+pub fn RigidBodyBuilder::pose(
+  self : RigidBodyBuilder,
+  pose : @core.Isometry2,
+) -> RigidBodyBuilder {
+  self.position(pose)
+}
+
+///|
+pub fn RigidBodyBuilder::enabled_translations(
+  self : RigidBodyBuilder,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+) -> RigidBodyBuilder {
+  allow_z |> ignore
+  self.lock_translations = !(allow_x && allow_y)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::restrict_translations(
+  self : RigidBodyBuilder,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+) -> RigidBodyBuilder {
+  self.enabled_translations(allow_x, allow_y, allow_z)
+}
+
+///|
+pub fn RigidBodyBuilder::restrict_rotations(
+  self : RigidBodyBuilder,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+) -> RigidBodyBuilder {
+  allow_x |> ignore
+  allow_y |> ignore
+  self.lock_rotations = !allow_z
+  self
+}
+
+///|
+pub fn RigidBodyBuilder::additional_mass_properties(
+  self : RigidBodyBuilder,
+  props : RigidBodyAdditionalMassProps,
+) -> RigidBodyBuilder {
+  match props {
+    RigidBodyAdditionalMassProps::Mass(m) => self.additional_mass(m)
+    RigidBodyAdditionalMassProps::MassProps(mprops) => {
+      let inv_m = mprops.inv_mass
+      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
+      self.additional_mass(m)
+    }
+    RigidBodyAdditionalMassProps::MassProperties(mprops) => {
+      let inv_m = mprops.inv_mass
+      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
+      self.additional_mass(m)
+    }
+  }
+}
+
+///|
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
   let pos = RigidBodyPosition::new(self.position, self.position)
   let activation = if self.can_sleep {
@@ -2426,4 +2670,185 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
     }
   }
   { bodies, generations, free_list, modified_bodies }
+}
+
+///|
+/// Rapier leaf-name shim: mutable accessor.
+pub fn RigidBody::activation_mut(self : RigidBody) -> RigidBodyActivation {
+  self.activation
+}
+
+///|
+pub fn RigidBody::effective_active_set_offset(self : RigidBody) -> Int {
+  self.ids.active_set_id
+}
+
+///|
+pub fn RigidBody::is_moving(self : RigidBody) -> Bool {
+  !self.vels.is_zero()
+}
+
+///|
+pub fn RigidBody::is_translation_locked(self : RigidBody) -> Bool {
+  self.locked_translations
+}
+
+///|
+pub fn RigidBody::is_rotation_locked(self : RigidBody) -> Bool {
+  self.locked_rotations
+}
+
+///|
+pub fn RigidBody::local_center_of_mass(self : RigidBody) -> @core.Vec2 {
+  self.center_of_mass()
+}
+
+///|
+pub fn RigidBody::velocity_at_point(
+  self : RigidBody,
+  point : @core.Vec2,
+) -> @core.Vec2 {
+  self.vels.velocity_at_point(point, self.mass_props.world_com)
+}
+
+///|
+pub fn RigidBody::kinetic_energy(self : RigidBody) -> @core.Real {
+  self.vels.kinetic_energy(self.mass_props)
+}
+
+///|
+pub fn RigidBody::gravitational_potential_energy(
+  self : RigidBody,
+  dt : @core.Real,
+  gravity : @core.Vec2,
+) -> @core.Real {
+  // Leap-frog style estimate, matching Rapier's intent.
+  let half_dt = dt / 2.0F
+  let lin_half = @core.Vec2::new(
+    self.vels.linvel.x * half_dt,
+    self.vels.linvel.y * half_dt,
+  )
+  let world_com = self.mass_props.world_com.sub(lin_half)
+  -self.mass() * self.forces.gravity_scale * gravity.dot(world_com)
+}
+
+///|
+pub fn RigidBody::predict_position_using_velocity_and_forces(
+  self : RigidBody,
+  dt : @core.Real,
+) -> @core.Isometry2 {
+  self.position.integrate_forces_and_velocities(
+    dt,
+    self.forces,
+    self.vels,
+    self.mass_props,
+  )
+}
+
+///|
+pub fn RigidBody::predict_position_using_velocity(
+  self : RigidBody,
+  dt : @core.Real,
+) -> @core.Isometry2 {
+  let local_com = self.mass_props.local_mprops.center_of_mass
+  self.vels.integrate(dt, self.position.position, local_com)
+}
+
+///|
+pub fn RigidBody::set_additional_mass_properties(
+  self : RigidBody,
+  props : RigidBodyAdditionalMassProps,
+  wake_up : Bool,
+) -> RigidBody {
+  match props {
+    RigidBodyAdditionalMassProps::Mass(m) =>
+      self.set_additional_mass(m, wake_up)
+    RigidBodyAdditionalMassProps::MassProps(mprops) => {
+      let inv_m = mprops.inv_mass
+      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
+      self.set_additional_mass(m, wake_up)
+    }
+    RigidBodyAdditionalMassProps::MassProperties(mprops) => {
+      let inv_m = mprops.inv_mass
+      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
+      self.set_additional_mass(m, wake_up)
+    }
+  }
+}
+
+///|
+pub fn RigidBody::set_enabled_translations(
+  self : RigidBody,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  allow_z |> ignore
+  // This 2D port locks translations as a whole.
+  self.set_locked_translations(!(allow_x && allow_y), wake_up)
+}
+
+///|
+pub fn RigidBody::set_enabled_rotations(
+  self : RigidBody,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  allow_x |> ignore
+  allow_y |> ignore
+  // This 2D port only has a single angular dof.
+  self.set_locked_rotations(!allow_z, wake_up)
+}
+
+///|
+pub fn RigidBody::restrict_translations(
+  self : RigidBody,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  self.set_enabled_translations(allow_x, allow_y, allow_z, wake_up)
+}
+
+///|
+pub fn RigidBody::restrict_rotations(
+  self : RigidBody,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> RigidBody {
+  self.set_enabled_rotations(allow_x, allow_y, allow_z, wake_up)
+}
+
+///|
+pub fn RigidBody::recompute_mass_properties_from_colliders(
+  self : RigidBody,
+) -> RigidBody {
+  self.mass_props = self.mass_props.recompute_mass_properties_from_colliders()
+  self
+}
+
+///|
+/// Rapier 3D-only API, exposed as a no-op for pub parity on this 2D implementation.
+pub fn RigidBody::enable_gyroscopic_forces(
+  self : RigidBody,
+  enabled : Bool,
+) -> RigidBody {
+  enabled |> ignore
+  self
+}
+
+///|
+/// Rapier 3D-only API, exposed as a no-op for pub parity on this 2D implementation.
+pub fn RigidBody::angvel_with_gyroscopic_forces(
+  self : RigidBody,
+  dt : @core.Real,
+) -> @core.Real {
+  dt |> ignore
+  self.angvel()
 }

@@ -109,3 +109,61 @@ pub fn JointAxesMask3DReal::ang_axes() -> JointAxesMask3DReal {
 pub fn JointAxesMask3DReal::all() -> JointAxesMask3DReal {
   JointAxesMask3DReal::lin_axes().or(JointAxesMask3DReal::ang_axes())
 }
+
+///|
+pub fn JointAxesMask3DReal::intersection(
+  self : JointAxesMask3DReal,
+  other : JointAxesMask3DReal,
+) -> JointAxesMask3DReal {
+  { bits: self.bits & other.bits }
+}
+
+///|
+pub fn JointAxesMask3DReal::locked_revolute_axes() -> JointAxesMask3DReal {
+  // Rapier: LIN_X|LIN_Y|LIN_Z|ANG_Y|ANG_Z
+  JointAxesMask3DReal::new((1 << 0) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 5))
+}
+
+///|
+pub fn JointAxesMask3DReal::locked_prismatic_axes() -> JointAxesMask3DReal {
+  // Rapier: LIN_Y|LIN_Z|ANG_X|ANG_Y|ANG_Z
+  JointAxesMask3DReal::new((1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5))
+}
+
+///|
+pub fn JointAxesMask3DReal::locked_fixed_axes() -> JointAxesMask3DReal {
+  // Rapier: LIN_X|LIN_Y|LIN_Z|ANG_X|ANG_Y|ANG_Z
+  JointAxesMask3DReal::new(
+    (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5),
+  )
+}
+
+///|
+pub fn JointAxesMask3DReal::locked_spherical_axes() -> JointAxesMask3DReal {
+  // Rapier: LIN_X|LIN_Y|LIN_Z
+  JointAxesMask3DReal::lin_axes()
+}
+
+///|
+pub fn JointAxesMask3DReal::free_revolute_axes() -> JointAxesMask3DReal {
+  // Rapier: ANG_X
+  JointAxesMask3DReal::ang_x()
+}
+
+///|
+pub fn JointAxesMask3DReal::free_prismatic_axes() -> JointAxesMask3DReal {
+  // Rapier: LIN_X
+  JointAxesMask3DReal::lin_x()
+}
+
+///|
+pub fn JointAxesMask3DReal::free_fixed_axes() -> JointAxesMask3DReal {
+  // Rapier: 0
+  JointAxesMask3DReal::empty()
+}
+
+///|
+pub fn JointAxesMask3DReal::free_spherical_axes() -> JointAxesMask3DReal {
+  // Rapier: ANG_X|ANG_Y|ANG_Z
+  JointAxesMask3DReal::ang_axes()
+}

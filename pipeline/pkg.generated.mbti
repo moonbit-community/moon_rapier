@@ -4,6 +4,7 @@ package "Milky2018/moon_rapier/pipeline"
 import {
   "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/counters",
   "Milky2018/moon_rapier/dynamics",
   "moonbitlang/core/hashmap",
 }
@@ -28,6 +29,15 @@ pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet
 // Errors
 
 // Types and methods
+pub struct ChannelEventCollector {
+  handler : EventHandler
+}
+pub fn ChannelEventCollector::handle_collision_event(Self, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit
+pub fn ChannelEventCollector::handle_contact_force_event(Self, Float, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.ContactForceEvent) -> Unit
+pub fn ChannelEventCollector::new() -> Self
+pub fn ChannelEventCollector::take_collision_events(Self) -> Array[@collision.CollisionEvent]
+pub fn ChannelEventCollector::take_contact_force_events(Self) -> Array[@collision.ContactForceEvent]
+
 pub struct CollisionPipeline {
 }
 pub fn CollisionPipeline::new() -> Self
@@ -55,6 +65,24 @@ pub struct ContactImpulseCacheEntry {
   impulse_n : Float
   impulse_t : Float
 }
+
+pub struct ContactModificationContext {
+  bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  rigid_body1 : @dynamics.RigidBodyHandle?
+  rigid_body2 : @dynamics.RigidBodyHandle?
+  manifold : @collision.ContactManifold
+  solver_contacts : Array[@collision.SolverContact]
+  mut normal : @core.Vec2
+  mut user_data : Int
+}
+pub fn ContactModificationContext::new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @collision.ContactManifold, Array[@collision.SolverContact], @core.Vec2, Int) -> Self
+pub fn ContactModificationContext::normal(Self) -> @core.Vec2
+pub fn ContactModificationContext::set_normal(Self, @core.Vec2) -> Unit
+pub fn ContactModificationContext::set_user_data(Self, Int) -> Unit
+pub fn ContactModificationContext::update_as_oneway_platform(Self, @core.Vec2, Float) -> Unit
 
 pub struct ContactSolverCache3D {
   entries : @hashmap.HashMap[(Int, Int, Int, Int), Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]]
@@ -164,6 +192,15 @@ pub fn EventHandler3D::new() -> Self
 pub fn EventHandler3D::push_collision_event(Self, @collision.CollisionEvent3D) -> Unit
 pub fn EventHandler3D::take_collision_events(Self) -> Array[@collision.CollisionEvent3D]
 
+pub struct PairFilterContext {
+  bodies : @dynamics.RigidBodySet
+  colliders : @collision.ColliderSet
+  collider1 : @collision.ColliderHandle
+  collider2 : @collision.ColliderHandle
+  rigid_body1 : @dynamics.RigidBodyHandle?
+  rigid_body2 : @dynamics.RigidBodyHandle?
+}
+
 pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
@@ -179,6 +216,7 @@ pub fn PhysicsHooks::new() -> Self
 pub struct PhysicsPipeline {
   prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags, Bool)]
   contact_solver_cache : Array[ContactImpulseCacheEntry]
+  counters : @counters.Counters
 }
 pub fn PhysicsPipeline::new() -> Self
 pub fn PhysicsPipeline::step(Self, @core.Vec2, @dynamics.IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
@@ -197,12 +235,39 @@ pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
   sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
+  contact_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
 }
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
+
+pub struct SolverBodies {
+  vels : Array[SolverVel]
+  poses : Array[SolverPose]
+}
+pub fn SolverBodies::clear(Self) -> Unit
+pub fn SolverBodies::copy_from(Self, Int, @dynamics.RigidBody) -> Unit
+pub fn SolverBodies::default() -> Self
+pub fn SolverBodies::len(Self) -> Int
+pub fn SolverBodies::resize(Self, Int) -> Unit
+pub fn SolverBodies::writeback_vels(Self, @dynamics.RigidBodySet) -> Unit
+
+pub struct SolverPose {
+  mut translation : @core.Vec2
+  mut rotation : @core.Rot2
+  mut im : @core.Vec2
+  mut ii : Float
+  padding : Float
+}
+pub fn SolverPose::zero() -> Self
+
+pub struct SolverVel {
+  mut linear : @core.Vec2
+  mut angular : Float
+}
+pub fn SolverVel::zero() -> Self
 
 // Type aliases
 pub using @dynamics {type IntegrationParameters}
