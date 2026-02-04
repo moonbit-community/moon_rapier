@@ -235,6 +235,7 @@ pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
   sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
+  contact_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
 }
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
