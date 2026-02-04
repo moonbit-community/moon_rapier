@@ -437,6 +437,7 @@ pub(all) enum Shape {
   CapsuleY(@core.Real, @core.Real)
   Segment(@core.Vec2, @core.Vec2)
   Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  HeightField(Array[@core.Real], @core.Vec2)
   ConvexPolygon(Array[@core.Vec2])
   TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
   Compound(Array[(@core.Isometry2, Shape)])
@@ -933,23 +934,34 @@ pub fn ColliderBuilder::heightfield(
   heights : Array[@core.Real],
   scale : @core.Vec2,
 ) -> ColliderBuilder {
-  if heights.length() == 0 {
-    // Degenerate heightfield: empty polyline.
-    return ColliderBuilder::polyline([], None)
+  let hs : Array[@core.Real] = []
+  for i in 0..<heights.length() {
+    hs.push(heights[i])
   }
+  ColliderBuilder::new(Shape::HeightField(hs, scale))
+}
+
+///|
+fn heightfield_vertices(
+  heights : Array[@core.Real],
+  scale : @core.Vec2,
+) -> Array[@core.Vec2] {
   let vertices : Array[@core.Vec2] = []
+  if heights.length() == 0 {
+    return vertices
+  }
   if heights.length() == 1 {
     vertices.push(@core.Vec2::new(0.0F, heights[0] * scale.y))
-  } else {
-    let denom = Float::from_double((heights.length() - 1).to_double())
-    let step = scale.x / denom
-    for i in 0..<heights.length() {
-      let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
-      let y = heights[i] * scale.y
-      vertices.push(@core.Vec2::new(x, y))
-    }
+    return vertices
   }
-  ColliderBuilder::polyline(vertices, None)
+  let denom = Float::from_double((heights.length() - 1).to_double())
+  let step = scale.x / denom
+  for i in 0..<heights.length() {
+    let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
+    let y = heights[i] * scale.y
+    vertices.push(@core.Vec2::new(x, y))
+  }
+  vertices
 }
 
 ///|
@@ -1806,6 +1818,8 @@ fn shape_mass_properties(
     }
     Shape::Polyline(_, _) =>
       @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+    Shape::HeightField(_, _) =>
+      @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
     Shape::ConvexPolygon(vertices) => {
       if vertices.length() < 3 {
         return @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
@@ -2345,6 +2359,15 @@ fn write_points(sb : StringBuilder, points : Array[@core.Vec2]) -> Unit {
 }
 
 ///|
+fn write_reals(sb : StringBuilder, values : Array[@core.Real]) -> Unit {
+  sb.write_object(values.length())
+  for i in 0..<values.length() {
+    sb.write_char(';')
+    sb.write_object(values[i])
+  }
+}
+
+///|
 fn write_pairs(sb : StringBuilder, pairs : Array[(Int, Int)]) -> Unit {
   sb.write_object(pairs.length())
   for i in 0..<pairs.length() {
@@ -2429,6 +2452,13 @@ fn write_shape(sb : StringBuilder, shape : Shape) -> Unit {
       }
       sb.write_char(')')
     }
+    Shape::HeightField(heights, scale) => {
+      sb.write_string("hf(")
+      write_reals(sb, heights)
+      sb.write_char('|')
+      write_vec2(sb, scale)
+      sb.write_char(')')
+    }
     Shape::ConvexPolygon(points) => {
       sb.write_string("v(")
       write_points(sb, points)
@@ -2491,6 +2521,18 @@ fn parse_points(text : String) -> Array[@core.Vec2] {
     }
   }
   points
+}
+
+///|
+fn parse_reals(text : String) -> Array[@core.Real] {
+  let parts = split_values(text, ";")
+  let values : Array[@core.Real] = []
+  if parts.length() > 1 {
+    for i in 1..<parts.length() {
+      values.push(parse_real_value(parts[i]))
+    }
+  }
+  values
 }
 
 ///|
@@ -2588,6 +2630,16 @@ fn parse_shape(text : String) -> Shape {
       None
     }
     Shape::Polyline(points, indices)
+  } else if text.strip_prefix("hf("[:]) is Some(v) &&
+    v.strip_suffix(")"[:]) is Some(inner) {
+    let parts = split_values(inner.to_string(), "|")
+    let heights = if parts.length() > 0 { parse_reals(parts[0]) } else { [] }
+    let scale = if parts.length() > 1 {
+      parse_vec2(parts[1])
+    } else {
+      @core.Vec2::new(1.0F, 1.0F)
+    }
+    Shape::HeightField(heights, scale)
   } else if text.strip_prefix("v("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
     Shape::ConvexPolygon(parse_points(inner.to_string()))
@@ -3689,6 +3741,16 @@ fn shapes_intersect(
     }
     _ => ()
   }
+  let shape1 = match shape1 {
+    Shape::HeightField(heights, scale) =>
+      Shape::Polyline(heightfield_vertices(heights, scale), None)
+    _ => shape1
+  }
+  let shape2 = match shape2 {
+    Shape::HeightField(heights, scale) =>
+      Shape::Polyline(heightfield_vertices(heights, scale), None)
+    _ => shape2
+  }
   fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
     a.x * b.y - a.y * b.x
   }
@@ -4257,6 +4319,15 @@ fn shapes_intersect(
           false
         }
       }
+      Shape::HeightField(heights, scale) =>
+        halfspace_intersects_shape_basic(
+          hs_pos,
+          hs_rot,
+          outward_normal_local,
+          Shape::Polyline(heightfield_vertices(heights, scale), None),
+          other_pos,
+          other_rot,
+        )
       Shape::ConvexPolygon(vertices) => {
         let vs = convex_polygon_world_vertices(other_pos, other_rot, vertices)
         for i in 0..<vs.length() {
@@ -6741,12 +6812,22 @@ fn build_contact_pair(
 
     let (shape1, radius1) = unwrap_round_shape(c1.shape)
     let (shape2, radius2) = unwrap_round_shape(c2.shape)
+    let shape1_norm = match shape1 {
+      Shape::HeightField(heights, scale) =>
+        Shape::Polyline(heightfield_vertices(heights, scale), None)
+      _ => shape1
+    }
+    let shape2_norm = match shape2 {
+      Shape::HeightField(heights, scale) =>
+        Shape::Polyline(heightfield_vertices(heights, scale), None)
+      _ => shape2
+    }
     let c1_base = c1
-    c1_base.shape = shape1
+    c1_base.shape = shape1_norm
     let c2_base = c2
-    c2_base.shape = shape2
+    c2_base.shape = shape2_norm
     let out : Array[ContactManifold] = []
-    match (shape1, shape2) {
+    match (shape1_norm, shape2_norm) {
       (Shape::HalfSpace(n), Shape::Ball(r)) =>
         if halfspace_ball_manifold(prediction_distance, c1_base, n, c2_base, r)
           is Some(m) {
@@ -7872,6 +7953,13 @@ fn compute_shape_aabb(
           max: @core.Vec2::new(max_x + pd, max_y + pd),
         }
       }
+    Shape::HeightField(heights, scale) =>
+      compute_shape_aabb(
+        Shape::Polyline(heightfield_vertices(heights, scale), None),
+        center,
+        rotation,
+        pd,
+      )
     Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         Aabb::{ min: center, max: center }

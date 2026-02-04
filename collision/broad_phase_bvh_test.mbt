@@ -251,6 +251,47 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
+    Shape::HeightField(heights, scale) => {
+      let vertices : Array[@core.Vec2] = []
+      if heights.length() == 0 {
+        return (center, center)
+      }
+      if heights.length() == 1 {
+        vertices.push(@core.Vec2::new(0.0F, heights[0] * scale.y))
+      } else {
+        let denom = Float::from_double((heights.length() - 1).to_double())
+        let step = scale.x / denom
+        for i in 0..<heights.length() {
+          let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
+          let y = heights[i] * scale.y
+          vertices.push(@core.Vec2::new(x, y))
+        }
+      }
+      let rot = @core.Rot2::from_angle(rotation)
+      let mut min_x = 1.0e30F
+      let mut max_x = -1.0e30F
+      let mut min_y = 1.0e30F
+      let mut max_y = -1.0e30F
+      for i in 0..<vertices.length() {
+        let wp = center.add(rot.rotate_vec2(vertices[i]))
+        if wp.x < min_x {
+          min_x = wp.x
+        }
+        if wp.x > max_x {
+          max_x = wp.x
+        }
+        if wp.y < min_y {
+          min_y = wp.y
+        }
+        if wp.y > max_y {
+          max_y = wp.y
+        }
+      }
+      (
+        @core.Vec2::new(min_x - pd, min_y - pd),
+        @core.Vec2::new(max_x + pd, max_y + pd),
+      )
+    }
     Shape::ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         (center, center)

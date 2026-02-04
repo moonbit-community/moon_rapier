@@ -410,6 +410,17 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
+    @collision.Shape::HeightField(heights, scale) => {
+      let hw = @core.abs(scale.x) * 0.5F
+      let mut hh = 0.0F
+      for i in 0..<heights.length() {
+        let ay = @core.abs(heights[i] * scale.y)
+        if ay > hh {
+          hh = ay
+        }
+      }
+      (hw, hh)
+    }
     @collision.Shape::ConvexPolygon(vertices) => {
       let mut hw = 0.0F
       let mut hh = 0.0F

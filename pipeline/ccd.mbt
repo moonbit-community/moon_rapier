@@ -24,6 +24,7 @@ fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
     @collision.Shape::CapsuleY(_, radius) => radius
     @collision.Shape::Segment(_, _) => 0.0F
     @collision.Shape::Polyline(_, _) => 0.0F
+    @collision.Shape::HeightField(_, _) => 0.0F
     @collision.Shape::ConvexPolygon(_) => 0.0F
     @collision.Shape::TriMesh(_, _) => 0.0F
     @collision.Shape::Compound(parts) => {
@@ -74,6 +75,16 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
         }
       }
       best
+    }
+    @collision.Shape::HeightField(heights, scale) => {
+      let mut max_abs_y = 0.0F
+      for i in 0..<heights.length() {
+        let ay = @core.abs(heights[i] * scale.y)
+        if ay > max_abs_y {
+          max_abs_y = ay
+        }
+      }
+      Float::sqrt(0.5F * scale.x * (0.5F * scale.x) + max_abs_y * max_abs_y)
     }
     @collision.Shape::ConvexPolygon(vertices) => {
       let mut best = 0.0F
