@@ -453,6 +453,8 @@ fn cc3d_real_handle_slopes(
 ///|
 fn cc3d_real_detect_ground_contact(
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   position : @core.Isometry3,
   up : @core.Vec3,
@@ -463,7 +465,8 @@ fn cc3d_real_detect_ground_contact(
   let options = @collision.ShapeCastOptions3::new(prediction, true).with_target_distance(
     offset,
   )
-  if query.cast_shape(position, down, shape, options) is Some(hit) {
+  if query.cast_shape(bodies, colliders, position, down, shape, options)
+    is Some(hit) {
     let normal = hit.1.normal()
     // For the controller to be grounded, the angle between the contact normal and the up vector
     // has to be smaller than acos(1.0e-3) ≈ 89.94 degrees.
@@ -480,6 +483,8 @@ fn cc3d_real_detect_ground_contact(
 ///|
 fn cc3d_real_detect_grounded(
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   position : @core.Isometry3,
   up : @core.Vec3,
@@ -487,7 +492,7 @@ fn cc3d_real_detect_grounded(
   offset : @core.Real,
 ) -> Bool {
   cc3d_real_detect_ground_contact(
-    query, shape, position, up, prediction, offset,
+    query, bodies, colliders, shape, position, up, prediction, offset,
   )
   is Some(_)
 }
@@ -495,6 +500,8 @@ fn cc3d_real_detect_grounded(
 ///|
 fn cc3d_real_grounded_info(
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   position : @core.Isometry3,
   up : @core.Vec3,
@@ -502,13 +509,13 @@ fn cc3d_real_grounded_info(
   offset : @core.Real,
 ) -> (Bool, @core.Vec3) {
   if cc3d_real_detect_ground_contact(
-      query, shape, position, up, prediction, offset,
+      query, bodies, colliders, shape, position, up, prediction, offset,
     )
     is Some(hit) {
     let handle = hit.0
-    if query.collider(handle) is Some(co) &&
+    if query.collider(colliders, handle) is Some(co) &&
       co.parent is Some(parent) &&
-      query.rigid_body(parent) is Some(body) &&
+      query.rigid_body(bodies, parent) is Some(body) &&
       body.body_type().is_kinematic() {
       (true, body.linvel())
     } else {
@@ -522,6 +529,8 @@ fn cc3d_real_grounded_info(
 ///|
 fn cc3d_real_attempt_autostep(
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   start_pos : @core.Isometry3,
   remaining : @core.Vec3,
@@ -549,9 +558,9 @@ fn cc3d_real_attempt_autostep(
   }
   if !autostep.include_dynamic_bodies() {
     // If the obstacle is dynamic, ignore it (Rapier parity).
-    if query.collider(stair_handle) is Some(co) &&
+    if query.collider(colliders, stair_handle) is Some(co) &&
       co.parent() is Some(parent) &&
-      query.rigid_body(parent) is Some(body) &&
+      query.rigid_body(bodies, parent) is Some(body) &&
       body.body_type().is_dynamic() {
       return None
     }
@@ -570,6 +579,8 @@ fn cc3d_real_attempt_autostep(
 
   // Can we go up?
   if query.cast_shape(
+      bodies,
+      colliders,
       start_pos,
       up,
       shape,
@@ -583,6 +594,8 @@ fn cc3d_real_attempt_autostep(
 
   // Is there enough room on the stair after stepping?
   if query.cast_shape(
+      bodies,
+      colliders,
       shifted_pos,
       horizontal_dir,
       shape,
@@ -600,6 +613,8 @@ fn cc3d_real_attempt_autostep(
     shifted_pos.rotation,
   )
   if query.cast_shape(
+      bodies,
+      colliders,
       pos_on_stair,
       down,
       shape,
@@ -623,6 +638,8 @@ fn cc3d_real_attempt_autostep(
 
   // Find actual step height.
   let toi_down = if query.cast_shape(
+      bodies,
+      colliders,
       pos_on_stair,
       down,
       shape,
@@ -650,6 +667,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
   self : KinematicCharacterController3DReal,
   dt : @core.Real,
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   position : @core.Isometry3,
   translation : @core.Vec3,
@@ -672,6 +691,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
   // Rapier parity: `check_and_fix_penetrations` is currently a stub upstream.
   let grounded_at_start = cc3d_real_grounded_info(
       query,
+      bodies,
+      colliders,
       shape,
       @core.Isometry3::new(
         position.translation.add(result_translation),
@@ -698,7 +719,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
     let options = @collision.ShapeCastOptions3::new(dist, false).with_target_distance(
       offset,
     )
-    if query.cast_shape(current_pos, dir, shape, options) is Some(hit) {
+    if query.cast_shape(bodies, colliders, current_pos, dir, shape, options)
+      is Some(hit) {
       let toi = hit.1.toi()
       let allowed_dist = toi
       let applied = dir.scale(allowed_dist)
@@ -719,6 +741,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
       if controller.autostep is Some(autostep) && hit_info.is_wall {
         if cc3d_real_attempt_autostep(
             query,
+            bodies,
+            colliders,
             shape,
             event_pos,
             remaining,
@@ -746,6 +770,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
     grounded = grounded ||
       cc3d_real_detect_grounded(
         query,
+        bodies,
+        colliders,
         shape,
         @core.Isometry3::new(
           position.translation.add(result_translation),
@@ -761,7 +787,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
   }
   if iters == 0 {
     grounded = cc3d_real_grounded_info(
-        query, shape, position, up, prediction, offset,
+        query, bodies, colliders, shape, position, up, prediction, offset,
       ).0
   }
   if grounded_at_start &&
@@ -777,7 +803,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
       let options = @collision.ShapeCastOptions3::new(snap_dist, false).with_target_distance(
         offset,
       )
-      if query.cast_shape(current_pos, down, shape, options) is Some(hit) {
+      if query.cast_shape(bodies, colliders, current_pos, down, shape, options)
+        is Some(hit) {
         result_translation = result_translation.add(down.scale(hit.1.toi()))
         grounded = true
       }
@@ -788,7 +815,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
     position.rotation,
   )
   let end_info = cc3d_real_grounded_info(
-    query, shape, final_pos, up, prediction, offset,
+    query, bodies, colliders, shape, final_pos, up, prediction, offset,
   )
   if end_info.0 {
     grounded = true
@@ -806,6 +833,8 @@ pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(
   self : KinematicCharacterController3DReal,
   dt : @core.Real,
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   character_shape : @collision.Shape3D,
   character_mass : @core.Real,
   collisions : Array[CharacterCollision3DReal],
@@ -832,9 +861,9 @@ pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(
     let vel_to_transfer = to_transfer.scale(1.0F / dt)
     let point = hit.point()
     let handle = collision.handle()
-    if query.collider(handle) is Some(co) &&
+    if query.collider(colliders, handle) is Some(co) &&
       co.parent() is Some(parent) &&
-      query.rigid_body_mut(parent) is Some(body) {
+      query.rigid_body_mut(bodies, parent) is Some(body) {
       if !body.body_type().is_dynamic() {
         continue
       }

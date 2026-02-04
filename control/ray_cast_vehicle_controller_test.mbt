@@ -77,7 +77,7 @@ test "raycast vehicle controller: accelerates on flat ground (2D)" {
   for _ in 0..<240 {
     let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
     let queries = @collision.QueryPipelineMut::new(filter, bodies, colliders)
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies, colliders)
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,
@@ -87,7 +87,7 @@ test "raycast vehicle controller: accelerates on flat ground (2D)" {
   // Refresh wheel contact info without adding impulses.
   let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
   let queries = @collision.QueryPipelineMut::new(filter, bodies, colliders)
-  vehicle.update_vehicle(0.0F, queries)
+  vehicle.update_vehicle(0.0F, queries, bodies, colliders)
   inspect(vehicle.wheels.length() == 2, content="true")
   inspect(vehicle.wheels[0].raycast_info().is_in_contact, content="true")
   if bodies.get(chassis) is Some(rb) {
@@ -179,7 +179,7 @@ test "raycast vehicle controller: climbs a mild slope (2D port)" {
   for _ in 0..<480 {
     let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
     let queries = @collision.QueryPipelineMut::new(filter, bodies, colliders)
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies, colliders)
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,
@@ -268,7 +268,7 @@ test "raycast vehicle controller: braking reduces forward speed (2D)" {
   for _ in 0..<180 {
     let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
     let queries = @collision.QueryPipelineMut::new(filter, bodies, colliders)
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies, colliders)
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,
@@ -288,7 +288,7 @@ test "raycast vehicle controller: braking reduces forward speed (2D)" {
   for _ in 0..<180 {
     let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
     let queries = @collision.QueryPipelineMut::new(filter, bodies, colliders)
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies, colliders)
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,

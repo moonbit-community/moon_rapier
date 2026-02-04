@@ -193,7 +193,7 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
     colliders,
   )
   for _ in 0..<240 {
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies, colliders)
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )

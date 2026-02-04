@@ -37,7 +37,7 @@ test "query pipeline cast_ray hits nearest collider" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, ch1), content="true")
     inspect(!ColliderHandle::equals(hit.0, ch2), content="true")
     inspect(@core.abs(hit.1 - 9.5F) < 1.0e-4F, content="true")
@@ -70,7 +70,7 @@ test "query pipeline intersect_ray returns all hits" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  let hits = query_pipeline.intersect_ray(ray, 100.0F, true)
+  let hits = query_pipeline.intersect_ray(bodies, colliders, ray, 100.0F, true)
   let mut found1 = false
   let mut found2 = false
   for i in 0..<hits.length() {
@@ -104,13 +104,15 @@ test "query pipeline cast_ray solid vs hollow" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(0.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 10.0F, true) is Some(hit_solid) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 10.0F, true)
+    is Some(hit_solid) {
     inspect(ColliderHandle::equals(hit_solid.0, ch1), content="true")
     inspect(@core.abs(hit_solid.1) < 1.0e-6F, content="true")
   } else {
     inspect(false, content="true")
   }
-  if query_pipeline.cast_ray(ray, 10.0F, false) is Some(hit_hollow) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 10.0F, false)
+    is Some(hit_hollow) {
     inspect(ColliderHandle::equals(hit_hollow.0, ch1), content="true")
     inspect(@core.abs(hit_hollow.1 - 1.0F) < 1.0e-4F, content="true")
   } else {
@@ -131,7 +133,10 @@ test "query pipeline cast_ray_and_get_normal returns toi and outward normal" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray_and_get_normal(
+      bodies, colliders, ray, 100.0F, true,
+    )
+    is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.toi() - 9.0F) < 1.0e-4F, content="true")
     let n = hit.1.normal()
@@ -159,7 +164,9 @@ test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(0.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true)
+  if query_pipeline.cast_ray_and_get_normal(
+      bodies, colliders, ray, 100.0F, true,
+    )
     is Some(hit_solid) {
     inspect(@core.abs(hit_solid.1.toi()) < 1.0e-6F, content="true")
     let n = hit_solid.1.normal()
@@ -169,7 +176,9 @@ test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
   } else {
     inspect(false, content="true")
   }
-  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, false)
+  if query_pipeline.cast_ray_and_get_normal(
+      bodies, colliders, ray, 100.0F, false,
+    )
     is Some(hit_hollow) {
     inspect(@core.abs(hit_hollow.1.toi() - 1.0F) < 1.0e-4F, content="true")
     let n = hit_hollow.1.normal()
@@ -200,7 +209,14 @@ test "query pipeline cast_shape ball hits ball" {
   )
   let vel = @core.Vec2::new(1.0F, 0.0F)
   let options = ShapeCastOptions::new(100.0F, true)
-  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+  if query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(1.0F),
+      options,
+    )
     is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.toi() - 8.0F) < 1.0e-4F, content="true")
@@ -241,7 +257,14 @@ test "query pipeline cast_shape ball hits rotated cuboid" {
   let options = ShapeCastOptions::new(100.0F, true)
   // Ball radius 0.5 against a 90deg-rotated cuboid with world x half-extent 0.5:
   // expanded boundary is at x = -(0.5 + 0.5) = -1.0, so toi = 9.0.
-  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+  if query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options,
+    )
     is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.toi() - 9.0F) < 1.0e-4F, content="true")
@@ -285,7 +308,7 @@ test "query pipeline filter exclude rigid body" {
   let broad_phase = BroadPhaseBvh::new()
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, ch2), content="true")
   } else {
     inspect(false, content="true")
@@ -313,7 +336,10 @@ test "query pipeline filter collision groups" {
   let broad_phase = BroadPhaseBvh::new()
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  inspect(query_pipeline.cast_ray(ray, 100.0F, true) is None, content="true")
+  inspect(
+    query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is None,
+    content="true",
+  )
 }
 
 ///|
@@ -346,7 +372,7 @@ test "query filter predicate can exclude colliders" {
     bodies, colliders, filter,
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(!ColliderHandle::equals(hit.0, near), content="true")
     inspect(ColliderHandle::equals(hit.0, far), content="true")
   } else {
@@ -367,7 +393,10 @@ test "query pipeline cast_ray hits capsule" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray_and_get_normal(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray_and_get_normal(
+      bodies, colliders, ray, 100.0F, true,
+    )
+    is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.toi() - 9.5F) < 1.0e-4F, content="true")
     let n = hit.1.normal()
@@ -399,6 +428,8 @@ test "query pipeline cast_shape capsule hits ball" {
   let vel = @core.Vec2::new(1.0F, 0.0F)
   let options = ShapeCastOptions::new(100.0F, true)
   if query_pipeline.cast_shape(
+      bodies,
+      colliders,
       shape_pos,
       vel,
       Shape::CapsuleY(1.0F, 0.5F),
@@ -434,7 +465,8 @@ test "query pipeline cast_ray hits segment" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(0.0F, -1.0F), @core.Vec2::new(0.0F, 1.0F))
-  if query_pipeline.cast_ray_and_get_normal(ray, 10.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
+    is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.toi() - 1.0F) < 1.0e-4F, content="true")
     let n = hit.1.normal()
@@ -469,7 +501,14 @@ test "query pipeline cast_shape ball hits segment (core)" {
   )
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(100.0F, true)
-  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+  if query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options,
+    )
     is Some(hit) {
     inspect(@core.abs(hit.1.toi() - 9.5F) < 1.0e-4F, content="true")
     let n = hit.1.normal()
@@ -505,7 +544,14 @@ test "query pipeline cast_shape ball hits segment endpoint (rounded caps)" {
   let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.5F))
   let vel = @core.Vec2::new(-1.0F, 0.0F)
   let options = ShapeCastOptions::new(10.0F, true)
-  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+  if query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(1.0F),
+      options,
+    )
     is Some(hit) {
     // The earliest contact is against the endpoint at (1, 0):
     // distance((2 - t, 0.5), (1, 0)) = 1 => t = 1 - sqrt(0.75) = ~0.1339746.
@@ -546,6 +592,8 @@ test "query pipeline cast_shape cuboid hits segment with target_distance" {
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
   if query_pipeline.cast_shape(
+      bodies,
+      colliders,
       shape_pos,
       vel,
       Shape::Cuboid(1.0F, 1.0F),
@@ -588,6 +636,8 @@ test "query pipeline cast_shape capsule_y hits segment with target_distance" {
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
   if query_pipeline.cast_shape(
+      bodies,
+      colliders,
       shape_pos,
       vel,
       Shape::CapsuleY(1.0F, 0.5F),
@@ -626,7 +676,14 @@ test "query pipeline cast_shape target_distance applies to non-segment shapes (b
   )
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.5F)
-  if query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+  if query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(1.0F),
+      options,
+    )
     is Some(hit) {
     // Distance between centers is 10. "Impact" when dist <= (r1 + target_distance) + r2.
     // => toi = 10 - (1.0 + 0.5) - 1.0 = 7.5.
@@ -660,14 +717,28 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(10.0F, false)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(1.0F),
+      options,
+    )
     is None,
     content="true",
   )
   // With stop_at_penetration=true, we keep the toi=0 hit.
   let options2 = ShapeCastOptions::new(10.0F, true)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(1.0F), options2)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(1.0F),
+      options2,
+    )
     is Some(_),
     content="true",
   )
@@ -694,13 +765,27 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
   let vel = @core.Vec2::new(1.0F, 0.0F)
   let options = ShapeCastOptions::new(10.0F, false)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options,
+    )
     is None,
     content="true",
   )
   let options2 = ShapeCastOptions::new(10.0F, true)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options2)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options2,
+    )
     is Some(_),
     content="true",
   )
@@ -730,13 +815,27 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
   let vel = @core.Vec2::new(0.0F, 1.0F)
   let options = ShapeCastOptions::new(10.0F, false)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options,
+    )
     is None,
     content="true",
   )
   let options2 = ShapeCastOptions::new(10.0F, true)
   inspect(
-    query_pipeline.cast_shape(shape_pos, vel, Shape::Ball(0.5F), options2)
+    query_pipeline.cast_shape(
+      bodies,
+      colliders,
+      shape_pos,
+      vel,
+      Shape::Ball(0.5F),
+      options2,
+    )
     is Some(_),
     content="true",
   )
@@ -769,7 +868,11 @@ test "query pipeline intersect_point" {
     colliders,
     QueryFilter::new(),
   )
-  let results = query_pipeline.intersect_point(@core.Vec2::new(1.0F, 0.0F))
+  let results = query_pipeline.intersect_point(
+    bodies,
+    colliders,
+    @core.Vec2::new(1.0F, 0.0F),
+  )
   inspect(results.length() == 1, content="true")
   inspect(ColliderHandle::equals(results[0], ch1), content="true")
 }
@@ -791,7 +894,13 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
   )
 
   // Outside point; max_dist is ignored.
-  if query_pipeline.project_point(@core.Vec2::new(2.0F, 0.0F), 0.01F, true)
+  if query_pipeline.project_point(
+      bodies,
+      colliders,
+      @core.Vec2::new(2.0F, 0.0F),
+      0.01F,
+      true,
+    )
     is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
@@ -802,7 +911,13 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
   }
 
   // Inside point with solid=true projects to itself.
-  if query_pipeline.project_point(@core.Vec2::new(0.2F, 0.0F), 0.01F, true)
+  if query_pipeline.project_point(
+      bodies,
+      colliders,
+      @core.Vec2::new(0.2F, 0.0F),
+      0.01F,
+      true,
+    )
     is Some(hit) {
     inspect(@core.abs(hit.1.point().x - 0.2F) < 1.0e-4F, content="true")
     inspect(hit.1.is_inside() == true, content="true")
@@ -811,7 +926,13 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
   }
 
   // Inside point with solid=false projects to the boundary.
-  if query_pipeline.project_point(@core.Vec2::new(0.2F, 0.0F), 0.01F, false)
+  if query_pipeline.project_point(
+      bodies,
+      colliders,
+      @core.Vec2::new(0.2F, 0.0F),
+      0.01F,
+      false,
+    )
     is Some(hit) {
     inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
     inspect(hit.1.is_inside() == true, content="true")
@@ -838,6 +959,8 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
 
   // Near the +X face.
   if query_pipeline.project_point_and_get_feature(
+      bodies,
+      colliders,
       @core.Vec2::new(3.0F, 0.25F),
       0.0F,
       false,
@@ -856,6 +979,8 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
 
   // Near the (+,+) corner.
   if query_pipeline.project_point_and_get_feature(
+      bodies,
+      colliders,
       @core.Vec2::new(3.0F, 3.0F),
       0.0F,
       false,
@@ -892,6 +1017,8 @@ test "query pipeline project_point_and_get_feature segment endpoint" {
     QueryFilter::new(),
   )
   if query_pipeline.project_point_and_get_feature(
+      bodies,
+      colliders,
       @core.Vec2::new(1.0F, 0.0F),
       0.0F,
       false,
@@ -938,7 +1065,7 @@ test "query pipeline with_filter overrides the pipeline filter" {
     QueryFilter::new().exclude_sensors(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if filtered.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if filtered.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(!ColliderHandle::equals(hit.0, sensor), content="true")
     inspect(ColliderHandle::equals(hit.0, solid), content="true")
   } else {
@@ -964,7 +1091,7 @@ test "query pipeline cast_ray respects cuboid rotation" {
     QueryFilter::new(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     // Rotated cuboid has world half-extent 0.5 along x, so it hits at x = -0.5.
     inspect(@core.abs(hit.1 - 9.5F) < 1.0e-4F, content="true")
@@ -1004,7 +1131,7 @@ test "query pipeline intersect_aabb_conservative uses cached aabbs" {
     @core.Vec2::new(-2.0F, -2.0F),
     @core.Vec2::new(2.0F, 2.0F),
   )
-  let results = pipeline.intersect_aabb_conservative(query)
+  let results = pipeline.intersect_aabb_conservative(bodies, colliders, query)
   inspect(results.length() == 1, content="true")
   inspect(ColliderHandle::equals(results[0], h1), content="true")
 
@@ -1013,8 +1140,10 @@ test "query pipeline intersect_aabb_conservative uses cached aabbs" {
   if bodies.get_mut(body1) is Some(b) {
     b.set_translation(@core.Vec2::new(100.0F, 0.0F), true) |> ignore
   }
-  broad_phase.update(0.0F, bodies, pipeline.colliders)
-  let results_after = pipeline.intersect_aabb_conservative(query)
+  broad_phase.update(0.0F, bodies, colliders)
+  let results_after = pipeline.intersect_aabb_conservative(
+    bodies, colliders, query,
+  )
   inspect(results_after.length() == 1, content="true")
   inspect(ColliderHandle::equals(results_after[0], h1), content="true")
 }
@@ -1041,7 +1170,11 @@ test "query pipeline intersect_point respects cuboid rotation" {
     QueryFilter::new(),
   )
   // This point is inside the AABB of the cuboid but outside the rotated cuboid itself.
-  let results = query_pipeline.intersect_point(@core.Vec2::new(1.2F, 0.0F))
+  let results = query_pipeline.intersect_point(
+    bodies,
+    colliders,
+    @core.Vec2::new(1.2F, 0.0F),
+  )
   inspect(results.length() == 0, content="true")
 }
 
@@ -1068,7 +1201,7 @@ test "query filter exclude sensors vs solids" {
       colliders,
       QueryFilter::new().exclude_sensors(),
     )
-    if pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+    if pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
       inspect(ColliderHandle::equals(hit.0, solid_handle), content="true")
     } else {
       inspect(false, content="true")
@@ -1093,7 +1226,7 @@ test "query filter exclude sensors vs solids" {
     colliders,
     QueryFilter::new().exclude_solids(),
   )
-  if pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, sensor_handle), content="true")
   } else {
     inspect(false, content="true")
@@ -1127,7 +1260,7 @@ test "query filter only_dynamic ignores fixed colliders" {
     QueryFilter::only_dynamic(),
   )
   let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
-  if query_pipeline.cast_ray(ray, 100.0F, true) is Some(hit) {
+  if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, dynamic_collider), content="true")
   } else {
     inspect(false, content="true")
@@ -1150,7 +1283,12 @@ test "query pipeline intersect_shape ball intersects cuboid" {
     QueryFilter::new(),
   )
   let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(1.4F, 0.0F))
-  let hits = query_pipeline.intersect_shape(shape_pos, Shape::Ball(0.5F))
+  let hits = query_pipeline.intersect_shape(
+    bodies,
+    colliders,
+    shape_pos,
+    Shape::Ball(0.5F),
+  )
   if hits.length() == 1 {
     inspect(ColliderHandle::equals(hits[0], handle), content="true")
   } else {
@@ -1178,6 +1316,8 @@ test "query pipeline intersect_shape uses query rotation" {
     @core.Rot2::from_angle(@core.pi() * 0.5F),
   )
   let hits = query_pipeline.intersect_shape(
+    bodies,
+    colliders,
     shape_pos,
     Shape::Cuboid(0.2F, 1.0F),
   )
@@ -1211,7 +1351,12 @@ test "query pipeline intersect_shape respects exclude_sensors filter" {
     QueryFilter::new().exclude_sensors(),
   )
   let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.0F))
-  let hits = query_pipeline.intersect_shape(shape_pos, Shape::Ball(0.5F))
+  let hits = query_pipeline.intersect_shape(
+    bodies,
+    colliders,
+    shape_pos,
+    Shape::Ball(0.5F),
+  )
   if hits.length() == 1 {
     inspect(ColliderHandle::equals(hits[0], solid), content="true")
   } else {
@@ -1244,6 +1389,8 @@ test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
     @core.pi() * 0.5F,
   )
   if query_pipeline.cast_shape_nonlinear(
+      bodies,
+      colliders,
       motion,
       Shape::Cuboid(2.0F, 0.2F),
       0.0F,
@@ -1282,9 +1429,12 @@ test "query pipeline update refreshes collider world state + aabb cache" {
   }
 
   // Without `update`, the collider still has the old world position, so the ray misses.
-  inspect(q.cast_ray(ray, 100.0F, true) is None, content="true")
-  q.update()
-  if q.cast_ray(ray, 100.0F, true) is Some((hit, _)) {
+  inspect(
+    q.cast_ray(bodies, colliders, ray, 100.0F, true) is None,
+    content="true",
+  )
+  q.update(bodies, colliders)
+  if q.cast_ray(bodies, colliders, ray, 100.0F, true) is Some((hit, _)) {
     inspect(ColliderHandle::equals(hit, ch), content="true")
   } else {
     inspect(false, content="true")
@@ -1315,9 +1465,10 @@ test "query pipeline mut wrapper provides as_ref and update" {
   } else {
     inspect(false, content="true")
   }
-  qm.update()
+  qm.update(bodies, colliders)
   let ray = Ray::new(@core.Vec2::new(5.0F, 10.0F), @core.Vec2::new(0.0F, -1.0F))
-  if qm.as_ref().cast_ray(ray, 100.0F, true) is Some((hit, _)) {
+  if qm.as_ref().cast_ray(bodies, colliders, ray, 100.0F, true)
+    is Some((hit, _)) {
     inspect(ColliderHandle::equals(hit, ch), content="true")
   } else {
     inspect(false, content="true")

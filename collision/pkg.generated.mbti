@@ -981,67 +981,60 @@ pub fn QueryFilterFlags::toggle(Self, Self) -> Self
 pub fn QueryFilterFlags::union(Self, Self) -> Self
 
 pub struct QueryPipeline {
-  dispatcher : Unit
   bvh : Bvh
   filter : QueryFilter
-  bodies : @dynamics.RigidBodySet
-  colliders : ColliderSet
 }
-pub fn QueryPipeline::cast_ray(Self, Ray, Float, Bool) -> (ColliderHandle, Float)?
-pub fn QueryPipeline::cast_ray_and_get_normal(Self, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
-pub fn QueryPipeline::cast_shape(Self, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
-pub fn QueryPipeline::cast_shape_nonlinear(Self, NonlinearRigidMotion, Shape, Float, Float, Bool) -> (ColliderHandle, ShapeCastHit)?
-pub fn QueryPipeline::collider(Self, ColliderHandle) -> Collider?
-pub fn QueryPipeline::intersect_aabb_conservative(Self, @core.Aabb) -> Array[ColliderHandle]
-pub fn QueryPipeline::intersect_point(Self, @core.Vec2) -> Array[ColliderHandle]
-pub fn QueryPipeline::intersect_ray(Self, Ray, Float, Bool) -> Array[(ColliderHandle, RayIntersection)]
-pub fn QueryPipeline::intersect_shape(Self, @core.Isometry2, Shape) -> Array[ColliderHandle]
+pub fn QueryPipeline::cast_ray(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> (ColliderHandle, Float)?
+pub fn QueryPipeline::cast_ray_and_get_normal(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
+pub fn QueryPipeline::cast_shape(Self, @dynamics.RigidBodySet, ColliderSet, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
+pub fn QueryPipeline::cast_shape_nonlinear(Self, @dynamics.RigidBodySet, ColliderSet, NonlinearRigidMotion, Shape, Float, Float, Bool) -> (ColliderHandle, ShapeCastHit)?
+pub fn QueryPipeline::collider(Self, ColliderSet, ColliderHandle) -> Collider?
+pub fn QueryPipeline::intersect_aabb_conservative(Self, @dynamics.RigidBodySet, ColliderSet, @core.Aabb) -> Array[ColliderHandle]
+pub fn QueryPipeline::intersect_point(Self, @dynamics.RigidBodySet, ColliderSet, @core.Vec2) -> Array[ColliderHandle]
+pub fn QueryPipeline::intersect_ray(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> Array[(ColliderHandle, RayIntersection)]
+pub fn QueryPipeline::intersect_shape(Self, @dynamics.RigidBodySet, ColliderSet, @core.Isometry2, Shape) -> Array[ColliderHandle]
 pub fn QueryPipeline::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
 pub fn QueryPipeline::new3(QueryFilter, @dynamics.RigidBodySet3, ColliderSet3) -> Self
-pub fn QueryPipeline::project_point(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
-pub fn QueryPipeline::project_point_and_get_feature(Self, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection, FeatureId)?
-pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
-pub fn QueryPipeline::update(Self) -> Unit
+pub fn QueryPipeline::project_point(Self, @dynamics.RigidBodySet, ColliderSet, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection)?
+pub fn QueryPipeline::project_point_and_get_feature(Self, @dynamics.RigidBodySet, ColliderSet, @core.Vec2, Float, Bool) -> (ColliderHandle, PointProjection, FeatureId)?
+pub fn QueryPipeline::rigid_body(Self, @dynamics.RigidBodySet, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody?
+pub fn QueryPipeline::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 pub fn QueryPipeline::with_filter(Self, QueryFilter) -> Self
 
 pub struct QueryPipeline3DReal {
   filter : QueryFilter3DReal
-  bodies : @dynamics.RigidBodySet3D
-  colliders : ColliderSet3D
   mut cached_aabbs : Array[@core.Aabb3?]
 }
-pub fn QueryPipeline3DReal::cast_ray(Self, Ray3, Float, Bool) -> (ColliderHandle3D, Float)?
-pub fn QueryPipeline3DReal::cast_ray_and_get_normal(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3)?
-pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3Feature)?
-pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(Self, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))?
-pub fn QueryPipeline3DReal::cast_shape(Self, @core.Isometry3, @core.Vec3, Shape3D, ShapeCastOptions3) -> (ColliderHandle3D, ShapeCastHit3)?
-pub fn QueryPipeline3DReal::collider(Self, ColliderHandle3D) -> Collider3D?
-pub fn QueryPipeline3DReal::intersect_aabb_conservative(Self, @core.Aabb3) -> Array[ColliderHandle3D]
-pub fn QueryPipeline3DReal::intersect_point(Self, @core.Vec3) -> Array[ColliderHandle3D]
-pub fn QueryPipeline3DReal::intersect_ray(Self, Ray3, Float, Bool) -> Array[(ColliderHandle3D, RayIntersection3Feature)]
+pub fn QueryPipeline3DReal::cast_ray(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, Float)?
+pub fn QueryPipeline3DReal::cast_ray_and_get_normal(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3)?
+pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3Feature)?
+pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))?
+pub fn QueryPipeline3DReal::cast_shape(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Isometry3, @core.Vec3, Shape3D, ShapeCastOptions3) -> (ColliderHandle3D, ShapeCastHit3)?
+pub fn QueryPipeline3DReal::collider(Self, ColliderSet3D, ColliderHandle3D) -> Collider3D?
+pub fn QueryPipeline3DReal::intersect_aabb_conservative(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Aabb3) -> Array[ColliderHandle3D]
+pub fn QueryPipeline3DReal::intersect_point(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Vec3) -> Array[ColliderHandle3D]
+pub fn QueryPipeline3DReal::intersect_ray(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> Array[(ColliderHandle3D, RayIntersection3Feature)]
 pub fn QueryPipeline3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
-pub fn QueryPipeline3DReal::project_point(Self, @core.Vec3, Float, Bool) -> (ColliderHandle3D, PointProjection3)?
-pub fn QueryPipeline3DReal::rigid_body(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
-pub fn QueryPipeline3DReal::rigid_body_mut(Self, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
-pub fn QueryPipeline3DReal::update(Self) -> Unit
+pub fn QueryPipeline3DReal::project_point(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Vec3, Float, Bool) -> (ColliderHandle3D, PointProjection3)?
+pub fn QueryPipeline3DReal::rigid_body(Self, @dynamics.RigidBodySet3D, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
+pub fn QueryPipeline3DReal::rigid_body_mut(Self, @dynamics.RigidBodySet3D, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?
+pub fn QueryPipeline3DReal::update(Self, @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
 pub fn QueryPipeline3DReal::with_filter(Self, QueryFilter3DReal) -> Self
 
 pub struct QueryPipelineMut {
-  mut dispatcher : Unit
-  mut bvh : Bvh
   pipeline : QueryPipeline
 }
 pub fn QueryPipelineMut::as_ref(Self) -> QueryPipeline
 pub fn QueryPipelineMut::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self
 pub fn QueryPipelineMut::new3(QueryFilter, @dynamics.RigidBodySet3, ColliderSet3) -> Self
-pub fn QueryPipelineMut::update(Self) -> Unit
+pub fn QueryPipelineMut::update(Self, @dynamics.RigidBodySet, ColliderSet) -> Unit
 
 pub struct QueryPipelineMut3DReal {
   pipeline : QueryPipeline3DReal
 }
 pub fn QueryPipelineMut3DReal::as_ref(Self) -> QueryPipeline3DReal
 pub fn QueryPipelineMut3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
-pub fn QueryPipelineMut3DReal::update(Self) -> Unit
+pub fn QueryPipelineMut3DReal::update(Self, @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
 
 pub struct Ray {
   origin : @core.Vec2

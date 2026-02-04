@@ -1070,6 +1070,8 @@ test "examples2d/character_controller2.rs parity" {
         let movement = controller.move_shape(
           dt,
           query_pipeline,
+          bodies,
+          colliders,
           character_shape,
           character_body.position(),
           desired,
@@ -1081,6 +1083,8 @@ test "examples2d/character_controller2.rs parity" {
           controller.solve_character_collision_impulses(
             dt,
             query_pipeline,
+            bodies,
+            colliders,
             character_shape,
             character_body.mass(),
             collisions,
@@ -1642,6 +1646,8 @@ test "examples2d/debug_intersection2.rs parity" {
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
   let query_center = @core.Vec2::zero()
   let hits = query_pipeline.intersect_shape(
+    bodies,
+    colliders,
     @core.Isometry2::from_translation(query_center),
     @collision.Shape::Ball(rad / 2.0F),
   )

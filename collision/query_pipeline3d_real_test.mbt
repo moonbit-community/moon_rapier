@@ -30,7 +30,8 @@ test "query_pipeline3d_real: cast_ray_and_get_normal cuboid" {
     @core.Vec3::new(0.0F, 5.0F, 0.0F),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp.cast_ray_and_get_normal(ray, 10.0F, true) is Some((_h, hit)) {
+  if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
+    is Some((_h, hit)) {
     inspect(hit.toi() > 3.0F, content="true")
     inspect(hit.normal().y > 0.9F, content="true")
   } else {
@@ -58,7 +59,8 @@ test "query_pipeline3d_real: cast_ray_and_get_normal trimesh triangle" {
     @core.Vec3::new(0.0F, 2.0F, 0.0F),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp.cast_ray_and_get_normal(ray, 10.0F, true) is Some((_h, hit)) {
+  if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
+    is Some((_h, hit)) {
     inspect(hit.toi() > 1.0F, content="true")
     let n = hit.normal()
     inspect(n.x == n.x && n.y == n.y && n.z == n.z, content="true")
@@ -87,7 +89,8 @@ test "query_pipeline3d_real: cast_shape capsule vs cuboid" {
   let shape_vel = @core.Vec3::new(1.0F, 0.0F, 0.0F)
   let shape = Shape3D::capsule_y(0.5F, 1.0F)
   let options = ShapeCastOptions3::new(10.0F, true)
-  if qp.cast_shape(shape_pos, shape_vel, shape, options) is Some((_h, hit)) {
+  if qp.cast_shape(bodies, colliders, shape_pos, shape_vel, shape, options)
+    is Some((_h, hit)) {
     inspect(hit.toi() > 3.0F, content="true")
     inspect(hit.toi() < 4.0F, content="true")
     inspect(hit.normal().x < -0.9F, content="true")
@@ -127,7 +130,8 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
     @core.Vec3::new(0.5F, 10.0F, 0.5F),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp.cast_ray_and_get_voxel_key(ray, 20.0F, true) is Some((_h, hit, key)) {
+  if qp.cast_ray_and_get_voxel_key(bodies, colliders, ray, 20.0F, true)
+    is Some((_h, hit, key)) {
     inspect(hit.toi() > 8.5F && hit.toi() < 9.5F, content="true")
     inspect(hit.normal().y > 0.9F, content="true")
     inspect(key.0 == 0 && key.1 == 0 && key.2 == 0, content="true")
@@ -192,7 +196,8 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
     @core.Vec3::new(center_x, origin_y, center_z),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp.cast_ray_and_get_voxel_key(ray0, 200.0F, true) is Some((_h, _hit, _key)) {
+  if qp.cast_ray_and_get_voxel_key(bodies, colliders, ray0, 200.0F, true)
+    is Some((_h, _hit, _key)) {
     inspect(true, content="true")
   } else {
     inspect(false, content="true")
@@ -201,7 +206,8 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
     @core.Vec3::new(center_x + 0.5F, origin_y, center_z + 0.5F),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp.cast_ray_and_get_voxel_key(ray1, 200.0F, true) is Some((_h, _hit, _key)) {
+  if qp.cast_ray_and_get_voxel_key(bodies, colliders, ray1, 200.0F, true)
+    is Some((_h, _hit, _key)) {
     inspect(true, content="true")
   } else {
     inspect(false, content="true")
@@ -255,7 +261,8 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
     bodies,
     colliders,
   )
-  if qp0.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h0, hit0)) {
+  if qp0.cast_ray_and_get_normal(bodies, colliders, ray, 20.0F, true)
+    is Some((h0, hit0)) {
     inspect(h0.equals(upper), content="true")
     inspect(hit0.toi() > 2.0F && hit0.toi() < 3.0F, content="true")
   } else {
@@ -268,7 +275,8 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
     bodies,
     colliders,
   )
-  if qp1.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h1, hit1)) {
+  if qp1.cast_ray_and_get_normal(bodies, colliders, ray, 20.0F, true)
+    is Some((h1, hit1)) {
     inspect(h1.equals(lower), content="true")
     inspect(hit1.toi() > 4.0F && hit1.toi() < 5.0F, content="true")
   } else {
@@ -283,7 +291,8 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
     bodies,
     colliders,
   )
-  if qp2.cast_ray_and_get_normal(ray, 20.0F, true) is Some((h2, _hit2)) {
+  if qp2.cast_ray_and_get_normal(bodies, colliders, ray, 20.0F, true)
+    is Some((h2, _hit2)) {
     inspect(h2.equals(lower), content="true")
   } else {
     inspect(false, content="true")

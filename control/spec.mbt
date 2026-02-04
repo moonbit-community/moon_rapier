@@ -262,6 +262,8 @@ pub fn KinematicCharacterController::move_shape(
   self : KinematicCharacterController,
   dt : @core.Real,
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   position : @core.Isometry2,
   translation : @core.Vec2,
@@ -276,6 +278,8 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
   self : KinematicCharacterController,
   dt : @core.Real,
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   character_shape : @collision.Shape,
   character_mass : @core.Real,
   collisions : Array[CharacterCollision],
@@ -601,6 +605,8 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
   self : DynamicRayCastVehicleController,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
 ) -> Unit {
   ...
 }
@@ -714,6 +720,8 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
   self : DynamicRayCastVehicleController3,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
 ) -> Unit {
   ...
 }
@@ -792,6 +800,8 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
   self : DynamicRayCastVehicleController3DReal,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
 ) -> Unit {
   ...
 }
@@ -962,6 +972,8 @@ pub fn KinematicCharacterController3DReal::move_shape(
   self : KinematicCharacterController3DReal,
   dt : @core.Real,
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   shape : @collision.Shape3D,
   position : @core.Isometry3,
   translation : @core.Vec3,
@@ -976,6 +988,8 @@ pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(
   self : KinematicCharacterController3DReal,
   dt : @core.Real,
   query : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   character_shape : @collision.Shape3D,
   character_mass : @core.Real,
   collisions : Array[CharacterCollision3DReal],

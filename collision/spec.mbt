@@ -2064,7 +2064,11 @@ pub fn QueryPipeline::new3(
 
 ///|
 #declaration_only
-pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
+pub fn QueryPipeline::update(
+  self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
   ...
 }
 
@@ -2110,7 +2114,11 @@ pub fn QueryPipelineMut::as_ref(self : QueryPipelineMut) -> QueryPipeline {
 
 ///|
 #declaration_only
-pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
+pub fn QueryPipelineMut::update(
+  self : QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
   ...
 }
 
@@ -2118,6 +2126,8 @@ pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
 #declaration_only
 pub fn QueryPipeline::cast_ray(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
@@ -2129,6 +2139,8 @@ pub fn QueryPipeline::cast_ray(
 #declaration_only
 pub fn QueryPipeline::cast_ray_and_get_normal(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
@@ -2156,7 +2168,11 @@ pub fn QueryPipeline3DReal::new(
 
 ///|
 #declaration_only
-pub fn QueryPipeline3DReal::update(self : QueryPipeline3DReal) -> Unit {
+pub fn QueryPipeline3DReal::update(
+  self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> Unit {
   ...
 }
 
@@ -2173,6 +2189,8 @@ pub fn QueryPipeline3DReal::with_filter(
 #declaration_only
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
@@ -2184,6 +2202,7 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
 #declaration_only
 pub fn QueryPipeline3DReal::rigid_body(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody3D? {
   ...
@@ -2193,6 +2212,7 @@ pub fn QueryPipeline3DReal::rigid_body(
 #declaration_only
 pub fn QueryPipeline3DReal::rigid_body_mut(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody3D? {
   ...
@@ -2202,6 +2222,7 @@ pub fn QueryPipeline3DReal::rigid_body_mut(
 #declaration_only
 pub fn QueryPipeline3DReal::collider(
   self : QueryPipeline3DReal,
+  colliders : ColliderSet3D,
   handle : ColliderHandle3D,
 ) -> Collider3D? {
   ...
@@ -2227,7 +2248,11 @@ pub fn QueryPipelineMut3DReal::as_ref(
 
 ///|
 #declaration_only
-pub fn QueryPipelineMut3DReal::update(self : QueryPipelineMut3DReal) -> Unit {
+pub fn QueryPipelineMut3DReal::update(
+  self : QueryPipelineMut3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> Unit {
   ...
 }
 
@@ -2235,6 +2260,8 @@ pub fn QueryPipelineMut3DReal::update(self : QueryPipelineMut3DReal) -> Unit {
 #declaration_only
 pub fn QueryPipeline::intersect_ray(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
@@ -2246,6 +2273,8 @@ pub fn QueryPipeline::intersect_ray(
 #declaration_only
 pub fn QueryPipeline::cast_shape(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_pos : @core.Isometry2,
   shape_vel : @core.Vec2,
   shape : Shape,
@@ -2258,6 +2287,8 @@ pub fn QueryPipeline::cast_shape(
 #declaration_only
 pub fn QueryPipeline::cast_shape_nonlinear(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_motion : NonlinearRigidMotion,
   shape : Shape,
   start_time : @core.Real,
@@ -2271,6 +2302,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
 #declaration_only
 pub fn QueryPipeline::collider(
   self : QueryPipeline,
+  colliders : ColliderSet,
   handle : ColliderHandle,
 ) -> Collider? {
   ...
@@ -2280,6 +2312,7 @@ pub fn QueryPipeline::collider(
 #declaration_only
 pub fn QueryPipeline::rigid_body(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody? {
   ...
@@ -2289,6 +2322,8 @@ pub fn QueryPipeline::rigid_body(
 #declaration_only
 pub fn QueryPipeline::intersect_shape(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_pos : @core.Isometry2,
   shape : Shape,
 ) -> Array[ColliderHandle] {
@@ -2299,6 +2334,8 @@ pub fn QueryPipeline::intersect_shape(
 #declaration_only
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
   max_dist : @core.Real,
   solid : Bool,
@@ -2310,6 +2347,8 @@ pub fn QueryPipeline::project_point(
 #declaration_only
 pub fn QueryPipeline::project_point_and_get_feature(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
   max_dist : @core.Real,
   solid : Bool,
@@ -2321,6 +2360,8 @@ pub fn QueryPipeline::project_point_and_get_feature(
 #declaration_only
 pub fn QueryPipeline::intersect_aabb_conservative(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   aabb : @core.Aabb,
 ) -> Array[ColliderHandle] {
   ...
@@ -2330,6 +2371,8 @@ pub fn QueryPipeline::intersect_aabb_conservative(
 #declaration_only
 pub fn QueryPipeline::intersect_point(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
 ) -> Array[ColliderHandle] {
   ...

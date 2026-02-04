@@ -419,6 +419,8 @@ fn veh3d_real_update_wheel_transforms_ws(
 ///|
 fn veh3d_real_ray_cast(
   queries : @collision.QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
   chassis : @dynamics.RigidBody3D,
   wheel : Wheel3DReal,
 ) -> Wheel3DReal {
@@ -429,7 +431,8 @@ fn veh3d_real_ray_cast(
   out.raycast_info.contact_point_ws = source_ws.add(rayvector)
   let ray = @collision.Ray3::new(source_ws, rayvector)
   out.raycast_info.ground_object = None
-  if queries.cast_ray_and_get_normal(ray, 1.0F, true) is Some(hit) {
+  if queries.cast_ray_and_get_normal(bodies, colliders, ray, 1.0F, true)
+    is Some(hit) {
     let collider_hit = hit.0
     let intersection = hit.1
     let mut normal_ws = intersection.normal()
@@ -690,10 +693,12 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
   self : DynamicRayCastVehicleController3DReal,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
 ) -> Unit {
-  queries.update()
+  queries.update(bodies, colliders)
   let qp = queries.as_ref()
-  let chassis = match qp.rigid_body(self.chassis) {
+  let chassis = match qp.rigid_body(bodies, self.chassis) {
     Some(rb) => rb
     None => return
   }
@@ -720,6 +725,8 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
       qp.with_filter(
         @collision.QueryFilter3DReal::new().exclude_rigid_body(self.chassis),
       ),
+      bodies,
+      colliders,
       chassis,
       w,
     )
@@ -733,7 +740,7 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
   }
 
   // Apply suspension impulses.
-  if qp.rigid_body_mut(self.chassis) is Some(rb) {
+  if qp.rigid_body_mut(bodies, self.chassis) is Some(rb) {
     for i in 0..<num_wheels {
       let w = self.wheels[i]
       if w.engine_force > 0.0F {
@@ -749,10 +756,10 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
       rb.apply_impulse_at_point(impulse, w.raycast_info.contact_point_ws, false)
     }
   }
-  veh3d_real_update_friction(self, qp.bodies, qp.colliders, dt)
+  veh3d_real_update_friction(self, bodies, colliders, dt)
 
   // Update wheel rotation.
-  if qp.rigid_body_mut(self.chassis) is Some(rb) {
+  if qp.rigid_body_mut(bodies, self.chassis) is Some(rb) {
     let fwd_axis = rb
       .rotation()
       .rotate_vec3(veh3d_real_axis_vec3(self.index_forward_axis))

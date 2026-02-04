@@ -409,6 +409,8 @@ fn update_wheel_transforms_ws(
 ///|
 fn ray_cast(
   queries : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   chassis : @dynamics.RigidBody,
   wheel : Wheel,
 ) -> Wheel {
@@ -420,7 +422,8 @@ fn ray_cast(
   out.raycast_info.contact_point_ws = source.add(
     veh_vec2_scale(ray_dir, raylen),
   )
-  if queries.cast_ray_and_get_normal(ray, raylen, true) is Some(hit) {
+  if queries.cast_ray_and_get_normal(bodies, colliders, ray, raylen, true)
+    is Some(hit) {
     let collider_hit = hit.0
     let intersection = hit.1
     out.raycast_info.contact_normal_ws = intersection.normal()
@@ -571,10 +574,12 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
   self : DynamicRayCastVehicleController,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
 ) -> Unit {
-  queries.update()
+  queries.update(bodies, colliders)
   let qp = queries.as_ref()
-  let chassis = match qp.rigid_body(self.chassis) {
+  let chassis = match qp.rigid_body(bodies, self.chassis) {
     Some(rb) => rb
     None => return
   }
@@ -583,7 +588,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
   for i in 0..<self.wheels.length() {
     let mut w = self.wheels[i]
     w = update_wheel_transforms_ws(chassis, w)
-    w = ray_cast(qp, chassis, w)
+    w = ray_cast(qp, bodies, colliders, chassis, w)
     self.wheels[i] = w
   }
   let chassis_mass = chassis.mass()
@@ -595,7 +600,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
 
   // Apply suspension impulses.
   // Need a mutable body for impulses.
-  if qp.bodies.get_mut_internal_with_modification_tracking(self.chassis)
+  if bodies.get_mut_internal_with_modification_tracking(self.chassis)
     is Some(rb) {
     for i in 0..<self.wheels.length() {
       let w = self.wheels[i]
@@ -626,7 +631,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
   if wheels_on_ground == 0 {
     return
   }
-  if qp.bodies.get_mut_internal_with_modification_tracking(self.chassis)
+  if bodies.get_mut_internal_with_modification_tracking(self.chassis)
     is Some(rb) {
     let fwd_axis_ws = rb
       .rotation()
@@ -658,9 +663,9 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
         let max_impulse = if w.brake != 0.0F { w.brake } else { 0.0F }
         let mut ground_body : @dynamics.RigidBody? = None
         if w.raycast_info.ground_object is Some(h) {
-          if qp.collider(h) is Some(c) {
+          if qp.collider(colliders, h) is Some(c) {
             if c.parent() is Some(parent) {
-              ground_body = qp.rigid_body(parent)
+              ground_body = qp.rigid_body(bodies, parent)
             }
           }
         }
@@ -691,7 +696,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
   }
 
   // Wheel rotation update.
-  if qp.rigid_body(self.chassis) is Some(rb2) {
+  if qp.rigid_body(bodies, self.chassis) is Some(rb2) {
     let fwd_axis_ws = rb2
       .rotation()
       .rotate_vec2(axis_vec2(self.index_forward_axis))

@@ -374,8 +374,6 @@ fn filter_pass_3d_real(
 ///|
 pub struct QueryPipeline3DReal {
   filter : QueryFilter3DReal
-  bodies : @dynamics.RigidBodySet3D
-  colliders : ColliderSet3D
   // Cached world-space AABBs to accelerate repeated queries (e.g. character controller).
   mut cached_aabbs : Array[@core.Aabb3?]
 }
@@ -391,15 +389,20 @@ pub fn QueryPipeline3DReal::new(
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
 ) -> QueryPipeline3DReal {
-  let qp = { filter, bodies, colliders, cached_aabbs: [] }
-  qp.update()
+  let qp = { filter, cached_aabbs: [] }
+  qp.update(bodies, colliders)
   qp
 }
 
 ///|
-pub fn QueryPipeline3DReal::update(self : QueryPipeline3DReal) -> Unit {
+pub fn QueryPipeline3DReal::update(
+  self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> Unit {
+  colliders.sync_with_bodies(bodies)
   // Cache AABBs for all colliders (including fixed ones) to speed up repeated queries.
-  let n = self.colliders.colliders.length()
+  let n = colliders.colliders.length()
   if self.cached_aabbs.length() != n {
     self.cached_aabbs = []
     for _ in 0..<n {
@@ -411,7 +414,7 @@ pub fn QueryPipeline3DReal::update(self : QueryPipeline3DReal) -> Unit {
     }
   }
   for i in 0..<n {
-    if self.colliders.colliders[i] is Some(co) {
+    if colliders.colliders[i] is Some(co) {
       self.cached_aabbs[i] = Some(co.compute_aabb())
     }
   }
@@ -422,12 +425,7 @@ pub fn QueryPipeline3DReal::with_filter(
   self : QueryPipeline3DReal,
   filter : QueryFilter3DReal,
 ) -> QueryPipeline3DReal {
-  {
-    filter,
-    bodies: self.bodies,
-    colliders: self.colliders,
-    cached_aabbs: self.cached_aabbs,
-  }
+  { filter, cached_aabbs: self.cached_aabbs }
 }
 
 ///|
@@ -447,32 +445,42 @@ pub fn QueryPipelineMut3DReal::as_ref(
 }
 
 ///|
-pub fn QueryPipelineMut3DReal::update(self : QueryPipelineMut3DReal) -> Unit {
-  self.pipeline.update()
+pub fn QueryPipelineMut3DReal::update(
+  self : QueryPipelineMut3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> Unit {
+  self.pipeline.update(bodies, colliders)
 }
 
 ///|
 pub fn QueryPipeline3DReal::rigid_body(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody3D? {
-  self.bodies.get(handle)
+  self |> ignore
+  bodies.get(handle)
 }
 
 ///|
 pub fn QueryPipeline3DReal::rigid_body_mut(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody3D? {
-  self.bodies.get_mut(handle)
+  self |> ignore
+  bodies.get_mut(handle)
 }
 
 ///|
 pub fn QueryPipeline3DReal::collider(
   self : QueryPipeline3DReal,
+  colliders : ColliderSet3D,
   handle : ColliderHandle3D,
 ) -> Collider3D? {
-  self.colliders.get(handle)
+  self |> ignore
+  colliders.get(handle)
 }
 
 ///|
@@ -1594,12 +1602,14 @@ fn ray_cone_y_toi_normal(
 ///|
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle3D, RayIntersection3)? {
   if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
-      self, ray, max_toi, solid,
+      self, bodies, colliders, ray, max_toi, solid,
     )
     is Some((h, it)) {
     Some((h, { toi: it.toi, normal: it.normal }))
@@ -1611,12 +1621,14 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
 ///|
 pub fn QueryPipeline3DReal::cast_ray(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle3D, @core.Real)? {
   if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
-      self, ray, max_toi, solid,
+      self, bodies, colliders, ray, max_toi, solid,
     )
     is Some((h, it)) {
     Some((h, it.toi))
@@ -1628,6 +1640,8 @@ pub fn QueryPipeline3DReal::cast_ray(
 ///|
 pub fn QueryPipeline3DReal::intersect_ray(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
@@ -1635,9 +1649,9 @@ pub fn QueryPipeline3DReal::intersect_ray(
   solid |> ignore
   let max_dist = if max_toi < 0.0F { 0.0F } else { max_toi }
   let results : Array[(ColliderHandle3D, RayIntersection3Feature)] = []
-  for h in self.colliders.all_handles() {
-    if self.colliders.get(h) is Some(co) {
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+  for h in colliders.all_handles() {
+    if colliders.get(h) is Some(co) {
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       if qp3d_real_hit_shape(ray, co.position(), co.shape(), max_dist)
@@ -1652,18 +1666,20 @@ pub fn QueryPipeline3DReal::intersect_ray(
 ///|
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle3D, RayIntersection3Feature)? {
   solid |> ignore
-  let handles = self.colliders.all_handles()
+  let handles = colliders.all_handles()
   let mut best_t = max_toi + 1.0F
   let mut best : (ColliderHandle3D, RayIntersection3Feature)? = None
   for i in 0..<handles.length() {
     let h = handles[i]
-    if self.colliders.get(h) is Some(co) {
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+    if colliders.get(h) is Some(co) {
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       let pos = co.position()
@@ -1680,15 +1696,17 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
 ///|
 pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))? {
   if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
-      self, ray, max_toi, solid,
+      self, bodies, colliders, ray, max_toi, solid,
     )
     is Some((h, it)) {
-    if it.feature_id >= 0 && self.colliders.get(h) is Some(co) {
+    if it.feature_id >= 0 && colliders.get(h) is Some(co) {
       if co.voxel_key_for_triangle(it.feature_id) is Some(key) {
         return Some((h, { toi: it.toi, normal: it.normal }, key))
       }
@@ -1702,12 +1720,14 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(
 ///|
 pub fn QueryPipeline3DReal::intersect_aabb_conservative(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   aabb : @core.Aabb3,
 ) -> Array[ColliderHandle3D] {
   let out : Array[ColliderHandle3D] = []
-  for h in self.colliders.all_handles() {
-    if self.colliders.get(h) is Some(co) {
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+  for h in colliders.all_handles() {
+    if colliders.get(h) is Some(co) {
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       // Conservative query: uses current collider AABB.
@@ -2295,6 +2315,8 @@ fn qp3d_real_project_point_on_shape(
 ///|
 pub fn QueryPipeline3DReal::project_point(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   point : @core.Vec3,
   max_dist : @core.Real,
   solid : Bool,
@@ -2303,9 +2325,9 @@ pub fn QueryPipeline3DReal::project_point(
   let max_d2 = max_d * max_d
   let mut best : (ColliderHandle3D, PointProjection3)? = None
   let mut best_d2 = max_d2 + 1.0F
-  for h in self.colliders.all_handles() {
-    if self.colliders.get(h) is Some(co) {
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+  for h in colliders.all_handles() {
+    if colliders.get(h) is Some(co) {
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       let (proj, d2) = qp3d_real_project_point_on_shape(
@@ -2372,12 +2394,14 @@ fn qp3d_real_contains_point(
 ///|
 pub fn QueryPipeline3DReal::intersect_point(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   point : @core.Vec3,
 ) -> Array[ColliderHandle3D] {
   let out : Array[ColliderHandle3D] = []
-  for h in self.colliders.all_handles() {
-    if self.colliders.get(h) is Some(co) {
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+  for h in colliders.all_handles() {
+    if colliders.get(h) is Some(co) {
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       if qp3d_real_contains_point(co.position(), co.shape(), point) {
@@ -3663,6 +3687,8 @@ fn qp3d_real_cast_moving_shape(
 ///|
 pub fn QueryPipeline3DReal::cast_shape(
   self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
   shape_pos : @core.Isometry3,
   shape_vel : @core.Vec3,
   shape : Shape3D,
@@ -3704,11 +3730,11 @@ pub fn QueryPipeline3DReal::cast_shape(
   let sweep_aabb = start_aabb.combine(end_aabb).dilated(td)
   let mut best : (ColliderHandle3D, ShapeCastHit3)? = None
   let mut best_t = max_toi + 1.0F
-  let n = self.colliders.colliders.length()
+  let n = colliders.colliders.length()
   for i in 0..<n {
-    if self.colliders.colliders[i] is Some(co) {
-      let h = ColliderHandle3D::from_raw_parts(i, self.colliders.generations[i])
-      if !filter_pass_3d_real(self.filter, self.bodies, h, co) {
+    if colliders.colliders[i] is Some(co) {
+      let h = ColliderHandle3D::from_raw_parts(i, colliders.generations[i])
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
       if self.cached_aabbs[i] is Some(aabb) && !sweep_aabb.intersects(aabb) {

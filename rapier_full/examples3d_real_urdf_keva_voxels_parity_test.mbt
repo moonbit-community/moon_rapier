@@ -327,7 +327,8 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
     ),
     @core.Vec3::new(0.0F, -1.0F, 0.0F),
   )
-  if qp0.cast_ray_and_get_voxel_key(ray0, 200.0F, true) is Some((_, _, _)) {
+  if qp0.cast_ray_and_get_voxel_key(bodies, colliders, ray0, 200.0F, true)
+    is Some((_, _, _)) {
     inspect(true, content="true")
   } else {
     inspect(false, content="true")
