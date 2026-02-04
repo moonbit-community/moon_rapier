@@ -200,6 +200,7 @@ pub struct PairFilterContext {
   rigid_body1 : @dynamics.RigidBodyHandle?
   rigid_body2 : @dynamics.RigidBodyHandle?
 }
+pub fn PairFilterContext::new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?) -> Self
 
 pub struct PhysicsHooks {
   mut filter_contact_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?

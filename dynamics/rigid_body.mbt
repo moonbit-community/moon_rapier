@@ -794,6 +794,27 @@ pub enum RigidBodyAdditionalMassProps {
 }
 
 ///|
+pub fn RigidBodyAdditionalMassProps::mass(
+  mass : @core.Real,
+) -> RigidBodyAdditionalMassProps {
+  RigidBodyAdditionalMassProps::Mass(mass)
+}
+
+///|
+pub fn RigidBodyAdditionalMassProps::mass_props(
+  mass_props : @core.MassProperties,
+) -> RigidBodyAdditionalMassProps {
+  RigidBodyAdditionalMassProps::MassProps(mass_props)
+}
+
+///|
+pub fn RigidBodyAdditionalMassProps::mass_properties(
+  mass_properties : @core.MassProperties,
+) -> RigidBodyAdditionalMassProps {
+  RigidBodyAdditionalMassProps::MassProperties(mass_properties)
+}
+
+///|
 pub struct RigidBody {
   mut ids : RigidBodyIds
   position : RigidBodyPosition

@@ -488,14 +488,44 @@ pub struct ColliderFlags {
 }
 
 ///|
+pub fn ColliderFlags::new(
+  collision_groups : @dynamics.InteractionGroups,
+  solver_groups : @dynamics.InteractionGroups,
+  active_collision_types : ActiveCollisionTypes,
+  active_hooks : ActiveHooks,
+  active_events : ActiveEvents,
+) -> ColliderFlags {
+  {
+    collision_groups,
+    solver_groups,
+    active_collision_types,
+    active_hooks,
+    active_events,
+  }
+}
+
+///|
 pub struct ColliderParent {
   handle : @dynamics.RigidBodyHandle
   pos_wrt_parent : @core.Isometry2
 }
 
 ///|
+pub fn ColliderParent::new(
+  handle : @dynamics.RigidBodyHandle,
+  pos_wrt_parent : @core.Isometry2,
+) -> ColliderParent {
+  { handle, pos_wrt_parent }
+}
+
+///|
 pub struct ColliderPosition {
   position : @core.Isometry2
+}
+
+///|
+pub fn ColliderPosition::new(position : @core.Isometry2) -> ColliderPosition {
+  { position, }
 }
 
 ///|
