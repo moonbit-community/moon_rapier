@@ -101,6 +101,8 @@ test "character controller climb" {
         let effective_movement = controller.move_shape(
           integration_parameters.dt,
           query_pipeline,
+          bodies,
+          colliders,
           character_shape,
           character_body.position(),
           @core.Vec2::new(0.1F, -0.1F),
@@ -270,6 +272,8 @@ test "character controller moving platform keeps grounded and follows platform" 
       let movement = controller.move_shape(
         dt,
         query_pipeline,
+        bodies,
+        colliders,
         character_shape,
         character_body.position(),
         @core.Vec2::new(0.0F, -0.1F),
@@ -389,6 +393,8 @@ test "character controller autostep climbs stairs" {
       let movement = controller.move_shape(
         dt,
         query_pipeline,
+        bodies,
+        colliders,
         character_shape,
         character_body.position(),
         @core.Vec2::new(0.08F, -0.1F),
@@ -488,6 +494,8 @@ test "character controller reports sliding on steep slope but not on flat ground
     let m = controller_flat.move_shape(
       dt,
       query_pipeline,
+      bodies,
+      colliders,
       character_shape,
       character_body.position(),
       @core.Vec2::new(0.05F, 0.0F),
@@ -526,6 +534,8 @@ test "character controller reports sliding on steep slope but not on flat ground
       let m = controller_steep.move_shape(
         dt,
         query_pipeline,
+        bodies,
+        colliders,
         character_shape,
         character_body.position(),
         @core.Vec2::new(0.1F, -0.1F),
@@ -564,6 +574,8 @@ test "character controller slides along wall" {
   let movement = controller.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     desired,
@@ -598,6 +610,8 @@ test "character controller collision event includes hit info" {
   let movement = controller.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     @core.Vec2::new(2.0F, 0.0F),
@@ -642,6 +656,8 @@ test "character controller follows kinematic platform velocity" {
   let movement = controller.move_shape(
     1.0F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     @core.Vec2::zero(),
@@ -682,6 +698,8 @@ test "character controller autostep moves past obstacle" {
   let no_step = controller_no_step.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     desired,
@@ -699,6 +717,8 @@ test "character controller autostep moves past obstacle" {
   let stepped = controller_step.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     desired,
@@ -780,6 +800,8 @@ test "character controller ground detection" {
         let effective_movement = controller.move_shape(
           integration_parameters.dt,
           query_pipeline,
+          bodies,
+          colliders,
           character_shape,
           character_body.position(),
           @core.Vec2::new(0.1F, -0.1F),
@@ -833,6 +855,8 @@ test "character controller grounded on rotated cuboid (cuboid character)" {
   let movement = controller.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     @core.Vec2::new(0.0F, -4.0F),
@@ -864,6 +888,8 @@ test "character controller grounded on rotated cuboid (capsule character)" {
   let movement = controller.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     @core.Vec2::new(0.0F, -4.0F),
@@ -896,6 +922,8 @@ test "character controller grounded on segment" {
   let movement = controller.move_shape(
     0.016F,
     query_pipeline,
+    bodies,
+    colliders,
     shape,
     start_pos,
     @core.Vec2::new(0.0F, -4.0F),
@@ -974,6 +1002,8 @@ test "character controller transfers impulse to dynamic body" {
   let movement = controller.move_shape(
     dt,
     query_pipeline,
+    bodies,
+    colliders,
     character_shape,
     start_pos,
     @core.Vec2::new(4.0F, 0.0F),
@@ -983,7 +1013,7 @@ test "character controller transfers impulse to dynamic body" {
   inspect(movement.translation().x > 0.0F, content="true")
   inspect(collisions.length() > 0, content="true")
   controller.solve_character_collision_impulses(
-    dt, query_pipeline, character_shape, 1.0F, collisions,
+    dt, query_pipeline, bodies, colliders, character_shape, 1.0F, collisions,
   )
   if bodies.get(box_handle) is Some(body) {
     inspect(body.linvel().x > 0.0F, content="true")

@@ -619,6 +619,8 @@ fn handle_slopes(
 ///|
 fn detect_ground_contact(
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   position : @core.Isometry2,
   up : @core.Vec2,
@@ -630,7 +632,8 @@ fn detect_ground_contact(
   let options = @collision.ShapeCastOptions::new(prediction, true).with_target_distance(
     offset,
   )
-  if query.cast_shape(position, down, shape, options) is Some(hit) {
+  if query.cast_shape(bodies, colliders, position, down, shape, options)
+    is Some(hit) {
     let normal = hit.1.normal()
     // For the controller to be grounded, the angle between the contact normal and the up vector
     // has to be smaller than acos(1.0e-3) ≈ 89.94 degrees.
@@ -647,6 +650,8 @@ fn detect_ground_contact(
 ///|
 fn attempt_autostep(
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   start_pos : @core.Isometry2,
   remaining : @core.Vec2,
@@ -668,9 +673,9 @@ fn attempt_autostep(
   }
   if !autostep.include_dynamic_bodies() {
     // If the obstacle is dynamic, ignore it (Rapier parity).
-    if query.collider(stair_handle) is Some(co) &&
+    if query.collider(colliders, stair_handle) is Some(co) &&
       co.parent() is Some(parent) &&
-      query.rigid_body(parent) is Some(body) &&
+      query.rigid_body(bodies, parent) is Some(body) &&
       body.is_dynamic() {
       return None
     }
@@ -689,6 +694,8 @@ fn attempt_autostep(
 
   // Can we go up?
   if query.cast_shape(
+      bodies,
+      colliders,
       start_pos,
       up,
       shape,
@@ -702,6 +709,8 @@ fn attempt_autostep(
 
   // Is there enough room on the stair after stepping?
   if query.cast_shape(
+      bodies,
+      colliders,
       shifted_pos,
       horizontal_dir,
       shape,
@@ -719,6 +728,8 @@ fn attempt_autostep(
     shifted_pos.rotation,
   )
   if query.cast_shape(
+      bodies,
+      colliders,
       pos_on_stair,
       down,
       shape,
@@ -742,6 +753,8 @@ fn attempt_autostep(
 
   // Find actual step height.
   let toi_down = if query.cast_shape(
+      bodies,
+      colliders,
       pos_on_stair,
       down,
       shape,
@@ -767,31 +780,39 @@ fn attempt_autostep(
 ///|
 fn detect_grounded(
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   position : @core.Isometry2,
   up : @core.Vec2,
   prediction : @core.Real,
   offset : @core.Real,
 ) -> Bool {
-  detect_ground_contact(query, shape, position, up, prediction, offset)
+  detect_ground_contact(
+    query, bodies, colliders, shape, position, up, prediction, offset,
+  )
   is Some(_)
 }
 
 ///|
 fn grounded_info(
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   position : @core.Isometry2,
   up : @core.Vec2,
   prediction : @core.Real,
   offset : @core.Real,
 ) -> (Bool, @core.Vec2) {
-  if detect_ground_contact(query, shape, position, up, prediction, offset)
+  if detect_ground_contact(
+      query, bodies, colliders, shape, position, up, prediction, offset,
+    )
     is Some(hit) {
     let handle = hit.0
-    if query.collider(handle) is Some(co) &&
+    if query.collider(colliders, handle) is Some(co) &&
       co.parent is Some(parent) &&
-      query.rigid_body(parent) is Some(body) &&
+      query.rigid_body(bodies, parent) is Some(body) &&
       body.is_kinematic() {
       (true, body.linvel())
     } else {
@@ -807,6 +828,8 @@ pub fn KinematicCharacterController::move_shape(
   self : KinematicCharacterController,
   dt : @core.Real,
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   shape : @collision.Shape,
   position : @core.Isometry2,
   translation : @core.Vec2,
@@ -823,6 +846,8 @@ pub fn KinematicCharacterController::move_shape(
   // Rapier parity: `check_and_fix_penetrations` is currently a stub upstream.
   let grounded_at_start = grounded_info(
       query,
+      bodies,
+      colliders,
       shape,
       @core.Isometry2::new(
         position.translation.add(result_translation),
@@ -849,7 +874,8 @@ pub fn KinematicCharacterController::move_shape(
     let options = @collision.ShapeCastOptions::new(dist, false).with_target_distance(
       offset,
     )
-    if query.cast_shape(current_pos, dir, shape, options) is Some(hit) {
+    if query.cast_shape(bodies, colliders, current_pos, dir, shape, options)
+      is Some(hit) {
       let toi = hit.1.toi()
       let allowed_dist = toi
       let applied = vec2_scale(dir, allowed_dist)
@@ -870,6 +896,8 @@ pub fn KinematicCharacterController::move_shape(
       if self.autostep is Some(autostep) && hit_info.is_wall {
         if attempt_autostep(
             query,
+            bodies,
+            colliders,
             shape,
             event_pos,
             remaining,
@@ -897,6 +925,8 @@ pub fn KinematicCharacterController::move_shape(
     grounded = grounded ||
       detect_grounded(
         query,
+        bodies,
+        colliders,
         shape,
         @core.Isometry2::new(
           position.translation.add(result_translation),
@@ -911,7 +941,9 @@ pub fn KinematicCharacterController::move_shape(
     }
   }
   if iters == 0 {
-    grounded = grounded_info(query, shape, position, up, prediction, offset).0
+    grounded = grounded_info(
+        query, bodies, colliders, shape, position, up, prediction, offset,
+      ).0
   }
   if grounded_at_start && !grounded && self.snap_to_ground is Some(snap_length) {
     let snap_dist = character_length_eval(snap_length, up_extent)
@@ -924,7 +956,8 @@ pub fn KinematicCharacterController::move_shape(
       let options = @collision.ShapeCastOptions::new(snap_dist, false).with_target_distance(
         offset,
       )
-      if query.cast_shape(current_pos, down, shape, options) is Some(hit) {
+      if query.cast_shape(bodies, colliders, current_pos, down, shape, options)
+        is Some(hit) {
         result_translation = result_translation.add(
           vec2_scale(down, hit.1.toi()),
         )
@@ -936,7 +969,9 @@ pub fn KinematicCharacterController::move_shape(
     position.translation.add(result_translation),
     position.rotation,
   )
-  let end_info = grounded_info(query, shape, final_pos, up, prediction, offset)
+  let end_info = grounded_info(
+    query, bodies, colliders, shape, final_pos, up, prediction, offset,
+  )
   if end_info.0 {
     grounded = true
     result_translation = result_translation.add(
@@ -955,6 +990,8 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
   self : KinematicCharacterController,
   dt : @core.Real,
   query : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   character_shape : @collision.Shape,
   character_mass : @core.Real,
   collisions : Array[CharacterCollision],
@@ -985,9 +1022,9 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
     let vel_to_transfer = vec2_scale(to_transfer, 1.0F / dt)
     let point = hit.point()
     let handle = collision.handle()
-    if query.collider(handle) is Some(co) &&
+    if query.collider(colliders, handle) is Some(co) &&
       co.parent() is Some(parent) &&
-      query.bodies.get_mut(parent) is Some(body) {
+      bodies.get_mut(parent) is Some(body) {
       if !body.is_dynamic() || !body.is_enabled() {
         continue
       }

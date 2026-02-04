@@ -446,20 +446,13 @@ pub fn Bvh::aabbs(self : Bvh) -> Array[@core.Aabb?] {
 
 ///|
 pub struct QueryPipeline {
-  /// A placeholder query dispatcher. Unlike Rapier, this port hardcodes the supported
-  /// shape queries, so this is currently only provided for pub-surface parity.
-  dispatcher : Unit
   /// Conservative AABB cache used by this QueryPipeline.
   bvh : Bvh
   filter : QueryFilter
-  bodies : @dynamics.RigidBodySet
-  colliders : ColliderSet
 }
 
 ///|
 pub struct QueryPipelineMut {
-  mut dispatcher : Unit
-  mut bvh : Bvh
   pipeline : QueryPipeline
 }
 
@@ -625,6 +618,7 @@ pub fn QueryPipeline::new(
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
 ) -> QueryPipeline {
+  colliders.sync_with_bodies(bodies)
   let aabbs : Array[@core.Aabb?] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -633,7 +627,7 @@ pub fn QueryPipeline::new(
       aabbs.push(None)
     }
   }
-  { dispatcher: (), bvh: Bvh::new(aabbs), filter, bodies, colliders }
+  { bvh: Bvh::new(aabbs), filter }
 }
 
 ///|
@@ -646,12 +640,15 @@ pub fn QueryPipeline::new3(
 }
 
 ///|
-pub fn QueryPipeline::update(self : QueryPipeline) -> Unit {
-  // Refresh collider world-space state and cached AABBs so scene queries see the latest positions.
-  self.colliders.sync_with_bodies(self.bodies)
+pub fn QueryPipeline::update(
+  self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  colliders.sync_with_bodies(bodies)
   self.bvh.aabbs.clear()
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
       self.bvh.aabbs.push(Some(compute_collider_aabb(collider)))
     } else {
       self.bvh.aabbs.push(None)
@@ -664,13 +661,7 @@ pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
-  {
-    dispatcher: self.dispatcher,
-    bvh: self.bvh,
-    filter,
-    bodies: self.bodies,
-    colliders: self.colliders,
-  }
+  { bvh: self.bvh, filter }
 }
 
 ///|
@@ -680,7 +671,7 @@ pub fn QueryPipelineMut::new(
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
   let pipeline = QueryPipeline::new(filter, bodies, colliders)
-  { dispatcher: pipeline.dispatcher, bvh: pipeline.bvh, pipeline }
+  { pipeline, }
 }
 
 ///|
@@ -698,10 +689,12 @@ pub fn QueryPipelineMut::as_ref(self : QueryPipelineMut) -> QueryPipeline {
 }
 
 ///|
-pub fn QueryPipelineMut::update(self : QueryPipelineMut) -> Unit {
-  self.pipeline.update()
-  self.dispatcher = self.pipeline.dispatcher
-  self.bvh = self.pipeline.bvh
+pub fn QueryPipelineMut::update(
+  self : QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> Unit {
+  self.pipeline.update(bodies, colliders)
 }
 
 ///|
@@ -1158,11 +1151,14 @@ fn ray_intersect_capsule_oriented_and_get_normal(
 ///|
 pub fn QueryPipeline::cast_ray(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, @core.Real)? {
-  if self.cast_ray_and_get_normal(ray, max_toi, solid) is Some(hit) {
+  if self.cast_ray_and_get_normal(bodies, colliders, ray, max_toi, solid)
+    is Some(hit) {
     Some((hit.0, hit.1.toi))
   } else {
     None
@@ -1172,16 +1168,18 @@ pub fn QueryPipeline::cast_ray(
 ///|
 pub fn QueryPipeline::cast_ray_and_get_normal(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
 ) -> (ColliderHandle, RayIntersection)? {
   let max_dist = if max_toi < 0.0F { 0.0F } else { max_toi }
   let mut best : (ColliderHandle, RayIntersection)? = None
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       let pos = collider.world_translation
@@ -1211,16 +1209,18 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
 ///|
 pub fn QueryPipeline::intersect_ray(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   ray : Ray,
   max_toi : @core.Real,
   solid : Bool,
 ) -> Array[(ColliderHandle, RayIntersection)] {
   let max_dist = if max_toi < 0.0F { 0.0F } else { max_toi }
   let results : Array[(ColliderHandle, RayIntersection)] = []
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       let pos = collider.world_translation
@@ -1750,6 +1750,8 @@ fn shape_cast_against_capsule(
 ///|
 pub fn QueryPipeline::cast_shape(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_pos : @core.Isometry2,
   shape_vel : @core.Vec2,
   shape : Shape,
@@ -1776,10 +1778,10 @@ pub fn QueryPipeline::cast_shape(
     Shape::Compound(_) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       fn best_hit(
@@ -2139,6 +2141,8 @@ pub fn QueryPipeline::cast_shape(
 ///|
 pub fn QueryPipeline::cast_shape_nonlinear(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_motion : NonlinearRigidMotion,
   shape : Shape,
   start_time : @core.Real,
@@ -2449,10 +2453,10 @@ pub fn QueryPipeline::cast_shape_nonlinear(
   let c1 = shape_motion.pose_at_time(end_time).translation
   let sweep_aabb = swept_center_aabb(c0, c1, radius)
   let mut best : (ColliderHandle, ShapeCastHit)? = None
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       // AABB prefilter using the cached collider AABB (Rapier parity).
@@ -2524,17 +2528,21 @@ pub fn QueryPipeline::cast_shape_nonlinear(
 ///|
 pub fn QueryPipeline::collider(
   self : QueryPipeline,
+  colliders : ColliderSet,
   handle : ColliderHandle,
 ) -> Collider? {
-  self.colliders.get(handle)
+  self |> ignore
+  colliders.get(handle)
 }
 
 ///|
 pub fn QueryPipeline::rigid_body(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
   handle : @dynamics.RigidBodyHandle,
 ) -> @dynamics.RigidBody? {
-  self.bodies.get(handle)
+  self |> ignore
+  bodies.get(handle)
 }
 
 ///|
@@ -3010,15 +3018,17 @@ fn compute_query_shape_aabb(
 ///|
 pub fn QueryPipeline::intersect_shape(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   shape_pos : @core.Isometry2,
   shape : Shape,
 ) -> Array[ColliderHandle] {
   let shape_aabb = compute_query_shape_aabb(shape_pos, shape)
   let results : Array[ColliderHandle] = []
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       if i < self.bvh.aabbs.length() && self.bvh.aabbs[i] is Some(co_aabb) {
@@ -3044,13 +3054,15 @@ pub fn QueryPipeline::intersect_shape(
 ///|
 pub fn QueryPipeline::intersect_aabb_conservative(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   aabb : @core.Aabb,
 ) -> Array[ColliderHandle] {
   let result : Array[ColliderHandle] = []
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       // Use the cached AABB from pipeline creation time (Rapier parity).
@@ -3939,6 +3951,8 @@ fn project_point_on_shape_and_get_feature(
 ///|
 pub fn QueryPipeline::project_point(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
   max_dist : @core.Real,
   solid : Bool,
@@ -3946,10 +3960,10 @@ pub fn QueryPipeline::project_point(
   // Rapier keeps this parameter for API consistency, but doesn't use it.
   max_dist |> ignore
   let mut best : (ColliderHandle, PointProjection, @core.Real)? = None
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       let projection = project_point_on_shape(
@@ -3980,6 +3994,8 @@ pub fn QueryPipeline::project_point(
 ///|
 pub fn QueryPipeline::project_point_and_get_feature(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
   max_dist : @core.Real,
   solid : Bool,
@@ -3987,10 +4003,10 @@ pub fn QueryPipeline::project_point_and_get_feature(
   // Rapier keeps this parameter for API consistency, but doesn't use it.
   max_dist |> ignore
   let mut best : (ColliderHandle, PointProjection, FeatureId, @core.Real)? = None
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       let (projection, feature) = project_point_on_shape_and_get_feature(
@@ -4021,13 +4037,15 @@ pub fn QueryPipeline::project_point_and_get_feature(
 ///|
 pub fn QueryPipeline::intersect_point(
   self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
   point : @core.Vec2,
 ) -> Array[ColliderHandle] {
   let result : Array[ColliderHandle] = []
-  for i in 0..<self.colliders.colliders.length() {
-    if self.colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, self.colliders.generations[i])
-      if !self.filter.passes(self.bodies, handle, collider) {
+  for i in 0..<colliders.colliders.length() {
+    if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.generations[i])
+      if !self.filter.passes(bodies, handle, collider) {
         continue
       }
       if point_in_shape(

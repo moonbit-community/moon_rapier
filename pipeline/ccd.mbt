@@ -146,7 +146,15 @@ fn predict_ccd_impacts_at_next_positions(
           let pipeline = @collision.QueryPipeline::new(
             filter, bodies, colliders,
           )
-          if pipeline.cast_shape_nonlinear(motion, co.shape, 0.0F, dt, true)
+          if pipeline.cast_shape_nonlinear(
+              bodies,
+              colliders,
+              motion,
+              co.shape,
+              0.0F,
+              dt,
+              true,
+            )
             is Some((_, hit)) {
             let toi = hit.toi()
             best_toi = match best_toi {
@@ -264,6 +272,8 @@ fn find_first_ccd_impact(
             filter, bodies, colliders,
           )
           if pipeline.cast_shape_nonlinear(
+              bodies,
+              colliders,
               motion,
               co.shape,
               0.0F,

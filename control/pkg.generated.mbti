@@ -69,7 +69,7 @@ pub fn DynamicRayCastVehicleController::add_wheel(Self, @core.Vec2, @core.Vec2, 
 pub fn DynamicRayCastVehicleController::new(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
+pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut, @dynamics.RigidBodySet, @collision.ColliderSet) -> Unit
 
 pub struct DynamicRayCastVehicleController3 {
   wheels : Array[Wheel3]
@@ -85,7 +85,7 @@ pub fn DynamicRayCastVehicleController3::new(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController3::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.QueryPipelineMut) -> Unit
+pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.QueryPipelineMut, @dynamics.RigidBodySet, @collision.ColliderSet) -> Unit
 pub fn DynamicRayCastVehicleController3::wheels(Self) -> Array[Wheel3]
 
 pub struct DynamicRayCastVehicleController3DReal {
@@ -102,7 +102,7 @@ pub fn DynamicRayCastVehicleController3DReal::new(@dynamics.RigidBodyHandle) -> 
 pub fn DynamicRayCastVehicleController3DReal::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3DReal::update_vehicle(Self, Float, @collision.QueryPipelineMut3DReal) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::update_vehicle(Self, Float, @collision.QueryPipelineMut3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::wheels(Self) -> Array[Wheel3DReal]
 
 pub struct EffectiveMovement {
@@ -134,9 +134,9 @@ pub struct KinematicCharacterController {
   normal_nudge_factor : Float
 }
 pub fn KinematicCharacterController::default() -> Self
-pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
+pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
 pub fn KinematicCharacterController::new() -> Self
-pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
+pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
 pub fn KinematicCharacterController::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController::with_min_slope_slide_angle(Self, Float) -> Self
@@ -157,9 +157,9 @@ pub struct KinematicCharacterController3DReal {
   normal_nudge_factor : Float
 }
 pub fn KinematicCharacterController3DReal::default() -> Self
-pub fn KinematicCharacterController3DReal::move_shape(Self, Float, @collision.QueryPipeline3DReal, @collision.Shape3D, @core.Isometry3, @core.Vec3, (CharacterCollision3DReal) -> Unit) -> EffectiveMovement3DReal
+pub fn KinematicCharacterController3DReal::move_shape(Self, Float, @collision.QueryPipeline3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.Shape3D, @core.Isometry3, @core.Vec3, (CharacterCollision3DReal) -> Unit) -> EffectiveMovement3DReal
 pub fn KinematicCharacterController3DReal::new() -> Self
-pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline3DReal, @collision.Shape3D, Float, Array[CharacterCollision3DReal]) -> Unit
+pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.Shape3D, Float, Array[CharacterCollision3DReal]) -> Unit
 pub fn KinematicCharacterController3DReal::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController3DReal::with_max_slope_climb_angle(Self, Float) -> Self
 pub fn KinematicCharacterController3DReal::with_min_slope_slide_angle(Self, Float) -> Self

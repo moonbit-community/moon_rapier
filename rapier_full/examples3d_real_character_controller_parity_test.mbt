@@ -261,7 +261,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
       rb.set_linvel(linvel)
     }
     colliders.sync_with_bodies(bodies)
-    queries.update()
+    queries.update(bodies, colliders)
     let qp = queries
       .as_ref()
       .with_filter(
@@ -272,6 +272,8 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
       let movement = controller.move_shape(
         dt,
         qp,
+        bodies,
+        colliders,
         cc.shape(),
         cc.position(),
         @core.Vec3::new(speed * dt, 0.0F, 0.0F),
@@ -280,6 +282,8 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
       controller.solve_character_collision_impulses(
         dt,
         qp,
+        bodies,
+        colliders,
         cc.shape(),
         1.0F,
         collisions,

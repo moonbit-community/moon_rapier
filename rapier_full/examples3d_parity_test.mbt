@@ -1351,7 +1351,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   for _ in 0..<240 {
     let filter = @collision.QueryFilter::new().exclude_rigid_body(chassis)
     let queries = @collision.QueryPipelineMut::new3(filter, bodies, colliders)
-    vehicle.update_vehicle(dt, queries)
+    vehicle.update_vehicle(dt, queries, bodies.as_2d(), colliders.as_2d())
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, ccd_solver, hooks, events,

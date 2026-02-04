@@ -324,6 +324,8 @@ fn update_wheel_transforms_ws3(
 ///|
 fn ray_cast3(
   queries : @collision.QueryPipeline,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
   chassis : @dynamics.RigidBody,
   wheel : Wheel3,
 ) -> Wheel3 {
@@ -335,7 +337,8 @@ fn ray_cast3(
   let ray_dir = v3_to_v2(ray_dir_ws)
   let ray = @collision.Ray::new(source, ray_dir)
   out.raycast_info.contact_point_ws = source_ws.add(ray_dir_ws.scale(raylen))
-  if queries.cast_ray_and_get_normal(ray, raylen, true) is Some(hit) {
+  if queries.cast_ray_and_get_normal(bodies, colliders, ray, raylen, true)
+    is Some(hit) {
     let collider_hit = hit.0
     let intersection = hit.1
     let normal2 = intersection.normal()
@@ -635,10 +638,12 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
   self : DynamicRayCastVehicleController3,
   dt : @core.Real,
   queries : @collision.QueryPipelineMut,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
 ) -> Unit {
-  queries.update()
+  queries.update(bodies, colliders)
   let qp = queries.as_ref()
-  let chassis = match qp.rigid_body(self.chassis) {
+  let chassis = match qp.rigid_body(bodies, self.chassis) {
     Some(rb) => rb
     None => return
   }
@@ -662,7 +667,7 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
   // Suspension ray casts.
   for i in 0..<num_wheels {
     let w = self.wheels[i]
-    self.wheels[i] = ray_cast3(qp, chassis, w)
+    self.wheels[i] = ray_cast3(qp, bodies, colliders, chassis, w)
   }
   let chassis_mass = chassis.mass()
   for i in 0..<num_wheels {
@@ -671,7 +676,7 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
   }
 
   // Apply suspension impulses.
-  if qp.bodies.get_mut_internal_with_modification_tracking(self.chassis)
+  if bodies.get_mut_internal_with_modification_tracking(self.chassis)
     is Some(rb) {
     for i in 0..<num_wheels {
       let w = self.wheels[i]
@@ -693,10 +698,10 @@ pub fn DynamicRayCastVehicleController3::update_vehicle(
       |> ignore
     }
   }
-  update_friction3(self, qp.bodies, qp.colliders, dt)
+  update_friction3(self, bodies, colliders, dt)
 
   // Update wheel rotation.
-  if qp.bodies.get_mut_internal_with_modification_tracking(self.chassis)
+  if bodies.get_mut_internal_with_modification_tracking(self.chassis)
     is Some(rb) {
     let fwd_axis = rotate_vec3_yaw(
       rb.rotation(),
