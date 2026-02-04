@@ -242,6 +242,32 @@ pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.Integ
 pub fn PhysicsPipeline3DReal::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
 
+pub struct SolverBodies {
+  vels : Array[SolverVel]
+  poses : Array[SolverPose]
+}
+pub fn SolverBodies::clear(Self) -> Unit
+pub fn SolverBodies::copy_from(Self, Int, @dynamics.RigidBody) -> Unit
+pub fn SolverBodies::default() -> Self
+pub fn SolverBodies::len(Self) -> Int
+pub fn SolverBodies::resize(Self, Int) -> Unit
+pub fn SolverBodies::writeback_vels(Self, @dynamics.RigidBodySet) -> Unit
+
+pub struct SolverPose {
+  mut translation : @core.Vec2
+  mut rotation : @core.Rot2
+  mut im : @core.Vec2
+  mut ii : Float
+  padding : Float
+}
+pub fn SolverPose::zero() -> Self
+
+pub struct SolverVel {
+  mut linear : @core.Vec2
+  mut angular : Float
+}
+pub fn SolverVel::zero() -> Self
+
 // Type aliases
 pub using @dynamics {type IntegrationParameters}
 

@@ -1253,6 +1253,84 @@ pub fn GenericJoint::new(locked_axes : JointAxesMask) -> GenericJoint {
 }
 
 ///|
+pub fn GenericJoint::lock_axes(
+  self : GenericJoint,
+  axes : JointAxesMask,
+) -> GenericJoint {
+  self.locked_axes = self.locked_axes.or(axes)
+  self
+}
+
+///|
+pub fn GenericJoint::as_revolute(self : GenericJoint) -> GenericJoint? {
+  if self.locked_axes.bits() == JointAxesMask::locked_revolute_axes().bits() {
+    Some(self)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn GenericJoint::as_revolute_mut(self : GenericJoint) -> GenericJoint? {
+  self.as_revolute()
+}
+
+///|
+pub fn GenericJoint::as_fixed(self : GenericJoint) -> GenericJoint? {
+  if self.locked_axes.bits() == ((1 << 0) | (1 << 1) | (1 << 2)) {
+    Some(self)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn GenericJoint::as_fixed_mut(self : GenericJoint) -> GenericJoint? {
+  self.as_fixed()
+}
+
+///|
+pub fn GenericJoint::as_prismatic(self : GenericJoint) -> GenericJoint? {
+  if self.locked_axes.bits() == ((1 << 1) | (1 << 2)) {
+    Some(self)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn GenericJoint::as_prismatic_mut(self : GenericJoint) -> GenericJoint? {
+  self.as_prismatic()
+}
+
+///|
+pub fn GenericJoint::as_rope(self : GenericJoint) -> GenericJoint? {
+  if self.locked_axes.bits() == 0 {
+    Some(self)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn GenericJoint::as_rope_mut(self : GenericJoint) -> GenericJoint? {
+  self.as_rope()
+}
+
+///|
+pub fn GenericJoint::as_spherical(self : GenericJoint) -> GenericJoint? {
+  // Spherical joints are a 3D-only joint type in Rapier. This MoonBit port currently has no
+  // dedicated 3D reduced-coordinate joints, so this conversion always fails.
+  self |> ignore
+  None
+}
+
+///|
+pub fn GenericJoint::as_spherical_mut(self : GenericJoint) -> GenericJoint? {
+  self.as_spherical()
+}
+
+///|
 pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
   let anchor1 = joint.local_anchor1()
   let anchor2 = joint.local_anchor2()

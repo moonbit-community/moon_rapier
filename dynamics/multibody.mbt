@@ -263,12 +263,45 @@ pub fn MultibodyLink::local_to_world(self : MultibodyLink) -> @core.Isometry2 {
 }
 
 ///|
+pub fn MultibodyLink::local_to_parent(self : MultibodyLink) -> @core.Isometry2 {
+  self.local_to_parent
+}
+
+///|
+pub fn MultibodyLink::is_root(self : MultibodyLink) -> Bool {
+  self.internal_id == 0
+}
+
+///|
+pub fn MultibodyLink::link_id(self : MultibodyLink) -> LinkId {
+  { value: self.internal_id }
+}
+
+///|
+pub fn MultibodyLink::parent_id(self : MultibodyLink) -> LinkId {
+  { value: self.parent_internal_id }
+}
+
+///|
+pub fn MultibodyLink::rigid_body_handle(
+  self : MultibodyLink,
+) -> RigidBodyHandle {
+  self.rigid_body
+}
+
+///|
 struct Multibody {
   links : Array[MultibodyLink]
   mut ndofs : Int
   mut root_is_dynamic : Bool
   mut root_translation : @core.Vec2
   mut root_angle : @core.Real
+  mut velocities : DVector
+  mut damping : DVector
+  mut accelerations : DVector
+  mut inv_augmented_mass : @core.DMatrix
+  solver_id : Int
+  mut self_contacts_enabled : Bool
 }
 
 ///|
@@ -285,12 +318,20 @@ fn Multibody::new_with_root(handle : RigidBodyHandle) -> Multibody {
     local_to_world: @core.Isometry2::identity(),
   }
   let links : Array[MultibodyLink] = [link]
+  let n = SPATIAL_DIM
+  let zeros = DVector::from_fn(n, fn(_) { 0.0F })
   {
     links,
-    ndofs: SPATIAL_DIM,
+    ndofs: n,
     root_is_dynamic: true,
     root_translation: @core.Vec2::zero(),
     root_angle: 0.0F,
+    velocities: zeros,
+    damping: DVector::from_fn(n, fn(_) { 0.0F }),
+    accelerations: DVector::from_fn(n, fn(_) { 0.0F }),
+    inv_augmented_mass: @core.DMatrix::identity(n),
+    solver_id: 0,
+    self_contacts_enabled: true,
   }
 }
 
@@ -340,6 +381,40 @@ fn Multibody::rebuild_indices(self : Multibody, root_dofs : Int) -> Unit {
 }
 
 ///|
+fn Multibody::ensure_buffers(self : Multibody) -> Unit {
+  let mut n = self.ndofs
+  if n < 0 {
+    n = 0
+  }
+  fn copy_prefix(src : DVector, dst : DVector, n : Int) -> Unit {
+    let limit = if src.len() < n { src.len() } else { n }
+    for i in 0..<limit {
+      dst.set_value(i, src.value_at(i))
+    }
+  }
+
+  if self.velocities.len() != n || self.velocities.as_array().length() != n {
+    let new_vels = DVector::from_fn(n, fn(_) { 0.0F })
+    copy_prefix(self.velocities, new_vels, n)
+    self.velocities = new_vels
+  }
+  if self.damping.len() != n || self.damping.as_array().length() != n {
+    let new_damping = DVector::from_fn(n, fn(_) { 0.0F })
+    copy_prefix(self.damping, new_damping, n)
+    self.damping = new_damping
+  }
+  if self.accelerations.len() != n ||
+    self.accelerations.as_array().length() != n {
+    let new_acc = DVector::from_fn(n, fn(_) { 0.0F })
+    copy_prefix(self.accelerations, new_acc, n)
+    self.accelerations = new_acc
+  }
+
+  // This port currently doesn't compute the augmented mass; keep a deterministic placeholder.
+  self.inv_augmented_mass = @core.DMatrix::identity(n)
+}
+
+///|
 fn Multibody::recompute_ndofs(self : Multibody) -> Unit {
   let count = self.links.length()
   if count <= 0 {
@@ -349,6 +424,7 @@ fn Multibody::recompute_ndofs(self : Multibody) -> Unit {
     self.ndofs = SPATIAL_DIM + (count - 1)
     self.rebuild_indices(SPATIAL_DIM)
   }
+  self.ensure_buffers()
 }
 
 ///|
@@ -370,6 +446,7 @@ fn Multibody::update_ndofs_with_root(
   self.root_is_dynamic = is_dynamic
   self.ndofs = root_dofs + (self.links.length() - 1)
   self.rebuild_indices(root_dofs)
+  self.ensure_buffers()
 }
 
 ///|
@@ -419,6 +496,187 @@ pub fn Multibody::update_rigid_bodies(
 ///|
 pub fn Multibody::ndofs(self : Multibody) -> Int {
   self.ndofs
+}
+
+///|
+pub fn Multibody::num_links(self : Multibody) -> Int {
+  self.links.length()
+}
+
+///|
+pub fn Multibody::root(self : Multibody) -> MultibodyLink? {
+  self.link({ value: 0 })
+}
+
+///|
+pub fn Multibody::root_mut(self : Multibody) -> MultibodyLink? {
+  // MoonBit doesn't have Rust-like borrowing; we return the same link view as `root`.
+  self.root()
+}
+
+///|
+pub fn Multibody::links_mut(self : Multibody) -> Array[MultibodyLink] {
+  self.links
+}
+
+///|
+pub fn Multibody::link_mut(self : Multibody, id : LinkId) -> MultibodyLink? {
+  self.link(id)
+}
+
+///|
+pub fn Multibody::kinematic_branch(
+  self : Multibody,
+  link_id : Int,
+) -> Array[Int] {
+  self.branch_ids({ value: link_id })
+}
+
+///|
+pub fn Multibody::self_contacts_enabled(self : Multibody) -> Bool {
+  self.self_contacts_enabled
+}
+
+///|
+pub fn Multibody::set_self_contacts_enabled(
+  self : Multibody,
+  enabled : Bool,
+) -> Unit {
+  self.self_contacts_enabled = enabled
+}
+
+///|
+pub fn Multibody::generalized_velocity(self : Multibody) -> DVector {
+  // Full view into the internal generalized velocity buffer.
+  DVector::new_view(self.velocities.data, 0, self.ndofs)
+}
+
+///|
+pub fn Multibody::generalized_velocity_mut(self : Multibody) -> DVector {
+  // Same as `generalized_velocity`; the returned view can be mutated via DVector setters.
+  self.generalized_velocity()
+}
+
+///|
+pub fn Multibody::generalized_acceleration(self : Multibody) -> DVector {
+  DVector::new_view(self.accelerations.data, 0, self.ndofs)
+}
+
+///|
+pub fn Multibody::damping_mut(self : Multibody) -> DVector {
+  DVector::new_view(self.damping.data, 0, self.ndofs)
+}
+
+///|
+pub fn Multibody::inv_augmented_mass(self : Multibody) -> @core.DMatrix {
+  self.inv_augmented_mass
+}
+
+///|
+pub fn Multibody::joint_velocity(
+  self : Multibody,
+  link : MultibodyLink,
+) -> DVector {
+  if link.internal_id == 0 {
+    let root_ndofs = if self.root_is_dynamic { SPATIAL_DIM } else { 0 }
+    DVector::new_view(self.velocities.data, 0, root_ndofs)
+  } else {
+    DVector::new_view(self.velocities.data, link.assembly_id, 1)
+  }
+}
+
+///|
+pub fn Multibody::forward_kinematics_single_branch(
+  self : Multibody,
+  bodies : RigidBodySet,
+  branch : Array[Int],
+  displacements : Array[@core.Real]?,
+  out_jacobian : Jacobian?,
+) -> @core.Isometry2 {
+  self.update_ndofs_with_root(bodies)
+  if branch.length() == 0 {
+    out_jacobian |> ignore
+    return @core.Isometry2::identity()
+  }
+  let first = branch[0]
+  if first < 0 || first >= self.links.length() {
+    out_jacobian |> ignore
+    return @core.Isometry2::identity()
+  }
+  if out_jacobian is Some(jacobian) {
+    jacobian.ensure_cols(self.ndofs)
+  }
+
+  // Start at root.
+  let root_pose = self.root_pose(displacements)
+  let mut current_pose = root_pose
+  let mut last = first
+  if first == 0 {
+    let root_link = self.links[0]
+    root_link.local_to_parent = root_pose
+    root_link.local_to_world = root_pose
+    self.links[0] = root_link
+  }
+
+  // Propagate along the branch.
+  for i in 1..<branch.length() {
+    let link_id = branch[i]
+    if link_id < 0 || link_id >= self.links.length() {
+      continue
+    }
+    let link = self.links[link_id]
+    let mut angle = link.joint_angle
+    if displacements is Some(disp) && link.assembly_id < disp.length() {
+      angle = angle + disp[link.assembly_id]
+    }
+    let local_to_parent = revolute_body_to_parent(link.joint, angle)
+    current_pose = current_pose.mul(local_to_parent)
+    link.local_to_parent = local_to_parent
+    link.local_to_world = current_pose
+    self.links[link_id] = link
+    last = link_id
+  }
+
+  // If a jacobian is requested, compute it for the last link of the branch.
+  if out_jacobian is Some(jacobian) {
+    self.compute_link_pose({ value: last }, displacements, Some(jacobian))
+    |> ignore
+  }
+  if last < 0 || last >= self.links.length() {
+    @core.Isometry2::identity()
+  } else {
+    self.links[last].local_to_world
+  }
+}
+
+///|
+pub fn Multibody::inverse_kinematics_delta(
+  self : Multibody,
+  link_id : LinkId,
+  dx : @core.Real,
+  dy : @core.Real,
+  da : @core.Real,
+  damping : @core.Real,
+  displacements : DVector,
+) -> Unit {
+  let jacobian = self.body_jacobian(link_id)
+  Multibody::inverse_kinematics_delta_with_jacobian(
+    jacobian, dx, dy, da, damping, displacements,
+  )
+}
+
+///|
+pub fn Multibody::inverse_kinematics_delta_with_jacobian(
+  jacobian : Jacobian,
+  dx : @core.Real,
+  dy : @core.Real,
+  da : @core.Real,
+  damping : @core.Real,
+  displacements : DVector,
+) -> Unit {
+  ik_inverse_kinematics_delta_with_jacobian(
+    jacobian, dx, dy, da, damping, displacements,
+  )
 }
 
 ///|
@@ -999,6 +1257,12 @@ fn build_multibody_from_indices(
     root_is_dynamic: multibody.root_is_dynamic,
     root_translation,
     root_angle,
+    velocities: DVector::from_fn(0, fn(_) { 0.0F }),
+    damping: DVector::from_fn(0, fn(_) { 0.0F }),
+    accelerations: DVector::from_fn(0, fn(_) { 0.0F }),
+    inv_augmented_mass: @core.DMatrix::identity(0),
+    solver_id: multibody.solver_id,
+    self_contacts_enabled: multibody.self_contacts_enabled,
   }
   new_multibody.recompute_ndofs()
   new_multibody
@@ -1274,7 +1538,14 @@ pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
           root_is_dynamic: true,
           root_translation: @core.Vec2::new(root_tx, root_ty),
           root_angle,
+          velocities: DVector::from_fn(0, fn(_) { 0.0F }),
+          damping: DVector::from_fn(0, fn(_) { 0.0F }),
+          accelerations: DVector::from_fn(0, fn(_) { 0.0F }),
+          inv_augmented_mass: @core.DMatrix::identity(0),
+          solver_id: 0,
+          self_contacts_enabled: true,
         }
+        mb.recompute_ndofs()
         let mb_index = set.multibodies.length()
         set.multibodies.push(mb)
         set.update_body_links_for_multibody(mb_index, mb)
