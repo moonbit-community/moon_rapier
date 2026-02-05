@@ -244,9 +244,14 @@ pub fn PhysicsPipeline3::new() -> Self
 pub fn PhysicsPipeline3::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 pub struct PhysicsPipeline3D {
+  inner : PhysicsPipeline3DReal
 }
 pub fn PhysicsPipeline3D::new() -> Self
-pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.RigidBodySet3D) -> Unit
+pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
+pub fn PhysicsPipeline3D::step_integration_only(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.RigidBodySet3D) -> Unit
+pub fn PhysicsPipeline3D::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
+pub fn PhysicsPipeline3D::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
+pub fn PhysicsPipeline3D::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
 
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D

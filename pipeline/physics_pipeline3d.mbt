@@ -13,16 +13,17 @@
 // limitations under the License.
 
 ///|
-/// Real dim3 physics pipeline (integration only for now).
+/// Real dim3 physics pipeline (broadphase + narrowphase + contact solver).
 ///
-/// This is the first building block for the true 3D backend. Collision
-/// detection and constraint solving will be added incrementally to match
-/// rapier-reference (cfg dim3).
-pub struct PhysicsPipeline3D {}
+/// This is the public 3D pipeline entrypoint. Internally it delegates to the
+/// incremental 3D backend implementation (`PhysicsPipeline3DReal`).
+pub struct PhysicsPipeline3D {
+  inner : PhysicsPipeline3DReal
+}
 
 ///|
 pub fn PhysicsPipeline3D::new() -> PhysicsPipeline3D {
-  PhysicsPipeline3D::{  }
+  { inner: PhysicsPipeline3DReal::new() }
 }
 
 ///|
@@ -30,9 +31,76 @@ pub fn PhysicsPipeline3D::step(
   self : PhysicsPipeline3D,
   gravity : @core.Vec3,
   parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+) -> Unit {
+  self.inner.step(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3D::step_with_events(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+) -> Unit {
+  self.inner.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, events,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3D::step_with_rope_joints(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+) -> Unit {
+  self.inner.step_with_rope_joints(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, rope_joints,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3D::step_with_joints(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  joints : @dynamics.JointSet3DReal,
+) -> Unit {
+  self.inner.step_with_joints(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, joints,
+  )
+}
+
+///|
+/// Integration-only step retained as a lightweight helper.
+pub fn PhysicsPipeline3D::step_integration_only(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
   bodies : @dynamics.RigidBodySet3D,
 ) -> Unit {
   self |> ignore
-  let dt = parameters.dt
-  bodies.integrate_all(gravity, dt)
+  bodies.integrate_all(gravity, parameters.dt)
 }

@@ -13,20 +13,50 @@
 // limitations under the License.
 
 ///|
-test "physics_pipeline3d step integrates bodies" {
+test "physics_pipeline3d step runs collisions and solver" {
   let pipeline = PhysicsPipeline3D::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let colliders = @collision.ColliderSet3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
-  let parameters = @dynamics.IntegrationParameters::default().set_dt(0.1F)
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
   let bodies = @dynamics.RigidBodySet3D::new()
-  let handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 1.0F, 2.0F))
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
     .build(),
   )
-  pipeline.step(gravity, parameters, bodies)
-  if bodies.get(handle) is Some(rb) {
-    inspect(rb.translation().y < 1.0F, content="true")
-    inspect(rb.translation().z == 2.0F, content="true")
+  let ground_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
+    ground,
+    bodies,
+  )
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .build(),
+  )
+  let ball_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F).build(),
+    ball,
+    bodies,
+  )
+  for _ in 0..<240 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+  if bodies.get(ball) is Some(rb) {
+    // Ball should not tunnel far below the ground top face (y=0).
+    inspect(rb.translation().y > -0.2F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if narrow_phase.contact_pair(ball_collider, ground_collider) is Some(pair) {
+    inspect(pair.manifolds_len() > 0, content="true")
   } else {
     inspect(false, content="true")
   }
