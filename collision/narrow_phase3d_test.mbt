@@ -272,6 +272,26 @@ test "ball-capsule contact: overlap on side" {
 }
 
 ///|
+test "convex contact: cylinder-cuboid overlap produces contact" {
+  let cyl_pos = @core.Isometry3::identity()
+  let cub_pos = @core.Isometry3::from_translation(
+    @core.Vec3::new(0.0F, -0.5F, 0.0F),
+  )
+  let c = compute_convex_contact(
+    cyl_pos,
+    Shape3D::Cylinder(1.0F, 1.0F),
+    cub_pos,
+    Shape3D::Cuboid(@core.Vec3::new(5.0F, 0.25F, 5.0F)),
+  )
+  if c is Some(cp) {
+    inspect(cp.normal.y < 0.0F, content="true")
+    inspect(cp.penetration > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "capsule-cuboid contact: face overlap" {
   let capsule = @core.Isometry3::from_translation(
     @core.Vec3::new(1.4F, 0.0F, 0.0F),
