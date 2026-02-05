@@ -1108,7 +1108,7 @@ fn qp3d_real_hit_shape(
       }
       best
     }
-    Shape3D::Heightfield(vertices, _, nrows, ncols) => {
+    Shape3D::Heightfield(vertices, _, nrows, ncols, _) => {
       if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
         return None
       }
@@ -2295,8 +2295,10 @@ fn qp3d_real_project_point_on_shape(
         ({ point: best_proj.point, is_inside: any_inside }, best_d2)
       }
     }
-    Shape3D::Heightfield(vertices, _, rows, cols) =>
-      if heightfield_closest_point_query(point, pos, vertices, rows, cols)
+    Shape3D::Heightfield(vertices, _, rows, cols, flags) =>
+      if heightfield_closest_point_query_with_flags(
+          point, pos, vertices, rows, cols, flags,
+        )
         is Some((q, _, d2)) {
         ({ point: q, is_inside: false }, d2)
       } else {
@@ -2562,7 +2564,7 @@ fn qp3d_real_cast_ball_against_shape(
       }
       best
     }
-    Shape3D::Heightfield(vertices, _, rows, cols) => {
+    Shape3D::Heightfield(vertices, _, rows, cols, flags) => {
       // Conservative advancement using heightfield distance queries.
       let mut t = 0.0F
       let mut prev_d = 1.0e30F
@@ -2571,7 +2573,9 @@ fn qp3d_real_cast_ball_against_shape(
           return None
         }
         let c = center.add(vel.scale(t))
-        if heightfield_closest_point_query(c, pos2, vertices, rows, cols)
+        if heightfield_closest_point_query_with_flags(
+            c, pos2, vertices, rows, cols, flags,
+          )
           is Some((q, n0, d2)) {
           let dist = Float::sqrt(d2)
           let delta = c.sub(q)
@@ -2795,8 +2799,8 @@ fn qp3d_real_inflate_shape(shape : Shape3D, margin : @core.Real) -> Shape3D {
       Shape3D::Compound(out)
     }
     Shape3D::Voxels(v) => Shape3D::Voxels(v)
-    Shape3D::Heightfield(vertices, indices, rows, cols) =>
-      Shape3D::Heightfield(vertices, indices, rows, cols)
+    Shape3D::Heightfield(vertices, indices, rows, cols, flags) =>
+      Shape3D::Heightfield(vertices, indices, rows, cols, flags)
     Shape3D::TriMesh(vertices, indices) => Shape3D::TriMesh(vertices, indices)
   }
 }
@@ -3096,14 +3100,15 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::Ball(r), Shape3D::Heightfield(vertices, _, rows, cols)) =>
-          if compute_ball_heightfield_contact(
+        (Shape3D::Ball(r), Shape3D::Heightfield(vertices, _, rows, cols, flags)) =>
+          if compute_ball_heightfield_contact_with_flags(
               p1.translation,
               r,
               p2,
               vertices,
               rows,
               cols,
+              flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3137,14 +3142,15 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Ball(r)) =>
-          if compute_ball_heightfield_contact(
+        (Shape3D::Heightfield(vertices, _, rows, cols, flags), Shape3D::Ball(r)) =>
+          if compute_ball_heightfield_contact_with_flags(
               p2.translation,
               r,
               p1,
               vertices,
               rows,
               cols,
+              flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3171,9 +3177,12 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::Cuboid(he), Shape3D::Heightfield(vertices, _, rows, cols)) =>
-          if compute_cuboid_heightfield_contact(
-              p1, he, p2, vertices, rows, cols,
+        (
+          Shape3D::Cuboid(he),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+        ) =>
+          if compute_cuboid_heightfield_contact_with_flags(
+              p1, he, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3200,9 +3209,12 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Cuboid(he)) =>
-          if compute_cuboid_heightfield_contact(
-              p2, he, p1, vertices, rows, cols,
+        (
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+          Shape3D::Cuboid(he),
+        ) =>
+          if compute_cuboid_heightfield_contact_with_flags(
+              p2, he, p1, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3230,10 +3242,12 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::CapsuleY(r, hh), Shape3D::Heightfield(vertices, _, rows, cols)
+        (
+          Shape3D::CapsuleY(r, hh),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
         ) =>
-          if compute_capsule_heightfield_contact(
-              p1, r, hh, p2, vertices, rows, cols,
+          if compute_capsule_heightfield_contact_with_flags(
+              p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3261,10 +3275,12 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::CapsuleY(r, hh)
+        (
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+          Shape3D::CapsuleY(r, hh),
         ) =>
-          if compute_capsule_heightfield_contact(
-              p2, r, hh, p1, vertices, rows, cols,
+          if compute_capsule_heightfield_contact_with_flags(
+              p2, r, hh, p1, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3292,10 +3308,12 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::Cylinder(r, hh), Shape3D::Heightfield(vertices, _, rows, cols)
+        (
+          Shape3D::Cylinder(r, hh),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
         ) =>
-          if compute_cylinder_heightfield_contact(
-              p1, r, hh, p2, vertices, rows, cols,
+          if compute_cylinder_heightfield_contact_with_flags(
+              p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3323,10 +3341,12 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Cylinder(r, hh)
+        (
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+          Shape3D::Cylinder(r, hh),
         ) =>
-          if compute_cylinder_heightfield_contact(
-              p2, r, hh, p1, vertices, rows, cols,
+          if compute_cylinder_heightfield_contact_with_flags(
+              p2, r, hh, p1, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3358,10 +3378,10 @@ fn qp3d_real_best_contact_for_pair(
         }
         (
           Shape3D::RoundCylinder(r, hh, br),
-          Shape3D::Heightfield(vertices, _, rows, cols),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
         ) =>
-          if compute_round_cylinder_heightfield_contact(
-              p1, r, hh, br, p2, vertices, rows, cols,
+          if compute_round_cylinder_heightfield_contact_with_flags(
+              p1, r, hh, br, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3393,11 +3413,11 @@ fn qp3d_real_best_contact_for_pair(
           }
         }
         (
-          Shape3D::Heightfield(vertices, _, rows, cols),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
           Shape3D::RoundCylinder(r, hh, br),
         ) =>
-          if compute_round_cylinder_heightfield_contact(
-              p2, r, hh, br, p1, vertices, rows, cols,
+          if compute_round_cylinder_heightfield_contact_with_flags(
+              p2, r, hh, br, p1, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3425,9 +3445,12 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::Cone(r, hh), Shape3D::Heightfield(vertices, _, rows, cols)) =>
-          if compute_cone_heightfield_contact(
-              p1, r, hh, p2, vertices, rows, cols,
+        (
+          Shape3D::Cone(r, hh),
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+        ) =>
+          if compute_cone_heightfield_contact_with_flags(
+              p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
@@ -3454,9 +3477,12 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Cone(r, hh)) =>
-          if compute_cone_heightfield_contact(
-              p2, r, hh, p1, vertices, rows, cols,
+        (
+          Shape3D::Heightfield(vertices, _, rows, cols, flags),
+          Shape3D::Cone(r, hh),
+        ) =>
+          if compute_cone_heightfield_contact_with_flags(
+              p2, r, hh, p1, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(

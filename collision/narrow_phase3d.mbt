@@ -177,6 +177,7 @@ fn heightfield_closest_point(
   vertices : Array[@core.Vec3],
   nrows : Int,
   ncols : Int,
+  flags : Int,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
     return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
@@ -357,6 +358,7 @@ fn heightfield_closest_point(
   let mut best_point_local = @core.Vec3::zero()
   let mut best_normal_sum = @core.Vec3::zero()
   let mut best_count = 0
+  let fix_internal_edges = (flags & 1) != 0
   let eps_d2 = 1.0e-6F
   let eps_q2 = 1.0e-8F
   while heap_pop_min(heap) is Some((lb, i, j)) {
@@ -383,6 +385,7 @@ fn heightfield_closest_point(
       best_point : @core.Vec3,
       best_normal_sum : @core.Vec3,
       best_count : Int,
+      fix_internal_edges : Bool,
       eps_d2 : @core.Real,
       eps_q2 : @core.Real,
     ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
@@ -398,7 +401,11 @@ fn heightfield_closest_point(
         (d2, q, n_norm, 1)
       } else if @core.abs(d2 - best_dist2) <= eps_d2 &&
         q.sub(best_point).length_squared() <= eps_q2 {
-        (best_dist2, best_point, best_normal_sum.add(n_norm), best_count + 1)
+        if fix_internal_edges {
+          (best_dist2, best_point, best_normal_sum.add(n_norm), best_count + 1)
+        } else {
+          (best_dist2, best_point, best_normal_sum, best_count)
+        }
       } else {
         (best_dist2, best_point, best_normal_sum, best_count)
       }
@@ -406,7 +413,7 @@ fn heightfield_closest_point(
 
     let (d2_0, q0, ns0, c0) = update_best_for_triangle(
       p_local, a, c, b, best_dist2, best_point_local, best_normal_sum, best_count,
-      eps_d2, eps_q2,
+      fix_internal_edges, eps_d2, eps_q2,
     )
     best_dist2 = d2_0
     best_point_local = q0
@@ -414,7 +421,7 @@ fn heightfield_closest_point(
     best_count = c0
     let (d2_1, q1, ns1, c1) = update_best_for_triangle(
       p_local, a, d, c, best_dist2, best_point_local, best_normal_sum, best_count,
-      eps_d2, eps_q2,
+      fix_internal_edges, eps_d2, eps_q2,
     )
     best_dist2 = d2_1
     best_point_local = q1
@@ -479,6 +486,7 @@ fn heightfield_closest_point_bounded(
   vertices : Array[@core.Vec3],
   nrows : Int,
   ncols : Int,
+  flags : Int,
   max_dist : @core.Real,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
@@ -542,6 +550,7 @@ fn heightfield_closest_point_bounded(
   let mut best_point_local = @core.Vec3::zero()
   let mut best_normal_sum = @core.Vec3::zero()
   let mut best_count = 0
+  let fix_internal_edges = (flags & 1) != 0
   let eps_d2 = 1.0e-6F
   let eps_q2 = 1.0e-8F
   for i in min_i..<(max_i + 1) {
@@ -559,6 +568,7 @@ fn heightfield_closest_point_bounded(
         best_point : @core.Vec3,
         best_normal_sum : @core.Vec3,
         best_count : Int,
+        fix_internal_edges : Bool,
         eps_d2 : @core.Real,
         eps_q2 : @core.Real,
       ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
@@ -574,7 +584,16 @@ fn heightfield_closest_point_bounded(
           (d2, q, n_norm, 1)
         } else if @core.abs(d2 - best_dist2) <= eps_d2 &&
           q.sub(best_point).length_squared() <= eps_q2 {
-          (best_dist2, best_point, best_normal_sum.add(n_norm), best_count + 1)
+          if fix_internal_edges {
+            (
+              best_dist2,
+              best_point,
+              best_normal_sum.add(n_norm),
+              best_count + 1,
+            )
+          } else {
+            (best_dist2, best_point, best_normal_sum, best_count)
+          }
         } else {
           (best_dist2, best_point, best_normal_sum, best_count)
         }
@@ -582,7 +601,7 @@ fn heightfield_closest_point_bounded(
 
       let (d2_0, q0, ns0, c0) = update_best_for_triangle(
         p_local, a, c, b, best_dist2, best_point_local, best_normal_sum, best_count,
-        eps_d2, eps_q2,
+        fix_internal_edges, eps_d2, eps_q2,
       )
       best_dist2 = d2_0
       best_point_local = q0
@@ -590,7 +609,7 @@ fn heightfield_closest_point_bounded(
       best_count = c0
       let (d2_1, q1, ns1, c1) = update_best_for_triangle(
         p_local, a, d, c, best_dist2, best_point_local, best_normal_sum, best_count,
-        eps_d2, eps_q2,
+        fix_internal_edges, eps_d2, eps_q2,
       )
       best_dist2 = d2_1
       best_point_local = q1
@@ -646,7 +665,27 @@ pub fn heightfield_closest_point_query(
   ncols : Int,
 ) -> (@core.Vec3, @core.Vec3, @core.Real)? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point(
-    p, mesh_pos, vertices, nrows, ncols,
+    p, mesh_pos, vertices, nrows, ncols, 0,
+  )
+  if ok {
+    Some((best_point, best_normal, best_dist2))
+  } else {
+    None
+  }
+}
+
+///|
+/// Heightfield variant of `trimesh_closest_point_query` with explicit HeightFieldFlags bits.
+pub fn heightfield_closest_point_query_with_flags(
+  p : @core.Vec3,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
+) -> (@core.Vec3, @core.Vec3, @core.Real)? {
+  let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point(
+    p, mesh_pos, vertices, nrows, ncols, flags,
   )
   if ok {
     Some((best_point, best_normal, best_dist2))
@@ -1183,16 +1222,17 @@ pub fn compute_cone_trimesh_contact(
 }
 
 ///|
-fn compute_point_heightfield_contact(
+fn compute_point_heightfield_contact_with_flags(
   point1 : @core.Vec3,
   radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
   nrows : Int,
   ncols : Int,
+  flags : Int,
 ) -> ContactPoint3D? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
-    point1, heightfield_pos, vertices, nrows, ncols, radius,
+    point1, heightfield_pos, vertices, nrows, ncols, flags, radius,
   )
   if !ok {
     return None
@@ -1221,8 +1261,23 @@ pub fn compute_ball_heightfield_contact(
   nrows : Int,
   ncols : Int,
 ) -> ContactPoint3D? {
+  compute_ball_heightfield_contact_with_flags(
+    ball_center, ball_radius, heightfield_pos, vertices, nrows, ncols, 0,
+  )
+}
+
+///|
+pub fn compute_ball_heightfield_contact_with_flags(
+  ball_center : @core.Vec3,
+  ball_radius : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
+) -> ContactPoint3D? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
-    ball_center, heightfield_pos, vertices, nrows, ncols, ball_radius,
+    ball_center, heightfield_pos, vertices, nrows, ncols, flags, ball_radius,
   )
   if !ok {
     return None
@@ -1250,6 +1305,21 @@ pub fn compute_cuboid_heightfield_contact(
   vertices : Array[@core.Vec3],
   nrows : Int,
   ncols : Int,
+) -> ContactPoint3D? {
+  compute_cuboid_heightfield_contact_with_flags(
+    cuboid_pos, cuboid_half_extents, heightfield_pos, vertices, nrows, ncols, 0,
+  )
+}
+
+///|
+pub fn compute_cuboid_heightfield_contact_with_flags(
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
 ) -> ContactPoint3D? {
   let skin = 0.05F
   let hx = cuboid_half_extents.x
@@ -1287,8 +1357,8 @@ pub fn compute_cuboid_heightfield_contact(
   let mut best_pen = -1.0F
   for i in 0..<points.length() {
     let p = cuboid_pos.transform_point(points[i])
-    if compute_point_heightfield_contact(
-        p, skin, heightfield_pos, vertices, nrows, ncols,
+    if compute_point_heightfield_contact_with_flags(
+        p, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
       is Some(cp) {
       if cp.penetration > best_pen {
@@ -1310,6 +1380,23 @@ pub fn compute_capsule_heightfield_contact(
   nrows : Int,
   ncols : Int,
 ) -> ContactPoint3D? {
+  compute_capsule_heightfield_contact_with_flags(
+    capsule_pos, capsule_radius, capsule_half_height, heightfield_pos, vertices,
+    nrows, ncols, 0,
+  )
+}
+
+///|
+pub fn compute_capsule_heightfield_contact_with_flags(
+  capsule_pos : @core.Isometry3,
+  capsule_radius : @core.Real,
+  capsule_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
+) -> ContactPoint3D? {
   let (a, b) = capsule_segment_endpoints(capsule_pos, capsule_half_height)
   let centers = [
     a,
@@ -1321,13 +1408,14 @@ pub fn compute_capsule_heightfield_contact(
   let mut best : ContactPoint3D? = None
   let mut best_pen = -1.0F
   for i in 0..<centers.length() {
-    if compute_ball_heightfield_contact(
+    if compute_ball_heightfield_contact_with_flags(
         centers[i],
         capsule_radius,
         heightfield_pos,
         vertices,
         nrows,
         ncols,
+        flags,
       )
       is Some(cp) {
       if cp.penetration > best_pen {
@@ -1349,6 +1437,23 @@ pub fn compute_cylinder_heightfield_contact(
   nrows : Int,
   ncols : Int,
 ) -> ContactPoint3D? {
+  compute_cylinder_heightfield_contact_with_flags(
+    cyl_pos, cyl_radius, cyl_half_height, heightfield_pos, vertices, nrows, ncols,
+    0,
+  )
+}
+
+///|
+pub fn compute_cylinder_heightfield_contact_with_flags(
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
+) -> ContactPoint3D? {
   let skin = 0.05F
   let r = cyl_radius
   let h = cyl_half_height
@@ -1369,8 +1474,8 @@ pub fn compute_cylinder_heightfield_contact(
     let p0 = cyl_pos.transform_point(
       ring[i].add(@core.Vec3::new(0.0F, -h, 0.0F)),
     )
-    if compute_point_heightfield_contact(
-        p0, skin, heightfield_pos, vertices, nrows, ncols,
+    if compute_point_heightfield_contact_with_flags(
+        p0, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
       is Some(cp) {
       if cp.penetration > best_pen {
@@ -1381,8 +1486,8 @@ pub fn compute_cylinder_heightfield_contact(
     let p1 = cyl_pos.transform_point(
       ring[i].add(@core.Vec3::new(0.0F, h, 0.0F)),
     )
-    if compute_point_heightfield_contact(
-        p1, skin, heightfield_pos, vertices, nrows, ncols,
+    if compute_point_heightfield_contact_with_flags(
+        p1, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
       is Some(cp) {
       if cp.penetration > best_pen {
@@ -1391,8 +1496,8 @@ pub fn compute_cylinder_heightfield_contact(
       }
     }
     let pm = cyl_pos.transform_point(ring[i])
-    if compute_point_heightfield_contact(
-        pm, skin, heightfield_pos, vertices, nrows, ncols,
+    if compute_point_heightfield_contact_with_flags(
+        pm, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
       is Some(cp) {
       if cp.penetration > best_pen {
@@ -1415,7 +1520,25 @@ pub fn compute_round_cylinder_heightfield_contact(
   nrows : Int,
   ncols : Int,
 ) -> ContactPoint3D? {
-  compute_capsule_heightfield_contact(
+  compute_round_cylinder_heightfield_contact_with_flags(
+    cyl_pos, cyl_radius, cyl_half_height, border_radius, heightfield_pos, vertices,
+    nrows, ncols, 0,
+  )
+}
+
+///|
+pub fn compute_round_cylinder_heightfield_contact_with_flags(
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+  border_radius : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
+) -> ContactPoint3D? {
+  compute_capsule_heightfield_contact_with_flags(
     cyl_pos,
     cyl_radius + border_radius,
     cyl_half_height + border_radius,
@@ -1423,6 +1546,7 @@ pub fn compute_round_cylinder_heightfield_contact(
     vertices,
     nrows,
     ncols,
+    flags,
   )
 }
 
@@ -1435,6 +1559,23 @@ pub fn compute_cone_heightfield_contact(
   vertices : Array[@core.Vec3],
   nrows : Int,
   ncols : Int,
+) -> ContactPoint3D? {
+  compute_cone_heightfield_contact_with_flags(
+    cone_pos, cone_radius, cone_half_height, heightfield_pos, vertices, nrows, ncols,
+    0,
+  )
+}
+
+///|
+pub fn compute_cone_heightfield_contact_with_flags(
+  cone_pos : @core.Isometry3,
+  cone_radius : @core.Real,
+  cone_half_height : @core.Real,
+  heightfield_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  nrows : Int,
+  ncols : Int,
+  flags : Int,
 ) -> ContactPoint3D? {
   let skin = 0.05F
   let r = cone_radius
@@ -1459,8 +1600,8 @@ pub fn compute_cone_heightfield_contact(
     for i in 0..<ring_dirs.length() {
       let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
       let p = cone_pos.transform_point(pt_local)
-      if compute_point_heightfield_contact(
-          p, skin, heightfield_pos, vertices, nrows, ncols,
+      if compute_point_heightfield_contact_with_flags(
+          p, skin, heightfield_pos, vertices, nrows, ncols, flags,
         )
         is Some(cp) {
         if cp.penetration > best_pen {
@@ -1587,7 +1728,7 @@ pub fn compute_halfspace_contact(
           }
           Some(best)
         }
-      Shape3D::Heightfield(vertices, _, _, _) =>
+      Shape3D::Heightfield(vertices, _, _, _, _) =>
         if vertices.length() == 0 {
           None
         } else {

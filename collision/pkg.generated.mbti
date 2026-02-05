@@ -50,6 +50,8 @@ pub fn compute_ball_cylinder_contact(@core.Vec3, Float, @core.Isometry3, Float, 
 
 pub fn compute_ball_heightfield_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
 
+pub fn compute_ball_heightfield_contact_with_flags(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+
 pub fn compute_ball_trimesh_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn compute_ball_voxels_contact(@core.Vec3, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
@@ -59,6 +61,8 @@ pub fn compute_capsule_capsule_contact(@core.Isometry3, Float, Float, @core.Isom
 pub fn compute_capsule_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_capsule_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
+pub fn compute_capsule_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
 
 pub fn compute_capsule_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
@@ -72,6 +76,8 @@ pub fn compute_cone_cylinder_contact(@core.Isometry3, Float, Float, @core.Isomet
 
 pub fn compute_cone_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
 
+pub fn compute_cone_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+
 pub fn compute_cone_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn compute_cone_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
@@ -81,6 +87,8 @@ pub fn compute_convex_contact(@core.Isometry3, Shape3D, @core.Isometry3, Shape3D
 pub fn compute_cuboid_cuboid_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_cuboid_heightfield_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+
+pub fn compute_cuboid_heightfield_contact_with_flags(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
 
 pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
@@ -92,6 +100,8 @@ pub fn compute_cylinder_cylinder_contact(@core.Isometry3, Float, Float, @core.Is
 
 pub fn compute_cylinder_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
 
+pub fn compute_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+
 pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn compute_cylinder_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
@@ -100,11 +110,15 @@ pub fn compute_halfspace_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, S
 
 pub fn compute_round_cylinder_heightfield_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
 
+pub fn compute_round_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+
 pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
 pub fn heightfield_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
+
+pub fn heightfield_closest_point_query_with_flags(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
 
 pub fn trimesh_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> (@core.Vec3, @core.Vec3, Float)?
 
@@ -1131,7 +1145,7 @@ pub(all) enum Shape3D {
   ConvexHull(Array[@core.Vec3], Float)
   Compound(Array[(@core.Isometry3, Shape3D)])
   Voxels(Voxels3DReal)
-  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
+  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 pub fn Shape3D::ball(Float) -> Self

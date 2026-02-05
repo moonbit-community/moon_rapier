@@ -569,14 +569,18 @@ pub fn NarrowPhase3D::update(
                   contacts.push(cp)
                 }
               }
-              (Shape3D::Ball(r), Shape3D::Heightfield(vertices, _, rows, cols)) =>
-                if compute_ball_heightfield_contact(
+              (
+                Shape3D::Ball(r),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
+              ) =>
+                if compute_ball_heightfield_contact_with_flags(
                     p1.translation,
                     r,
                     p2,
                     vertices,
                     rows,
                     cols,
+                    flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -620,14 +624,18 @@ pub fn NarrowPhase3D::update(
                   })
                 }
               }
-              (Shape3D::Heightfield(vertices, _, rows, cols), Shape3D::Ball(r)) =>
-                if compute_ball_heightfield_contact(
+              (
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
+                Shape3D::Ball(r),
+              ) =>
+                if compute_ball_heightfield_contact_with_flags(
                     p2.translation,
                     r,
                     p1,
                     vertices,
                     rows,
                     cols,
+                    flags,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -656,10 +664,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cuboid(he),
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
               ) =>
-                if compute_cuboid_heightfield_contact(
-                    p1, he, p2, vertices, rows, cols,
+                if compute_cuboid_heightfield_contact_with_flags(
+                    p1, he, p2, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -697,11 +705,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
                 Shape3D::Cuboid(he),
               ) =>
-                if compute_cuboid_heightfield_contact(
-                    p2, he, p1, vertices, rows, cols,
+                if compute_cuboid_heightfield_contact_with_flags(
+                    p2, he, p1, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -732,10 +740,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::CapsuleY(r, hh),
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
               ) =>
-                if compute_capsule_heightfield_contact(
-                    p1, r, hh, p2, vertices, rows, cols,
+                if compute_capsule_heightfield_contact_with_flags(
+                    p1, r, hh, p2, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -775,11 +783,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
                 Shape3D::CapsuleY(r, hh),
               ) =>
-                if compute_capsule_heightfield_contact(
-                    p2, r, hh, p1, vertices, rows, cols,
+                if compute_capsule_heightfield_contact_with_flags(
+                    p2, r, hh, p1, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -810,10 +818,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cylinder(r, hh),
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
               ) =>
-                if compute_cylinder_heightfield_contact(
-                    p1, r, hh, p2, vertices, rows, cols,
+                if compute_cylinder_heightfield_contact_with_flags(
+                    p1, r, hh, p2, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -853,11 +861,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
                 Shape3D::Cylinder(r, hh),
               ) =>
-                if compute_cylinder_heightfield_contact(
-                    p2, r, hh, p1, vertices, rows, cols,
+                if compute_cylinder_heightfield_contact_with_flags(
+                    p2, r, hh, p1, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -894,10 +902,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::RoundCylinder(r, hh, br),
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
               ) =>
-                if compute_round_cylinder_heightfield_contact(
-                    p1, r, hh, br, p2, vertices, rows, cols,
+                if compute_round_cylinder_heightfield_contact_with_flags(
+                    p1, r, hh, br, p2, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -943,11 +951,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
                 Shape3D::RoundCylinder(r, hh, br),
               ) =>
-                if compute_round_cylinder_heightfield_contact(
-                    p2, r, hh, br, p1, vertices, rows, cols,
+                if compute_round_cylinder_heightfield_contact_with_flags(
+                    p2, r, hh, br, p1, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push({
@@ -978,10 +986,10 @@ pub fn NarrowPhase3D::update(
               }
               (
                 Shape3D::Cone(r, hh),
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
               ) =>
-                if compute_cone_heightfield_contact(
-                    p1, r, hh, p2, vertices, rows, cols,
+                if compute_cone_heightfield_contact_with_flags(
+                    p1, r, hh, p2, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push(cp)
@@ -1021,11 +1029,11 @@ pub fn NarrowPhase3D::update(
                 }
               }
               (
-                Shape3D::Heightfield(vertices, _, rows, cols),
+                Shape3D::Heightfield(vertices, _, rows, cols, flags),
                 Shape3D::Cone(r, hh),
               ) =>
-                if compute_cone_heightfield_contact(
-                    p2, r, hh, p1, vertices, rows, cols,
+                if compute_cone_heightfield_contact_with_flags(
+                    p2, r, hh, p1, vertices, rows, cols, flags,
                   )
                   is Some(cp) {
                   contacts.push({

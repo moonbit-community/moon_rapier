@@ -68,7 +68,8 @@ pub(all) enum Shape3D {
   // A sparse voxel set representing the union of axis-aligned boxes on a regular grid.
   Voxels(Voxels3DReal)
   // Heightfield stored as a triangle mesh plus grid dimensions (rows/cols) for future optimizations.
-  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int)
+  // `flags` matches Rapier/Parry `HeightFieldFlags` bitflags (currently only FIX_INTERNAL_EDGES).
+  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int, Int)
   TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
 }
 
@@ -252,7 +253,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
       )
       @core.Aabb3::new(min, max)
     }
-    Shape3D::Heightfield(vertices, _, _, _) =>
+    Shape3D::Heightfield(vertices, _, _, _, _) =>
       if vertices.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
@@ -1353,6 +1354,17 @@ pub fn ColliderBuilder3D::heightfield(
   ncols : Int,
   scale : @core.Vec3,
 ) -> ColliderBuilder3D? {
+  heightfield_impl(heights, nrows, ncols, scale, 0)
+}
+
+///|
+fn heightfield_impl(
+  heights : Array[@core.Real],
+  nrows : Int,
+  ncols : Int,
+  scale : @core.Vec3,
+  flags : Int,
+) -> ColliderBuilder3D? {
   if nrows <= 1 || ncols <= 1 {
     return None
   }
@@ -1394,7 +1406,7 @@ pub fn ColliderBuilder3D::heightfield(
           position: @core.Isometry3::identity(),
           local_position: @core.Isometry3::identity(),
           parent: None,
-          shape: Shape3D::Heightfield(vtx, idx, nrows, ncols),
+          shape: Shape3D::Heightfield(vtx, idx, nrows, ncols, flags),
           voxel_tri_map: None,
           enabled: true,
           sensor: false,
@@ -1423,9 +1435,7 @@ pub fn ColliderBuilder3D::heightfield_with_flags(
   scale : @core.Vec3,
   flags : Int,
 ) -> ColliderBuilder3D? {
-  // Heightfield flags are not implemented yet; accept for pub parity.
-  flags |> ignore
-  ColliderBuilder3D::heightfield(heights, nrows, ncols, scale)
+  heightfield_impl(heights, nrows, ncols, scale, flags)
 }
 
 ///|
