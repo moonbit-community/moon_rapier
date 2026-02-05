@@ -861,5 +861,21 @@ fn PhysicsPipeline3DReal::step_impl_one(
     self.contact_pairs.append(next_contact_pairs[:])
   }
   bodies.update_sleep_all(dt, parameters.length_unit)
-  islands.update(bodies)
+  let interactions : Array[
+    (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
+  ] = []
+  let pairs = narrow_phase.all_contact_pairs()
+  for i in 0..<pairs.length() {
+    let ((c1h, c2h), pair) = pairs[i]
+    if pair.manifolds_len() <= 0 {
+      continue
+    }
+    if colliders.get(c1h) is Some(c1) &&
+      colliders.get(c2h) is Some(c2) &&
+      c1.parent() is Some(b1) &&
+      c2.parent() is Some(b2) {
+      interactions.push((b1, b2))
+    }
+  }
+  islands.update(bodies, interactions)
 }

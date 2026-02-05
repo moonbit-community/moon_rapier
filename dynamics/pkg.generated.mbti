@@ -462,7 +462,7 @@ pub struct IslandManager3D {
 }
 pub fn IslandManager3D::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3D::new() -> Self
-pub fn IslandManager3D::update(Self, RigidBodySet3D) -> Unit
+pub fn IslandManager3D::update(Self, RigidBodySet3D, Array[(RigidBodyHandle, RigidBodyHandle)]) -> Unit
 
 type IslandsOptimizer
 
