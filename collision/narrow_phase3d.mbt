@@ -3664,6 +3664,27 @@ fn support_world_for_cuboid(
 }
 
 ///|
+fn support_world_for_triangle(
+  pos : @core.Isometry3,
+  a : @core.Vec3,
+  b : @core.Vec3,
+  c : @core.Vec3,
+  dir : @core.Vec3,
+) -> @core.Vec3 {
+  let local_dir = pos.rotation.inverse().rotate_vec3(dir)
+  let da = a.dot(local_dir)
+  let db = b.dot(local_dir)
+  let dc = c.dot(local_dir)
+  if db >= da && db >= dc {
+    pos.transform_point(b)
+  } else if dc >= da {
+    pos.transform_point(c)
+  } else {
+    pos.transform_point(a)
+  }
+}
+
+///|
 fn support_world_for_cylinder_y(
   pos : @core.Isometry3,
   radius : @core.Real,
@@ -3751,6 +3772,7 @@ fn support_minkowski(
     Shape3D::RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos1, r + br, hh + br, dir)
     Shape3D::Cone(r, hh) => support_world_for_cone_y(pos1, r, hh, dir)
+    Shape3D::Triangle(a, b, c) => support_world_for_triangle(pos1, a, b, c, dir)
     _ => return None
   }
   let neg_dir = dir.scale(-1.0F)
@@ -3766,6 +3788,8 @@ fn support_minkowski(
     Shape3D::RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos2, r + br, hh + br, neg_dir)
     Shape3D::Cone(r, hh) => support_world_for_cone_y(pos2, r, hh, neg_dir)
+    Shape3D::Triangle(a, b, c) =>
+      support_world_for_triangle(pos2, a, b, c, neg_dir)
     _ => return None
   }
   Some({ p: sup1.sub(sup2), sup1, sup2 })
