@@ -304,6 +304,7 @@ pub struct Collider3D {
   mut one_way_offset : Float?
   mut one_way_direction : Int
   active_events : ActiveEvents
+  mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
   collision_groups : @dynamics.InteractionGroups
   friction : Float
@@ -314,6 +315,7 @@ pub fn Collider3D::clear_one_way(Self) -> Unit
 pub fn Collider3D::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
+pub fn Collider3D::contact_force_event_threshold(Self) -> Float
 pub fn Collider3D::enabled(Self) -> Bool
 pub fn Collider3D::friction(Self) -> Float
 pub fn Collider3D::is_sensor(Self) -> Bool
@@ -322,6 +324,7 @@ pub fn Collider3D::one_way(Self) -> (Float, Int)?
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
 pub fn Collider3D::restitution(Self) -> Float
+pub fn Collider3D::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_one_way_above(Self, Float) -> Unit
@@ -451,6 +454,7 @@ pub struct ColliderBuilder3D {
   mut one_way_offset : Float?
   mut one_way_direction : Int
   mut active_events : ActiveEvents
+  mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut friction : Float
@@ -465,6 +469,7 @@ pub fn ColliderBuilder3D::capsule_z(Float, Float) -> Self
 pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::compound(Array[(@core.Isometry3, Self)]) -> Self?
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
+pub fn ColliderBuilder3D::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?
 pub fn ColliderBuilder3D::convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
@@ -703,6 +708,23 @@ pub fn ContactForceEvent::new(ColliderHandle, ColliderHandle, @core.Vec2, Float,
 pub fn ContactForceEvent::total_force(Self) -> @core.Vec2
 pub fn ContactForceEvent::total_force_magnitude(Self) -> Float
 
+pub struct ContactForceEvent3D {
+  collider1 : ColliderHandle3D
+  collider2 : ColliderHandle3D
+  total_force : @core.Vec3
+  total_force_magnitude : Float
+  max_force_direction : @core.Vec3
+  max_force_magnitude : Float
+}
+pub fn ContactForceEvent3D::collider1(Self) -> ColliderHandle3D
+pub fn ContactForceEvent3D::collider2(Self) -> ColliderHandle3D
+pub fn ContactForceEvent3D::from_contact_pair(Float, ColliderHandle3D, ColliderHandle3D, ContactPair3D, Float) -> Self
+pub fn ContactForceEvent3D::max_force_direction(Self) -> @core.Vec3
+pub fn ContactForceEvent3D::max_force_magnitude(Self) -> Float
+pub fn ContactForceEvent3D::new(ColliderHandle3D, ColliderHandle3D, @core.Vec3, Float, @core.Vec3, Float) -> Self
+pub fn ContactForceEvent3D::total_force(Self) -> @core.Vec3
+pub fn ContactForceEvent3D::total_force_magnitude(Self) -> Float
+
 pub struct ContactManifold {
   normal : @core.Vec2
   points : Array[ContactManifoldPoint]
@@ -746,9 +768,14 @@ pub fn ContactPair::total_impulse_magnitude(Self) -> Float
 
 pub struct ContactPair3D {
   manifolds : Array[ContactPoint3D]
+  impulses : Array[Float]
 }
 pub fn ContactPair3D::manifolds(Self) -> Array[ContactPoint3D]
 pub fn ContactPair3D::manifolds_len(Self) -> Int
+pub fn ContactPair3D::max_impulse(Self) -> (Float, @core.Vec3)
+pub fn ContactPair3D::set_normal_impulse_at(Self, Int, Float) -> Unit
+pub fn ContactPair3D::total_impulse(Self) -> @core.Vec3
+pub fn ContactPair3D::total_impulse_magnitude(Self) -> Float
 
 pub struct ContactPoint3D {
   point1 : @core.Vec3
@@ -884,6 +911,7 @@ pub fn NarrowPhase3D::clear(Self) -> Unit
 pub fn NarrowPhase3D::contact_pair(Self, ColliderHandle3D, ColliderHandle3D) -> ContactPair3D?
 pub fn NarrowPhase3D::intersection_pair(Self, ColliderHandle3D, ColliderHandle3D) -> IntersectionPair3D?
 pub fn NarrowPhase3D::new() -> Self
+pub fn NarrowPhase3D::set_contact_pair_normal_impulses(Self, ColliderHandle3D, ColliderHandle3D, Array[Float]) -> Unit
 pub fn NarrowPhase3D::update(Self, Array[(ColliderHandle3D, ColliderHandle3D)], @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
 
 pub struct NonlinearRigidMotion {

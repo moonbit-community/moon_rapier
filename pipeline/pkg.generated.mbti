@@ -24,7 +24,7 @@ pub fn simd_strategy() -> String
 
 pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
-pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.NarrowPhase3D, ContactSolverCache3D, ContactSolverCache3D) -> Unit
+pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.NarrowPhase3D, ContactSolverCache3D, ContactSolverCache3D, EventHandler3D?) -> Unit
 
 // Errors
 
@@ -196,11 +196,14 @@ pub fn EventHandler::take_intersection_events(Self) -> Array[@collision.Intersec
 pub struct EventHandler3D {
   collision_events : Array[@collision.CollisionEvent3D]
   intersection_events : Array[@collision.IntersectionEvent3D]
+  contact_force_events : Array[@collision.ContactForceEvent3D]
 }
 pub fn EventHandler3D::new() -> Self
 pub fn EventHandler3D::push_collision_event(Self, @collision.CollisionEvent3D) -> Unit
+pub fn EventHandler3D::push_contact_force_event(Self, @collision.ContactForceEvent3D) -> Unit
 pub fn EventHandler3D::push_intersection_event(Self, @collision.IntersectionEvent3D) -> Unit
 pub fn EventHandler3D::take_collision_events(Self) -> Array[@collision.CollisionEvent3D]
+pub fn EventHandler3D::take_contact_force_events(Self) -> Array[@collision.ContactForceEvent3D]
 pub fn EventHandler3D::take_intersection_events(Self) -> Array[@collision.IntersectionEvent3D]
 
 pub struct PairFilterContext {

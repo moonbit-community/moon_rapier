@@ -592,3 +592,54 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
   let ev2 = handler.take_intersection_events()
   inspect(has_event(ev2, false, sensor_ball, ground_collider), content="true")
 }
+
+///|
+test "physics_pipeline3d_real: contact force events and contact impulses are populated" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let handler = EventHandler3D::new()
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  let ground_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
+    ground,
+    bodies,
+  )
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    // Start slightly penetrating the ground so the solver must apply impulses immediately.
+    .translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    .build(),
+  )
+  let ball_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F)
+    .active_events(@collision.ActiveEvents::contact_force_events())
+    .contact_force_event_threshold(0.0F)
+    .build(),
+    ball,
+    bodies,
+  )
+  pipeline.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+  )
+  let forces = handler.take_contact_force_events()
+  inspect(forces.length() > 0, content="true")
+  if narrow_phase.contact_pair(ball_collider, ground_collider) is Some(pair) {
+    inspect(pair.total_impulse_magnitude() > 0.0F, content="true")
+    let impulse = pair.total_impulse()
+    inspect(impulse.y > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

@@ -45,7 +45,7 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
   let params = @dynamics.IntegrationParameters::default().set_dt(1.0F / 60.0F)
   let cache0 = ContactSolverCache3D::new()
   let cache1 = ContactSolverCache3D::new()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1)
+  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None)
 
   // Ensure the relative normal velocity is no longer strongly negative.
   if nf.contact_pair(c1, c2) is Some(pair) && pair.manifolds_len() == 1 {
@@ -79,7 +79,7 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
     @core.Vec3::zero()
   }
   let cache2 = ContactSolverCache3D::new()
-  solve_contacts_3d(params, bodies, colliders, nf, cache1, cache2)
+  solve_contacts_3d(params, bodies, colliders, nf, cache1, cache2, None)
   let v1_after = if bodies.get(b1) is Some(rb1) {
     rb1.linvel()
   } else {
@@ -129,7 +129,7 @@ test "contact solver 3d restitution bounces (ball-ball)" {
     .set_num_solver_iterations(20)
   let cache0 = ContactSolverCache3D::new()
   let cache1 = ContactSolverCache3D::new()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1)
+  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None)
   if nf.contact_pair(c1, c2) is Some(pair) && pair.manifolds_len() == 1 {
     let cp = pair.manifolds()[0]
     if bodies.get(b1) is Some(rb1) && bodies.get(b2) is Some(rb2) {
@@ -190,7 +190,7 @@ test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
     .set_num_solver_iterations(20)
   let cache0 = ContactSolverCache3D::new()
   let cache1 = ContactSolverCache3D::new()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1)
+  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None)
   if bodies.get(ball) is Some(rb) {
     inspect(rb.linvel().x < 0.2F, content="true")
   } else {

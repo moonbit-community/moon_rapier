@@ -400,6 +400,40 @@ fn collect_contact_pairs(
 }
 
 ///|
+/// Restore contact-pair impulse data from the solver cache after a narrow-phase refresh.
+///
+/// `PhysicsPipeline3DReal::step_impl_one` refreshes the narrow-phase after integrating positions
+/// in order to emit collision/intersection events based on the end-of-step configuration.
+/// This refresh clears the impulse data written by the contact solver, so we reapply it here to
+/// keep `ContactPair3D::{total_impulse,*}` usable after `step_with_events`.
+fn restore_contact_pair_impulses_from_cache(
+  narrow_phase : @collision.NarrowPhase3D,
+  cache : ContactSolverCache3D,
+) -> Unit {
+  let all = narrow_phase.all_contact_pairs()
+  for i in 0..<all.length() {
+    let pair = all[i].0
+    let cp = all[i].1
+    if cp.manifolds_len() <= 0 {
+      continue
+    }
+    let impulses : Array[@core.Real] = []
+    for _ in 0..<cp.manifolds_len() {
+      impulses.push(0.0F)
+    }
+    if cache.entries.get(pair_key_3d(pair.0, pair.1)) is Some(list) {
+      let n = impulses.length()
+      let m = list.length()
+      let k = if n < m { n } else { m }
+      for j in 0..<k {
+        impulses[j] = list[j].2.normal
+      }
+    }
+    narrow_phase.set_contact_pair_normal_impulses(pair.0, pair.1, impulses)
+  }
+}
+
+///|
 fn emit_collision_events_for_pair_diffs(
   handler : EventHandler3D,
   prev_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
@@ -766,6 +800,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     narrow_phase,
     self.contact_cache,
     cache_out,
+    events,
   )
   self.contact_cache = cache_out
   bodies.advance_positions_all(dt)
@@ -794,6 +829,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     // the end-of-step configuration.
     broad_phase.update(prediction_distance, colliders)
     narrow_phase.update(broad_phase.pairs(), bodies, colliders)
+    restore_contact_pair_impulses_from_cache(narrow_phase, self.contact_cache)
     let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
     let next_intersection_pairs = collect_intersection_pairs(
       narrow_phase, colliders,
