@@ -1137,32 +1137,13 @@ pub fn compute_capsule_trimesh_contact(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
 ) -> ContactPoint3D? {
-  let (a, b) = capsule_segment_endpoints(capsule_pos, capsule_half_height)
-  let centers = [
-    a,
-    b,
-    a.add(b).scale(0.5F),
-    a.scale(0.75F).add(b.scale(0.25F)),
-    a.scale(0.25F).add(b.scale(0.75F)),
-  ]
-  let mut best : ContactPoint3D? = None
-  let mut best_pen = -1.0F
-  for i in 0..<centers.length() {
-    if compute_ball_trimesh_contact(
-        centers[i],
-        capsule_radius,
-        mesh_pos,
-        vertices,
-        indices,
-      )
-      is Some(cp) {
-      if cp.penetration > best_pen {
-        best_pen = cp.penetration
-        best = Some(cp)
-      }
-    }
-  }
-  best
+  compute_convex_trimesh_contact(
+    capsule_pos,
+    Shape3D::CapsuleY(capsule_radius, capsule_half_height),
+    mesh_pos,
+    vertices,
+    indices,
+  )
 }
 
 ///|
@@ -3272,7 +3253,10 @@ fn support_world_for_cylinder_y(
   let radial = @core.Vec3::new(local_dir.x, 0.0F, local_dir.z)
   let rl2 = radial.length_squared()
   let (x, z) = if rl2 <= 1.0e-12F {
-    (radius, 0.0F)
+    // Any point on the cap is valid when the direction is purely along Y.
+    // Pick the center to avoid introducing a spurious tangential component
+    // that can cause GJK/EPA degeneracy.
+    (0.0F, 0.0F)
   } else {
     let inv = 1.0F / local_sqrt(rl2)
     (radial.x * inv * radius, radial.z * inv * radius)
@@ -3393,118 +3377,172 @@ fn support_minkowski(
 }
 
 ///|
-fn triple_product(a : @core.Vec3, b : @core.Vec3, c : @core.Vec3) -> @core.Vec3 {
-  // a x (b x c)
-  b.scale(a.dot(c)).sub(c.scale(a.dot(b)))
-}
-
-///|
-fn gjk_update_simplex(
+fn gjk_reduce_simplex_closest_to_origin(
   simplex : Array[SupportVertex3D],
-  dir : @core.Vec3,
-) -> (@core.Vec3, Bool) {
-  // Newest point is always at the end of the array.
-  let a = simplex[simplex.length() - 1].p
-  let ao = a.scale(-1.0F)
+) -> (@core.Vec3, Array[@core.Real], Bool) {
+  // Returns: closest point on simplex to the origin, barycentric weights for each simplex vertex
+  // (in the same order), and whether the origin is inside the simplex.
+  if simplex.length() == 0 {
+    return (@core.Vec3::zero(), [], false)
+  }
+  if simplex.length() == 1 {
+    return (simplex[0].p, [1.0F], false)
+  }
   if simplex.length() == 2 {
-    let v_b = simplex[0]
-    let v_a = simplex[1]
-    let b = v_b.p
+    let a = simplex[1].p
+    let b = simplex[0].p
     let ab = b.sub(a)
-    if ab.dot(ao) > 0.0F {
-      let d = triple_product(ab, ao, ab)
-      if d.length_squared() > 1.0e-12F {
-        (d, false)
-      } else {
-        (ab.cross(@core.Vec3::new(0.0F, 1.0F, 0.0F)), false)
-      }
-    } else {
-      simplex.clear()
-      simplex.push(v_a)
-      (ao, false)
+    let denom = ab.length_squared()
+    if denom <= 1.0e-18F {
+      simplex[0] = simplex[1]
+      simplex.pop() |> ignore
+      return (a, [1.0F], false)
     }
+    let t = @core.clamp(-a.dot(ab) / denom, 0.0F, 1.0F)
+    let closest = a.add(ab.scale(t))
+    if t <= 1.0e-6F {
+      simplex[0] = simplex[1]
+      simplex.pop() |> ignore
+      return (a, [1.0F], false)
+    }
+    if t >= 1.0F - 1.0e-6F {
+      simplex.pop() |> ignore
+      return (b, [1.0F], false)
+    }
+    // simplex order is [b, a] (index 0, 1) with weights [t, 1-t].
+    (closest, [t, 1.0F - t], false)
   } else if simplex.length() == 3 {
-    let b = simplex[1].p
-    let c = simplex[0].p
-    let ab = b.sub(a)
-    let ac = c.sub(a)
-    let abc = ab.cross(ac)
-    let ab_perp = abc.cross(ab)
-    if ab_perp.dot(ao) > 0.0F {
-      // Remove c, keep (b,a).
-      let v_b = simplex[1]
-      let v_a = simplex[2]
-      simplex.clear()
-      simplex.push(v_b)
-      simplex.push(v_a)
-      return (triple_product(ab, ao, ab), false)
+    // Triangle region test (Ericson).
+    let a_v = simplex[2].p
+    let b_v = simplex[1].p
+    let c_v = simplex[0].p
+    let ab = b_v.sub(a_v)
+    let ac = c_v.sub(a_v)
+    let ao = a_v.scale(-1.0F)
+    let d1 = ab.dot(ao)
+    let d2 = ac.dot(ao)
+    if d1 <= 0.0F && d2 <= 0.0F {
+      // Closest to A.
+      simplex[0] = simplex[2]
+      simplex.pop() |> ignore
+      simplex.pop() |> ignore
+      return (a_v, [1.0F], false)
     }
-    let ac_perp = abc.cross(ac)
-    if ac_perp.dot(ao) > 0.0F {
-      // Remove b, keep (c,a).
-      let v_c = simplex[0]
-      let v_a = simplex[2]
-      simplex.clear()
-      simplex.push(v_c)
-      simplex.push(v_a)
-      return (triple_product(ac, ao, ac), false)
+    let bo = b_v.scale(-1.0F)
+    let d3 = ab.dot(bo)
+    let d4 = ac.dot(bo)
+    if d3 >= 0.0F && d4 <= d3 {
+      // Closest to B.
+      simplex[0] = simplex[1]
+      simplex.pop() |> ignore
+      return (b_v, [1.0F], false)
     }
-    // Origin is either above or below the triangle.
-    if abc.dot(ao) > 0.0F {
-      (abc, false)
-    } else {
-      // Swap b and c to keep a consistent winding.
-      let v_c = simplex[0]
-      let v_b = simplex[1]
-      simplex[0] = v_b
-      simplex[1] = v_c
-      (abc.scale(-1.0F), false)
+    let vc = d1 * d4 - d3 * d2
+    if vc <= 0.0F && d1 >= 0.0F && d3 <= 0.0F {
+      // Closest on AB.
+      let v = d1 / (d1 - d3)
+      let closest = a_v.add(ab.scale(v))
+      simplex[0] = simplex[1]
+      simplex[1] = simplex[2]
+      simplex.pop() |> ignore
+      return (closest, [v, 1.0F - v], false)
     }
+    let co = c_v.scale(-1.0F)
+    let d5 = ab.dot(co)
+    let d6 = ac.dot(co)
+    if d6 >= 0.0F && d5 <= d6 {
+      // Closest to C.
+      simplex[1] = simplex[0]
+      simplex[0] = simplex[2]
+      simplex.pop() |> ignore
+      simplex.pop() |> ignore
+      return (c_v, [1.0F], false)
+    }
+    let vb = d5 * d2 - d1 * d6
+    if vb <= 0.0F && d2 >= 0.0F && d6 <= 0.0F {
+      // Closest on AC.
+      let w = d2 / (d2 - d6)
+      let closest = a_v.add(ac.scale(w))
+      simplex[1] = simplex[2]
+      simplex.pop() |> ignore
+      return (closest, [w, 1.0F - w], false)
+    }
+    let va = d3 * d6 - d5 * d4
+    if va <= 0.0F && d4 - d3 >= 0.0F && d5 - d6 >= 0.0F {
+      // Closest on BC.
+      let bc = c_v.sub(b_v)
+      let w = (d4 - d3) / (d4 - d3 + (d5 - d6))
+      let closest = b_v.add(bc.scale(w))
+      simplex[2] = simplex[1]
+      simplex[1] = simplex[0]
+      simplex.pop() |> ignore
+      return (closest, [1.0F - w, w], false)
+    }
+    // Closest inside face.
+    let denom = 1.0F / (va + vb + vc)
+    let v = vb * denom
+    let w = vc * denom
+    let u = 1.0F - v - w
+    let closest = a_v.scale(u).add(b_v.scale(v)).add(c_v.scale(w))
+    // Keep full triangle with order [c, b, a] (0,1,2) => weights [w, v, u]
+    (closest, [w, v, u], false)
   } else {
-    // Tetrahedron.
-    let b = simplex[2].p
-    let c = simplex[1].p
-    let d = simplex[0].p
-    let ab = b.sub(a)
-    let ac = c.sub(a)
-    let ad = d.sub(a)
-    let abc = ab.cross(ac)
-    let acd = ac.cross(ad)
-    let adb = ad.cross(ab)
-    if abc.dot(ao) > 0.0F {
-      // Remove d.
-      let v_c = simplex[1]
-      let v_b = simplex[2]
-      let v_a = simplex[3]
-      simplex.clear()
-      simplex.push(v_c)
-      simplex.push(v_b)
-      simplex.push(v_a)
-      return (abc, false)
+    // Tetrahedron: check if the origin is outside any face; otherwise it's inside.
+    // simplex order is [d, c, b, a] (0..3), with a the newest point.
+    let faces = [
+      (3, 2, 1, 0), // (a,b,c) opposite d
+      (3, 1, 0, 2), // (a,c,d) opposite b
+      (3, 0, 2, 1), // (a,d,b) opposite c
+      (2, 0, 1, 3),
+    ] // (b,d,c) opposite a
+    let mut best_d2 = 1.0e30F
+    let mut best_simplex : Array[SupportVertex3D] = []
+    let mut best_weights : Array[@core.Real] = []
+    let mut best_closest = @core.Vec3::zero()
+    for fi in 0..<faces.length() {
+      let (ia, ib, ic, iopp) = faces[fi]
+      let a = simplex[ia].p
+      let b = simplex[ib].p
+      let c = simplex[ic].p
+      let opp = simplex[iopp].p
+      let ab = b.sub(a)
+      let ac = c.sub(a)
+      let mut n = ab.cross(ac)
+      let n2 = n.length_squared()
+      if n2 <= 1.0e-18F {
+        continue
+      }
+      // Ensure n points outward (away from opposite vertex).
+      if n.dot(opp.sub(a)) > 0.0F {
+        n = n.scale(-1.0F)
+      }
+      if n.dot(a.scale(-1.0F)) > 0.0F {
+        // Origin outside this face: compute closest point on the triangle.
+        let tri_simplex : Array[SupportVertex3D] = [
+          simplex[ic],
+          simplex[ib],
+          simplex[ia],
+        ]
+        let (closest, w, _) = gjk_reduce_simplex_closest_to_origin(tri_simplex)
+        let d2 = closest.length_squared()
+        if d2 < best_d2 {
+          best_d2 = d2
+          best_simplex = tri_simplex
+          best_weights = w
+          best_closest = closest
+        }
+      }
     }
-    if acd.dot(ao) > 0.0F {
-      // Remove b.
-      let v_d = simplex[0]
-      let v_c = simplex[1]
-      let v_a = simplex[3]
+    if best_simplex.length() > 0 {
       simplex.clear()
-      simplex.push(v_d)
-      simplex.push(v_c)
-      simplex.push(v_a)
-      return (acd, false)
+      for i in 0..<best_simplex.length() {
+        simplex.push(best_simplex[i])
+      }
+      (best_closest, best_weights, false)
+    } else {
+      // Origin inside tetrahedron.
+      (@core.Vec3::zero(), [0.0F], true)
     }
-    if adb.dot(ao) > 0.0F {
-      // Remove c.
-      let v_d = simplex[0]
-      let v_b = simplex[2]
-      let v_a = simplex[3]
-      simplex.clear()
-      simplex.push(v_d)
-      simplex.push(v_b)
-      simplex.push(v_a)
-      return (adb, false)
-    }
-    (dir, true)
   }
 }
 
@@ -3526,31 +3564,59 @@ fn gjk_intersect(
   } else {
     return None
   }
-  for _ in 0..<32 {
+  let eps2 = 1.0e-18F
+  let mut closest = simplex[0].p
+  for _ in 0..<64 {
+    if dir.length_squared() <= eps2 {
+      if simplex.length() >= 4 {
+        return Some(simplex)
+      }
+      // Try to expand the simplex in a new direction to avoid low-dimensional degeneracy.
+      if simplex.length() == 1 {
+        dir = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      } else if simplex.length() == 2 {
+        let a = simplex[1].p
+        let b = simplex[0].p
+        let ab = b.sub(a)
+        let axis = if @core.abs(ab.x) < 0.9F {
+          @core.Vec3::new(1.0F, 0.0F, 0.0F)
+        } else {
+          @core.Vec3::new(0.0F, 1.0F, 0.0F)
+        }
+        dir = ab.cross(axis)
+        if dir.length_squared() <= eps2 {
+          dir = ab.cross(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+        }
+      } else if simplex.length() == 3 {
+        let a = simplex[2].p
+        let b = simplex[1].p
+        let c = simplex[0].p
+        dir = b.sub(a).cross(c.sub(a))
+        if dir.length_squared() <= eps2 {
+          dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+        }
+      } else {
+        dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      }
+    }
     if support_minkowski(pos1, s1, pos2, s2, dir) is Some(a) {
       if a.p.dot(dir) < 0.0F {
         return None
       }
       simplex.push(a)
-      let (new_dir, contains) = gjk_update_simplex(simplex, dir)
-      if contains {
-        // Ensure we have a tetrahedron for EPA.
-        if simplex.length() >= 4 {
-          return Some(simplex)
-        } else {
-          return Some(simplex)
-        }
-      }
-      dir = new_dir
-      if dir.length_squared() <= 1.0e-18F {
-        // Degenerate; treat as intersecting.
+      let (new_closest, _, inside) = gjk_reduce_simplex_closest_to_origin(
+        simplex,
+      )
+      closest = new_closest
+      if inside {
         return Some(simplex)
       }
+      dir = closest.scale(-1.0F)
     } else {
       return None
     }
   }
-  Some(simplex)
+  None
 }
 
 ///|
@@ -3582,6 +3648,45 @@ fn epa_make_face(
   let mut dist = normal.dot(a)
   let mut i1 = i1
   let mut i2 = i2
+  if dist < 0.0F {
+    normal = normal.scale(-1.0F)
+    dist = -dist
+    let tmp = i1
+    i1 = i2
+    i2 = tmp
+  }
+  Some({ i0, i1, i2, normal, dist })
+}
+
+///|
+fn epa_make_face_with_opposite(
+  verts : Array[SupportVertex3D],
+  i0 : Int,
+  i1 : Int,
+  i2 : Int,
+  i_opp : Int,
+) -> EpaFace? {
+  let a = verts[i0].p
+  let b = verts[i1].p
+  let c = verts[i2].p
+  let opp = verts[i_opp].p
+  let mut n0 = b.sub(a).cross(c.sub(a))
+  let n2 = n0.length_squared()
+  if n2 <= 1.0e-18F {
+    return None
+  }
+  let mut i1 = i1
+  let mut i2 = i2
+  // Ensure the normal points away from the opposite vertex (outward for tetrahedra).
+  if n0.dot(opp.sub(a)) > 0.0F {
+    n0 = n0.scale(-1.0F)
+    let tmp = i1
+    i1 = i2
+    i2 = tmp
+  }
+  let inv = 1.0F / local_sqrt(n2)
+  let mut normal = n0.scale(inv)
+  let mut dist = normal.dot(a)
   if dist < 0.0F {
     normal = normal.scale(-1.0F)
     dist = -dist
@@ -3648,10 +3753,10 @@ fn epa_contact(
     return None
   }
   let faces : Array[EpaFace] = []
-  let initial = [(0, 1, 2), (0, 3, 1), (0, 2, 3), (1, 3, 2)]
+  let initial = [(0, 1, 2, 3), (0, 3, 1, 2), (0, 2, 3, 1), (1, 3, 2, 0)]
   for i in 0..<initial.length() {
-    let (i0, i1, i2) = initial[i]
-    if epa_make_face(verts, i0, i1, i2) is Some(f) {
+    let (i0, i1, i2, i_opp) = initial[i]
+    if epa_make_face_with_opposite(verts, i0, i1, i2, i_opp) is Some(f) {
       faces.push(f)
     }
   }
@@ -3682,12 +3787,23 @@ fn epa_contact(
         let (u, vv, w) = barycentric_on_triangle(a.p, b.p, c.p, p)
         let cp1 = a.sup1.scale(u).add(b.sup1.scale(vv)).add(c.sup1.scale(w))
         let cp2 = a.sup2.scale(u).add(b.sup2.scale(vv)).add(c.sup2.scale(w))
-        return Some({
-          point1: cp1,
-          point2: cp2,
-          normal: dir,
-          penetration: best.dist,
-        })
+        // Keep the convention consistent with the analytic contact generators and the solver:
+        // `normal` points from shape1 to shape2 (collider1 → collider2).
+        //
+        // Prefer the witness-point direction for robustness on smooth shapes; fall back to the
+        // polytope face normal if the witness direction is degenerate.
+        let nvec = cp1.sub(cp2)
+        let n2 = nvec.length_squared()
+        let mut normal = if n2 > 1.0e-18F {
+          nvec.scale(1.0F / local_sqrt(n2))
+        } else {
+          dir
+        }
+        let delta = pos2.translation.sub(pos1.translation)
+        if delta.length_squared() > 1.0e-12F && normal.dot(delta) < 0.0F {
+          normal = normal.scale(-1.0F)
+        }
+        return Some({ point1: cp1, point2: cp2, normal, penetration: best.dist })
       }
       // Expand polytope.
       let new_index = verts.length()

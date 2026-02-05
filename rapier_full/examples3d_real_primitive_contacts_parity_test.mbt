@@ -37,14 +37,13 @@ test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
-  colliders.insert_with_parent(
+  let ground_co = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(
       ground_size, ground_height, ground_size,
     ).build(),
     ground,
     bodies,
   )
-  |> ignore
 
   // Cylinder.
   let rad = 1.0F
@@ -55,17 +54,32 @@ test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
     .can_sleep(false)
     .build(),
   )
-  colliders.insert_with_parent(
+  let cyl_co = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cylinder(rad, rad).build(),
     body,
     bodies,
   )
-  |> ignore
+  let (ci, cg) = cyl_co.into_raw_parts()
+  let (gi, gg) = ground_co.into_raw_parts()
+  let cyl_first = ci < gi || (ci == gi && cg <= gg)
+  let mut saw_contact = false
+  let mut saw_up_normal = false
   for _ in 0..<360 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
+    if narrow_phase.contact_pair(cyl_co, ground_co) is Some(pair) &&
+      pair.manifolds_len() > 0 {
+      saw_contact = true
+      let manifolds = pair.manifolds()
+      if manifolds.length() > 0 && manifolds[0].normal.y > 0.7F {
+        saw_up_normal = true
+      }
+    }
   }
+  inspect(saw_contact, content="true")
+  inspect(cyl_first, content="false")
+  inspect(saw_up_normal, content="true")
   if bodies.get(body) is Some(rb) {
     let p = rb.translation()
     inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
@@ -289,8 +303,8 @@ test "contacts: cone-vs-cone (3DReal headless)" {
   )
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    // Place it deeply overlapping to avoid missing contacts due to the sampling approximation.
-    .translation(@core.Vec3::new(0.1F, 0.2F, 0.05F))
+    // Slight overlap should still generate contacts with robust narrow-phase.
+    .translation(@core.Vec3::new(0.1F, 1.6F, 0.05F))
     .can_sleep(false)
     .build(),
   )
