@@ -677,7 +677,7 @@ pub fn CollisionEventFlags::insert(Self, Self) -> Self
 pub fn CollisionEventFlags::removed() -> Self
 pub fn CollisionEventFlags::sensor() -> Self
 
-pub struct ContactData {
+pub(all) struct ContactData {
   impulse : Float
   tangent_impulse : @core.Vec2
   warmstart_impulse : Float
@@ -685,6 +685,7 @@ pub struct ContactData {
   warmstart_twist_impulse : Float
 }
 pub fn ContactData::default() -> Self
+pub fn ContactData::new(Float, @core.Vec2, Float, @core.Vec2, Float) -> Self
 
 pub struct ContactForceEvent {
   collider1 : ColliderHandle
@@ -726,12 +727,15 @@ pub struct ContactManifoldPoint {
   dist : Float
   fid1 : FeatureId
   fid2 : FeatureId
+  mut data : ContactData
 }
+pub fn ContactManifoldPoint::data(Self) -> ContactData
 pub fn ContactManifoldPoint::dist(Self) -> Float
 pub fn ContactManifoldPoint::fid1(Self) -> FeatureId
 pub fn ContactManifoldPoint::fid2(Self) -> FeatureId
 pub fn ContactManifoldPoint::local_p1(Self) -> @core.Vec2
 pub fn ContactManifoldPoint::local_p2(Self) -> @core.Vec2
+pub fn ContactManifoldPoint::set_data(Self, ContactData) -> Unit
 
 pub struct ContactPair {
   manifolds : Array[ContactManifold]

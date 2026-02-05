@@ -30,7 +30,7 @@ pub type Contact = ContactManifoldPoint
 
 ///|
 /// Equivalent to Rapier's `geometry::contact_pair::ContactData`.
-pub struct ContactData {
+pub(all) struct ContactData {
   impulse : @core.Real
   tangent_impulse : @core.Vec2
   warmstart_impulse : @core.Real
@@ -47,6 +47,23 @@ pub fn ContactData::default() -> ContactData {
     warmstart_impulse: 0.0F,
     warmstart_tangent_impulse: @core.Vec2::zero(),
     warmstart_twist_impulse: 0.0F,
+  }
+}
+
+///|
+pub fn ContactData::new(
+  impulse : @core.Real,
+  tangent_impulse : @core.Vec2,
+  warmstart_impulse : @core.Real,
+  warmstart_tangent_impulse : @core.Vec2,
+  warmstart_twist_impulse : @core.Real,
+) -> ContactData {
+  {
+    impulse,
+    tangent_impulse,
+    warmstart_impulse,
+    warmstart_tangent_impulse,
+    warmstart_twist_impulse,
   }
 }
 
@@ -130,23 +147,56 @@ pub fn ContactPair::has_any_active_contact(self : ContactPair) -> Bool {
 
 ///|
 pub fn ContactPair::total_impulse(self : ContactPair) -> @core.Vec2 {
-  // TODO: integrate with the constraints solver to populate impulses.
-  self |> ignore
-  @core.Vec2::zero()
+  fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
+    @core.Vec2::new(v.x * s, v.y * s)
+  }
+
+  let mut out = @core.Vec2::zero()
+  let manifolds = self.manifolds()
+  for mi in 0..<manifolds.length() {
+    let m = manifolds[mi]
+    let pts = m.points()
+    let mut total = 0.0F
+    for pi in 0..<pts.length() {
+      let p = pts[pi]
+      total = total + p.data().impulse
+    }
+    out = out.add(vec2_scale(m.normal(), total))
+  }
+  out
 }
 
 ///|
 pub fn ContactPair::total_impulse_magnitude(self : ContactPair) -> @core.Real {
-  // TODO: integrate with the constraints solver to populate impulses.
-  self |> ignore
-  0.0F
+  let manifolds = self.manifolds()
+  let mut out = 0.0F
+  for mi in 0..<manifolds.length() {
+    let pts = manifolds[mi].points()
+    for pi in 0..<pts.length() {
+      out = out + pts[pi].data().impulse
+    }
+  }
+  out
 }
 
 ///|
 pub fn ContactPair::max_impulse(self : ContactPair) -> (@core.Real, @core.Vec2) {
-  // TODO: integrate with the constraints solver to populate impulses.
-  self |> ignore
-  (0.0F, @core.Vec2::zero())
+  let manifolds = self.manifolds()
+  let mut best = 0.0F
+  let mut best_dir = @core.Vec2::zero()
+  for mi in 0..<manifolds.length() {
+    let m = manifolds[mi]
+    let pts = m.points()
+    let mut total = 0.0F
+    for pi in 0..<pts.length() {
+      total = total + pts[pi].data().impulse
+    }
+    if total > best {
+      best = total
+      best_dir = m.normal()
+    }
+  }
+  (best, best_dir)
 }
 
 ///|
@@ -161,6 +211,7 @@ pub fn ContactPair::find_deepest_contact(
     dist: 0.0F,
     fid1: FeatureId::Unknown,
     fid2: FeatureId::Unknown,
+    data: ContactData::default(),
   }
   let mut best_dist = 0.0F
   for mi in 0..<self.manifolds.length() {
@@ -194,16 +245,46 @@ pub fn ContactForceEvent::from_contact_pair(
   pair : ContactPair,
   total_force_magnitude : @core.Real,
 ) -> ContactForceEvent {
-  // TODO: convert impulses to forces once impulses are available in this port.
-  dt |> ignore
-  pair |> ignore
+  fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
+    @core.Vec2::new(v.x * s, v.y * s)
+  }
+
+  if dt <= 0.0F {
+    return ContactForceEvent::new(
+      collider1,
+      collider2,
+      @core.Vec2::zero(),
+      total_force_magnitude,
+      @core.Vec2::zero(),
+      0.0F,
+    )
+  }
+  let mut total_impulse = @core.Vec2::zero()
+  let mut max_impulse = 0.0F
+  let mut max_dir = @core.Vec2::zero()
+  let manifolds = pair.manifolds()
+  for mi in 0..<manifolds.length() {
+    let m = manifolds[mi]
+    let pts = m.points()
+    let mut manifold_impulse = 0.0F
+    for pi in 0..<pts.length() {
+      let imp = pts[pi].data().impulse
+      manifold_impulse = manifold_impulse + imp
+      if imp > max_impulse {
+        max_impulse = imp
+        max_dir = m.normal()
+      }
+    }
+    total_impulse = total_impulse.add(vec2_scale(m.normal(), manifold_impulse))
+  }
+  let inv_dt = 1.0F / dt
   ContactForceEvent::new(
     collider1,
     collider2,
-    @core.Vec2::zero(),
+    vec2_scale(total_impulse, inv_dt),
     total_force_magnitude,
-    @core.Vec2::zero(),
-    0.0F,
+    max_dir,
+    max_impulse * inv_dt,
   )
 }
 

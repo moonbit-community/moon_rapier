@@ -3503,6 +3503,7 @@ pub struct ContactManifoldPoint {
   dist : @core.Real
   fid1 : FeatureId
   fid2 : FeatureId
+  mut data : ContactData
 }
 
 ///|
@@ -3532,6 +3533,19 @@ pub fn ContactManifoldPoint::fid1(self : ContactManifoldPoint) -> FeatureId {
 ///|
 pub fn ContactManifoldPoint::fid2(self : ContactManifoldPoint) -> FeatureId {
   self.fid2
+}
+
+///|
+pub fn ContactManifoldPoint::data(self : ContactManifoldPoint) -> ContactData {
+  self.data
+}
+
+///|
+pub fn ContactManifoldPoint::set_data(
+  self : ContactManifoldPoint,
+  data : ContactData,
+) -> Unit {
+  self.data = data
 }
 
 ///|
@@ -4858,6 +4872,7 @@ fn contact_manifold_ball_ball(
         dist: signed_dist,
         fid1: FeatureId::Face(0),
         fid2: FeatureId::Face(0),
+        data: ContactData::default(),
       },
     ],
   }
@@ -4899,6 +4914,7 @@ fn contact_manifold_ball_cuboid(
         dist: signed_dist,
         fid1: FeatureId::Face(0),
         fid2: feature2,
+        data: ContactData::default(),
       },
     ],
   }
@@ -4940,6 +4956,7 @@ fn contact_manifold_cuboid_ball(
         dist: signed_dist,
         fid1: feature1,
         fid2: FeatureId::Face(0),
+        data: ContactData::default(),
       },
     ],
   }
@@ -4976,6 +4993,7 @@ fn contact_manifold_ball_convex_polygon(
         dist: signed_dist,
         fid1: FeatureId::Face(0),
         fid2: feature2,
+        data: ContactData::default(),
       },
     ],
   }
@@ -5012,6 +5030,7 @@ fn contact_manifold_convex_polygon_ball(
         dist: signed_dist,
         fid1: feature1,
         fid2: FeatureId::Face(0),
+        data: ContactData::default(),
       },
     ],
   }
@@ -5272,6 +5291,7 @@ fn polygon_contact_manifold(
         },
         fid1,
         fid2,
+        data: ContactData::default(),
       })
     }
   }
@@ -5301,6 +5321,7 @@ fn polygon_contact_manifold(
       dist: sep,
       fid1,
       fid2,
+      data: ContactData::default(),
     })
   }
   if points.length() == 2 {
@@ -5711,6 +5732,7 @@ fn contact_manifold_cuboid_cuboid(
         dist: separation,
         fid1,
         fid2,
+        data: ContactData::default(),
       })
     }
   }
@@ -5833,6 +5855,7 @@ fn contact_manifold_ball_segment(
         dist: signed_dist,
         fid1: FeatureId::Face(0),
         fid2: seg_feature,
+        data: ContactData::default(),
       },
     ],
   }
@@ -5870,6 +5893,7 @@ fn contact_manifold_segment_ball(
         dist: signed_dist,
         fid1: seg_feature,
         fid2: FeatureId::Face(0),
+        data: ContactData::default(),
       },
     ],
   }
@@ -5918,6 +5942,7 @@ fn contact_manifold_ball_capsule(
         dist: signed_dist,
         fid1: FeatureId::Face(0),
         fid2: capsule_segment_feature(t),
+        data: ContactData::default(),
       },
     ],
   }
@@ -5955,6 +5980,7 @@ fn contact_manifold_capsule_ball(
         dist: signed_dist,
         fid1: capsule_segment_feature(t),
         fid2: FeatureId::Face(0),
+        data: ContactData::default(),
       },
     ],
   }
@@ -5999,6 +6025,7 @@ fn contact_manifold_capsule_capsule(
         dist: signed_dist,
         fid1: capsule_segment_feature(s),
         fid2: capsule_segment_feature(t),
+        data: ContactData::default(),
       },
     ],
   }
@@ -6060,6 +6087,7 @@ fn contact_manifold_segment_cuboid(
         dist: dist_center,
         fid1: seg_f,
         fid2: box_f,
+        data: ContactData::default(),
       },
     ],
   }
@@ -6088,6 +6116,7 @@ fn contact_manifold_cuboid_segment(
       dist: p.dist(),
       fid1: p.fid2(),
       fid2: p.fid1(),
+      data: p.data(),
     })
   }
   ContactManifold::{
@@ -6130,6 +6159,7 @@ fn contact_manifold_polyline_ball(
           dist: p.dist,
           fid1: FeatureId::Edge(seg_index),
           fid2: p.fid2,
+          data: p.data,
         },
       ],
     }
@@ -6214,6 +6244,7 @@ fn contact_manifold_ball_polyline(
       dist: p.dist(),
       fid1: p.fid2(),
       fid2: p.fid1(),
+      data: p.data(),
     })
   }
   ContactManifold::{
@@ -6260,6 +6291,7 @@ fn contact_manifold_polyline_cuboid(
           dist: p.dist,
           fid1: FeatureId::Edge(seg_index),
           fid2: p.fid2,
+          data: p.data,
         },
       ],
     }
@@ -6347,6 +6379,7 @@ fn contact_manifold_cuboid_polyline(
       dist: p.dist(),
       fid1: p.fid2(),
       fid2: p.fid1(),
+      data: p.data(),
     })
   }
   ContactManifold::{
@@ -6403,6 +6436,7 @@ fn contact_manifold_segment_segment(
         dist,
         fid1,
         fid2,
+        data: ContactData::default(),
       },
     ],
   }
@@ -6453,6 +6487,7 @@ fn contact_manifold_segment_capsule(
         dist: signed_dist,
         fid1,
         fid2: capsule_segment_feature(t),
+        data: ContactData::default(),
       },
     ],
   }
@@ -6481,6 +6516,7 @@ fn contact_manifold_capsule_segment(
       dist: p.dist(),
       fid1: p.fid2(),
       fid2: p.fid1(),
+      data: p.data(),
     })
   }
   ContactManifold::{
@@ -6557,6 +6593,7 @@ fn contact_manifold_capsule_cuboid(
         dist: signed_dist,
         fid1: capsule_segment_feature(t),
         fid2: box_f,
+        data: ContactData::default(),
       },
     ],
   }
@@ -6585,6 +6622,7 @@ fn contact_manifold_cuboid_capsule(
       dist: p.dist(),
       fid1: p.fid2(),
       fid2: p.fid1(),
+      data: p.data(),
     })
   }
   ContactManifold::{
@@ -6659,6 +6697,7 @@ fn build_contact_pair(
           dist: p.dist - (radius1 + radius2),
           fid1: p.fid1,
           fid2: p.fid2,
+          data: p.data,
         })
       }
       ContactManifold::{ normal: n, points: out_pts }
@@ -6674,6 +6713,7 @@ fn build_contact_pair(
           dist: p.dist,
           fid1: p.fid2,
           fid2: p.fid1,
+          data: p.data,
         })
       }
       ContactManifold::{
@@ -6718,6 +6758,7 @@ fn build_contact_pair(
             dist,
             fid1: FeatureId::Face(0),
             fid2: FeatureId::Unknown,
+            data: ContactData::default(),
           },
         ],
       })
@@ -6761,6 +6802,7 @@ fn build_contact_pair(
             dist,
             fid1: FeatureId::Face(0),
             fid2: capsule_segment_feature(t),
+            data: ContactData::default(),
           },
         ],
       })
@@ -6804,6 +6846,7 @@ fn build_contact_pair(
             dist: d,
             fid1: FeatureId::Face(0),
             fid2: fid,
+            data: ContactData::default(),
           })
         }
       }
@@ -7257,6 +7300,7 @@ fn build_contact_pair(
         dist: p.dist(),
         fid1: pack_feature(prefix1, p.fid1()),
         fid2: pack_feature(prefix2, p.fid2()),
+        data: p.data(),
       })
     }
     ContactManifold::{ normal: manifold.normal, points: out_pts }

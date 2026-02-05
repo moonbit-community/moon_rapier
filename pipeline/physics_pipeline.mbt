@@ -797,6 +797,88 @@ fn collision_pair_in_list(
 }
 
 ///|
+/// Populate narrow-phase contact impulses from the last contact solver cache.
+///
+/// Rapier stores per-contact impulses on each contact point. This port keeps a pipeline-side
+/// cache keyed by collider handles + feature ids; this function writes those impulses back into
+/// the narrow-phase contact pairs for pub-surface parity (`ContactPair::total_impulse`, etc.).
+fn populate_contact_impulses_from_cache(
+  narrow_phase : @collision.NarrowPhase,
+  cache : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  fn feature_id_equals(
+    a : @collision.FeatureId,
+    b : @collision.FeatureId,
+  ) -> Bool {
+    match (a, b) {
+      (@collision.FeatureId::Unknown, @collision.FeatureId::Unknown) => true
+      (@collision.FeatureId::Vertex(i), @collision.FeatureId::Vertex(j)) =>
+        i == j
+      (@collision.FeatureId::Edge(i), @collision.FeatureId::Edge(j)) => i == j
+      (@collision.FeatureId::Face(i), @collision.FeatureId::Face(j)) => i == j
+      _ => false
+    }
+  }
+
+  // Reset impulses so removed contacts don't keep stale values.
+  for ci in 0..<narrow_phase.contacts.length() {
+    let entry = narrow_phase.contacts[ci]
+    let pair = entry.2
+    for mi in 0..<pair.manifolds.length() {
+      let manifold = pair.manifolds[mi]
+      for pi in 0..<manifold.points.length() {
+        manifold.points[pi].set_data(@collision.ContactData::default())
+      }
+    }
+  }
+  for i in 0..<cache.length() {
+    let e = cache[i]
+    // Find the corresponding narrow-phase contact pair.
+    for ci in 0..<narrow_phase.contacts.length() {
+      let entry = narrow_phase.contacts[ci]
+      let h1 = entry.0
+      let h2 = entry.1
+      let direct = collider_handle_equals(h1, e.collider1) &&
+        collider_handle_equals(h2, e.collider2)
+      let swapped = collider_handle_equals(h1, e.collider2) &&
+        collider_handle_equals(h2, e.collider1)
+      if !direct && !swapped {
+        continue
+      }
+      let fid1 = if swapped { e.fid2 } else { e.fid1 }
+      let fid2 = if swapped { e.fid1 } else { e.fid2 }
+      let pair = entry.2
+      for mi in 0..<pair.manifolds.length() {
+        let manifold = pair.manifolds[mi]
+        let n = manifold.normal
+        let tangent = @core.Vec2::new(-n.y, n.x)
+        let tangent_imp = @core.Vec2::new(
+          tangent.x * e.impulse_t,
+          tangent.y * e.impulse_t,
+        )
+        for pi in 0..<manifold.points.length() {
+          let p = manifold.points[pi]
+          if feature_id_equals(p.fid1, fid1) && feature_id_equals(p.fid2, fid2) {
+            p.set_data(
+              @collision.ContactData::new(
+                e.impulse_n,
+                tangent_imp,
+                e.impulse_n,
+                tangent_imp,
+                0.0F,
+              ),
+            )
+            // We only expect one match for a given (fid1, fid2).
+            break
+          }
+        }
+      }
+      break
+    }
+  }
+}
+
+///|
 fn solve_joints_and_contacts_interleaved(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
@@ -1416,6 +1498,7 @@ pub fn PhysicsPipeline::step(
     )
   }
   // Only emit collision events after the final collision detection pass.
+  populate_contact_impulses_from_cache(narrow_phase, self.contact_solver_cache)
   PhysicsPipeline::emit_collision_events(
     self, bodies, colliders, narrow_phase, event_handler,
   )
