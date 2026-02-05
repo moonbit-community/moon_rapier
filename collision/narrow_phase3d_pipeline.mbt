@@ -655,11 +655,9 @@ pub fn NarrowPhase3D::update(
                   contacts.push(cp)
                 }
               (Shape3D::Cuboid(he), Shape3D::Triangle(a, b, c)) => {
-                let vtx = [a, b, c]
-                let idx = [(0, 1, 2)]
-                if compute_cuboid_trimesh_contact(p1, he, p2, vtx, idx)
-                  is Some(cp) {
-                  contacts.push(cp)
+                let cps = compute_cuboid_triangle_contacts(p1, he, p2, a, b, c)
+                for k in 0..<cps.length() {
+                  contacts.push(cps[k])
                 }
               }
               (
@@ -692,10 +690,9 @@ pub fn NarrowPhase3D::update(
                   })
                 }
               (Shape3D::Triangle(a, b, c), Shape3D::Cuboid(he)) => {
-                let vtx = [a, b, c]
-                let idx = [(0, 1, 2)]
-                if compute_cuboid_trimesh_contact(p2, he, p1, vtx, idx)
-                  is Some(cp) {
+                let cps = compute_cuboid_triangle_contacts(p2, he, p1, a, b, c)
+                for k in 0..<cps.length() {
+                  let cp = cps[k]
                   contacts.push({
                     point1: cp.point2,
                     point2: cp.point1,

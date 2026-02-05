@@ -90,6 +90,10 @@ pub fn compute_cuboid_heightfield_contact(@core.Isometry3, @core.Vec3, @core.Iso
 
 pub fn compute_cuboid_heightfield_contact_with_flags(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
 
+pub fn compute_cuboid_triangle_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3, @core.Vec3, @core.Vec3) -> ContactPoint3D?
+
+pub fn compute_cuboid_triangle_contacts(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3, @core.Vec3, @core.Vec3) -> Array[ContactPoint3D]
+
 pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
 
 pub fn compute_cuboid_voxels_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
