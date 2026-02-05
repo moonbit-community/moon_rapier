@@ -15,6 +15,7 @@
 ///|
 pub struct ContactPair3D {
   manifolds : Array[ContactPoint3D]
+  impulses : Array[@core.Real]
 }
 
 ///|
@@ -25,6 +26,61 @@ pub fn ContactPair3D::manifolds_len(self : ContactPair3D) -> Int {
 ///|
 pub fn ContactPair3D::manifolds(self : ContactPair3D) -> Array[ContactPoint3D] {
   self.manifolds
+}
+
+///|
+pub fn ContactPair3D::set_normal_impulse_at(
+  self : ContactPair3D,
+  idx : Int,
+  impulse : @core.Real,
+) -> Unit {
+  if idx >= 0 && idx < self.impulses.length() {
+    self.impulses[idx] = impulse
+  }
+}
+
+///|
+pub fn ContactPair3D::total_impulse(self : ContactPair3D) -> @core.Vec3 {
+  // Matches Rapier: sum(manifold_total_impulse * manifold_normal).
+  let mut out = @core.Vec3::zero()
+  let n = self.manifolds.length()
+  for i in 0..<n {
+    let imp = if i < self.impulses.length() { self.impulses[i] } else { 0.0F }
+    out = out.add(self.manifolds[i].normal.scale(imp))
+  }
+  out
+}
+
+///|
+pub fn ContactPair3D::total_impulse_magnitude(
+  self : ContactPair3D,
+) -> @core.Real {
+  // Matches Rapier: sum(manifold_total_impulse) (not |total_impulse|).
+  let mut out = 0.0F
+  for i in 0..<self.impulses.length() {
+    out = out + self.impulses[i]
+  }
+  out
+}
+
+///|
+pub fn ContactPair3D::max_impulse(
+  self : ContactPair3D,
+) -> (@core.Real, @core.Vec3) {
+  // Matches Rapier: strongest manifold impulse and its normal direction.
+  let mut best = 0.0F
+  let mut dir = @core.Vec3::zero()
+  let n = self.manifolds.length()
+  let m = self.impulses.length()
+  let k = if n < m { n } else { m }
+  for i in 0..<k {
+    let imp = self.impulses[i]
+    if imp > best {
+      best = imp
+      dir = self.manifolds[i].normal
+    }
+  }
+  (best, dir)
 }
 
 ///|
@@ -115,6 +171,37 @@ pub fn NarrowPhase3D::contact_pair(
 }
 
 ///|
+/// Update the normal impulses stored for a given contact pair.
+///
+/// This is written by the 3D contact solver after each step so `ContactPair3D::{total_impulse,*}`
+/// matches Rapier semantics.
+pub fn NarrowPhase3D::set_contact_pair_normal_impulses(
+  self : NarrowPhase3D,
+  a : ColliderHandle3D,
+  b : ColliderHandle3D,
+  impulses : Array[@core.Real],
+) -> Unit {
+  let key = canonical_pair(a, b)
+  for i in 0..<self.contact_pairs.length() {
+    let entry = self.contact_pairs[i]
+    if entry.0.0.equals(key.0) && entry.0.1.equals(key.1) {
+      let pair = entry.1
+      let n = pair.impulses.length()
+      let m = impulses.length()
+      let k = if n < m { n } else { m }
+      for j in 0..<k {
+        pair.impulses[j] = impulses[j]
+      }
+      for j in k..<n {
+        pair.impulses[j] = 0.0F
+      }
+      self.contact_pairs[i] = (entry.0, pair)
+      return
+    }
+  }
+}
+
+///|
 pub fn NarrowPhase3D::intersection_pair(
   self : NarrowPhase3D,
   a : ColliderHandle3D,
@@ -148,7 +235,7 @@ pub fn NarrowPhase3D::update(
         continue
       }
       if !co1.collision_groups.test_groups(co2.collision_groups) {
-        self.contact_pairs.push(((a, b), { manifolds: [] }))
+        self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))
         self.intersection_pairs.push(
           ((a, b), { collider1: a, collider2: b, intersecting: false }),
         )
@@ -158,7 +245,7 @@ pub fn NarrowPhase3D::update(
       // Keep the pair, but avoid generating contacts between colliders attached to the same body.
       if co1.parent() is Some(p1) && co2.parent() is Some(p2) {
         if p1.equals(p2) {
-          self.contact_pairs.push(((a, b), { manifolds: [] }))
+          self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))
           self.intersection_pairs.push(
             ((a, b), { collider1: a, collider2: b, intersecting: false }),
           )
@@ -991,7 +1078,11 @@ pub fn NarrowPhase3D::update(
           contacts.push(c)
         }
       }
-      self.contact_pairs.push(((a, b), { manifolds: contacts }))
+      let impulses : Array[@core.Real] = []
+      for _ in 0..<contacts.length() {
+        impulses.push(0.0F)
+      }
+      self.contact_pairs.push(((a, b), { manifolds: contacts, impulses }))
       self.intersection_pairs.push(
         (
           (a, b),

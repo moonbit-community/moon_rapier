@@ -176,6 +176,7 @@ pub fn solve_contacts_3d(
   narrow_phase : @collision.NarrowPhase3D,
   cache_in : ContactSolverCache3D,
   cache_out : ContactSolverCache3D,
+  event_handler : EventHandler3D?,
 ) -> Unit {
   cache_out.clear()
   fn accept_one_way(
@@ -566,6 +567,83 @@ pub fn solve_contacts_3d(
           }
         }
         cached[k] = (c0.point1, c0.point2, acc)
+      }
+    }
+  }
+
+  // Write back the normal impulses for pub-surface parity, and emit contact-force events.
+  for i in 0..<all_pairs.length() {
+    let entry = all_pairs[i]
+    let pair = entry.0
+    let cp = entry.1
+    if cp.manifolds_len() == 0 {
+      continue
+    }
+    let a = pair.0
+    let b = pair.1
+    if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      if co1.is_sensor() || co2.is_sensor() {
+        continue
+      }
+      let cached = if cache_get(cache_out, a, b) is Some(list) {
+        list
+      } else {
+        []
+      }
+      let contacts = cp.manifolds()
+      let n = contacts.length()
+      let m = cached.length()
+      let k = if n < m { n } else { m }
+      let normal_impulses : Array[@core.Real] = []
+      for _ in 0..<n {
+        normal_impulses.push(0.0F)
+      }
+      let mut total_impulse = 0.0F
+      let mut total_vec = @core.Vec3::zero()
+      let mut best_impulse = 0.0F
+      let mut best_dir = @core.Vec3::zero()
+      for j in 0..<k {
+        let imp = cached[j].2.normal
+        normal_impulses[j] = imp
+        total_impulse = total_impulse + imp
+        let nrm = contacts[j].normal
+        total_vec = total_vec.add(nrm.scale(imp))
+        if imp > best_impulse {
+          best_impulse = imp
+          best_dir = nrm
+        }
+      }
+      narrow_phase.set_contact_pair_normal_impulses(a, b, normal_impulses)
+      if event_handler is Some(handler) {
+        let flag = @collision.ActiveEvents::contact_force_events()
+        let max_threshold = 1.0e30F
+        let t1 = if co1.active_events().contains(flag) {
+          co1.contact_force_event_threshold()
+        } else {
+          max_threshold
+        }
+        let t2 = if co2.active_events().contains(flag) {
+          co2.contact_force_event_threshold()
+        } else {
+          max_threshold
+        }
+        let threshold = if t1 < t2 { t1 } else { t2 }
+        if threshold < max_threshold && dt > 0.0F {
+          let inv_dt = 1.0F / dt
+          let total_force_magnitude = total_impulse * inv_dt
+          if total_force_magnitude > threshold {
+            handler.push_contact_force_event(
+              @collision.ContactForceEvent3D::new(
+                a,
+                b,
+                total_vec.scale(inv_dt),
+                total_force_magnitude,
+                best_dir,
+                best_impulse * inv_dt,
+              ),
+            )
+          }
+        }
       }
     }
   }

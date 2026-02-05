@@ -157,6 +157,60 @@ test "ball-trimesh contact: triangle floor overlap" {
 }
 
 ///|
+test "cylinder-trimesh contact: triangle floor shallow overlap" {
+  let mesh_pos = @core.Isometry3::identity()
+  let vertices = [
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+    @core.Vec3::new(2.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 2.0F),
+  ]
+  let indices = [(0, 1, 2)]
+  let cyl_pos = @core.Isometry3::from_translation(
+    @core.Vec3::new(0.5F, 0.45F, 0.5F),
+  )
+  let c = compute_cylinder_trimesh_contact(
+    cyl_pos, 0.5F, 0.5F, mesh_pos, vertices, indices,
+  )
+  if c is Some(cp) {
+    inspect(cp.penetration > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "cone-cone contact: shallow overlap produces contact" {
+  let cone1_pos = @core.Isometry3::identity()
+  let cone2_pos = @core.Isometry3::from_translation(
+    @core.Vec3::new(1.9F, 0.0F, 0.0F),
+  )
+  let c = compute_cone_cone_contact(
+    cone1_pos, 1.0F, 1.0F, cone2_pos, 1.0F, 1.0F,
+  )
+  if c is Some(cp) {
+    inspect(cp.penetration > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "cone-cuboid contact: shallow overlap produces contact" {
+  // Slightly penetrate in the Y axis (GJK+EPA reports contacts only for intersecting shapes).
+  let cone_pos = @core.Isometry3::from_translation(
+    @core.Vec3::new(1.4F, 0.05F, 0.0F),
+  )
+  let cuboid_pos = @core.Isometry3::identity()
+  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let c = compute_cone_cuboid_contact(cone_pos, 1.0F, 1.0F, cuboid_pos, he)
+  if c is Some(cp) {
+    inspect(cp.penetration > 0.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "cuboid-cuboid contact: axis-aligned overlap along x" {
   let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
   let a = @core.Isometry3::identity()
