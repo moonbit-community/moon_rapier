@@ -16,8 +16,8 @@
 /// Dim3 island manager.
 ///
 /// Rapier's island manager builds connected components of the interaction graph.
-/// The real 3D backend will refine this further, but for now we maintain a list
-/// of awake bodies that can be used by the pipeline.
+/// This port approximates the same high-level behavior by taking an interaction
+/// edge list from the pipeline and propagating activation across connected components.
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
 }
