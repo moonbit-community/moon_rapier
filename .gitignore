@@ -1,5 +1,6 @@
 .DS_Store
 _build/
+_build2/
 target/
 target
 .mooncakes/
