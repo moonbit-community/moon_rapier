@@ -184,6 +184,47 @@ pub struct PhysicsHooks {
 }
 
 ///|
+fn resolve_hook_user_data(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+) -> (
+  @core.UserData128,
+  @core.UserData128,
+  @dynamics.RigidBodyHandle?,
+  @dynamics.RigidBodyHandle?,
+  @core.UserData128?,
+  @core.UserData128?,
+) {
+  let mut ud1 = @core.UserData128::zero()
+  let mut ud2 = @core.UserData128::zero()
+  let mut rb1 : @dynamics.RigidBodyHandle? = None
+  let mut rb2 : @dynamics.RigidBodyHandle? = None
+  let mut rb_ud1 : @core.UserData128? = None
+  let mut rb_ud2 : @core.UserData128? = None
+  if colliders.get(collider1) is Some(co1) {
+    ud1 = co1.user_data128()
+    rb1 = co1.parent()
+    if rb1 is Some(h1) {
+      if bodies.get(h1) is Some(b1) {
+        rb_ud1 = Some(b1.user_data128())
+      }
+    }
+  }
+  if colliders.get(collider2) is Some(co2) {
+    ud2 = co2.user_data128()
+    rb2 = co2.parent()
+    if rb2 is Some(h2) {
+      if bodies.get(h2) is Some(b2) {
+        rb_ud2 = Some(b2.user_data128())
+      }
+    }
+  }
+  (ud1, ud2, rb1, rb2, rb_ud1, rb_ud2)
+}
+
+///|
 pub fn PhysicsHooks::new() -> PhysicsHooks {
   {
     filter_contact_pair: None,
@@ -208,6 +249,38 @@ pub fn PhysicsHooks::filter_contact_pair(
 }
 
 ///|
+pub fn PhysicsHooks::filter_contact_pair_with_user_data(
+  self : PhysicsHooks,
+  predicate : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @core.UserData128,
+    @core.UserData128,
+    @dynamics.RigidBodyHandle?,
+    @dynamics.RigidBodyHandle?,
+    @core.UserData128?,
+    @core.UserData128?,
+  ) -> Bool,
+) -> PhysicsHooks {
+  self.filter_contact_pair = Some(fn(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+  ) -> Bool {
+    let (ud1, ud2, rb1, rb2, rb_ud1, rb_ud2) = resolve_hook_user_data(
+      bodies, colliders, collider1, collider2,
+    )
+    predicate(
+      bodies, colliders, collider1, collider2, ud1, ud2, rb1, rb2, rb_ud1, rb_ud2,
+    )
+  })
+  self
+}
+
+///|
 pub fn PhysicsHooks::filter_intersection_pair(
   self : PhysicsHooks,
   predicate : (
@@ -218,6 +291,38 @@ pub fn PhysicsHooks::filter_intersection_pair(
   ) -> Bool,
 ) -> PhysicsHooks {
   self.filter_intersection_pair = Some(predicate)
+  self
+}
+
+///|
+pub fn PhysicsHooks::filter_intersection_pair_with_user_data(
+  self : PhysicsHooks,
+  predicate : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @core.UserData128,
+    @core.UserData128,
+    @dynamics.RigidBodyHandle?,
+    @dynamics.RigidBodyHandle?,
+    @core.UserData128?,
+    @core.UserData128?,
+  ) -> Bool,
+) -> PhysicsHooks {
+  self.filter_intersection_pair = Some(fn(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+  ) -> Bool {
+    let (ud1, ud2, rb1, rb2, rb_ud1, rb_ud2) = resolve_hook_user_data(
+      bodies, colliders, collider1, collider2,
+    )
+    predicate(
+      bodies, colliders, collider1, collider2, ud1, ud2, rb1, rb2, rb_ud1, rb_ud2,
+    )
+  })
   self
 }
 
@@ -237,6 +342,41 @@ pub fn PhysicsHooks::modify_solver_contacts(
 }
 
 ///|
+pub fn PhysicsHooks::modify_solver_contacts_with_user_data(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @core.UserData128,
+    @core.UserData128,
+    @dynamics.RigidBodyHandle?,
+    @dynamics.RigidBodyHandle?,
+    @core.UserData128?,
+    @core.UserData128?,
+    @collision.ContactManifold,
+  ) -> (Bool, @core.Vec2),
+) -> PhysicsHooks {
+  self.modify_solver_contacts = Some(fn(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+    manifold : @collision.ContactManifold,
+  ) -> (Bool, @core.Vec2) {
+    let (ud1, ud2, rb1, rb2, rb_ud1, rb_ud2) = resolve_hook_user_data(
+      bodies, colliders, collider1, collider2,
+    )
+    callback(
+      bodies, colliders, collider1, collider2, ud1, ud2, rb1, rb2, rb_ud1, rb_ud2,
+      manifold,
+    )
+  })
+  self
+}
+
+///|
 pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(
   self : PhysicsHooks,
   callback : (
@@ -250,6 +390,45 @@ pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(
   ) -> @collision.SolverFlags,
 ) -> PhysicsHooks {
   self.modify_solver_contacts_with_solver_contacts = Some(callback)
+  self
+}
+
+///|
+pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts_with_user_data(
+  self : PhysicsHooks,
+  callback : (
+    @dynamics.RigidBodySet,
+    @collision.ColliderSet,
+    @collision.ColliderHandle,
+    @collision.ColliderHandle,
+    @core.UserData128,
+    @core.UserData128,
+    @dynamics.RigidBodyHandle?,
+    @dynamics.RigidBodyHandle?,
+    @core.UserData128?,
+    @core.UserData128?,
+    @collision.ContactManifold,
+    Array[@collision.SolverContact],
+    @collision.SolverFlags,
+  ) -> @collision.SolverFlags,
+) -> PhysicsHooks {
+  self.modify_solver_contacts_with_solver_contacts = Some(fn(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+    manifold : @collision.ContactManifold,
+    solver_contacts : Array[@collision.SolverContact],
+    solver_flags : @collision.SolverFlags,
+  ) -> @collision.SolverFlags {
+    let (ud1, ud2, rb1, rb2, rb_ud1, rb_ud2) = resolve_hook_user_data(
+      bodies, colliders, collider1, collider2,
+    )
+    callback(
+      bodies, colliders, collider1, collider2, ud1, ud2, rb1, rb2, rb_ud1, rb_ud2,
+      manifold, solver_contacts, solver_flags,
+    )
+  })
   self
 }
 

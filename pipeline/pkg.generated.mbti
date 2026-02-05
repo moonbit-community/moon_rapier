@@ -223,9 +223,13 @@ pub struct PhysicsHooks {
   mut modify_solver_contacts_with_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags)?
 }
 pub fn PhysicsHooks::filter_contact_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
+pub fn PhysicsHooks::filter_contact_pair_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
 pub fn PhysicsHooks::filter_intersection_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
+pub fn PhysicsHooks::filter_intersection_pair_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
 pub fn PhysicsHooks::modify_solver_contacts(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2)) -> Self
 pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Self
+pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags) -> Self
+pub fn PhysicsHooks::modify_solver_contacts_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?, @collision.ContactManifold) -> (Bool, @core.Vec2)) -> Self
 pub fn PhysicsHooks::new() -> Self
 
 pub struct PhysicsPipeline {
