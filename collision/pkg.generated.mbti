@@ -1274,9 +1274,11 @@ pub fn Triangle::as_shape(Self) -> Shape
 pub fn Triangle::new(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 
 pub struct VHACDParameters {
-  dummy : Int
+  max_convex_hulls : Int
 }
 pub fn VHACDParameters::default() -> Self
+pub fn VHACDParameters::max_convex_hulls(Self) -> Int
+pub fn VHACDParameters::set_max_convex_hulls(Self, Int) -> Self
 
 pub struct Voxels3DReal {
   voxel_size : @core.Vec3

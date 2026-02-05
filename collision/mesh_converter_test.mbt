@@ -55,3 +55,54 @@ test "mesh converter convex hull returns convex polygon shape" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "mesh converter convex decomposition honors max_convex_hulls" {
+  // A simple concave pentagon: (0,0)->(2,0)->(2,2)->(1,1)->(0,2).
+  let vertices = [
+    @core.Vec2::new(0.0F, 0.0F),
+    @core.Vec2::new(2.0F, 0.0F),
+    @core.Vec2::new(2.0F, 2.0F),
+    @core.Vec2::new(1.0F, 1.0F),
+    @core.Vec2::new(0.0F, 2.0F),
+  ]
+  let indices = [(0, 1, 3), (1, 2, 3), (0, 3, 4)]
+  let hull = MeshConverter::convex_hull().apply(vertices, indices)
+  if hull is Ok((shape, _)) {
+    if shape.as_shape() is Shape::ConvexPolygon(h) {
+      inspect(h.length() >= 3, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+  let params_one = VHACDParameters::default().set_max_convex_hulls(1)
+  let decomp_one = MeshConverter::ConvexDecompositionWithParams(params_one).apply(
+    vertices, indices,
+  )
+  if decomp_one is Ok((shape, _)) {
+    // With a budget of 1 hull, we fall back to a single convex hull.
+    if shape.as_shape() is Shape::ConvexPolygon(_) {
+      inspect(true, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+  let params_many = VHACDParameters::default().set_max_convex_hulls(16)
+  let decomp_many = MeshConverter::ConvexDecompositionWithParams(params_many).apply(
+    vertices, indices,
+  )
+  if decomp_many is Ok((shape, _)) {
+    // With a larger budget, we should get a compound of multiple convex pieces (not a single hull).
+    if shape.as_shape() is Shape::Compound(parts) {
+      inspect(parts.length() > 1, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}

@@ -284,13 +284,73 @@ pub fn MeshConverter::apply(
           Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
       }
     MeshConverter::ConvexDecomposition =>
-      // NOTE: Convex decomposition isn't implemented yet; we approximate with the convex hull
-      // for determinism and a usable fallback.
-      MeshConverter::ConvexHull.apply(vertices, indices)
+      MeshConverter::ConvexDecompositionWithParams(VHACDParameters::default()).apply(
+        vertices, indices,
+      )
     MeshConverter::ConvexDecompositionWithParams(params) => {
-      // Parameters are ignored for now; we keep the enum variant for pub parity.
-      params |> ignore
-      MeshConverter::ConvexHull.apply(vertices, indices)
+      fn boundary_segments_from_trimesh(
+        indices : Array[(Int, Int, Int)],
+      ) -> Array[(Int, Int)] {
+        fn min_int(a : Int, b : Int) -> Int {
+          if a < b {
+            a
+          } else {
+            b
+          }
+        }
+
+        fn max_int(a : Int, b : Int) -> Int {
+          if a > b {
+            a
+          } else {
+            b
+          }
+        }
+
+        let counts : @hashmap.HashMap[(Int, Int), Int] = @hashmap.new(
+          capacity=indices.length() * 3,
+        )
+        let keys : Array[(Int, Int)] = []
+        fn bump(
+          counts : @hashmap.HashMap[(Int, Int), Int],
+          keys : Array[(Int, Int)],
+          a : Int,
+          b : Int,
+        ) -> Unit {
+          let u = min_int(a, b)
+          let v = max_int(a, b)
+          let key = (u, v)
+          if counts.get(key) is Some(c) {
+            counts.set(key, c + 1)
+          } else {
+            counts.set(key, 1)
+            keys.push(key)
+          }
+        }
+
+        for t in indices {
+          let (i0, i1, i2) = t
+          bump(counts, keys, i0, i1)
+          bump(counts, keys, i1, i2)
+          bump(counts, keys, i2, i0)
+        }
+        let out : Array[(Int, Int)] = []
+        for k in keys {
+          if counts.get(k) is Some(c) && c == 1 {
+            out.push(k)
+          }
+        }
+        out
+      }
+
+      let segments = boundary_segments_from_trimesh(indices)
+      if segments.length() == 0 {
+        return MeshConverter::ConvexHull.apply(vertices, indices)
+      }
+      let builder = ColliderBuilder::convex_decomposition_with_params(
+        vertices, segments, params,
+      )
+      Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
     }
   }
 }

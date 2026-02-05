@@ -419,13 +419,27 @@ pub fn ActiveHooks::from_name(name : String) -> ActiveHooks? {
 /// The actual convex decomposition implementation lives in Rapier/Parry. This port keeps a
 /// minimal public type to avoid blocking pub-surface parity.
 pub struct VHACDParameters {
-  // Reserved for future fields.
-  dummy : Int
+  // Maximum number of convex parts to generate. If <= 1, this falls back to the convex hull.
+  max_convex_hulls : Int
 }
 
 ///|
 pub fn VHACDParameters::default() -> VHACDParameters {
-  { dummy: 0 }
+  { max_convex_hulls: 64 }
+}
+
+///|
+pub fn VHACDParameters::max_convex_hulls(self : VHACDParameters) -> Int {
+  self.max_convex_hulls
+}
+
+///|
+pub fn VHACDParameters::set_max_convex_hulls(
+  self : VHACDParameters,
+  max : Int,
+) -> VHACDParameters {
+  self |> ignore
+  { max_convex_hulls: max }
 }
 
 ///|
@@ -1050,9 +1064,341 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
   indices : Array[(Int, Int)],
   params : VHACDParameters,
 ) -> ColliderBuilder {
-  // Convex decomposition isn't implemented yet; approximate with the convex hull.
-  params |> ignore
-  indices |> ignore
+  fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
+    a.x * b.y - a.y * b.x
+  }
+
+  fn signed_area(poly : Array[@core.Vec2]) -> @core.Real {
+    if poly.length() < 3 {
+      return 0.0F
+    }
+    let mut sum = 0.0F
+    for i in 0..<poly.length() {
+      let a = poly[i]
+      let b = poly[(i + 1) % poly.length()]
+      sum = sum + (a.x * b.y - a.y * b.x)
+    }
+    0.5F * sum
+  }
+
+  fn is_convex_polygon(poly : Array[@core.Vec2]) -> Bool {
+    if poly.length() < 3 {
+      return false
+    }
+    let eps = 1.0e-8F
+    let mut sign = 0
+    for i in 0..<poly.length() {
+      let a = poly[i]
+      let b = poly[(i + 1) % poly.length()]
+      let c = poly[(i + 2) % poly.length()]
+      let ab = b.sub(a)
+      let bc = c.sub(b)
+      let z = cross2(ab, bc)
+      if @core.abs(z) <= eps {
+        continue
+      }
+      if sign == 0 {
+        sign = if z > 0.0F { 1 } else { -1 }
+      } else if (z > 0.0F && sign < 0) || (z < 0.0F && sign > 0) {
+        return false
+      }
+    }
+    true
+  }
+
+  fn point_in_triangle_ccw(
+    p : @core.Vec2,
+    a : @core.Vec2,
+    b : @core.Vec2,
+    c : @core.Vec2,
+  ) -> Bool {
+    let eps = 1.0e-10F
+    let ab = b.sub(a)
+    let bc = c.sub(b)
+    let ca = a.sub(c)
+    let ap = p.sub(a)
+    let bp = p.sub(b)
+    let cp = p.sub(c)
+    cross2(ab, ap) >= -eps && cross2(bc, bp) >= -eps && cross2(ca, cp) >= -eps
+  }
+
+  fn extract_simple_loop(
+    vertices : Array[@core.Vec2],
+    indices : Array[(Int, Int)],
+  ) -> Array[Int]? {
+    if vertices.length() < 3 {
+      return None
+    }
+    // Build undirected adjacency and walk a single loop.
+    let neighbors : Array[Array[Int]] = []
+    for _ in 0..<vertices.length() {
+      neighbors.push([])
+    }
+    fn push_unique(xs : Array[Int], v : Int) -> Unit {
+      for i in 0..<xs.length() {
+        if xs[i] == v {
+          return
+        }
+      }
+      xs.push(v)
+    }
+
+    for e in indices {
+      let (a0, b0) = e
+      if a0 < 0 || b0 < 0 || a0 >= vertices.length() || b0 >= vertices.length() {
+        continue
+      }
+      if a0 == b0 {
+        continue
+      }
+      push_unique(neighbors[a0], b0)
+      push_unique(neighbors[b0], a0)
+    }
+    let mut start = -1
+    for i in 0..<neighbors.length() {
+      if neighbors[i].length() > 0 {
+        start = i
+        break
+      }
+    }
+    if start < 0 {
+      return None
+    }
+    // Reject obviously non-loop graphs (degree != 2) for simplicity.
+    for i in 0..<neighbors.length() {
+      if neighbors[i].length() != 0 && neighbors[i].length() != 2 {
+        return None
+      }
+    }
+    let out : Array[Int] = []
+    let mut prev = -1
+    let mut curr = start
+    for _ in 0..<vertices.length() {
+      out.push(curr)
+      let ns = neighbors[curr]
+      if ns.length() == 0 {
+        return None
+      }
+      let mut next = ns[0]
+      if ns.length() == 2 {
+        let a = ns[0]
+        let b = ns[1]
+        if a == prev {
+          next = b
+        } else if b == prev {
+          next = a
+        } else {
+          next = if a < b { a } else { b }
+        }
+      }
+      prev = curr
+      curr = next
+      if curr == start {
+        break
+      }
+    }
+    if out.length() < 3 {
+      None
+    } else {
+      Some(out)
+    }
+  }
+
+  fn convex_decompose_simple_polygon(
+    vertices : Array[@core.Vec2],
+    poly_ids : Array[Int],
+    params : VHACDParameters,
+  ) -> Shape? {
+    let max_hulls = params.max_convex_hulls()
+    if max_hulls <= 1 {
+      return match ColliderBuilder::convex_hull(vertices) {
+        Some(b) => Some(b.shape)
+        None => None
+      }
+    }
+    let poly : Array[@core.Vec2] = []
+    for i in 0..<poly_ids.length() {
+      poly.push(vertices[poly_ids[i]])
+    }
+    if signed_area(poly) < 0.0F {
+      let mut i = 0
+      let mut j = poly.length() - 1
+      while i < j {
+        let tmp = poly[i]
+        poly[i] = poly[j]
+        poly[j] = tmp
+        i = i + 1
+        j = j - 1
+      }
+    }
+    if is_convex_polygon(poly) {
+      return Some(Shape::ConvexPolygon(poly))
+    }
+    // Ear clipping triangulation on the polygon vertices.
+    let remaining : Array[Int] = []
+    for i in 0..<poly.length() {
+      remaining.push(i)
+    }
+    let triangles : Array[Array[Int]] = []
+    let mut iter_guard = 0
+    while remaining.length() > 3 && iter_guard < 4096 {
+      iter_guard = iter_guard + 1
+      let mut clipped = false
+      for i in 0..<remaining.length() {
+        let i0 = remaining[(i + remaining.length() - 1) % remaining.length()]
+        let i1 = remaining[i]
+        let i2 = remaining[(i + 1) % remaining.length()]
+        let a = poly[i0]
+        let b = poly[i1]
+        let c = poly[i2]
+        if cross2(b.sub(a), c.sub(b)) <= 1.0e-12F {
+          continue
+        }
+        let mut contains = false
+        for j in 0..<remaining.length() {
+          let ij = remaining[j]
+          if ij == i0 || ij == i1 || ij == i2 {
+            continue
+          }
+          if point_in_triangle_ccw(poly[ij], a, b, c) {
+            contains = true
+            break
+          }
+        }
+        if contains {
+          continue
+        }
+        triangles.push([i0, i1, i2])
+        remaining.remove(i) |> ignore
+        clipped = true
+        break
+      }
+      if !clipped {
+        break
+      }
+    }
+    if remaining.length() == 3 {
+      triangles.push([remaining[0], remaining[1], remaining[2]])
+    }
+    if triangles.length() == 0 {
+      return None
+    }
+
+    // Greedily merge adjacent triangles while staying convex.
+    let parts : Array[Array[Int]] = []
+    for t in triangles {
+      parts.push(t)
+    }
+    fn try_merge_convex(
+      poly : Array[@core.Vec2],
+      p1 : Array[Int],
+      p2 : Array[Int],
+    ) -> Array[Int]? {
+      for i in 0..<p1.length() {
+        let u = p1[i]
+        let v = p1[(i + 1) % p1.length()]
+        for j in 0..<p2.length() {
+          if p2[j] == v && p2[(j + 1) % p2.length()] == u {
+            // Build union boundary: p2 path u->v then p1 path v->u.
+            fn index_of(xs : Array[Int], v : Int) -> Int? {
+              for k in 0..<xs.length() {
+                if xs[k] == v {
+                  return Some(k)
+                }
+              }
+              None
+            }
+
+            fn path(xs : Array[Int], start : Int, end : Int) -> Array[Int]? {
+              if index_of(xs, start) is Some(s0) {
+                let out : Array[Int] = []
+                let mut k = s0
+                for _ in 0..<xs.length() {
+                  out.push(xs[k])
+                  if xs[k] == end {
+                    return Some(out)
+                  }
+                  k = (k + 1) % xs.length()
+                }
+              }
+              None
+            }
+
+            if path(p2, u, v) is Some(p2uv) && path(p1, v, u) is Some(p1vu) {
+              let merged : Array[Int] = []
+              for x in p2uv {
+                merged.push(x)
+              }
+              for k in 1..<p1vu.length() {
+                merged.push(p1vu[k])
+              }
+              if merged.length() >= 4 {
+                // Remove last duplicate of the first vertex (u).
+                if merged[merged.length() - 1] == merged[0] {
+                  merged.pop() |> ignore
+                }
+              }
+              let poly_pts : Array[@core.Vec2] = []
+              for id in merged {
+                poly_pts.push(poly[id])
+              }
+              if is_convex_polygon(poly_pts) {
+                return Some(merged)
+              }
+            }
+          }
+        }
+      }
+      None
+    }
+
+    let mut changed = true
+    while changed && parts.length() > 1 {
+      changed = false
+      for i in 0..<parts.length() {
+        let mut j = i + 1
+        while j < parts.length() {
+          if try_merge_convex(poly, parts[i], parts[j]) is Some(m) {
+            parts[i] = m
+            parts.remove(j) |> ignore
+            changed = true
+            break
+          }
+          j = j + 1
+        }
+        if changed {
+          break
+        }
+      }
+      if parts.length() <= max_hulls {
+        break
+      }
+    }
+    if parts.length() > max_hulls {
+      // If we can't stay within the requested budget, fall back to a single convex hull.
+      return match ColliderBuilder::convex_hull(vertices) {
+        Some(b) => Some(b.shape)
+        None => None
+      }
+    }
+    let out_parts : Array[(@core.Isometry2, Shape)] = []
+    for p in parts {
+      let pts : Array[@core.Vec2] = []
+      for id in p {
+        pts.push(poly[id])
+      }
+      out_parts.push((@core.Isometry2::identity(), Shape::ConvexPolygon(pts)))
+    }
+    Some(Shape::Compound(out_parts))
+  }
+
+  if extract_simple_loop(vertices, indices) is Some(poly_ids) {
+    if convex_decompose_simple_polygon(vertices, poly_ids, params)
+      is Some(shape) {
+      return ColliderBuilder::new(shape)
+    }
+  }
+  // Fallback: approximate with the convex hull, else keep as polyline.
   match ColliderBuilder::convex_hull(vertices) {
     Some(builder) => builder
     None => ColliderBuilder::polyline(vertices, Some(indices))
