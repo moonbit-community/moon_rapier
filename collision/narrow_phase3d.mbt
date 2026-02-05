@@ -695,6 +695,37 @@ pub fn heightfield_closest_point_query_with_flags(
 }
 
 ///|
+fn compute_point_trimesh_contact(
+  point1 : @core.Vec3,
+  radius : @core.Real,
+  mesh_pos : @core.Isometry3,
+  vertices : Array[@core.Vec3],
+  indices : Array[(Int, Int, Int)],
+) -> ContactPoint3D? {
+  let (best_point, best_normal, best_dist2, ok) = trimesh_closest_point(
+    point1, mesh_pos, vertices, indices,
+  )
+  if !ok {
+    return None
+  }
+  let r2 = radius * radius
+  if best_dist2 > r2 {
+    return None
+  }
+  let dist = local_sqrt(best_dist2)
+  let normal0 = if dist > 1.0e-6F {
+    best_point.sub(point1).scale(1.0F / dist)
+  } else {
+    best_normal
+  }
+  // For the current real dim3 backend, trimeshes are primarily used as terrains/grounds.
+  // Flip upward-facing normals so penetrations are pushed back above the surface instead of
+  // potentially getting "stuck" below due to unsigned distance queries.
+  let normal = if normal0.y > 0.0F { normal0.scale(-1.0F) } else { normal0 }
+  Some({ point1, point2: best_point, normal, penetration: radius - dist })
+}
+
+///|
 fn voxels_floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
   if denom == 0.0F {
     0
@@ -1074,33 +1105,155 @@ pub fn compute_ball_trimesh_contact(
 }
 
 ///|
-/// Convex-vs-trimesh contact helper.
-///
-/// This iterates over the triangles and uses the same GJK+EPA routine as other convex pairs so
-/// we don't rely on sampling approximations for cylinders/cones.
-fn compute_convex_trimesh_contact(
-  convex_pos : @core.Isometry3,
-  convex_shape : Shape3D,
+pub fn compute_cuboid_trimesh_contact(
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
 ) -> ContactPoint3D? {
+  // Approximation:
+  // 1) For terrain-like triangles (non-vertical), project bottom-face sample points onto the
+  //    triangle plane (solves the common "ground mesh" case robustly).
+  // 2) Fallback to point-vs-mesh proximity tests with a small skin radius.
+  fn tri_contains_xz(
+    px : @core.Real,
+    pz : @core.Real,
+    ax : @core.Real,
+    az : @core.Real,
+    bx : @core.Real,
+    bz : @core.Real,
+    cx : @core.Real,
+    cz : @core.Real,
+  ) -> Bool {
+    // 2D barycentric sign test on (x, z).
+    fn sign(
+      px : @core.Real,
+      pz : @core.Real,
+      ax : @core.Real,
+      az : @core.Real,
+      bx : @core.Real,
+      bz : @core.Real,
+    ) -> @core.Real {
+      (px - bx) * (az - bz) - (ax - bx) * (pz - bz)
+    }
+
+    let d1 = sign(px, pz, ax, az, bx, bz)
+    let d2 = sign(px, pz, bx, bz, cx, cz)
+    let d3 = sign(px, pz, cx, cz, ax, az)
+    let has_neg = d1 < 0.0F || d2 < 0.0F || d3 < 0.0F
+    let has_pos = d1 > 0.0F || d2 > 0.0F || d3 > 0.0F
+    !(has_neg && has_pos)
+  }
+
+  fn projected_bottom_contact(
+    cuboid_pos : @core.Isometry3,
+    cuboid_half_extents : @core.Vec3,
+    mesh_pos : @core.Isometry3,
+    vertices : Array[@core.Vec3],
+    indices : Array[(Int, Int, Int)],
+  ) -> ContactPoint3D? {
+    let hx = cuboid_half_extents.x
+    let hy = cuboid_half_extents.y
+    let hz = cuboid_half_extents.z
+    let samples = [
+      @core.Vec3::new(-hx, -hy, -hz),
+      @core.Vec3::new(hx, -hy, -hz),
+      @core.Vec3::new(-hx, -hy, hz),
+      @core.Vec3::new(hx, -hy, hz),
+      @core.Vec3::new(0.0F, -hy, 0.0F),
+    ]
+    let mut best : ContactPoint3D? = None
+    let mut best_pen = -1.0F
+    for si in 0..<samples.length() {
+      let p = cuboid_pos.transform_point(samples[si])
+      for ti in 0..<indices.length() {
+        let tri = indices[ti]
+        let a = mesh_pos.transform_point(vertices[tri.0])
+        let b = mesh_pos.transform_point(vertices[tri.1])
+        let c = mesh_pos.transform_point(vertices[tri.2])
+        let ab = b.sub(a)
+        let ac = c.sub(a)
+        let n = ab.cross(ac)
+        let nlen2 = n.length_squared()
+        if nlen2 <= 1.0e-12F {
+          continue
+        }
+        // Skip near-vertical triangles (y-projection isn't stable).
+        if @core.abs(n.y) * @core.abs(n.y) < 0.04F * nlen2 {
+          continue
+        }
+        if !tri_contains_xz(p.x, p.z, a.x, a.z, b.x, b.z, c.x, c.z) {
+          continue
+        }
+        let y_on_plane = a.y - (n.x * (p.x - a.x) + n.z * (p.z - a.z)) / n.y
+        let pen = y_on_plane - p.y
+        if pen > best_pen && pen > 0.0F {
+          let point2 = @core.Vec3::new(p.x, y_on_plane, p.z)
+          let d = point2.sub(p)
+          let dist2 = d.length_squared()
+          let mut normal = if dist2 > 1.0e-12F {
+            d.scale(1.0F / local_sqrt(dist2))
+          } else {
+            @core.Vec3::new(0.0F, -1.0F, 0.0F)
+          }
+          if normal.y > 0.0F {
+            normal = normal.scale(-1.0F)
+          }
+          best_pen = pen
+          best = Some({ point1: p, point2, normal, penetration: pen })
+        }
+      }
+    }
+    best
+  }
+
+  if projected_bottom_contact(
+      cuboid_pos, cuboid_half_extents, mesh_pos, vertices, indices,
+    )
+    is Some(cp0) {
+    return Some(cp0)
+  }
+  let skin = 0.05F
+  let hx = cuboid_half_extents.x
+  let hy = cuboid_half_extents.y
+  let hz = cuboid_half_extents.z
+  let points = [
+    // 8 corners.
+    @core.Vec3::new(-hx, -hy, -hz),
+    @core.Vec3::new(hx, -hy, -hz),
+    @core.Vec3::new(-hx, hy, -hz),
+    @core.Vec3::new(hx, hy, -hz),
+    @core.Vec3::new(-hx, -hy, hz),
+    @core.Vec3::new(hx, -hy, hz),
+    @core.Vec3::new(-hx, hy, hz),
+    @core.Vec3::new(hx, hy, hz),
+    // 6 face centers.
+    @core.Vec3::new(0.0F, -hy, 0.0F),
+    @core.Vec3::new(0.0F, hy, 0.0F),
+    @core.Vec3::new(-hx, 0.0F, 0.0F),
+    @core.Vec3::new(hx, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, -hz),
+    @core.Vec3::new(0.0F, 0.0F, hz),
+    // 12 edge midpoints.
+    @core.Vec3::new(0.0F, -hy, -hz),
+    @core.Vec3::new(0.0F, -hy, hz),
+    @core.Vec3::new(0.0F, hy, -hz),
+    @core.Vec3::new(0.0F, hy, hz),
+    @core.Vec3::new(-hx, 0.0F, -hz),
+    @core.Vec3::new(-hx, 0.0F, hz),
+    @core.Vec3::new(hx, 0.0F, -hz),
+    @core.Vec3::new(hx, 0.0F, hz),
+    @core.Vec3::new(-hx, -hy, 0.0F),
+    @core.Vec3::new(hx, -hy, 0.0F),
+    @core.Vec3::new(-hx, hy, 0.0F),
+    @core.Vec3::new(hx, hy, 0.0F),
+  ]
   let mut best : ContactPoint3D? = None
   let mut best_pen = -1.0F
-  for t in indices {
-    let i0 = t.0
-    let i1 = t.1
-    let i2 = t.2
-    if i0 < 0 || i1 < 0 || i2 < 0 {
-      continue
-    }
-    if i0 >= vertices.length() ||
-      i1 >= vertices.length() ||
-      i2 >= vertices.length() {
-      continue
-    }
-    let tri = Shape3D::Triangle(vertices[i0], vertices[i1], vertices[i2])
-    if compute_convex_contact(convex_pos, convex_shape, mesh_pos, tri)
+  for i in 0..<points.length() {
+    let p = cuboid_pos.transform_point(points[i])
+    if compute_point_trimesh_contact(p, skin, mesh_pos, vertices, indices)
       is Some(cp) {
       if cp.penetration > best_pen {
         best_pen = cp.penetration
@@ -1109,23 +1262,6 @@ fn compute_convex_trimesh_contact(
     }
   }
   best
-}
-
-///|
-pub fn compute_cuboid_trimesh_contact(
-  cuboid_pos : @core.Isometry3,
-  cuboid_half_extents : @core.Vec3,
-  mesh_pos : @core.Isometry3,
-  vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
-) -> ContactPoint3D? {
-  compute_convex_trimesh_contact(
-    cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
-    mesh_pos,
-    vertices,
-    indices,
-  )
 }
 
 ///|
@@ -1174,13 +1310,54 @@ pub fn compute_cylinder_trimesh_contact(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
 ) -> ContactPoint3D? {
-  compute_convex_trimesh_contact(
-    cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
-    mesh_pos,
-    vertices,
-    indices,
-  )
+  // Approximation: sample points on the cylinder surface and treat them as small spheres.
+  let skin = 0.05F
+  let r = cyl_radius
+  let h = cyl_half_height
+  let a = 0.70710677F // sqrt(0.5)
+  let ring = [
+    @core.Vec3::new(r, 0.0F, 0.0F),
+    @core.Vec3::new(-r, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, r),
+    @core.Vec3::new(0.0F, 0.0F, -r),
+    @core.Vec3::new(r * a, 0.0F, r * a),
+    @core.Vec3::new(r * a, 0.0F, -r * a),
+    @core.Vec3::new(-r * a, 0.0F, r * a),
+    @core.Vec3::new(-r * a, 0.0F, -r * a),
+  ]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for i in 0..<ring.length() {
+    let p0 = cyl_pos.transform_point(
+      ring[i].add(@core.Vec3::new(0.0F, -h, 0.0F)),
+    )
+    if compute_point_trimesh_contact(p0, skin, mesh_pos, vertices, indices)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+    let p1 = cyl_pos.transform_point(
+      ring[i].add(@core.Vec3::new(0.0F, h, 0.0F)),
+    )
+    if compute_point_trimesh_contact(p1, skin, mesh_pos, vertices, indices)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+    let pm = cyl_pos.transform_point(ring[i])
+    if compute_point_trimesh_contact(pm, skin, mesh_pos, vertices, indices)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1212,13 +1389,41 @@ pub fn compute_cone_trimesh_contact(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
 ) -> ContactPoint3D? {
-  compute_convex_trimesh_contact(
-    cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
-    mesh_pos,
-    vertices,
-    indices,
-  )
+  // Approximation: sample points on the cone base rim and on a few rings along the slope.
+  let skin = 0.05F
+  let r = cone_radius
+  let hh = cone_half_height
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  let slices = [1.0F, 0.66F, 0.33F]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  // Base rim is at y = -hh, tip is at y = +hh.
+  for s in slices {
+    let y = -hh + (1.0F - s) * (2.0F * hh)
+    let rr = r * s
+    for i in 0..<ring_dirs.length() {
+      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cone_pos.transform_point(pt_local)
+      if compute_point_trimesh_contact(p, skin, mesh_pos, vertices, indices)
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1886,6 +2091,74 @@ pub fn compute_ball_cuboid_contact(
 }
 
 ///|
+fn compute_point_cuboid_contact(
+  point1 : @core.Vec3,
+  radius : @core.Real,
+  cuboid_pos : @core.Isometry3,
+  cuboid_half_extents : @core.Vec3,
+) -> ContactPoint3D? {
+  if compute_ball_cuboid_contact(
+      point1, radius, cuboid_pos, cuboid_half_extents,
+    )
+    is Some(cp) {
+    Some({
+      point1,
+      point2: cp.point2,
+      normal: cp.normal,
+      penetration: cp.penetration,
+    })
+  } else {
+    None
+  }
+}
+
+///|
+fn compute_point_cylinder_contact(
+  point1 : @core.Vec3,
+  radius : @core.Real,
+  cyl_pos : @core.Isometry3,
+  cyl_radius : @core.Real,
+  cyl_half_height : @core.Real,
+) -> ContactPoint3D? {
+  if compute_ball_cylinder_contact(
+      point1, radius, cyl_pos, cyl_radius, cyl_half_height,
+    )
+    is Some(cp) {
+    Some({
+      point1,
+      point2: cp.point2,
+      normal: cp.normal,
+      penetration: cp.penetration,
+    })
+  } else {
+    None
+  }
+}
+
+///|
+fn compute_point_cone_contact(
+  point1 : @core.Vec3,
+  radius : @core.Real,
+  cone_pos : @core.Isometry3,
+  cone_radius : @core.Real,
+  cone_half_height : @core.Real,
+) -> ContactPoint3D? {
+  if compute_ball_cone_contact(
+      point1, radius, cone_pos, cone_radius, cone_half_height,
+    )
+    is Some(cp) {
+    Some({
+      point1,
+      point2: cp.point2,
+      normal: cp.normal,
+      penetration: cp.penetration,
+    })
+  } else {
+    None
+  }
+}
+
+///|
 pub fn compute_cylinder_cuboid_contact(
   cyl_pos : @core.Isometry3,
   cyl_radius : @core.Real,
@@ -1893,12 +2166,36 @@ pub fn compute_cylinder_cuboid_contact(
   cuboid_pos : @core.Isometry3,
   cuboid_half_extents : @core.Vec3,
 ) -> ContactPoint3D? {
-  compute_convex_contact(
-    cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
-    cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
-  )
+  // Approximation: sample points on the cylinder surface and treat them as small spheres.
+  let skin = 0.05F
+  let r = cyl_radius
+  let h = cyl_half_height
+  let a = 0.70710677F
+  let ring = [
+    @core.Vec3::new(r, 0.0F, 0.0F),
+    @core.Vec3::new(-r, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, r),
+    @core.Vec3::new(0.0F, 0.0F, -r),
+    @core.Vec3::new(r * a, 0.0F, r * a),
+    @core.Vec3::new(r * a, 0.0F, -r * a),
+    @core.Vec3::new(-r * a, 0.0F, r * a),
+    @core.Vec3::new(-r * a, 0.0F, -r * a),
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+  ]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for i in 0..<ring.length() {
+    let pt_local = ring[i].add(@core.Vec3::new(0.0F, -h, 0.0F))
+    let p = cyl_pos.transform_point(pt_local)
+    if compute_point_cuboid_contact(p, skin, cuboid_pos, cuboid_half_extents)
+      is Some(cp) {
+      if cp.penetration > best_pen {
+        best_pen = cp.penetration
+        best = Some(cp)
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1910,12 +2207,42 @@ pub fn compute_cylinder_cylinder_contact(
   cyl2_radius : @core.Real,
   cyl2_half_height : @core.Real,
 ) -> ContactPoint3D? {
-  compute_convex_contact(
-    cyl1_pos,
-    Shape3D::Cylinder(cyl1_radius, cyl1_half_height),
-    cyl2_pos,
-    Shape3D::Cylinder(cyl2_radius, cyl2_half_height),
-  )
+  // Approximation: sample points on the first cylinder surface and test them against the second
+  // cylinder using a small "skin" radius.
+  let skin = 0.05F
+  let r = cyl1_radius
+  let h = cyl1_half_height
+  let a = 0.70710677F
+  let ring = [
+    @core.Vec3::new(r, 0.0F, 0.0F),
+    @core.Vec3::new(-r, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, r),
+    @core.Vec3::new(0.0F, 0.0F, -r),
+    @core.Vec3::new(r * a, 0.0F, r * a),
+    @core.Vec3::new(r * a, 0.0F, -r * a),
+    @core.Vec3::new(-r * a, 0.0F, r * a),
+    @core.Vec3::new(-r * a, 0.0F, -r * a),
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+  ]
+  let ys = [-h, 0.0F, h]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for y in ys {
+    for i in 0..<ring.length() {
+      let pt_local = ring[i].add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cyl1_pos.transform_point(pt_local)
+      if compute_point_cylinder_contact(
+          p, skin, cyl2_pos, cyl2_radius, cyl2_half_height,
+        )
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1927,12 +2254,42 @@ pub fn compute_cone_cylinder_contact(
   cyl_radius : @core.Real,
   cyl_half_height : @core.Real,
 ) -> ContactPoint3D? {
-  compute_convex_contact(
-    cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
-    cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
-  )
+  // Approximation: sample points on the cone surface and test them against the cylinder.
+  let skin = 0.05F
+  let r = cone_radius
+  let hh = cone_half_height
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  let slices = [1.0F, 0.66F, 0.33F, 0.0F]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for s in slices {
+    let y = -hh + (1.0F - s) * (2.0F * hh)
+    let rr = r * s
+    for i in 0..<ring_dirs.length() {
+      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cone_pos.transform_point(pt_local)
+      if compute_point_cylinder_contact(
+          p, skin, cyl_pos, cyl_radius, cyl_half_height,
+        )
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1944,12 +2301,42 @@ pub fn compute_cone_cone_contact(
   cone2_radius : @core.Real,
   cone2_half_height : @core.Real,
 ) -> ContactPoint3D? {
-  compute_convex_contact(
-    cone1_pos,
-    Shape3D::Cone(cone1_radius, cone1_half_height),
-    cone2_pos,
-    Shape3D::Cone(cone2_radius, cone2_half_height),
-  )
+  // Approximation: sample points on the first cone surface and test them against the second cone.
+  let skin = 0.05F
+  let r = cone1_radius
+  let hh = cone1_half_height
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  let slices = [1.0F, 0.66F, 0.33F, 0.0F]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for s in slices {
+    let y = -hh + (1.0F - s) * (2.0F * hh)
+    let rr = r * s
+    for i in 0..<ring_dirs.length() {
+      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cone1_pos.transform_point(pt_local)
+      if compute_point_cone_contact(
+          p, skin, cone2_pos, cone2_radius, cone2_half_height,
+        )
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -1960,12 +2347,40 @@ pub fn compute_cone_cuboid_contact(
   cuboid_pos : @core.Isometry3,
   cuboid_half_extents : @core.Vec3,
 ) -> ContactPoint3D? {
-  compute_convex_contact(
-    cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
-    cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
-  )
+  // Approximation: sample points on the cone base rim and on a few rings along the slope.
+  let skin = 0.05F
+  let r = cone_radius
+  let hh = cone_half_height
+  let a = 0.70710677F
+  let ring_dirs = [
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(0.0F, 0.0F, -1.0F),
+    @core.Vec3::new(a, 0.0F, a),
+    @core.Vec3::new(a, 0.0F, -a),
+    @core.Vec3::new(-a, 0.0F, a),
+    @core.Vec3::new(-a, 0.0F, -a),
+  ]
+  let slices = [1.0F, 0.66F, 0.33F, 0.0F]
+  let mut best : ContactPoint3D? = None
+  let mut best_pen = -1.0F
+  for s in slices {
+    let y = -hh + (1.0F - s) * (2.0F * hh)
+    let rr = r * s
+    for i in 0..<ring_dirs.length() {
+      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let p = cone_pos.transform_point(pt_local)
+      if compute_point_cuboid_contact(p, skin, cuboid_pos, cuboid_half_extents)
+        is Some(cp) {
+        if cp.penetration > best_pen {
+          best_pen = cp.penetration
+          best = Some(cp)
+        }
+      }
+    }
+  }
+  best
 }
 
 ///|
@@ -3311,10 +3726,7 @@ fn support_world_for_cone_y(
   let radial = @core.Vec3::new(local_dir.x, 0.0F, local_dir.z)
   let rl2 = radial.length_squared()
   let base_pt = if rl2 <= 1.0e-12F {
-    // Any point on the base disk maximizes the dot product for a purely axial direction.
-    // Picking the center avoids introducing arbitrary lateral components that can hurt GJK
-    // convergence for near-vertical directions.
-    @core.Vec3::new(0.0F, -half_height, 0.0F)
+    @core.Vec3::new(radius, -half_height, 0.0F)
   } else {
     let inv = 1.0F / local_sqrt(rl2)
     @core.Vec3::new(
@@ -3326,29 +3738,6 @@ fn support_world_for_cone_y(
   let da = apex.dot(local_dir)
   let db = base_pt.dot(local_dir)
   pos.transform_point(if da >= db { apex } else { base_pt })
-}
-
-///|
-fn support_world_for_triangle(
-  pos : @core.Isometry3,
-  a : @core.Vec3,
-  b : @core.Vec3,
-  c : @core.Vec3,
-  dir : @core.Vec3,
-) -> @core.Vec3 {
-  let local_dir = pos.rotation.inverse().rotate_vec3(dir)
-  let mut best = a
-  let mut best_dot = a.dot(local_dir)
-  let db = b.dot(local_dir)
-  if db > best_dot {
-    best = b
-    best_dot = db
-  }
-  let dc = c.dot(local_dir)
-  if dc > best_dot {
-    best = c
-  }
-  pos.transform_point(best)
 }
 
 ///|
@@ -3369,7 +3758,6 @@ fn support_minkowski(
     Shape3D::RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos1, r + br, hh + br, dir)
     Shape3D::Cone(r, hh) => support_world_for_cone_y(pos1, r, hh, dir)
-    Shape3D::Triangle(a, b, c) => support_world_for_triangle(pos1, a, b, c, dir)
     _ => return None
   }
   let neg_dir = dir.scale(-1.0F)
@@ -3385,8 +3773,6 @@ fn support_minkowski(
     Shape3D::RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos2, r + br, hh + br, neg_dir)
     Shape3D::Cone(r, hh) => support_world_for_cone_y(pos2, r, hh, neg_dir)
-    Shape3D::Triangle(a, b, c) =>
-      support_world_for_triangle(pos2, a, b, c, neg_dir)
     _ => return None
   }
   Some({ p: sup1.sub(sup2), sup1, sup2 })
@@ -3439,7 +3825,7 @@ fn gjk_update_simplex(
       simplex.push(v_a)
       return (triple_product(ab, ao, ab), false)
     }
-    let ac_perp = abc.cross(ac)
+    let ac_perp = ac.cross(abc)
     if ac_perp.dot(ao) > 0.0F {
       // Remove b, keep (c,a).
       let v_c = simplex[0]
