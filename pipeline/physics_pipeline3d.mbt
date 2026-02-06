@@ -43,6 +43,23 @@ pub fn PhysicsPipeline3D::step(
 }
 
 ///|
+pub fn PhysicsPipeline3D::step_with_hooks(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  self.inner.step_with_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, hooks,
+  )
+}
+
+///|
 pub fn PhysicsPipeline3D::step_with_events(
   self : PhysicsPipeline3D,
   gravity : @core.Vec3,
@@ -56,6 +73,25 @@ pub fn PhysicsPipeline3D::step_with_events(
 ) -> Unit {
   self.inner.step_with_events(
     gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, events,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3D::step_with_events_and_hooks(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  self.inner.step_with_events_and_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, events,
+    hooks,
   )
 }
 
@@ -77,6 +113,25 @@ pub fn PhysicsPipeline3D::step_with_rope_joints(
 }
 
 ///|
+pub fn PhysicsPipeline3D::step_with_rope_joints_and_hooks(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  self.inner.step_with_rope_joints_and_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, rope_joints,
+    hooks,
+  )
+}
+
+///|
 pub fn PhysicsPipeline3D::step_with_joints(
   self : PhysicsPipeline3D,
   gravity : @core.Vec3,
@@ -90,6 +145,25 @@ pub fn PhysicsPipeline3D::step_with_joints(
 ) -> Unit {
   self.inner.step_with_joints(
     gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, joints,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3D::step_with_joints_and_hooks(
+  self : PhysicsPipeline3D,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  joints : @dynamics.JointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  self.inner.step_with_joints_and_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, joints,
+    hooks,
   )
 }
 

@@ -24,7 +24,7 @@ pub fn simd_strategy() -> String
 
 pub fn solve_contacts(@dynamics.IntegrationParameters, @dynamics.RigidBodySet, @collision.ColliderSet, PhysicsHooks, @collision.NarrowPhase, Float, EventHandler, Array[ContactImpulseCacheEntry]) -> Unit
 
-pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.NarrowPhase3D, ContactSolverCache3D, ContactSolverCache3D, EventHandler3D?) -> Unit
+pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.NarrowPhase3D, ContactSolverCache3D, ContactSolverCache3D, PhysicsHooks3D?, EventHandler3D?) -> Unit
 
 // Errors
 
@@ -232,6 +232,19 @@ pub fn PhysicsHooks::modify_solver_contacts_with_solver_contacts_with_user_data(
 pub fn PhysicsHooks::modify_solver_contacts_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?, @collision.ContactManifold) -> (Bool, @core.Vec2)) -> Self
 pub fn PhysicsHooks::new() -> Self
 
+pub struct PhysicsHooks3D {
+  mut filter_contact_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
+  mut filter_intersection_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
+  mut modify_solver_contacts : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.Vec3) -> (Bool, @core.Vec3?))?
+}
+pub fn PhysicsHooks3D::filter_contact_pair(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool) -> Self
+pub fn PhysicsHooks3D::filter_contact_pair_with_user_data(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
+pub fn PhysicsHooks3D::filter_intersection_pair(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool) -> Self
+pub fn PhysicsHooks3D::filter_intersection_pair_with_user_data(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
+pub fn PhysicsHooks3D::modify_solver_contacts(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.Vec3) -> (Bool, @core.Vec3?)) -> Self
+pub fn PhysicsHooks3D::modify_solver_contacts_with_user_data(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?, @core.Vec3) -> (Bool, @core.Vec3?)) -> Self
+pub fn PhysicsHooks3D::new() -> Self
+
 pub struct PhysicsPipeline {
   prev_collisions : Array[(@collision.ColliderHandle, @collision.ColliderHandle, @collision.CollisionEventFlags, Bool)]
   prev_intersections : Array[(@collision.ColliderHandle, @collision.ColliderHandle, Bool)]
@@ -254,8 +267,12 @@ pub fn PhysicsPipeline3D::new() -> Self
 pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn PhysicsPipeline3D::step_integration_only(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.RigidBodySet3D) -> Unit
 pub fn PhysicsPipeline3D::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
+pub fn PhysicsPipeline3D::step_with_events_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D, PhysicsHooks3D) -> Unit
+pub fn PhysicsPipeline3D::step_with_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3D::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
+pub fn PhysicsPipeline3D::step_with_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3D::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
+pub fn PhysicsPipeline3D::step_with_rope_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal, PhysicsHooks3D) -> Unit
 
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
@@ -266,8 +283,12 @@ pub struct PhysicsPipeline3DReal {
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D, PhysicsHooks3D) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_rope_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_rope_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.RopeJointSet3DReal, PhysicsHooks3D) -> Unit
 
 pub struct SolverBodies {
   vels : Array[SolverVel]

@@ -525,6 +525,70 @@ fn emit_intersection_events_for_pair_diffs(
 }
 
 ///|
+fn rb_pair_key_3d(
+  a : @dynamics.RigidBodyHandle,
+  b : @dynamics.RigidBodyHandle,
+) -> (Int, Int, Int, Int) {
+  let (ai, ag) = a.into_raw_parts()
+  let (bi, bg) = b.into_raw_parts()
+  if ai < bi || (ai == bi && ag <= bg) {
+    (ai, ag, bi, bg)
+  } else {
+    (bi, bg, ai, ag)
+  }
+}
+
+///|
+fn filter_broad_phase_pairs_3d(
+  pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  joints : @dynamics.JointSet3DReal?,
+  hooks : PhysicsHooks3D?,
+) -> Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] {
+  let mut disabled : @hashmap.HashMap[(Int, Int, Int, Int), Bool]? = None
+  if joints is Some(js) {
+    let disabled_body_pairs = js.disabled_contact_pairs()
+    if disabled_body_pairs.length() > 0 {
+      let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
+        capacity=disabled_body_pairs.length() * 2,
+      )
+      for p in disabled_body_pairs {
+        out.set(rb_pair_key_3d(p.0, p.1), true)
+      }
+      disabled = Some(out)
+    }
+  }
+  let filtered : Array[
+    (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
+  ] = []
+  for pair in pairs {
+    let c1 = pair.0
+    let c2 = pair.1
+    if colliders.get(c1) is Some(co1) && colliders.get(c2) is Some(co2) {
+      if disabled is Some(set) &&
+        co1.parent() is Some(p1) &&
+        co2.parent() is Some(p2) &&
+        set.get(rb_pair_key_3d(p1, p2)) is Some(true) {
+        continue
+      }
+      if hooks is Some(physics_hooks) {
+        let keep = if co1.is_sensor() || co2.is_sensor() {
+          physics_hooks.test_intersection_pair(bodies, colliders, c1, c2)
+        } else {
+          physics_hooks.test_contact_pair(bodies, colliders, c1, c2)
+        }
+        if !keep {
+          continue
+        }
+      }
+      filtered.push((c1, c2))
+    }
+  }
+  filtered
+}
+
+///|
 pub fn PhysicsPipeline3DReal::step(
   self : PhysicsPipeline3DReal,
   gravity : @core.Vec3,
@@ -547,6 +611,35 @@ pub fn PhysicsPipeline3DReal::step(
     None,
     None,
     None,
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    None,
+    None,
+    Some(hooks),
   )
 }
 
@@ -574,6 +667,36 @@ pub fn PhysicsPipeline3DReal::step_with_events(
     Some(events),
     None,
     None,
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    None,
+    None,
+    Some(hooks),
   )
 }
 
@@ -601,6 +724,36 @@ pub fn PhysicsPipeline3DReal::step_with_rope_joints(
     None,
     Some(rope_joints),
     None,
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_rope_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    Some(rope_joints),
+    None,
+    Some(hooks),
   )
 }
 
@@ -628,6 +781,36 @@ pub fn PhysicsPipeline3DReal::step_with_joints(
     None,
     None,
     Some(joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  joints : @dynamics.JointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    None,
+    Some(joints),
+    Some(hooks),
   )
 }
 
@@ -644,6 +827,7 @@ fn PhysicsPipeline3DReal::step_impl(
   events : EventHandler3D?,
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
+  hooks : PhysicsHooks3D?,
 ) -> Unit {
   fn ceil_pos(x : @core.Real) -> Int {
     let i = x.to_int()
@@ -707,20 +891,20 @@ fn PhysicsPipeline3DReal::step_impl(
       let p1 = parameters.with_dt(toi_step)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, p1, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints,
+        events, rope_joints, joints, hooks,
       )
       let rem = sub_dt - toi_step
       if rem > 0.0F {
         let p2 = parameters.with_dt(rem)
         PhysicsPipeline3DReal::step_impl_one(
           self, gravity, p2, islands, broad_phase, narrow_phase, bodies, colliders,
-          events, rope_joints, joints,
+          events, rope_joints, joints, hooks,
         )
       }
     } else {
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints,
+        events, rope_joints, joints, hooks,
       )
     }
   }
@@ -739,20 +923,8 @@ fn PhysicsPipeline3DReal::step_impl_one(
   events : EventHandler3D?,
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
+  hooks : PhysicsHooks3D?,
 ) -> Unit {
-  fn rb_pair_key(
-    a : @dynamics.RigidBodyHandle,
-    b : @dynamics.RigidBodyHandle,
-  ) -> (Int, Int, Int, Int) {
-    let (ai, ag) = a.into_raw_parts()
-    let (bi, bg) = b.into_raw_parts()
-    if ai < bi || (ai == bi && ag <= bg) {
-      (ai, ag, bi, bg)
-    } else {
-      (bi, bg, ai, ag)
-    }
-  }
-
   let dt = parameters.dt
   bodies.apply_gravity_all(gravity, dt)
   bodies.apply_damping_all(dt)
@@ -763,34 +935,13 @@ fn PhysicsPipeline3DReal::step_impl_one(
   colliders.sync_with_bodies(bodies)
   let prediction_distance = parameters.prediction_distance()
   broad_phase.update(prediction_distance, colliders)
-  let mut pairs = broad_phase.pairs()
-  if joints is Some(js) {
-    let disabled_body_pairs = js.disabled_contact_pairs()
-    if disabled_body_pairs.length() > 0 {
-      let disabled : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
-        capacity=disabled_body_pairs.length() * 2,
-      )
-      for p in disabled_body_pairs {
-        disabled.set(rb_pair_key(p.0, p.1), true)
-      }
-      let filtered : Array[
-        (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
-      ] = []
-      for pair in pairs {
-        let c1 = pair.0
-        let c2 = pair.1
-        if colliders.get(c1) is Some(co1) &&
-          colliders.get(c2) is Some(co2) &&
-          co1.parent() is Some(p1) &&
-          co2.parent() is Some(p2) &&
-          disabled.get(rb_pair_key(p1, p2)) is Some(true) {
-          continue
-        }
-        filtered.push((c1, c2))
-      }
-      pairs = filtered
-    }
-  }
+  let pairs = filter_broad_phase_pairs_3d(
+    broad_phase.pairs(),
+    bodies,
+    colliders,
+    joints,
+    hooks,
+  )
   narrow_phase.update(pairs, bodies, colliders)
   let cache_out = ContactSolverCache3D::new()
   solve_contacts_3d(
@@ -800,6 +951,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     narrow_phase,
     self.contact_cache,
     cache_out,
+    hooks,
     events,
   )
   self.contact_cache = cache_out
@@ -828,7 +980,14 @@ fn PhysicsPipeline3DReal::step_impl_one(
     // Update the collision state after integrating positions so queries and sensor events reflect
     // the end-of-step configuration.
     broad_phase.update(prediction_distance, colliders)
-    narrow_phase.update(broad_phase.pairs(), bodies, colliders)
+    let pairs = filter_broad_phase_pairs_3d(
+      broad_phase.pairs(),
+      bodies,
+      colliders,
+      joints,
+      hooks,
+    )
+    narrow_phase.update(pairs, bodies, colliders)
     restore_contact_pair_impulses_from_cache(narrow_phase, self.contact_cache)
     let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
     let next_intersection_pairs = collect_intersection_pairs(

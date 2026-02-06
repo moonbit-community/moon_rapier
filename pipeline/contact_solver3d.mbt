@@ -103,7 +103,9 @@ priv struct ContactSolveEntry3D {
 
 ///|
 priv struct ContactSolvePoint3D {
-  c : @collision.ContactPoint3D
+  point1 : @core.Vec3
+  point2 : @core.Vec3
+  normal : @core.Vec3
   t1 : @core.Vec3
   t2 : @core.Vec3
   kn : @core.Real
@@ -176,9 +178,42 @@ pub fn solve_contacts_3d(
   narrow_phase : @collision.NarrowPhase3D,
   cache_in : ContactSolverCache3D,
   cache_out : ContactSolverCache3D,
+  physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
 ) -> Unit {
   cache_out.clear()
+  fn hook_normal_or_fallback(
+    hook_normal : @core.Vec3?,
+    fallback : @core.Vec3,
+  ) -> @core.Vec3 {
+    if hook_normal is Some(n) {
+      if n.length_squared() > 1.0e-12F {
+        n.normalize()
+      } else {
+        fallback
+      }
+    } else {
+      fallback
+    }
+  }
+
+  fn resolve_modify_hook(
+    physics_hooks : PhysicsHooks3D?,
+    bodies : @dynamics.RigidBodySet3D,
+    colliders : @collision.ColliderSet3D,
+    collider1 : @collision.ColliderHandle3D,
+    collider2 : @collision.ColliderHandle3D,
+    fallback_normal : @core.Vec3,
+  ) -> (Bool, @core.Vec3?) {
+    if physics_hooks is Some(hooks) {
+      hooks.modify_solver_contacts_internal(
+        bodies, colliders, collider1, collider2, fallback_normal,
+      )
+    } else {
+      (true, None)
+    }
+  }
+
   fn accept_one_way(
     platform : @collision.Collider3D,
     other : @collision.Collider3D,
@@ -273,6 +308,20 @@ pub fn solve_contacts_3d(
       }
 
       let contacts = cp.manifolds()
+      if contacts.length() == 0 {
+        continue
+      }
+      let (accept, hook_normal) = resolve_modify_hook(
+        physics_hooks,
+        bodies,
+        colliders,
+        a,
+        b,
+        contacts[0].normal,
+      )
+      if !accept {
+        continue
+      }
       let current : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)] = []
       for k in 0..<contacts.length() {
         let c = contacts[k]
@@ -280,8 +329,9 @@ pub fn solve_contacts_3d(
         current.push((c.point1, c.point2, imp))
         if !(dyn_sleeping1 && dyn_sleeping2) {
           let ws = imp.scaled(warmstart_coeff)
-          let (t1, t2) = orthonormal_basis(c.normal)
-          let total = c.normal
+          let normal = hook_normal_or_fallback(hook_normal, c.normal)
+          let (t1, t2) = orthonormal_basis(normal)
+          let total = normal
             .scale(ws.normal)
             .add(t1.scale(ws.tangent1))
             .add(t2.scale(ws.tangent2))
@@ -343,6 +393,17 @@ pub fn solve_contacts_3d(
       }
       let contacts = cp.manifolds()
       if contacts.length() == 0 {
+        continue
+      }
+      let (accept, hook_normal) = resolve_modify_hook(
+        physics_hooks,
+        bodies,
+        colliders,
+        a,
+        b,
+        contacts[0].normal,
+      )
+      if !accept {
         continue
       }
       let mut rb1 : @dynamics.RigidBody3D? = None
@@ -419,7 +480,7 @@ pub fn solve_contacts_3d(
       let points : Array[ContactSolvePoint3D] = []
       for k in 0..<contacts.length() {
         let c0 = contacts[k]
-        let n = c0.normal
+        let n = hook_normal_or_fallback(hook_normal, c0.normal)
         let (t1, t2) = orthonormal_basis(n)
         let r1 = if rb1 is Some(b1) {
           c0.point1.sub(b1.world_com())
@@ -465,7 +526,18 @@ pub fn solve_contacts_3d(
             0.0F
           }
         }
-        points.push({ c: c0, t1, t2, kn, kt1, kt2, target_vn, bias })
+        points.push({
+          point1: c0.point1,
+          point2: c0.point2,
+          normal: n,
+          t1,
+          t2,
+          kn,
+          kt1,
+          kt2,
+          target_vn,
+          bias,
+        })
       }
       solve_entries.push({ rb1, rb2, points, cached, friction, surface_vel })
     }
@@ -481,8 +553,7 @@ pub fn solve_contacts_3d(
       let rb2 = e.rb2
       for k in 0..<points.length() {
         let p0 = points[k]
-        let c0 = p0.c
-        let n = c0.normal
+        let n = p0.normal
         let t1 = p0.t1
         let t2 = p0.t2
         let target_vn = p0.target_vn
@@ -492,12 +563,12 @@ pub fn solve_contacts_3d(
         let kt2 = p0.kt2
         let mut acc = cached[k].2
         let v1 = if rb1 is Some(b1) {
-          vel_at(b1, c0.point1)
+          vel_at(b1, p0.point1)
         } else {
           @core.Vec3::zero()
         }
         let v2 = if rb2 is Some(b2) {
-          vel_at(b2, c0.point2)
+          vel_at(b2, p0.point2)
         } else {
           @core.Vec3::zero()
         }
@@ -511,10 +582,10 @@ pub fn solve_contacts_3d(
           if delta_n != 0.0F {
             let p = n.scale(delta_n)
             if rb1 is Some(b1) && b1.body_type().is_dynamic() {
-              apply_impulse(b1, p.scale(-1.0F), c0.point1)
+              apply_impulse(b1, p.scale(-1.0F), p0.point1)
             }
             if rb2 is Some(b2) && b2.body_type().is_dynamic() {
-              apply_impulse(b2, p, c0.point2)
+              apply_impulse(b2, p, p0.point2)
             }
           }
           acc = {
@@ -526,12 +597,12 @@ pub fn solve_contacts_3d(
         if friction > 0.0F && acc.normal > 0.0F {
           // Recompute after normal impulse.
           let v1b = if rb1 is Some(b1) {
-            vel_at(b1, c0.point1)
+            vel_at(b1, p0.point1)
           } else {
             @core.Vec3::zero()
           }
           let v2b = if rb2 is Some(b2) {
-            vel_at(b2, c0.point2)
+            vel_at(b2, p0.point2)
           } else {
             @core.Vec3::zero()
           }
@@ -557,16 +628,16 @@ pub fn solve_contacts_3d(
             if delta_t1 != 0.0F || delta_t2 != 0.0F {
               let p = t1.scale(delta_t1).add(t2.scale(delta_t2))
               if rb1 is Some(b1) && b1.body_type().is_dynamic() {
-                apply_impulse(b1, p.scale(-1.0F), c0.point1)
+                apply_impulse(b1, p.scale(-1.0F), p0.point1)
               }
               if rb2 is Some(b2) && b2.body_type().is_dynamic() {
-                apply_impulse(b2, p, c0.point2)
+                apply_impulse(b2, p, p0.point2)
               }
             }
             acc = { normal: acc.normal, tangent1: next_t1, tangent2: next_t2 }
           }
         }
-        cached[k] = (c0.point1, c0.point2, acc)
+        cached[k] = (p0.point1, p0.point2, acc)
       }
     }
   }
@@ -591,6 +662,17 @@ pub fn solve_contacts_3d(
         []
       }
       let contacts = cp.manifolds()
+      if contacts.length() == 0 {
+        continue
+      }
+      let (_, hook_normal) = resolve_modify_hook(
+        physics_hooks,
+        bodies,
+        colliders,
+        a,
+        b,
+        contacts[0].normal,
+      )
       let n = contacts.length()
       let m = cached.length()
       let k = if n < m { n } else { m }
@@ -606,7 +688,7 @@ pub fn solve_contacts_3d(
         let imp = cached[j].2.normal
         normal_impulses[j] = imp
         total_impulse = total_impulse + imp
-        let nrm = contacts[j].normal
+        let nrm = hook_normal_or_fallback(hook_normal, contacts[j].normal)
         total_vec = total_vec.add(nrm.scale(imp))
         if imp > best_impulse {
           best_impulse = imp

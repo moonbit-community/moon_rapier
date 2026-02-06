@@ -643,3 +643,116 @@ test "physics_pipeline3d_real: contact force events and contact impulses are pop
     inspect(false, content="true")
   }
 }
+
+///|
+test "physics_pipeline3d_real: hooks can filter contact pairs" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let handler = EventHandler3D::new()
+  let hooks = PhysicsHooks3D::new().filter_contact_pair(fn(
+    _bodies : @dynamics.RigidBodySet3D,
+    _colliders : @collision.ColliderSet3D,
+    _c1 : @collision.ColliderHandle3D,
+    _c2 : @collision.ColliderHandle3D,
+  ) -> Bool {
+    false
+  })
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  let ground_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
+    ground,
+    bodies,
+  )
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::kinematic_position_based()
+    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .build(),
+  )
+  let ball_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    ball,
+    bodies,
+  )
+  if bodies.get(ball) is Some(rb) {
+    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+  } else {
+    inspect(false, content="true")
+  }
+  pipeline.step_with_events_and_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+    hooks,
+  )
+  inspect(handler.take_collision_events().length(), content="0")
+  inspect(
+    narrow_phase.contact_pair(ball_collider, ground_collider) is None,
+    content="true",
+  )
+}
+
+///|
+test "physics_pipeline3d_real: hooks can override solver normal" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let hooks = PhysicsHooks3D::new().modify_solver_contacts(fn(
+    _bodies : @dynamics.RigidBodySet3D,
+    _colliders : @collision.ColliderSet3D,
+    _c1 : @collision.ColliderHandle3D,
+    _c2 : @collision.ColliderHandle3D,
+    _normal : @core.Vec3,
+  ) -> (Bool, @core.Vec3?) {
+    (true, Some(@core.Vec3::new(1.0F, 0.0F, 0.0F)))
+  })
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let ball = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    // Start penetrating so the solver applies a corrective impulse immediately.
+    .translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.5F).build(),
+    ball,
+    bodies,
+  )
+  |> ignore
+  pipeline.step_with_hooks(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, hooks,
+  )
+  if bodies.get(ball) is Some(rb) {
+    inspect(@core.abs(rb.linvel().x) > 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
