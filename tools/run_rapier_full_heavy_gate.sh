@@ -30,6 +30,10 @@ run_file() {
   echo | tee -a "$LOG_FILE"
 }
 
+run_file "examples2d_s2d_pyramid_parity_test.mbt" "HEAVY examples2d/s2d_pyramid.rs*"
+run_file "examples3d_real_heightfield_parity_test.mbt" "HEAVY examples3d/heightfield3.rs*"
+run_file "examples3d_real_primitive_contacts_parity_test.mbt" "HEAVY examples3d/debug_cylinder3.rs*"
+run_file "examples3d_real_urdf_keva_voxels_parity_test.mbt" "HEAVY examples3d/voxels3.rs*"
 run_file "examples3d_worlds_parity_test.mbt" "HEAVY examples3d/domino3.rs*"
 
 echo "HEAVY_GATE_DONE" | tee -a "$LOG_FILE"

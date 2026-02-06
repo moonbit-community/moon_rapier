@@ -38,9 +38,9 @@ fn step_pipeline_2d_n_s2d_pyramid(
 }
 
 ///|
-/// Ported from `rapier-reference/examples2d/s2d_pyramid.rs`.
-/// NOTE: This is intentionally heavy (base_count = 100 -> 5050 bodies). Keep it in a dedicated file.
-test "examples2d/s2d_pyramid.rs parity" {
+fn run_examples2d_s2d_pyramid(heavy : Bool) -> Bool {
+  // Ported from `rapier-reference/examples2d/s2d_pyramid.rs`.
+  // Keep default mode tractable; heavy mode moves toward upstream scene scale.
   let pipeline = @pipeline.PhysicsPipeline::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -67,9 +67,8 @@ test "examples2d/s2d_pyramid.rs parity" {
     bodies,
   )
   |> ignore
-
-  // Keep a smaller pyramid here so parity checks stay tractable in CI/runtime-constrained environments.
-  let base_count = 30
+  let base_count = if heavy { 45 } else { 30 }
+  let nsteps = if heavy { 120 } else { 80 }
   let h = 0.5F
   let shift = 1.0F * h
   let mut dyn_count = 0
@@ -95,10 +94,12 @@ test "examples2d/s2d_pyramid.rs parity" {
       dyn_count = dyn_count + 1
     }
   }
-  inspect(dyn_count > 0, content="true")
+  if dyn_count <= 0 {
+    return false
+  }
   step_pipeline_2d_n_s2d_pyramid(
     pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    impulse_joints, multibody_joints, ccd_solver, hooks, events, 80,
+    impulse_joints, multibody_joints, ccd_solver, hooks, events, nsteps,
   )
 
   // Sanity: no NaNs/explosions, pyramid stays in a reasonable region.
@@ -108,8 +109,9 @@ test "examples2d/s2d_pyramid.rs parity" {
   for i in 0..<it.length() {
     let (_, b) = it[i]
     let p = b.translation()
-    inspect(p.x == p.x, content="true")
-    inspect(p.y == p.y, content="true")
+    if !(p.x == p.x) || !(p.y == p.y) {
+      return false
+    }
     if p.y < min_y {
       min_y = p.y
     }
@@ -118,6 +120,16 @@ test "examples2d/s2d_pyramid.rs parity" {
       max_d2 = d2
     }
   }
-  inspect(min_y > -5.0F, content="true")
-  inspect(max_d2 < 1.0e8F, content="true")
+  min_y > -5.0F && max_d2 < 1.0e8F
+}
+
+///|
+test "examples2d/s2d_pyramid.rs parity" {
+  inspect(run_examples2d_s2d_pyramid(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples2d/s2d_pyramid.rs parity" {
+  inspect(run_examples2d_s2d_pyramid(true), content="true")
 }

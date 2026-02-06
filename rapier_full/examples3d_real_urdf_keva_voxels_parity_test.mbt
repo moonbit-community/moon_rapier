@@ -16,7 +16,7 @@
 /// Parity tests for large-scene examples against the real dim3 backend.
 
 ///|
-test "examples3d/keva3.rs parity (3DReal headless)" {
+fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/keva3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -25,8 +25,9 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iters,
   )
 
   // Ground.
@@ -127,10 +128,10 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
     }
   }
 
-  // Reduced keva scene to keep runtime tractable on the pure MoonBit backend.
+  // Reduced keva scene in default mode; heavy mode moves toward denser upstream behavior.
   let half_extents = @core.Vec3::new(0.1F, 0.5F, 2.0F)
-  let numx = 2
-  let ny = 8
+  let numx = if heavy { 3 } else { 2 }
+  let ny = if heavy { 10 } else { 8 }
   let numz = numx * 3 + 1
   let block_width = Float::from_int(numx) * half_extents.z * 2.0F
   build_block(
@@ -142,7 +143,7 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
     ny,
     numz,
   )
-  for _ in 0..<40 {
+  for _ in 0..<(if heavy { 60 } else { 40 }) {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -151,16 +152,29 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
   for h in bodies.all_handles() {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
-      inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-      inspect(p.y > -500.0F, content="true")
+      if !(p.x == p.x && p.y == p.y && p.z == p.z) || p.y <= -500.0F {
+        return false
+      }
     } else {
-      inspect(false, content="true")
+      return false
     }
   }
+  true
 }
 
 ///|
-test "examples3d/urdf3.rs parity (3DReal headless)" {
+test "examples3d/keva3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_keva3_profile(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/keva3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_keva3_profile(true), content="true")
+}
+
+///|
+fn run_examples3d_urdf3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/urdf3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -170,11 +184,12 @@ test "examples3d/urdf3.rs parity (3DReal headless)" {
   let islands = @dynamics.IslandManager3D::new()
   let joints = @dynamics.JointSet3DReal::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iters,
   )
 
-  // Load the URDF once (smoke-scale parity scenario).
+  // Load the URDF once in default mode and twice in heavy mode.
   let options = @urdf.UrdfLoaderOptions3DReal::default()
     .create_colliders_from_visual_shapes(true)
     .create_colliders_from_collision_shapes(false)
@@ -199,10 +214,20 @@ test "examples3d/urdf3.rs parity (3DReal headless)" {
       joints,
       @core.Isometry3::identity(),
     )
+    if heavy {
+      robot.insert_3d_real(
+        options,
+        bounds,
+        bodies,
+        colliders,
+        joints,
+        @core.Isometry3::from_translation(@core.Vec3::new(10.0F, 0.0F, 0.0F)),
+      )
+    }
   } else {
-    inspect(false, content="true")
+    return false
   }
-  for _ in 0..<120 {
+  for _ in 0..<(if heavy { 160 } else { 120 }) {
     pipeline.step_with_joints(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       joints,
@@ -213,16 +238,29 @@ test "examples3d/urdf3.rs parity (3DReal headless)" {
   for h in bodies.all_handles() {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
-      inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-      inspect(p.y > -200.0F, content="true")
+      if !(p.x == p.x && p.y == p.y && p.z == p.z) || p.y <= -200.0F {
+        return false
+      }
     } else {
-      inspect(false, content="true")
+      return false
     }
   }
+  true
 }
 
 ///|
-test "examples3d/voxels3.rs parity (3DReal headless)" {
+test "examples3d/urdf3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_urdf3_profile(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/urdf3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_urdf3_profile(true), content="true")
+}
+
+///|
+fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; settings fixed to defaults).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -231,8 +269,9 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iters,
   )
 
   // Defaults in the upstream testbed UI:
@@ -254,7 +293,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
 
   // A voxelized wavy floor.
   let points : Array[@core.Vec3] = []
-  let n = 24
+  let n = if heavy { 28 } else { 24 }
   for i in 0..<n {
     for j in 0..<n {
       let x = Float::from_int(i)
@@ -267,7 +306,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
       points.push(@core.Vec3::new(x, y * voxel_size_y, z))
       // Boundary "walls".
       if i == 0 || i == n - 1 || j == 0 || j == n - 1 {
-        for k in 0..<2 {
+        for k in 0..<(if heavy { 3 } else { 2 }) {
           points.push(
             @core.Vec3::new(x, (y + Float::from_int(k)) * voxel_size_y, z),
           )
@@ -281,10 +320,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
     is Some(builder) {
     colliders.insert(builder.build())
   } else {
-    inspect(false, content="true")
-    colliders.insert(
-      @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
-    )
+    return false
   }
   let floor_aabb = if colliders.get(floor_handle) is Some(floor) {
     floor.compute_aabb()
@@ -312,21 +348,21 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
   )
   if qp0.cast_ray_and_get_voxel_key(bodies, colliders, ray0, 200.0F, true)
     is Some((_, _, _)) {
-    inspect(true, content="true")
+    ()
   } else {
-    inspect(false, content="true")
+    return false
   }
 
   // Dynamic primitives.
   // Keep the runtime bounded while still exercising voxel contacts with multiple shape types.
-  let nik = 3
+  let nik = if heavy { 4 } else { 3 }
   let floor_size = floor_aabb.maxs.sub(floor_aabb.mins)
   let extents = floor_size.scale(0.75F)
   let margin = floor_size.sub(extents).scale(0.5F)
   let ball_radius = 0.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<nik {
-    for j in 0..<3 {
+    for j in 0..<(if heavy { 4 } else { 3 }) {
       for k in 0..<nik {
         let rb = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
@@ -362,7 +398,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
       }
     }
   }
-  for _ in 0..<20 {
+  for _ in 0..<(if heavy { 24 } else { 20 }) {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -370,10 +406,23 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
   for h in handles {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
-      inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-      inspect(p.y > -200.0F, content="true")
+      if !(p.x == p.x && p.y == p.y && p.z == p.z) || p.y <= -200.0F {
+        return false
+      }
     } else {
-      inspect(false, content="true")
+      return false
     }
   }
+  true
+}
+
+///|
+test "examples3d/voxels3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_voxels3_profile(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/voxels3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_voxels3_profile(true), content="true")
 }

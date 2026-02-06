@@ -16,7 +16,7 @@
 /// Heightfield parity tests for the real dim3 backend.
 
 ///|
-test "examples3d/heightfield3.rs parity (3DReal headless)" {
+fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -25,16 +25,15 @@ test "examples3d/heightfield3.rs parity (3DReal headless)" {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
-  // Keep this test relatively small because the pure MoonBit 3DReal backend is significantly
-  // slower than Rapier's native implementation.
+  // Keep default mode relatively small; heavy mode moves toward upstream scale.
+  let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iters,
   )
 
   // Ground heightfield.
   let ground_size = @core.Vec3::new(100.0F, 1.0F, 100.0F)
-  // Use a smaller grid here to keep this parity scenario tractable on the pure MoonBit backend.
-  let nsubdivs = 6
+  let nsubdivs = if heavy { 7 } else { 6 }
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
     for j in 0..<(nsubdivs + 1) {
@@ -61,8 +60,8 @@ test "examples3d/heightfield3.rs parity (3DReal headless)" {
   colliders.insert_with_parent(hf, ground, bodies) |> ignore
 
   // Spawn a stack with mixed shapes.
-  let num = 2
-  let numy = 2
+  let num = if heavy { 3 } else { 2 }
+  let numy = if heavy { 2 } else { 2 }
   let rad = 1.0F
   let shift = rad * 2.0F + rad
   let center = shift * Float::from_int(num / 2)
@@ -149,7 +148,8 @@ test "examples3d/heightfield3.rs parity (3DReal headless)" {
       }
     }
   }
-  for _ in 0..<60 {
+  let settle_steps = if heavy { 80 } else { 60 }
+  for _ in 0..<settle_steps {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -157,10 +157,26 @@ test "examples3d/heightfield3.rs parity (3DReal headless)" {
   for h in handles {
     if bodies.get(h) is Some(rb) {
       let p = rb.translation()
-      inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-      inspect(p.y > -100.0F, content="true")
+      if !(p.x == p.x && p.y == p.y && p.z == p.z) {
+        return false
+      }
+      if p.y <= -100.0F {
+        return false
+      }
     } else {
-      inspect(false, content="true")
+      return false
     }
   }
+  true
+}
+
+///|
+test "examples3d/heightfield3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_heightfield3_profile(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/heightfield3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_heightfield3_profile(true), content="true")
 }

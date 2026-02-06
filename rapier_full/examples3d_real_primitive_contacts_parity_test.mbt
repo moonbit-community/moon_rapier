@@ -16,7 +16,7 @@
 /// Parity tests for missing primitive contact pairs in the real dim3 backend.
 
 ///|
-test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
+fn run_examples3d_debug_cylinder3(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/debug_cylinder3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -25,8 +25,9 @@ test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iters = if heavy { 18 } else { 16 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    solver_iters,
   )
 
   // Ground.
@@ -62,9 +63,11 @@ test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
   let (ci, cg) = cyl_co.into_raw_parts()
   let (gi, gg) = ground_co.into_raw_parts()
   let cyl_first = ci < gi || (ci == gi && cg <= gg)
+  let settle_steps = 360
+  let min_allowed_y = -100.0F
   let mut saw_contact = false
   let mut saw_up_normal = false
-  for _ in 0..<360 {
+  for _ in 0..<settle_steps {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -77,17 +80,26 @@ test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
       }
     }
   }
-  inspect(saw_contact, content="true")
-  inspect(cyl_first, content="false")
-  inspect(saw_up_normal, content="true")
+  if !saw_contact || cyl_first || !saw_up_normal {
+    return false
+  }
   if bodies.get(body) is Some(rb) {
     let p = rb.translation()
-    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
-    // Keep this broad enough to avoid false negatives on the pure MoonBit backend.
-    inspect(p.y > -100.0F, content="true")
+    p.x == p.x && p.y == p.y && p.z == p.z && p.y > min_allowed_y
   } else {
-    inspect(false, content="true")
+    false
   }
+}
+
+///|
+test "examples3d/debug_cylinder3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_debug_cylinder3(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/debug_cylinder3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_debug_cylinder3(true), content="true")
 }
 
 ///|
