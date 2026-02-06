@@ -19,21 +19,32 @@ LOG_DIR="${LOG_DIR:-_build}"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/rapier_full_heavy_gate.log"
 : > "$LOG_FILE"
+PROFILE="${RAPIER_FULL_PROFILE:-heavy}"
+PROFILE_UPPER="$(printf '%s' "$PROFILE" | tr '[:lower:]' '[:upper:]')"
+
+if [[ "$PROFILE_UPPER" != "MEDIUM" && "$PROFILE_UPPER" != "HEAVY" && "$PROFILE_UPPER" != "FULLSCALE" ]]; then
+  echo "Unsupported RAPIER_FULL_PROFILE='$PROFILE'. Use medium|heavy|fullscale." | tee -a "$LOG_FILE"
+  exit 1
+fi
 
 run_file() {
   local file="$1"
   local filter="$2"
-  echo "==> HEAVY ${file} (${filter})" | tee -a "$LOG_FILE"
+  echo "==> ${PROFILE_UPPER} ${file} (${filter})" | tee -a "$LOG_FILE"
   /usr/bin/time -p moon test --frozen --release --target native \
     --include-skipped -p rapier_full -f "$file" -F "$filter" \
     2>&1 | tee -a "$LOG_FILE"
   echo | tee -a "$LOG_FILE"
 }
 
-run_file "examples2d_s2d_pyramid_parity_test.mbt" "HEAVY examples2d/s2d_pyramid.rs*"
-run_file "examples3d_real_heightfield_parity_test.mbt" "HEAVY examples3d/heightfield3.rs*"
-run_file "examples3d_real_primitive_contacts_parity_test.mbt" "HEAVY examples3d/debug_cylinder3.rs*"
-run_file "examples3d_real_urdf_keva_voxels_parity_test.mbt" "HEAVY examples3d/voxels3.rs*"
-run_file "examples3d_worlds_parity_test.mbt" "HEAVY examples3d/domino3.rs*"
+if [[ "$PROFILE_UPPER" == "HEAVY" ]]; then
+  run_file "examples2d_s2d_pyramid_parity_test.mbt" "HEAVY examples2d/s2d_pyramid.rs*"
+  run_file "examples3d_real_heightfield_parity_test.mbt" "HEAVY examples3d/heightfield3.rs*"
+  run_file "examples3d_real_primitive_contacts_parity_test.mbt" "HEAVY examples3d/debug_cylinder3.rs*"
+  run_file "examples3d_real_urdf_keva_voxels_parity_test.mbt" "HEAVY examples3d/voxels3.rs*"
+fi
 
-echo "HEAVY_GATE_DONE" | tee -a "$LOG_FILE"
+run_file "examples3d_trimesh_parity_test.mbt" "${PROFILE_UPPER} examples3d/trimesh3.rs*"
+run_file "examples3d_worlds_parity_test.mbt" "${PROFILE_UPPER} examples3d/domino3.rs*"
+
+echo "${PROFILE_UPPER}_GATE_DONE" | tee -a "$LOG_FILE"

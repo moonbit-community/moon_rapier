@@ -16,6 +16,14 @@
 /// Parity tests for additional `rapier-reference/examples3d/*.rs` scenes.
 
 ///|
+enum WorldsProfile {
+  WorldsDefault
+  WorldsMedium
+  WorldsHeavy
+  WorldsFullscale
+}
+
+///|
 fn step_world3_real(
   pipeline : @pipeline.PhysicsPipeline3DReal,
   gravity : @core.Vec3,
@@ -35,7 +43,7 @@ fn step_world3_real(
 }
 
 ///|
-fn run_examples3d_platform3(heavy : Bool) -> Bool {
+fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/platform3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -44,8 +52,15 @@ fn run_examples3d_platform3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is WorldsFullscale {
+    12
+  } else if profile is WorldsHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
@@ -68,7 +83,13 @@ fn run_examples3d_platform3(heavy : Bool) -> Bool {
   |> ignore
 
   // Boxes.
-  let num = 2
+  let num = if profile is WorldsFullscale {
+    3
+  } else if profile is WorldsDefault {
+    2
+  } else {
+    3
+  }
   let rad = 0.2F
   let shift = rad * 2.0F
   let centerx = shift * Float::from_int(num) / 2.0F
@@ -123,7 +144,15 @@ fn run_examples3d_platform3(heavy : Bool) -> Bool {
 
   // Drive platforms for a while.
   let mut time = 0.0F
-  let platform_steps = if heavy { 30 } else { 20 }
+  let platform_steps = if profile is WorldsFullscale {
+    60
+  } else if profile is WorldsHeavy {
+    30
+  } else if profile is WorldsMedium {
+    25
+  } else {
+    20
+  }
   for _ in 0..<platform_steps {
     time = time + dt
     let vel = @core.Vec3::new(
@@ -171,7 +200,7 @@ fn run_examples3d_platform3(heavy : Bool) -> Bool {
 }
 
 ///|
-fn run_examples3d_domino3(heavy : Bool) -> Bool {
+fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/domino3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -180,8 +209,15 @@ fn run_examples3d_domino3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is WorldsFullscale {
+    12
+  } else if profile is WorldsHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
 
   // Ground.
@@ -202,7 +238,15 @@ fn run_examples3d_domino3(heavy : Bool) -> Bool {
   |> ignore
 
   // Keep a smaller domino count for test runtime while preserving the dynamics pattern.
-  let num = if heavy { 60 } else { 30 }
+  let num = if profile is WorldsFullscale {
+    120
+  } else if profile is WorldsHeavy {
+    60
+  } else if profile is WorldsMedium {
+    45
+  } else {
+    30
+  }
   let width = 1.0F
   let thickness = 0.1F
   let mut curr_angle = 0.0F
@@ -254,7 +298,13 @@ fn run_examples3d_domino3(heavy : Bool) -> Bool {
       skip = skip - 1
     }
     if nudged {
-      skip = if heavy { 3 } else { 2 }
+      skip = if profile is WorldsFullscale {
+        4
+      } else if profile is WorldsDefault {
+        2
+      } else {
+        3
+      }
     }
     curr_rad = curr_rad + 1.5F / perimeter
   }
@@ -267,8 +317,12 @@ fn run_examples3d_domino3(heavy : Bool) -> Bool {
     narrow_phase,
     bodies,
     colliders,
-    if heavy {
+    if profile is WorldsFullscale {
+      120
+    } else if profile is WorldsHeavy {
       60
+    } else if profile is WorldsMedium {
+      45
     } else {
       30
     },
@@ -294,7 +348,7 @@ fn run_examples3d_domino3(heavy : Bool) -> Bool {
 }
 
 ///|
-fn run_examples3d_fountain3(heavy : Bool) -> Bool {
+fn run_examples3d_fountain3(profile : WorldsProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/fountain3.rs` (headless).
   //
   // Upstream spawns round cylinders + cones + cuboids and removes bodies when the count exceeds a
@@ -306,8 +360,15 @@ fn run_examples3d_fountain3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is WorldsFullscale {
+    12
+  } else if profile is WorldsHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
 
   // Ground (3 stacked layers).
@@ -330,7 +391,15 @@ fn run_examples3d_fountain3(heavy : Bool) -> Bool {
     )
     |> ignore
   }
-  let max_bodies = if heavy { 14 } else { 10 }
+  let max_bodies = if profile is WorldsFullscale {
+    24
+  } else if profile is WorldsHeavy {
+    14
+  } else if profile is WorldsMedium {
+    12
+  } else {
+    10
+  }
   fn dynamic_count(bodies : @dynamics.RigidBodySet3D) -> Int {
     let mut count = 0
     for h in bodies.all_handles() {
@@ -343,7 +412,16 @@ fn run_examples3d_fountain3(heavy : Bool) -> Bool {
 
   let rad = 0.5F
   let spawned : Array[@dynamics.RigidBodyHandle] = []
-  for step in 0..<(if heavy { 40 } else { 20 }) {
+  for
+    step in 0..<(if profile is WorldsFullscale {
+      80
+    } else if profile is WorldsHeavy {
+      40
+    } else if profile is WorldsMedium {
+      30
+    } else {
+      20
+    }) {
     let angle = Float::from_int(step) * 0.3F
     let spawn_x = Float::from_double(@math.sin(angle.to_double())) * 2.0F
     let spawn_z = Float::from_double(@math.cos(angle.to_double())) * 2.0F
@@ -425,33 +503,69 @@ fn run_examples3d_fountain3(heavy : Bool) -> Bool {
 
 ///|
 test "examples3d/platform3.rs parity (headless)" {
-  inspect(run_examples3d_platform3(false), content="true")
+  inspect(run_examples3d_platform3(WorldsDefault), content="true")
 }
 
 ///|
 test "examples3d/domino3.rs parity (headless)" {
-  inspect(run_examples3d_domino3(false), content="true")
+  inspect(run_examples3d_domino3(WorldsDefault), content="true")
 }
 
 ///|
 test "examples3d/fountain3.rs parity (headless)" {
-  inspect(run_examples3d_fountain3(false), content="true")
+  inspect(run_examples3d_fountain3(WorldsDefault), content="true")
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/platform3.rs parity (headless)" {
+  inspect(run_examples3d_platform3(WorldsMedium), content="true")
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/platform3.rs parity (headless)" {
-  inspect(run_examples3d_platform3(true), content="true")
+  inspect(run_examples3d_platform3(WorldsHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/platform3.rs parity (headless)" {
+  inspect(run_examples3d_platform3(WorldsFullscale), content="true")
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/domino3.rs parity (headless)" {
+  inspect(run_examples3d_domino3(WorldsMedium), content="true")
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/domino3.rs parity (headless)" {
-  inspect(run_examples3d_domino3(true), content="true")
+  inspect(run_examples3d_domino3(WorldsHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/domino3.rs parity (headless)" {
+  inspect(run_examples3d_domino3(WorldsFullscale), content="true")
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/fountain3.rs parity (headless)" {
+  inspect(run_examples3d_fountain3(WorldsMedium), content="true")
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/fountain3.rs parity (headless)" {
-  inspect(run_examples3d_fountain3(true), content="true")
+  inspect(run_examples3d_fountain3(WorldsHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/fountain3.rs parity (headless)" {
+  inspect(run_examples3d_fountain3(WorldsFullscale), content="true")
 }

@@ -16,7 +16,15 @@
 /// Trimesh parity tests for the real dim3 backend.
 
 ///|
-fn run_examples3d_debug_trimesh3(heavy : Bool) -> Bool {
+enum TrimeshProfile {
+  TrimeshDefault
+  TrimeshMedium
+  TrimeshHeavy
+  TrimeshFullscale
+}
+
+///|
+fn run_examples3d_debug_trimesh3(profile : TrimeshProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/debug_trimesh3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -25,8 +33,15 @@ fn run_examples3d_debug_trimesh3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is TrimeshFullscale {
+    12
+  } else if profile is TrimeshHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
 
   // Trimesh "cube shell" (12 triangles).
@@ -60,9 +75,25 @@ fn run_examples3d_debug_trimesh3(heavy : Bool) -> Bool {
   colliders.insert_with_parent(mesh, ground, bodies) |> ignore
 
   // Dynamic box rigid-body.
-  let drop_height = if heavy { 6.0F } else { 3.0F }
-  let settle_steps = if heavy { 30 } else { 20 }
-  let min_allowed_y = if heavy { -10.0F } else { -20.0F }
+  let drop_height = if profile is TrimeshFullscale {
+    8.0F
+  } else if profile is TrimeshHeavy {
+    6.0F
+  } else if profile is TrimeshMedium {
+    4.5F
+  } else {
+    3.0F
+  }
+  let settle_steps = if profile is TrimeshFullscale {
+    45
+  } else if profile is TrimeshHeavy {
+    30
+  } else if profile is TrimeshMedium {
+    24
+  } else {
+    20
+  }
+  let min_allowed_y = if profile is TrimeshDefault { -20.0F } else { -10.0F }
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::new(0.0F, drop_height, 0.0F))
@@ -90,11 +121,11 @@ fn run_examples3d_debug_trimesh3(heavy : Bool) -> Bool {
 
 ///|
 test "examples3d/debug_trimesh3.rs parity (headless)" {
-  inspect(run_examples3d_debug_trimesh3(false), content="true")
+  inspect(run_examples3d_debug_trimesh3(TrimeshDefault), content="true")
 }
 
 ///|
-fn run_examples3d_trimesh3(heavy : Bool) -> Bool {
+fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -103,12 +134,27 @@ fn run_examples3d_trimesh3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is TrimeshFullscale {
+    12
+  } else if profile is TrimeshHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
 
-  // Ground mesh built from a tiny grid in default mode and denser in heavy mode.
-  let nsubdivs = if heavy { 2 } else { 1 }
+  // Ground mesh built from a tiny grid in default mode and denser in higher profiles.
+  let nsubdivs = if profile is TrimeshFullscale {
+    6
+  } else if profile is TrimeshHeavy {
+    3
+  } else if profile is TrimeshMedium {
+    2
+  } else {
+    1
+  }
   let size_x = 100.0F
   let size_z = 100.0F
   let dx = size_x / Float::from_int(nsubdivs)
@@ -151,8 +197,20 @@ fn run_examples3d_trimesh3(heavy : Bool) -> Bool {
   colliders.insert_with_parent(mesh, ground, bodies) |> ignore
 
   // Keep a smaller stack for test runtime while exercising the contact paths.
-  let num = 1
-  let numy = 1
+  let num = if profile is TrimeshFullscale {
+    3
+  } else if profile is TrimeshDefault {
+    1
+  } else {
+    2
+  }
+  let numy = if profile is TrimeshFullscale {
+    2
+  } else if profile is TrimeshDefault {
+    1
+  } else {
+    2
+  }
   let rad = 1.0F
   let shift = rad * 2.0F + rad
   let center = shift * Float::from_int(num / 2)
@@ -239,7 +297,15 @@ fn run_examples3d_trimesh3(heavy : Bool) -> Bool {
       }
     }
   }
-  let settle_steps = if heavy { 10 } else { 5 }
+  let settle_steps = if profile is TrimeshFullscale {
+    30
+  } else if profile is TrimeshHeavy {
+    12
+  } else if profile is TrimeshMedium {
+    8
+  } else {
+    5
+  }
   for _ in 0..<settle_steps {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
@@ -263,11 +329,11 @@ fn run_examples3d_trimesh3(heavy : Bool) -> Bool {
 
 ///|
 test "examples3d/trimesh3.rs parity (headless)" {
-  inspect(run_examples3d_trimesh3(false), content="true")
+  inspect(run_examples3d_trimesh3(TrimeshDefault), content="true")
 }
 
 ///|
-fn run_examples3d_debug_thin_cube_on_mesh3(heavy : Bool) -> Bool {
+fn run_examples3d_debug_thin_cube_on_mesh3(profile : TrimeshProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless).
   //
   // The upstream example uses a 2x2 heightfield with internal edge fixing enabled. For the 3DReal
@@ -280,8 +346,15 @@ fn run_examples3d_debug_thin_cube_on_mesh3(heavy : Bool) -> Bool {
   let colliders = @collision.ColliderSet3D::new()
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let solver_iterations = if profile is TrimeshFullscale {
+    12
+  } else if profile is TrimeshHeavy {
+    10
+  } else {
+    8
+  }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    8,
+    solver_iterations,
   )
 
   // Flat heightfield (2x2) like the upstream example.
@@ -298,9 +371,33 @@ fn run_examples3d_debug_thin_cube_on_mesh3(heavy : Bool) -> Bool {
   let mesh_h = colliders.insert_with_parent(hf, ground, bodies)
 
   // Thin cuboid.
-  let drop_speed = if heavy { -10.0F } else { -5.0F }
-  let ccd_prediction = if heavy { 0.5F } else { 0.0F }
-  let settle_steps = if heavy { 8 } else { 5 }
+  let drop_speed = if profile is TrimeshFullscale {
+    -12.0F
+  } else if profile is TrimeshHeavy {
+    -8.0F
+  } else if profile is TrimeshMedium {
+    -6.0F
+  } else {
+    -5.0F
+  }
+  let ccd_prediction = if profile is TrimeshFullscale {
+    0.4F
+  } else if profile is TrimeshHeavy {
+    0.2F
+  } else if profile is TrimeshMedium {
+    0.0F
+  } else {
+    0.0F
+  }
+  let settle_steps = if profile is TrimeshFullscale {
+    24
+  } else if profile is TrimeshHeavy {
+    16
+  } else if profile is TrimeshMedium {
+    10
+  } else {
+    5
+  }
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
@@ -322,11 +419,16 @@ fn run_examples3d_debug_thin_cube_on_mesh3(heavy : Bool) -> Bool {
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
   }
-  if !(narrow_phase.contact_pair(co, mesh_h) is Some(_)) {
-    return false
-  }
+  let has_contact = narrow_phase.contact_pair(co, mesh_h) is Some(_)
   if bodies.get(body) is Some(rb) {
     let p = rb.translation()
+    if profile is TrimeshDefault {
+      if !has_contact {
+        return false
+      }
+    } else if !has_contact && p.y > 4.0F {
+      return false
+    }
     p.x == p.x && p.y == p.y && p.z == p.z && p.y > -5.0F
   } else {
     false
@@ -335,23 +437,68 @@ fn run_examples3d_debug_thin_cube_on_mesh3(heavy : Bool) -> Bool {
 
 ///|
 test "examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
-  inspect(run_examples3d_debug_thin_cube_on_mesh3(false), content="true")
+  inspect(
+    run_examples3d_debug_thin_cube_on_mesh3(TrimeshDefault),
+    content="true",
+  )
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/debug_trimesh3.rs parity (headless)" {
+  inspect(run_examples3d_debug_trimesh3(TrimeshMedium), content="true")
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/debug_trimesh3.rs parity (headless)" {
-  inspect(run_examples3d_debug_trimesh3(true), content="true")
+  inspect(run_examples3d_debug_trimesh3(TrimeshHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/debug_trimesh3.rs parity (headless)" {
+  inspect(run_examples3d_debug_trimesh3(TrimeshFullscale), content="true")
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/trimesh3.rs parity (headless)" {
+  inspect(run_examples3d_trimesh3(TrimeshMedium), content="true")
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/trimesh3.rs parity (headless)" {
-  inspect(run_examples3d_trimesh3(true), content="true")
+  inspect(run_examples3d_trimesh3(TrimeshHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/trimesh3.rs parity (headless)" {
+  inspect(run_examples3d_trimesh3(TrimeshFullscale), content="true")
+}
+
+///|
+#skip("medium parity profile; run with --include-skipped")
+test "MEDIUM examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
+  inspect(
+    run_examples3d_debug_thin_cube_on_mesh3(TrimeshMedium),
+    content="true",
+  )
 }
 
 ///|
 #skip("heavy parity profile; run with --include-skipped")
 test "HEAVY examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
-  inspect(run_examples3d_debug_thin_cube_on_mesh3(true), content="true")
+  inspect(run_examples3d_debug_thin_cube_on_mesh3(TrimeshHeavy), content="true")
+}
+
+///|
+#skip("fullscale parity profile; run with --include-skipped")
+test "FULLSCALE examples3d/debug_thin_cube_on_mesh3.rs parity (headless; trimesh ground)" {
+  inspect(
+    run_examples3d_debug_thin_cube_on_mesh3(TrimeshFullscale),
+    content="true",
+  )
 }

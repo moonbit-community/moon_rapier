@@ -12,9 +12,11 @@ This document defines the current runtime profiles for selected parity tests in 
 
 - Default profile (fast):
   - `moon test --frozen --release --target native -p rapier_full`
-- Heavy profile gate (opt-in):
-  - `tools/run_rapier_full_heavy_gate.sh`
-  - This executes selected skipped tests prefixed with `HEAVY` using `--include-skipped`.
+- Tiered profile gate (opt-in):
+  - `tools/run_rapier_full_heavy_gate.sh` (defaults to `RAPIER_FULL_PROFILE=heavy`)
+  - `RAPIER_FULL_PROFILE=medium tools/run_rapier_full_heavy_gate.sh`
+  - `RAPIER_FULL_PROFILE=fullscale tools/run_rapier_full_heavy_gate.sh`
+  - The script executes skipped tests prefixed with `MEDIUM`/`HEAVY`/`FULLSCALE` using `--include-skipped`.
 
 ## Profile matrix
 
@@ -24,11 +26,11 @@ This document defines the current runtime profiles for selected parity tests in 
 | `examples3d_real_heightfield_parity_test.mbt` | `nsubdivs=6`, `num=2`, `numy=2`, `steps=60` | `nsubdivs=7`, `num=3`, `numy=2`, `steps=80` via `HEAVY examples3d/heightfield3.rs*` | `nsubdivs=10`, `num=3`, `numy=3`, `steps=180` |
 | `examples3d_real_primitive_contacts_parity_test.mbt` | baseline contact/stability thresholds | higher solver iteration via `HEAVY examples3d/debug_cylinder3.rs*` | stricter contact/stability thresholds |
 | `examples3d_real_urdf_keva_voxels_parity_test.mbt` | reduced keva/urdf/voxels scales | denser voxel scene via `HEAVY examples3d/voxels3.rs*` | upstream-like scene density and step counts |
-| `examples3d_trimesh_parity_test.mbt` | `nsubdivs=1`, `steps={20,5,5}` | `nsubdivs=2`, `steps={30,10,8}` via skipped HEAVY tests (manual run) | restore upstream-like mesh density and longer settling |
-| `examples3d_worlds_parity_test.mbt` | reduced `platform/domino/fountain` scales (`steps={20,30,20}`) | heavier scales (`steps={30,60,40}`) via `HEAVY examples3d/domino3.rs*` | restore upstream-like scene density and longer settling |
+| `examples3d_trimesh_parity_test.mbt` | `nsubdivs=1`, low stack (`num=1`, `numy=1`), `steps={20,5,5}` | `MEDIUM`: `nsubdivs=2`, `steps={24,8,7}`; `HEAVY`: `nsubdivs=3`, `steps={30,12,8}` | `FULLSCALE`: `nsubdivs=6`, denser stack (`num=3`, `numy=2`), `steps={45,30,12}` |
+| `examples3d_worlds_parity_test.mbt` | reduced `platform/domino/fountain` scales (`steps={20,30,20}`) | `MEDIUM`: `steps={25,45,30}`; `HEAVY`: `steps={30,60,40}` | `FULLSCALE`: denser scenes + longer runs (`steps={60,120,80}`) |
 
 ## Notes
 
-- Heavy tests are intentionally marked with `#skip(...)` and are only run when `--include-skipped` is provided.
-- The scripted heavy gate runs representative HEAVY scenarios for all currently wired reduced-scene files.
+- Non-default profiles are intentionally marked with `#skip(...)` and are only run when `--include-skipped` is provided.
+- The gate script validates one representative tiered scenario per `trimesh/worlds` file; in `HEAVY` mode it also runs the previously wired heavy-only scenes.
 - Full-scale targets remain tracked by BD issue `moon_rapier-restore-fullscale-rapier_full-parity-tests`.
