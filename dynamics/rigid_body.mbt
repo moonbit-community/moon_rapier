@@ -138,13 +138,28 @@ pub fn RigidBodyChanges::sleep_flag() -> Int {
 }
 
 ///|
+pub fn RigidBodyChanges::sleep() -> Int {
+  RigidBodyChanges::sleep_flag()
+}
+
+///|
 pub fn RigidBodyChanges::colliders_flag() -> Int {
   RIGID_BODY_CHANGES_COLLIDERS
 }
 
 ///|
+pub fn RigidBodyChanges::colliders() -> Int {
+  RigidBodyChanges::colliders_flag()
+}
+
+///|
 pub fn RigidBodyChanges::dominance_flag() -> Int {
   RIGID_BODY_CHANGES_DOMINANCE
+}
+
+///|
+pub fn RigidBodyChanges::dominance() -> Int {
+  RigidBodyChanges::dominance_flag()
 }
 
 ///|

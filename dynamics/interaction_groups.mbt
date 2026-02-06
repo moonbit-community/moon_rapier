@@ -290,6 +290,14 @@ pub fn InteractionGroups::test_groups(
 }
 
 ///|
+pub fn InteractionGroups::passes(
+  self : InteractionGroups,
+  other : InteractionGroups,
+) -> Bool {
+  self.test_groups(other)
+}
+
+///|
 pub fn InteractionGroups::memberships(self : InteractionGroups) -> Group {
   self.memberships
 }

@@ -48,6 +48,11 @@ pub fn Timer::resume_timer(self : Timer) -> Unit {
 }
 
 ///|
+pub fn Timer::resume_(self : Timer) -> Unit {
+  self.resume_timer()
+}
+
+///|
 pub fn Timer::time_ms(self : Timer) -> Double {
   self.time_ms
 }

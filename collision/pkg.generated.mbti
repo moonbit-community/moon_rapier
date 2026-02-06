@@ -135,6 +135,7 @@ pub struct ActiveCollisionTypes {
 pub fn ActiveCollisionTypes::all() -> Self
 pub fn ActiveCollisionTypes::default() -> Self
 pub fn ActiveCollisionTypes::equals(Self, Self) -> Bool
+pub fn ActiveCollisionTypes::passes(Self, @dynamics.RigidBodyType, @dynamics.RigidBodyType) -> Bool
 pub fn ActiveCollisionTypes::test_body_types(Self, @dynamics.RigidBodyType, @dynamics.RigidBodyType) -> Bool
 
 pub struct ActiveEvents {

@@ -66,6 +66,8 @@ def classify_leaf_pair(rapier_leaf: str, moon_leaf: str) -> str:
         return "exact"
     if rapier_leaf == "test" and moon_leaf == "passes":
         return "keyword_alias"
+    if rapier_leaf == "resume" and moon_leaf in {"resume_", "resume_timer"}:
+        return "keyword_alias"
     if rapier_leaf.isupper() and moon_leaf.lower() == rapier_leaf.lower():
         return "const_case_alias"
     if normalize_leaf(rapier_leaf) == normalize_leaf(moon_leaf):

@@ -495,3 +495,236 @@ pub type ScalarTypeAngInertia2 = Float
 
 ///|
 pub type ScalarTypeAngInertia3 = @core.SdpMat3
+
+// ---- Pub-style shim names for rapier2d/rapier3d mapping stability. ----
+
+///|
+pub fn transform_vector2(inertia : Float, v : Float) -> Float {
+  angular_inertia_transform_vector2(inertia, v)
+}
+
+///|
+pub fn into_matrix2(inertia : Float) -> Float {
+  angular_inertia_into_matrix2(inertia)
+}
+
+///|
+pub fn transform_vector3(inertia : @core.SdpMat3, v : @core.Vec3) -> @core.Vec3 {
+  angular_inertia_transform_vector3(inertia, v)
+}
+
+///|
+pub fn into_matrix3(inertia : @core.SdpMat3) -> @core.Mat3 {
+  angular_inertia_into_matrix3(inertia)
+}
+
+///|
+pub fn gcross2(lhs : @core.Vec2, rhs : @core.Vec2) -> Float {
+  lhs.cross(rhs)
+}
+
+///|
+pub fn gcross3(lhs : @core.Vec3, rhs : @core.Vec3) -> @core.Vec3 {
+  lhs.cross(rhs)
+}
+
+///|
+pub fn gdot2(lhs : @core.Vec2, rhs : @core.Vec2) -> Float {
+  lhs.dot(rhs)
+}
+
+///|
+pub fn gdot3(lhs : @core.Vec3, rhs : @core.Vec3) -> Float {
+  lhs.dot(rhs)
+}
+
+///|
+pub fn simd_length2(v : @core.Vec2) -> Float {
+  v.length()
+}
+
+///|
+pub fn simd_length3(v : @core.Vec3) -> Float {
+  v.length()
+}
+
+///|
+pub fn column2(m : @core.Mat2, i : Int) -> @core.Vec2? {
+  mat2_column(m, i)
+}
+
+///|
+pub fn column3(m : @core.Mat3, i : Int) -> @core.Vec3? {
+  mat3_column(m, i)
+}
+
+///|
+pub fn append_translation2(
+  p : @core.Isometry2,
+  t : @core.Vec2,
+) -> @core.Isometry2 {
+  pose_append_translation2(p, t)
+}
+
+///|
+pub fn prepend_translation2(
+  p : @core.Isometry2,
+  t : @core.Vec2,
+) -> @core.Isometry2 {
+  pose_prepend_translation2(p, t)
+}
+
+///|
+pub fn append_rotation2(p : @core.Isometry2, angle : Float) -> @core.Isometry2 {
+  pose_append_rotation2(p, angle)
+}
+
+///|
+pub fn prepend_rotation2(p : @core.Isometry2, angle : Float) -> @core.Isometry2 {
+  pose_prepend_rotation2(p, angle)
+}
+
+///|
+pub fn append_translation3(
+  p : @core.Isometry3,
+  t : @core.Vec3,
+) -> @core.Isometry3 {
+  pose_append_translation3(p, t)
+}
+
+///|
+pub fn prepend_translation3(
+  p : @core.Isometry3,
+  t : @core.Vec3,
+) -> @core.Isometry3 {
+  pose_prepend_translation3(p, t)
+}
+
+///|
+pub fn append_rotation3(
+  p : @core.Isometry3,
+  axisangle : @core.Vec3,
+) -> @core.Isometry3 {
+  pose_append_rotation3(p, axisangle)
+}
+
+///|
+pub fn prepend_rotation3(
+  p : @core.Isometry3,
+  axisangle : @core.Vec3,
+) -> @core.Isometry3 {
+  pose_prepend_rotation3(p, axisangle)
+}
+
+///|
+pub fn to_mat2(r : @core.Rot2) -> @core.Mat2 {
+  rot2_to_mat(r)
+}
+
+///|
+pub fn diff_conj1_2(q1 : @core.Quat, q2 : @core.Quat) -> @core.Mat3 {
+  quat_diff_conj1_2(q1, q2)
+}
+
+///|
+pub fn diff_conj1_2_tr(q1 : @core.Quat, q2 : @core.Quat) -> @core.Mat3 {
+  quat_diff_conj1_2_tr(q1, q2)
+}
+
+///|
+pub fn mul_assign_unchecked(q : @core.Quat, rhs : Float) -> @core.Quat {
+  quat_mul_assign_unchecked(q, rhs)
+}
+
+///|
+pub fn select2(
+  v : @core.Vec2,
+  condition : Bool,
+  if_false : @core.Vec2,
+) -> @core.Vec2 {
+  select_vec2(v, condition, if_false)
+}
+
+///|
+pub fn select3(
+  v : @core.Vec3,
+  condition : Bool,
+  if_false : @core.Vec3,
+) -> @core.Vec3 {
+  select_vec3(v, condition, if_false)
+}
+
+///|
+pub type AngVector2 = Float
+
+///|
+pub type AngVector3 = @core.Vec3
+
+///|
+pub type AngMatrix2 = Float
+
+///|
+pub type AngMatrix3 = @core.Mat3
+
+///|
+pub type CrossMat2 = @core.Vec2
+
+///|
+pub type CrossMatTr2 = @core.Vec2
+
+///|
+pub type CrossMat3 = @core.Mat3
+
+///|
+pub type CrossMatTr3 = @core.Mat3
+
+///|
+pub type Column2 = @core.Vec2
+
+///|
+pub type Column3 = @core.Vec3
+
+///|
+pub type Basis2 = Array[@core.Vec2]
+
+///|
+pub type Basis3 = Array[@core.Vec3]
+
+///|
+pub type Pose2 = @core.Isometry2
+
+///|
+pub type Pose3 = @core.Isometry3
+
+///|
+pub type Vector2 = @core.Vec2
+
+///|
+pub type Vector3 = @core.Vec3
+
+///|
+pub type Rotation2 = @core.Rot2
+
+///|
+pub type Rotation3 = @core.Quat
+
+///|
+pub type Matrix2 = @core.Mat2
+
+///|
+pub type Matrix3 = @core.Mat3
+
+///|
+pub type AngInertia2 = Float
+
+///|
+pub type AngInertia3 = @core.SdpMat3
+
+///|
+pub type Result2 = Float
+
+///|
+pub(all) enum Result3 {
+  Scalar(Float)
+  Vector(@core.Vec3)
+}

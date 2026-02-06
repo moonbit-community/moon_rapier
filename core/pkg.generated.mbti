@@ -16,6 +16,8 @@ pub const SPATIAL_DIM2 : Int = 3
 
 pub const SPATIAL_DIM3 : Int = 6
 
+pub const VERSION : String = "0.32.0"
+
 pub fn abs(Float) -> Float
 
 pub fn acos(Float) -> Float
@@ -63,6 +65,10 @@ pub fn Aabb3::from_points(Vec3, Vec3) -> Self
 pub fn Aabb3::intersects(Self, Self) -> Bool
 pub fn Aabb3::new(Vec3, Vec3) -> Self
 
+#alias(JacobianView2)
+#alias(JacobianView3)
+#alias(JacobianViewMut2)
+#alias(JacobianViewMut3)
 pub struct DMatrix {
   rows : Int
   cols : Int
@@ -76,6 +82,7 @@ pub fn DMatrix::rows(Self) -> Int
 pub fn DMatrix::set(Self, Int, Int, Float) -> Self
 pub fn DMatrix::zeros(Int, Int) -> Self
 
+#alias(SimdPose2)
 pub struct Isometry2 {
   translation : Vec2
   rotation : Rot2
@@ -87,6 +94,7 @@ pub fn Isometry2::mul(Self, Self) -> Self
 pub fn Isometry2::new(Vec2, Rot2) -> Self
 pub fn Isometry2::transform_point(Self, Vec2) -> Vec2
 
+#alias(SimdPose3)
 pub struct Isometry3 {
   translation : Vec3
   rotation : Quat
@@ -124,6 +132,7 @@ pub fn MassProperties3::new(Float, SdpMat3, Vec3) -> Self
 pub fn MassProperties3::set_mass(Self, Float, Bool) -> Self
 pub fn MassProperties3::transform_by(Self, Isometry3) -> Self
 
+#alias(SimdMatrix2)
 pub struct Mat2 {
   m00 : Float
   m01 : Float
@@ -141,6 +150,7 @@ pub fn Mat2::sub(Self, Self) -> Self
 pub fn Mat2::transpose(Self) -> Self
 pub fn Mat2::zero() -> Self
 
+#alias(SimdMatrix3)
 pub struct Mat3 {
   m00 : Float
   m01 : Float
@@ -165,6 +175,7 @@ pub fn Mat3::sub(Self, Self) -> Self
 pub fn Mat3::transpose(Self) -> Self
 pub fn Mat3::zero() -> Self
 
+#alias(SimdRotation3)
 pub struct Quat {
   x : Float
   y : Float
@@ -186,6 +197,7 @@ pub fn Quat::rotate_vec3(Self, Vec3) -> Vec3
 pub fn Quat::to_mat3(Self) -> Mat3
 pub fn Quat::to_scaled_axis(Self) -> Vec3
 
+#alias(SimdRotation2)
 pub struct Rot2 {
   sin : Float
   cos : Float
@@ -197,6 +209,7 @@ pub fn Rot2::inverse(Self) -> Self
 pub fn Rot2::mul(Self, Self) -> Self
 pub fn Rot2::rotate_vec2(Self, Vec2) -> Vec2
 
+#alias(SimdAngularInertia3)
 pub struct SdpMat3 {
   m11 : Float
   m12 : Float
@@ -226,6 +239,8 @@ pub fn UserData128::to_int_truncate(Self) -> Int
 pub fn UserData128::to_parts(Self) -> (UInt64, UInt64)
 pub fn UserData128::zero() -> Self
 
+#alias(SimdPoint2)
+#alias(SimdVector2)
 #alias(TangentImpulse3)
 pub struct Vec2 {
   x : Float
@@ -241,6 +256,9 @@ pub fn Vec2::normalize(Self) -> Self
 pub fn Vec2::sub(Self, Self) -> Self
 pub fn Vec2::zero() -> Self
 
+#alias(SimdAngVector3)
+#alias(SimdPoint3)
+#alias(SimdVector3)
 pub struct Vec3 {
   x : Float
   y : Float
@@ -267,6 +285,10 @@ pub type Dim2 = Int
 pub type Dim3 = Int
 
 pub type Real = Float
+
+pub type SimdAngVector2 = Float
+
+pub type SimdAngularInertia2 = Float
 
 pub type TangentImpulse2 = Float
 

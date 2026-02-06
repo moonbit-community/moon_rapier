@@ -125,6 +125,7 @@ pub struct Timer {
 pub fn Timer::new() -> Self
 pub fn Timer::pause(Self) -> Unit
 pub fn Timer::reset(Self) -> Unit
+pub fn Timer::resume_(Self) -> Unit
 pub fn Timer::resume_timer(Self) -> Unit
 pub fn Timer::start(Self) -> Unit
 pub fn Timer::time(Self) -> Double

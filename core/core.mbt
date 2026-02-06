@@ -19,6 +19,9 @@ pub type Real = Float
 pub const RAPIER_REFERENCE_VERSION : String = "0.32.0"
 
 ///|
+pub const VERSION : String = RAPIER_REFERENCE_VERSION
+
+///|
 pub const SPATIAL_DIM2 : Int = 3
 
 ///|
@@ -745,3 +748,59 @@ pub fn MassProperties::set_mass(
   }
   MassProperties::new(new_mass, inertia, self.center_of_mass)
 }
+
+// ---- Pub-style parity aliases for rapier2d/rapier3d math facade ----
+
+///|
+pub type JacobianView2 = DMatrix
+
+///|
+pub type JacobianViewMut2 = DMatrix
+
+///|
+pub type JacobianView3 = DMatrix
+
+///|
+pub type JacobianViewMut3 = DMatrix
+
+///|
+pub type SimdVector2 = Vec2
+
+///|
+pub type SimdPoint2 = Vec2
+
+///|
+pub type SimdPose2 = Isometry2
+
+///|
+pub type SimdRotation2 = Rot2
+
+///|
+pub type SimdAngVector2 = Real
+
+///|
+pub type SimdAngularInertia2 = Real
+
+///|
+pub type SimdMatrix2 = Mat2
+
+///|
+pub type SimdVector3 = Vec3
+
+///|
+pub type SimdPoint3 = Vec3
+
+///|
+pub type SimdPose3 = Isometry3
+
+///|
+pub type SimdRotation3 = Quat
+
+///|
+pub type SimdAngVector3 = Vec3
+
+///|
+pub type SimdAngularInertia3 = SdpMat3
+
+///|
+pub type SimdMatrix3 = Mat3

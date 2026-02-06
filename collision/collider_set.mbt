@@ -265,6 +265,15 @@ pub fn ActiveCollisionTypes::test_body_types(
 }
 
 ///|
+pub fn ActiveCollisionTypes::passes(
+  self : ActiveCollisionTypes,
+  body_type1 : @dynamics.RigidBodyType,
+  body_type2 : @dynamics.RigidBodyType,
+) -> Bool {
+  self.test_body_types(body_type1, body_type2)
+}
+
+///|
 const ACTIVE_HOOKS_FILTER_CONTACT_PAIRS : Int = 1 << 0
 
 ///|

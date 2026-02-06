@@ -18,6 +18,18 @@ pub fn angular_inertia_transform_vector2(Float, Float) -> Float
 
 pub fn angular_inertia_transform_vector3(@core.SdpMat3, @core.Vec3) -> @core.Vec3
 
+pub fn append_rotation2(@core.Isometry2, Float) -> @core.Isometry2
+
+pub fn append_rotation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn append_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
+
+pub fn append_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn column2(@core.Mat2, Int) -> @core.Vec2?
+
+pub fn column3(@core.Mat3, Int) -> @core.Vec3?
+
 pub fn component_mul2(@core.Vec2, @core.Vec2) -> @core.Vec2
 
 pub fn component_mul3(@core.Vec3, @core.Vec3) -> @core.Vec3
@@ -25,6 +37,14 @@ pub fn component_mul3(@core.Vec3, @core.Vec3) -> @core.Vec3
 pub fn copy_sign_to(Float, Float) -> Float
 
 pub fn deserialize_from_vec_tuple(String) -> HashMap
+
+pub fn diff_conj1_2(@core.Quat, @core.Quat) -> @core.Mat3
+
+pub fn diff_conj1_2_tr(@core.Quat, @core.Quat) -> @core.Mat3
+
+pub fn gcross2(@core.Vec2, @core.Vec2) -> Float
+
+pub fn gcross3(@core.Vec3, @core.Vec3) -> @core.Vec3
 
 pub fn gcross_matrix2(@core.Vec2) -> @core.Vec2
 
@@ -34,15 +54,25 @@ pub fn gcross_matrix_tr2(@core.Vec2) -> @core.Vec2
 
 pub fn gcross_matrix_tr3(@core.Vec3) -> @core.Mat3
 
+pub fn gdot2(@core.Vec2, @core.Vec2) -> Float
+
+pub fn gdot3(@core.Vec3, @core.Vec3) -> Float
+
 pub fn[T] index_mut2(Array[T], Int, Int) -> (T?, T?)
 
 pub fn[T] index_mut_const(Array[T], Int, Int) -> (T?, T?)
+
+pub fn into_matrix2(Float) -> Float
+
+pub fn into_matrix3(@core.SdpMat3) -> @core.Mat3
 
 pub fn mat2_column(@core.Mat2, Int) -> @core.Vec2?
 
 pub fn mat3_column(@core.Mat3, Int) -> @core.Vec3?
 
 pub fn[T] mat_to_na(T) -> T
+
+pub fn mul_assign_unchecked(@core.Quat, Float) -> @core.Quat
 
 pub fn orthonormal_basis2(@core.Vec2) -> Array[@core.Vec2]
 
@@ -68,6 +98,14 @@ pub fn pose_prepend_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
 
 pub fn pose_prepend_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
 
+pub fn prepend_rotation2(@core.Isometry2, Float) -> @core.Isometry2
+
+pub fn prepend_rotation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
+pub fn prepend_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
+
+pub fn prepend_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
+
 pub fn quat_diff_conj1_2(@core.Quat, @core.Quat) -> @core.Mat3
 
 pub fn quat_diff_conj1_2_tr(@core.Quat, @core.Quat) -> @core.Mat3
@@ -76,15 +114,29 @@ pub fn quat_mul_assign_unchecked(@core.Quat, Float) -> @core.Quat
 
 pub fn rot2_to_mat(@core.Rot2) -> @core.Mat2
 
+pub fn select2(@core.Vec2, Bool, @core.Vec2) -> @core.Vec2
+
+pub fn select3(@core.Vec3, Bool, @core.Vec3) -> @core.Vec3
+
 pub fn select_vec2(@core.Vec2, Bool, @core.Vec2) -> @core.Vec2
 
 pub fn select_vec3(@core.Vec3, Bool, @core.Vec3) -> @core.Vec3
 
 pub fn serialize_to_vec_tuple(HashMap) -> String
 
+pub fn simd_length2(@core.Vec2) -> Float
+
+pub fn simd_length3(@core.Vec3) -> Float
+
 pub fn smallest_abs_diff_between_angles(Float, Float) -> Float
 
 pub fn smallest_abs_diff_between_sin_angles(Float, Float) -> Float
+
+pub fn to_mat2(@core.Rot2) -> @core.Mat2
+
+pub fn transform_vector2(Float, Float) -> Float
+
+pub fn transform_vector3(@core.SdpMat3, @core.Vec3) -> @core.Vec3
 
 pub fn try_normalize_and_get_length2(@core.Vec2, Float) -> (@core.Vec2, Float)?
 
@@ -101,7 +153,24 @@ pub struct HashMap {
 pub fn HashMap::equals(Self, Self) -> Bool
 pub fn HashMap::from_array(Array[(Int, String)]) -> Self
 
+pub(all) enum Result3 {
+  Scalar(Float)
+  Vector(@core.Vec3)
+}
+
 // Type aliases
+pub type AngInertia2 = Float
+
+pub using @core {type SdpMat3 as AngInertia3}
+
+pub type AngMatrix2 = Float
+
+pub using @core {type Mat3 as AngMatrix3}
+
+pub type AngVector2 = Float
+
+pub using @core {type Vec3 as AngVector3}
+
 pub type AngularInertiaOps = Unit
 
 pub type AngularInertiaOpsAngMatrix2 = Float
@@ -112,9 +181,25 @@ pub type AngularInertiaOpsAngVector2 = Float
 
 pub using @core {type Vec3 as AngularInertiaOpsAngVector3}
 
+pub type Basis2 = Array[@core.Vec2]
+
+pub type Basis3 = Array[@core.Vec3]
+
+pub using @core {type Vec2 as Column2}
+
+pub using @core {type Vec3 as Column3}
+
 pub type ComponentMul = Unit
 
 pub type CopySign = Unit
+
+pub using @core {type Vec2 as CrossMat2}
+
+pub using @core {type Mat3 as CrossMat3}
+
+pub using @core {type Vec2 as CrossMatTr2}
+
+pub using @core {type Mat3 as CrossMatTr3}
 
 pub type CrossProduct = Unit
 
@@ -138,6 +223,10 @@ pub type DotProductResult = Float
 
 pub type IndexMut2 = Unit
 
+pub using @core {type Mat2 as Matrix2}
+
+pub using @core {type Mat3 as Matrix3}
+
 pub type MatrixColumn = Unit
 
 pub using @core {type Vec2 as MatrixColumnColumn2}
@@ -150,7 +239,17 @@ pub type OrthonormalBasisBasis2 = Array[@core.Vec2]
 
 pub type OrthonormalBasisBasis3 = Array[@core.Vec3]
 
+pub using @core {type Isometry2 as Pose2}
+
+pub using @core {type Isometry3 as Pose3}
+
 pub type PoseOps = Unit
+
+pub type Result2 = Float
+
+pub using @core {type Rot2 as Rotation2}
+
+pub using @core {type Quat as Rotation3}
 
 pub type RotationOps = Unit
 
@@ -185,6 +284,10 @@ pub type SimdLength = Unit
 pub type SimdRealCopy = Unit
 
 pub type SimdSelect = Unit
+
+pub using @core {type Vec2 as Vector2}
+
+pub using @core {type Vec3 as Vector3}
 
 // Traits
 

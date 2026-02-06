@@ -398,6 +398,7 @@ pub fn InteractionGroups::filter(Self) -> Group
 pub fn InteractionGroups::memberships(Self) -> Group
 pub fn InteractionGroups::new(Group, Group, InteractionTestMode) -> Self
 pub fn InteractionGroups::none() -> Self
+pub fn InteractionGroups::passes(Self, Self) -> Bool
 pub fn InteractionGroups::test_and(Self, Self) -> Bool
 pub fn InteractionGroups::test_groups(Self, Self) -> Bool
 pub fn InteractionGroups::test_mode(Self) -> InteractionTestMode
@@ -1299,12 +1300,15 @@ pub struct RigidBodyChanges {
   bits : Int
 }
 pub fn RigidBodyChanges::all() -> Self
+pub fn RigidBodyChanges::colliders() -> Int
 pub fn RigidBodyChanges::colliders_flag() -> Int
 pub fn RigidBodyChanges::contains(Self, Int) -> Bool
+pub fn RigidBodyChanges::dominance() -> Int
 pub fn RigidBodyChanges::dominance_flag() -> Int
 pub fn RigidBodyChanges::empty() -> Self
 pub fn RigidBodyChanges::insert(Self, Int) -> Self
 pub fn RigidBodyChanges::remove(Self, Int) -> Self
+pub fn RigidBodyChanges::sleep() -> Int
 pub fn RigidBodyChanges::sleep_flag() -> Int
 
 pub struct RigidBodyColliders {
