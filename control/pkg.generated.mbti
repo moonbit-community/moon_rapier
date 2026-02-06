@@ -104,7 +104,9 @@ pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int, Float)
 pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::update_vehicle(Self, Float, @collision.QueryPipelineMut3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::wheels(Self) -> Array[Wheel3DReal]
+pub fn DynamicRayCastVehicleController3DReal::wheels_mut(Self) -> Array[Wheel3DReal]
 
+#alias(EffectiveCharacterMovement)
 pub struct EffectiveMovement {
   translation : @core.Vec2
   grounded : Bool

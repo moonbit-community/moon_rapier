@@ -449,11 +449,21 @@ pub struct QueryPipeline {
   /// Conservative AABB cache used by this QueryPipeline.
   bvh : Bvh
   filter : QueryFilter
+  dispatcher : QueryDispatcher
 }
 
 ///|
 pub struct QueryPipelineMut {
   pipeline : QueryPipeline
+  dispatcher : QueryDispatcher
+}
+
+///|
+pub struct QueryDispatcher {}
+
+///|
+pub fn QueryDispatcher::new() -> QueryDispatcher {
+  QueryDispatcher::{  }
 }
 
 ///|
@@ -649,7 +659,7 @@ pub fn QueryPipeline::new(
       aabbs[idx] = Some(expanded)
     }
   }
-  { bvh: Bvh::new(aabbs), filter }
+  { bvh: Bvh::new(aabbs), filter, dispatcher: QueryDispatcher::new() }
 }
 
 ///|
@@ -704,7 +714,7 @@ pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
-  { bvh: self.bvh, filter }
+  { bvh: self.bvh, filter, dispatcher: self.dispatcher }
 }
 
 ///|
@@ -714,7 +724,7 @@ pub fn QueryPipelineMut::new(
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
   let pipeline = QueryPipeline::new(filter, bodies, colliders)
-  { pipeline, }
+  { pipeline, dispatcher: pipeline.dispatcher }
 }
 
 ///|

@@ -54,6 +54,7 @@ pub fn Counters::collision_detection_started(Self) -> Unit
 pub fn Counters::collision_detection_time_ms(Self) -> Double
 pub fn Counters::custom_completed(Self) -> Unit
 pub fn Counters::custom_started(Self) -> Unit
+pub fn Counters::custom_time(Self) -> Double
 pub fn Counters::custom_time_ms(Self) -> Double
 pub fn Counters::default() -> Self
 pub fn Counters::disable(Self) -> Unit
@@ -126,6 +127,7 @@ pub fn Timer::pause(Self) -> Unit
 pub fn Timer::reset(Self) -> Unit
 pub fn Timer::resume_timer(Self) -> Unit
 pub fn Timer::start(Self) -> Unit
+pub fn Timer::time(Self) -> Double
 pub fn Timer::time_ms(Self) -> Double
 pub fn Timer::to_string(Self) -> String
 

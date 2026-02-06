@@ -958,6 +958,10 @@ pub struct PointProjection3 {
 pub fn PointProjection3::is_inside(Self) -> Bool
 pub fn PointProjection3::point(Self) -> @core.Vec3
 
+pub struct QueryDispatcher {
+}
+pub fn QueryDispatcher::new() -> Self
+
 pub struct QueryFilter {
   excluded_body : @dynamics.RigidBodyHandle?
   excluded_collider : ColliderHandle?
@@ -1033,6 +1037,7 @@ pub fn QueryFilterFlags::union(Self, Self) -> Self
 pub struct QueryPipeline {
   bvh : Bvh
   filter : QueryFilter
+  dispatcher : QueryDispatcher
 }
 pub fn QueryPipeline::cast_ray(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> (ColliderHandle, Float)?
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
@@ -1073,6 +1078,7 @@ pub fn QueryPipeline3DReal::with_filter(Self, QueryFilter3DReal) -> Self
 
 pub struct QueryPipelineMut {
   pipeline : QueryPipeline
+  dispatcher : QueryDispatcher
 }
 pub fn QueryPipelineMut::as_ref(Self) -> QueryPipeline
 pub fn QueryPipelineMut::new(QueryFilter, @dynamics.RigidBodySet, ColliderSet) -> Self

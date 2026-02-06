@@ -103,6 +103,11 @@ pub fn Counters::custom_time_ms(self : Counters) -> Double {
 }
 
 ///|
+pub fn Counters::custom_time(self : Counters) -> Double {
+  self.custom_time_ms()
+}
+
+///|
 pub fn Counters::set_nconstraints(self : Counters, n : Int) -> Unit {
   if self.enabled {
     self.solver.set_nconstraints(n)

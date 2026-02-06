@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/moon_rapier/rapier3d"
+
+import {
+  "Milky2018/moon_rapier/control",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @control {type DynamicRayCastVehicleController3DReal as DynamicRayCastVehicleController}
+
+pub using @control {type EffectiveMovement3DReal as EffectiveCharacterMovement}
+
+// Traits
+

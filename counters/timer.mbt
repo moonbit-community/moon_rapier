@@ -53,6 +53,11 @@ pub fn Timer::time_ms(self : Timer) -> Double {
 }
 
 ///|
+pub fn Timer::time(self : Timer) -> Double {
+  self.time_ms()
+}
+
+///|
 pub fn Timer::to_string(self : Timer) -> String {
   self.time_ms.to_string() + "ms"
 }

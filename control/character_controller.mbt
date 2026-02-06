@@ -169,6 +169,9 @@ pub struct EffectiveMovement {
 }
 
 ///|
+pub type EffectiveCharacterMovement = EffectiveMovement
+
+///|
 pub fn EffectiveMovement::translation(self : EffectiveMovement) -> @core.Vec2 {
   self.translation
 }

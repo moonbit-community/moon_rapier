@@ -239,6 +239,13 @@ pub fn DynamicRayCastVehicleController3DReal::wheels(
 }
 
 ///|
+pub fn DynamicRayCastVehicleController3DReal::wheels_mut(
+  self : DynamicRayCastVehicleController3DReal,
+) -> Array[Wheel3DReal] {
+  self.wheels
+}
+
+///|
 fn veh3d_real_axis_vec3(axis : Int) -> @core.Vec3 {
   if axis == 0 {
     @core.Vec3::new(1.0F, 0.0F, 0.0F)
