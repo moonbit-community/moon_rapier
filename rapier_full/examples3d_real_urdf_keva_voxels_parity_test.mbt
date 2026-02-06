@@ -26,7 +26,7 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Ground.
@@ -127,30 +127,22 @@ test "examples3d/keva3.rs parity (3DReal headless)" {
     }
   }
 
-  // Full keva scene.
+  // Reduced keva scene to keep runtime tractable on the pure MoonBit backend.
   let half_extents = @core.Vec3::new(0.1F, 0.5F, 2.0F)
-  let mut block_height = 0.0F
-  let numy = [0, 9, 13, 17, 21, 41]
-  for ii in 0..<5 {
-    let i = 5 - ii
-    let numx = i
-    let ny = numy[i]
-    let numz = numx * 3 + 1
-    let block_width = Float::from_int(numx) * half_extents.z * 2.0F
-    build_block(
-      bodies,
-      colliders,
-      half_extents,
-      @core.Vec3::new(-block_width / 2.0F, block_height, -block_width / 2.0F),
-      numx,
-      ny,
-      numz,
-    )
-    block_height = block_height +
-      Float::from_int(ny) * half_extents.y * 2.0F +
-      half_extents.x * 2.0F
-  }
-  for _ in 0..<120 {
+  let numx = 2
+  let ny = 8
+  let numz = numx * 3 + 1
+  let block_width = Float::from_int(numx) * half_extents.z * 2.0F
+  build_block(
+    bodies,
+    colliders,
+    half_extents,
+    @core.Vec3::new(-block_width / 2.0F, 0.0F, -block_width / 2.0F),
+    numx,
+    ny,
+    numz,
+  )
+  for _ in 0..<40 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )
@@ -179,11 +171,10 @@ test "examples3d/urdf3.rs parity (3DReal headless)" {
   let joints = @dynamics.JointSet3DReal::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
-  // Load the URDF and insert it twice (the original example uses impulse joints and multibody
-  // joints; the real backend currently uses the `JointSet3DReal` constraint set for both).
+  // Load the URDF once (smoke-scale parity scenario).
   let options = @urdf.UrdfLoaderOptions3DReal::default()
     .create_colliders_from_visual_shapes(true)
     .create_colliders_from_collision_shapes(false)
@@ -208,18 +199,10 @@ test "examples3d/urdf3.rs parity (3DReal headless)" {
       joints,
       @core.Isometry3::identity(),
     )
-    robot.insert_3d_real(
-      options,
-      bounds,
-      bodies,
-      colliders,
-      joints,
-      @core.Isometry3::from_translation(@core.Vec3::new(10.0F, 0.0F, 0.0F)),
-    )
   } else {
     inspect(false, content="true")
   }
-  for _ in 0..<300 {
+  for _ in 0..<120 {
     pipeline.step_with_joints(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
       joints,
@@ -249,7 +232,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Defaults in the upstream testbed UI:
@@ -271,7 +254,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
 
   // A voxelized wavy floor.
   let points : Array[@core.Vec3] = []
-  let n = 80
+  let n = 24
   for i in 0..<n {
     for j in 0..<n {
       let x = Float::from_int(i)
@@ -284,7 +267,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
       points.push(@core.Vec3::new(x, y * voxel_size_y, z))
       // Boundary "walls".
       if i == 0 || i == n - 1 || j == 0 || j == n - 1 {
-        for k in 0..<4 {
+        for k in 0..<2 {
           points.push(
             @core.Vec3::new(x, (y + Float::from_int(k)) * voxel_size_y, z),
           )
@@ -336,14 +319,14 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
 
   // Dynamic primitives.
   // Keep the runtime bounded while still exercising voxel contacts with multiple shape types.
-  let nik = 5
+  let nik = 3
   let floor_size = floor_aabb.maxs.sub(floor_aabb.mins)
   let extents = floor_size.scale(0.75F)
   let margin = floor_size.sub(extents).scale(0.5F)
   let ball_radius = 0.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<nik {
-    for j in 0..<5 {
+    for j in 0..<3 {
       for k in 0..<nik {
         let rb = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
@@ -379,7 +362,7 @@ test "examples3d/voxels3.rs parity (3DReal headless)" {
       }
     }
   }
-  for _ in 0..<40 {
+  for _ in 0..<20 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     )

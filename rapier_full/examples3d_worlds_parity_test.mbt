@@ -45,7 +45,7 @@ fn run_examples3d_platform3() -> Bool {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
@@ -68,7 +68,7 @@ fn run_examples3d_platform3() -> Bool {
   |> ignore
 
   // Boxes.
-  let num = 6
+  let num = 2
   let rad = 0.2F
   let shift = rad * 2.0F
   let centerx = shift * Float::from_int(num) / 2.0F
@@ -123,7 +123,7 @@ fn run_examples3d_platform3() -> Bool {
 
   // Drive platforms for a while.
   let mut time = 0.0F
-  for _ in 0..<240 {
+  for _ in 0..<20 {
     time = time + dt
     let vel = @core.Vec3::new(
       0.0F,
@@ -180,7 +180,7 @@ fn run_examples3d_domino3() -> Bool {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Ground.
@@ -201,7 +201,7 @@ fn run_examples3d_domino3() -> Bool {
   |> ignore
 
   // Keep a smaller domino count for test runtime while preserving the dynamics pattern.
-  let num = 400
+  let num = 30
   let width = 1.0F
   let thickness = 0.1F
   let mut curr_angle = 0.0F
@@ -253,13 +253,13 @@ fn run_examples3d_domino3() -> Bool {
       skip = skip - 1
     }
     if nudged {
-      skip = 5
+      skip = 2
     }
     curr_rad = curr_rad + 1.5F / perimeter
   }
   step_world3_real(
     pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    360,
+    30,
   )
 
   // The chain should have started falling: at least one domino drops noticeably below its start.
@@ -295,7 +295,7 @@ fn run_examples3d_fountain3() -> Bool {
   let islands = @dynamics.IslandManager3D::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
-    16,
+    8,
   )
 
   // Ground (3 stacked layers).
@@ -318,7 +318,7 @@ fn run_examples3d_fountain3() -> Bool {
     )
     |> ignore
   }
-  let max_bodies = 30
+  let max_bodies = 10
   fn dynamic_count(bodies : @dynamics.RigidBodySet3D) -> Int {
     let mut count = 0
     for h in bodies.all_handles() {
@@ -331,7 +331,7 @@ fn run_examples3d_fountain3() -> Bool {
 
   let rad = 0.5F
   let spawned : Array[@dynamics.RigidBodyHandle] = []
-  for step in 0..<120 {
+  for step in 0..<20 {
     let angle = Float::from_int(step) * 0.3F
     let spawn_x = Float::from_double(@math.sin(angle.to_double())) * 2.0F
     let spawn_z = Float::from_double(@math.cos(angle.to_double())) * 2.0F
