@@ -35,7 +35,7 @@ fn step_world3_real(
 }
 
 ///|
-fn run_examples3d_platform3() -> Bool {
+fn run_examples3d_platform3(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/platform3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -123,7 +123,8 @@ fn run_examples3d_platform3() -> Bool {
 
   // Drive platforms for a while.
   let mut time = 0.0F
-  for _ in 0..<20 {
+  let platform_steps = if heavy { 30 } else { 20 }
+  for _ in 0..<platform_steps {
     time = time + dt
     let vel = @core.Vec3::new(
       0.0F,
@@ -170,7 +171,7 @@ fn run_examples3d_platform3() -> Bool {
 }
 
 ///|
-fn run_examples3d_domino3() -> Bool {
+fn run_examples3d_domino3(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/domino3.rs` (headless).
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -201,7 +202,7 @@ fn run_examples3d_domino3() -> Bool {
   |> ignore
 
   // Keep a smaller domino count for test runtime while preserving the dynamics pattern.
-  let num = 30
+  let num = if heavy { 60 } else { 30 }
   let width = 1.0F
   let thickness = 0.1F
   let mut curr_angle = 0.0F
@@ -253,13 +254,24 @@ fn run_examples3d_domino3() -> Bool {
       skip = skip - 1
     }
     if nudged {
-      skip = 2
+      skip = if heavy { 3 } else { 2 }
     }
     curr_rad = curr_rad + 1.5F / perimeter
   }
   step_world3_real(
-    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
-    30,
+    pipeline,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    if heavy {
+      60
+    } else {
+      30
+    },
   )
 
   // The chain should have started falling: at least one domino drops noticeably below its start.
@@ -282,7 +294,7 @@ fn run_examples3d_domino3() -> Bool {
 }
 
 ///|
-fn run_examples3d_fountain3() -> Bool {
+fn run_examples3d_fountain3(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/fountain3.rs` (headless).
   //
   // Upstream spawns round cylinders + cones + cuboids and removes bodies when the count exceeds a
@@ -318,7 +330,7 @@ fn run_examples3d_fountain3() -> Bool {
     )
     |> ignore
   }
-  let max_bodies = 10
+  let max_bodies = if heavy { 14 } else { 10 }
   fn dynamic_count(bodies : @dynamics.RigidBodySet3D) -> Int {
     let mut count = 0
     for h in bodies.all_handles() {
@@ -331,7 +343,7 @@ fn run_examples3d_fountain3() -> Bool {
 
   let rad = 0.5F
   let spawned : Array[@dynamics.RigidBodyHandle] = []
-  for step in 0..<20 {
+  for step in 0..<(if heavy { 40 } else { 20 }) {
     let angle = Float::from_int(step) * 0.3F
     let spawn_x = Float::from_double(@math.sin(angle.to_double())) * 2.0F
     let spawn_z = Float::from_double(@math.cos(angle.to_double())) * 2.0F
@@ -413,15 +425,33 @@ fn run_examples3d_fountain3() -> Bool {
 
 ///|
 test "examples3d/platform3.rs parity (headless)" {
-  inspect(run_examples3d_platform3(), content="true")
+  inspect(run_examples3d_platform3(false), content="true")
 }
 
 ///|
 test "examples3d/domino3.rs parity (headless)" {
-  inspect(run_examples3d_domino3(), content="true")
+  inspect(run_examples3d_domino3(false), content="true")
 }
 
 ///|
 test "examples3d/fountain3.rs parity (headless)" {
-  inspect(run_examples3d_fountain3(), content="true")
+  inspect(run_examples3d_fountain3(false), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/platform3.rs parity (headless)" {
+  inspect(run_examples3d_platform3(true), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/domino3.rs parity (headless)" {
+  inspect(run_examples3d_domino3(true), content="true")
+}
+
+///|
+#skip("heavy parity profile; run with --include-skipped")
+test "HEAVY examples3d/fountain3.rs parity (headless)" {
+  inspect(run_examples3d_fountain3(true), content="true")
 }
