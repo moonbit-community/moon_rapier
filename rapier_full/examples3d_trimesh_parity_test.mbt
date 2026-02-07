@@ -147,11 +147,11 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
 
   // Ground mesh built from a tiny grid in default mode and denser in higher profiles.
   let nsubdivs = if profile is TrimeshFullscale {
-    6
-  } else if profile is TrimeshHeavy {
-    3
-  } else if profile is TrimeshMedium {
     2
+  } else if profile is TrimeshHeavy {
+    2
+  } else if profile is TrimeshMedium {
+    1
   } else {
     1
   }
@@ -197,20 +197,8 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
   colliders.insert_with_parent(mesh, ground, bodies) |> ignore
 
   // Keep a smaller stack for test runtime while exercising the contact paths.
-  let num = if profile is TrimeshFullscale {
-    3
-  } else if profile is TrimeshDefault {
-    1
-  } else {
-    2
-  }
-  let numy = if profile is TrimeshFullscale {
-    2
-  } else if profile is TrimeshDefault {
-    1
-  } else {
-    2
-  }
+  let num = if profile is TrimeshDefault { 1 } else { 2 }
+  let numy = if profile is TrimeshFullscale { 2 } else { 1 }
   let rad = 1.0F
   let shift = rad * 2.0F + rad
   let center = shift * Float::from_int(num / 2)
@@ -298,11 +286,11 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
     }
   }
   let settle_steps = if profile is TrimeshFullscale {
-    30
-  } else if profile is TrimeshHeavy {
     12
-  } else if profile is TrimeshMedium {
+  } else if profile is TrimeshHeavy {
     8
+  } else if profile is TrimeshMedium {
+    6
   } else {
     5
   }

@@ -27,13 +27,53 @@ if [[ "$PROFILE_UPPER" != "MEDIUM" && "$PROFILE_UPPER" != "HEAVY" && "$PROFILE_U
   exit 1
 fi
 
+case "$PROFILE_UPPER" in
+  MEDIUM)
+    SCENARIO_BUDGET_SEC="${RAPIER_FULL_SCENARIO_BUDGET_SEC:-90}"
+    TOTAL_BUDGET_SEC="${RAPIER_FULL_TOTAL_BUDGET_SEC:-180}"
+    ;;
+  HEAVY)
+    SCENARIO_BUDGET_SEC="${RAPIER_FULL_SCENARIO_BUDGET_SEC:-120}"
+    TOTAL_BUDGET_SEC="${RAPIER_FULL_TOTAL_BUDGET_SEC:-300}"
+    ;;
+  FULLSCALE)
+    SCENARIO_BUDGET_SEC="${RAPIER_FULL_SCENARIO_BUDGET_SEC:-180}"
+    TOTAL_BUDGET_SEC="${RAPIER_FULL_TOTAL_BUDGET_SEC:-360}"
+    ;;
+esac
+
+TOTAL_REAL_SEC="0"
+
+if [[ "${RAPIER_FULL_SKIP_WARMUP:-0}" != "1" ]]; then
+  echo "==> WARMUP native build (excluded from runtime budget)" | tee -a "$LOG_FILE"
+  moon test --frozen --release --target native \
+    -p rapier_full -f "examples3d_trimesh_parity_test.mbt" \
+    -F "examples3d/trimesh3.rs parity*" \
+    2>&1 | tee -a "$LOG_FILE"
+  echo | tee -a "$LOG_FILE"
+fi
+
 run_file() {
   local file="$1"
   local filter="$2"
+  local tmp
+  local real_sec
   echo "==> ${PROFILE_UPPER} ${file} (${filter})" | tee -a "$LOG_FILE"
+  tmp="$(mktemp)"
   /usr/bin/time -p moon test --frozen --release --target native \
     --include-skipped -p rapier_full -f "$file" -F "$filter" \
-    2>&1 | tee -a "$LOG_FILE"
+    2>&1 | tee -a "$LOG_FILE" | tee "$tmp"
+  real_sec="$(awk '/^real / { print $2 }' "$tmp" | tail -n1)"
+  rm -f "$tmp"
+  if [[ -z "$real_sec" ]]; then
+    echo "Failed to parse runtime for ${file}" | tee -a "$LOG_FILE"
+    exit 1
+  fi
+  TOTAL_REAL_SEC="$(awk "BEGIN { printf \"%.2f\", ${TOTAL_REAL_SEC} + ${real_sec} }")"
+  if awk "BEGIN { exit !(${real_sec} > ${SCENARIO_BUDGET_SEC}) }"; then
+    echo "Runtime budget exceeded for ${file}: real=${real_sec}s, budget=${SCENARIO_BUDGET_SEC}s" | tee -a "$LOG_FILE"
+    exit 1
+  fi
   echo | tee -a "$LOG_FILE"
 }
 
@@ -46,5 +86,10 @@ fi
 
 run_file "examples3d_trimesh_parity_test.mbt" "${PROFILE_UPPER} examples3d/trimesh3.rs*"
 run_file "examples3d_worlds_parity_test.mbt" "${PROFILE_UPPER} examples3d/domino3.rs*"
+
+if awk "BEGIN { exit !(${TOTAL_REAL_SEC} > ${TOTAL_BUDGET_SEC}) }"; then
+  echo "Total runtime budget exceeded: total=${TOTAL_REAL_SEC}s, budget=${TOTAL_BUDGET_SEC}s" | tee -a "$LOG_FILE"
+  exit 1
+fi
 
 echo "${PROFILE_UPPER}_GATE_DONE" | tee -a "$LOG_FILE"

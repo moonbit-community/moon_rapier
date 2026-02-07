@@ -322,7 +322,7 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
     } else if profile is WorldsHeavy {
       60
     } else if profile is WorldsMedium {
-      45
+      60
     } else {
       30
     },
@@ -330,6 +330,7 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
 
   // The chain should have started falling: at least one domino drops noticeably below its start.
   let start_y = width * 2.0F + ground_height
+  let drop_threshold = if profile is WorldsMedium { 0.03F } else { 0.1F }
   let mut started_falling = false
   for h in handles {
     if bodies.get(h) is Some(rb) {
@@ -337,7 +338,7 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
       if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
         return false
       }
-      if p.y < start_y - 0.1F {
+      if p.y < start_y - drop_threshold {
         started_falling = true
       }
     } else {

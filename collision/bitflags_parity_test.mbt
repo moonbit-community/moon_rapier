@@ -69,10 +69,15 @@ test "QueryFilterFlags bitflags parity helpers" {
     QueryFilterFlags::from_name("EXCLUDE_SOLIDS") is Some(_),
     content="true",
   )
-
   let bodies = @dynamics.RigidBodySet::new()
   let sensor = ColliderBuilder::ball(0.2F).sensor(true).build()
   let solid = ColliderBuilder::ball(0.2F).sensor(false).build()
-  inspect(QueryFilterFlags::exclude_sensors().passes(bodies, sensor), content="false")
-  inspect(QueryFilterFlags::exclude_sensors().passes(bodies, solid), content="true")
+  inspect(
+    QueryFilterFlags::exclude_sensors().passes(bodies, sensor),
+    content="false",
+  )
+  inspect(
+    QueryFilterFlags::exclude_sensors().passes(bodies, solid),
+    content="true",
+  )
 }
