@@ -121,8 +121,9 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
     inspect(false, content="true")
   }
   let qp = QueryPipeline3DReal::new(
-    QueryFilter3DReal::new().predicate((_, co) => co.voxel_key_for_triangle(0)
-      is Some(_)),
+    QueryFilter3DReal::new().predicate((_, co) => {
+      co.voxel_key_for_triangle(0) is Some(_)
+    }),
     bodies,
     colliders,
   )
@@ -184,8 +185,9 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
     @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
   }
   let qp = QueryPipeline3DReal::new(
-    QueryFilter3DReal::new().predicate((_, co) => co.voxel_key_for_triangle(0)
-      is Some(_)),
+    QueryFilter3DReal::new().predicate((_, co) => {
+      co.voxel_key_for_triangle(0) is Some(_)
+    }),
     bodies,
     colliders,
   )

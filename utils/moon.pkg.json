@@ -1,8 +1,0 @@
-{
-  "import": [
-    "Milky2018/moon_rapier/core"
-  ],
-  "test-import": [
-    "Milky2018/moon_rapier/core"
-  ]
-}

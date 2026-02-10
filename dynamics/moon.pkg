@@ -1,0 +1,10 @@
+import {
+  "Milky2018/moon_rapier/core",
+  "moonbitlang/core/uint64",
+  "moonbitlang/core/strconv",
+}
+
+import {
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/collision",
+} for "test"

@@ -1,0 +1,18 @@
+import {
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
+  "moonbitlang/core/math",
+}
+
+import {
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/urdf",
+  "Milky2018/moon_rapier/control",
+  "Milky2018/moon_rapier/pipeline",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/math",
+} for "test"

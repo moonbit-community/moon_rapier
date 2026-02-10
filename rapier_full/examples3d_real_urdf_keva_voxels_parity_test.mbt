@@ -331,10 +331,9 @@ fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
   // Basic raycast sanity on the voxel collider (before adding dynamic bodies, to avoid accidental
   // hits on corner-touching boxes).
   let qp0 = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new().predicate((_, co) => co.voxel_key_for_triangle(
-        0,
-      )
-      is Some(_)),
+    @collision.QueryFilter3DReal::new().predicate((_, co) => {
+      co.voxel_key_for_triangle(0) is Some(_)
+    }),
     bodies,
     colliders,
   )

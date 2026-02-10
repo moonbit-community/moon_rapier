@@ -1,0 +1,16 @@
+import {
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/counters",
+  "Milky2018/moon_rapier/dynamics",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/math",
+}
+
+import {
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/collision",
+  "Milky2018/moon_rapier/dynamics",
+  "moonbitlang/core/hashmap",
+  "moonbitlang/core/math",
+} for "test"
