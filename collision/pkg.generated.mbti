@@ -322,14 +322,18 @@ pub struct Collider3D {
   mut surface_velocity : @core.Vec3
   mut one_way_offset : Float?
   mut one_way_direction : Int
-  active_events : ActiveEvents
+  mut active_collision_types : ActiveCollisionTypes
+  mut active_hooks : ActiveHooks
+  mut active_events : ActiveEvents
   mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
   collision_groups : @dynamics.InteractionGroups
   friction : Float
   restitution : Float
 }
+pub fn Collider3D::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider3D::active_events(Self) -> ActiveEvents
+pub fn Collider3D::active_hooks(Self) -> ActiveHooks
 pub fn Collider3D::clear_one_way(Self) -> Unit
 pub fn Collider3D::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
@@ -343,6 +347,9 @@ pub fn Collider3D::one_way(Self) -> (Float, Int)?
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
 pub fn Collider3D::restitution(Self) -> Float
+pub fn Collider3D::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
+pub fn Collider3D::set_active_events(Self, ActiveEvents) -> Self
+pub fn Collider3D::set_active_hooks(Self, ActiveHooks) -> Self
 pub fn Collider3D::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
@@ -472,6 +479,8 @@ pub struct ColliderBuilder3D {
   mut surface_velocity : @core.Vec3
   mut one_way_offset : Float?
   mut one_way_direction : Int
+  mut active_collision_types : ActiveCollisionTypes
+  mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
   mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
@@ -479,7 +488,9 @@ pub struct ColliderBuilder3D {
   mut friction : Float
   mut restitution : Float
 }
+pub fn ColliderBuilder3D::active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn ColliderBuilder3D::active_events(Self, ActiveEvents) -> Self
+pub fn ColliderBuilder3D::active_hooks(Self, ActiveHooks) -> Self
 pub fn ColliderBuilder3D::ball(Float) -> Self
 pub fn ColliderBuilder3D::build(Self) -> Collider3D
 pub fn ColliderBuilder3D::capsule_x(Float, Float) -> Self

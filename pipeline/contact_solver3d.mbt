@@ -206,9 +206,19 @@ pub fn solve_contacts_3d(
     fallback_normal : @core.Vec3,
   ) -> (Bool, @core.Vec3?) {
     if physics_hooks is Some(hooks) {
-      hooks.modify_solver_contacts_internal(
-        bodies, colliders, collider1, collider2, fallback_normal,
-      )
+      if colliders.get(collider1) is Some(c1) &&
+        colliders.get(collider2) is Some(c2) {
+        let hook = @collision.ActiveHooks::modify_solver_contacts()
+        if c1.active_hooks().contains(hook) || c2.active_hooks().contains(hook) {
+          hooks.modify_solver_contacts_internal(
+            bodies, colliders, collider1, collider2, fallback_normal,
+          )
+        } else {
+          (true, None)
+        }
+      } else {
+        (true, None)
+      }
     } else {
       (true, None)
     }

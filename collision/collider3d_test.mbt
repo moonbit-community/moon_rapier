@@ -86,3 +86,45 @@ test "collider3d user_data128 stored on build" {
   let co = ColliderBuilder3D::ball(0.5F).user_data128(data).build()
   inspect(co.user_data128().equals(data), content="true")
 }
+
+///|
+test "collider3d exposes active hooks/collision types APIs" {
+  let co = ColliderBuilder3D::ball(0.5F)
+    .active_events(ActiveEvents::collision_events())
+    .active_collision_types(ActiveCollisionTypes::all())
+    .active_hooks(ActiveHooks::filter_contact_pairs())
+    .build()
+  inspect(
+    co.active_events().contains(ActiveEvents::collision_events()),
+    content="true",
+  )
+  inspect(
+    co.active_collision_types().equals(ActiveCollisionTypes::all()),
+    content="true",
+  )
+  inspect(
+    co.active_hooks().contains(ActiveHooks::filter_contact_pairs()),
+    content="true",
+  )
+}
+
+///|
+test "collider3d active flags setters update values" {
+  let co = ColliderBuilder3D::ball(0.5F).build()
+  co.set_active_events(ActiveEvents::collision_events()) |> ignore
+  co.set_active_collision_types(ActiveCollisionTypes::all()) |> ignore
+  co.set_active_hooks(ActiveHooks::modify_solver_contacts()) |> ignore
+
+  inspect(
+    co.active_events().contains(ActiveEvents::collision_events()),
+    content="true",
+  )
+  inspect(
+    co.active_collision_types().equals(ActiveCollisionTypes::all()),
+    content="true",
+  )
+  inspect(
+    co.active_hooks().contains(ActiveHooks::modify_solver_contacts()),
+    content="true",
+  )
+}

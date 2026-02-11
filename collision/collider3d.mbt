@@ -355,7 +355,9 @@ pub struct Collider3D {
   mut surface_velocity : @core.Vec3
   mut one_way_offset : @core.Real?
   mut one_way_direction : Int // 1 = allow from above, -1 = allow from below, 0 = disabled
-  active_events : ActiveEvents
+  mut active_collision_types : ActiveCollisionTypes
+  mut active_hooks : ActiveHooks
+  mut active_events : ActiveEvents
   mut contact_force_event_threshold : @core.Real
   mut user_data : @core.UserData128
   collision_groups : @dynamics.InteractionGroups
@@ -487,6 +489,45 @@ pub fn Collider3D::active_events(self : Collider3D) -> ActiveEvents {
 }
 
 ///|
+pub fn Collider3D::set_active_events(
+  self : Collider3D,
+  active_events : ActiveEvents,
+) -> Collider3D {
+  self.active_events = active_events
+  self
+}
+
+///|
+pub fn Collider3D::active_collision_types(
+  self : Collider3D,
+) -> ActiveCollisionTypes {
+  self.active_collision_types
+}
+
+///|
+pub fn Collider3D::set_active_collision_types(
+  self : Collider3D,
+  types : ActiveCollisionTypes,
+) -> Collider3D {
+  self.active_collision_types = types
+  self
+}
+
+///|
+pub fn Collider3D::active_hooks(self : Collider3D) -> ActiveHooks {
+  self.active_hooks
+}
+
+///|
+pub fn Collider3D::set_active_hooks(
+  self : Collider3D,
+  hooks : ActiveHooks,
+) -> Collider3D {
+  self.active_hooks = hooks
+  self
+}
+
+///|
 pub fn Collider3D::contact_force_event_threshold(
   self : Collider3D,
 ) -> @core.Real {
@@ -580,6 +621,8 @@ pub struct ColliderBuilder3D {
   mut surface_velocity : @core.Vec3
   mut one_way_offset : @core.Real?
   mut one_way_direction : Int
+  mut active_collision_types : ActiveCollisionTypes
+  mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
   mut contact_force_event_threshold : @core.Real
   mut user_data : @core.UserData128
@@ -601,6 +644,8 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -627,6 +672,8 @@ pub fn ColliderBuilder3D::cuboid(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -652,6 +699,8 @@ pub fn ColliderBuilder3D::capsule_y(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -698,6 +747,8 @@ pub fn ColliderBuilder3D::cylinder(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -724,6 +775,8 @@ pub fn ColliderBuilder3D::round_cylinder(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -749,6 +802,8 @@ pub fn ColliderBuilder3D::cone(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -782,6 +837,8 @@ pub fn ColliderBuilder3D::halfspace(normal : @core.Vec3) -> ColliderBuilder3D {
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -808,6 +865,8 @@ pub fn ColliderBuilder3D::triangle(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -862,6 +921,8 @@ pub fn ColliderBuilder3D::trimesh(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -922,6 +983,8 @@ pub fn ColliderBuilder3D::compound(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -958,6 +1021,8 @@ pub fn ColliderBuilder3D::round_convex_hull(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -1116,6 +1181,8 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       surface_velocity: @core.Vec3::zero(),
       one_way_offset: None,
       one_way_direction: 0,
+      active_collision_types: ActiveCollisionTypes::default(),
+      active_hooks: ActiveHooks::empty(),
       active_events: ActiveEvents::empty(),
       contact_force_event_threshold: 0.0F,
       user_data: @core.UserData128::zero(),
@@ -1338,6 +1405,8 @@ pub fn ColliderBuilder3D::voxels_from_points(
     surface_velocity: @core.Vec3::zero(),
     one_way_offset: None,
     one_way_direction: 0,
+    active_collision_types: ActiveCollisionTypes::default(),
+    active_hooks: ActiveHooks::empty(),
     active_events: ActiveEvents::empty(),
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -1413,6 +1482,8 @@ fn heightfield_impl(
           surface_velocity: @core.Vec3::zero(),
           one_way_offset: None,
           one_way_direction: 0,
+          active_collision_types: ActiveCollisionTypes::default(),
+          active_hooks: ActiveHooks::empty(),
           active_events: ActiveEvents::empty(),
           contact_force_event_threshold: 0.0F,
           user_data: @core.UserData128::zero(),
@@ -1531,6 +1602,24 @@ pub fn ColliderBuilder3D::active_events(
 }
 
 ///|
+pub fn ColliderBuilder3D::active_collision_types(
+  self : ColliderBuilder3D,
+  types : ActiveCollisionTypes,
+) -> ColliderBuilder3D {
+  self.active_collision_types = types
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::active_hooks(
+  self : ColliderBuilder3D,
+  hooks : ActiveHooks,
+) -> ColliderBuilder3D {
+  self.active_hooks = hooks
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::contact_force_event_threshold(
   self : ColliderBuilder3D,
   threshold : @core.Real,
@@ -1606,6 +1695,8 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     surface_velocity: self.surface_velocity,
     one_way_offset: self.one_way_offset,
     one_way_direction: self.one_way_direction,
+    active_collision_types: self.active_collision_types,
+    active_hooks: self.active_hooks,
     active_events: self.active_events,
     contact_force_event_threshold: self.contact_force_event_threshold,
     user_data: self.user_data,

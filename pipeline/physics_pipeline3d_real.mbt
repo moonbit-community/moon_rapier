@@ -574,9 +574,21 @@ fn filter_broad_phase_pairs_3d(
       }
       if hooks is Some(physics_hooks) {
         let keep = if co1.is_sensor() || co2.is_sensor() {
-          physics_hooks.test_intersection_pair(bodies, colliders, c1, c2)
+          let hook = @collision.ActiveHooks::filter_intersection_pair()
+          if co1.active_hooks().contains(hook) ||
+            co2.active_hooks().contains(hook) {
+            physics_hooks.test_intersection_pair(bodies, colliders, c1, c2)
+          } else {
+            true
+          }
         } else {
-          physics_hooks.test_contact_pair(bodies, colliders, c1, c2)
+          let hook = @collision.ActiveHooks::filter_contact_pairs()
+          if co1.active_hooks().contains(hook) ||
+            co2.active_hooks().contains(hook) {
+            physics_hooks.test_contact_pair(bodies, colliders, c1, c2)
+          } else {
+            true
+          }
         }
         if !keep {
           continue
