@@ -45,10 +45,8 @@ esac
 TOTAL_REAL_SEC="0"
 
 if [[ "${RAPIER_FULL_SKIP_WARMUP:-0}" != "1" ]]; then
-  echo "==> WARMUP native build (excluded from runtime budget)" | tee -a "$LOG_FILE"
-  moon test --frozen --release --target native \
-    -p rapier_full -f "examples3d_trimesh_parity_test.mbt" \
-    -F "examples3d/trimesh3.rs parity*" \
+  echo "==> WARMUP native release build (excluded from runtime budget)" | tee -a "$LOG_FILE"
+  moon build --frozen --release --target native rapier_full \
     2>&1 | tee -a "$LOG_FILE"
   echo | tee -a "$LOG_FILE"
 fi

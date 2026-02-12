@@ -10,6 +10,9 @@ This document defines the current runtime profiles for selected parity tests in 
 
 ## Running profiles
 
+- Build behavior update:
+  - `moon build` now defaults to debug output.
+  - Any script requiring optimized binaries must use `moon build --release`.
 - Default profile (fast):
   - `moon test --frozen --release --target native -p rapier_full`
 - Tiered profile gate (opt-in):
@@ -24,7 +27,8 @@ This document defines the current runtime profiles for selected parity tests in 
   - Budget overrides:
     - `RAPIER_FULL_SCENARIO_BUDGET_SEC=<seconds>`
     - `RAPIER_FULL_TOTAL_BUDGET_SEC=<seconds>`
-  - Native warmup (excluded from budget) is enabled by default; disable with:
+  - Native warmup uses `moon build --frozen --release --target native rapier_full`
+    (excluded from budget); disable with:
     - `RAPIER_FULL_SKIP_WARMUP=1`
 
 ## Profile matrix
