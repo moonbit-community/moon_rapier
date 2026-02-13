@@ -11,6 +11,7 @@
 #
 # Usage:
 #   python3 tools/rapier_pub_audit.py run
+#   python3 tools/rapier_pub_audit.py run-f64
 #
 # Outputs (by default) under _build/rapier_pub_audit/ (gitignored).
 
@@ -108,21 +109,21 @@ def _parse_mapping_toml(path: pathlib.Path) -> Tuple[Dict[str, List[str]], Dict[
     return mapping, ignore
 
 
-def _rustdoc_json_path(rapier_ref: pathlib.Path, crate: str) -> pathlib.Path:
-    return rapier_ref / "target" / "doc" / f"{crate}.json"
+def _rustdoc_json_path(rapier_ref: pathlib.Path, crate_name: str) -> pathlib.Path:
+    return rapier_ref / "target" / "doc" / f"{crate_name}.json"
 
 
-def build_rustdoc_json(rapier_ref: pathlib.Path, crate: str) -> pathlib.Path:
+def build_rustdoc_json(rapier_ref: pathlib.Path, package: str, crate_name: str) -> pathlib.Path:
     # rustdoc JSON is still "unstable options" on stable toolchains.
     # RUSTC_BOOTSTRAP=1 enables -Z for local auditing purposes.
     env = dict(os.environ)
     env["RUSTC_BOOTSTRAP"] = "1"
     _run(
-        ["cargo", "rustdoc", "-p", crate, "--", "-Z", "unstable-options", "--output-format", "json"],
+        ["cargo", "rustdoc", "-p", package, "--", "-Z", "unstable-options", "--output-format", "json"],
         cwd=rapier_ref,
         env=env,
     )
-    out = _rustdoc_json_path(rapier_ref, crate)
+    out = _rustdoc_json_path(rapier_ref, crate_name)
     if not out.exists():
         raise FileNotFoundError(f"rustdoc JSON not found at {out}")
     return out
@@ -459,9 +460,8 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
     return {"exports": exports_sorted}
 
 
-def report_missing(
-    rapier2d: Dict[str, Any],
-    rapier3d: Dict[str, Any],
+def report_missing_multi(
+    rapiers: Dict[str, Dict[str, Any]],
     moon: Dict[str, Any],
     mapping_path: pathlib.Path,
 ) -> Dict[str, Any]:
@@ -471,15 +471,33 @@ def report_missing(
     moon_names: Set[str] = set(e["symbol"].split("::")[-1] for e in moon["exports"])
     moon_norm_names: Set[str] = set(_normalize_name(n) for n in moon_names)
 
+    def mapping_keys_for(path: str) -> List[str]:
+        keys = [path]
+        keys.extend(
+            path.replace(prefix, repl, 1)
+            for prefix, repl in (
+                ("rapier2d_f64::", "rapier2d::"),
+                ("rapier3d_f64::", "rapier3d::"),
+                ("rapier2d::", "rapier2d_f64::"),
+                ("rapier3d::", "rapier3d_f64::"),
+            )
+            if path.startswith(prefix)
+        )
+        # Preserve order, remove duplicates.
+        return list(dict.fromkeys(keys))
+
     def is_covered(rust_path: str) -> Tuple[bool, str]:
-        if rust_path in ignore:
+        alias_keys = mapping_keys_for(rust_path)
+
+        if any(key in ignore for key in alias_keys):
             return True, "ignored"
-        mapped = mapping.get(rust_path)
-        if mapped:
-            for s in mapped:
-                if s in moon_syms:
-                    return True, "mapped"
-            return False, "mapped-missing"
+        for key in alias_keys:
+            mapped = mapping.get(key)
+            if mapped:
+                for s in mapped:
+                    if s in moon_syms:
+                        return True, "mapped"
+                return False, "mapped-missing"
         # Heuristic match (names only).
         last = rust_path.split("::")[-1]
         if last in moon_names or _normalize_name(last) in moon_norm_names:
@@ -518,13 +536,53 @@ def report_missing(
             missing_by_bucket[b] = sorted(missing_by_bucket[b], key=lambda x: (x["kind"], x["path"]))
         return {"totals": totals, "missing_by_bucket": missing_by_bucket}
 
-    return {
-        "rapier2d": summarize(rapier2d),
-        "rapier3d": summarize(rapier3d),
+    out: Dict[str, Any] = {
         "mapping_file": str(mapping_path.relative_to(ROOT)) if mapping_path.exists() else str(mapping_path),
         "ignored_count": len(ignore),
         "mapped_count": len(mapping),
     }
+    for label, rapier in sorted(rapiers.items(), key=lambda kv: kv[0]):
+        out[label] = summarize(rapier)
+    return out
+
+
+def report_missing(
+    rapier2d: Dict[str, Any],
+    rapier3d: Dict[str, Any],
+    moon: Dict[str, Any],
+    mapping_path: pathlib.Path,
+) -> Dict[str, Any]:
+    return report_missing_multi({"rapier2d": rapier2d, "rapier3d": rapier3d}, moon, mapping_path)
+
+
+def _run_audit(
+    *,
+    outdir: pathlib.Path,
+    rapier_ref: pathlib.Path,
+    mapping: pathlib.Path,
+    crates: List[Tuple[str, str, str]],
+) -> int:
+    # crates: (cargo_package, crate_name, report_label)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    rapier_surfaces: Dict[str, Dict[str, Any]] = {}
+    for package, crate_name, label in crates:
+        rustdoc_json = build_rustdoc_json(rapier_ref, package, crate_name)
+        rapier_surfaces[label] = extract_rapier_pub_surface(rustdoc_json, crate_name)
+
+    moon = extract_moon_exports(ROOT)
+    rep = report_missing_multi(rapier_surfaces, moon, mapping)
+
+    for label, surface in sorted(rapier_surfaces.items(), key=lambda kv: kv[0]):
+        _write_json(outdir / f"{label}_pub.json", surface)
+    _write_json(outdir / "moon_exports.json", moon)
+    _write_json(outdir / "report.json", rep)
+
+    for label in sorted(rapier_surfaces.keys()):
+        t = rep[label]["totals"]
+        _eprint(f"{label}: items={t['items']} covered={t['covered']} missing={t['missing']}")
+    _eprint(f"wrote: {outdir}")
+    return 0
 
 
 def cmd_run(args: argparse.Namespace) -> int:
@@ -536,27 +594,35 @@ def cmd_run(args: argparse.Namespace) -> int:
         _eprint(f"error: rapier-reference not found at {rapier_ref}")
         return 2
 
-    outdir.mkdir(parents=True, exist_ok=True)
+    return _run_audit(
+        outdir=outdir,
+        rapier_ref=rapier_ref,
+        mapping=mapping,
+        crates=[
+            ("rapier2d", "rapier2d", "rapier2d"),
+            ("rapier3d", "rapier3d", "rapier3d"),
+        ],
+    )
 
-    rapier2d_json = build_rustdoc_json(rapier_ref, "rapier2d")
-    rapier3d_json = build_rustdoc_json(rapier_ref, "rapier3d")
 
-    rapier2d = extract_rapier_pub_surface(rapier2d_json, "rapier2d")
-    rapier3d = extract_rapier_pub_surface(rapier3d_json, "rapier3d")
-    moon = extract_moon_exports(ROOT)
-    rep = report_missing(rapier2d, rapier3d, moon, mapping)
+def cmd_run_f64(args: argparse.Namespace) -> int:
+    outdir = pathlib.Path(args.outdir).resolve()
+    rapier_ref = pathlib.Path(args.rapier_ref).resolve()
+    mapping = pathlib.Path(args.mapping).resolve()
 
-    _write_json(outdir / "rapier2d_pub.json", rapier2d)
-    _write_json(outdir / "rapier3d_pub.json", rapier3d)
-    _write_json(outdir / "moon_exports.json", moon)
-    _write_json(outdir / "report.json", rep)
+    if not rapier_ref.exists():
+        _eprint(f"error: rapier-reference not found at {rapier_ref}")
+        return 2
 
-    # Print a compact summary for humans.
-    for label in ("rapier2d", "rapier3d"):
-        t = rep[label]["totals"]
-        _eprint(f"{label}: items={t['items']} covered={t['covered']} missing={t['missing']}")
-    _eprint(f"wrote: {outdir}")
-    return 0
+    return _run_audit(
+        outdir=outdir,
+        rapier_ref=rapier_ref,
+        mapping=mapping,
+        crates=[
+            ("rapier2d-f64", "rapier2d_f64", "rapier2d_f64"),
+            ("rapier3d-f64", "rapier3d_f64", "rapier3d_f64"),
+        ],
+    )
 
 
 def main(argv: Sequence[str]) -> int:
@@ -568,6 +634,19 @@ def main(argv: Sequence[str]) -> int:
     runp.add_argument("--mapping", default=str(DEFAULT_MAPPING), help="Path to rapier_pub_mapping.toml")
     runp.add_argument("--outdir", default=str(DEFAULT_OUTDIR), help="Output directory (default: _build/rapier_pub_audit)")
     runp.set_defaults(func=cmd_run)
+
+    f64p = sub.add_parser(
+        "run-f64",
+        help="Build rustdoc JSON for rapier2d-f64/rapier3d-f64 + write report to _build.",
+    )
+    f64p.add_argument("--rapier-ref", default=str(ROOT / "rapier-reference"), help="Path to rapier-reference checkout.")
+    f64p.add_argument("--mapping", default=str(DEFAULT_MAPPING), help="Path to rapier_pub_mapping.toml")
+    f64p.add_argument(
+        "--outdir",
+        default=str(ROOT / "_build" / "rapier_pub_audit_f64"),
+        help="Output directory (default: _build/rapier_pub_audit_f64)",
+    )
+    f64p.set_defaults(func=cmd_run_f64)
 
     args = ap.parse_args(list(argv))
     return int(args.func(args))
