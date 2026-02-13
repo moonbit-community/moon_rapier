@@ -113,16 +113,21 @@ def _rustdoc_json_path(rapier_ref: pathlib.Path, crate_name: str) -> pathlib.Pat
     return rapier_ref / "target" / "doc" / f"{crate_name}.json"
 
 
-def build_rustdoc_json(rapier_ref: pathlib.Path, package: str, crate_name: str) -> pathlib.Path:
+def build_rustdoc_json(
+    rapier_ref: pathlib.Path,
+    package: str,
+    crate_name: str,
+    features: Optional[str] = None,
+) -> pathlib.Path:
     # rustdoc JSON is still "unstable options" on stable toolchains.
     # RUSTC_BOOTSTRAP=1 enables -Z for local auditing purposes.
     env = dict(os.environ)
     env["RUSTC_BOOTSTRAP"] = "1"
-    _run(
-        ["cargo", "rustdoc", "-p", package, "--", "-Z", "unstable-options", "--output-format", "json"],
-        cwd=rapier_ref,
-        env=env,
-    )
+    cmd = ["cargo", "rustdoc", "-p", package]
+    if features:
+        cmd.extend(["--features", features])
+    cmd.extend(["--", "-Z", "unstable-options", "--output-format", "json"])
+    _run(cmd, cwd=rapier_ref, env=env)
     out = _rustdoc_json_path(rapier_ref, crate_name)
     if not out.exists():
         raise FileNotFoundError(f"rustdoc JSON not found at {out}")
@@ -561,13 +566,14 @@ def _run_audit(
     rapier_ref: pathlib.Path,
     mapping: pathlib.Path,
     crates: List[Tuple[str, str, str]],
+    features: Optional[str] = None,
 ) -> int:
     # crates: (cargo_package, crate_name, report_label)
     outdir.mkdir(parents=True, exist_ok=True)
 
     rapier_surfaces: Dict[str, Dict[str, Any]] = {}
     for package, crate_name, label in crates:
-        rustdoc_json = build_rustdoc_json(rapier_ref, package, crate_name)
+        rustdoc_json = build_rustdoc_json(rapier_ref, package, crate_name, features=features)
         rapier_surfaces[label] = extract_rapier_pub_surface(rustdoc_json, crate_name)
 
     moon = extract_moon_exports(ROOT)
@@ -602,6 +608,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             ("rapier2d", "rapier2d", "rapier2d"),
             ("rapier3d", "rapier3d", "rapier3d"),
         ],
+        features=(args.features.strip() if args.features else None),
     )
 
 
@@ -622,6 +629,7 @@ def cmd_run_f64(args: argparse.Namespace) -> int:
             ("rapier2d-f64", "rapier2d_f64", "rapier2d_f64"),
             ("rapier3d-f64", "rapier3d_f64", "rapier3d_f64"),
         ],
+        features=(args.features.strip() if args.features else None),
     )
 
 
@@ -633,6 +641,11 @@ def main(argv: Sequence[str]) -> int:
     runp.add_argument("--rapier-ref", default=str(ROOT / "rapier-reference"), help="Path to rapier-reference checkout.")
     runp.add_argument("--mapping", default=str(DEFAULT_MAPPING), help="Path to rapier_pub_mapping.toml")
     runp.add_argument("--outdir", default=str(DEFAULT_OUTDIR), help="Output directory (default: _build/rapier_pub_audit)")
+    runp.add_argument(
+        "--features",
+        default="",
+        help="Optional cargo features for rapier2d/rapier3d rustdoc build (comma-separated).",
+    )
     runp.set_defaults(func=cmd_run)
 
     f64p = sub.add_parser(
@@ -641,6 +654,11 @@ def main(argv: Sequence[str]) -> int:
     )
     f64p.add_argument("--rapier-ref", default=str(ROOT / "rapier-reference"), help="Path to rapier-reference checkout.")
     f64p.add_argument("--mapping", default=str(DEFAULT_MAPPING), help="Path to rapier_pub_mapping.toml")
+    f64p.add_argument(
+        "--features",
+        default="",
+        help="Optional cargo features for rapier2d-f64/rapier3d-f64 rustdoc build (comma-separated).",
+    )
     f64p.add_argument(
         "--outdir",
         default=str(ROOT / "_build" / "rapier_pub_audit_f64"),

@@ -223,6 +223,46 @@ pub fn DebugRenderBackend::draw_line(
 }
 
 ///|
+pub fn DebugRenderBackend::filter_object(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+) -> Bool {
+  self |> ignore
+  object |> ignore
+  true
+}
+
+///|
+pub fn DebugRenderBackend::draw_polyline(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+  vertices : Array[@core.Vec2],
+  color : DebugColor,
+  closed : Bool,
+) -> Unit {
+  if vertices.length() < 2 {
+    return
+  }
+  for i in 0..<(vertices.length() - 1) {
+    self.draw_line(object, vertices[i], vertices[i + 1], color)
+  }
+  if closed && vertices.length() > 2 {
+    self.draw_line(object, vertices[vertices.length() - 1], vertices[0], color)
+  }
+}
+
+///|
+pub fn DebugRenderBackend::draw_line_strip(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+  vertices : Array[@core.Vec2],
+  color : DebugColor,
+  closed : Bool,
+) -> Unit {
+  self.draw_polyline(object, vertices, color, closed)
+}
+
+///|
 pub fn DebugRenderBackend::lines(
   self : DebugRenderBackend,
 ) -> Array[DebugRenderLine] {
@@ -270,6 +310,14 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
       DebugRenderObject::Collider(h) => {
         let (id, gen) = h.into_raw_parts()
         sb.write_string("co(")
+        sb.write_object(id)
+        sb.write_char(',')
+        sb.write_object(gen)
+        sb.write_char(')')
+      }
+      DebugRenderObject::ColliderAabb(h) => {
+        let (id, gen) = h.into_raw_parts()
+        sb.write_string("ca(")
         sb.write_object(id)
         sb.write_char(',')
         sb.write_object(gen)
@@ -399,17 +447,11 @@ fn draw_aabb_outline(
 }
 
 ///|
-pub fn DebugRenderPipeline::render(
+pub fn DebugRenderPipeline::render_rigid_bodies(
   self : DebugRenderPipeline,
   backend : DebugRenderBackend,
   bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  impulse_joints : @dynamics.ImpulseJointSet,
-  multibody_joints : @dynamics.MultibodyJointSet,
-  narrow_phase : @collision.NarrowPhase,
 ) -> Unit {
-  narrow_phase |> ignore
-  // Rigid-body axes.
   if self.mode.contains(DebugRenderMode::rigid_body_axes()) {
     for i in 0..<bodies.bodies.length() {
       let handle = @dynamics.RigidBodyHandle::from_raw_parts(
@@ -417,15 +459,23 @@ pub fn DebugRenderPipeline::render(
         bodies.generations[i],
       )
       if bodies.get(handle) is Some(body) {
-        let (o, x, y) = rigid_body_axes_lines(self.style, body.position())
         let obj = DebugRenderObject::RigidBody(handle)
-        backend.draw_line(obj, o, x, self.style.contact_normal_color)
-        backend.draw_line(obj, o, y, self.style.contact_depth_color)
+        if backend.filter_object(obj) {
+          let (o, x, y) = rigid_body_axes_lines(self.style, body.position())
+          backend.draw_line(obj, o, x, self.style.contact_normal_color)
+          backend.draw_line(obj, o, y, self.style.contact_depth_color)
+        }
       }
     }
   }
+}
 
-  // Colliders (shapes and aabbs) in stable handle order.
+///|
+pub fn DebugRenderPipeline::render_colliders(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  colliders : @collision.ColliderSet,
+) -> Unit {
   for i in 0..<colliders.colliders.length() {
     let handle = @collision.ColliderHandle::from_raw_parts(
       i,
@@ -437,6 +487,9 @@ pub fn DebugRenderPipeline::render(
       }
       let obj = DebugRenderObject::Collider(handle)
       if self.mode.contains(DebugRenderMode::collider_shapes()) {
+        if !backend.filter_object(obj) {
+          continue
+        }
         match collider.shape() {
           @collision.Shape::Ball(r) => {
             // Deterministic approximation: draw two diameters.
@@ -462,12 +515,16 @@ pub fn DebugRenderPipeline::render(
         }
       }
       if self.mode.contains(DebugRenderMode::collider_aabbs()) {
+        let aabb_obj = DebugRenderObject::ColliderAabb(handle)
+        if !backend.filter_object(aabb_obj) {
+          continue
+        }
         match collider.shape() {
           @collision.Shape::Ball(r) => {
             let c = collider.translation()
             draw_aabb_outline(
               backend,
-              obj,
+              aabb_obj,
               @core.Vec2::new(c.x - r, c.y - r),
               @core.Vec2::new(c.x + r, c.y + r),
               self.style.collider_aabb_color,
@@ -482,7 +539,7 @@ pub fn DebugRenderPipeline::render(
             let ay = @core.abs(rot.sin) * hw + @core.abs(rot.cos) * hh
             draw_aabb_outline(
               backend,
-              obj,
+              aabb_obj,
               @core.Vec2::new(c.x - ax, c.y - ay),
               @core.Vec2::new(c.x + ax, c.y + ay),
               self.style.collider_aabb_color,
@@ -493,8 +550,16 @@ pub fn DebugRenderPipeline::render(
       }
     }
   }
+}
 
-  // Joints (best-effort).
+///|
+pub fn DebugRenderPipeline::render_joints(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  bodies : @dynamics.RigidBodySet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+) -> Unit {
   if self.mode.contains(DebugRenderMode::impulse_joints()) {
     let graph = impulse_joints.joint_graph()
     let edges = graph.edges()
@@ -503,8 +568,12 @@ pub fn DebugRenderPipeline::render(
       let b1 = edge.0
       let b2 = edge.1
       if bodies.get(b1) is Some(rb1) && bodies.get(b2) is Some(rb2) {
+        let obj = DebugRenderObject::ImpulseJoint(edge.2.handle)
+        if !backend.filter_object(obj) {
+          continue
+        }
         backend.draw_line(
-          DebugRenderObject::ImpulseJoint(edge.2.handle),
+          obj,
           rb1.translation(),
           rb2.translation(),
           self.style.impulse_joint_separation_color,
@@ -523,8 +592,12 @@ pub fn DebugRenderPipeline::render(
         child_id, child_gen,
       )
       if bodies.get(parent) is Some(rb1) && bodies.get(child) is Some(rb2) {
+        let obj = DebugRenderObject::MultibodyJoint(handle)
+        if !backend.filter_object(obj) {
+          continue
+        }
         backend.draw_line(
-          DebugRenderObject::MultibodyJoint(handle),
+          obj,
           rb1.translation(),
           rb2.translation(),
           self.style.multibody_joint_separation_color,
@@ -532,4 +605,33 @@ pub fn DebugRenderPipeline::render(
       }
     }
   }
+}
+
+///|
+pub fn DebugRenderPipeline::render_contacts(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  colliders : @collision.ColliderSet,
+  narrow_phase : @collision.NarrowPhase,
+) -> Unit {
+  self |> ignore
+  backend |> ignore
+  colliders |> ignore
+  narrow_phase |> ignore
+}
+
+///|
+pub fn DebugRenderPipeline::render(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+  narrow_phase : @collision.NarrowPhase,
+) -> Unit {
+  self.render_rigid_bodies(backend, bodies)
+  self.render_colliders(backend, colliders)
+  self.render_joints(backend, bodies, impulse_joints, multibody_joints)
+  self.render_contacts(backend, colliders, narrow_phase)
 }

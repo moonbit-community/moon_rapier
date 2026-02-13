@@ -419,6 +419,7 @@ pub fn DebugRenderMode::remove(
 pub(all) enum DebugRenderObject {
   RigidBody(@dynamics.RigidBodyHandle)
   Collider(@collision.ColliderHandle)
+  ColliderAabb(@collision.ColliderHandle)
   ImpulseJoint(@dynamics.ImpulseJointHandle)
   MultibodyJoint(@dynamics.MultibodyJointHandle)
   ContactPair(@collision.ColliderHandle, @collision.ColliderHandle)
@@ -446,6 +447,39 @@ pub fn DebugRenderBackend::draw_line(
   a : @core.Vec2,
   b : @core.Vec2,
   color : DebugColor,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::filter_object(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+) -> Bool {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::draw_polyline(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+  vertices : Array[@core.Vec2],
+  color : DebugColor,
+  closed : Bool,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderBackend::draw_line_strip(
+  self : DebugRenderBackend,
+  object : DebugRenderObject,
+  vertices : Array[@core.Vec2],
+  color : DebugColor,
+  closed : Bool,
 ) -> Unit {
   ...
 }
@@ -488,6 +522,49 @@ pub fn DebugRenderPipeline::render_all(
 ///|
 #declaration_only
 pub fn DebugRenderPipeline::default() -> DebugRenderPipeline {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render_rigid_bodies(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render_colliders(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  colliders : @collision.ColliderSet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render_joints(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  bodies : @dynamics.RigidBodySet,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet,
+) -> Unit {
+  ...
+}
+
+///|
+#declaration_only
+pub fn DebugRenderPipeline::render_contacts(
+  self : DebugRenderPipeline,
+  backend : DebugRenderBackend,
+  colliders : @collision.ColliderSet,
+  narrow_phase : @collision.NarrowPhase,
+) -> Unit {
   ...
 }
 

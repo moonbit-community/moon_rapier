@@ -67,3 +67,25 @@ test "debug-render output is deterministic (best-effort)" {
   inspect(s1.length() > 0, content="true")
   inspect(s1 == s2, content="true")
 }
+
+///|
+test "debug-render backend polyline helpers and collider-aabb object are exported" {
+  let backend = DebugRenderBackend::new()
+  let color = DebugColor::new(0.0F, 0.0F, 0.0F, 1.0F)
+  let obj = DebugRenderObject::ColliderAabb(
+    @collision.ColliderHandle::from_raw_parts(7, 0),
+  )
+  let vertices = [
+    @core.Vec2::new(0.0F, 0.0F),
+    @core.Vec2::new(1.0F, 0.0F),
+    @core.Vec2::new(1.0F, 1.0F),
+  ]
+  inspect(backend.filter_object(obj), content="true")
+
+  backend.draw_line_strip(obj, vertices, color, true)
+  inspect(backend.lines().length(), content="3")
+
+  let backend2 = DebugRenderBackend::new()
+  backend2.draw_polyline(obj, vertices, color, false)
+  inspect(backend2.lines().length(), content="2")
+}

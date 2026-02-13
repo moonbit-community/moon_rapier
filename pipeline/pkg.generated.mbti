@@ -104,6 +104,9 @@ pub struct DebugRenderBackend {
   lines : Array[DebugRenderLine]
 }
 pub fn DebugRenderBackend::draw_line(Self, DebugRenderObject, @core.Vec2, @core.Vec2, DebugColor) -> Unit
+pub fn DebugRenderBackend::draw_line_strip(Self, DebugRenderObject, Array[@core.Vec2], DebugColor, Bool) -> Unit
+pub fn DebugRenderBackend::draw_polyline(Self, DebugRenderObject, Array[@core.Vec2], DebugColor, Bool) -> Unit
+pub fn DebugRenderBackend::filter_object(Self, DebugRenderObject) -> Bool
 pub fn DebugRenderBackend::lines(Self) -> Array[DebugRenderLine]
 pub fn DebugRenderBackend::new() -> Self
 pub fn DebugRenderBackend::serialize_lines(Self) -> String
@@ -136,6 +139,7 @@ pub fn DebugRenderMode::solver_contacts() -> Self
 pub(all) enum DebugRenderObject {
   RigidBody(@dynamics.RigidBodyHandle)
   Collider(@collision.ColliderHandle)
+  ColliderAabb(@collision.ColliderHandle)
   ImpulseJoint(@dynamics.ImpulseJointHandle)
   MultibodyJoint(@dynamics.MultibodyJointHandle)
   ContactPair(@collision.ColliderHandle, @collision.ColliderHandle)
@@ -149,6 +153,10 @@ pub fn DebugRenderPipeline::default() -> Self
 pub fn DebugRenderPipeline::new(DebugRenderStyle, DebugRenderMode) -> Self
 pub fn DebugRenderPipeline::render(Self, DebugRenderBackend, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @collision.NarrowPhase) -> Unit
 pub fn DebugRenderPipeline::render_all(DebugRenderStyle) -> Self
+pub fn DebugRenderPipeline::render_colliders(Self, DebugRenderBackend, @collision.ColliderSet) -> Unit
+pub fn DebugRenderPipeline::render_contacts(Self, DebugRenderBackend, @collision.ColliderSet, @collision.NarrowPhase) -> Unit
+pub fn DebugRenderPipeline::render_joints(Self, DebugRenderBackend, @dynamics.RigidBodySet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
+pub fn DebugRenderPipeline::render_rigid_bodies(Self, DebugRenderBackend, @dynamics.RigidBodySet) -> Unit
 
 pub struct DebugRenderStyle {
   subdivisions : Int

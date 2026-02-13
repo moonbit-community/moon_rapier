@@ -382,4 +382,22 @@
 "rapier3d::dynamics::joint::generic_joint::JointAxesMask::LIN_AXES" = "Milky2018/moon_rapier/dynamics::JointAxesMask3DReal::lin_axes"
 "rapier3d::dynamics::joint::generic_joint::JointAxesMask::ANG_AXES" = "Milky2018/moon_rapier/dynamics::JointAxesMask3DReal::ang_axes"
 
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::COLLIDER_SHAPES" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::collider_shapes"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::RIGID_BODY_AXES" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::rigid_body_axes"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::MULTIBODY_JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::multibody_joints"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::IMPULSE_JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::impulse_joints"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::joints"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::SOLVER_CONTACTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::solver_contacts"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::CONTACTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::contacts"
+"rapier2d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::COLLIDER_AABBS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::collider_aabbs"
+
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::COLLIDER_SHAPES" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::collider_shapes"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::RIGID_BODY_AXES" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::rigid_body_axes"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::MULTIBODY_JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::multibody_joints"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::IMPULSE_JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::impulse_joints"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::JOINTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::joints"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::SOLVER_CONTACTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::solver_contacts"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::CONTACTS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::contacts"
+"rapier3d::pipeline::debug_render_pipeline::debug_render_pipeline::DebugRenderMode::COLLIDER_AABBS" = "Milky2018/moon_rapier/pipeline::DebugRenderMode::collider_aabbs"
+
 [ignore]
