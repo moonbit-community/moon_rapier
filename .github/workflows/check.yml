@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  native:
-    name: Native (${{ matrix.os }})
+  check:
+    name: Check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -38,39 +38,14 @@ jobs:
           moon fmt
           git diff --exit-code
 
-      - name: Moon check (native)
+      - name: Moon check
         run: |
-          moon check --target native
+          moon check
 
-      - name: Moon test (native)
+      - name: Moon test
         run: |
-          moon test --target native --frozen
+          moon test --frozen
 
-      - name: Moon build (native release)
+      - name: Moon build (release)
         run: |
-          moon build --target native --release
-
-  wasm-gc-smoke:
-    name: wasm-gc smoke build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install MoonBit
-        run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-
-      - name: Post install
-        run: |
-          moon version --all
-          moon update
-
-      - name: Moon check (wasm-gc)
-        run: |
-          moon check --target wasm-gc
-
-      - name: Moon build (wasm-gc release)
-        run: |
-          moon build --target wasm-gc --release
+          moon build --release
