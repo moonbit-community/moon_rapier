@@ -1,0 +1,76 @@
+name: Check and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: moon-rapier-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Post install
+        run: |
+          moon version --all
+          moon update
+
+      - name: Lint generated interfaces and formatting
+        run: |
+          moon info
+          moon fmt
+          git diff --exit-code
+
+      - name: Moon check (native)
+        run: |
+          moon check --target native
+
+      - name: Moon test (native)
+        run: |
+          moon test --target native --frozen
+
+      - name: Moon build (native release)
+        run: |
+          moon build --target native --release
+
+  wasm-gc-smoke:
+    name: wasm-gc smoke build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Post install
+        run: |
+          moon version --all
+          moon update
+
+      - name: Moon check (wasm-gc)
+        run: |
+          moon check --target wasm-gc
+
+      - name: Moon build (wasm-gc release)
+        run: |
+          moon build --target wasm-gc --release
