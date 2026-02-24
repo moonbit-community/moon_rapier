@@ -18,6 +18,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+if [[ ! -d "$ROOT/rapier-reference" ]]; then
+  echo "[parity-gate] rapier-reference missing; cloning Rapier v0.32.0"
+  git clone --depth 1 --branch v0.32.0 https://github.com/dimforge/rapier.git "$ROOT/rapier-reference"
+fi
+
 echo "[parity-gate] run pub audit (rapier2d + rapier3d default features)"
 python3 tools/rapier_pub_audit.py run
 

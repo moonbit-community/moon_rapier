@@ -77,6 +77,34 @@
 "rapier3d::control::character_controller::EffectiveCharacterMovement" = "Milky2018/moon_rapier/rapier3d::EffectiveCharacterMovement"
 "rapier3d::control::ray_cast_vehicle_controller::DynamicRayCastVehicleController::wheels_mut" = "Milky2018/moon_rapier/control::DynamicRayCastVehicleController3DReal::wheels_mut"
 
+"rapier3d::dynamics::joint::generic_joint::GenericJointBuilder" = "Milky2018/moon_rapier/dynamics::GenericJoint3DRealBuilder"
+
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::build" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::build"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::local_anchor1" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::local_anchor1"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::local_anchor2" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::local_anchor2"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::local_basis1" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::local_basis1"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::local_basis2" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::local_basis2"
+"rapier3d::dynamics::joint::fixed_joint::FixedJointBuilder::new" = "Milky2018/moon_rapier/dynamics::FixedJoint3DRealBuilder::new"
+
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3"
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder::build" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3::build"
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder::limits" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3::limits"
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder::local_anchor1" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3::local_anchor1"
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder::local_anchor2" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3::local_anchor2"
+"rapier3d::dynamics::joint::prismatic_joint::PrismaticJointBuilder::new" = "Milky2018/moon_rapier/dynamics::PrismaticJointBuilder3::new"
+
+"rapier3d::dynamics::joint::spherical_joint::SphericalJoint" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DReal"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::build" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::build"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::limits" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::limits"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::local_anchor1" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::local_anchor1"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::local_anchor2" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::local_anchor2"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::motor_max_force" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::motor_max_force"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::motor_position" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::motor_position"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::motor_velocity" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::motor_velocity"
+"rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::new" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::new"
+
 "rapier2d::utils::DIM_MINUS_ONE" = "Milky2018/moon_rapier/utils::DIM_MINUS_ONE2"
 "rapier3d::utils::DIM_MINUS_ONE" = "Milky2018/moon_rapier/utils::DIM_MINUS_ONE3"
 

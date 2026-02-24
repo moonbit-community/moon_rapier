@@ -300,6 +300,7 @@ def extract_rapier_pub_surface(rustdoc_json: pathlib.Path, crate_name: str) -> D
 
 MBTI_PKG_RE = re.compile(r'^\s*package\s+"([^"]+)"\s*$')
 MBTI_TYPE_RE = re.compile(r"^\s*pub(?:\([^)]*\))?\s+(struct|enum|trait|type)\s+([A-Za-z_][A-Za-z0-9_]*)")
+MBTI_ABSTRACT_TYPE_RE = re.compile(r"^\s*type\s+([A-Za-z_][A-Za-z0-9_]*)\b")
 MBTI_FN_RE = re.compile(
     # Example:
     # - pub fn foo(Int) -> Int
@@ -435,6 +436,10 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
             if m:
                 kind, name = m.group(1), m.group(2)
                 add(pkg, name, kind, src)
+                continue
+            m = MBTI_ABSTRACT_TYPE_RE.match(line)
+            if m:
+                add(pkg, m.group(1), "type", src)
                 continue
             m = MBTI_FN_RE.match(line)
             if m:

@@ -40,6 +40,7 @@ pub struct Arena[T] {
   items : Array[Int]
 }
 pub fn[T] Arena::capacity(Self[T]) -> Int
+type ArenaEntry[T]
 
 pub(open) trait HasModifiedFlag {
   has_modified_flag(Self) -> Bool
@@ -58,6 +59,9 @@ pub using @core {type Vec2 as AliasVec2}
         assert (
             "Milky2018/moon_rapier/data::Arena::capacity" in syms
         ), "generic fn parsing failed (Arena::capacity)"
+        assert (
+            "Milky2018/moon_rapier/data::ArenaEntry" in syms
+        ), "abstract type parsing failed (ArenaEntry)"
         assert (
             "Milky2018/moon_rapier/data::HasModifiedFlag::has_modified_flag" in syms
         ), "trait method parsing failed (HasModifiedFlag::has_modified_flag)"
