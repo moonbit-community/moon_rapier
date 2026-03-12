@@ -141,6 +141,8 @@ pub struct NarrowPhase3D {
   intersection_pairs : Array[
     ((ColliderHandle3D, ColliderHandle3D), IntersectionPair3D),
   ]
+
+  fn new() -> NarrowPhase3D
 }
 
 ///|

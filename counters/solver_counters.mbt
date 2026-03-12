@@ -22,6 +22,8 @@ pub struct SolverCounters {
   velocity_assembly_time_constraints_init : Timer
   velocity_update_time : Timer
   velocity_writeback_time : Timer
+
+  fn new() -> SolverCounters
 }
 
 ///|

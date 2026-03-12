@@ -24,6 +24,8 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : @core.Real
   mut joint_rot : @core.Rot2
+
+  fn new(data : GenericJoint, kinematic : Bool) -> MultibodyJoint
 }
 
 ///|

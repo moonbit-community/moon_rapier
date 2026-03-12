@@ -15,6 +15,8 @@
 ///|
 pub struct AxesMask {
   bits : Int
+
+  fn new(bits : Int) -> AxesMask
 }
 
 ///|

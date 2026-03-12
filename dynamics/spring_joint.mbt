@@ -19,6 +19,12 @@
 /// (capability-wise) for default features.
 pub struct SpringJoint {
   mut data : GenericJoint
+
+  fn new(
+    rest_length : @core.Real,
+    stiffness : @core.Real,
+    damping : @core.Real,
+  ) -> SpringJoint
 }
 
 ///|
@@ -93,6 +99,12 @@ pub fn SpringJoint::set_spring_model(
 ///|
 pub struct SpringJointBuilder {
   mut inner : SpringJoint
+
+  fn new(
+    rest_length : @core.Real,
+    stiffness : @core.Real,
+    damping : @core.Real,
+  ) -> SpringJointBuilder
 }
 
 ///|

@@ -21,6 +21,8 @@ pub struct StagesCounters {
   solver_time : Timer
   ccd_time : Timer
   user_changes : Timer
+
+  fn new() -> StagesCounters
 }
 
 ///|

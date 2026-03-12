@@ -19,6 +19,8 @@
 /// z-component of anchors is dropped.
 pub struct RevoluteJointBuilder3 {
   inner : RevoluteJointBuilder
+
+  fn new(_axis : @core.Vec3) -> RevoluteJointBuilder3
 }
 
 ///|

@@ -16,6 +16,8 @@
 pub struct ColliderHandle3D {
   id : Int
   generation : Int
+
+  fn new(id : Int, generation : Int) -> ColliderHandle3D
 }
 
 ///|
@@ -54,6 +56,8 @@ pub struct ColliderSet3D {
   colliders : Array[Collider3D?]
   generations : Array[Int]
   free_list : Array[Int]
+
+  fn new() -> ColliderSet3D
 }
 
 ///|

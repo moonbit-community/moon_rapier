@@ -19,6 +19,8 @@
 /// incremental 3D backend implementation (`PhysicsPipeline3DReal`).
 pub struct PhysicsPipeline3D {
   inner : PhysicsPipeline3DReal
+
+  fn new() -> PhysicsPipeline3D
 }
 
 ///|

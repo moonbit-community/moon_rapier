@@ -21,6 +21,8 @@ pub struct Counters {
   cd : CollisionDetectionCounters
   solver : SolverCounters
   ccd : CCDCounters
+
+  fn new(enabled : Bool) -> Counters
 }
 
 ///|

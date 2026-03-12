@@ -18,6 +18,8 @@
 /// This is a compatibility wrapper used to port rapier-reference dim3 tests.
 pub struct PhysicsPipeline3 {
   inner : PhysicsPipeline
+
+  fn new() -> PhysicsPipeline3
 }
 
 ///|

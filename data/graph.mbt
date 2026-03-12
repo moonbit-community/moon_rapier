@@ -22,6 +22,8 @@
 ///|
 pub struct NodeIndex {
   index : Int
+
+  fn new(x : Int) -> NodeIndex
 }
 
 ///|
@@ -42,6 +44,8 @@ pub fn NodeIndex::end() -> NodeIndex {
 ///|
 pub struct EdgeIndex {
   index : Int
+
+  fn new(x : Int) -> EdgeIndex
 }
 
 ///|

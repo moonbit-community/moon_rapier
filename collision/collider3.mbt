@@ -326,6 +326,8 @@ pub fn Collider::translation3(self : Collider) -> @core.Vec3 {
 /// 3D-flavored collider set (dim3,f32).
 pub struct ColliderSet3 {
   inner : ColliderSet
+
+  fn new() -> ColliderSet3
 }
 
 ///|

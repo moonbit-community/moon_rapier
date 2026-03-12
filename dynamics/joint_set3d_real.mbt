@@ -97,6 +97,8 @@ pub struct JointSet3DReal {
   spherical_motors : Array[SphericalMotor3DReal]
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
+
+  fn new() -> JointSet3DReal
 }
 
 ///|

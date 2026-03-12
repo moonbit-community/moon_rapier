@@ -15,6 +15,8 @@ pub fn unit_joint_motor_constraint(IntegrationParameters, Multibody, MultibodyLi
 // Types and methods
 pub struct AxesMask {
   bits : Int
+
+  fn new(Int) -> AxesMask
 }
 pub fn AxesMask::all() -> Self
 pub fn AxesMask::ang_axes() -> Self
@@ -41,6 +43,8 @@ pub(all) enum AxisState3DReal {
 pub struct BodyPair {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
+
+  fn new(RigidBodyHandle, RigidBodyHandle) -> BodyPair
 }
 pub fn BodyPair::new(RigidBodyHandle, RigidBodyHandle) -> Self
 
@@ -63,6 +67,8 @@ pub fn CoefficientCombineRule::combine(Float, Float, Self, Self) -> Float
 
 pub struct ContactGraph {
   pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
+
+  fn new() -> ContactGraph
 }
 pub fn ContactGraph::add_pair(Self, RigidBodyHandle, RigidBodyHandle) -> Unit
 pub fn ContactGraph::clear(Self) -> Unit
@@ -83,6 +89,8 @@ pub struct FixedJoint {
 
 pub struct FixedJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+
+  fn new() -> FixedJoint3DRealBuilder
 }
 pub fn FixedJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
 pub fn FixedJoint3DRealBuilder::local_anchor1(Self, @core.Vec3) -> Self
@@ -118,6 +126,8 @@ pub struct GenericJoint {
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
+
+  fn new(JointAxesMask) -> GenericJoint
 }
 pub fn GenericJoint::as_fixed(Self) -> Self?
 pub fn GenericJoint::as_fixed_mut(Self) -> Self?
@@ -192,6 +202,8 @@ pub struct GenericJoint3DRealBuilder {
   mut local_basis2 : @core.Quat
   axis_states : Array[AxisState3DReal]
   motors : Array[MotorState3DReal]
+
+  fn new(JointAxesMask3DReal) -> GenericJoint3DRealBuilder
 }
 pub fn GenericJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
 pub fn GenericJoint3DRealBuilder::contacts_enabled(Self, Bool) -> Self
@@ -237,6 +249,8 @@ pub struct GenericJointConstraint3DReal {
 
 pub struct Group {
   value : Int
+
+  fn new(Int) -> Group
 }
 pub fn Group::all() -> Self
 pub fn Group::bits(Self) -> Int
@@ -300,6 +314,8 @@ pub fn ImpulseJointGraph::nodes(Self) -> Array[RigidBodyHandle]
 pub struct ImpulseJointHandle {
   id : Int
   generation : Int
+
+  fn new(Int, Int) -> ImpulseJointHandle
 }
 pub fn ImpulseJointHandle::from_raw_parts(Int, Int) -> Self
 pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
@@ -335,6 +351,8 @@ pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 pub struct ImpulseJointSet3 {
   inner : ImpulseJointSet
+
+  fn new() -> ImpulseJointSet3
 }
 pub fn ImpulseJointSet3::as_2d(Self) -> ImpulseJointSet
 pub fn ImpulseJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
@@ -364,6 +382,8 @@ pub struct IntegrationParameters {
   mut min_island_size : Int
   mut max_ccd_substeps : Int
   friction_model : FrictionModel
+
+  fn new() -> IntegrationParameters
 }
 pub fn IntegrationParameters::allowed_linear_error(Self) -> Float
 pub fn IntegrationParameters::default() -> Self
@@ -391,6 +411,8 @@ pub struct InteractionGroups {
   mut memberships : Group
   mut filter : Group
   test_mode : InteractionTestMode
+
+  fn new(Group, Group, InteractionTestMode) -> InteractionGroups
 }
 pub fn InteractionGroups::all() -> Self
 pub fn InteractionGroups::default() -> Self
@@ -439,6 +461,8 @@ pub struct IslandManager {
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
   body_state_generations : Array[Int]
+
+  fn new() -> IslandManager
 }
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager::active_islands(Self) -> Array[Int]
@@ -453,6 +477,8 @@ pub fn IslandManager::wake_up(Self, RigidBodySet, RigidBodyHandle, Bool) -> Unit
 
 pub struct IslandManager3 {
   inner : IslandManager
+
+  fn new() -> IslandManager3
 }
 pub fn IslandManager3::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3::as_2d(Self) -> IslandManager
@@ -460,6 +486,8 @@ pub fn IslandManager3::new() -> Self
 
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
+
+  fn new() -> IslandManager3D
 }
 pub fn IslandManager3D::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3D::new() -> Self
@@ -483,6 +511,8 @@ pub fn Jacobian3::zeros(Int) -> Self
 
 pub struct JointAxesMask {
   bits : Int
+
+  fn new(Int) -> JointAxesMask
 }
 pub fn JointAxesMask::all() -> Self
 pub fn JointAxesMask::ang_axes() -> Self
@@ -507,6 +537,8 @@ pub fn JointAxesMask::or(Self, Self) -> Self
 
 pub struct JointAxesMask3DReal {
   bits : Int
+
+  fn new(Int) -> JointAxesMask3DReal
 }
 pub fn JointAxesMask3DReal::all() -> Self
 pub fn JointAxesMask3DReal::ang_axes() -> Self
@@ -561,6 +593,8 @@ pub struct JointLimits {
   min : Float
   max : Float
   mut impulse : Float
+
+  fn new(Float, Float) -> JointLimits
 }
 pub fn JointLimits::clear_impulse(Self) -> Self
 pub fn JointLimits::default() -> Self
@@ -612,6 +646,8 @@ pub struct JointSet3DReal {
   spherical_motors : Array[SphericalMotor3DReal]
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
+
+  fn new() -> JointSet3DReal
 }
 pub fn JointSet3DReal::disabled_contact_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn JointSet3DReal::insert_generic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> JointHandle3DReal
@@ -635,6 +671,8 @@ pub fn JointSolverBody::invalid() -> Self
 
 pub struct LinkId {
   value : Int
+
+  fn new(Int) -> LinkId
 }
 
 pub(all) enum LinkOrBodyRef {
@@ -645,6 +683,8 @@ pub(all) enum LinkOrBodyRef {
 
 pub struct LockedAxes {
   bits : Int
+
+  fn new(Int) -> LockedAxes
 }
 pub fn LockedAxes::bits(Self) -> Int
 pub fn LockedAxes::contains(Self, Self) -> Bool
@@ -713,6 +753,8 @@ pub fn Multibody3::ndofs(Self) -> Int
 
 pub struct MultibodyIndex {
   value : Int
+
+  fn new(Int) -> MultibodyIndex
 }
 pub fn MultibodyIndex::invalid() -> Self
 
@@ -722,6 +764,8 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : Float
   mut joint_rot : @core.Rot2
+
+  fn new(GenericJoint, Bool) -> MultibodyJoint
 }
 pub fn MultibodyJoint::apply_displacement(Self, Array[Float]) -> Unit
 pub fn MultibodyJoint::body_to_parent(Self) -> @core.Isometry2
@@ -767,6 +811,8 @@ pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 pub struct MultibodyJointSet3 {
   inner : MultibodyJointSet
+
+  fn new() -> MultibodyJointSet3
 }
 pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
 pub fn MultibodyJointSet3::get(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
@@ -816,6 +862,8 @@ pub struct PinSlotJointBuilder {
   mut local_anchor2 : @core.Vec2
   mut limits : JointLimits
   mut limits_enabled : Bool
+
+  fn new(@core.Vec2) -> PinSlotJointBuilder
 }
 pub fn PinSlotJointBuilder::build(Self) -> PinSlotJoint
 pub fn PinSlotJointBuilder::limits(Self, Float, Float) -> Self
@@ -853,6 +901,8 @@ pub struct PrismaticJoint3DReal {
 
 pub struct PrismaticJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+
+  fn new(@core.Vec3) -> PrismaticJoint3DRealBuilder
 }
 pub fn PrismaticJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
 pub fn PrismaticJoint3DRealBuilder::limits(Self, Float, Float) -> Self
@@ -872,6 +922,8 @@ pub fn PrismaticJointBuilder::new(@core.Vec2) -> Self
 
 pub struct PrismaticJointBuilder3 {
   inner : PrismaticJointBuilder
+
+  fn new(@core.Vec3) -> PrismaticJointBuilder3
 }
 pub fn PrismaticJointBuilder3::build(Self) -> PrismaticJoint
 pub fn PrismaticJointBuilder3::limits(Self, Float, Float) -> Self
@@ -891,6 +943,8 @@ pub struct RevoluteJoint3 {
   axis : @core.Vec3
   local_frame1_rotation : @core.Quat
   local_frame2_rotation : @core.Quat
+
+  fn new(@core.Vec3) -> RevoluteJoint3
 }
 pub fn RevoluteJoint3::angle(Self, @core.Quat, @core.Quat) -> Float
 pub fn RevoluteJoint3::new(@core.Vec3) -> Self
@@ -903,6 +957,8 @@ pub fn RevoluteJoint3Builder::new(@core.Vec3) -> Self
 
 pub struct RevoluteJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+
+  fn new(@core.Vec3) -> RevoluteJoint3DRealBuilder
 }
 pub fn RevoluteJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
 pub fn RevoluteJoint3DRealBuilder::limits(Self, Float, Float) -> Self
@@ -927,6 +983,8 @@ pub fn RevoluteJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct RevoluteJointBuilder3 {
   inner : RevoluteJointBuilder
+
+  fn new(@core.Vec3) -> RevoluteJointBuilder3
 }
 pub fn RevoluteJointBuilder3::build(Self) -> RevoluteJoint
 pub fn RevoluteJointBuilder3::limits(Self, Float, Float) -> Self
@@ -1179,6 +1237,8 @@ pub struct RigidBodyBuilder {
   mut soft_ccd_prediction : Float
   mut dominance_group : Int
   mut user_data : @core.UserData128
+
+  fn new(RigidBodyType) -> RigidBodyBuilder
 }
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder::additional_mass_properties(Self, RigidBodyAdditionalMassProps) -> Self
@@ -1313,6 +1373,8 @@ pub fn RigidBodyChanges::sleep_flag() -> Int
 
 pub struct RigidBodyColliders {
   colliders : Array[Int]
+
+  fn new() -> RigidBodyColliders
 }
 pub fn RigidBodyColliders::attach_collider(Self, Int) -> Self
 pub fn RigidBodyColliders::detach_collider(Self, Int) -> Self
@@ -1326,6 +1388,8 @@ pub fn RigidBodyDamping::default() -> Self
 
 pub struct RigidBodyDominance {
   mut group : Int
+
+  fn new(Int) -> RigidBodyDominance
 }
 pub fn RigidBodyDominance::default() -> Self
 pub fn RigidBodyDominance::effective_group(Self, RigidBodyType) -> Int
@@ -1346,6 +1410,8 @@ pub fn RigidBodyForces::integrate(Self, Float, RigidBodyVelocity, RigidBodyMassP
 pub struct RigidBodyHandle {
   id : Int
   generation : Int
+
+  fn new(Int, Int) -> RigidBodyHandle
 }
 pub fn RigidBodyHandle::equals(Self, Self) -> Bool
 pub fn RigidBodyHandle::from_raw_parts(Int, Int) -> Self
@@ -1377,6 +1443,8 @@ pub fn RigidBodyMassProps::update_world_mass_properties(Self, RigidBodyType, @co
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
   mut next_position : @core.Isometry2
+
+  fn new(@core.Isometry2, @core.Isometry2) -> RigidBodyPosition
 }
 pub fn RigidBodyPosition::integrate_forces_and_velocities(Self, Float, RigidBodyForces, RigidBodyVelocity, RigidBodyMassProps) -> @core.Isometry2
 pub fn RigidBodyPosition::interpolate_velocity(Self, Float, @core.Vec2) -> RigidBodyVelocity
@@ -1385,6 +1453,8 @@ pub fn RigidBodyPosition::new(@core.Isometry2, @core.Isometry2) -> Self
 pub struct RigidBodyPosition3 {
   position : @core.Isometry3
   next_position : @core.Isometry3
+
+  fn new(@core.Isometry3, @core.Isometry3) -> RigidBodyPosition3
 }
 pub fn RigidBodyPosition3::interpolate_velocity(Self, Float, @core.Vec3) -> RigidBodyVelocity3
 pub fn RigidBodyPosition3::new(@core.Isometry3, @core.Isometry3) -> Self
@@ -1393,6 +1463,8 @@ pub fn RigidBodyPosition3::pose_errors(Self, @core.Vec3) -> PdErrors3
 pub struct RigidBodyPosition3D {
   position : @core.Isometry3
   next_position : @core.Isometry3
+
+  fn new(@core.Isometry3, @core.Isometry3) -> RigidBodyPosition3D
 }
 pub fn RigidBodyPosition3D::interpolate_velocity(Self, Float, @core.Vec3) -> RigidBodyVelocity3D
 pub fn RigidBodyPosition3D::new(@core.Isometry3, @core.Isometry3) -> Self
@@ -1402,6 +1474,8 @@ pub struct RigidBodySet {
   generations : Array[Int]
   free_list : Array[Int]
   modified_bodies : Array[RigidBodyHandle]
+
+  fn new() -> RigidBodySet
 }
 pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
 pub fn RigidBodySet::deserialize(String) -> Self
@@ -1426,6 +1500,8 @@ pub fn RigidBodySet::with_capacity(Int) -> Self
 
 pub struct RigidBodySet3 {
   inner : RigidBodySet
+
+  fn new() -> RigidBodySet3
 }
 pub fn RigidBodySet3::as_2d(Self) -> RigidBodySet
 pub fn RigidBodySet3::get(Self, RigidBodyHandle) -> RigidBody?
@@ -1441,6 +1517,8 @@ pub struct RigidBodySet3D {
   bodies : Array[RigidBody3D?]
   generations : Array[Int]
   free_list : Array[Int]
+
+  fn new() -> RigidBodySet3D
 }
 pub fn RigidBodySet3D::advance_positions_all(Self, Float) -> Unit
 pub fn RigidBodySet3D::all_handles(Self) -> Array[RigidBodyHandle]
@@ -1474,6 +1552,8 @@ pub fn RigidBodyType::is_kinematic(Self) -> Bool
 pub struct RigidBodyVelocity {
   mut linvel : @core.Vec2
   mut angvel : Float
+
+  fn new(@core.Vec2, Float) -> RigidBodyVelocity
 }
 pub fn RigidBodyVelocity::angvel(Self) -> Float
 pub fn RigidBodyVelocity::apply_damping(Self, Float, RigidBodyDamping) -> Self
@@ -1527,6 +1607,8 @@ pub struct RopeJointBuilder {
   max_length : Float
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+
+  fn new(Float) -> RopeJointBuilder
 }
 pub fn RopeJointBuilder::build(Self) -> RopeJoint
 pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
@@ -1536,6 +1618,8 @@ pub fn RopeJointBuilder::new(Float) -> Self
 
 pub struct RopeJointBuilder3 {
   inner : RopeJointBuilder
+
+  fn new(Float) -> RopeJointBuilder3
 }
 pub fn RopeJointBuilder3::build(Self) -> RopeJoint
 pub fn RopeJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
@@ -1544,6 +1628,8 @@ pub fn RopeJointBuilder3::new(Float) -> Self
 
 pub struct RopeJointSet3DReal {
   joints : Array[RopeJoint3DReal]
+
+  fn new() -> RopeJointSet3DReal
 }
 pub fn RopeJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, Float) -> Unit
 pub fn RopeJointSet3DReal::new() -> Self
@@ -1569,6 +1655,8 @@ pub struct SphericalJoint3DReal {
 
 pub struct SphericalJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+
+  fn new() -> SphericalJoint3DRealBuilder
 }
 pub fn SphericalJoint3DRealBuilder::build(Self) -> GenericJoint3DReal
 pub fn SphericalJoint3DRealBuilder::limits(Self, JointAxis3DReal, Float, Float) -> Self
@@ -1590,6 +1678,8 @@ pub struct SphericalMotor3DReal {
 pub struct SpringCoefficients {
   natural_frequency : Float
   damping_ratio : Float
+
+  fn new(Float, Float) -> SpringCoefficients
 }
 pub fn SpringCoefficients::angular_frequency(Self) -> Float
 pub fn SpringCoefficients::cfm_coeff(Self, Float) -> Float
@@ -1602,6 +1692,8 @@ pub fn SpringCoefficients::new(Float, Float) -> Self
 
 pub struct SpringJoint {
   mut data : GenericJoint
+
+  fn new(Float, Float, Float) -> SpringJoint
 }
 pub fn SpringJoint::contacts_enabled(Self) -> Bool
 pub fn SpringJoint::data(Self) -> GenericJoint
@@ -1625,6 +1717,8 @@ pub struct SpringJoint3DReal {
 
 pub struct SpringJointBuilder {
   mut inner : SpringJoint
+
+  fn new(Float, Float, Float) -> SpringJointBuilder
 }
 pub fn SpringJointBuilder::build(Self) -> SpringJoint
 pub fn SpringJointBuilder::contacts_enabled(Self, Bool) -> Self

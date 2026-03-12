@@ -71,6 +71,11 @@ pub fn RigidBodyVelocity3D::integrate(
 pub struct RigidBodyPosition3D {
   position : @core.Isometry3
   next_position : @core.Isometry3
+
+  fn new(
+    position : @core.Isometry3,
+    next_position : @core.Isometry3,
+  ) -> RigidBodyPosition3D
 }
 
 ///|
@@ -890,6 +895,8 @@ pub struct RigidBodySet3D {
   bodies : Array[RigidBody3D?]
   generations : Array[Int]
   free_list : Array[Int]
+
+  fn new() -> RigidBodySet3D
 }
 
 ///|

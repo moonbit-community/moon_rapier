@@ -25,6 +25,8 @@ pub(all) enum JointAxis {
 ///|
 pub struct JointAxesMask {
   bits : Int
+
+  fn new(bits : Int) -> JointAxesMask
 }
 
 ///|
@@ -143,6 +145,8 @@ pub struct JointLimits {
   min : @core.Real
   max : @core.Real
   mut impulse : @core.Real
+
+  fn new(min : @core.Real, max : @core.Real) -> JointLimits
 }
 
 ///|

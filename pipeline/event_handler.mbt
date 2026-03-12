@@ -33,6 +33,8 @@ pub struct EventHandler {
     @collision.ColliderSet,
     @collision.ContactForceEvent,
   ) -> Unit)?
+
+  fn new() -> EventHandler
 }
 
 ///|
@@ -190,6 +192,8 @@ pub fn EventHandler::take_contact_force_events(
 ///|
 pub struct ChannelEventCollector {
   handler : EventHandler
+
+  fn new() -> ChannelEventCollector
 }
 
 ///|

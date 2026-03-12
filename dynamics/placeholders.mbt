@@ -26,6 +26,8 @@ struct Island {
   bodies : Array[RigidBodyHandle]
   mut id_in_awake_list : Int?
   mut additional_solver_iterations : Int
+
+  fn new(handle : RigidBodyHandle, additional_solver_iterations : Int) -> Island
 }
 
 ///|
@@ -44,6 +46,8 @@ struct SleepCandidate {
 ///|
 pub struct ContactGraph {
   pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
+
+  fn new() -> ContactGraph
 }
 
 ///|
@@ -84,6 +88,8 @@ struct IslandsOptimizer {
   mut mode : Int
   merge_state : IslandsOptimizerMergeState
   split_state : IslandsOptimizerSplitState
+
+  fn new() -> IslandsOptimizer
 }
 
 ///|
@@ -110,6 +116,8 @@ pub struct IslandManager {
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
   body_state_generations : Array[Int]
+
+  fn new() -> IslandManager
 }
 
 ///|
@@ -1184,6 +1192,8 @@ pub fn ImpulseJointGraph::edges(
 pub struct ImpulseJointHandle {
   id : Int
   generation : Int
+
+  fn new(id : Int, generation : Int) -> ImpulseJointHandle
 }
 
 ///|
@@ -1225,6 +1235,8 @@ pub struct GenericJoint {
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
+
+  fn new(locked_axes : JointAxesMask) -> GenericJoint
 }
 
 ///|
@@ -1907,6 +1919,8 @@ struct ImpulseJointSet {
   free_handles : Array[Int]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
+
+  fn new() -> ImpulseJointSet
 }
 
 ///|

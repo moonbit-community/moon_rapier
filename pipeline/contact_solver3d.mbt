@@ -46,6 +46,8 @@ pub struct ContactSolverCache3D {
     (Int, Int, Int, Int),
     Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)],
   ]
+
+  fn new() -> ContactSolverCache3D
 }
 
 ///|

@@ -16,6 +16,8 @@
 /// 3D-flavored island manager.
 pub struct IslandManager3 {
   inner : IslandManager
+
+  fn new() -> IslandManager3
 }
 
 ///|
@@ -39,6 +41,8 @@ pub fn IslandManager3::active_bodies(
 /// 3D-flavored rigid-body set.
 pub struct RigidBodySet3 {
   inner : RigidBodySet
+
+  fn new() -> RigidBodySet3
 }
 
 ///|

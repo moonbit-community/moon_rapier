@@ -51,6 +51,8 @@ pub struct GenericJoint3DRealBuilder {
   mut local_basis2 : @core.Quat
   axis_states : Array[AxisState3DReal]
   motors : Array[MotorState3DReal]
+
+  fn new(locked_axes : JointAxesMask3DReal) -> GenericJoint3DRealBuilder
 }
 
 ///|

@@ -20,6 +20,8 @@
 /// edge list from the pipeline and propagating activation across connected components.
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
+
+  fn new() -> IslandManager3D
 }
 
 ///|

@@ -104,6 +104,11 @@ pub struct CharacterAutostep {
   max_height : CharacterLength
   min_width : CharacterLength
   include_dynamic_bodies : Bool
+
+  fn new(
+    max_height : CharacterLength,
+    min_width : CharacterLength,
+  ) -> CharacterAutostep
 }
 
 ///|
@@ -198,6 +203,8 @@ pub struct KinematicCharacterController {
   snap_to_ground : CharacterLength?
   autostep : CharacterAutostep?
   normal_nudge_factor : @core.Real
+
+  fn new() -> KinematicCharacterController
 }
 
 ///|

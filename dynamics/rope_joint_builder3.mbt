@@ -18,6 +18,8 @@
 /// NOTE: This maps to the existing 2D rope joint builder by dropping the `z` coordinate.
 pub struct RopeJointBuilder3 {
   inner : RopeJointBuilder
+
+  fn new(max_length : @core.Real) -> RopeJointBuilder3
 }
 
 ///|

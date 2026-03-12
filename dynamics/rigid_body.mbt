@@ -16,6 +16,8 @@
 pub struct RigidBodyHandle {
   id : Int
   generation : Int
+
+  fn new(id : Int, generation : Int) -> RigidBodyHandle
 }
 
 ///|
@@ -165,6 +167,8 @@ pub fn RigidBodyChanges::dominance() -> Int {
 ///|
 pub struct RigidBodyDominance {
   mut group : Int
+
+  fn new(group : Int) -> RigidBodyDominance
 }
 
 ///|
@@ -218,6 +222,11 @@ pub type BodyStatus = RigidBodyType
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
   mut next_position : @core.Isometry2
+
+  fn new(
+    position : @core.Isometry2,
+    next_position : @core.Isometry2,
+  ) -> RigidBodyPosition
 }
 
 ///|
@@ -266,6 +275,8 @@ pub fn RigidBodyPosition::integrate_forces_and_velocities(
 pub struct RigidBodyVelocity {
   mut linvel : @core.Vec2
   mut angvel : @core.Real
+
+  fn new(linvel : @core.Vec2, angvel : @core.Real) -> RigidBodyVelocity
 }
 
 ///|
@@ -1643,6 +1654,8 @@ pub struct RigidBodyBuilder {
   mut soft_ccd_prediction : @core.Real
   mut dominance_group : Int
   mut user_data : @core.UserData128
+
+  fn new(body_type : RigidBodyType) -> RigidBodyBuilder
 }
 
 ///|
@@ -1994,6 +2007,8 @@ pub struct RigidBodySet {
   generations : Array[Int]
   free_list : Array[Int]
   modified_bodies : Array[RigidBodyHandle]
+
+  fn new() -> RigidBodySet
 }
 
 ///|

@@ -11,6 +11,8 @@ pub struct Arena[T] {
   mut generation : Int
   mut free_list_head : Int?
   mut len : Int
+
+  fn[T] new() -> Arena[T]
 }
 pub fn[T] Arena::capacity(Self[T]) -> Int
 pub fn[T] Arena::clear(Self[T]) -> Unit
@@ -35,6 +37,8 @@ pub fn[T] Arena::with_capacity(Int) -> Self[T]
 
 pub struct Coarena[T] {
   data : Array[(Int, T)]
+
+  fn[T] new() -> Coarena[T]
 }
 pub fn[T] Coarena::ensure_element_exist(Self[T], Index, T) -> T
 pub fn[T] Coarena::ensure_pair_exists(Self[T], Index, Index, T) -> (T, T)
@@ -73,6 +77,8 @@ pub fn[E] Edge::target(Self[E]) -> NodeIndex
 
 pub struct EdgeIndex {
   index : Int
+
+  fn new(Int) -> EdgeIndex
 }
 pub fn EdgeIndex::end() -> Self
 pub fn EdgeIndex::index(Self) -> Int
@@ -158,6 +164,8 @@ pub fn[T] IterMut::next(Self[T]) -> (Index, T)?
 pub struct ModifiedObjects[Handle, Object] {
   handles : Array[Handle]
   object_marker : Object?
+
+  fn[Handle, Object] new() -> ModifiedObjects[Handle, Object]
 }
 pub fn[Handle, Object] ModifiedObjects::as_internal(Self[Handle, Object]) -> Array[Handle]
 pub fn[Handle, Object] ModifiedObjects::as_mut_internal(Self[Handle, Object]) -> Array[Handle]
@@ -175,6 +183,8 @@ pub struct Node[N] {
 
 pub struct NodeIndex {
   index : Int
+
+  fn new(Int) -> NodeIndex
 }
 pub fn NodeIndex::end() -> Self
 pub fn NodeIndex::index(Self) -> Int
@@ -186,6 +196,8 @@ pub struct PubSub[T] {
   messages : Array[T]
   offsets : Array[Int]
   cursors : Array[PubSubCursor]
+
+  fn[T] new() -> PubSub[T]
 }
 pub fn[T] PubSub::ack(Self[T], Subscription[T]) -> Unit
 pub fn[T] PubSub::new() -> Self[T]

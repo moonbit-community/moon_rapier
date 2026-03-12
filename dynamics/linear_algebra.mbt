@@ -244,6 +244,8 @@ pub fn Jacobian::equals(self : Jacobian, other : Jacobian) -> Bool {
 struct IndexSequence {
   mut first_to_remove : Int
   index_map : Array[Int]
+
+  fn new() -> IndexSequence
 }
 
 ///|

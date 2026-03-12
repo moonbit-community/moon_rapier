@@ -112,6 +112,8 @@ fn max(a : Real, b : Real) -> Real {
 pub struct Vec2 {
   x : Real
   y : Real
+
+  fn new(x : Real, y : Real) -> Vec2
 }
 
 ///|
@@ -255,6 +257,8 @@ pub fn rotation_from_angle(angle : Real) -> Rot2 {
 pub struct Isometry2 {
   translation : Vec2
   rotation : Rot2
+
+  fn new(translation : Vec2, rotation : Rot2) -> Isometry2
 }
 
 ///|
@@ -298,6 +302,8 @@ pub fn Isometry2::transform_point(self : Isometry2, point : Vec2) -> Vec2 {
 pub struct Aabb {
   mins : Vec2
   maxs : Vec2
+
+  fn new(mins : Vec2, maxs : Vec2) -> Aabb
 }
 
 ///|
@@ -327,6 +333,8 @@ pub struct Vec3 {
   x : Real
   y : Real
   z : Real
+
+  fn new(x : Real, y : Real, z : Real) -> Vec3
 }
 
 ///|
@@ -395,6 +403,8 @@ pub struct Quat {
   y : Real
   z : Real
   w : Real
+
+  fn new(x : Real, y : Real, z : Real, w : Real) -> Quat
 }
 
 ///|
@@ -539,6 +549,8 @@ pub fn rotation_between(from : Vec3, to : Vec3) -> Quat {
 pub struct Isometry3 {
   translation : Vec3
   rotation : Quat
+
+  fn new(translation : Vec3, rotation : Quat) -> Isometry3
 }
 
 ///|
@@ -586,6 +598,8 @@ pub fn Isometry3::transform_point(self : Isometry3, point : Vec3) -> Vec3 {
 pub struct Aabb3 {
   mins : Vec3
   maxs : Vec3
+
+  fn new(mins : Vec3, maxs : Vec3) -> Aabb3
 }
 
 ///|
@@ -670,6 +684,8 @@ pub struct MassProperties {
   inertia : Real
   inv_inertia : Real
   center_of_mass : Vec2
+
+  fn new(mass : Real, inertia : Real, center_of_mass : Vec2) -> MassProperties
 }
 
 ///|

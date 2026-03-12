@@ -33,6 +33,8 @@ pub struct PhysicsHooks3D {
     @collision.ColliderHandle3D,
     @core.Vec3,
   ) -> (Bool, @core.Vec3?))?
+
+  fn new() -> PhysicsHooks3D
 }
 
 ///|

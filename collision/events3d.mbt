@@ -75,6 +75,12 @@ pub struct IntersectionEvent3D {
   collider1 : ColliderHandle3D
   collider2 : ColliderHandle3D
   intersecting : Bool
+
+  fn new(
+    collider1 : ColliderHandle3D,
+    collider2 : ColliderHandle3D,
+    intersecting : Bool,
+  ) -> IntersectionEvent3D
 }
 
 ///|
@@ -113,6 +119,15 @@ pub struct ContactForceEvent3D {
   total_force_magnitude : @core.Real
   max_force_direction : @core.Vec3
   max_force_magnitude : @core.Real
+
+  fn new(
+    collider1 : ColliderHandle3D,
+    collider2 : ColliderHandle3D,
+    total_force : @core.Vec3,
+    total_force_magnitude : @core.Real,
+    max_force_direction : @core.Vec3,
+    max_force_magnitude : @core.Real,
+  ) -> ContactForceEvent3D
 }
 
 ///|

@@ -16,6 +16,8 @@
 /// 3D-flavored impulse joint set.
 pub struct ImpulseJointSet3 {
   inner : ImpulseJointSet
+
+  fn new() -> ImpulseJointSet3
 }
 
 ///|
@@ -43,6 +45,8 @@ pub fn ImpulseJointSet3::insert(
 /// 3D-flavored multibody joint set.
 pub struct MultibodyJointSet3 {
   inner : MultibodyJointSet
+
+  fn new() -> MultibodyJointSet3
 }
 
 ///|

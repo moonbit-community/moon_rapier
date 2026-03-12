@@ -16,6 +16,8 @@
 struct FixedJointBuilder {
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+
+  fn new() -> FixedJointBuilder
 }
 
 ///|
@@ -67,6 +69,8 @@ pub struct RopeJointBuilder {
   max_length : @core.Real
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+
+  fn new(max_length : @core.Real) -> RopeJointBuilder
 }
 
 ///|
@@ -159,6 +163,8 @@ pub struct PinSlotJointBuilder {
   mut local_anchor2 : @core.Vec2
   mut limits : JointLimits
   mut limits_enabled : Bool
+
+  fn new(axis : @core.Vec2) -> PinSlotJointBuilder
 }
 
 ///|
@@ -281,6 +287,8 @@ struct PrismaticJointBuilder {
   mut local_anchor2 : @core.Vec2
   mut limits : JointLimits
   mut limits_enabled : Bool
+
+  fn new(axis : @core.Vec2) -> PrismaticJointBuilder
 }
 
 ///|

@@ -20,6 +20,8 @@
 /// so the public surface matches Rapier's default-feature crates.
 pub struct LockedAxes {
   bits : Int
+
+  fn new(bits : Int) -> LockedAxes
 }
 
 ///|

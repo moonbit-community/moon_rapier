@@ -31,6 +31,8 @@ pub fn solve_contacts_3d(@dynamics.IntegrationParameters, @dynamics.RigidBodySet
 // Types and methods
 pub struct ChannelEventCollector {
   handler : EventHandler
+
+  fn new() -> ChannelEventCollector
 }
 pub fn ChannelEventCollector::handle_collision_event(Self, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit
 pub fn ChannelEventCollector::handle_contact_force_event(Self, Float, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.ContactForceEvent) -> Unit
@@ -47,6 +49,8 @@ pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.
 
 pub struct CollisionPipeline3 {
   inner : CollisionPipeline
+
+  fn new() -> CollisionPipeline3
 }
 pub fn CollisionPipeline3::new() -> Self
 pub fn CollisionPipeline3::step(Self, Float, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, PhysicsHooks, EventHandler) -> Unit
@@ -79,6 +83,8 @@ pub struct ContactModificationContext {
   solver_contacts : Array[@collision.SolverContact]
   mut normal : @core.Vec2
   mut user_data : Int
+
+  fn new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @collision.ContactManifold, Array[@collision.SolverContact], @core.Vec2, Int) -> ContactModificationContext
 }
 pub fn ContactModificationContext::new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @collision.ContactManifold, Array[@collision.SolverContact], @core.Vec2, Int) -> Self
 pub fn ContactModificationContext::normal(Self) -> @core.Vec2
@@ -88,6 +94,8 @@ pub fn ContactModificationContext::update_as_oneway_platform(Self, @core.Vec2, F
 
 pub struct ContactSolverCache3D {
   entries : @hashmap.HashMap[(Int, Int, Int, Int), Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]]
+
+  fn new() -> ContactSolverCache3D
 }
 pub fn ContactSolverCache3D::clear(Self) -> Unit
 pub fn ContactSolverCache3D::new() -> Self
@@ -97,11 +105,15 @@ pub struct DebugColor {
   s : Float
   l : Float
   a : Float
+
+  fn new(Float, Float, Float, Float) -> DebugColor
 }
 pub fn DebugColor::new(Float, Float, Float, Float) -> Self
 
 pub struct DebugRenderBackend {
   lines : Array[DebugRenderLine]
+
+  fn new() -> DebugRenderBackend
 }
 pub fn DebugRenderBackend::draw_line(Self, DebugRenderObject, @core.Vec2, @core.Vec2, DebugColor) -> Unit
 pub fn DebugRenderBackend::draw_line_strip(Self, DebugRenderObject, Array[@core.Vec2], DebugColor, Bool) -> Unit
@@ -148,6 +160,8 @@ pub(all) enum DebugRenderObject {
 pub struct DebugRenderPipeline {
   style : DebugRenderStyle
   mode : DebugRenderMode
+
+  fn new(DebugRenderStyle, DebugRenderMode) -> DebugRenderPipeline
 }
 pub fn DebugRenderPipeline::default() -> Self
 pub fn DebugRenderPipeline::new(DebugRenderStyle, DebugRenderMode) -> Self
@@ -186,6 +200,8 @@ pub struct EventHandler {
   mut intersection_callback : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.IntersectionEvent) -> Unit)?
   contact_force_events : Array[@collision.ContactForceEvent]
   mut contact_force_callback : ((Float, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.ContactForceEvent) -> Unit)?
+
+  fn new() -> EventHandler
 }
 pub fn EventHandler::handle_collision_event(Self, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.CollisionEvent) -> Unit
 pub fn EventHandler::handle_contact_force_event(Self, Float, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.ContactForceEvent) -> Unit
@@ -205,6 +221,8 @@ pub struct EventHandler3D {
   collision_events : Array[@collision.CollisionEvent3D]
   intersection_events : Array[@collision.IntersectionEvent3D]
   contact_force_events : Array[@collision.ContactForceEvent3D]
+
+  fn new() -> EventHandler3D
 }
 pub fn EventHandler3D::new() -> Self
 pub fn EventHandler3D::push_collision_event(Self, @collision.CollisionEvent3D) -> Unit
@@ -221,6 +239,8 @@ pub struct PairFilterContext {
   collider2 : @collision.ColliderHandle
   rigid_body1 : @dynamics.RigidBodyHandle?
   rigid_body2 : @dynamics.RigidBodyHandle?
+
+  fn new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?) -> PairFilterContext
 }
 pub fn PairFilterContext::new(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?) -> Self
 
@@ -229,6 +249,8 @@ pub struct PhysicsHooks {
   mut filter_intersection_pair : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool)?
   mut modify_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold) -> (Bool, @core.Vec2))?
   mut modify_solver_contacts_with_solver_contacts : ((@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @collision.ContactManifold, Array[@collision.SolverContact], @collision.SolverFlags) -> @collision.SolverFlags)?
+
+  fn new() -> PhysicsHooks
 }
 pub fn PhysicsHooks::filter_contact_pair(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle) -> Bool) -> Self
 pub fn PhysicsHooks::filter_contact_pair_with_user_data(Self, (@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
@@ -244,6 +266,8 @@ pub struct PhysicsHooks3D {
   mut filter_contact_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
   mut filter_intersection_pair : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool)?
   mut modify_solver_contacts : ((@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.Vec3) -> (Bool, @core.Vec3?))?
+
+  fn new() -> PhysicsHooks3D
 }
 pub fn PhysicsHooks3D::filter_contact_pair(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D) -> Bool) -> Self
 pub fn PhysicsHooks3D::filter_contact_pair_with_user_data(Self, (@dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.ColliderHandle3D, @collision.ColliderHandle3D, @core.UserData128, @core.UserData128, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @core.UserData128?, @core.UserData128?) -> Bool) -> Self
@@ -258,18 +282,24 @@ pub struct PhysicsPipeline {
   prev_intersections : Array[(@collision.ColliderHandle, @collision.ColliderHandle, Bool)]
   contact_solver_cache : Array[ContactImpulseCacheEntry]
   counters : @counters.Counters
+
+  fn new() -> PhysicsPipeline
 }
 pub fn PhysicsPipeline::new() -> Self
 pub fn PhysicsPipeline::step(Self, @core.Vec2, @dynamics.IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 pub struct PhysicsPipeline3 {
   inner : PhysicsPipeline
+
+  fn new() -> PhysicsPipeline3
 }
 pub fn PhysicsPipeline3::new() -> Self
 pub fn PhysicsPipeline3::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 pub struct PhysicsPipeline3D {
   inner : PhysicsPipeline3DReal
+
+  fn new() -> PhysicsPipeline3D
 }
 pub fn PhysicsPipeline3D::new() -> Self
 pub fn PhysicsPipeline3D::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
@@ -287,6 +317,8 @@ pub struct PhysicsPipeline3DReal {
   sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   contact_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   intersection_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
+
+  fn new() -> PhysicsPipeline3DReal
 }
 pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit

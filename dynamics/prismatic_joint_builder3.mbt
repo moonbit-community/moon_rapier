@@ -18,6 +18,8 @@
 /// NOTE: This maps to the existing 2D prismatic joint builder by dropping the `z` coordinate.
 pub struct PrismaticJointBuilder3 {
   inner : PrismaticJointBuilder
+
+  fn new(axis : @core.Vec3) -> PrismaticJointBuilder3
 }
 
 ///|

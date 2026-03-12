@@ -1872,6 +1872,8 @@ pub fn QueryFilterFlags::insert(
 pub struct Ray {
   origin : @core.Vec2
   dir : @core.Vec2
+
+  fn new(origin : @core.Vec2, dir : @core.Vec2) -> Ray
 }
 
 ///|

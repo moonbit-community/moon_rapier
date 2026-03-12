@@ -16,6 +16,11 @@
 pub struct SpringCoefficients {
   natural_frequency : @core.Real
   damping_ratio : @core.Real
+
+  fn new(
+    natural_frequency : @core.Real,
+    damping_ratio : @core.Real,
+  ) -> SpringCoefficients
 }
 
 ///|
@@ -133,6 +138,8 @@ pub struct IntegrationParameters {
   mut min_island_size : Int
   mut max_ccd_substeps : Int
   friction_model : FrictionModel
+
+  fn new() -> IntegrationParameters
 }
 
 ///|

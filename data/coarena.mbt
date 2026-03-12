@@ -15,6 +15,8 @@
 ///|
 pub struct Coarena[T] {
   data : Array[(Int, T)]
+
+  fn[T] new() -> Coarena[T]
 }
 
 ///|

@@ -12,6 +12,8 @@ pub struct CCDCounters {
   solver_time : Timer
   broad_phase_time : Timer
   narrow_phase_time : Timer
+
+  fn new() -> CCDCounters
 }
 pub fn CCDCounters::new() -> Self
 pub fn CCDCounters::num_substeps(Self) -> Int
@@ -24,6 +26,8 @@ pub struct CollisionDetectionCounters {
   broad_phase_time : Timer
   final_broad_phase_time : Timer
   narrow_phase_time : Timer
+
+  fn new() -> CollisionDetectionCounters
 }
 pub fn CollisionDetectionCounters::ncontact_pairs(Self) -> Int
 pub fn CollisionDetectionCounters::new() -> Self
@@ -39,6 +43,8 @@ pub struct Counters {
   cd : CollisionDetectionCounters
   solver : SolverCounters
   ccd : CCDCounters
+
+  fn new(Bool) -> Counters
 }
 pub fn Counters::assembly_completed(Self) -> Unit
 pub fn Counters::assembly_started(Self) -> Unit
@@ -97,6 +103,8 @@ pub struct SolverCounters {
   velocity_assembly_time_constraints_init : Timer
   velocity_update_time : Timer
   velocity_writeback_time : Timer
+
+  fn new() -> SolverCounters
 }
 pub fn SolverCounters::nconstraints(Self) -> Int
 pub fn SolverCounters::ncontacts(Self) -> Int
@@ -114,6 +122,8 @@ pub struct StagesCounters {
   solver_time : Timer
   ccd_time : Timer
   user_changes : Timer
+
+  fn new() -> StagesCounters
 }
 pub fn StagesCounters::new() -> Self
 pub fn StagesCounters::reset(Self) -> Unit
@@ -121,6 +131,8 @@ pub fn StagesCounters::to_string(Self) -> String
 
 pub struct Timer {
   mut time_ms : Double
+
+  fn new() -> Timer
 }
 pub fn Timer::new() -> Self
 pub fn Timer::pause(Self) -> Unit

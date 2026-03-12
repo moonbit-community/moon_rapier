@@ -63,6 +63,8 @@ pub struct SolverContact {
   mut friction : @core.Real
   mut restitution : @core.Real
   mut tangent_velocity : @core.Vec2
+
+  fn new(point : @core.Vec2, dist : @core.Real) -> SolverContact
 }
 
 ///|

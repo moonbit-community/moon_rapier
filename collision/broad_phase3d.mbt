@@ -16,6 +16,11 @@
 pub struct ColliderPair3D {
   collider1 : ColliderHandle3D
   collider2 : ColliderHandle3D
+
+  fn new(
+    collider1 : ColliderHandle3D,
+    collider2 : ColliderHandle3D,
+  ) -> ColliderPair3D
 }
 
 ///|
@@ -47,6 +52,8 @@ pub struct BroadPhase3D {
   pairs : Array[(ColliderHandle3D, ColliderHandle3D)]
   prev_pairs : Array[(ColliderHandle3D, ColliderHandle3D)]
   events : Array[BroadPhasePairEvent3D]
+
+  fn new() -> BroadPhase3D
 }
 
 ///|

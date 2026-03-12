@@ -17,6 +17,8 @@ pub struct Timer {
   // In rapier, the timer only measures when the `profiler` feature is enabled.
   // This port keeps timers deterministic by default (always 0 unless a future profiler is added).
   mut time_ms : Double
+
+  fn new() -> Timer
 }
 
 ///|

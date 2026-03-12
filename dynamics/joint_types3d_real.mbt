@@ -28,6 +28,8 @@ pub(all) enum JointAxis3DReal {
 ///|
 pub struct JointAxesMask3DReal {
   bits : Int
+
+  fn new(bits : Int) -> JointAxesMask3DReal
 }
 
 ///|

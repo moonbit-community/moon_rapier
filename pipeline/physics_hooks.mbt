@@ -20,6 +20,15 @@ pub struct PairFilterContext {
   collider2 : @collision.ColliderHandle
   rigid_body1 : @dynamics.RigidBodyHandle?
   rigid_body2 : @dynamics.RigidBodyHandle?
+
+  fn new(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+    rigid_body1 : @dynamics.RigidBodyHandle?,
+    rigid_body2 : @dynamics.RigidBodyHandle?,
+  ) -> PairFilterContext
 }
 
 ///|
@@ -46,6 +55,19 @@ pub struct ContactModificationContext {
   solver_contacts : Array[@collision.SolverContact]
   mut normal : @core.Vec2
   mut user_data : Int
+
+  fn new(
+    bodies : @dynamics.RigidBodySet,
+    colliders : @collision.ColliderSet,
+    collider1 : @collision.ColliderHandle,
+    collider2 : @collision.ColliderHandle,
+    rigid_body1 : @dynamics.RigidBodyHandle?,
+    rigid_body2 : @dynamics.RigidBodyHandle?,
+    manifold : @collision.ContactManifold,
+    solver_contacts : Array[@collision.SolverContact],
+    normal : @core.Vec2,
+    user_data : Int,
+  ) -> ContactModificationContext
 }
 
 ///|
@@ -181,6 +203,8 @@ pub struct PhysicsHooks {
     Array[@collision.SolverContact],
     @collision.SolverFlags,
   ) -> @collision.SolverFlags)?
+
+  fn new() -> PhysicsHooks
 }
 
 ///|

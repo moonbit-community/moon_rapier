@@ -15,6 +15,8 @@
 ///|
 pub struct SharedShape {
   shape : Shape
+
+  fn new(shape : Shape) -> SharedShape
 }
 
 ///|
@@ -104,6 +106,8 @@ pub struct Triangle {
   a : @core.Vec2
   b : @core.Vec2
   c : @core.Vec2
+
+  fn new(a : @core.Vec2, b : @core.Vec2, c : @core.Vec2) -> Triangle
 }
 
 ///|
@@ -125,6 +129,8 @@ pub fn Triangle::as_shape(self : Triangle) -> Shape {
 pub struct HeightField {
   heights : Array[@core.Real]
   scale : @core.Vec2
+
+  fn new(heights : Array[@core.Real], scale : @core.Vec2) -> HeightField
 }
 
 ///|
@@ -368,6 +374,8 @@ pub fn MeshConverter::convert(
 pub struct ColliderPair {
   collider1 : ColliderHandle
   collider2 : ColliderHandle
+
+  fn new(a : ColliderHandle, b : ColliderHandle) -> ColliderPair
 }
 
 ///|

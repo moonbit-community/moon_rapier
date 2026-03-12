@@ -18,6 +18,8 @@ pub struct Mat2 {
   m01 : Real
   m10 : Real
   m11 : Real
+
+  fn new(m00 : Real, m01 : Real, m10 : Real, m11 : Real) -> Mat2
 }
 
 ///|

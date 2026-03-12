@@ -24,6 +24,8 @@ struct RevoluteJointBuilder {
   mut motor_enabled : Bool
   mut limits : JointLimits
   mut limits_enabled : Bool
+
+  fn new() -> RevoluteJointBuilder
 }
 
 ///|
@@ -238,6 +240,8 @@ fn revolute_body_to_parent(
 ///|
 pub struct LinkId {
   value : Int
+
+  fn new(value : Int) -> LinkId
 }
 
 ///|
@@ -1080,6 +1084,8 @@ pub fn Multibody::inverse_kinematics(
 ///|
 struct MultibodyJointHandle {
   id : Int
+
+  fn new(id : Int) -> MultibodyJointHandle
 }
 
 ///|
@@ -1111,6 +1117,8 @@ pub fn MultibodyJointHandle::invalid() -> MultibodyJointHandle {
 ///|
 pub struct MultibodyIndex {
   value : Int
+
+  fn new(value : Int) -> MultibodyIndex
 }
 
 ///|
@@ -1155,6 +1163,8 @@ struct MultibodyJointSet {
   body_links : Array[LinkInfo?]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
+
+  fn new() -> MultibodyJointSet
 }
 
 ///|

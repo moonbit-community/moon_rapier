@@ -33,6 +33,8 @@ pub struct PubSub[T] {
   messages : Array[T]
   offsets : Array[Int]
   cursors : Array[PubSubCursor]
+
+  fn[T] new() -> PubSub[T]
 }
 
 ///|

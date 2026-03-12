@@ -24,6 +24,18 @@ pub struct Mat3 {
   m20 : Real
   m21 : Real
   m22 : Real
+
+  fn new(
+    m00 : Real,
+    m01 : Real,
+    m02 : Real,
+    m10 : Real,
+    m11 : Real,
+    m12 : Real,
+    m20 : Real,
+    m21 : Real,
+    m22 : Real,
+  ) -> Mat3
 }
 
 ///|
@@ -179,6 +191,15 @@ pub struct SdpMat3 {
   m22 : Real
   m23 : Real
   m33 : Real
+
+  fn new(
+    m11 : Real,
+    m12 : Real,
+    m13 : Real,
+    m22 : Real,
+    m23 : Real,
+    m33 : Real,
+  ) -> SdpMat3
 }
 
 ///|
@@ -257,6 +278,12 @@ pub struct MassProperties3 {
   inertia : SdpMat3
   inv_inertia : SdpMat3
   center_of_mass : Vec3
+
+  fn new(
+    mass : Real,
+    inertia : SdpMat3,
+    center_of_mass : Vec3,
+  ) -> MassProperties3
 }
 
 ///|

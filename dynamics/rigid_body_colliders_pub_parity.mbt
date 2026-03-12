@@ -21,6 +21,8 @@
 pub struct RigidBodyColliders {
   // Collider handles are represented opaquely in this port's public dynamics surface.
   colliders : Array[Int]
+
+  fn new() -> RigidBodyColliders
 }
 
 ///|

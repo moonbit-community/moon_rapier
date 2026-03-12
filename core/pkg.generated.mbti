@@ -48,6 +48,8 @@ pub fn two_pi() -> Float
 pub struct Aabb {
   mins : Vec2
   maxs : Vec2
+
+  fn new(Vec2, Vec2) -> Aabb
 }
 pub fn Aabb::combine(Self, Self) -> Self
 pub fn Aabb::contains_point(Self, Vec2) -> Bool
@@ -58,6 +60,8 @@ pub fn Aabb::new(Vec2, Vec2) -> Self
 pub struct Aabb3 {
   mins : Vec3
   maxs : Vec3
+
+  fn new(Vec3, Vec3) -> Aabb3
 }
 pub fn Aabb3::combine(Self, Self) -> Self
 pub fn Aabb3::dilated(Self, Float) -> Self
@@ -73,6 +77,8 @@ pub struct DMatrix {
   rows : Int
   cols : Int
   data : Array[Float]
+
+  fn new(Int, Int, Float) -> DMatrix
 }
 pub fn DMatrix::cols(Self) -> Int
 pub fn DMatrix::get(Self, Int, Int) -> Float?
@@ -86,6 +92,8 @@ pub fn DMatrix::zeros(Int, Int) -> Self
 pub struct Isometry2 {
   translation : Vec2
   rotation : Rot2
+
+  fn new(Vec2, Rot2) -> Isometry2
 }
 pub fn Isometry2::from_translation(Vec2) -> Self
 pub fn Isometry2::identity() -> Self
@@ -98,6 +106,8 @@ pub fn Isometry2::transform_point(Self, Vec2) -> Vec2
 pub struct Isometry3 {
   translation : Vec3
   rotation : Quat
+
+  fn new(Vec3, Quat) -> Isometry3
 }
 pub fn Isometry3::from_translation(Vec3) -> Self
 pub fn Isometry3::identity() -> Self
@@ -112,6 +122,8 @@ pub struct MassProperties {
   inertia : Float
   inv_inertia : Float
   center_of_mass : Vec2
+
+  fn new(Float, Float, Vec2) -> MassProperties
 }
 pub fn MassProperties::add(Self, Self) -> Self
 pub fn MassProperties::default() -> Self
@@ -125,6 +137,8 @@ pub struct MassProperties3 {
   inertia : SdpMat3
   inv_inertia : SdpMat3
   center_of_mass : Vec3
+
+  fn new(Float, SdpMat3, Vec3) -> MassProperties3
 }
 pub fn MassProperties3::add(Self, Self) -> Self
 pub fn MassProperties3::default() -> Self
@@ -138,6 +152,8 @@ pub struct Mat2 {
   m01 : Float
   m10 : Float
   m11 : Float
+
+  fn new(Float, Float, Float, Float) -> Mat2
 }
 pub fn Mat2::add(Self, Self) -> Self
 pub fn Mat2::determinant(Self) -> Float
@@ -161,6 +177,8 @@ pub struct Mat3 {
   m20 : Float
   m21 : Float
   m22 : Float
+
+  fn new(Float, Float, Float, Float, Float, Float, Float, Float, Float) -> Mat3
 }
 pub fn Mat3::add(Self, Self) -> Self
 pub fn Mat3::determinant(Self) -> Float
@@ -181,6 +199,8 @@ pub struct Quat {
   y : Float
   z : Float
   w : Float
+
+  fn new(Float, Float, Float, Float) -> Quat
 }
 pub fn Quat::conjugate(Self) -> Self
 pub fn Quat::dot(Self, Self) -> Float
@@ -217,6 +237,8 @@ pub struct SdpMat3 {
   m22 : Float
   m23 : Float
   m33 : Float
+
+  fn new(Float, Float, Float, Float, Float, Float) -> SdpMat3
 }
 pub fn SdpMat3::from_diagonal(Vec3) -> Self
 pub fn SdpMat3::into_mat3(Self) -> Mat3
@@ -245,6 +267,8 @@ pub fn UserData128::zero() -> Self
 pub struct Vec2 {
   x : Float
   y : Float
+
+  fn new(Float, Float) -> Vec2
 }
 pub fn Vec2::add(Self, Self) -> Self
 pub fn Vec2::cross(Self, Self) -> Float
@@ -263,6 +287,8 @@ pub struct Vec3 {
   x : Float
   y : Float
   z : Float
+
+  fn new(Float, Float, Float) -> Vec3
 }
 pub fn Vec3::add(Self, Self) -> Self
 pub fn Vec3::cross(Self, Self) -> Self

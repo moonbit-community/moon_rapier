@@ -15,6 +15,8 @@
 ///|
 pub struct Group {
   value : Int
+
+  fn new(bits : Int) -> Group
 }
 
 ///|
@@ -217,6 +219,12 @@ pub struct InteractionGroups {
   mut memberships : Group
   mut filter : Group
   test_mode : InteractionTestMode
+
+  fn new(
+    memberships : Group,
+    filter : Group,
+    test_mode : InteractionTestMode,
+  ) -> InteractionGroups
 }
 
 ///|

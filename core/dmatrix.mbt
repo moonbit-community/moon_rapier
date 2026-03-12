@@ -21,6 +21,8 @@ pub struct DMatrix {
   rows : Int
   cols : Int
   data : Array[Real]
+
+  fn new(rows : Int, cols : Int, init : Real) -> DMatrix
 }
 
 ///|
