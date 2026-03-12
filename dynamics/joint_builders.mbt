@@ -16,8 +16,6 @@
 struct FixedJointBuilder {
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
-
-  fn new() -> FixedJointBuilder
 }
 
 ///|
@@ -287,8 +285,6 @@ struct PrismaticJointBuilder {
   mut local_anchor2 : @core.Vec2
   mut limits : JointLimits
   mut limits_enabled : Bool
-
-  fn new(axis : @core.Vec2) -> PrismaticJointBuilder
 }
 
 ///|

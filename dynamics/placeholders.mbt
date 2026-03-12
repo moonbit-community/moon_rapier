@@ -26,8 +26,6 @@ struct Island {
   bodies : Array[RigidBodyHandle]
   mut id_in_awake_list : Int?
   mut additional_solver_iterations : Int
-
-  fn new(handle : RigidBodyHandle, additional_solver_iterations : Int) -> Island
 }
 
 ///|
@@ -88,8 +86,6 @@ struct IslandsOptimizer {
   mut mode : Int
   merge_state : IslandsOptimizerMergeState
   split_state : IslandsOptimizerSplitState
-
-  fn new() -> IslandsOptimizer
 }
 
 ///|
@@ -1919,8 +1915,6 @@ struct ImpulseJointSet {
   free_handles : Array[Int]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
-
-  fn new() -> ImpulseJointSet
 }
 
 ///|

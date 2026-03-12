@@ -407,7 +407,7 @@ fn basename(path : String) -> String {
     path
   } else {
     // Safe: indices are within bounds.
-    (try! path[last + 1:path.length()]).to_string()
+    path[last + 1:path.length()].to_string()
   }
 }
 
