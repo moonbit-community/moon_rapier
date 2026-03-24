@@ -24,8 +24,12 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : @core.Real
   mut joint_rot : @core.Rot2
-
-  fn new(data : GenericJoint, kinematic : Bool) -> MultibodyJoint
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  mut solver_lin_impulses : @core.Vec2
 }
 
 ///|
@@ -39,7 +43,76 @@ pub fn MultibodyJoint::new(
     coords: @core.Vec2::zero(),
     angle: 0.0F,
     joint_rot: @core.Rot2::identity(),
+    axis3: @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    local_anchor1_3: @core.Vec3::new(
+      data.local_anchor1().x,
+      data.local_anchor1().y,
+      0.0F,
+    ),
+    local_anchor2_3: @core.Vec3::new(
+      data.local_anchor2().x,
+      data.local_anchor2().y,
+      0.0F,
+    ),
+    local_frame1_rotation: @core.Quat::identity(),
+    local_frame2_rotation: @core.Quat::identity(),
+    solver_lin_impulses: @core.Vec2::zero(),
   }
+}
+
+///|
+fn MultibodyJoint::from_revolute(
+  joint : RevoluteJoint,
+  kinematic : Bool,
+) -> MultibodyJoint {
+  {
+    data: GenericJoint::from_revolute(joint),
+    kinematic,
+    coords: @core.Vec2::zero(),
+    angle: 0.0F,
+    joint_rot: @core.Rot2::identity(),
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
+    solver_lin_impulses: joint.solver_lin_impulses,
+  }
+}
+
+///|
+fn MultibodyJoint::as_revolute_joint(self : MultibodyJoint) -> RevoluteJoint {
+  let motor_enabled = self.data.motor_axes.contains(JointAxesMask::ang_z())
+  let limits_enabled = self.data.limit_axes.contains(JointAxesMask::ang_z())
+  let limits = self.data.limits.ang_z
+  let motor = self.data.motors.ang_z
+  {
+    local_anchor1: self.data.local_anchor1(),
+    local_anchor2: self.data.local_anchor2(),
+    axis3: self.axis3,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    local_frame1_rotation: self.local_frame1_rotation,
+    local_frame2_rotation: self.local_frame2_rotation,
+    softness: self.data.softness,
+    motor,
+    motor_enabled,
+    limits,
+    limits_enabled,
+    solver_lin_impulses: self.solver_lin_impulses,
+  }
+}
+
+///|
+fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int {
+  let locked = self.data.locked_axes().bits()
+  let mut ndofs = 0
+  for i in 0..<3 {
+    if (locked & (1 << i)) == 0 {
+      ndofs = ndofs + 1
+    }
+  }
+  ndofs
 }
 
 ///|

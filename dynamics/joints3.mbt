@@ -504,9 +504,9 @@ fn mb3_root_pose_from_bodies(
 }
 
 ///|
-fn mb3_revolute_body_to_parent(
-  joint : RevoluteJoint,
-  angle : @core.Real,
+fn mb3_multibody_body_to_parent(
+  joint : MultibodyJoint,
+  displacement : @core.Real,
 ) -> @core.Isometry3 {
   let frame1 = @core.Isometry3::new(
     joint.local_anchor1_3,
@@ -518,7 +518,9 @@ fn mb3_revolute_body_to_parent(
   )
   let free_axis_rotation = @core.Isometry3::new(
     @core.Vec3::zero(),
-    @core.rotation_from_scaled_axis(@core.Vec3::new(angle, 0.0F, 0.0F)),
+    @core.rotation_from_scaled_axis(
+      @core.Vec3::new(joint.angle + displacement, 0.0F, 0.0F),
+    ),
   )
   frame1.mul(free_axis_rotation).mul(frame2.inverse())
 }
@@ -553,14 +555,14 @@ fn mb3_compute_link_pose(
     joint_axes.push(current_pose.rotation.rotate_vec3(link.joint.axis3))
     joint_cols.push(mb3_joint_logical_column(multibody, link.assembly_id))
 
-    let mut angle = link.joint_angle
     let disp_col = mb3_joint_logical_column(multibody, link.assembly_id)
+    let mut displacement = 0.0F
     if displacements is Some(disp) && disp_col < disp.length() {
-      angle = angle + disp[disp_col]
+      displacement = disp[disp_col]
     }
 
     current_pose = current_pose.mul(
-      mb3_revolute_body_to_parent(link.joint, angle),
+      mb3_multibody_body_to_parent(link.joint, displacement),
     )
   }
 

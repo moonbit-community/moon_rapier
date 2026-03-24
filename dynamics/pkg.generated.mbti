@@ -761,8 +761,12 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : Float
   mut joint_rot : @core.Rot2
-
-  fn new(GenericJoint, Bool) -> MultibodyJoint
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  mut solver_lin_impulses : @core.Vec2
 }
 pub fn MultibodyJoint::apply_displacement(Self, Array[Float]) -> Unit
 pub fn MultibodyJoint::body_to_parent(Self) -> @core.Isometry2

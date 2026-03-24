@@ -183,13 +183,13 @@ struct RevoluteJoint {
   local_frame1_rotation : @core.Quat
   local_frame2_rotation : @core.Quat
   softness : SpringCoefficients
-  mut motor : JointMotor
+  motor : JointMotor
   motor_enabled : Bool
-  mut limits : JointLimits
+  limits : JointLimits
   limits_enabled : Bool
   // Solver warmstart cache for the (locked) linear DOFs of this revolute joint.
   // The motor/limit impulses are stored inside `motor` and `limits`.
-  mut solver_lin_impulses : @core.Vec2
+  solver_lin_impulses : @core.Vec2
 }
 
 ///|
@@ -255,21 +255,54 @@ pub fn RevoluteJoint::angle(
 }
 
 ///|
-fn revolute_body_to_parent(
-  joint : RevoluteJoint,
-  angle : @core.Real,
-) -> @core.Isometry2 {
-  let t1 = @core.Isometry2::from_translation(joint.local_anchor1)
-  let rot = @core.Isometry2::new(
-    @core.Vec2::zero(),
-    @core.Rot2::from_angle(angle),
+fn multibody_joint_local_displacements(
+  joint : MultibodyJoint,
+  displacements : Array[@core.Real]?,
+  assembly_id : Int,
+) -> Array[@core.Real] {
+  let result : Array[@core.Real] = []
+  let ndofs = joint.ndofs()
+  if displacements is Some(global) {
+    for i in 0..<ndofs {
+      let index = assembly_id + i
+      if index >= 0 && index < global.length() {
+        result.push(global[index])
+      } else {
+        result.push(0.0F)
+      }
+    }
+  } else {
+    for _ in 0..<ndofs {
+      result.push(0.0F)
+    }
+  }
+  result
+}
+
+///|
+fn multibody_joint_with_local_displacements(
+  joint : MultibodyJoint,
+  displacements : Array[@core.Real]?,
+  assembly_id : Int,
+) -> MultibodyJoint {
+  let result = MultibodyJoint::{
+    data: joint.data,
+    kinematic: joint.kinematic,
+    coords: joint.coords,
+    angle: joint.angle,
+    joint_rot: joint.joint_rot,
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
+    solver_lin_impulses: joint.solver_lin_impulses,
+  }
+  let joint_disp = multibody_joint_local_displacements(
+    joint, displacements, assembly_id,
   )
-  let neg_anchor2 = @core.Vec2::new(
-    -joint.local_anchor2.x,
-    -joint.local_anchor2.y,
-  )
-  let t2 = @core.Isometry2::from_translation(neg_anchor2)
-  t1.mul(rot).mul(t2)
+  result.apply_displacement(joint_disp)
+  result
 }
 
 ///|
@@ -290,8 +323,7 @@ struct MultibodyLink {
   mut parent_internal_id : Int
   mut assembly_id : Int
   rigid_body : RigidBodyHandle
-  mut joint : RevoluteJoint
-  mut joint_angle : @core.Real
+  mut joint : MultibodyJoint
   mut local_to_parent : @core.Isometry2
   mut local_to_world : @core.Isometry2
 }
@@ -347,14 +379,13 @@ struct Multibody {
 
 ///|
 fn Multibody::new_with_root(handle : RigidBodyHandle) -> Multibody {
-  let joint = RevoluteJointBuilder::new().build()
+  let joint = MultibodyJoint::new(GenericJoint::default(), false)
   let link = MultibodyLink::{
     internal_id: 0,
     parent_internal_id: 0,
     assembly_id: 0,
     rigid_body: handle,
     joint,
-    joint_angle: 0.0F,
     local_to_parent: @core.Isometry2::identity(),
     local_to_world: @core.Isometry2::identity(),
   }
@@ -417,7 +448,7 @@ fn Multibody::rebuild_indices(self : Multibody, root_dofs : Int) -> Unit {
       link.assembly_id = 0
     } else {
       link.assembly_id = assembly
-      assembly = assembly + 1
+      assembly = assembly + link.joint.ndofs()
     }
     self.links[i] = link
   }
@@ -459,12 +490,15 @@ fn Multibody::ensure_buffers(self : Multibody) -> Unit {
 
 ///|
 fn Multibody::recompute_ndofs(self : Multibody) -> Unit {
-  let count = self.links.length()
-  if count <= 0 {
+  if self.links.length() <= 0 {
     self.ndofs = 0
   } else {
     self.root_is_dynamic = true
-    self.ndofs = SPATIAL_DIM + (count - 1)
+    let mut joint_ndofs = 0
+    for i in 1..<self.links.length() {
+      joint_ndofs = joint_ndofs + self.links[i].joint.ndofs()
+    }
+    self.ndofs = SPATIAL_DIM + joint_ndofs
     self.rebuild_indices(SPATIAL_DIM)
   }
   self.ensure_buffers()
@@ -486,8 +520,12 @@ fn Multibody::update_ndofs_with_root(
     true
   }
   let root_dofs = if is_dynamic { SPATIAL_DIM } else { 0 }
+  let mut joint_ndofs = 0
+  for i in 1..<self.links.length() {
+    joint_ndofs = joint_ndofs + self.links[i].joint.ndofs()
+  }
   self.root_is_dynamic = is_dynamic
-  self.ndofs = root_dofs + (self.links.length() - 1)
+  self.ndofs = root_dofs + joint_ndofs
   self.rebuild_indices(root_dofs)
   self.ensure_buffers()
 }
@@ -514,7 +552,7 @@ pub fn Multibody::forward_kinematics(
   for i in 1..<self.links.length() {
     let link = self.links[i]
     let parent = self.links[link.parent_internal_id]
-    let local_to_parent = revolute_body_to_parent(link.joint, link.joint_angle)
+    let local_to_parent = link.joint.body_to_parent()
     link.local_to_parent = local_to_parent
     link.local_to_world = parent.local_to_world.mul(link.local_to_parent)
     self.links[i] = link
@@ -624,7 +662,11 @@ pub fn Multibody::joint_velocity(
     let root_ndofs = if self.root_is_dynamic { SPATIAL_DIM } else { 0 }
     DVector::new_view(self.velocities.data, 0, root_ndofs)
   } else {
-    DVector::new_view(self.velocities.data, link.assembly_id, 1)
+    DVector::new_view(
+      self.velocities.data,
+      link.assembly_id,
+      link.joint.ndofs(),
+    )
   }
 }
 
@@ -668,11 +710,12 @@ pub fn Multibody::forward_kinematics_single_branch(
       continue
     }
     let link = self.links[link_id]
-    let mut angle = link.joint_angle
-    if displacements is Some(disp) && link.assembly_id < disp.length() {
-      angle = angle + disp[link.assembly_id]
-    }
-    let local_to_parent = revolute_body_to_parent(link.joint, angle)
+    let displaced_joint = multibody_joint_with_local_displacements(
+      link.joint,
+      displacements,
+      link.assembly_id,
+    )
+    let local_to_parent = displaced_joint.body_to_parent()
     current_pose = current_pose.mul(local_to_parent)
     link.local_to_parent = local_to_parent
     link.local_to_world = current_pose
@@ -775,14 +818,17 @@ fn Multibody::compute_link_pose(
   for i in 1..<branch.length() {
     let link_id = branch[i]
     let link = self.links[link_id]
-    let joint_pos = current_pose.transform_point(link.joint.local_anchor1)
+    let joint_pos = current_pose.transform_point(
+      link.joint.data.local_anchor1(),
+    )
     joint_positions.push(joint_pos)
     joint_cols.push(link.assembly_id)
-    let mut angle = link.joint_angle
-    if displacements is Some(disp) && link.assembly_id < disp.length() {
-      angle = angle + disp[link.assembly_id]
-    }
-    let local_to_parent = revolute_body_to_parent(link.joint, angle)
+    let displaced_joint = multibody_joint_with_local_displacements(
+      link.joint,
+      displacements,
+      link.assembly_id,
+    )
+    let local_to_parent = displaced_joint.body_to_parent()
     current_pose = current_pose.mul(local_to_parent)
   }
   if out_jacobian is Some(jacobian) {
@@ -856,9 +902,13 @@ pub fn Multibody::apply_displacements(
   }
   for i in 1..<self.links.length() {
     let link = self.links[i]
-    let col = link.assembly_id
-    if col >= 0 && col < displacements.length() {
-      link.joint_angle = link.joint_angle + displacements[col]
+    let joint_disp = multibody_joint_local_displacements(
+      link.joint,
+      Some(displacements),
+      link.assembly_id,
+    )
+    if joint_disp.length() > 0 {
+      link.joint.apply_displacement(joint_disp)
       self.links[i] = link
     }
   }
@@ -1643,6 +1693,7 @@ fn mb_motor_model_from_int(value : Int) -> MotorModel {
 
 ///|
 fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
+  let revolute = link.joint.as_revolute_joint()
   let (rbid, rbgen) = link.rigid_body.into_raw_parts()
   sb.write_string("L^")
   sb.write_object(link.parent_internal_id)
@@ -1651,47 +1702,47 @@ fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
   sb.write_char('^')
   sb.write_object(rbgen)
   sb.write_char('^')
-  sb.write_object(link.joint.local_anchor1.x)
+  sb.write_object(revolute.local_anchor1.x)
   sb.write_char('^')
-  sb.write_object(link.joint.local_anchor1.y)
+  sb.write_object(revolute.local_anchor1.y)
   sb.write_char('^')
-  sb.write_object(link.joint.local_anchor2.x)
+  sb.write_object(revolute.local_anchor2.x)
   sb.write_char('^')
-  sb.write_object(link.joint.local_anchor2.y)
+  sb.write_object(revolute.local_anchor2.y)
   sb.write_char('^')
-  sb.write_object(link.joint.softness.natural_frequency)
+  sb.write_object(revolute.softness.natural_frequency)
   sb.write_char('^')
-  sb.write_object(link.joint.softness.damping_ratio)
+  sb.write_object(revolute.softness.damping_ratio)
   sb.write_char('^')
-  sb.write_object(if link.joint.motor_enabled { 1 } else { 0 })
+  sb.write_object(if revolute.motor_enabled { 1 } else { 0 })
   sb.write_char('^')
-  sb.write_object(link.joint.motor.target_vel)
+  sb.write_object(revolute.motor.target_vel)
   sb.write_char('^')
-  sb.write_object(link.joint.motor.target_pos)
+  sb.write_object(revolute.motor.target_pos)
   sb.write_char('^')
-  sb.write_object(link.joint.motor.stiffness)
+  sb.write_object(revolute.motor.stiffness)
   sb.write_char('^')
-  sb.write_object(link.joint.motor.damping)
+  sb.write_object(revolute.motor.damping)
   sb.write_char('^')
-  sb.write_object(link.joint.motor.max_force)
+  sb.write_object(revolute.motor.max_force)
   sb.write_char('^')
-  sb.write_object(link.joint.motor.impulse)
+  sb.write_object(revolute.motor.impulse)
   sb.write_char('^')
-  sb.write_object(mb_motor_model_to_int(link.joint.motor.model))
+  sb.write_object(mb_motor_model_to_int(revolute.motor.model))
   sb.write_char('^')
-  sb.write_object(if link.joint.limits_enabled { 1 } else { 0 })
+  sb.write_object(if revolute.limits_enabled { 1 } else { 0 })
   sb.write_char('^')
-  sb.write_object(link.joint.limits.min)
+  sb.write_object(revolute.limits.min)
   sb.write_char('^')
-  sb.write_object(link.joint.limits.max)
+  sb.write_object(revolute.limits.max)
   sb.write_char('^')
-  sb.write_object(link.joint.limits.impulse)
+  sb.write_object(revolute.limits.impulse)
   sb.write_char('^')
   sb.write_object(link.joint.solver_lin_impulses.x)
   sb.write_char('^')
   sb.write_object(link.joint.solver_lin_impulses.y)
   sb.write_char('^')
-  sb.write_object(link.joint_angle)
+  sb.write_object(link.joint.angle)
   sb.write_char('^')
   sb.write_object(link.joint.local_anchor1_3.z)
   sb.write_char('^')
@@ -1769,7 +1820,7 @@ fn parse_link(text : String) -> MultibodyLink? {
     }
     let limits = JointLimits::new(limit_min, limit_max)
     limits.impulse = limit_impulse
-    let joint = RevoluteJoint::{
+    let revolute = RevoluteJoint::{
       local_anchor1: @core.Vec2::new(a1x, a1y),
       local_anchor2: @core.Vec2::new(a2x, a2y),
       axis3,
@@ -1784,6 +1835,9 @@ fn parse_link(text : String) -> MultibodyLink? {
       limits_enabled,
       solver_lin_impulses: @core.Vec2::new(solver_lin_x, solver_lin_y),
     }
+    let joint = MultibodyJoint::from_revolute(revolute, false)
+    joint.angle = joint_angle
+    joint.joint_rot = @core.Rot2::from_angle(joint_angle)
     let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
     Some(MultibodyLink::{
       internal_id: 0,
@@ -1791,7 +1845,6 @@ fn parse_link(text : String) -> MultibodyLink? {
       assembly_id: 0,
       rigid_body: handle,
       joint,
-      joint_angle,
       local_to_parent: @core.Isometry2::identity(),
       local_to_world: @core.Isometry2::identity(),
     })
@@ -2002,7 +2055,7 @@ pub fn MultibodyJointSet::revolute_joint_descriptors(
         link: MultibodyLinkId::new(graph_id, mb_index, link_id),
         parent: parent_link.rigid_body,
         child: link.rigid_body,
-        joint: link.joint,
+        joint: link.joint.as_revolute_joint(),
         solver_lin_impulses: link.joint.solver_lin_impulses,
       })
     }
@@ -2024,8 +2077,18 @@ pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(
     }
     let lnk = mb.links[link.id]
     lnk.joint.solver_lin_impulses = lin_impulses
-    lnk.joint.motor = lnk.joint.motor.set_impulse(motor_impulse)
-    lnk.joint.limits = lnk.joint.limits.set_impulse(limit_impulse)
+    let motors = lnk.joint.data.motors
+    lnk.joint.data.motors = JointMotors3::{
+      lin_x: motors.lin_x,
+      lin_y: motors.lin_y,
+      ang_z: motors.ang_z.set_impulse(motor_impulse),
+    }
+    let limits = lnk.joint.data.limits
+    lnk.joint.data.limits = JointLimits3::{
+      lin_x: limits.lin_x,
+      lin_y: limits.lin_y,
+      ang_z: limits.ang_z.set_impulse(limit_impulse),
+    }
     mb.links[link.id] = lnk
     self.multibodies.set(link.multibody.arena_index(), mb) |> ignore
   }
@@ -2092,6 +2155,7 @@ pub fn MultibodyJointSet::insert(
   joint : RevoluteJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
+  let multibody_joint = MultibodyJoint::from_revolute(joint, false)
   let parent_link = self.lookup_body(parent)
   let child_link = self.lookup_body(child)
   if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
@@ -2106,7 +2170,7 @@ pub fn MultibodyJointSet::insert(
         let link = child_mb.links[i]
         if i == 0 {
           link.parent_internal_id = parent_link.id
-          link.joint = joint
+          link.joint = multibody_joint
         } else {
           link.parent_internal_id = link.parent_internal_id + offset
         }
@@ -2152,7 +2216,57 @@ pub fn MultibodyJointSet::insert_kinematic(
   joint : RevoluteJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  self.insert(parent, child, joint, wake_up)
+  let multibody_joint = MultibodyJoint::from_revolute(joint, true)
+  let parent_link = self.lookup_body(parent)
+  let child_link = self.lookup_body(child)
+  if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
+    return None
+  }
+  if self.multibodies.get(parent_link.multibody.arena_index())
+    is Some(parent_mb) {
+    if self.multibodies.remove(child_link.multibody.arena_index())
+      is Some(child_mb) {
+      let offset = parent_mb.links.length()
+      for i in 0..<child_mb.links.length() {
+        let link = child_mb.links[i]
+        if i == 0 {
+          link.parent_internal_id = parent_link.id
+          link.joint = multibody_joint
+        } else {
+          link.parent_internal_id = link.parent_internal_id + offset
+        }
+        link.internal_id = offset + i
+        parent_mb.links.push(link)
+      }
+      parent_mb.recompute_ndofs()
+      self.multibodies.set(parent_link.multibody.arena_index(), parent_mb)
+      |> ignore
+      self.insert_graph_edge(parent, child)
+      for i in 0..<child_mb.links.length() {
+        let link = child_mb.links[i]
+        let graph_id = if self.rb2mb.get(rb_handle_index(link.rigid_body))
+          is Some(existing) {
+          existing.graph_id
+        } else {
+          self.ensure_graph_node(link.rigid_body)
+        }
+        self.set_link(
+          link.rigid_body,
+          MultibodyLinkId::new(graph_id, parent_link.multibody, offset + i),
+        )
+      }
+      if wake_up {
+        push_unique_handle(self.to_wake_up, parent)
+        push_unique_handle(self.to_wake_up, child)
+      }
+      push_unique_pair(self.to_join, (parent, child))
+      Some(MultibodyJointHandle::new(rb_handle_index(child)))
+    } else {
+      None
+    }
+  } else {
+    None
+  }
 }
 
 ///|
