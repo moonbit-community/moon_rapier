@@ -120,7 +120,7 @@ pub fn MultibodyJointSet3::insert(
   self : MultibodyJointSet3,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
   let inner = self.as_2d()
@@ -134,7 +134,7 @@ pub fn MultibodyJointSet3::insert_kinematic(
   self : MultibodyJointSet3,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
   let inner = self.as_2d()
@@ -506,8 +506,9 @@ fn mb3_root_pose_from_bodies(
 ///|
 fn mb3_multibody_body_to_parent(
   joint : MultibodyJoint,
-  displacement : @core.Real,
+  displacements : Array[@core.Real],
 ) -> @core.Isometry3 {
+  let locked = joint.data.locked_axes().bits()
   let frame1 = @core.Isometry3::new(
     joint.local_anchor1_3,
     joint.local_frame1_rotation,
@@ -516,13 +517,56 @@ fn mb3_multibody_body_to_parent(
     joint.local_anchor2_3,
     joint.local_frame2_rotation,
   )
-  let free_axis_rotation = @core.Isometry3::new(
+  let last_displacement = if displacements.length() > 0 {
+    displacements[displacements.length() - 1]
+  } else {
+    0.0F
+  }
+  let angle = if (locked & (1 << 2)) == 0 {
+    joint.angle + last_displacement
+  } else {
+    0.0F
+  }
+  let lin_x_disp = if displacements.length() > 0 {
+    displacements[0]
+  } else {
+    0.0F
+  }
+  let lin_y_disp = if displacements.length() > 1 {
+    displacements[1]
+  } else if (locked & (1 << 0)) != 0 && displacements.length() > 0 {
+    displacements[0]
+  } else {
+    0.0F
+  }
+  let mut transform = @core.Isometry3::new(
     @core.Vec3::zero(),
-    @core.rotation_from_scaled_axis(
-      @core.Vec3::new(joint.angle + displacement, 0.0F, 0.0F),
-    ),
-  )
-  frame1.mul(free_axis_rotation).mul(frame2.inverse())
+    @core.rotation_from_scaled_axis(@core.Vec3::new(angle, 0.0F, 0.0F)),
+  ).mul(frame2.inverse())
+
+  let lin_x = if (locked & (1 << 0)) == 0 {
+    joint.coords.x + lin_x_disp
+  } else {
+    0.0F
+  }
+  let lin_y = if (locked & (1 << 1)) == 0 {
+    joint.coords.y + lin_y_disp
+  } else {
+    0.0F
+  }
+
+  if (locked & (1 << 0)) == 0 {
+    transform = @core.Isometry3::from_translation(
+      @core.Vec3::new(lin_x, 0.0F, 0.0F),
+    ).mul(transform)
+  }
+  if (locked & (1 << 1)) == 0 {
+    transform = @core.Isometry3::from_translation(
+      @core.Vec3::new(0.0F, lin_y, 0.0F),
+    ).mul(transform)
+  }
+
+  frame1.mul(transform)
 }
 
 ///|
@@ -542,27 +586,65 @@ fn mb3_compute_link_pose(
     jacobian.ensure_cols(mb3_logical_ndofs(multibody))
   }
 
-  let joint_positions : Array[@core.Vec3] = []
-  let joint_axes : Array[@core.Vec3] = []
-  let joint_cols : Array[Int] = []
+  let dof_positions : Array[@core.Vec3] = []
+  let dof_axes : Array[@core.Vec3] = []
+  let dof_cols : Array[Int] = []
+  let dof_is_angular : Array[Bool] = []
   let root_position = root_pose.translation
   let mut current_pose = root_pose
 
   for i in 1..<branch.length() {
     let link = multibody.links[branch[i]]
     let joint_origin = current_pose.transform_point(link.joint.local_anchor1_3)
-    joint_positions.push(joint_origin)
-    joint_axes.push(current_pose.rotation.rotate_vec3(link.joint.axis3))
-    joint_cols.push(mb3_joint_logical_column(multibody, link.assembly_id))
-
-    let disp_col = mb3_joint_logical_column(multibody, link.assembly_id)
-    let mut displacement = 0.0F
-    if displacements is Some(disp) && disp_col < disp.length() {
-      displacement = disp[disp_col]
+    let frame1_rot = current_pose.rotation.mul(link.joint.local_frame1_rotation)
+    let locked = link.joint.data.locked_axes().bits()
+    let joint_base_col = mb3_joint_logical_column(multibody, link.assembly_id)
+    let joint_disp : Array[@core.Real] = []
+    let mut local_col = 0
+    if (locked & (1 << 0)) == 0 {
+      let axis = frame1_rot.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+      dof_positions.push(joint_origin)
+      dof_axes.push(axis)
+      dof_cols.push(joint_base_col + local_col)
+      dof_is_angular.push(false)
+      if displacements is Some(disp) &&
+        joint_base_col + local_col < disp.length() {
+        joint_disp.push(disp[joint_base_col + local_col])
+      } else {
+        joint_disp.push(0.0F)
+      }
+      local_col = local_col + 1
+    }
+    if (locked & (1 << 1)) == 0 {
+      let axis = frame1_rot.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+      dof_positions.push(joint_origin)
+      dof_axes.push(axis)
+      dof_cols.push(joint_base_col + local_col)
+      dof_is_angular.push(false)
+      if displacements is Some(disp) &&
+        joint_base_col + local_col < disp.length() {
+        joint_disp.push(disp[joint_base_col + local_col])
+      } else {
+        joint_disp.push(0.0F)
+      }
+      local_col = local_col + 1
+    }
+    if (locked & (1 << 2)) == 0 {
+      let axis = current_pose.rotation.rotate_vec3(link.joint.axis3)
+      dof_positions.push(joint_origin)
+      dof_axes.push(axis)
+      dof_cols.push(joint_base_col + local_col)
+      dof_is_angular.push(true)
+      if displacements is Some(disp) &&
+        joint_base_col + local_col < disp.length() {
+        joint_disp.push(disp[joint_base_col + local_col])
+      } else {
+        joint_disp.push(0.0F)
+      }
     }
 
     current_pose = current_pose.mul(
-      mb3_multibody_body_to_parent(link.joint, displacement),
+      mb3_multibody_body_to_parent(link.joint, joint_disp),
     )
   }
 
@@ -600,11 +682,15 @@ fn mb3_compute_link_pose(
       }
     }
 
-    for i in 0..<joint_positions.length() {
-      let joint_origin = joint_positions[i]
-      let axis = joint_axes[i]
-      let linear = axis.cross(link_position.sub(joint_origin))
-      mb3_set_spatial_column(jacobian, joint_cols[i], linear, axis)
+    for i in 0..<dof_positions.length() {
+      let axis = dof_axes[i]
+      if dof_is_angular[i] {
+        let joint_origin = dof_positions[i]
+        let linear = axis.cross(link_position.sub(joint_origin))
+        mb3_set_spatial_column(jacobian, dof_cols[i], linear, axis)
+      } else {
+        mb3_set_spatial_column(jacobian, dof_cols[i], axis, @core.Vec3::zero())
+      }
     }
   }
 

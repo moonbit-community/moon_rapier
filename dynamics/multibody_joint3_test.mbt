@@ -96,7 +96,9 @@ test "multibody append (dim3)" {
   let b = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let c = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let d = bodies.insert(RigidBodyBuilder3::dynamic().build())
-  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build(),
+  )
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
@@ -118,9 +120,11 @@ test "multibody jacobian cols match ndofs for dynamic root (dim3)" {
   let joints = MultibodyJointSet3::new()
   let root = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
-  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -0.5F))
-    .build()
+    .build(),
+  )
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, link_id)) {
@@ -141,7 +145,9 @@ test "multibody apply_displacements preserves dynamic root 3d dofs" {
   let joints = MultibodyJointSet3::new()
   let root = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
-  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build()
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build(),
+  )
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, link_id)) {
@@ -153,6 +159,35 @@ test "multibody apply_displacements preserves dynamic root 3d dofs" {
         let axis = pose.rotation.to_scaled_axis()
         inspect(@core.abs(axis.x) > 1.0e-3F, content="true")
         inspect(@core.abs(axis.y) > 1.0e-3F, content="true")
+      } else {
+        inspect(false, content="true")
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "multibody generic prismatic joint follows 3d local axis" {
+  let bodies = RigidBodySet3::new()
+  let joints = MultibodyJointSet3::new()
+  let root = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build(),
+  ).set_locked_axes(JointAxesMask::locked_prismatic_axes())
+  let handle = joints.insert(root, child, joint, true)
+  if handle is Some(link_handle) {
+    if joints.get_mut(link_handle) is Some((multibody, link_id)) {
+      multibody.apply_displacements([0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.25F])
+      multibody.forward_kinematics(bodies, false)
+      if multibody.link_pose(link_id) is Some(pose) {
+        inspect(@core.abs(pose.translation.z - 1.25F) < 1.0e-5F, content="true")
+        inspect(@core.abs(pose.translation.x) < 1.0e-5F, content="true")
+        inspect(@core.abs(pose.translation.y) < 1.0e-5F, content="true")
       } else {
         inspect(false, content="true")
       }
@@ -186,7 +221,9 @@ test "multibody insert (dim3)" {
     } else if scenario > 1 {
       seed = shuffle_int_array3(insertion_ids, seed)
     }
-    let joint = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+    let joint = GenericJoint::from_revolute(
+      RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build(),
+    )
     let mut mb_handle : MultibodyJointHandle = MultibodyJointHandle::invalid()
     for index in insertion_ids {
       let inserted = multibody_joints.insert(
@@ -222,7 +259,9 @@ test "multibody remove (dim3)" {
     for _ in 0..<num_links {
       handles.push(bodies.insert(RigidBodyBuilder3::dynamic().build()))
     }
-    let joint = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+    let joint = GenericJoint::from_revolute(
+      RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build(),
+    )
     for index in 0..<(num_links - 1) {
       multibody_joints.insert(handles[index], handles[index + 1], joint, true)
       |> ignore
@@ -248,7 +287,9 @@ test "multibody attached joints use connectivity graph semantics (dim3)" {
   let a = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let b = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let c = bodies.insert(RigidBodyBuilder3::dynamic().build())
-  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build(),
+  )
   let ab = multibody_joints.insert(a, b, joint, true)
   let bc = multibody_joints.insert(b, c, joint, true)
   if ab is Some(ab_handle) && bc is Some(bc_handle) {
@@ -303,7 +344,9 @@ test "multibody handles preserve rigid body generations (dim3)" {
   let joints = MultibodyJointSet3::new()
   let parent = bodies.insert(RigidBodyBuilder3::dynamic().build())
   let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
-  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build()
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build(),
+  )
   let inserted = joints.insert(parent, child, joint, true)
   if inserted is Some(handle) {
     inspect(handle.into_raw_parts() == child.into_raw_parts(), content="true")

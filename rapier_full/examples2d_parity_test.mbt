@@ -2112,12 +2112,14 @@ test "examples2d/inverse_kinematics2.rs parity" {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJointBuilder::new()
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder::new()
       .local_anchor1(
         @core.Vec2::new(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F })),
       )
       .local_anchor2(@core.Vec2::new(0.0F, -size / 2.0F))
-      .build()
+      .build(),
+    )
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
       last_link = handle
     } else {

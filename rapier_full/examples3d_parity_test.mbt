@@ -718,7 +718,8 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJointBuilder3::new(axis_z)
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder3::new(axis_z)
       .local_anchor1(
         @core.Vec3::new(
           0.0F,
@@ -727,7 +728,8 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
         ),
       )
       .local_anchor2(@core.Vec3::new(0.0F, -size / 2.0F, 0.0F))
-      .build()
+      .build(),
+    )
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
       last_link = handle
     } else {
@@ -1755,12 +1757,14 @@ test "examples3d/debug_articulations3.rs parity" {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJointBuilder::new()
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder::new()
       .local_anchor1(
         @core.Vec2::new(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F })),
       )
       .local_anchor2(@core.Vec2::new(0.0F, -size / 2.0F))
-      .build()
+      .build(),
+    )
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
       last_link = handle
     } else {
@@ -2788,9 +2792,11 @@ test "examples3d/debug_multibody_ang_motor_pos3.rs parity" {
     bodies,
   )
   |> ignore
-  let joint = @dynamics.RevoluteJointBuilder::new()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
     .motor_position(1.0F, 100.0F, 10.0F)
-    .build()
+    .build(),
+  )
   let inserted = multibody_joints.insert(base, link, joint, true)
   inspect(inserted is Some(_), content="true")
   step_pipeline_2d_n(

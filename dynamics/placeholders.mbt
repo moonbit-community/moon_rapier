@@ -1221,6 +1221,11 @@ pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
 pub struct GenericJoint {
   mut local_frame1 : @core.Isometry2
   mut local_frame2 : @core.Isometry2
+  mut axis3 : @core.Vec3
+  mut local_anchor1_3 : @core.Vec3
+  mut local_anchor2_3 : @core.Vec3
+  mut local_frame1_rotation : @core.Quat
+  mut local_frame2_rotation : @core.Quat
   mut locked_axes : JointAxesMask
   mut limit_axes : JointAxesMask
   mut motor_axes : JointAxesMask
@@ -1240,6 +1245,11 @@ pub fn GenericJoint::default() -> GenericJoint {
   {
     local_frame1: @core.Isometry2::identity(),
     local_frame2: @core.Isometry2::identity(),
+    axis3: @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    local_anchor1_3: @core.Vec3::zero(),
+    local_anchor2_3: @core.Vec3::zero(),
+    local_frame1_rotation: @core.Quat::identity(),
+    local_frame2_rotation: @core.Quat::identity(),
     locked_axes: JointAxesMask::empty(),
     limit_axes: JointAxesMask::empty(),
     motor_axes: JointAxesMask::empty(),
@@ -1347,6 +1357,11 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
   let result = GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
     locked_axes: JointAxesMask::locked_revolute_axes(),
     limit_axes: JointAxesMask::empty(),
     motor_axes: JointAxesMask::empty(),
@@ -1400,6 +1415,14 @@ pub fn GenericJoint::set_local_frame1(
   frame : @core.Isometry2,
 ) -> GenericJoint {
   self.local_frame1 = frame
+  self.local_anchor1_3 = @core.Vec3::new(
+    frame.translation.x,
+    frame.translation.y,
+    self.local_anchor1_3.z,
+  )
+  self.local_frame1_rotation = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, 0.0F, frame.rotation.angle()),
+  )
   self
 }
 
@@ -1409,6 +1432,14 @@ pub fn GenericJoint::set_local_frame2(
   frame : @core.Isometry2,
 ) -> GenericJoint {
   self.local_frame2 = frame
+  self.local_anchor2_3 = @core.Vec3::new(
+    frame.translation.x,
+    frame.translation.y,
+    self.local_anchor2_3.z,
+  )
+  self.local_frame2_rotation = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, 0.0F, frame.rotation.angle()),
+  )
   self
 }
 
@@ -1428,6 +1459,11 @@ pub fn GenericJoint::set_local_anchor1(
   anchor : @core.Vec2,
 ) -> GenericJoint {
   self.local_frame1 = @core.Isometry2::new(anchor, self.local_frame1.rotation)
+  self.local_anchor1_3 = @core.Vec3::new(
+    anchor.x,
+    anchor.y,
+    self.local_anchor1_3.z,
+  )
   self
 }
 
@@ -1437,6 +1473,11 @@ pub fn GenericJoint::set_local_anchor2(
   anchor : @core.Vec2,
 ) -> GenericJoint {
   self.local_frame2 = @core.Isometry2::new(anchor, self.local_frame2.rotation)
+  self.local_anchor2_3 = @core.Vec3::new(
+    anchor.x,
+    anchor.y,
+    self.local_anchor2_3.z,
+  )
   self
 }
 
@@ -1504,6 +1545,14 @@ pub fn GenericJoint::flip(self : GenericJoint) -> GenericJoint {
   let tmp = self.local_frame1
   self.local_frame1 = self.local_frame2
   self.local_frame2 = tmp
+  let axis3 = self.axis3
+  self.axis3 = axis3
+  let anchor1_3 = self.local_anchor1_3
+  self.local_anchor1_3 = self.local_anchor2_3
+  self.local_anchor2_3 = anchor1_3
+  let frame1_3 = self.local_frame1_rotation
+  self.local_frame1_rotation = self.local_frame2_rotation
+  self.local_frame2_rotation = frame1_3
   let coupled_bits = self.coupled_axes.bits()
   // In 2D we have 3 dofs (LinX, LinY, AngZ) matching bit indices 0..2.
   if (coupled_bits & (1 << 0)) == 0 {
@@ -2059,6 +2108,9 @@ fn write_limits_fields(sb : StringBuilder, limits : JointLimits) -> Unit {
 }
 
 ///|
+const SERIALIZED_GENERIC_JOINT_FIELD_COUNT : Int = 58
+
+///|
 fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit {
   sb.write_object(joint.local_frame1.translation.x)
   sb.write_char('^')
@@ -2103,6 +2155,32 @@ fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit 
   sb.write_object(joint_enabled_to_int(joint.enabled))
   sb.write_char('^')
   sb.write_object(joint.user_data)
+  sb.write_char('^')
+  sb.write_object(joint.local_anchor1_3.z)
+  sb.write_char('^')
+  sb.write_object(joint.local_anchor2_3.z)
+  sb.write_char('^')
+  sb.write_object(joint.axis3.x)
+  sb.write_char('^')
+  sb.write_object(joint.axis3.y)
+  sb.write_char('^')
+  sb.write_object(joint.axis3.z)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1_rotation.x)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1_rotation.y)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1_rotation.z)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame1_rotation.w)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2_rotation.x)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2_rotation.y)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2_rotation.z)
+  sb.write_char('^')
+  sb.write_object(joint.local_frame2_rotation.w)
 }
 
 ///|
@@ -2230,9 +2308,65 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
   } else {
     0
   }
+  let anchor1_z = if fields.length() > start + 45 {
+    ij_parse_real_value(fields[start + 45])
+  } else {
+    0.0F
+  }
+  let anchor2_z = if fields.length() > start + 46 {
+    ij_parse_real_value(fields[start + 46])
+  } else {
+    0.0F
+  }
+  let axis3 = if fields.length() > start + 49 {
+    @core.Vec3::new(
+      ij_parse_real_value(fields[start + 47]),
+      ij_parse_real_value(fields[start + 48]),
+      ij_parse_real_value(fields[start + 49]),
+    )
+  } else {
+    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  }
+  let frame1_rotation = if fields.length() > start + 53 {
+    @core.Quat::new(
+      ij_parse_real_value(fields[start + 50]),
+      ij_parse_real_value(fields[start + 51]),
+      ij_parse_real_value(fields[start + 52]),
+      ij_parse_real_value(fields[start + 53]),
+    )
+  } else {
+    @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, frame1.rotation.angle()),
+    )
+  }
+  let frame2_rotation = if fields.length() > start + 57 {
+    @core.Quat::new(
+      ij_parse_real_value(fields[start + 54]),
+      ij_parse_real_value(fields[start + 55]),
+      ij_parse_real_value(fields[start + 56]),
+      ij_parse_real_value(fields[start + 57]),
+    )
+  } else {
+    @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, frame2.rotation.angle()),
+    )
+  }
   GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
+    axis3,
+    local_anchor1_3: @core.Vec3::new(
+      frame1.translation.x,
+      frame1.translation.y,
+      anchor1_z,
+    ),
+    local_anchor2_3: @core.Vec3::new(
+      frame2.translation.x,
+      frame2.translation.y,
+      anchor2_z,
+    ),
+    local_frame1_rotation: frame1_rotation,
+    local_frame2_rotation: frame2_rotation,
     locked_axes,
     limit_axes,
     motor_axes,
@@ -2388,7 +2522,7 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       let body1 = RigidBodyHandle::new(b1id, b1gen)
       let body2 = RigidBodyHandle::new(b2id, b2gen)
       let joint_data = parse_generic_joint(fields, 6)
-      let impulse_x_index = 6 + 45
+      let impulse_x_index = 6 + SERIALIZED_GENERIC_JOINT_FIELD_COUNT
       let impulses_x = if fields.length() > impulse_x_index {
         ij_parse_real_value(fields[impulse_x_index])
       } else {
@@ -2620,6 +2754,11 @@ pub fn ImpulseJointSet::insert(
   let joint_data = GenericJoint::{
     local_frame1: joint.local_frame1,
     local_frame2: joint.local_frame2,
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
     locked_axes: joint.locked_axes,
     limit_axes: joint.limit_axes,
     motor_axes: joint.motor_axes,

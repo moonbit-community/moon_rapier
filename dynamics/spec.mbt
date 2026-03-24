@@ -2528,7 +2528,7 @@ pub fn MultibodyJointSet::insert(
   self : MultibodyJointSet,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
   ...
@@ -2540,7 +2540,7 @@ pub fn MultibodyJointSet::insert_kinematic(
   self : MultibodyJointSet,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : RevoluteJoint,
+  joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
   ...

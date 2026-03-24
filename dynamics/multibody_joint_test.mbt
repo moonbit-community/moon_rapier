@@ -96,7 +96,7 @@ test "multibody append" {
   let b : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let c : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let d : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = RevoluteJointBuilder::new().build()
+  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
@@ -130,7 +130,7 @@ test "multibody insert" {
     } else if scenario > 1 {
       seed = shuffle_int_array(insertion_ids, seed)
     }
-    let joint = RevoluteJointBuilder::new().build()
+    let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
     let mut mb_handle : MultibodyJointHandle = MultibodyJointHandle::invalid()
     for index in insertion_ids {
       let inserted = multibody_joints.insert(
@@ -165,7 +165,7 @@ test "multibody remove" {
     for _ in 0..<num_links {
       handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
     }
-    let joint = RevoluteJointBuilder::new().build()
+    let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
     for index in 0..<(num_links - 1) {
       multibody_joints.insert(handles[index], handles[index + 1], joint, true)
       |> ignore
@@ -190,7 +190,7 @@ test "multibody remove wakes links" {
   let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
   let islands = IslandManager::new()
   let impulse_joints = ImpulseJointSet::new()
-  let joint = RevoluteJointBuilder::new().build()
+  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
@@ -218,7 +218,7 @@ test "multibody handles preserve rigid body generations" {
   let joints = MultibodyJointSet::new()
   let parent = bodies.insert(RigidBodyBuilder::dynamic().build())
   let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = RevoluteJointBuilder::new().build()
+  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
   let inserted = joints.insert(parent, child, joint, true)
   if inserted is Some(handle) {
     inspect(handle.into_raw_parts() == child.into_raw_parts(), content="true")
@@ -228,6 +228,34 @@ test "multibody handles preserve rigid body generations" {
         unknown_handle.into_raw_parts() == child.into_raw_parts(),
         content="true",
       )
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "multibody insert accepts generic prismatic joint" {
+  let bodies = RigidBodySet::new()
+  let joints = MultibodyJointSet::new()
+  let root = bodies.insert(RigidBodyBuilder::fixed().build())
+  let child = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = GenericJoint::new(JointAxesMask::locked_prismatic_axes())
+  let inserted = joints.insert(root, child, joint, true)
+  if inserted is Some(handle) {
+    if joints.get_mut(handle) is Some((multibody, link_id)) {
+      multibody.forward_kinematics(bodies, true)
+      inspect(multibody.ndofs() == 1, content="true")
+      let pose = multibody.forward_kinematics_single_link(
+        bodies,
+        link_id,
+        Some([2.0F]),
+        None,
+      )
+      inspect(@core.abs(pose.translation.x - 2.0F) < 1.0e-5F, content="true")
+      inspect(@core.abs(pose.translation.y) < 1.0e-5F, content="true")
     } else {
       inspect(false, content="true")
     }

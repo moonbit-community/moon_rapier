@@ -43,19 +43,11 @@ pub fn MultibodyJoint::new(
     coords: @core.Vec2::zero(),
     angle: 0.0F,
     joint_rot: @core.Rot2::identity(),
-    axis3: @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    local_anchor1_3: @core.Vec3::new(
-      data.local_anchor1().x,
-      data.local_anchor1().y,
-      0.0F,
-    ),
-    local_anchor2_3: @core.Vec3::new(
-      data.local_anchor2().x,
-      data.local_anchor2().y,
-      0.0F,
-    ),
-    local_frame1_rotation: @core.Quat::identity(),
-    local_frame2_rotation: @core.Quat::identity(),
+    axis3: data.axis3,
+    local_anchor1_3: data.local_anchor1_3,
+    local_anchor2_3: data.local_anchor2_3,
+    local_frame1_rotation: data.local_frame1_rotation,
+    local_frame2_rotation: data.local_frame2_rotation,
     solver_lin_impulses: @core.Vec2::zero(),
   }
 }
@@ -101,6 +93,11 @@ fn MultibodyJoint::as_revolute_joint(self : MultibodyJoint) -> RevoluteJoint {
     limits_enabled,
     solver_lin_impulses: self.solver_lin_impulses,
   }
+}
+
+///|
+fn MultibodyJoint::is_revolute(self : MultibodyJoint) -> Bool {
+  self.data.as_revolute() is Some(_)
 }
 
 ///|

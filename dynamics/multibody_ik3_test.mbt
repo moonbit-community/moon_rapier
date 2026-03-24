@@ -99,7 +99,12 @@ test "one link fwd kinematics (dim3)" {
     let builder = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
       .local_anchor1(@core.Vec3::new(0.0F, anchor_delta, 0.0F))
       .local_anchor2(@core.Vec3::new(0.0F, -anchor_delta, 0.0F))
-    let link = multibodies.insert(last_body, new_body, builder.build(), true)
+    let link = multibodies.insert(
+      last_body,
+      new_body,
+      GenericJoint::from_revolute(builder.build()),
+      true,
+    )
     if link is Some(handle) {
       last_link = handle
     }
@@ -178,7 +183,12 @@ test "one link fwd kinematics uses 3d axis and z anchors" {
   let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
     .local_anchor1(@core.Vec3::zero())
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
-  let handle = multibodies.insert(root, child, builder.build(), true)
+  let handle = multibodies.insert(
+    root,
+    child,
+    GenericJoint::from_revolute(builder.build()),
+    true,
+  )
   if handle is Some(link_handle) {
     if multibodies.get_mut(link_handle) is Some((multibody, link_id)) {
       multibody.forward_kinematics(bodies, true)
@@ -220,7 +230,12 @@ test "one link inverse kinematics follows 3d hinge axis" {
   let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
     .local_anchor1(@core.Vec3::zero())
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
-  let handle = multibodies.insert(root, child, builder.build(), true)
+  let handle = multibodies.insert(
+    root,
+    child,
+    GenericJoint::from_revolute(builder.build()),
+    true,
+  )
   if handle is Some(link_handle) {
     if multibodies.get_mut(link_handle) is Some((multibody, link_id)) {
       multibody.forward_kinematics(bodies, true)

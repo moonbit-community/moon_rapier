@@ -31,10 +31,12 @@ test "physics_pipeline syncs multibody rigid bodies" {
     .translation(@core.Vec2::new(10.0F, 10.0F))
     .build(),
   )
-  let joint = @dynamics.RevoluteJointBuilder::new()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
     .local_anchor1(@core.Vec2::zero())
     .local_anchor2(@core.Vec2::new(1.0F, 0.0F))
-    .build()
+    .build(),
+  )
   multibody_joints.insert(parent, child, joint, true) |> ignore
   let parameters = @dynamics.IntegrationParameters::default().set_dt(0.0F)
   pipeline.step(

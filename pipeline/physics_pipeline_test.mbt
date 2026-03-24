@@ -1092,7 +1092,9 @@ test "multibody joints participate in pipeline solver (revolute constraint)" {
   |> ignore
 
   // A simple multibody with one revolute joint (locks the two linear DOFs).
-  let joint = @dynamics.RevoluteJointBuilder::new().build()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new().build(),
+  )
   multibody_joints.insert(parent, child, joint, true) |> ignore
 
   // Give the child an initial velocity; without a solver-backed joint, it would drift away.

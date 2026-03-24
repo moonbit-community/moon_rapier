@@ -73,7 +73,12 @@ test "one link fwd kinematics" {
     let builder = RevoluteJointBuilder::new()
       .local_anchor1(@core.Vec2::new(0.0F, anchor_delta))
       .local_anchor2(@core.Vec2::new(0.0F, -anchor_delta))
-    let link = multibodies.insert(last_body, new_body, builder.build(), true)
+    let link = multibodies.insert(
+      last_body,
+      new_body,
+      GenericJoint::from_revolute(builder.build()),
+      true,
+    )
     if link is Some(handle) {
       last_link = handle
     }
