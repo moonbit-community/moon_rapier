@@ -240,6 +240,64 @@ test "multibody remove (dim3)" {
 }
 
 ///|
+test "multibody attached joints use connectivity graph semantics (dim3)" {
+  let bodies = RigidBodySet3::new()
+  let multibody_joints = MultibodyJointSet3::new()
+  let impulse_joints = ImpulseJointSet3::new()
+  let islands = IslandManager3::new()
+  let a = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let b = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let c = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+  let ab = multibody_joints.insert(a, b, joint, true)
+  let bc = multibody_joints.insert(b, c, joint, true)
+  if ab is Some(ab_handle) && bc is Some(bc_handle) {
+    let attached = multibody_joints.attached_joints(b)
+    inspect(attached.length() == 2, content="true")
+    let mut saw_ab = false
+    let mut saw_bc = false
+    for i in 0..<attached.length() {
+      let (parent, child, handle) = attached[i]
+      if RigidBodyHandle::equals(parent, a) && RigidBodyHandle::equals(child, b) {
+        let (id, _) = handle.into_raw_parts()
+        let (expected_id, _) = ab_handle.into_raw_parts()
+        if id == expected_id {
+          saw_ab = true
+        }
+      } else if RigidBodyHandle::equals(parent, b) &&
+        RigidBodyHandle::equals(child, c) {
+        let (id, _) = handle.into_raw_parts()
+        let (expected_id, _) = bc_handle.into_raw_parts()
+        if id == expected_id {
+          saw_bc = true
+        }
+      }
+    }
+    inspect(saw_ab, content="true")
+    inspect(saw_bc, content="true")
+    let attached_bodies = multibody_joints.attached_bodies(b)
+    inspect(attached_bodies.length() == 2, content="true")
+    let mut saw_a = false
+    let mut saw_c = false
+    for i in 0..<attached_bodies.length() {
+      if RigidBodyHandle::equals(attached_bodies[i], a) {
+        saw_a = true
+      } else if RigidBodyHandle::equals(attached_bodies[i], c) {
+        saw_c = true
+      }
+    }
+    inspect(saw_a, content="true")
+    inspect(saw_c, content="true")
+    bodies.remove(b, islands, (), impulse_joints, multibody_joints, true)
+    |> ignore
+    inspect(multibody_joints.attached_joints(a).length() == 0, content="true")
+    inspect(multibody_joints.attached_joints(c).length() == 0, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns (dim3)" {
   let seq : IndexSequence = IndexSequence::new()

@@ -46,13 +46,69 @@ pub fn ImpulseJointSet3::insert(
 struct MultibodyJointSet3 {
   multibodies : Array[Multibody]
   body_links : Array[LinkInfo?]
+  rb_graph_ids : Array[Int]
+  rb_graph_generations : Array[Int]
+  graph_nodes : Array[RigidBodyHandle]
+  graph_edges : Array[MultibodyGraphEdge3]
+  adjacency : Array[Array[Int]]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
 
 ///|
+priv struct MultibodyGraphEdge3 {
+  node1 : Int
+  node2 : Int
+  parent : RigidBodyHandle
+  child : RigidBodyHandle
+}
+
+///|
+fn remove_graph_edge_index(values : Array[Int], index : Int) -> Unit {
+  let mut found = -1
+  for i in 0..<values.length() {
+    if values[i] == index {
+      found = i
+      break
+    }
+  }
+  if found < 0 {
+    return
+  }
+  let last_index = values.length() - 1
+  if found != last_index {
+    values[found] = values[last_index]
+  }
+  values.pop() |> ignore
+}
+
+///|
+fn replace_graph_edge_index(
+  values : Array[Int],
+  old_index : Int,
+  new_index : Int,
+) -> Unit {
+  for i in 0..<values.length() {
+    if values[i] == old_index {
+      values[i] = new_index
+      return
+    }
+  }
+}
+
+///|
 pub fn MultibodyJointSet3::new() -> MultibodyJointSet3 {
-  { multibodies: [], body_links: [], to_wake_up: [], to_join: [] }
+  {
+    multibodies: [],
+    body_links: [],
+    rb_graph_ids: [],
+    rb_graph_generations: [],
+    graph_nodes: [],
+    graph_edges: [],
+    adjacency: [],
+    to_wake_up: [],
+    to_join: [],
+  }
 }
 
 ///|
@@ -99,6 +155,190 @@ fn MultibodyJointSet3::ensure_body_capacity(
   while self.body_links.length() <= id {
     self.body_links.push(None)
   }
+}
+
+///|
+fn MultibodyJointSet3::ensure_graph_mapping_capacity(
+  self : MultibodyJointSet3,
+  id : Int,
+) -> Unit {
+  if id < 0 {
+    return
+  }
+  let mut index = self.rb_graph_ids.length()
+  while index <= id {
+    self.rb_graph_ids.push(-1)
+    self.rb_graph_generations.push(0)
+    index = index + 1
+  }
+}
+
+///|
+fn MultibodyJointSet3::graph_node_for(
+  self : MultibodyJointSet3,
+  handle : RigidBodyHandle,
+) -> Int? {
+  if handle.id < 0 || handle.id >= self.rb_graph_ids.length() {
+    return None
+  }
+  let node_id = self.rb_graph_ids[handle.id]
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return None
+  }
+  if self.rb_graph_generations[handle.id] != handle.generation {
+    return None
+  }
+  if !RigidBodyHandle::equals(self.graph_nodes[node_id], handle) {
+    return None
+  }
+  Some(node_id)
+}
+
+///|
+fn MultibodyJointSet3::ensure_graph_node(
+  self : MultibodyJointSet3,
+  handle : RigidBodyHandle,
+) -> Int {
+  self.ensure_graph_mapping_capacity(handle.id)
+  if self.graph_node_for(handle) is Some(node_id) {
+    node_id
+  } else {
+    let node_id = self.graph_nodes.length()
+    self.graph_nodes.push(handle)
+    self.adjacency.push([])
+    self.rb_graph_ids[handle.id] = node_id
+    self.rb_graph_generations[handle.id] = handle.generation
+    node_id
+  }
+}
+
+///|
+fn MultibodyJointSet3::insert_graph_edge(
+  self : MultibodyJointSet3,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+) -> Unit {
+  let node1 = self.ensure_graph_node(parent)
+  let node2 = self.ensure_graph_node(child)
+  let edge_id = self.graph_edges.length()
+  self.graph_edges.push(MultibodyGraphEdge3::{ node1, node2, parent, child })
+  self.adjacency[node1].push(edge_id)
+  self.adjacency[node2].push(edge_id)
+}
+
+///|
+fn MultibodyJointSet3::remove_graph_edge(
+  self : MultibodyJointSet3,
+  edge_id : Int,
+) -> MultibodyGraphEdge3? {
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let removed_edge = self.graph_edges[edge_id]
+  remove_graph_edge_index(self.adjacency[removed_edge.node1], edge_id)
+  if removed_edge.node2 != removed_edge.node1 {
+    remove_graph_edge_index(self.adjacency[removed_edge.node2], edge_id)
+  }
+  let last_index = self.graph_edges.length() - 1
+  if edge_id != last_index {
+    let moved_edge = self.graph_edges[last_index]
+    self.graph_edges[edge_id] = moved_edge
+    replace_graph_edge_index(
+      self.adjacency[moved_edge.node1],
+      last_index,
+      edge_id,
+    )
+    if moved_edge.node2 != moved_edge.node1 {
+      replace_graph_edge_index(
+        self.adjacency[moved_edge.node2],
+        last_index,
+        edge_id,
+      )
+    }
+  }
+  self.graph_edges.pop() |> ignore
+  Some(removed_edge)
+}
+
+///|
+fn MultibodyJointSet3::remove_graph_node(
+  self : MultibodyJointSet3,
+  node_id : Int,
+) -> Unit {
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return
+  }
+  while self.adjacency[node_id].length() > 0 {
+    let last_edge = self.adjacency[node_id].length() - 1
+    self.remove_graph_edge(self.adjacency[node_id][last_edge]) |> ignore
+  }
+  let removed_handle = self.graph_nodes[node_id]
+  if removed_handle.id >= 0 && removed_handle.id < self.rb_graph_ids.length() {
+    self.rb_graph_ids[removed_handle.id] = -1
+  }
+  let last_index = self.graph_nodes.length() - 1
+  if node_id != last_index {
+    let moved_handle = self.graph_nodes[last_index]
+    self.graph_nodes[node_id] = moved_handle
+    self.adjacency[node_id] = self.adjacency[last_index]
+    if moved_handle.id >= 0 && moved_handle.id < self.rb_graph_ids.length() {
+      self.rb_graph_ids[moved_handle.id] = node_id
+      self.rb_graph_generations[moved_handle.id] = moved_handle.generation
+    }
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        self.graph_edges[edge_id] = MultibodyGraphEdge3::{
+          node1: if edge.node1 == last_index {
+            node_id
+          } else {
+            edge.node1
+          },
+          node2: if edge.node2 == last_index {
+            node_id
+          } else {
+            edge.node2
+          },
+          parent: edge.parent,
+          child: edge.child,
+        }
+      }
+    }
+  }
+  self.graph_nodes.pop() |> ignore
+  self.adjacency.pop() |> ignore
+}
+
+///|
+fn MultibodyJointSet3::remove_graph_node_for_handle(
+  self : MultibodyJointSet3,
+  handle : RigidBodyHandle,
+) -> Unit {
+  if self.graph_node_for(handle) is Some(node_id) {
+    self.remove_graph_node(node_id)
+  }
+}
+
+///|
+fn MultibodyJointSet3::find_graph_edge_by_child(
+  self : MultibodyJointSet3,
+  child : RigidBodyHandle,
+) -> Int? {
+  if self.graph_node_for(child) is Some(node_id) {
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        if RigidBodyHandle::equals(edge.child, child) {
+          return Some(edge_id)
+        }
+      }
+    }
+  }
+  None
 }
 
 ///|
@@ -204,6 +444,7 @@ pub fn MultibodyJointSet3::insert(
   }
   parent_mb.recompute_ndofs()
   self.multibodies[parent_info.mb_index] = parent_mb
+  self.insert_graph_edge(parent, child)
   for i in 0..<child_mb.links.length() {
     let link = child_mb.links[i]
     self.ensure_body_capacity(link.rigid_body.id)
@@ -296,6 +537,10 @@ pub fn MultibodyJointSet3::remove(
       return
     }
     let multibody = self.multibodies[info.mb_index]
+    let removed_link = multibody.links[link_id]
+    if self.find_graph_edge_by_child(removed_link.rigid_body) is Some(edge_id) {
+      self.remove_graph_edge(edge_id) |> ignore
+    }
     let subtree = collect_subtree_indices(multibody, link_id)
     if subtree.length() == 0 || subtree.length() == multibody.links.length() {
       return
@@ -314,7 +559,6 @@ pub fn MultibodyJointSet3::remove(
       }
     }
     if wake_up {
-      let removed_link = multibody.links[link_id]
       push_unique_handle(self.to_wake_up, removed_link.rigid_body)
       let parent_id = removed_link.parent_internal_id
       if parent_id >= 0 && parent_id < multibody.links.length() {
@@ -329,6 +573,7 @@ pub fn MultibodyJointSet3::remove(
       if link.rigid_body.id >= 0 {
         self.ensure_body_capacity(link.rigid_body.id)
         self.body_links[link.rigid_body.id] = None
+        self.remove_graph_node_for_handle(link.rigid_body)
       }
       self.remove_multibody_at(info.mb_index)
     } else {
@@ -340,6 +585,7 @@ pub fn MultibodyJointSet3::remove(
       if link.rigid_body.id >= 0 {
         self.ensure_body_capacity(link.rigid_body.id)
         self.body_links[link.rigid_body.id] = None
+        self.remove_graph_node_for_handle(link.rigid_body)
       }
     } else {
       let new_index = self.multibodies.length()
@@ -366,8 +612,10 @@ pub fn MultibodyJointSet3::remove_multibody_articulations(
       return
     }
     let removed_multibody = self.multibodies[info.mb_index]
+    let removed_handles : Array[RigidBodyHandle] = []
     for i in 0..<removed_multibody.links.length() {
       let link = removed_multibody.links[i]
+      removed_handles.push(link.rigid_body)
       if link.rigid_body.id >= 0 {
         self.ensure_body_capacity(link.rigid_body.id)
         self.body_links[link.rigid_body.id] = None
@@ -377,6 +625,9 @@ pub fn MultibodyJointSet3::remove_multibody_articulations(
       }
     }
     self.remove_multibody_at(info.mb_index)
+    for i in 0..<removed_handles.length() {
+      self.remove_graph_node_for_handle(removed_handles[i])
+    }
   } else {
     self.body_links[handle.id] = None
   }
@@ -522,42 +773,29 @@ pub fn MultibodyJointSet3::attached_joints(
   self : MultibodyJointSet3,
   handle : RigidBodyHandle,
 ) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] {
-  if handle.id < 0 || handle.id >= self.body_links.length() {
-    return []
-  }
-  if self.body_links[handle.id] is Some(info) {
-    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
-      return []
-    }
-    let multibody = self.multibodies[info.mb_index]
-    if info.link_id.value < 0 || info.link_id.value >= multibody.links.length() {
-      return []
-    }
+  if self.graph_node_for(handle) is Some(node_id) {
     let result : Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] = []
-    let current_link = multibody.links[info.link_id.value]
-    if current_link.parent_internal_id != current_link.internal_id {
-      let parent_id = current_link.parent_internal_id
-      if parent_id >= 0 && parent_id < multibody.links.length() {
-        let parent = multibody.links[parent_id].rigid_body
-        result.push((parent, handle, MultibodyJointHandle::new(handle.id)))
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id < 0 || edge_id >= self.graph_edges.length() {
+        continue
       }
-    }
-    for i in 0..<multibody.links.length() {
-      let link = multibody.links[i]
-      if link.parent_internal_id == info.link_id.value &&
-        !RigidBodyHandle::equals(link.rigid_body, handle) {
-        result.push(
-          (
-            handle,
-            link.rigid_body,
-            MultibodyJointHandle::new(link.rigid_body.id),
+      let edge = self.graph_edges[edge_id]
+      result.push(
+        (
+          edge.parent,
+          edge.child,
+          MultibodyJointHandle::from_raw_parts(
+            edge.child.id,
+            edge.child.generation,
           ),
-        )
-      }
+        ),
+      )
     }
     result
   } else {
-    []
+    return []
   }
 }
 
@@ -566,19 +804,19 @@ pub fn MultibodyJointSet3::attached_bodies(
   self : MultibodyJointSet3,
   handle : RigidBodyHandle,
 ) -> Array[RigidBodyHandle] {
-  if handle.id < 0 || handle.id >= self.body_links.length() {
-    return []
-  }
-  if self.body_links[handle.id] is Some(info) {
-    if info.mb_index < 0 || info.mb_index >= self.multibodies.length() {
-      return []
-    }
-    let multibody = self.multibodies[info.mb_index]
+  if self.graph_node_for(handle) is Some(node_id) {
     let result : Array[RigidBodyHandle] = []
-    for i in 0..<multibody.links.length() {
-      let link = multibody.links[i]
-      if !RigidBodyHandle::equals(link.rigid_body, handle) {
-        result.push(link.rigid_body)
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id < 0 || edge_id >= self.graph_edges.length() {
+        continue
+      }
+      let edge = self.graph_edges[edge_id]
+      if RigidBodyHandle::equals(edge.parent, handle) {
+        result.push(edge.child)
+      } else {
+        result.push(edge.parent)
       }
     }
     result

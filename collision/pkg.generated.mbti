@@ -685,6 +685,7 @@ pub struct ColliderSet3 {
   fn new() -> ColliderSet3
 }
 pub fn ColliderSet3::as_2d(Self) -> ColliderSet
+pub fn ColliderSet3::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle]
 pub fn ColliderSet3::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet3::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3) -> ColliderHandle
