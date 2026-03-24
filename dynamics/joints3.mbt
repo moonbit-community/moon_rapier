@@ -178,16 +178,6 @@ fn Jacobian3::clear_column(self : Jacobian3, col : Int) -> Unit {
 }
 
 ///|
-fn iso3_from_iso2(iso : @core.Isometry2) -> @core.Isometry3 {
-  @core.Isometry3::new(
-    @core.Vec3::new(iso.translation.x, iso.translation.y, 0.0F),
-    @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, iso.rotation.angle()),
-    ),
-  )
-}
-
-///|
 fn mb3_logical_ndofs(multibody : Multibody) -> Int {
   if multibody.root_is_dynamic {
     multibody.ndofs() + 3
@@ -223,7 +213,19 @@ fn mb3_set_spatial_column(
 ///|
 fn mb3_cached_root_pose(multibody : Multibody) -> @core.Isometry3 {
   if multibody.links.length() > 0 {
-    iso3_from_iso2(multibody.links[0].local_to_world)
+    let pose2 = multibody.links[0].local_to_world
+    @core.Isometry3::new(
+      @core.Vec3::new(
+        pose2.translation.x,
+        pose2.translation.y,
+        multibody.root_translation3_z,
+      ),
+      multibody.root_rotation3_extra.mul(
+        @core.rotation_from_scaled_axis(
+          @core.Vec3::new(0.0F, 0.0F, pose2.rotation.angle()),
+        ),
+      ),
+    )
   } else {
     @core.Isometry3::identity()
   }
@@ -237,7 +239,15 @@ fn mb3_root_pose_from_bodies(
 ) -> @core.Isometry3 {
   let mut pose = if multibody.links.length() > 0 {
     let root = multibody.links[0].rigid_body
-    @core.Isometry3::new(bodies.translation(root), bodies.rotation(root))
+    let body_translation = bodies.translation(root)
+    @core.Isometry3::new(
+      @core.Vec3::new(
+        body_translation.x,
+        body_translation.y,
+        multibody.root_translation3_z,
+      ),
+      multibody.root_rotation3_extra.mul(bodies.rotation(root)),
+    )
   } else {
     @core.Isometry3::identity()
   }
@@ -509,7 +519,50 @@ pub fn Multibody3::apply_displacements(
   self : Multibody3,
   displacements : Array[@core.Real],
 ) -> Unit {
-  self.inner.apply_displacements(displacements)
+  let projected : Array[@core.Real] = []
+  if self.inner.root_is_dynamic {
+    if displacements.length() > 0 {
+      projected.push(displacements[0])
+    }
+    if displacements.length() > 1 {
+      projected.push(displacements[1])
+    }
+    if displacements.length() > 2 {
+      self.inner.root_translation3_z = self.inner.root_translation3_z +
+        displacements[2]
+    }
+    let rot_delta = @core.rotation_from_scaled_axis(
+      @core.Vec3::new(
+        if displacements.length() > 3 {
+          displacements[3]
+        } else {
+          0.0F
+        },
+        if displacements.length() > 4 {
+          displacements[4]
+        } else {
+          0.0F
+        },
+        if displacements.length() > 5 {
+          displacements[5]
+        } else {
+          0.0F
+        },
+      ),
+    )
+    self.inner.root_rotation3_extra = rot_delta.mul(
+      self.inner.root_rotation3_extra,
+    )
+    if displacements.length() > 5 {
+      projected.push(displacements[5])
+    }
+    for i in 6..<displacements.length() {
+      projected.push(displacements[i])
+    }
+    self.inner.apply_displacements(projected)
+  } else {
+    self.inner.apply_displacements(displacements)
+  }
 }
 
 ///|

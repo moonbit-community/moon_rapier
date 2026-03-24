@@ -335,6 +335,8 @@ struct Multibody {
   mut root_is_dynamic : Bool
   mut root_translation : @core.Vec2
   mut root_angle : @core.Real
+  mut root_translation3_z : @core.Real
+  mut root_rotation3_extra : @core.Quat
   mut velocities : DVector
   mut damping : DVector
   mut accelerations : DVector
@@ -365,6 +367,8 @@ fn Multibody::new_with_root(handle : RigidBodyHandle) -> Multibody {
     root_is_dynamic: true,
     root_translation: @core.Vec2::zero(),
     root_angle: 0.0F,
+    root_translation3_z: 0.0F,
+    root_rotation3_extra: @core.Quat::identity(),
     velocities: zeros,
     damping: DVector::from_fn(n, fn(_) { 0.0F }),
     accelerations: DVector::from_fn(n, fn(_) { 0.0F }),
@@ -1298,6 +1302,8 @@ fn build_multibody_from_indices(
     root_is_dynamic: multibody.root_is_dynamic,
     root_translation,
     root_angle,
+    root_translation3_z: multibody.root_translation3_z,
+    root_rotation3_extra: multibody.root_rotation3_extra,
     velocities: DVector::from_fn(0, fn(_) { 0.0F }),
     damping: DVector::from_fn(0, fn(_) { 0.0F }),
     accelerations: DVector::from_fn(0, fn(_) { 0.0F }),
@@ -1616,6 +1622,8 @@ pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
           root_is_dynamic: true,
           root_translation: @core.Vec2::new(root_tx, root_ty),
           root_angle,
+          root_translation3_z: 0.0F,
+          root_rotation3_extra: @core.Quat::identity(),
           velocities: DVector::from_fn(0, fn(_) { 0.0F }),
           damping: DVector::from_fn(0, fn(_) { 0.0F }),
           accelerations: DVector::from_fn(0, fn(_) { 0.0F }),
