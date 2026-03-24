@@ -44,6 +44,66 @@ pub fn RopeJointBuilder3::local_anchor2(
 }
 
 ///|
+pub fn RopeJointBuilder3::softness(
+  self : RopeJointBuilder3,
+  softness : SpringCoefficients,
+) -> RopeJointBuilder3 {
+  { inner: self.inner.softness(softness) }
+}
+
+///|
+pub fn RopeJointBuilder3::motor_model(
+  self : RopeJointBuilder3,
+  model : MotorModel,
+) -> RopeJointBuilder3 {
+  { inner: self.inner.motor_model(model) }
+}
+
+///|
+pub fn RopeJointBuilder3::motor_velocity(
+  self : RopeJointBuilder3,
+  target_vel : @core.Real,
+  factor : @core.Real,
+) -> RopeJointBuilder3 {
+  { inner: self.inner.motor_velocity(target_vel, factor) }
+}
+
+///|
+pub fn RopeJointBuilder3::motor_position(
+  self : RopeJointBuilder3,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> RopeJointBuilder3 {
+  { inner: self.inner.motor_position(target_pos, stiffness, damping) }
+}
+
+///|
+pub fn RopeJointBuilder3::motor_max_force(
+  self : RopeJointBuilder3,
+  max_force : @core.Real,
+) -> RopeJointBuilder3 {
+  { inner: self.inner.motor_max_force(max_force) }
+}
+
+///|
+pub fn RopeJointBuilder3::max_distance(
+  self : RopeJointBuilder3,
+  max_distance : @core.Real,
+) -> RopeJointBuilder3 {
+  {
+    inner: {
+      max_length: max_distance,
+      local_anchor1: self.inner.local_anchor1,
+      local_anchor2: self.inner.local_anchor2,
+      softness: self.inner.softness,
+      motor: self.inner.motor,
+      motor_enabled: self.inner.motor_enabled,
+    },
+  }
+}
+
+///|
 pub fn RopeJointBuilder3::build(self : RopeJointBuilder3) -> RopeJoint {
   self.inner.build()
 }

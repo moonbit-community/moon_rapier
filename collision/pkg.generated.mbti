@@ -336,9 +336,10 @@ pub struct Collider3D {
   mut active_events : ActiveEvents
   mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
-  collision_groups : @dynamics.InteractionGroups
-  friction : Float
-  restitution : Float
+  mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
+  mut friction : Float
+  mut restitution : Float
 }
 pub fn Collider3D::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider3D::active_events(Self) -> ActiveEvents
@@ -359,18 +360,23 @@ pub fn Collider3D::restitution(Self) -> Float
 pub fn Collider3D::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn Collider3D::set_active_events(Self, ActiveEvents) -> Self
 pub fn Collider3D::set_active_hooks(Self, ActiveHooks) -> Self
+pub fn Collider3D::set_collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider3D::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
+pub fn Collider3D::set_friction(Self, Float) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_one_way_above(Self, Float) -> Unit
 pub fn Collider3D::set_one_way_below(Self, Float) -> Unit
 pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
 pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
+pub fn Collider3D::set_restitution(Self, Float) -> Self
 pub fn Collider3D::set_shape(Self, Shape3D) -> Unit
+pub fn Collider3D::set_solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider3D::set_surface_velocity(Self, @core.Vec3) -> Unit
 pub fn Collider3D::set_user_data(Self, Int) -> Self
 pub fn Collider3D::set_user_data128(Self, @core.UserData128) -> Self
 pub fn Collider3D::shape(Self) -> Shape3D
+pub fn Collider3D::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::surface_velocity(Self) -> @core.Vec3
 pub fn Collider3D::user_data(Self) -> Int
 pub fn Collider3D::user_data128(Self) -> @core.UserData128
@@ -494,6 +500,7 @@ pub struct ColliderBuilder3D {
   mut contact_force_event_threshold : Float
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
   mut friction : Float
   mut restitution : Float
 }
@@ -532,6 +539,7 @@ pub fn ColliderBuilder3D::round_convex_hull(Array[@core.Vec3], Float) -> Self?
 pub fn ColliderBuilder3D::round_convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)], Float) -> Self?
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
+pub fn ColliderBuilder3D::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::surface_velocity(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::triangle(@core.Vec3, @core.Vec3, @core.Vec3) -> Self
@@ -1144,6 +1152,7 @@ pub fn QueryPipeline3DReal::collider(Self, ColliderSet3D, ColliderHandle3D) -> C
 pub fn QueryPipeline3DReal::intersect_aabb_conservative(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Aabb3) -> Array[ColliderHandle3D]
 pub fn QueryPipeline3DReal::intersect_point(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Vec3) -> Array[ColliderHandle3D]
 pub fn QueryPipeline3DReal::intersect_ray(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> Array[(ColliderHandle3D, RayIntersection3Feature)]
+pub fn QueryPipeline3DReal::intersect_shape(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Isometry3, Shape3D) -> Array[ColliderHandle3D]
 pub fn QueryPipeline3DReal::new(QueryFilter3DReal, @dynamics.RigidBodySet3D, ColliderSet3D) -> Self
 pub fn QueryPipeline3DReal::project_point(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Vec3, Float, Bool) -> (ColliderHandle3D, PointProjection3)?
 pub fn QueryPipeline3DReal::rigid_body(Self, @dynamics.RigidBodySet3D, @dynamics.RigidBodyHandle) -> @dynamics.RigidBody3D?

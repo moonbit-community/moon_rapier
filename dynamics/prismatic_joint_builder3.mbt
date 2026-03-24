@@ -44,6 +44,49 @@ pub fn PrismaticJointBuilder3::local_anchor2(
 }
 
 ///|
+pub fn PrismaticJointBuilder3::softness(
+  self : PrismaticJointBuilder3,
+  softness : SpringCoefficients,
+) -> PrismaticJointBuilder3 {
+  { inner: self.inner.softness(softness) }
+}
+
+///|
+pub fn PrismaticJointBuilder3::motor_model(
+  self : PrismaticJointBuilder3,
+  model : MotorModel,
+) -> PrismaticJointBuilder3 {
+  { inner: self.inner.motor_model(model) }
+}
+
+///|
+pub fn PrismaticJointBuilder3::motor_velocity(
+  self : PrismaticJointBuilder3,
+  target_vel : @core.Real,
+  factor : @core.Real,
+) -> PrismaticJointBuilder3 {
+  { inner: self.inner.motor_velocity(target_vel, factor) }
+}
+
+///|
+pub fn PrismaticJointBuilder3::motor_position(
+  self : PrismaticJointBuilder3,
+  target_pos : @core.Real,
+  stiffness : @core.Real,
+  damping : @core.Real,
+) -> PrismaticJointBuilder3 {
+  { inner: self.inner.motor_position(target_pos, stiffness, damping) }
+}
+
+///|
+pub fn PrismaticJointBuilder3::motor_max_force(
+  self : PrismaticJointBuilder3,
+  max_force : @core.Real,
+) -> PrismaticJointBuilder3 {
+  { inner: self.inner.motor_max_force(max_force) }
+}
+
+///|
 pub fn PrismaticJointBuilder3::limits(
   self : PrismaticJointBuilder3,
   min : @core.Real,

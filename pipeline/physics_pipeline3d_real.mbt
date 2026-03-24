@@ -715,6 +715,67 @@ pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(
 }
 
 ///|
+pub fn PhysicsPipeline3DReal::step_with_events_and_joints(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    Some(hooks),
+  )
+}
+
+///|
 pub fn PhysicsPipeline3DReal::step_with_rope_joints(
   self : PhysicsPipeline3DReal,
   gravity : @core.Vec3,

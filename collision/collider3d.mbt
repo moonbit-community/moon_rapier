@@ -360,9 +360,10 @@ pub struct Collider3D {
   mut active_events : ActiveEvents
   mut contact_force_event_threshold : @core.Real
   mut user_data : @core.UserData128
-  collision_groups : @dynamics.InteractionGroups
-  friction : @core.Real
-  restitution : @core.Real
+  mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
+  mut friction : @core.Real
+  mut restitution : @core.Real
 }
 
 ///|
@@ -576,13 +577,56 @@ pub fn Collider3D::collision_groups(
 }
 
 ///|
+pub fn Collider3D::set_collision_groups(
+  self : Collider3D,
+  groups : @dynamics.InteractionGroups,
+) -> Collider3D {
+  self.collision_groups = groups
+  self
+}
+
+///|
+pub fn Collider3D::solver_groups(
+  self : Collider3D,
+) -> @dynamics.InteractionGroups {
+  self.solver_groups
+}
+
+///|
+pub fn Collider3D::set_solver_groups(
+  self : Collider3D,
+  groups : @dynamics.InteractionGroups,
+) -> Collider3D {
+  self.solver_groups = groups
+  self
+}
+
+///|
 pub fn Collider3D::friction(self : Collider3D) -> @core.Real {
   self.friction
 }
 
 ///|
+pub fn Collider3D::set_friction(
+  self : Collider3D,
+  friction : @core.Real,
+) -> Collider3D {
+  self.friction = friction
+  self
+}
+
+///|
 pub fn Collider3D::restitution(self : Collider3D) -> @core.Real {
   self.restitution
+}
+
+///|
+pub fn Collider3D::set_restitution(
+  self : Collider3D,
+  restitution : @core.Real,
+) -> Collider3D {
+  self.restitution = restitution
+  self
 }
 
 ///|
@@ -627,18 +671,22 @@ pub struct ColliderBuilder3D {
   mut contact_force_event_threshold : @core.Real
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
+  mut solver_groups : @dynamics.InteractionGroups
   mut friction : @core.Real
   mut restitution : @core.Real
 }
 
 ///|
-pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
+fn collider_builder3d_default(
+  shape : Shape3D,
+  voxel_tri_map : Array[(Int, Int, Int)]?,
+) -> ColliderBuilder3D {
   {
     position: @core.Isometry3::identity(),
     local_position: @core.Isometry3::identity(),
     parent: None,
-    shape: Shape3D::ball(radius),
-    voxel_tri_map: None,
+    shape,
+    voxel_tri_map,
     enabled: true,
     sensor: false,
     surface_velocity: @core.Vec3::zero(),
@@ -650,9 +698,15 @@ pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
+    solver_groups: @dynamics.InteractionGroups::all(),
     friction: 0.7F,
     restitution: 0.0F,
   }
+}
+
+///|
+pub fn ColliderBuilder3D::ball(radius : @core.Real) -> ColliderBuilder3D {
+  collider_builder3d_default(Shape3D::ball(radius), None)
 }
 
 ///|
@@ -661,26 +715,7 @@ pub fn ColliderBuilder3D::cuboid(
   hy : @core.Real,
   hz : @core.Real,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::cuboid(hx, hy, hz),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::cuboid(hx, hy, hz), None)
 }
 
 ///|
@@ -688,26 +723,7 @@ pub fn ColliderBuilder3D::capsule_y(
   radius : @core.Real,
   half_height : @core.Real,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::capsule_y(radius, half_height),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::capsule_y(radius, half_height), None)
 }
 
 ///|
@@ -736,26 +752,7 @@ pub fn ColliderBuilder3D::cylinder(
   radius : @core.Real,
   half_height : @core.Real,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::cylinder(radius, half_height),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::cylinder(radius, half_height), None)
 }
 
 ///|
@@ -764,26 +761,10 @@ pub fn ColliderBuilder3D::round_cylinder(
   half_height : @core.Real,
   border_radius : @core.Real,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::round_cylinder(radius, half_height, border_radius),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(
+    Shape3D::round_cylinder(radius, half_height, border_radius),
+    None,
+  )
 }
 
 ///|
@@ -791,26 +772,7 @@ pub fn ColliderBuilder3D::cone(
   radius : @core.Real,
   half_height : @core.Real,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::cone(radius, half_height),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::cone(radius, half_height), None)
 }
 
 ///|
@@ -826,26 +788,7 @@ pub fn ColliderBuilder3D::round_cone(
 
 ///|
 pub fn ColliderBuilder3D::halfspace(normal : @core.Vec3) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::halfspace(normal),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::halfspace(normal), None)
 }
 
 ///|
@@ -854,26 +797,7 @@ pub fn ColliderBuilder3D::triangle(
   b : @core.Vec3,
   c : @core.Vec3,
 ) -> ColliderBuilder3D {
-  {
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::triangle(a, b, c),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  }
+  collider_builder3d_default(Shape3D::triangle(a, b, c), None)
 }
 
 ///|
@@ -910,26 +834,7 @@ pub fn ColliderBuilder3D::trimesh(
   if valid.length() == 0 {
     return None
   }
-  Some({
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::TriMesh(vertices, valid),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  })
+  Some(collider_builder3d_default(Shape3D::TriMesh(vertices, valid), None))
 }
 
 ///|
@@ -972,26 +877,7 @@ pub fn ColliderBuilder3D::compound(
     let (iso, part) = parts[i]
     shapes.push((iso.mul(part.position), part.shape))
   }
-  Some({
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::Compound(shapes),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  })
+  Some(collider_builder3d_default(Shape3D::Compound(shapes), None))
 }
 
 ///|
@@ -1010,26 +896,9 @@ pub fn ColliderBuilder3D::round_convex_hull(
   for i in 0..<points.length() {
     pts.push(points[i])
   }
-  Some({
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::ConvexHull(pts, border_radius),
-    voxel_tri_map: None,
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  })
+  Some(
+    collider_builder3d_default(Shape3D::ConvexHull(pts, border_radius), None),
+  )
 }
 
 ///|
@@ -1170,26 +1039,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
   if parts.length() <= 1 {
     ColliderBuilder3D::round_convex_hull(vertices, border_radius)
   } else {
-    Some({
-      position: @core.Isometry3::identity(),
-      local_position: @core.Isometry3::identity(),
-      parent: None,
-      shape: Shape3D::Compound(parts),
-      voxel_tri_map: None,
-      enabled: true,
-      sensor: false,
-      surface_velocity: @core.Vec3::zero(),
-      one_way_offset: None,
-      one_way_direction: 0,
-      active_collision_types: ActiveCollisionTypes::default(),
-      active_hooks: ActiveHooks::empty(),
-      active_events: ActiveEvents::empty(),
-      contact_force_event_threshold: 0.0F,
-      user_data: @core.UserData128::zero(),
-      collision_groups: @dynamics.InteractionGroups::all(),
-      friction: 0.7F,
-      restitution: 0.0F,
-    })
+    Some(collider_builder3d_default(Shape3D::Compound(parts), None))
   }
 }
 
@@ -1382,38 +1232,24 @@ pub fn ColliderBuilder3D::voxels_from_points(
     dense_nz = nz
     dense_columns = Some(dense)
   }
-  Some({
-    position: @core.Isometry3::identity(),
-    local_position: @core.Isometry3::identity(),
-    parent: None,
-    shape: Shape3D::Voxels({
-      voxel_size,
-      columns,
-      dense_origin_x,
-      dense_origin_z,
-      dense_nx,
-      dense_nz,
-      dense_columns,
-      keys: voxels,
-      key_to_id,
-      min_key,
-      max_key,
-    }),
-    voxel_tri_map: Some(voxels),
-    enabled: true,
-    sensor: false,
-    surface_velocity: @core.Vec3::zero(),
-    one_way_offset: None,
-    one_way_direction: 0,
-    active_collision_types: ActiveCollisionTypes::default(),
-    active_hooks: ActiveHooks::empty(),
-    active_events: ActiveEvents::empty(),
-    contact_force_event_threshold: 0.0F,
-    user_data: @core.UserData128::zero(),
-    collision_groups: @dynamics.InteractionGroups::all(),
-    friction: 0.7F,
-    restitution: 0.0F,
-  })
+  Some(
+    collider_builder3d_default(
+      Shape3D::Voxels({
+        voxel_size,
+        columns,
+        dense_origin_x,
+        dense_origin_z,
+        dense_nx,
+        dense_nz,
+        dense_columns,
+        keys: voxels,
+        key_to_id,
+        min_key,
+        max_key,
+      }),
+      Some(voxels),
+    ),
+  )
 }
 
 ///|
@@ -1471,26 +1307,12 @@ fn heightfield_impl(
   if ColliderBuilder3D::trimesh(vertices, indices) is Some(builder) {
     match builder.shape {
       Shape3D::TriMesh(vtx, idx) =>
-        Some({
-          position: @core.Isometry3::identity(),
-          local_position: @core.Isometry3::identity(),
-          parent: None,
-          shape: Shape3D::Heightfield(vtx, idx, nrows, ncols, flags),
-          voxel_tri_map: None,
-          enabled: true,
-          sensor: false,
-          surface_velocity: @core.Vec3::zero(),
-          one_way_offset: None,
-          one_way_direction: 0,
-          active_collision_types: ActiveCollisionTypes::default(),
-          active_hooks: ActiveHooks::empty(),
-          active_events: ActiveEvents::empty(),
-          contact_force_event_threshold: 0.0F,
-          user_data: @core.UserData128::zero(),
-          collision_groups: @dynamics.InteractionGroups::all(),
-          friction: 0.7F,
-          restitution: 0.0F,
-        })
+        Some(
+          collider_builder3d_default(
+            Shape3D::Heightfield(vtx, idx, nrows, ncols, flags),
+            None,
+          ),
+        )
       _ => None
     }
   } else {
@@ -1665,6 +1487,15 @@ pub fn ColliderBuilder3D::collision_groups(
 }
 
 ///|
+pub fn ColliderBuilder3D::solver_groups(
+  self : ColliderBuilder3D,
+  groups : @dynamics.InteractionGroups,
+) -> ColliderBuilder3D {
+  self.solver_groups = groups
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::friction(
   self : ColliderBuilder3D,
   friction : @core.Real,
@@ -1701,6 +1532,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     contact_force_event_threshold: self.contact_force_event_threshold,
     user_data: self.user_data,
     collision_groups: self.collision_groups,
+    solver_groups: self.solver_groups,
     friction: self.friction,
     restitution: self.restitution,
   }

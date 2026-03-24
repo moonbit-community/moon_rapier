@@ -37,3 +37,46 @@ test "rigid_body3d integrates angular velocity into quaternion" {
   inspect(@core.abs(r.y - 0.0F) < 1.0e-5F, content="true")
   inspect(@core.abs(r.z - 0.0F) < 1.0e-5F, content="true")
 }
+
+///|
+test "rigid_body3d dominance and locked axes APIs" {
+  let locked_axes = LockedAxes::translation_locked_x().insert(
+    LockedAxes::rotation_locked_y(),
+  )
+  let rb = RigidBodyBuilder3D::dynamic()
+    .dominance_group(7)
+    .locked_axes(locked_axes)
+    .linvel(@core.Vec3::new(1.0F, 2.0F, 3.0F))
+    .angvel(@core.Vec3::new(4.0F, 5.0F, 6.0F))
+    .build()
+  inspect(rb.dominance_group() == 7, content="true")
+  inspect(rb.effective_dominance_group() == 7, content="true")
+  inspect(
+    rb.locked_axes().contains(LockedAxes::translation_locked_x()),
+    content="true",
+  )
+  inspect(
+    rb.locked_axes().contains(LockedAxes::rotation_locked_y()),
+    content="true",
+  )
+  inspect(rb.linvel().x == 0.0F, content="true")
+  inspect(rb.linvel().y == 2.0F && rb.linvel().z == 3.0F, content="true")
+  inspect(rb.angvel().x == 4.0F && rb.angvel().z == 6.0F, content="true")
+  inspect(rb.angvel().y == 0.0F, content="true")
+
+  rb.set_enabled_translations(false, true, true, true)
+  rb.set_linvel(@core.Vec3::new(9.0F, 8.0F, 7.0F))
+  inspect(rb.linvel().x == 0.0F, content="true")
+  inspect(rb.linvel().y == 8.0F && rb.linvel().z == 7.0F, content="true")
+
+  rb.set_enabled_rotations(true, false, true, true)
+  rb.set_angvel(@core.Vec3::new(3.0F, 2.0F, 1.0F))
+  inspect(rb.angvel().x == 3.0F && rb.angvel().z == 1.0F, content="true")
+  inspect(rb.angvel().y == 0.0F, content="true")
+
+  rb.set_dominance_group(2)
+  inspect(rb.dominance_group() == 2, content="true")
+
+  let fixed = RigidBodyBuilder3D::fixed().dominance_group(5).build()
+  inspect(fixed.effective_dominance_group() == 128, content="true")
+}

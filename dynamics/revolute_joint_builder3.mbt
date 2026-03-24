@@ -53,6 +53,14 @@ pub fn RevoluteJointBuilder3::softness(
 }
 
 ///|
+pub fn RevoluteJointBuilder3::motor_model(
+  self : RevoluteJointBuilder3,
+  model : MotorModel,
+) -> RevoluteJointBuilder3 {
+  { inner: self.inner.motor_model(model) }
+}
+
+///|
 pub fn RevoluteJointBuilder3::motor_velocity(
   self : RevoluteJointBuilder3,
   target_vel : @core.Real,

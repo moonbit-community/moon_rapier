@@ -128,3 +128,50 @@ test "collider3d active flags setters update values" {
     content="true",
   )
 }
+
+///|
+test "collider3d group and material setters update values" {
+  let collision_groups = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_1(),
+    @dynamics.Group::group_2(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let solver_groups = @dynamics.InteractionGroups::none()
+  let co = ColliderBuilder3D::ball(0.5F)
+    .collision_groups(collision_groups)
+    .solver_groups(solver_groups)
+    .friction(0.25F)
+    .restitution(0.5F)
+    .build()
+  inspect(
+    co.collision_groups().memberships().equals(@dynamics.Group::group_1()),
+    content="true",
+  )
+  inspect(
+    co.solver_groups().memberships().equals(@dynamics.Group::none()),
+    content="true",
+  )
+  inspect(@core.abs(co.friction() - 0.25F) < 1.0e-6F, content="true")
+  inspect(@core.abs(co.restitution() - 0.5F) < 1.0e-6F, content="true")
+
+  co.set_collision_groups(@dynamics.InteractionGroups::all()) |> ignore
+  co.set_solver_groups(
+    @dynamics.InteractionGroups::default().with_filter(
+      @dynamics.Group::group_3(),
+    ),
+  )
+  |> ignore
+  co.set_friction(0.9F) |> ignore
+  co.set_restitution(0.1F) |> ignore
+
+  inspect(
+    co.collision_groups().test_mode() is @dynamics.InteractionTestMode::And,
+    content="true",
+  )
+  inspect(
+    co.solver_groups().filter().equals(@dynamics.Group::group_3()),
+    content="true",
+  )
+  inspect(@core.abs(co.friction() - 0.9F) < 1.0e-6F, content="true")
+  inspect(@core.abs(co.restitution() - 0.1F) < 1.0e-6F, content="true")
+}

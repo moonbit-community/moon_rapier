@@ -100,6 +100,31 @@ test "query_pipeline3d_real: cast_shape capsule vs cuboid" {
 }
 
 ///|
+test "query_pipeline3d_real: intersect_shape returns overlapping colliders" {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = ColliderSet3D::new()
+  let near = colliders.insert(
+    ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+  )
+  colliders.insert(
+    ColliderBuilder3D::ball(0.5F)
+    .translation(@core.Vec3::new(10.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  |> ignore
+
+  let qp = QueryPipeline3DReal::new(QueryFilter3DReal::new(), bodies, colliders)
+  let hits = qp.intersect_shape(
+    bodies,
+    colliders,
+    @core.Isometry3::identity(),
+    Shape3D::ball(0.75F),
+  )
+  inspect(hits.length() == 1, content="true")
+  inspect(hits[0].equals(near), content="true")
+}
+
+///|
 test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
   let bodies = @dynamics.RigidBodySet3D::new()
   let colliders = ColliderSet3D::new()

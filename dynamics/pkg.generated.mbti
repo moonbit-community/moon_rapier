@@ -881,11 +881,16 @@ pub struct PrismaticJoint {
   axis : @core.Vec2
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  softness : SpringCoefficients
+  motor : JointMotor
+  motor_enabled : Bool
   limits : JointLimits
   limits_enabled : Bool
 }
+pub fn PrismaticJoint::motor(Self) -> JointMotor?
 pub fn PrismaticJoint::set_local_axis1(Self, @core.Vec2) -> Self
 pub fn PrismaticJoint::set_local_axis2(Self, @core.Vec2) -> Self
+pub fn PrismaticJoint::softness(Self) -> SpringCoefficients
 
 pub struct PrismaticJoint3DReal {
   body1 : RigidBodyHandle
@@ -918,7 +923,12 @@ pub fn PrismaticJointBuilder::build(Self) -> PrismaticJoint
 pub fn PrismaticJointBuilder::limits(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn PrismaticJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
+pub fn PrismaticJointBuilder::motor_max_force(Self, Float) -> Self
+pub fn PrismaticJointBuilder::motor_model(Self, MotorModel) -> Self
+pub fn PrismaticJointBuilder::motor_position(Self, Float, Float, Float) -> Self
+pub fn PrismaticJointBuilder::motor_velocity(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder::new(@core.Vec2) -> Self
+pub fn PrismaticJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct PrismaticJointBuilder3 {
   inner : PrismaticJointBuilder
@@ -929,7 +939,12 @@ pub fn PrismaticJointBuilder3::build(Self) -> PrismaticJoint
 pub fn PrismaticJointBuilder3::limits(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
 pub fn PrismaticJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn PrismaticJointBuilder3::motor_max_force(Self, Float) -> Self
+pub fn PrismaticJointBuilder3::motor_model(Self, MotorModel) -> Self
+pub fn PrismaticJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
+pub fn PrismaticJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::new(@core.Vec3) -> Self
+pub fn PrismaticJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
 type RevoluteJoint
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
@@ -991,6 +1006,7 @@ pub fn RevoluteJointBuilder3::limits(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
 pub fn RevoluteJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
 pub fn RevoluteJointBuilder3::motor_max_force(Self, Float) -> Self
+pub fn RevoluteJointBuilder3::motor_model(Self, MotorModel) -> Self
 pub fn RevoluteJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
 pub fn RevoluteJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn RevoluteJointBuilder3::new(@core.Vec3) -> Self
@@ -1123,11 +1139,14 @@ pub struct RigidBody3D {
   mut position : @core.Isometry3
   mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
-  locked_translations : Bool
-  locked_rotations : Bool
-  rot_x_enabled : Bool
-  rot_y_enabled : Bool
-  rot_z_enabled : Bool
+  mut locked_translations : Bool
+  mut trans_x_enabled : Bool
+  mut trans_y_enabled : Bool
+  mut trans_z_enabled : Bool
+  mut locked_rotations : Bool
+  mut rot_x_enabled : Bool
+  mut rot_y_enabled : Bool
+  mut rot_z_enabled : Bool
   ccd_enabled : Bool
   soft_ccd_prediction : Float
   gyroscopic_forces_enabled : Bool
@@ -1137,6 +1156,7 @@ pub struct RigidBody3D {
   mass_properties : @core.MassProperties3
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
+  mut dominance_group : Int
 }
 pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
@@ -1145,6 +1165,8 @@ pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::apply_gyroscopic_forces(Self, Float) -> Unit
 pub fn RigidBody3D::apply_impulse_at_point(Self, @core.Vec3, @core.Vec3, Bool) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
+pub fn RigidBody3D::dominance_group(Self) -> Int
+pub fn RigidBody3D::effective_dominance_group(Self) -> Int
 pub fn RigidBody3D::gravity_scale(Self) -> Float
 pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
@@ -1152,15 +1174,22 @@ pub fn RigidBody3D::is_active(Self) -> Bool
 pub fn RigidBody3D::is_ccd_active(Self) -> Bool
 pub fn RigidBody3D::is_sleeping(Self) -> Bool
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
+pub fn RigidBody3D::locked_axes(Self) -> LockedAxes
 pub fn RigidBody3D::locked_rotations(Self) -> Bool
 pub fn RigidBody3D::locked_translations(Self) -> Bool
 pub fn RigidBody3D::mass_properties(Self) -> @core.MassProperties3
 pub fn RigidBody3D::next_position(Self) -> @core.Isometry3
 pub fn RigidBody3D::position(Self) -> @core.Isometry3
+pub fn RigidBody3D::restrict_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
+pub fn RigidBody3D::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_dominance_group(Self, Int) -> Unit
+pub fn RigidBody3D::set_enabled_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
+pub fn RigidBody3D::set_enabled_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::set_gravity_scale(Self, Float, Bool) -> Unit
 pub fn RigidBody3D::set_linvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_locked_axes(Self, LockedAxes, Bool) -> Unit
 pub fn RigidBody3D::set_next_kinematic_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_next_kinematic_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
@@ -1307,6 +1336,9 @@ pub struct RigidBodyBuilder3D {
   mut linvel : @core.Vec3
   mut angvel : @core.Vec3
   mut locked_translations : Bool
+  mut trans_x_enabled : Bool
+  mut trans_y_enabled : Bool
+  mut trans_z_enabled : Bool
   mut locked_rotations : Bool
   mut rot_x_enabled : Bool
   mut rot_y_enabled : Bool
@@ -1320,14 +1352,17 @@ pub struct RigidBodyBuilder3D {
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
   mut user_data : @core.UserData128
+  mut dominance_group : Int
 }
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
 pub fn RigidBodyBuilder3D::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::ccd_enabled(Self, Bool) -> Self
+pub fn RigidBodyBuilder3D::dominance_group(Self, Int) -> Self
 pub fn RigidBodyBuilder3D::dynamic() -> Self
 pub fn RigidBodyBuilder3D::enabled_rotations(Self, Bool, Bool, Bool) -> Self
+pub fn RigidBodyBuilder3D::enabled_translations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::fixed() -> Self
 pub fn RigidBodyBuilder3D::gravity_scale(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::gyroscopic_forces_enabled(Self, Bool) -> Self
@@ -1337,7 +1372,10 @@ pub fn RigidBodyBuilder3D::linear_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::linvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::lock_rotations(Self) -> Self
 pub fn RigidBodyBuilder3D::lock_translations(Self) -> Self
+pub fn RigidBodyBuilder3D::locked_axes(Self, LockedAxes) -> Self
 pub fn RigidBodyBuilder3D::mass_properties(Self, @core.MassProperties3) -> Self
+pub fn RigidBodyBuilder3D::restrict_rotations(Self, Bool, Bool, Bool) -> Self
+pub fn RigidBodyBuilder3D::restrict_translations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn RigidBodyBuilder3D::rotation_scaled_axis(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::soft_ccd_prediction(Self, Float) -> Self
@@ -1592,10 +1630,15 @@ pub struct RopeJoint {
   max_length : Float
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  softness : SpringCoefficients
+  motor : JointMotor
+  motor_enabled : Bool
 }
 pub fn RopeJoint::max_distance(Self) -> Float
 pub fn RopeJoint::max_length(Self) -> Float
+pub fn RopeJoint::motor(Self) -> JointMotor?
 pub fn RopeJoint::set_max_distance(Self, Float) -> Self
+pub fn RopeJoint::softness(Self) -> SpringCoefficients
 
 pub struct RopeJoint3DReal {
   body1 : RigidBodyHandle
@@ -1607,6 +1650,9 @@ pub struct RopeJointBuilder {
   max_length : Float
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+  mut softness : SpringCoefficients
+  mut motor : JointMotor
+  mut motor_enabled : Bool
 
   fn new(Float) -> RopeJointBuilder
 }
@@ -1614,7 +1660,12 @@ pub fn RopeJointBuilder::build(Self) -> RopeJoint
 pub fn RopeJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
 pub fn RopeJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn RopeJointBuilder::max_distance(Self) -> Float
+pub fn RopeJointBuilder::motor_max_force(Self, Float) -> Self
+pub fn RopeJointBuilder::motor_model(Self, MotorModel) -> Self
+pub fn RopeJointBuilder::motor_position(Self, Float, Float, Float) -> Self
+pub fn RopeJointBuilder::motor_velocity(Self, Float, Float) -> Self
 pub fn RopeJointBuilder::new(Float) -> Self
+pub fn RopeJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct RopeJointBuilder3 {
   inner : RopeJointBuilder
@@ -1624,7 +1675,13 @@ pub struct RopeJointBuilder3 {
 pub fn RopeJointBuilder3::build(Self) -> RopeJoint
 pub fn RopeJointBuilder3::local_anchor1(Self, @core.Vec3) -> Self
 pub fn RopeJointBuilder3::local_anchor2(Self, @core.Vec3) -> Self
+pub fn RopeJointBuilder3::max_distance(Self, Float) -> Self
+pub fn RopeJointBuilder3::motor_max_force(Self, Float) -> Self
+pub fn RopeJointBuilder3::motor_model(Self, MotorModel) -> Self
+pub fn RopeJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
+pub fn RopeJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn RopeJointBuilder3::new(Float) -> Self
+pub fn RopeJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
 pub struct RopeJointSet3DReal {
   joints : Array[RopeJoint3DReal]
