@@ -810,16 +810,29 @@ pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet)
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct MultibodyJointSet3 {
-  inner : MultibodyJointSet
-
-  fn new() -> MultibodyJointSet3
-}
+type MultibodyJointSet3
 pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
+pub fn MultibodyJointSet3::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet3::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
+pub fn MultibodyJointSet3::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet3::get(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
+pub fn MultibodyJointSet3::get_multibody(Self, MultibodyIndex) -> Multibody3?
+pub fn MultibodyJointSet3::get_multibody_mut(Self, MultibodyIndex) -> Multibody3?
+pub fn MultibodyJointSet3::get_multibody_mut_internal(Self, MultibodyIndex) -> Multibody3?
 pub fn MultibodyJointSet3::get_mut(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
+pub fn MultibodyJointSet3::get_mut_internal(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
+pub fn MultibodyJointSet3::get_unknown_gen(Self, Int) -> (Multibody3, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, RevoluteJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody3, MultibodyLink)]
+pub fn MultibodyJointSet3::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody3, MultibodyLink)?
+pub fn MultibodyJointSet3::multibodies(Self) -> Array[Multibody3]
 pub fn MultibodyJointSet3::new() -> Self
+pub fn MultibodyJointSet3::remove(Self, MultibodyJointHandle, Bool) -> Unit
+pub fn MultibodyJointSet3::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
+pub fn MultibodyJointSet3::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
+pub fn MultibodyJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type MultibodyLink
 pub fn MultibodyLink::is_root(Self) -> Bool

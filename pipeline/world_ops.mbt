@@ -52,14 +52,18 @@ pub fn remove_rigid_body3(
   remove_attached_colliders : Bool,
   wake_up : Bool,
 ) -> @dynamics.RigidBody? {
-  remove_rigid_body(
-    bodies.as_2d(),
+  if remove_attached_colliders {
+    let attached = colliders.colliders_with_parent(handle)
+    for i in 0..<attached.length() {
+      colliders.remove(attached[i], islands, bodies, wake_up)
+    }
+  }
+  bodies.remove(
     handle,
-    islands.as_2d(),
-    colliders.as_2d(),
-    impulse_joints.as_2d(),
-    multibody_joints.as_2d(),
+    islands,
+    (),
+    impulse_joints,
+    multibody_joints,
     remove_attached_colliders,
-    wake_up,
   )
 }

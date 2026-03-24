@@ -375,6 +375,14 @@ pub fn ColliderSet3::remove(
 }
 
 ///|
+pub fn ColliderSet3::colliders_with_parent(
+  self : ColliderSet3,
+  parent : @dynamics.RigidBodyHandle,
+) -> Array[ColliderHandle] {
+  self.inner.colliders_with_parent(parent)
+}
+
+///|
 pub fn ColliderSet3::get(
   self : ColliderSet3,
   handle : ColliderHandle,

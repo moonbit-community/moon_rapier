@@ -79,14 +79,18 @@ pub fn RigidBodySet3::remove(
   wake_up : Bool,
 ) -> RigidBody? {
   colliders |> ignore
-  self.inner.remove(
+  let removed = self.inner.remove(
     handle,
     islands.as_2d(),
     (),
     impulse_joints.as_2d(),
-    multibody_joints.as_2d(),
+    MultibodyJointSet::new(),
     wake_up,
   )
+  if removed is Some(_) {
+    multibody_joints.remove_joints_attached_to_rigid_body(handle)
+  }
+  removed
 }
 
 ///|
