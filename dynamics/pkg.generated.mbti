@@ -503,7 +503,8 @@ pub fn Jacobian::value_at(Self, Int, Int) -> Float
 pub fn Jacobian::zeros(Int) -> Self
 
 pub struct Jacobian3 {
-  inner : Jacobian
+  mut cols_ : Int
+  data : Array[Float]
 }
 pub fn Jacobian3::cols(Self) -> Int
 pub fn Jacobian3::value_at(Self, Int, Int) -> Float
@@ -998,6 +999,9 @@ pub fn RevoluteJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct RevoluteJointBuilder3 {
   inner : RevoluteJointBuilder
+  axis : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
 
   fn new(@core.Vec3) -> RevoluteJointBuilder3
 }

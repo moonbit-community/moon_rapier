@@ -79,13 +79,7 @@ pub struct Multibody3 {
 
 ///|
 pub fn Multibody3::ndofs(self : Multibody3) -> Int {
-  // Rapier3D uses SPATIAL_DIM = 6, while the current port uses SPATIAL_DIM = 3.
-  // Only the dynamic root contributes the extra 3 DOFs in 3D.
-  if self.inner.root_is_dynamic {
-    self.inner.ndofs() + 3
-  } else {
-    self.inner.ndofs()
-  }
+  mb3_logical_ndofs(self.inner)
 }
 
 ///|
@@ -114,17 +108,22 @@ pub fn MultibodyJointSet3::get_mut(
 
 ///|
 pub struct Jacobian3 {
-  inner : Jacobian
+  mut cols_ : Int
+  data : Array[@core.Real]
 }
 
 ///|
 pub fn Jacobian3::zeros(size : Int) -> Jacobian3 {
-  { inner: Jacobian::zeros(size) }
+  let data : Array[@core.Real] = []
+  for _ in 0..<(size * 6) {
+    data.push(0.0F)
+  }
+  { cols_: size, data }
 }
 
 ///|
 pub fn Jacobian3::cols(self : Jacobian3) -> Int {
-  self.inner.cols()
+  self.cols_
 }
 
 ///|
@@ -133,16 +132,48 @@ pub fn Jacobian3::value_at(
   row : Int,
   col : Int,
 ) -> @core.Real {
-  // Map the 2D (3xN) jacobian to a 3D (6xN) one by zero-padding:
-  // [lin.x, lin.y, lin.z=0, ang.x=0, ang.y=0, ang.z].
-  if row == 0 {
-    self.inner.value_at(0, col)
-  } else if row == 1 {
-    self.inner.value_at(1, col)
-  } else if row == 5 {
-    self.inner.value_at(2, col)
-  } else {
+  if row < 0 || row >= 6 || col < 0 || col >= self.cols_ {
     0.0F
+  } else {
+    self.data[col * 6 + row]
+  }
+}
+
+///|
+fn Jacobian3::ensure_cols(self : Jacobian3, cols : Int) -> Unit {
+  if self.cols_ != cols {
+    self.cols_ = cols
+    self.data.clear()
+    for _ in 0..<(cols * 6) {
+      self.data.push(0.0F)
+    }
+  } else {
+    for i in 0..<self.data.length() {
+      self.data[i] = 0.0F
+    }
+  }
+}
+
+///|
+fn Jacobian3::set_value(
+  self : Jacobian3,
+  row : Int,
+  col : Int,
+  value : @core.Real,
+) -> Unit {
+  if row >= 0 && row < 6 && col >= 0 && col < self.cols_ {
+    self.data[col * 6 + row] = value
+  }
+}
+
+///|
+fn Jacobian3::clear_column(self : Jacobian3, col : Int) -> Unit {
+  if col < 0 || col >= self.cols_ {
+    return
+  }
+  let base = col * 6
+  for row in 0..<6 {
+    self.data[base + row] = 0.0F
   }
 }
 
@@ -157,14 +188,311 @@ fn iso3_from_iso2(iso : @core.Isometry2) -> @core.Isometry3 {
 }
 
 ///|
-fn iso2_from_iso3(iso : @core.Isometry3) -> @core.Isometry2 {
-  // 2D compatibility: project 3D translation to XY, keep only the Z component of the scaled axis
-  // (yaw) as the 2D rotation.
-  let axis = iso.rotation.to_scaled_axis()
-  @core.Isometry2::new(
-    @core.Vec2::new(iso.translation.x, iso.translation.y),
-    @core.Rot2::from_angle(axis.z),
+fn mb3_logical_ndofs(multibody : Multibody) -> Int {
+  if multibody.root_is_dynamic {
+    multibody.ndofs() + 3
+  } else {
+    multibody.ndofs()
+  }
+}
+
+///|
+fn mb3_joint_logical_column(multibody : Multibody, assembly_id : Int) -> Int {
+  if multibody.root_is_dynamic && assembly_id >= 3 {
+    assembly_id + 3
+  } else {
+    assembly_id
+  }
+}
+
+///|
+fn mb3_set_spatial_column(
+  jacobian : Jacobian3,
+  col : Int,
+  linear : @core.Vec3,
+  angular : @core.Vec3,
+) -> Unit {
+  jacobian.set_value(0, col, linear.x)
+  jacobian.set_value(1, col, linear.y)
+  jacobian.set_value(2, col, linear.z)
+  jacobian.set_value(3, col, angular.x)
+  jacobian.set_value(4, col, angular.y)
+  jacobian.set_value(5, col, angular.z)
+}
+
+///|
+fn mb3_cached_root_pose(multibody : Multibody) -> @core.Isometry3 {
+  if multibody.links.length() > 0 {
+    iso3_from_iso2(multibody.links[0].local_to_world)
+  } else {
+    @core.Isometry3::identity()
+  }
+}
+
+///|
+fn mb3_root_pose_from_bodies(
+  multibody : Multibody,
+  bodies : RigidBodySet3,
+  displacements : Array[@core.Real]?,
+) -> @core.Isometry3 {
+  let mut pose = if multibody.links.length() > 0 {
+    let root = multibody.links[0].rigid_body
+    @core.Isometry3::new(bodies.translation(root), bodies.rotation(root))
+  } else {
+    @core.Isometry3::identity()
+  }
+
+  if multibody.root_is_dynamic && displacements is Some(disp) {
+    let dx = if disp.length() > 0 { disp[0] } else { 0.0F }
+    let dy = if disp.length() > 1 { disp[1] } else { 0.0F }
+    let dz = if disp.length() > 2 { disp[2] } else { 0.0F }
+    let rot_delta = @core.rotation_from_scaled_axis(
+      @core.Vec3::new(
+        if disp.length() > 3 {
+          disp[3]
+        } else {
+          0.0F
+        },
+        if disp.length() > 4 {
+          disp[4]
+        } else {
+          0.0F
+        },
+        if disp.length() > 5 {
+          disp[5]
+        } else {
+          0.0F
+        },
+      ),
+    )
+    pose = @core.Isometry3::new(
+      pose.translation.add(@core.Vec3::new(dx, dy, dz)),
+      rot_delta.mul(pose.rotation),
+    )
+  }
+
+  pose
+}
+
+///|
+fn mb3_revolute_body_to_parent(
+  joint : RevoluteJoint,
+  angle : @core.Real,
+) -> @core.Isometry3 {
+  let frame1 = @core.Isometry3::new(
+    joint.local_anchor1_3,
+    joint.local_frame1_rotation,
   )
+  let frame2 = @core.Isometry3::new(
+    joint.local_anchor2_3,
+    joint.local_frame2_rotation,
+  )
+  let free_axis_rotation = @core.Isometry3::new(
+    @core.Vec3::zero(),
+    @core.rotation_from_scaled_axis(@core.Vec3::new(angle, 0.0F, 0.0F)),
+  )
+  frame1.mul(free_axis_rotation).mul(frame2.inverse())
+}
+
+///|
+fn mb3_compute_link_pose(
+  multibody : Multibody,
+  id : LinkId,
+  root_pose : @core.Isometry3,
+  displacements : Array[@core.Real]?,
+  out_jacobian : Jacobian3?,
+) -> @core.Isometry3 {
+  let branch = multibody.branch_ids(id)
+  if branch.length() <= 0 {
+    return @core.Isometry3::identity()
+  }
+
+  if out_jacobian is Some(jacobian) {
+    jacobian.ensure_cols(mb3_logical_ndofs(multibody))
+  }
+
+  let joint_positions : Array[@core.Vec3] = []
+  let joint_axes : Array[@core.Vec3] = []
+  let joint_cols : Array[Int] = []
+  let root_position = root_pose.translation
+  let mut current_pose = root_pose
+
+  for i in 1..<branch.length() {
+    let link = multibody.links[branch[i]]
+    let joint_origin = current_pose.transform_point(link.joint.local_anchor1_3)
+    joint_positions.push(joint_origin)
+    joint_axes.push(current_pose.rotation.rotate_vec3(link.joint.axis3))
+    joint_cols.push(mb3_joint_logical_column(multibody, link.assembly_id))
+
+    let mut angle = link.joint_angle
+    let disp_col = mb3_joint_logical_column(multibody, link.assembly_id)
+    if displacements is Some(disp) && disp_col < disp.length() {
+      angle = angle + disp[disp_col]
+    }
+
+    current_pose = current_pose.mul(
+      mb3_revolute_body_to_parent(link.joint, angle),
+    )
+  }
+
+  if out_jacobian is Some(jacobian) {
+    let link_position = current_pose.translation
+    if multibody.root_is_dynamic {
+      mb3_set_spatial_column(
+        jacobian,
+        0,
+        @core.Vec3::new(1.0F, 0.0F, 0.0F),
+        @core.Vec3::zero(),
+      )
+      mb3_set_spatial_column(
+        jacobian,
+        1,
+        @core.Vec3::new(0.0F, 1.0F, 0.0F),
+        @core.Vec3::zero(),
+      )
+      mb3_set_spatial_column(
+        jacobian,
+        2,
+        @core.Vec3::new(0.0F, 0.0F, 1.0F),
+        @core.Vec3::zero(),
+      )
+
+      let root_axes : Array[@core.Vec3] = [
+        root_pose.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F)),
+        root_pose.rotation.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F)),
+        root_pose.rotation.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F)),
+      ]
+      let rel = link_position.sub(root_position)
+      for axis_index in 0..<3 {
+        let axis = root_axes[axis_index]
+        mb3_set_spatial_column(jacobian, 3 + axis_index, axis.cross(rel), axis)
+      }
+    }
+
+    for i in 0..<joint_positions.length() {
+      let joint_origin = joint_positions[i]
+      let axis = joint_axes[i]
+      let linear = axis.cross(link_position.sub(joint_origin))
+      mb3_set_spatial_column(jacobian, joint_cols[i], linear, axis)
+    }
+  }
+
+  current_pose
+}
+
+///|
+fn mb3_matrix_inverse_6x6(data : Array[@core.Real]) -> Array[@core.Real]? {
+  if data.length() != 36 {
+    return None
+  }
+
+  let augmented : Array[@core.Real] = []
+  for row in 0..<6 {
+    for col in 0..<6 {
+      augmented.push(data[row * 6 + col])
+    }
+    for col in 0..<6 {
+      augmented.push(if row == col { 1.0F } else { 0.0F })
+    }
+  }
+
+  for pivot in 0..<6 {
+    let mut best_row = pivot
+    let mut best_abs = @core.abs(augmented[pivot * 12 + pivot])
+    for row in (pivot + 1)..<6 {
+      let candidate = @core.abs(augmented[row * 12 + pivot])
+      if candidate > best_abs {
+        best_abs = candidate
+        best_row = row
+      }
+    }
+
+    if best_abs <= 1.0e-8F {
+      return None
+    }
+
+    if best_row != pivot {
+      for col in 0..<12 {
+        let temp = augmented[pivot * 12 + col]
+        augmented[pivot * 12 + col] = augmented[best_row * 12 + col]
+        augmented[best_row * 12 + col] = temp
+      }
+    }
+
+    let pivot_value = augmented[pivot * 12 + pivot]
+    for col in 0..<12 {
+      augmented[pivot * 12 + col] = augmented[pivot * 12 + col] / pivot_value
+    }
+
+    for row in 0..<6 {
+      if row == pivot {
+        continue
+      }
+      let factor = augmented[row * 12 + pivot]
+      if @core.abs(factor) <= 1.0e-12F {
+        continue
+      }
+      for col in 0..<12 {
+        augmented[row * 12 + col] = augmented[row * 12 + col] -
+          factor * augmented[pivot * 12 + col]
+      }
+    }
+  }
+
+  let inverse : Array[@core.Real] = []
+  for row in 0..<6 {
+    for col in 0..<6 {
+      inverse.push(augmented[row * 12 + 6 + col])
+    }
+  }
+  Some(inverse)
+}
+
+///|
+fn mb3_inverse_kinematics_delta_with_jacobian(
+  jacobian : Jacobian3,
+  desired_movement : Array[@core.Real],
+  damping : @core.Real,
+  displacements : DVector,
+) -> Unit {
+  let jj : Array[@core.Real] = []
+  for _ in 0..<36 {
+    jj.push(0.0F)
+  }
+
+  for row in 0..<6 {
+    for col in 0..<6 {
+      let mut value = 0.0F
+      for j in 0..<jacobian.cols() {
+        value = value + jacobian.value_at(row, j) * jacobian.value_at(col, j)
+      }
+      if row == col {
+        value = value + damping * damping
+      }
+      jj[row * 6 + col] = value
+    }
+  }
+
+  if mb3_matrix_inverse_6x6(jj) is Some(inv_jj) {
+    let solved : Array[@core.Real] = []
+    for row in 0..<6 {
+      let mut value = 0.0F
+      for col in 0..<6 {
+        value = value + inv_jj[row * 6 + col] * desired_movement[col]
+      }
+      solved.push(value)
+    }
+
+    for col in 0..<jacobian.cols() {
+      let mut delta = 0.0F
+      for row in 0..<6 {
+        delta = delta + jacobian.value_at(row, col) * solved[row]
+      }
+      if col < displacements.len() {
+        displacements.set_value(col, displacements.value_at(col) + delta)
+      }
+    }
+  }
 }
 
 ///|
@@ -189,8 +517,16 @@ pub fn Multibody3::link_pose(
   self : Multibody3,
   id : LinkId,
 ) -> @core.Isometry3? {
-  if self.inner.link(id) is Some(link) {
-    Some(iso3_from_iso2(link.local_to_world()))
+  if self.inner.link(id) is Some(_) {
+    Some(
+      mb3_compute_link_pose(
+        self.inner,
+        id,
+        mb3_cached_root_pose(self.inner),
+        None,
+        None,
+      ),
+    )
   } else {
     None
   }
@@ -198,7 +534,16 @@ pub fn Multibody3::link_pose(
 
 ///|
 pub fn Multibody3::body_jacobian(self : Multibody3, id : LinkId) -> Jacobian3 {
-  { inner: self.inner.body_jacobian(id) }
+  let jacobian = Jacobian3::zeros(0)
+  mb3_compute_link_pose(
+    self.inner,
+    id,
+    mb3_cached_root_pose(self.inner),
+    None,
+    Some(jacobian),
+  )
+  |> ignore
+  jacobian
 }
 
 ///|
@@ -209,14 +554,13 @@ pub fn Multibody3::forward_kinematics_single_link(
   displacements : Array[@core.Real]?,
   jacobian : Jacobian3?,
 ) -> @core.Isometry3 {
-  let jac2 : Jacobian? = if jacobian is Some(j) { Some(j.inner) } else { None }
-  iso3_from_iso2(
-    self.inner.forward_kinematics_single_link(
-      bodies.as_2d(),
-      id,
-      displacements,
-      jac2,
-    ),
+  self.inner.update_ndofs_with_root(bodies.as_2d())
+  mb3_compute_link_pose(
+    self.inner,
+    id,
+    mb3_root_pose_from_bodies(self.inner, bodies, displacements),
+    displacements,
+    jacobian,
   )
 }
 
@@ -230,12 +574,82 @@ pub fn Multibody3::inverse_kinematics(
   can_move : (MultibodyLink) -> Bool,
   displacements : DVector,
 ) -> Unit {
-  self.inner.inverse_kinematics(
-    bodies.as_2d(),
-    id,
-    options,
-    iso2_from_iso3(target),
-    can_move,
-    displacements,
-  )
+  let branch = self.inner.branch_ids(id)
+  let can_move_branch : Array[Bool] = []
+  for branch_id in branch {
+    can_move_branch.push(can_move(self.inner.links[branch_id]))
+  }
+
+  let jacobian = Jacobian3::zeros(0)
+  for _ in 0..<options.max_iters {
+    let pose = self.forward_kinematics_single_link(
+      bodies,
+      id,
+      Some(displacements.as_array()),
+      Some(jacobian),
+    )
+
+    for i in 0..<branch.length() {
+      if can_move_branch[i] {
+        continue
+      }
+
+      let link_id = branch[i]
+      let link = self.inner.links[link_id]
+      if link_id == 0 && self.inner.root_is_dynamic {
+        for col in 0..<6 {
+          jacobian.clear_column(col)
+        }
+      } else {
+        jacobian.clear_column(
+          mb3_joint_logical_column(self.inner, link.assembly_id),
+        )
+      }
+    }
+
+    let delta_lin = target.translation.sub(pose.translation)
+    let delta_ang = target.rotation
+      .mul(pose.rotation.inverse())
+      .to_scaled_axis()
+    let desired : Array[@core.Real] = [
+      delta_lin.x,
+      delta_lin.y,
+      delta_lin.z,
+      delta_ang.x,
+      delta_ang.y,
+      delta_ang.z,
+    ]
+
+    if !options.constrained_axes.contains(JointAxesMask::lin_x()) {
+      desired[0] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::lin_y()) {
+      desired[1] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_z()) {
+      desired[5] = 0.0F
+    }
+
+    let linear_error = Float::sqrt(
+      desired[0] * desired[0] +
+      desired[1] * desired[1] +
+      desired[2] * desired[2],
+    )
+    let angular_error = Float::sqrt(
+      desired[3] * desired[3] +
+      desired[4] * desired[4] +
+      desired[5] * desired[5],
+    )
+    if linear_error <= options.epsilon_linear &&
+      angular_error <= options.epsilon_angular {
+      break
+    }
+
+    mb3_inverse_kinematics_delta_with_jacobian(
+      jacobian,
+      desired,
+      options.damping,
+      displacements,
+    )
+  }
 }

@@ -16,6 +16,23 @@
 const SPATIAL_DIM : Int = 3
 
 ///|
+fn revolute_joint_axis3_or_default(axis : @core.Vec3) -> @core.Vec3 {
+  if axis.length_squared() > 1.0e-12F {
+    axis.normalize()
+  } else {
+    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  }
+}
+
+///|
+fn revolute_joint_frame_from_axis3(axis : @core.Vec3) -> @core.Quat {
+  @core.rotation_between(
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    revolute_joint_axis3_or_default(axis),
+  )
+}
+
+///|
 struct RevoluteJointBuilder {
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
@@ -129,9 +146,24 @@ pub fn RevoluteJointBuilder::limits(
 pub fn RevoluteJointBuilder::build(
   self : RevoluteJointBuilder,
 ) -> RevoluteJoint {
+  let axis3 = revolute_joint_axis3_or_default(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+  let frame3 = revolute_joint_frame_from_axis3(axis3)
   {
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
+    axis3,
+    local_anchor1_3: @core.Vec3::new(
+      self.local_anchor1.x,
+      self.local_anchor1.y,
+      0.0F,
+    ),
+    local_anchor2_3: @core.Vec3::new(
+      self.local_anchor2.x,
+      self.local_anchor2.y,
+      0.0F,
+    ),
+    local_frame1_rotation: frame3,
+    local_frame2_rotation: frame3,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -145,6 +177,11 @@ pub fn RevoluteJointBuilder::build(
 struct RevoluteJoint {
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
   softness : SpringCoefficients
   mut motor : JointMotor
   motor_enabled : Bool
@@ -1338,7 +1375,7 @@ fn mb_motor_model_from_int(value : Int) -> MotorModel {
 
 ///|
 fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
-  // L^parent^rbid^rbgen^a1x^a1y^a2x^a2y^snat^sdamp^menabled^m...^lenabled^l...^solx^soly^jangle
+  // L^parent^rbid^rbgen^a1x^a1y^a2x^a2y^snat^sdamp^menabled^m...^lenabled^l...^solx^soly^jangle^a1z^a2z^axisx^axisy^axisz
   let (rbid, rbgen) = link.rigid_body.into_raw_parts()
   sb.write_string("L^")
   sb.write_object(link.parent_internal_id)
@@ -1388,6 +1425,16 @@ fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
   sb.write_object(link.joint.solver_lin_impulses.y)
   sb.write_char('^')
   sb.write_object(link.joint_angle)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor1_3.z)
+  sb.write_char('^')
+  sb.write_object(link.joint.local_anchor2_3.z)
+  sb.write_char('^')
+  sb.write_object(link.joint.axis3.x)
+  sb.write_char('^')
+  sb.write_object(link.joint.axis3.y)
+  sb.write_char('^')
+  sb.write_object(link.joint.axis3.z)
 }
 
 ///|
@@ -1421,6 +1468,28 @@ fn parse_link(text : String) -> MultibodyLink? {
     let solver_lin_x = mb_parse_real_value(fields[21])
     let solver_lin_y = mb_parse_real_value(fields[22])
     let joint_angle = mb_parse_real_value(fields[23])
+    let a1z = if fields.length() >= 25 {
+      mb_parse_real_value(fields[24])
+    } else {
+      0.0F
+    }
+    let a2z = if fields.length() >= 26 {
+      mb_parse_real_value(fields[25])
+    } else {
+      0.0F
+    }
+    let axis3 = if fields.length() >= 29 {
+      revolute_joint_axis3_or_default(
+        @core.Vec3::new(
+          mb_parse_real_value(fields[26]),
+          mb_parse_real_value(fields[27]),
+          mb_parse_real_value(fields[28]),
+        ),
+      )
+    } else {
+      revolute_joint_axis3_or_default(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+    }
+    let frame3 = revolute_joint_frame_from_axis3(axis3)
     let softness = SpringCoefficients::new(snat, sdamp)
     let motor = JointMotor::{
       target_vel: motor_target_vel,
@@ -1436,6 +1505,11 @@ fn parse_link(text : String) -> MultibodyLink? {
     let joint = RevoluteJoint::{
       local_anchor1: @core.Vec2::new(a1x, a1y),
       local_anchor2: @core.Vec2::new(a2x, a2y),
+      axis3,
+      local_anchor1_3: @core.Vec3::new(a1x, a1y, a1z),
+      local_anchor2_3: @core.Vec3::new(a2x, a2y, a2z),
+      local_frame1_rotation: frame3,
+      local_frame2_rotation: frame3,
       softness,
       motor,
       motor_enabled,

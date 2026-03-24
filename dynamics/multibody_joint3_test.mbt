@@ -113,6 +113,29 @@ test "multibody append (dim3)" {
 }
 
 ///|
+test "multibody jacobian cols match ndofs for dynamic root (dim3)" {
+  let bodies = RigidBodySet3::new()
+  let joints = MultibodyJointSet3::new()
+  let root = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -0.5F))
+    .build()
+  let handle = joints.insert(root, child, joint, true)
+  if handle is Some(link_handle) {
+    if joints.get_mut(link_handle) is Some((multibody, link_id)) {
+      multibody.forward_kinematics(bodies, true)
+      let jacobian = multibody.body_jacobian(link_id)
+      inspect(jacobian.cols() == multibody.ndofs(), content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_insert) for dim3.
 test "multibody insert (dim3)" {
   let spatial_dim : Int = TEST_SPATIAL_DIM3

@@ -166,3 +166,96 @@ test "one link fwd kinematics (dim3)" {
     inspect(jacobian_diff_after < 1.0e-5F, content="true")
   }
 }
+
+///|
+test "one link fwd kinematics uses 3d axis and z anchors" {
+  let bodies = RigidBodySet3::new()
+  let multibodies = MultibodyJointSet3::new()
+  let root = bodies.insert(RigidBodyBuilder3::fixed().build())
+  let child = bodies.insert(
+    RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+  )
+  let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .local_anchor1(@core.Vec3::zero())
+    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
+  let handle = multibodies.insert(root, child, builder.build(), true)
+  if handle is Some(link_handle) {
+    if multibodies.get_mut(link_handle) is Some((multibody, link_id)) {
+      multibody.forward_kinematics(bodies, true)
+      let jacobian = Jacobian3::zeros(0)
+      let pose = multibody.forward_kinematics_single_link(
+        bodies,
+        link_id,
+        Some([@core.pi() * 0.5F]),
+        Some(jacobian),
+      )
+      inspect(@core.abs(pose.translation.x) < 1.0e-5F, content="true")
+      inspect(
+        @core.abs(@core.abs(pose.translation.y) - 1.0F) < 1.0e-5F,
+        content="true",
+      )
+      inspect(@core.abs(pose.translation.z) < 1.0e-5F, content="true")
+      inspect(
+        @core.abs(jacobian.value_at(3, 0) - 1.0F) < 1.0e-5F,
+        content="true",
+      )
+      inspect(@core.abs(jacobian.value_at(4, 0)) < 1.0e-5F, content="true")
+      inspect(@core.abs(jacobian.value_at(5, 0)) < 1.0e-5F, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "one link inverse kinematics follows 3d hinge axis" {
+  let bodies = RigidBodySet3::new()
+  let multibodies = MultibodyJointSet3::new()
+  let root = bodies.insert(RigidBodyBuilder3::fixed().build())
+  let child = bodies.insert(
+    RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+  )
+  let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .local_anchor1(@core.Vec3::zero())
+    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
+  let handle = multibodies.insert(root, child, builder.build(), true)
+  if handle is Some(link_handle) {
+    if multibodies.get_mut(link_handle) is Some((multibody, link_id)) {
+      multibody.forward_kinematics(bodies, true)
+      let target_pose = multibody.forward_kinematics_single_link(
+        bodies,
+        link_id,
+        Some([@core.pi() * 0.5F]),
+        None,
+      )
+      let options = InverseKinematicsOption::default()
+        .set_damping(0.1F)
+        .set_max_iters(32)
+      let displacements = DVector::from_array([0.0F])
+      multibody.inverse_kinematics(
+        bodies,
+        link_id,
+        options,
+        target_pose,
+        fn(_) { true },
+        displacements,
+      )
+      let solved_pose = multibody.forward_kinematics_single_link(
+        bodies,
+        link_id,
+        Some(displacements.as_array()),
+        None,
+      )
+      inspect(
+        isometry3_max_abs_diff(solved_pose, target_pose) < 1.0e-3F,
+        content="true",
+      )
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
