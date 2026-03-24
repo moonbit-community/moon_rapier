@@ -752,11 +752,7 @@ pub fn Multibody3::inverse_kinematics(Self, RigidBodySet3, LinkId, InverseKinema
 pub fn Multibody3::link_pose(Self, LinkId) -> @core.Isometry3?
 pub fn Multibody3::ndofs(Self) -> Int
 
-pub struct MultibodyIndex {
-  value : Int
-
-  fn new(Int) -> MultibodyIndex
-}
+type MultibodyIndex
 pub fn MultibodyIndex::invalid() -> Self
 
 pub struct MultibodyJoint {
@@ -842,10 +838,8 @@ pub fn MultibodyLink::local_to_world(Self) -> @core.Isometry2
 pub fn MultibodyLink::parent_id(Self) -> LinkId
 pub fn MultibodyLink::rigid_body_handle(Self) -> RigidBodyHandle
 
-pub struct MultibodyLinkId {
-  multibody : MultibodyIndex
-  id : Int
-}
+type MultibodyLinkId
+pub fn MultibodyLinkId::default() -> Self
 
 pub struct MultibodyRevoluteJointDesc {
   link : MultibodyLinkId

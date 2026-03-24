@@ -20,6 +20,7 @@ pub fn[T] Arena::contains(Self[T], Index) -> Bool
 pub fn[T] Arena::drain(Self[T]) -> Drain[T]
 pub fn[T] Arena::get(Self[T], Index) -> T?
 pub fn[T] Arena::get2_mut(Self[T], Index, Index) -> (T?, T?)
+pub fn[T] Arena::get_gen(Self[T], Int) -> Int?
 pub fn[T] Arena::get_mut(Self[T], Index) -> T?
 pub fn[T] Arena::insert(Self[T], T) -> Index
 pub fn[T] Arena::insert_with(Self[T], (Index) -> T) -> Index
@@ -31,6 +32,7 @@ pub fn[T] Arena::new() -> Self[T]
 pub fn[T] Arena::remove(Self[T], Index) -> T?
 pub fn[T] Arena::reserve(Self[T], Int) -> Unit
 pub fn[T] Arena::retain(Self[T], (Index, T) -> Bool) -> Unit
+pub fn[T] Arena::set(Self[T], Index, T) -> Bool
 pub fn[T] Arena::try_insert(Self[T], T) -> Result[Index, T]
 pub fn[T] Arena::try_insert_with(Self[T], (Index) -> T) -> Result[Index, (Index) -> T]
 pub fn[T] Arena::with_capacity(Int) -> Self[T]
@@ -43,6 +45,7 @@ pub struct Coarena[T] {
 pub fn[T] Coarena::ensure_element_exist(Self[T], Index, T) -> T
 pub fn[T] Coarena::ensure_pair_exists(Self[T], Index, Index, T) -> (T, T)
 pub fn[T] Coarena::get(Self[T], Index) -> T?
+pub fn[T] Coarena::get_gen(Self[T], Int) -> Int?
 pub fn[T] Coarena::get_mut(Self[T], Index) -> T?
 pub fn[T] Coarena::get_mut_unknown_gen(Self[T], Int) -> T?
 pub fn[T] Coarena::get_unknown_gen(Self[T], Int) -> T?
@@ -52,6 +55,7 @@ pub fn[T] Coarena::len(Self[T]) -> Int
 pub fn[T] Coarena::new() -> Self[T]
 pub fn[T] Coarena::remove(Self[T], Index, T) -> T?
 pub fn[T] Coarena::reserve(Self[T], Int) -> Unit
+pub fn[T] Coarena::set(Self[T], Index, T, T) -> Unit
 
 pub(all) enum Direction {
   Outgoing

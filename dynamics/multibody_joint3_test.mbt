@@ -298,6 +298,30 @@ test "multibody attached joints use connectivity graph semantics (dim3)" {
 }
 
 ///|
+test "multibody handles preserve rigid body generations (dim3)" {
+  let bodies = RigidBodySet3::new()
+  let joints = MultibodyJointSet3::new()
+  let parent = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let joint = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build()
+  let inserted = joints.insert(parent, child, joint, true)
+  if inserted is Some(handle) {
+    inspect(handle.into_raw_parts() == child.into_raw_parts(), content="true")
+    let (id, _) = handle.into_raw_parts()
+    if joints.get_unknown_gen(id) is Some((_, _, unknown_handle)) {
+      inspect(
+        unknown_handle.into_raw_parts() == child.into_raw_parts(),
+        content="true",
+      )
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns (dim3)" {
   let seq : IndexSequence = IndexSequence::new()

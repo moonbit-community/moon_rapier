@@ -213,6 +213,30 @@ test "multibody remove wakes links" {
 }
 
 ///|
+test "multibody handles preserve rigid body generations" {
+  let bodies = RigidBodySet::new()
+  let joints = MultibodyJointSet::new()
+  let parent = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let child = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let joint = RevoluteJointBuilder::new().build()
+  let inserted = joints.insert(parent, child, joint, true)
+  if inserted is Some(handle) {
+    inspect(handle.into_raw_parts() == child.into_raw_parts(), content="true")
+    let (id, _) = handle.into_raw_parts()
+    if joints.get_unknown_gen(id) is Some((_, _, unknown_handle)) {
+      inspect(
+        unknown_handle.into_raw_parts() == child.into_raw_parts(),
+        content="true",
+      )
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns" {
   let seq : IndexSequence = IndexSequence::new()

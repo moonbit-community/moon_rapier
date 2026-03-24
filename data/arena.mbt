@@ -269,6 +269,32 @@ pub fn[T] Arena::get_mut(self : Arena[T], index : Index) -> T? {
 }
 
 ///|
+pub fn[T] Arena::set(self : Arena[T], index : Index, value : T) -> Bool {
+  let (i, g) = index.into_raw_parts()
+  if i < 0 || i >= self.items.length() {
+    return false
+  }
+  match self.items[i] {
+    Entry::Occupied(gen, _) if gen == g => {
+      self.items[i] = Entry::Occupied(gen, value)
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+pub fn[T] Arena::get_gen(self : Arena[T], index : Int) -> Int? {
+  if index < 0 || index >= self.items.length() {
+    return None
+  }
+  match self.items[index] {
+    Entry::Occupied(generation, _) => Some(generation)
+    _ => None
+  }
+}
+
+///|
 pub fn[T] Arena::get2_mut(
   self : Arena[T],
   index1 : Index,
