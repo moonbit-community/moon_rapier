@@ -2416,3 +2416,543 @@ pub fn Multibody3::inverse_kinematics(
     )
   }
 }
+
+///|
+fn mb3_split_root_rotation_real(
+  rotation : @core.Quat,
+) -> (@core.Real, @core.Quat) {
+  let yaw = rotation.to_scaled_axis().z
+  let extra = rotation.mul(
+    @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, -yaw)),
+  )
+  (yaw, extra)
+}
+
+///|
+fn mb3_update_root_from_bodies_real(
+  multibody : Multibody,
+  bodies : RigidBodySet3D,
+) -> Unit {
+  if multibody.links.length() > 0 {
+    let root = multibody.links[0].rigid_body
+    if bodies.get(root) is Some(body) {
+      let translation = body.translation()
+      let rotation = body.rotation()
+      let (yaw, extra) = mb3_split_root_rotation_real(rotation)
+      multibody.root_translation = @core.Vec2::new(translation.x, translation.y)
+      multibody.root_translation3_z = translation.z
+      multibody.root_angle = yaw
+      multibody.root_rotation3_extra = extra
+    }
+  }
+}
+
+///|
+fn mb3_update_ndofs_with_root_real(
+  multibody : Multibody,
+  bodies : RigidBodySet3D,
+) -> Unit {
+  if multibody.links.length() <= 0 {
+    multibody.ndofs = 0
+    return
+  }
+  let root = multibody.links[0]
+  let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
+    !(body.body_type() is RigidBodyType::Fixed)
+  } else {
+    true
+  }
+  let root_dofs = if is_dynamic { 6 } else { 0 }
+  let mut joint_ndofs = 0
+  for i in 1..<multibody.links.length() {
+    joint_ndofs = joint_ndofs + multibody.links[i].joint.ndofs()
+  }
+  multibody.root_is_dynamic = is_dynamic
+  multibody.ndofs = root_dofs + joint_ndofs
+  multibody.rebuild_indices(root_dofs)
+  multibody.ensure_buffers()
+}
+
+///|
+fn mb3_root_pose_from_bodies_real(
+  multibody : Multibody,
+  bodies : RigidBodySet3D,
+  displacements : Array[@core.Real]?,
+) -> @core.Isometry3 {
+  let mut pose = if multibody.links.length() > 0 {
+    let root = multibody.links[0].rigid_body
+    if bodies.get(root) is Some(body) {
+      body.position()
+    } else {
+      mb3_cached_root_pose(multibody)
+    }
+  } else {
+    @core.Isometry3::identity()
+  }
+
+  if multibody.root_is_dynamic && displacements is Some(disp) {
+    let dx = if disp.length() > 0 { disp[0] } else { 0.0F }
+    let dy = if disp.length() > 1 { disp[1] } else { 0.0F }
+    let dz = if disp.length() > 2 { disp[2] } else { 0.0F }
+    let rot_delta = @core.rotation_from_scaled_axis(
+      @core.Vec3::new(
+        if disp.length() > 3 {
+          disp[3]
+        } else {
+          0.0F
+        },
+        if disp.length() > 4 {
+          disp[4]
+        } else {
+          0.0F
+        },
+        if disp.length() > 5 {
+          disp[5]
+        } else {
+          0.0F
+        },
+      ),
+    )
+    pose = @core.Isometry3::new(
+      pose.translation.add(@core.Vec3::new(dx, dy, dz)),
+      rot_delta.mul(pose.rotation),
+    )
+  }
+
+  pose
+}
+
+///|
+fn mb3_forward_kinematics_real(
+  multibody : Multibody,
+  bodies : RigidBodySet3D,
+  update_dofs : Bool,
+) -> Unit {
+  mb3_update_ndofs_with_root_real(multibody, bodies)
+  if multibody.links.length() <= 0 {
+    update_dofs |> ignore
+    return
+  }
+  if update_dofs {
+    mb3_update_root_from_bodies_real(multibody, bodies)
+  }
+  mb3_store_projected_link_poses(multibody, mb3_cached_root_pose(multibody))
+}
+
+///|
+fn mb3_update_rigid_bodies_real(
+  multibody : Multibody,
+  bodies : RigidBodySet3D,
+) -> Unit {
+  let root_pose = mb3_cached_root_pose(multibody)
+  for i in 0..<multibody.links.length() {
+    let link = multibody.links[i]
+    if bodies.get_mut(link.rigid_body) is Some(body) {
+      let pose = mb3_compute_link_pose(
+        multibody,
+        LinkId::new(i),
+        root_pose,
+        None,
+        None,
+      )
+      body.set_translation(pose.translation)
+      body.set_rotation(pose.rotation)
+    }
+  }
+}
+
+///|
+pub struct Multibody3DReal {
+  inner : Multibody
+}
+
+///|
+pub fn Multibody3DReal::ndofs(self : Multibody3DReal) -> Int {
+  mb3_logical_ndofs(self.inner)
+}
+
+///|
+pub fn Multibody3DReal::forward_kinematics(
+  self : Multibody3DReal,
+  bodies : RigidBodySet3D,
+  update_dofs : Bool,
+) -> Unit {
+  mb3_forward_kinematics_real(self.inner, bodies, update_dofs)
+}
+
+///|
+pub fn Multibody3DReal::apply_displacements(
+  self : Multibody3DReal,
+  displacements : Array[@core.Real],
+) -> Unit {
+  Multibody3::{ inner: self.inner }.apply_displacements(displacements)
+}
+
+///|
+pub fn Multibody3DReal::link_pose(
+  self : Multibody3DReal,
+  id : LinkId,
+) -> @core.Isometry3? {
+  Multibody3::{ inner: self.inner }.link_pose(id)
+}
+
+///|
+pub fn Multibody3DReal::body_jacobian(
+  self : Multibody3DReal,
+  id : LinkId,
+) -> Jacobian3 {
+  Multibody3::{ inner: self.inner }.body_jacobian(id)
+}
+
+///|
+pub fn Multibody3DReal::forward_kinematics_single_link(
+  self : Multibody3DReal,
+  bodies : RigidBodySet3D,
+  id : LinkId,
+  displacements : Array[@core.Real]?,
+  jacobian : Jacobian3?,
+) -> @core.Isometry3 {
+  mb3_update_ndofs_with_root_real(self.inner, bodies)
+  mb3_compute_link_pose(
+    self.inner,
+    id,
+    mb3_root_pose_from_bodies_real(self.inner, bodies, displacements),
+    displacements,
+    jacobian,
+  )
+}
+
+///|
+pub fn Multibody3DReal::inverse_kinematics(
+  self : Multibody3DReal,
+  bodies : RigidBodySet3D,
+  id : LinkId,
+  options : InverseKinematicsOption,
+  target : @core.Isometry3,
+  can_move : (MultibodyLink) -> Bool,
+  displacements : DVector,
+) -> Unit {
+  let branch = self.inner.branch_ids(id)
+  let can_move_branch : Array[Bool] = []
+  for branch_id in branch {
+    can_move_branch.push(can_move(self.inner.links[branch_id]))
+  }
+
+  let jacobian = Jacobian3::zeros(0)
+  for _ in 0..<options.max_iters {
+    let pose = self.forward_kinematics_single_link(
+      bodies,
+      id,
+      Some(displacements.as_array()),
+      Some(jacobian),
+    )
+
+    for i in 0..<branch.length() {
+      if can_move_branch[i] {
+        continue
+      }
+
+      let link_id = branch[i]
+      let link = self.inner.links[link_id]
+      if link_id == 0 && self.inner.root_is_dynamic {
+        for col in 0..<6 {
+          jacobian.clear_column(col)
+        }
+      } else {
+        jacobian.clear_column(
+          mb3_joint_logical_column(self.inner, link.assembly_id),
+        )
+      }
+    }
+
+    let delta_lin = target.translation.sub(pose.translation)
+    let delta_ang = target.rotation
+      .mul(pose.rotation.inverse())
+      .to_scaled_axis()
+    let desired : Array[@core.Real] = [
+      delta_lin.x,
+      delta_lin.y,
+      delta_lin.z,
+      delta_ang.x,
+      delta_ang.y,
+      delta_ang.z,
+    ]
+
+    if !options.constrained_axes.contains(JointAxesMask::lin_x()) {
+      desired[0] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::lin_y()) {
+      desired[1] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::lin_z()) {
+      desired[2] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_x()) {
+      desired[3] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_y()) {
+      desired[4] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_z()) {
+      desired[5] = 0.0F
+    }
+
+    let linear_error = Float::sqrt(
+      desired[0] * desired[0] +
+      desired[1] * desired[1] +
+      desired[2] * desired[2],
+    )
+    let angular_error = Float::sqrt(
+      desired[3] * desired[3] +
+      desired[4] * desired[4] +
+      desired[5] * desired[5],
+    )
+    if linear_error <= options.epsilon_linear &&
+      angular_error <= options.epsilon_angular {
+      break
+    }
+
+    mb3_inverse_kinematics_delta_with_jacobian(
+      jacobian,
+      desired,
+      options.damping,
+      displacements,
+    )
+  }
+}
+
+///|
+pub struct MultibodyJointSet3DReal {
+  inner : MultibodyJointSet3
+
+  fn new() -> MultibodyJointSet3DReal
+}
+
+///|
+pub fn MultibodyJointSet3DReal::new() -> MultibodyJointSet3DReal {
+  { inner: MultibodyJointSet3::new() }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::take_wake_up(
+  self : MultibodyJointSet3DReal,
+) -> Array[RigidBodyHandle] {
+  self.inner.take_wake_up()
+}
+
+///|
+pub fn MultibodyJointSet3DReal::take_to_join(
+  self : MultibodyJointSet3DReal,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  self.inner.take_to_join()
+}
+
+///|
+pub fn MultibodyJointSet3DReal::insert(
+  self : MultibodyJointSet3DReal,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+  joint : GenericJoint,
+  wake_up : Bool,
+) -> MultibodyJointHandle? {
+  self.inner.insert(parent, child, joint, wake_up)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::insert_kinematic(
+  self : MultibodyJointSet3DReal,
+  parent : RigidBodyHandle,
+  child : RigidBodyHandle,
+  joint : GenericJoint,
+  wake_up : Bool,
+) -> MultibodyJointHandle? {
+  self.inner.insert_kinematic(parent, child, joint, wake_up)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::get(
+  self : MultibodyJointSet3DReal,
+  handle : MultibodyJointHandle,
+) -> (Multibody3DReal, LinkId)? {
+  if self.inner.get(handle) is Some((multibody, link)) {
+    Some((Multibody3DReal::{ inner: multibody.inner }, link))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::get_mut(
+  self : MultibodyJointSet3DReal,
+  handle : MultibodyJointHandle,
+) -> (Multibody3DReal, LinkId)? {
+  if self.inner.get_mut(handle) is Some((multibody, link)) {
+    Some((Multibody3DReal::{ inner: multibody.inner }, link))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::remove(
+  self : MultibodyJointSet3DReal,
+  handle : MultibodyJointHandle,
+  wake_up : Bool,
+) -> Unit {
+  self.inner.remove(handle, wake_up)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::remove_multibody_articulations(
+  self : MultibodyJointSet3DReal,
+  handle : RigidBodyHandle,
+  wake_up : Bool,
+) -> Unit {
+  self.inner.remove_multibody_articulations(handle, wake_up)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::rigid_body_link(
+  self : MultibodyJointSet3DReal,
+  handle : RigidBodyHandle,
+) -> MultibodyLinkId? {
+  self.inner.rigid_body_link(handle)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::get_multibody(
+  self : MultibodyJointSet3DReal,
+  index : MultibodyIndex,
+) -> Multibody3DReal? {
+  if self.inner.get_multibody(index) is Some(multibody) {
+    Some(Multibody3DReal::{ inner: multibody.inner })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::get_multibody_mut(
+  self : MultibodyJointSet3DReal,
+  index : MultibodyIndex,
+) -> Multibody3DReal? {
+  if self.inner.get_multibody_mut(index) is Some(multibody) {
+    Some(Multibody3DReal::{ inner: multibody.inner })
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::multibodies(
+  self : MultibodyJointSet3DReal,
+) -> Array[Multibody3DReal] {
+  let result : Array[Multibody3DReal] = []
+  let items = self.inner.multibodies()
+  for i in 0..<items.length() {
+    result.push(Multibody3DReal::{ inner: items[i].inner })
+  }
+  result
+}
+
+///|
+pub fn MultibodyJointSet3DReal::get_unknown_gen(
+  self : MultibodyJointSet3DReal,
+  id : Int,
+) -> (Multibody3DReal, LinkId, MultibodyJointHandle)? {
+  if self.inner.get_unknown_gen(id) is Some((multibody, link, handle)) {
+    Some((Multibody3DReal::{ inner: multibody.inner }, link, handle))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::joint_between(
+  self : MultibodyJointSet3DReal,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)? {
+  if self.inner.joint_between(body1, body2) is Some((handle, multibody, link)) {
+    Some((handle, Multibody3DReal::{ inner: multibody.inner }, link))
+  } else {
+    None
+  }
+}
+
+///|
+pub fn MultibodyJointSet3DReal::attached_joints(
+  self : MultibodyJointSet3DReal,
+  handle : RigidBodyHandle,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)] {
+  self.inner.attached_joints(handle)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::attached_bodies(
+  self : MultibodyJointSet3DReal,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  self.inner.attached_bodies(handle)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::bodies_attached_with_enabled_joint(
+  self : MultibodyJointSet3DReal,
+  handle : RigidBodyHandle,
+) -> Array[RigidBodyHandle] {
+  self.inner.bodies_attached_with_enabled_joint(handle)
+}
+
+///|
+pub fn MultibodyJointSet3DReal::iter(
+  self : MultibodyJointSet3DReal,
+) -> Array[
+  (MultibodyJointHandle, MultibodyLinkId, Multibody3DReal, MultibodyLink),
+] {
+  let result : Array[
+    (MultibodyJointHandle, MultibodyLinkId, Multibody3DReal, MultibodyLink),
+  ] = []
+  let items = self.inner.iter()
+  for i in 0..<items.length() {
+    let (handle, link_id, multibody, link) = items[i]
+    result.push(
+      (handle, link_id, Multibody3DReal::{ inner: multibody.inner }, link),
+    )
+  }
+  result
+}
+
+///|
+pub fn MultibodyJointSet3DReal::revolute_joint_descriptors(
+  self : MultibodyJointSet3DReal,
+) -> Array[MultibodyRevoluteJointDesc] {
+  self.inner.revolute_joint_descriptors()
+}
+
+///|
+pub fn MultibodyJointSet3DReal::set_revolute_joint_solver_impulses(
+  self : MultibodyJointSet3DReal,
+  link : MultibodyLinkId,
+  lin_impulses : @core.Vec2,
+  motor_impulse : @core.Real,
+  limit_impulse : @core.Real,
+) -> Unit {
+  self.inner.set_revolute_joint_solver_impulses(
+    link, lin_impulses, motor_impulse, limit_impulse,
+  )
+}
+
+///|
+pub fn MultibodyJointSet3DReal::sync_rigid_bodies_from_multibodies(
+  self : MultibodyJointSet3DReal,
+  bodies : RigidBodySet3D,
+) -> Unit {
+  let items = self.inner.multibodies.iter()
+  for i in 0..<items.length() {
+    let (mb_handle, multibody) = items[i]
+    mb3_forward_kinematics_real(multibody, bodies, true)
+    mb3_update_rigid_bodies_real(multibody, bodies)
+    self.inner.multibodies.set(mb_handle, multibody) |> ignore
+  }
+}

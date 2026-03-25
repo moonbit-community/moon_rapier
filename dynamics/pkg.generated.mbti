@@ -805,6 +805,17 @@ pub fn Multibody3::inverse_kinematics(Self, RigidBodySet3, LinkId, InverseKinema
 pub fn Multibody3::link_pose(Self, LinkId) -> @core.Isometry3?
 pub fn Multibody3::ndofs(Self) -> Int
 
+pub struct Multibody3DReal {
+  inner : Multibody
+}
+pub fn Multibody3DReal::apply_displacements(Self, Array[Float]) -> Unit
+pub fn Multibody3DReal::body_jacobian(Self, LinkId) -> Jacobian3
+pub fn Multibody3DReal::forward_kinematics(Self, RigidBodySet3D, Bool) -> Unit
+pub fn Multibody3DReal::forward_kinematics_single_link(Self, RigidBodySet3D, LinkId, Array[Float]?, Jacobian3?) -> @core.Isometry3
+pub fn Multibody3DReal::inverse_kinematics(Self, RigidBodySet3D, LinkId, InverseKinematicsOption, @core.Isometry3, (MultibodyLink) -> Bool, DVector) -> Unit
+pub fn Multibody3DReal::link_pose(Self, LinkId) -> @core.Isometry3?
+pub fn Multibody3DReal::ndofs(Self) -> Int
+
 type MultibodyIndex
 pub fn MultibodyIndex::invalid() -> Self
 
@@ -892,6 +903,34 @@ pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(Self, MultibodyLin
 pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(Self, RigidBodySet3) -> Unit
 pub fn MultibodyJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
+
+pub struct MultibodyJointSet3DReal {
+  inner : MultibodyJointSet3
+
+  fn new() -> MultibodyJointSet3DReal
+}
+pub fn MultibodyJointSet3DReal::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet3DReal::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
+pub fn MultibodyJointSet3DReal::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet3DReal::get(Self, MultibodyJointHandle) -> (Multibody3DReal, LinkId)?
+pub fn MultibodyJointSet3DReal::get_multibody(Self, MultibodyIndex) -> Multibody3DReal?
+pub fn MultibodyJointSet3DReal::get_multibody_mut(Self, MultibodyIndex) -> Multibody3DReal?
+pub fn MultibodyJointSet3DReal::get_mut(Self, MultibodyJointHandle) -> (Multibody3DReal, LinkId)?
+pub fn MultibodyJointSet3DReal::get_unknown_gen(Self, Int) -> (Multibody3DReal, LinkId, MultibodyJointHandle)?
+pub fn MultibodyJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3DReal::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3DReal::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody3DReal, MultibodyLink)]
+pub fn MultibodyJointSet3DReal::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)?
+pub fn MultibodyJointSet3DReal::multibodies(Self) -> Array[Multibody3DReal]
+pub fn MultibodyJointSet3DReal::new() -> Self
+pub fn MultibodyJointSet3DReal::remove(Self, MultibodyJointHandle, Bool) -> Unit
+pub fn MultibodyJointSet3DReal::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
+pub fn MultibodyJointSet3DReal::revolute_joint_descriptors(Self) -> Array[MultibodyRevoluteJointDesc]
+pub fn MultibodyJointSet3DReal::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet3DReal::set_revolute_joint_solver_impulses(Self, MultibodyLinkId, @core.Vec2, Float, Float) -> Unit
+pub fn MultibodyJointSet3DReal::sync_rigid_bodies_from_multibodies(Self, RigidBodySet3D) -> Unit
+pub fn MultibodyJointSet3DReal::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
+pub fn MultibodyJointSet3DReal::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type MultibodyLink
 pub fn MultibodyLink::is_root(Self) -> Bool
