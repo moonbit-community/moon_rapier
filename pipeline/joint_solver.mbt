@@ -44,6 +44,67 @@ fn joint_motor_coefficients(
 }
 
 ///|
+fn joint_solver_axis_mask(
+  axis : @dynamics.JointAxis,
+) -> @dynamics.JointAxesMask {
+  match axis {
+    @dynamics.JointAxis::LinX => @dynamics.JointAxesMask::lin_x()
+    @dynamics.JointAxis::LinY => @dynamics.JointAxesMask::lin_y()
+    @dynamics.JointAxis::LinZ => @dynamics.JointAxesMask::lin_z()
+    @dynamics.JointAxis::AngX => @dynamics.JointAxesMask::ang_x()
+    @dynamics.JointAxis::AngY => @dynamics.JointAxesMask::ang_y()
+    @dynamics.JointAxis::AngZ => @dynamics.JointAxesMask::ang_z()
+  }
+}
+
+///|
+fn joint_solver_angular_axis(
+  data : @dynamics.GenericJoint,
+) -> @dynamics.JointAxis {
+  let spatial_axes = data
+    .locked_axes()
+    .or(data.limit_axes())
+    .or(data.motor_axes())
+    .or(data.coupled_axes())
+    .intersection(
+      @dynamics.JointAxesMask::lin_z().or(
+        @dynamics.JointAxesMask::ang_x().or(@dynamics.JointAxesMask::ang_y()),
+      ),
+    )
+  if spatial_axes.bits() == 0 {
+    return @dynamics.JointAxis::AngZ
+  }
+  let locked_axes = data.locked_axes()
+  if !locked_axes.contains(@dynamics.JointAxesMask::ang_x()) {
+    return @dynamics.JointAxis::AngX
+  }
+  if !locked_axes.contains(@dynamics.JointAxesMask::ang_y()) {
+    return @dynamics.JointAxis::AngY
+  }
+  if !locked_axes.contains(@dynamics.JointAxesMask::ang_z()) {
+    return @dynamics.JointAxis::AngZ
+  }
+  let motor_axes = data.motor_axes()
+  if motor_axes.contains(@dynamics.JointAxesMask::ang_x()) {
+    return @dynamics.JointAxis::AngX
+  }
+  if motor_axes.contains(@dynamics.JointAxesMask::ang_y()) {
+    return @dynamics.JointAxis::AngY
+  }
+  if motor_axes.contains(@dynamics.JointAxesMask::ang_z()) {
+    return @dynamics.JointAxis::AngZ
+  }
+  let limit_axes = data.limit_axes()
+  if limit_axes.contains(@dynamics.JointAxesMask::ang_x()) {
+    return @dynamics.JointAxis::AngX
+  }
+  if limit_axes.contains(@dynamics.JointAxesMask::ang_y()) {
+    return @dynamics.JointAxis::AngY
+  }
+  @dynamics.JointAxis::AngZ
+}
+
+///|
 fn joint_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
   @core.Vec2::new(v.x * s, v.y * s)
 }
@@ -306,6 +367,8 @@ fn build_joint_constraints(
     let local_anchor2 = joint.data.local_anchor2()
     let frame1 = joint.data.local_frame1()
     let frame2 = joint.data.local_frame2()
+    let angular_axis = joint_solver_angular_axis(joint.data)
+    let angular_axis_mask = joint_solver_axis_mask(angular_axis)
     let local_rot1 = frame1.rotation
     let local_rot2 = frame2.rotation
     let world1 = rb1.position().transform_point(local_anchor1)
@@ -314,7 +377,7 @@ fn build_joint_constraints(
     let lock_axes = joint.data.locked_axes()
     let lock_x = lock_axes.contains(@dynamics.JointAxesMask::lin_x())
     let lock_y = lock_axes.contains(@dynamics.JointAxesMask::lin_y())
-    let lock_ang = lock_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let lock_ang = lock_axes.contains(angular_axis_mask)
 
     // Joint basis expressed in world-space.
     // For a fully locked linear constraint (revolute/fixed), any orthonormal basis is valid.
@@ -389,7 +452,7 @@ fn build_joint_constraints(
     let coupled_axes = joint.data.coupled_axes()
     let coupled_lin = coupled_axes.contains(@dynamics.JointAxesMask::lin_axes())
     let motor_axes = joint.data.motor_axes()
-    let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let motor_enabled = motor_axes.contains(angular_axis_mask)
     let mut motor_lin_x_enabled = motor_axes.contains(
       @dynamics.JointAxesMask::lin_x(),
     )
@@ -397,7 +460,9 @@ fn build_joint_constraints(
       @dynamics.JointAxesMask::lin_y(),
     )
     let motors = joint.data.motors()
-    let motor = motors.ang_z
+    let motor = joint.data
+      .motor(angular_axis)
+      .unwrap_or(@dynamics.JointMotor::default())
     let motor_lin_x = motors.lin_x
     let motor_lin_y = motors.lin_y
     let limit_axes = joint.data.limit_axes()
@@ -518,8 +583,10 @@ fn build_joint_constraints(
     }
 
     // Angular limits are only warmstarted when currently violated.
-    let limits_enabled = limit_axes.contains(@dynamics.JointAxesMask::ang_z())
-    let limits = limits_all.ang_z
+    let limits_enabled = limit_axes.contains(angular_axis_mask)
+    let limits = joint.data
+      .limits_axis(angular_axis)
+      .unwrap_or(@dynamics.JointLimits::default())
     let rot2 = rb2.rotation()
     let joint_rot2 = rot2.mul(local_rot2)
     let rel_rot = joint_rot1.inverse().mul(joint_rot2)
@@ -541,7 +608,7 @@ fn build_joint_constraints(
       0.0F
     }
     let motor_impulse = if motor_enabled {
-      motors.ang_z.impulse() * warmstart
+      motor.impulse() * warmstart
     } else {
       0.0F
     }
@@ -637,6 +704,8 @@ fn build_joint_constraints(
     let local_anchor2 = data.local_anchor2()
     let frame1 = data.local_frame1()
     let frame2 = data.local_frame2()
+    let angular_axis = joint_solver_angular_axis(data)
+    let angular_axis_mask = joint_solver_axis_mask(angular_axis)
     let local_rot1 = frame1.rotation
     let local_rot2 = frame2.rotation
     let world1 = rb1.position().transform_point(local_anchor1)
@@ -645,7 +714,7 @@ fn build_joint_constraints(
     let lock_axes = data.locked_axes()
     let lock_x = lock_axes.contains(@dynamics.JointAxesMask::lin_x())
     let lock_y = lock_axes.contains(@dynamics.JointAxesMask::lin_y())
-    let lock_ang = lock_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let lock_ang = lock_axes.contains(angular_axis_mask)
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
       (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
@@ -727,7 +796,7 @@ fn build_joint_constraints(
       1.0F / denom_ang
     }
     let motor_axes = data.motor_axes()
-    let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let motor_enabled = motor_axes.contains(angular_axis_mask)
     let motor_lin_x_enabled = motor_axes.contains(
       @dynamics.JointAxesMask::lin_x(),
     )
@@ -735,7 +804,9 @@ fn build_joint_constraints(
       @dynamics.JointAxesMask::lin_y(),
     )
     let motors = data.motors()
-    let motor = motors.ang_z
+    let motor = data
+      .motor(angular_axis)
+      .unwrap_or(@dynamics.JointMotor::default())
     let motor_lin_x = motors.lin_x
     let motor_lin_y = motors.lin_y
     let limit_axes = data.limit_axes()
@@ -782,8 +853,10 @@ fn build_joint_constraints(
         lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
       }
     }
-    let limits_enabled = limit_axes.contains(@dynamics.JointAxesMask::ang_z())
-    let limits = limits_all.ang_z
+    let limits_enabled = limit_axes.contains(angular_axis_mask)
+    let limits = data
+      .limits_axis(angular_axis)
+      .unwrap_or(@dynamics.JointLimits::default())
     let rot2 = rb2.rotation()
     let joint_rot2 = rot2.mul(local_rot2)
     let rel_rot = joint_rot1.inverse().mul(joint_rot2)
@@ -801,7 +874,7 @@ fn build_joint_constraints(
     }
     let ang_impulse = 0.0F
     let motor_impulse = if motor_enabled {
-      motors.ang_z.impulse() * warmstart
+      motor.impulse() * warmstart
     } else {
       0.0F
     }
@@ -907,6 +980,8 @@ fn append_multibody_joint_constraints(
     let local_anchor2 = data.local_anchor2()
     let frame1 = data.local_frame1()
     let frame2 = data.local_frame2()
+    let angular_axis = joint_solver_angular_axis(data)
+    let angular_axis_mask = joint_solver_axis_mask(angular_axis)
     let local_rot1 = frame1.rotation
     let local_rot2 = frame2.rotation
     let world1 = rb1.position().transform_point(local_anchor1)
@@ -915,7 +990,7 @@ fn append_multibody_joint_constraints(
     let lock_axes = data.locked_axes()
     let lock_x = lock_axes.contains(@dynamics.JointAxesMask::lin_x())
     let lock_y = lock_axes.contains(@dynamics.JointAxesMask::lin_y())
-    let lock_ang = lock_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let lock_ang = lock_axes.contains(angular_axis_mask)
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
       (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
@@ -1106,8 +1181,10 @@ fn append_multibody_joint_constraints(
         lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
       }
     }
-    let limits_enabled = limit_axes.contains(@dynamics.JointAxesMask::ang_z())
-    let limits = limits_all.ang_z
+    let limits_enabled = limit_axes.contains(angular_axis_mask)
+    let limits = data
+      .limits_axis(angular_axis)
+      .unwrap_or(@dynamics.JointLimits::default())
     let rot2 = rb2.rotation()
     let joint_rot2 = rot2.mul(local_rot2)
     let rel_rot = joint_rot1.inverse().mul(joint_rot2)
@@ -1124,9 +1201,12 @@ fn append_multibody_joint_constraints(
       impulses = @core.Vec2::new(impulses.x, 0.0F)
     }
     let ang_impulse = 0.0F
-    let motor_enabled = motor_axes.contains(@dynamics.JointAxesMask::ang_z())
+    let motor_enabled = motor_axes.contains(angular_axis_mask)
+    let motor = data
+      .motor(angular_axis)
+      .unwrap_or(@dynamics.JointMotor::default())
     let motor_impulse = if motor_enabled {
-      motors.ang_z.impulse() * warmstart
+      motor.impulse() * warmstart
     } else {
       0.0F
     }
@@ -1165,7 +1245,7 @@ fn append_multibody_joint_constraints(
       inv_mass_y,
       inv_mass_ang,
       motor_enabled,
-      motor: motors.ang_z,
+      motor,
       motor_impulse,
       motor_lin_x_enabled,
       motor_lin_x: motors.lin_x,

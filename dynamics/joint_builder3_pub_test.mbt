@@ -31,9 +31,13 @@ test "revolute joint builder3 exposes motor model and softness" {
     @core.abs(joint.softness().damping_ratio - 0.25F) < 1.0e-6F,
     content="true",
   )
-  inspect(joint.motors.ang_z.model is MotorModel::ForceBased, content="true")
+  inspect(joint.motors.ang_x.model is MotorModel::ForceBased, content="true")
   inspect(
-    @core.abs(joint.motors.ang_z.max_force - 4.0F) < 1.0e-6F,
+    @core.abs(joint.motors.ang_x.max_force - 4.0F) < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    joint.locked_axes().bits() == JointAxesMask::locked_revolute_axes3().bits(),
     content="true",
   )
 }
@@ -70,6 +74,10 @@ test "prismatic joint builder3 exposes motor model and softness" {
     @core.abs(joint.motors.lin_x.max_force - 6.0F) < 1.0e-6F,
     content="true",
   )
+  inspect(
+    joint.locked_axes().bits() == JointAxesMask::locked_prismatic_axes3().bits(),
+    content="true",
+  )
 }
 
 ///|
@@ -102,6 +110,10 @@ test "rope joint builder3 exposes motor model and softness" {
   )
   inspect(
     @core.abs(joint.motors.lin_x.max_force - 8.0F) < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    joint.coupled_axes().bits() == JointAxesMask::lin_axes3().bits(),
     content="true",
   )
 }

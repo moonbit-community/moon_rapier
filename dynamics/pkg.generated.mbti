@@ -163,7 +163,9 @@ pub fn GenericJoint::local_frame1(Self) -> @core.Isometry2
 pub fn GenericJoint::local_frame2(Self) -> @core.Isometry2
 pub fn GenericJoint::lock_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
+pub fn GenericJoint::motor(Self, JointAxis) -> JointMotor?
 pub fn GenericJoint::motor_axes(Self) -> JointAxesMask
+pub fn GenericJoint::motor_model(Self, JointAxis) -> MotorModel?
 pub fn GenericJoint::motors(Self) -> JointMotors3
 pub fn GenericJoint::new(JointAxesMask) -> Self
 pub fn GenericJoint::set_contacts_enabled(Self, Bool) -> Self
@@ -522,23 +524,35 @@ pub struct JointAxesMask {
   fn new(Int) -> JointAxesMask
 }
 pub fn JointAxesMask::all() -> Self
+pub fn JointAxesMask::all3() -> Self
 pub fn JointAxesMask::ang_axes() -> Self
+pub fn JointAxesMask::ang_axes3() -> Self
 pub fn JointAxesMask::ang_x() -> Self
+pub fn JointAxesMask::ang_y() -> Self
 pub fn JointAxesMask::ang_z() -> Self
 pub fn JointAxesMask::bits(Self) -> Int
 pub fn JointAxesMask::contains(Self, Self) -> Bool
 pub fn JointAxesMask::empty() -> Self
 pub fn JointAxesMask::free_fixed_axes() -> Self
 pub fn JointAxesMask::free_prismatic_axes() -> Self
+pub fn JointAxesMask::free_prismatic_axes3() -> Self
 pub fn JointAxesMask::free_revolute_axes() -> Self
+pub fn JointAxesMask::free_revolute_axes3() -> Self
+pub fn JointAxesMask::free_spherical_axes() -> Self
 pub fn JointAxesMask::intersection(Self, Self) -> Self
 pub fn JointAxesMask::lin_axes() -> Self
+pub fn JointAxesMask::lin_axes3() -> Self
 pub fn JointAxesMask::lin_x() -> Self
 pub fn JointAxesMask::lin_y() -> Self
+pub fn JointAxesMask::lin_z() -> Self
 pub fn JointAxesMask::locked_fixed_axes() -> Self
+pub fn JointAxesMask::locked_fixed_axes3() -> Self
 pub fn JointAxesMask::locked_pin_slot_axes() -> Self
 pub fn JointAxesMask::locked_prismatic_axes() -> Self
+pub fn JointAxesMask::locked_prismatic_axes3() -> Self
 pub fn JointAxesMask::locked_revolute_axes() -> Self
+pub fn JointAxesMask::locked_revolute_axes3() -> Self
+pub fn JointAxesMask::locked_spherical_axes() -> Self
 pub fn JointAxesMask::new(Int) -> Self
 pub fn JointAxesMask::or(Self, Self) -> Self
 
@@ -574,6 +588,9 @@ pub fn JointAxesMask3DReal::or(Self, Self) -> Self
 pub(all) enum JointAxis {
   LinX
   LinY
+  LinZ
+  AngX
+  AngY
   AngZ
 }
 
@@ -616,6 +633,9 @@ pub fn JointLimits::set_min(Self, Float) -> Self
 pub struct JointLimits3 {
   lin_x : JointLimits
   lin_y : JointLimits
+  lin_z : JointLimits
+  ang_x : JointLimits
+  ang_y : JointLimits
   ang_z : JointLimits
 }
 pub fn JointLimits3::default() -> Self
@@ -643,6 +663,9 @@ pub fn JointMotor::set_target_vel(Self, Float) -> Self
 pub struct JointMotors3 {
   lin_x : JointMotor
   lin_y : JointMotor
+  lin_z : JointMotor
+  ang_x : JointMotor
+  ang_y : JointMotor
   ang_z : JointMotor
 }
 pub fn JointMotors3::default() -> Self
@@ -767,6 +790,9 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : Float
   mut joint_rot : @core.Rot2
+  mut lin_coords3 : @core.Vec3
+  mut ang_coords3 : @core.Vec3
+  mut joint_rot3 : @core.Quat
   axis3 : @core.Vec3
   local_anchor1_3 : @core.Vec3
   local_anchor2_3 : @core.Vec3
@@ -853,6 +879,8 @@ pub fn MultibodyLink::rigid_body_handle(Self) -> RigidBodyHandle
 
 type MultibodyLinkId
 pub fn MultibodyLinkId::default() -> Self
+pub fn MultibodyLinkId::id(Self) -> Int
+pub fn MultibodyLinkId::multibody(Self) -> MultibodyIndex
 
 pub struct MultibodyRevoluteJointDesc {
   link : MultibodyLinkId
@@ -902,6 +930,12 @@ pub struct PrismaticJoint {
   axis : @core.Vec2
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  is_spatial : Bool
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
@@ -953,6 +987,9 @@ pub fn PrismaticJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct PrismaticJointBuilder3 {
   inner : PrismaticJointBuilder
+  axis : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
 
   fn new(@core.Vec3) -> PrismaticJointBuilder3
 }
@@ -1654,6 +1691,9 @@ pub struct RopeJoint {
   max_length : Float
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  is_spatial : Bool
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
@@ -1674,6 +1714,9 @@ pub struct RopeJointBuilder {
   max_length : Float
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+  mut local_anchor1_3 : @core.Vec3
+  mut local_anchor2_3 : @core.Vec3
+  is_spatial : Bool
   mut softness : SpringCoefficients
   mut motor : JointMotor
   mut motor_enabled : Bool
@@ -1693,6 +1736,8 @@ pub fn RopeJointBuilder::softness(Self, SpringCoefficients) -> Self
 
 pub struct RopeJointBuilder3 {
   inner : RopeJointBuilder
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
 
   fn new(Float) -> RopeJointBuilder3
 }

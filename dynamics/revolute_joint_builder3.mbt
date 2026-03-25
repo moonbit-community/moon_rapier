@@ -155,6 +155,7 @@ pub fn RevoluteJointBuilder3::build(
     local_anchor2_3: self.local_anchor2_3,
     local_frame1_rotation: frame,
     local_frame2_rotation: frame,
+    is_spatial: true,
     softness: joint.softness,
     motor: joint.motor,
     motor_enabled: joint.motor_enabled,

@@ -164,6 +164,7 @@ pub fn RevoluteJointBuilder::build(
     ),
     local_frame1_rotation: frame3,
     local_frame2_rotation: frame3,
+    is_spatial: false,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -182,6 +183,7 @@ struct RevoluteJoint {
   local_anchor2_3 : @core.Vec3
   local_frame1_rotation : @core.Quat
   local_frame2_rotation : @core.Quat
+  is_spatial : Bool
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
@@ -291,6 +293,9 @@ fn multibody_joint_with_local_displacements(
     coords: joint.coords,
     angle: joint.angle,
     joint_rot: joint.joint_rot,
+    lin_coords3: joint.lin_coords3,
+    ang_coords3: joint.ang_coords3,
+    joint_rot3: joint.joint_rot3,
     axis3: joint.axis3,
     local_anchor1_3: joint.local_anchor1_3,
     local_anchor2_3: joint.local_anchor2_3,
@@ -928,7 +933,7 @@ pub fn InverseKinematicsOption::default() -> InverseKinematicsOption {
   {
     damping: 1.0F,
     max_iters: 10,
-    constrained_axes: JointAxesMask::all(),
+    constrained_axes: JointAxesMask::all3(),
     epsilon_linear: 1.0e-3F,
     epsilon_angular: 1.0e-3F,
   }
@@ -1254,6 +1259,16 @@ fn MultibodyLinkId::new(
 ///|
 pub fn MultibodyLinkId::default() -> MultibodyLinkId {
   MultibodyLinkId::new(-1, MultibodyIndex::invalid(), 0)
+}
+
+///|
+pub fn MultibodyLinkId::multibody(self : MultibodyLinkId) -> MultibodyIndex {
+  self.multibody
+}
+
+///|
+pub fn MultibodyLinkId::id(self : MultibodyLinkId) -> Int {
+  self.id
 }
 
 ///|
@@ -1714,16 +1729,21 @@ fn parse_link(text : String) -> MultibodyLink? {
     let parent_id = mb_parse_int_value(fields[0])
     let rbid = mb_parse_int_value(fields[1])
     let rbgen = mb_parse_int_value(fields[2])
-    if fields.length() >= 65 {
+    let joint_start = 4
+    let joint_field_count = SERIALIZED_GENERIC_JOINT_FIELD_COUNT
+    let joint_end = joint_start + joint_field_count
+    if fields.length() >= joint_end + 3 {
       let kinematic = mb_parse_bool_value(fields[3])
-      let data = parse_generic_joint(fields, 4)
-      let solver_lin_x = mb_parse_real_value(fields[62])
-      let solver_lin_y = mb_parse_real_value(fields[63])
-      let joint_angle = mb_parse_real_value(fields[64])
+      let data = parse_generic_joint(fields, joint_start)
+      let solver_lin_x = mb_parse_real_value(fields[joint_end])
+      let solver_lin_y = mb_parse_real_value(fields[joint_end + 1])
+      let joint_angle = mb_parse_real_value(fields[joint_end + 2])
       let joint = MultibodyJoint::new(data, kinematic)
       joint.solver_lin_impulses = @core.Vec2::new(solver_lin_x, solver_lin_y)
       joint.angle = joint_angle
       joint.joint_rot = @core.Rot2::from_angle(joint_angle)
+      joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
+      joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
       let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
       return Some(MultibodyLink::{
         internal_id: 0,
@@ -1798,6 +1818,7 @@ fn parse_link(text : String) -> MultibodyLink? {
       local_anchor2_3: @core.Vec3::new(a2x, a2y, a2z),
       local_frame1_rotation: frame3,
       local_frame2_rotation: frame3,
+      is_spatial: fields.length() >= 29,
       softness,
       motor,
       motor_enabled,
@@ -1808,6 +1829,8 @@ fn parse_link(text : String) -> MultibodyLink? {
     let joint = MultibodyJoint::from_revolute(revolute, false)
     joint.angle = joint_angle
     joint.joint_rot = @core.Rot2::from_angle(joint_angle)
+    joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
+    joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
     let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
     Some(MultibodyLink::{
       internal_id: 0,
@@ -2054,12 +2077,18 @@ pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(
     lnk.joint.data.motors = JointMotors3::{
       lin_x: motors.lin_x,
       lin_y: motors.lin_y,
+      lin_z: motors.lin_z,
+      ang_x: motors.ang_x,
+      ang_y: motors.ang_y,
       ang_z: motors.ang_z.set_impulse(motor_impulse),
     }
     let limits = lnk.joint.data.limits
     lnk.joint.data.limits = JointLimits3::{
       lin_x: limits.lin_x,
       lin_y: limits.lin_y,
+      lin_z: limits.lin_z,
+      ang_x: limits.ang_x,
+      ang_y: limits.ang_y,
       ang_z: limits.ang_z.set_impulse(limit_impulse),
     }
     mb.links[link.id] = lnk

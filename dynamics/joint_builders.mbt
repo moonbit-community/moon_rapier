@@ -67,6 +67,9 @@ pub struct RopeJointBuilder {
   max_length : @core.Real
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+  mut local_anchor1_3 : @core.Vec3
+  mut local_anchor2_3 : @core.Vec3
+  is_spatial : Bool
   mut softness : SpringCoefficients
   mut motor : JointMotor
   mut motor_enabled : Bool
@@ -80,6 +83,9 @@ pub fn RopeJointBuilder::new(max_length : @core.Real) -> RopeJointBuilder {
     max_length,
     local_anchor1: @core.Vec2::zero(),
     local_anchor2: @core.Vec2::zero(),
+    local_anchor1_3: @core.Vec3::zero(),
+    local_anchor2_3: @core.Vec3::zero(),
+    is_spatial: false,
     softness: SpringCoefficients::joint_defaults(),
     motor: JointMotor::default(),
     motor_enabled: false,
@@ -92,6 +98,7 @@ pub fn RopeJointBuilder::local_anchor1(
   anchor : @core.Vec2,
 ) -> RopeJointBuilder {
   self.local_anchor1 = anchor
+  self.local_anchor1_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -101,6 +108,7 @@ pub fn RopeJointBuilder::local_anchor2(
   anchor : @core.Vec2,
 ) -> RopeJointBuilder {
   self.local_anchor2 = anchor
+  self.local_anchor2_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -167,6 +175,9 @@ pub fn RopeJointBuilder::build(self : RopeJointBuilder) -> RopeJoint {
     max_length: self.max_length,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    is_spatial: self.is_spatial,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -178,6 +189,9 @@ pub struct RopeJoint {
   max_length : @core.Real
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  is_spatial : Bool
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
@@ -216,6 +230,9 @@ pub fn RopeJoint::set_max_distance(
     max_length: max_distance,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    is_spatial: self.is_spatial,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -231,14 +248,30 @@ pub fn RopeJointBuilder::max_distance(self : RopeJointBuilder) -> @core.Real {
 pub fn GenericJoint::from_rope(joint : RopeJoint) -> GenericJoint {
   let frame1 = @core.Isometry2::from_translation(joint.local_anchor1)
   let frame2 = @core.Isometry2::from_translation(joint.local_anchor2)
-  let mut result = GenericJoint::default()
-    .set_local_frame1(frame1)
-    .set_local_frame2(frame2)
-    .set_coupled_axes(JointAxesMask::lin_axes())
-    // Rapier parity: rope joint is a coupled linear limit on the distance between anchors.
-    // The coupled solver reads the limits stored on the first coupled axis (LinX).
-    .set_limits_axis(JointAxis::LinX, 0.0F, joint.max_length)
-    .set_softness(joint.softness)
+  let mut result = GenericJoint::{
+    local_frame1: frame1,
+    local_frame2: frame2,
+    axis3: @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: @core.Quat::identity(),
+    local_frame2_rotation: @core.Quat::identity(),
+    locked_axes: JointAxesMask::empty(),
+    limit_axes: JointAxesMask::empty(),
+    motor_axes: JointAxesMask::empty(),
+    coupled_axes: if joint.is_spatial {
+      JointAxesMask::lin_axes3()
+    } else {
+      JointAxesMask::lin_axes()
+    },
+    limits: JointLimits3::default(),
+    motors: JointMotors3::default(),
+    softness: joint.softness,
+    contacts_enabled: true,
+    enabled: JointEnabled::Enabled,
+    user_data: 0,
+  }
+  result = result.set_limits_axis(JointAxis::LinX, 0.0F, joint.max_length)
   if joint.motor_enabled {
     result = result
       .set_motor(
@@ -372,6 +405,9 @@ pub fn GenericJoint::from_pin_slot(joint : PinSlotJoint) -> GenericJoint {
       .set_limits(JointLimits3::{
         lin_x: joint.limits,
         lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       })
   }
@@ -381,8 +417,14 @@ pub fn GenericJoint::from_pin_slot(joint : PinSlotJoint) -> GenericJoint {
 ///|
 struct PrismaticJointBuilder {
   axis : @core.Vec2
+  axis3 : @core.Vec3
   mut local_anchor1 : @core.Vec2
   mut local_anchor2 : @core.Vec2
+  mut local_anchor1_3 : @core.Vec3
+  mut local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  is_spatial : Bool
   mut softness : SpringCoefficients
   mut motor : JointMotor
   mut motor_enabled : Bool
@@ -399,8 +441,18 @@ pub fn PrismaticJointBuilder::new(axis : @core.Vec2) -> PrismaticJointBuilder {
   }
   {
     axis: norm_axis,
+    axis3: @core.Vec3::new(norm_axis.x, norm_axis.y, 0.0F),
     local_anchor1: @core.Vec2::zero(),
     local_anchor2: @core.Vec2::zero(),
+    local_anchor1_3: @core.Vec3::zero(),
+    local_anchor2_3: @core.Vec3::zero(),
+    local_frame1_rotation: @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
+    ),
+    local_frame2_rotation: @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
+    ),
+    is_spatial: false,
     softness: SpringCoefficients::joint_defaults(),
     motor: JointMotor::default(),
     motor_enabled: false,
@@ -415,6 +467,7 @@ pub fn PrismaticJointBuilder::local_anchor1(
   anchor : @core.Vec2,
 ) -> PrismaticJointBuilder {
   self.local_anchor1 = anchor
+  self.local_anchor1_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -424,6 +477,7 @@ pub fn PrismaticJointBuilder::local_anchor2(
   anchor : @core.Vec2,
 ) -> PrismaticJointBuilder {
   self.local_anchor2 = anchor
+  self.local_anchor2_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -503,6 +557,12 @@ pub fn PrismaticJointBuilder::build(
     axis: self.axis,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
+    axis3: self.axis3,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    local_frame1_rotation: self.local_frame1_rotation,
+    local_frame2_rotation: self.local_frame2_rotation,
+    is_spatial: self.is_spatial,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -516,6 +576,12 @@ pub struct PrismaticJoint {
   axis : @core.Vec2
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  is_spatial : Bool
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
@@ -532,6 +598,16 @@ pub fn PrismaticJoint::set_local_axis1(
     axis,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
+    axis3: @core.Vec3::new(axis.x, axis.y, self.axis3.z),
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    local_frame1_rotation: @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
+    ),
+    local_frame2_rotation: @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
+    ),
+    is_spatial: self.is_spatial,
     softness: self.softness,
     motor: self.motor,
     motor_enabled: self.motor_enabled,
@@ -571,12 +647,29 @@ pub fn GenericJoint::from_prismatic(joint : PrismaticJoint) -> GenericJoint {
     @core.Rot2::from_angle(angle),
   )
   let frame2 = @core.Isometry2::from_translation(joint.local_anchor2)
-  let mut result = GenericJoint::default()
-    .set_local_frame1(frame1)
-    .set_local_frame2(frame2)
-    // 2D prismatic: keep translation along local x, lock translation along y and rotation.
-    .set_locked_axes(JointAxesMask::lin_y().or(JointAxesMask::ang_z()))
-    .set_softness(joint.softness)
+  let mut result = GenericJoint::{
+    local_frame1: frame1,
+    local_frame2: frame2,
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
+    locked_axes: if joint.is_spatial {
+      JointAxesMask::locked_prismatic_axes3()
+    } else {
+      JointAxesMask::locked_prismatic_axes()
+    },
+    limit_axes: JointAxesMask::empty(),
+    motor_axes: JointAxesMask::empty(),
+    coupled_axes: JointAxesMask::empty(),
+    limits: JointLimits3::default(),
+    motors: JointMotors3::default(),
+    softness: joint.softness,
+    contacts_enabled: true,
+    enabled: JointEnabled::Enabled,
+    user_data: 0,
+  }
   if joint.motor_enabled {
     result = result
       .set_motor(
@@ -596,6 +689,9 @@ pub fn GenericJoint::from_prismatic(joint : PrismaticJoint) -> GenericJoint {
       .set_limits(JointLimits3::{
         lin_x: joint.limits,
         lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       })
   }

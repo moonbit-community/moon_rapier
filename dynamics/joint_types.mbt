@@ -19,6 +19,9 @@ const REAL_MAX : @core.Real = 1.0e30F
 pub(all) enum JointAxis {
   LinX
   LinY
+  LinZ
+  AngX
+  AngY
   AngZ
 }
 
@@ -79,14 +82,23 @@ pub fn JointAxesMask::lin_y() -> JointAxesMask {
 }
 
 ///|
-pub fn JointAxesMask::ang_z() -> JointAxesMask {
+pub fn JointAxesMask::lin_z() -> JointAxesMask {
   { bits: 1 << 2 }
 }
 
 ///|
 pub fn JointAxesMask::ang_x() -> JointAxesMask {
-  // Rapier's dim2 uses ANG_X for the unique angular DOF.
-  JointAxesMask::ang_z()
+  { bits: 1 << 3 }
+}
+
+///|
+pub fn JointAxesMask::ang_y() -> JointAxesMask {
+  { bits: 1 << 4 }
+}
+
+///|
+pub fn JointAxesMask::ang_z() -> JointAxesMask {
+  { bits: 1 << 5 }
 }
 
 ///|
@@ -100,8 +112,23 @@ pub fn JointAxesMask::ang_axes() -> JointAxesMask {
 }
 
 ///|
+pub fn JointAxesMask::lin_axes3() -> JointAxesMask {
+  JointAxesMask::lin_axes().or(JointAxesMask::lin_z())
+}
+
+///|
+pub fn JointAxesMask::ang_axes3() -> JointAxesMask {
+  JointAxesMask::ang_x().or(JointAxesMask::ang_y()).or(JointAxesMask::ang_z())
+}
+
+///|
 pub fn JointAxesMask::all() -> JointAxesMask {
   JointAxesMask::lin_axes().or(JointAxesMask::ang_axes())
+}
+
+///|
+pub fn JointAxesMask::all3() -> JointAxesMask {
+  JointAxesMask::lin_axes3().or(JointAxesMask::ang_axes3())
 }
 
 ///|
@@ -111,8 +138,24 @@ pub fn JointAxesMask::locked_revolute_axes() -> JointAxesMask {
 }
 
 ///|
+pub fn JointAxesMask::locked_revolute_axes3() -> JointAxesMask {
+  JointAxesMask::lin_axes3()
+  .or(JointAxesMask::ang_y())
+  .or(JointAxesMask::ang_z())
+}
+
+///|
 pub fn JointAxesMask::locked_prismatic_axes() -> JointAxesMask {
-  JointAxesMask::new((1 << 1) | (1 << 2))
+  JointAxesMask::lin_y().or(JointAxesMask::ang_z())
+}
+
+///|
+pub fn JointAxesMask::locked_prismatic_axes3() -> JointAxesMask {
+  JointAxesMask::lin_y()
+  .or(JointAxesMask::lin_z())
+  .or(JointAxesMask::ang_x())
+  .or(JointAxesMask::ang_y())
+  .or(JointAxesMask::ang_z())
 }
 
 ///|
@@ -122,11 +165,26 @@ pub fn JointAxesMask::locked_pin_slot_axes() -> JointAxesMask {
 
 ///|
 pub fn JointAxesMask::locked_fixed_axes() -> JointAxesMask {
-  JointAxesMask::new((1 << 0) | (1 << 1) | (1 << 2))
+  JointAxesMask::lin_axes().or(JointAxesMask::ang_z())
+}
+
+///|
+pub fn JointAxesMask::locked_fixed_axes3() -> JointAxesMask {
+  JointAxesMask::all3()
+}
+
+///|
+pub fn JointAxesMask::locked_spherical_axes() -> JointAxesMask {
+  JointAxesMask::lin_axes3()
 }
 
 ///|
 pub fn JointAxesMask::free_revolute_axes() -> JointAxesMask {
+  JointAxesMask::ang_z()
+}
+
+///|
+pub fn JointAxesMask::free_revolute_axes3() -> JointAxesMask {
   JointAxesMask::ang_x()
 }
 
@@ -136,8 +194,18 @@ pub fn JointAxesMask::free_prismatic_axes() -> JointAxesMask {
 }
 
 ///|
+pub fn JointAxesMask::free_prismatic_axes3() -> JointAxesMask {
+  JointAxesMask::lin_x()
+}
+
+///|
 pub fn JointAxesMask::free_fixed_axes() -> JointAxesMask {
   JointAxesMask::empty()
+}
+
+///|
+pub fn JointAxesMask::free_spherical_axes() -> JointAxesMask {
+  JointAxesMask::ang_axes3()
 }
 
 ///|
@@ -209,6 +277,9 @@ pub fn JointLimits::set_impulse(
 pub struct JointLimits3 {
   lin_x : JointLimits
   lin_y : JointLimits
+  lin_z : JointLimits
+  ang_x : JointLimits
+  ang_y : JointLimits
   ang_z : JointLimits
 }
 
@@ -217,6 +288,9 @@ pub fn JointLimits3::default() -> JointLimits3 {
   {
     lin_x: JointLimits::default(),
     lin_y: JointLimits::default(),
+    lin_z: JointLimits::default(),
+    ang_x: JointLimits::default(),
+    ang_y: JointLimits::default(),
     ang_z: JointLimits::default(),
   }
 }
@@ -395,6 +469,9 @@ pub fn JointMotor::set_impulse(
 pub struct JointMotors3 {
   lin_x : JointMotor
   lin_y : JointMotor
+  lin_z : JointMotor
+  ang_x : JointMotor
+  ang_y : JointMotor
   ang_z : JointMotor
 }
 
@@ -403,6 +480,9 @@ pub fn JointMotors3::default() -> JointMotors3 {
   {
     lin_x: JointMotor::default(),
     lin_y: JointMotor::default(),
+    lin_z: JointMotor::default(),
+    ang_x: JointMotor::default(),
+    ang_y: JointMotor::default(),
     ang_z: JointMotor::default(),
   }
 }

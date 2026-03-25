@@ -1281,7 +1281,9 @@ pub fn GenericJoint::lock_axes(
 
 ///|
 pub fn GenericJoint::as_revolute(self : GenericJoint) -> GenericJoint? {
-  if self.locked_axes.bits() == JointAxesMask::locked_revolute_axes().bits() {
+  let bits = self.locked_axes.bits()
+  if bits == JointAxesMask::locked_revolute_axes().bits() ||
+    bits == JointAxesMask::locked_revolute_axes3().bits() {
     Some(self)
   } else {
     None
@@ -1295,7 +1297,9 @@ pub fn GenericJoint::as_revolute_mut(self : GenericJoint) -> GenericJoint? {
 
 ///|
 pub fn GenericJoint::as_fixed(self : GenericJoint) -> GenericJoint? {
-  if self.locked_axes.bits() == ((1 << 0) | (1 << 1) | (1 << 2)) {
+  let bits = self.locked_axes.bits()
+  if bits == JointAxesMask::locked_fixed_axes().bits() ||
+    bits == JointAxesMask::locked_fixed_axes3().bits() {
     Some(self)
   } else {
     None
@@ -1309,7 +1313,9 @@ pub fn GenericJoint::as_fixed_mut(self : GenericJoint) -> GenericJoint? {
 
 ///|
 pub fn GenericJoint::as_prismatic(self : GenericJoint) -> GenericJoint? {
-  if self.locked_axes.bits() == ((1 << 1) | (1 << 2)) {
+  let bits = self.locked_axes.bits()
+  if bits == JointAxesMask::locked_prismatic_axes().bits() ||
+    bits == JointAxesMask::locked_prismatic_axes3().bits() {
     Some(self)
   } else {
     None
@@ -1337,10 +1343,11 @@ pub fn GenericJoint::as_rope_mut(self : GenericJoint) -> GenericJoint? {
 
 ///|
 pub fn GenericJoint::as_spherical(self : GenericJoint) -> GenericJoint? {
-  // Spherical joints are a 3D-only joint type in Rapier. This MoonBit port currently has no
-  // dedicated 3D reduced-coordinate joints, so this conversion always fails.
-  self |> ignore
-  None
+  if self.locked_axes.bits() == JointAxesMask::locked_spherical_axes().bits() {
+    Some(self)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -1354,6 +1361,11 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
   let anchor2 = joint.local_anchor2()
   let frame1 = @core.Isometry2::from_translation(anchor1)
   let frame2 = @core.Isometry2::from_translation(anchor2)
+  let motor_axis = if joint.is_spatial {
+    JointAxis::AngX
+  } else {
+    JointAxis::AngZ
+  }
   let result = GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
@@ -1362,7 +1374,11 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     local_anchor2_3: joint.local_anchor2_3,
     local_frame1_rotation: joint.local_frame1_rotation,
     local_frame2_rotation: joint.local_frame2_rotation,
-    locked_axes: JointAxesMask::locked_revolute_axes(),
+    locked_axes: if joint.is_spatial {
+      JointAxesMask::locked_revolute_axes3()
+    } else {
+      JointAxesMask::locked_revolute_axes()
+    },
     limit_axes: JointAxesMask::empty(),
     motor_axes: JointAxesMask::empty(),
     coupled_axes: JointAxesMask::empty(),
@@ -1374,22 +1390,12 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     user_data: 0,
   }
   if joint.motor() is Some(motor) {
-    result.motor_axes = JointAxesMask::ang_z()
-    let motors = result.motors
-    result.motors = JointMotors3::{
-      lin_x: motors.lin_x,
-      lin_y: motors.lin_y,
-      ang_z: motor,
-    }
+    result.motor_axes = joint_axis_mask(motor_axis)
+    result.motors = joint_motors_set_axis(result.motors, motor_axis, motor)
   }
   if joint.limits() is Some(limits) {
-    result.limit_axes = JointAxesMask::ang_z()
-    let current = result.limits
-    result.limits = JointLimits3::{
-      lin_x: current.lin_x,
-      lin_y: current.lin_y,
-      ang_z: limits,
-    }
+    result.limit_axes = joint_axis_mask(motor_axis)
+    result.limits = joint_limits_set_axis(result.limits, motor_axis, limits)
   }
   result
 }
@@ -1538,6 +1544,161 @@ pub fn GenericJoint::set_coupled_axes(
 }
 
 ///|
+fn joint_limits_for_axis(
+  limits : JointLimits3,
+  axis : JointAxis,
+) -> JointLimits {
+  match axis {
+    JointAxis::LinX => limits.lin_x
+    JointAxis::LinY => limits.lin_y
+    JointAxis::LinZ => limits.lin_z
+    JointAxis::AngX => limits.ang_x
+    JointAxis::AngY => limits.ang_y
+    JointAxis::AngZ => limits.ang_z
+  }
+}
+
+///|
+fn joint_limits_set_axis(
+  limits : JointLimits3,
+  axis : JointAxis,
+  value : JointLimits,
+) -> JointLimits3 {
+  match axis {
+    JointAxis::LinX =>
+      JointLimits3::{
+        lin_x: value,
+        lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
+        ang_z: limits.ang_z,
+      }
+    JointAxis::LinY =>
+      JointLimits3::{
+        lin_x: limits.lin_x,
+        lin_y: value,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
+        ang_z: limits.ang_z,
+      }
+    JointAxis::LinZ =>
+      JointLimits3::{
+        lin_x: limits.lin_x,
+        lin_y: limits.lin_y,
+        lin_z: value,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
+        ang_z: limits.ang_z,
+      }
+    JointAxis::AngX =>
+      JointLimits3::{
+        lin_x: limits.lin_x,
+        lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: value,
+        ang_y: limits.ang_y,
+        ang_z: limits.ang_z,
+      }
+    JointAxis::AngY =>
+      JointLimits3::{
+        lin_x: limits.lin_x,
+        lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: value,
+        ang_z: limits.ang_z,
+      }
+    JointAxis::AngZ =>
+      JointLimits3::{
+        lin_x: limits.lin_x,
+        lin_y: limits.lin_y,
+        lin_z: limits.lin_z,
+        ang_x: limits.ang_x,
+        ang_y: limits.ang_y,
+        ang_z: value,
+      }
+  }
+}
+
+///|
+fn joint_motor_for_axis(motors : JointMotors3, axis : JointAxis) -> JointMotor {
+  match axis {
+    JointAxis::LinX => motors.lin_x
+    JointAxis::LinY => motors.lin_y
+    JointAxis::LinZ => motors.lin_z
+    JointAxis::AngX => motors.ang_x
+    JointAxis::AngY => motors.ang_y
+    JointAxis::AngZ => motors.ang_z
+  }
+}
+
+///|
+fn joint_motors_set_axis(
+  motors : JointMotors3,
+  axis : JointAxis,
+  value : JointMotor,
+) -> JointMotors3 {
+  match axis {
+    JointAxis::LinX =>
+      JointMotors3::{
+        lin_x: value,
+        lin_y: motors.lin_y,
+        lin_z: motors.lin_z,
+        ang_x: motors.ang_x,
+        ang_y: motors.ang_y,
+        ang_z: motors.ang_z,
+      }
+    JointAxis::LinY =>
+      JointMotors3::{
+        lin_x: motors.lin_x,
+        lin_y: value,
+        lin_z: motors.lin_z,
+        ang_x: motors.ang_x,
+        ang_y: motors.ang_y,
+        ang_z: motors.ang_z,
+      }
+    JointAxis::LinZ =>
+      JointMotors3::{
+        lin_x: motors.lin_x,
+        lin_y: motors.lin_y,
+        lin_z: value,
+        ang_x: motors.ang_x,
+        ang_y: motors.ang_y,
+        ang_z: motors.ang_z,
+      }
+    JointAxis::AngX =>
+      JointMotors3::{
+        lin_x: motors.lin_x,
+        lin_y: motors.lin_y,
+        lin_z: motors.lin_z,
+        ang_x: value,
+        ang_y: motors.ang_y,
+        ang_z: motors.ang_z,
+      }
+    JointAxis::AngY =>
+      JointMotors3::{
+        lin_x: motors.lin_x,
+        lin_y: motors.lin_y,
+        lin_z: motors.lin_z,
+        ang_x: motors.ang_x,
+        ang_y: value,
+        ang_z: motors.ang_z,
+      }
+    JointAxis::AngZ =>
+      JointMotors3::{
+        lin_x: motors.lin_x,
+        lin_y: motors.lin_y,
+        lin_z: motors.lin_z,
+        ang_x: motors.ang_x,
+        ang_y: motors.ang_y,
+        ang_z: value,
+      }
+  }
+}
+
+///|
 /// Flips the orientation of the joint, including limits and motors.
 ///
 /// Ported from rapier-reference `GenericJoint::flip`.
@@ -1554,38 +1715,32 @@ pub fn GenericJoint::flip(self : GenericJoint) -> GenericJoint {
   self.local_frame1_rotation = self.local_frame2_rotation
   self.local_frame2_rotation = frame1_3
   let coupled_bits = self.coupled_axes.bits()
-  // In 2D we have 3 dofs (LinX, LinY, AngZ) matching bit indices 0..2.
-  if (coupled_bits & (1 << 0)) == 0 {
-    let lim = self.limits.lin_x
-    self.limits = JointLimits3::{
-      lin_x: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
-      lin_y: self.limits.lin_y,
-      ang_z: self.limits.ang_z,
+  let axes : Array[JointAxis] = [
+    JointAxis::LinX,
+    JointAxis::LinY,
+    JointAxis::LinZ,
+    JointAxis::AngX,
+    JointAxis::AngY,
+    JointAxis::AngZ,
+  ]
+  for index in 0..<axes.length() {
+    if (coupled_bits & (1 << index)) == 0 {
+      let axis = axes[index]
+      let lim = joint_limits_for_axis(self.limits, axis)
+      self.limits = joint_limits_set_axis(
+        self.limits,
+        axis,
+        JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
+      )
     }
   }
-  if (coupled_bits & (1 << 1)) == 0 {
-    let lim = self.limits.lin_y
-    self.limits = JointLimits3::{
-      lin_x: self.limits.lin_x,
-      lin_y: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
-      ang_z: self.limits.ang_z,
-    }
-  }
-  if (coupled_bits & (1 << 2)) == 0 {
-    let lim = self.limits.ang_z
-    self.limits = JointLimits3::{
-      lin_x: self.limits.lin_x,
-      lin_y: self.limits.lin_y,
-      ang_z: JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
-    }
-  }
-  let mx = self.motors.lin_x
-  let my = self.motors.lin_y
-  let mz = self.motors.ang_z
-  self.motors = JointMotors3::{
-    lin_x: mx.set_target_vel(-mx.target_vel).set_target_pos(-mx.target_pos),
-    lin_y: my.set_target_vel(-my.target_vel).set_target_pos(-my.target_pos),
-    ang_z: mz.set_target_vel(-mz.target_vel).set_target_pos(-mz.target_pos),
+  for axis in axes {
+    let motor = joint_motor_for_axis(self.motors, axis)
+    self.motors = joint_motors_set_axis(
+      self.motors,
+      axis,
+      motor.set_target_vel(-motor.target_vel).set_target_pos(-motor.target_pos),
+    )
   }
   self
 }
@@ -1623,6 +1778,9 @@ fn joint_axis_mask(axis : JointAxis) -> JointAxesMask {
   match axis {
     JointAxis::LinX => JointAxesMask::lin_x()
     JointAxis::LinY => JointAxesMask::lin_y()
+    JointAxis::LinZ => JointAxesMask::lin_z()
+    JointAxis::AngX => JointAxesMask::ang_x()
+    JointAxis::AngY => JointAxesMask::ang_y()
     JointAxis::AngZ => JointAxesMask::ang_z()
   }
 }
@@ -1637,47 +1795,12 @@ pub fn GenericJoint::set_motor(
   damping : @core.Real,
 ) -> GenericJoint {
   self.motor_axes = self.motor_axes.or(joint_axis_mask(axis))
-  match axis {
-    JointAxis::LinX => {
-      let m0 = self.motors.lin_x
-      let m = m0
-        .set_target_vel(target_vel)
-        .set_target_pos(target_pos)
-        .set_stiffness(stiffness)
-        .set_damping(damping)
-      self.motors = JointMotors3::{
-        lin_x: m,
-        lin_y: self.motors.lin_y,
-        ang_z: self.motors.ang_z,
-      }
-    }
-    JointAxis::LinY => {
-      let m0 = self.motors.lin_y
-      let m = m0
-        .set_target_vel(target_vel)
-        .set_target_pos(target_pos)
-        .set_stiffness(stiffness)
-        .set_damping(damping)
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: m,
-        ang_z: self.motors.ang_z,
-      }
-    }
-    JointAxis::AngZ => {
-      let m0 = self.motors.ang_z
-      let m = m0
-        .set_target_vel(target_vel)
-        .set_target_pos(target_pos)
-        .set_stiffness(stiffness)
-        .set_damping(damping)
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: self.motors.lin_y,
-        ang_z: m,
-      }
-    }
-  }
+  let motor = joint_motor_for_axis(self.motors, axis)
+    .set_target_vel(target_vel)
+    .set_target_pos(target_pos)
+    .set_stiffness(stiffness)
+    .set_damping(damping)
+  self.motors = joint_motors_set_axis(self.motors, axis, motor)
   self
 }
 
@@ -1688,11 +1811,7 @@ pub fn GenericJoint::set_motor_velocity(
   target_vel : @core.Real,
   factor : @core.Real,
 ) -> GenericJoint {
-  let current_pos = match axis {
-    JointAxis::LinX => self.motors.lin_x.target_pos
-    JointAxis::LinY => self.motors.lin_y.target_pos
-    JointAxis::AngZ => self.motors.ang_z.target_pos
-  }
+  let current_pos = joint_motor_for_axis(self.motors, axis).target_pos
   self.set_motor(axis, current_pos, target_vel, 0.0F, factor)
 }
 
@@ -1713,26 +1832,11 @@ pub fn GenericJoint::set_motor_max_force(
   axis : JointAxis,
   max_force : @core.Real,
 ) -> GenericJoint {
-  match axis {
-    JointAxis::LinX =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x.set_max_force(max_force),
-        lin_y: self.motors.lin_y,
-        ang_z: self.motors.ang_z,
-      }
-    JointAxis::LinY =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: self.motors.lin_y.set_max_force(max_force),
-        ang_z: self.motors.ang_z,
-      }
-    JointAxis::AngZ =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: self.motors.lin_y,
-        ang_z: self.motors.ang_z.set_max_force(max_force),
-      }
-  }
+  self.motors = joint_motors_set_axis(
+    self.motors,
+    axis,
+    joint_motor_for_axis(self.motors, axis).set_max_force(max_force),
+  )
   self
 }
 
@@ -1742,27 +1846,36 @@ pub fn GenericJoint::set_motor_model(
   axis : JointAxis,
   model : MotorModel,
 ) -> GenericJoint {
-  match axis {
-    JointAxis::LinX =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x.set_model(model),
-        lin_y: self.motors.lin_y,
-        ang_z: self.motors.ang_z,
-      }
-    JointAxis::LinY =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: self.motors.lin_y.set_model(model),
-        ang_z: self.motors.ang_z,
-      }
-    JointAxis::AngZ =>
-      self.motors = JointMotors3::{
-        lin_x: self.motors.lin_x,
-        lin_y: self.motors.lin_y,
-        ang_z: self.motors.ang_z.set_model(model),
-      }
-  }
+  self.motors = joint_motors_set_axis(
+    self.motors,
+    axis,
+    joint_motor_for_axis(self.motors, axis).set_model(model),
+  )
   self
+}
+
+///|
+pub fn GenericJoint::motor(
+  self : GenericJoint,
+  axis : JointAxis,
+) -> JointMotor? {
+  let mask = joint_axis_mask(axis)
+  if !self.motor_axes.contains(mask) {
+    return None
+  }
+  Some(joint_motor_for_axis(self.motors, axis))
+}
+
+///|
+pub fn GenericJoint::motor_model(
+  self : GenericJoint,
+  axis : JointAxis,
+) -> MotorModel? {
+  if self.motor(axis) is Some(motor) {
+    Some(motor.model)
+  } else {
+    None
+  }
 }
 
 ///|
@@ -1774,11 +1887,7 @@ pub fn GenericJoint::limits_axis(
   if !self.limit_axes.contains(mask) {
     return None
   }
-  match axis {
-    JointAxis::LinX => Some(self.limits.lin_x)
-    JointAxis::LinY => Some(self.limits.lin_y)
-    JointAxis::AngZ => Some(self.limits.ang_z)
-  }
+  Some(joint_limits_for_axis(self.limits, axis))
 }
 
 ///|
@@ -1789,26 +1898,11 @@ pub fn GenericJoint::set_limits_axis(
   max : @core.Real,
 ) -> GenericJoint {
   self.limit_axes = self.limit_axes.or(joint_axis_mask(axis))
-  match axis {
-    JointAxis::LinX =>
-      self.limits = JointLimits3::{
-        lin_x: self.limits.lin_x.set_min(min).set_max(max),
-        lin_y: self.limits.lin_y,
-        ang_z: self.limits.ang_z,
-      }
-    JointAxis::LinY =>
-      self.limits = JointLimits3::{
-        lin_x: self.limits.lin_x,
-        lin_y: self.limits.lin_y.set_min(min).set_max(max),
-        ang_z: self.limits.ang_z,
-      }
-    JointAxis::AngZ =>
-      self.limits = JointLimits3::{
-        lin_x: self.limits.lin_x,
-        lin_y: self.limits.lin_y,
-        ang_z: self.limits.ang_z.set_min(min).set_max(max),
-      }
-  }
+  self.limits = joint_limits_set_axis(
+    self.limits,
+    axis,
+    joint_limits_for_axis(self.limits, axis).set_min(min).set_max(max),
+  )
   self
 }
 
@@ -2108,7 +2202,7 @@ fn write_limits_fields(sb : StringBuilder, limits : JointLimits) -> Unit {
 }
 
 ///|
-const SERIALIZED_GENERIC_JOINT_FIELD_COUNT : Int = 58
+const SERIALIZED_GENERIC_JOINT_FIELD_COUNT : Int = 88
 
 ///|
 fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit {
@@ -2137,12 +2231,24 @@ fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit 
   sb.write_char('^')
   write_limits_fields(sb, joint.limits.lin_y)
   sb.write_char('^')
+  write_limits_fields(sb, joint.limits.lin_z)
+  sb.write_char('^')
+  write_limits_fields(sb, joint.limits.ang_x)
+  sb.write_char('^')
+  write_limits_fields(sb, joint.limits.ang_y)
+  sb.write_char('^')
   write_limits_fields(sb, joint.limits.ang_z)
   sb.write_char('^')
   // JointMotors3
   write_motor_fields(sb, joint.motors.lin_x)
   sb.write_char('^')
   write_motor_fields(sb, joint.motors.lin_y)
+  sb.write_char('^')
+  write_motor_fields(sb, joint.motors.lin_z)
+  sb.write_char('^')
+  write_motor_fields(sb, joint.motors.ang_x)
+  sb.write_char('^')
+  write_motor_fields(sb, joint.motors.ang_y)
   sb.write_char('^')
   write_motor_fields(sb, joint.motors.ang_z)
   sb.write_char('^')
@@ -2279,72 +2385,78 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
   }
   let lx = parse_limits(fields, start + 10)
   let ly = parse_limits(fields, start + 13)
-  let az = parse_limits(fields, start + 16)
-  let mx = parse_motor(fields, start + 19)
-  let my = parse_motor(fields, start + 26)
-  let mz = parse_motor(fields, start + 33)
-  let natural_frequency = if fields.length() > start + 40 {
-    ij_parse_real_value(fields[start + 40])
+  let lz = parse_limits(fields, start + 16)
+  let ax = parse_limits(fields, start + 19)
+  let ay = parse_limits(fields, start + 22)
+  let az = parse_limits(fields, start + 25)
+  let mx = parse_motor(fields, start + 28)
+  let my = parse_motor(fields, start + 35)
+  let mz_lin = parse_motor(fields, start + 42)
+  let max_ang = parse_motor(fields, start + 49)
+  let may_ang = parse_motor(fields, start + 56)
+  let maz_ang = parse_motor(fields, start + 63)
+  let natural_frequency = if fields.length() > start + 70 {
+    ij_parse_real_value(fields[start + 70])
   } else {
     SpringCoefficients::joint_defaults().natural_frequency
   }
-  let damping_ratio = if fields.length() > start + 41 {
-    ij_parse_real_value(fields[start + 41])
+  let damping_ratio = if fields.length() > start + 71 {
+    ij_parse_real_value(fields[start + 71])
   } else {
     SpringCoefficients::joint_defaults().damping_ratio
   }
-  let contacts_enabled = if fields.length() > start + 42 {
-    ij_parse_bool_value(fields[start + 42])
+  let contacts_enabled = if fields.length() > start + 72 {
+    ij_parse_bool_value(fields[start + 72])
   } else {
     true
   }
-  let enabled = if fields.length() > start + 43 {
-    joint_enabled_from_int(ij_parse_int_value(fields[start + 43]))
+  let enabled = if fields.length() > start + 73 {
+    joint_enabled_from_int(ij_parse_int_value(fields[start + 73]))
   } else {
     JointEnabled::Enabled
   }
-  let user_data = if fields.length() > start + 44 {
-    ij_parse_int_value(fields[start + 44])
+  let user_data = if fields.length() > start + 74 {
+    ij_parse_int_value(fields[start + 74])
   } else {
     0
   }
-  let anchor1_z = if fields.length() > start + 45 {
-    ij_parse_real_value(fields[start + 45])
+  let anchor1_z = if fields.length() > start + 75 {
+    ij_parse_real_value(fields[start + 75])
   } else {
     0.0F
   }
-  let anchor2_z = if fields.length() > start + 46 {
-    ij_parse_real_value(fields[start + 46])
+  let anchor2_z = if fields.length() > start + 76 {
+    ij_parse_real_value(fields[start + 76])
   } else {
     0.0F
   }
-  let axis3 = if fields.length() > start + 49 {
+  let axis3 = if fields.length() > start + 79 {
     @core.Vec3::new(
-      ij_parse_real_value(fields[start + 47]),
-      ij_parse_real_value(fields[start + 48]),
-      ij_parse_real_value(fields[start + 49]),
+      ij_parse_real_value(fields[start + 77]),
+      ij_parse_real_value(fields[start + 78]),
+      ij_parse_real_value(fields[start + 79]),
     )
   } else {
     @core.Vec3::new(0.0F, 0.0F, 1.0F)
   }
-  let frame1_rotation = if fields.length() > start + 53 {
+  let frame1_rotation = if fields.length() > start + 83 {
     @core.Quat::new(
-      ij_parse_real_value(fields[start + 50]),
-      ij_parse_real_value(fields[start + 51]),
-      ij_parse_real_value(fields[start + 52]),
-      ij_parse_real_value(fields[start + 53]),
+      ij_parse_real_value(fields[start + 80]),
+      ij_parse_real_value(fields[start + 81]),
+      ij_parse_real_value(fields[start + 82]),
+      ij_parse_real_value(fields[start + 83]),
     )
   } else {
     @core.rotation_from_scaled_axis(
       @core.Vec3::new(0.0F, 0.0F, frame1.rotation.angle()),
     )
   }
-  let frame2_rotation = if fields.length() > start + 57 {
+  let frame2_rotation = if fields.length() > start + 87 {
     @core.Quat::new(
-      ij_parse_real_value(fields[start + 54]),
-      ij_parse_real_value(fields[start + 55]),
-      ij_parse_real_value(fields[start + 56]),
-      ij_parse_real_value(fields[start + 57]),
+      ij_parse_real_value(fields[start + 84]),
+      ij_parse_real_value(fields[start + 85]),
+      ij_parse_real_value(fields[start + 86]),
+      ij_parse_real_value(fields[start + 87]),
     )
   } else {
     @core.rotation_from_scaled_axis(
@@ -2371,8 +2483,22 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
     limit_axes,
     motor_axes,
     coupled_axes,
-    limits: JointLimits3::{ lin_x: lx, lin_y: ly, ang_z: az },
-    motors: JointMotors3::{ lin_x: mx, lin_y: my, ang_z: mz },
+    limits: JointLimits3::{
+      lin_x: lx,
+      lin_y: ly,
+      lin_z: lz,
+      ang_x: ax,
+      ang_y: ay,
+      ang_z: az,
+    },
+    motors: JointMotors3::{
+      lin_x: mx,
+      lin_y: my,
+      lin_z: mz_lin,
+      ang_x: max_ang,
+      ang_y: may_ang,
+      ang_z: maz_ang,
+    },
     softness: SpringCoefficients::new(natural_frequency, damping_ratio),
     contacts_enabled,
     enabled,
@@ -2918,6 +3044,51 @@ pub fn ImpulseJointSet::set_impulses(
 }
 
 ///|
+fn impulse_joint_solver_angular_axis(data : GenericJoint) -> JointAxis {
+  let spatial_axes = data
+    .locked_axes()
+    .or(data.limit_axes())
+    .or(data.motor_axes())
+    .or(data.coupled_axes())
+    .intersection(
+      JointAxesMask::lin_z().or(
+        JointAxesMask::ang_x().or(JointAxesMask::ang_y()),
+      ),
+    )
+  if spatial_axes.bits() == 0 {
+    return JointAxis::AngZ
+  }
+  let locked_axes = data.locked_axes()
+  if !locked_axes.contains(JointAxesMask::ang_x()) {
+    return JointAxis::AngX
+  }
+  if !locked_axes.contains(JointAxesMask::ang_y()) {
+    return JointAxis::AngY
+  }
+  if !locked_axes.contains(JointAxesMask::ang_z()) {
+    return JointAxis::AngZ
+  }
+  let motor_axes = data.motor_axes()
+  if motor_axes.contains(JointAxesMask::ang_x()) {
+    return JointAxis::AngX
+  }
+  if motor_axes.contains(JointAxesMask::ang_y()) {
+    return JointAxis::AngY
+  }
+  if motor_axes.contains(JointAxesMask::ang_z()) {
+    return JointAxis::AngZ
+  }
+  let limit_axes = data.limit_axes()
+  if limit_axes.contains(JointAxesMask::ang_x()) {
+    return JointAxis::AngX
+  }
+  if limit_axes.contains(JointAxesMask::ang_y()) {
+    return JointAxis::AngY
+  }
+  JointAxis::AngZ
+}
+
+///|
 pub fn ImpulseJointSet::set_solver_impulses(
   self : ImpulseJointSet,
   handle : ImpulseJointHandle,
@@ -2939,20 +3110,39 @@ pub fn ImpulseJointSet::set_solver_impulses(
   }
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
+  let angular_axis = impulse_joint_solver_angular_axis(joint.data)
   joint.impulses = impulses
   joint.ang_impulse = ang_impulse
   let motors = joint.data.motors
-  joint.data.motors = JointMotors3::{
+  let updated_motors = JointMotors3::{
     lin_x: motors.lin_x.set_impulse(motor_lin_x),
     lin_y: motors.lin_y.set_impulse(motor_lin_y),
-    ang_z: motors.ang_z.set_impulse(motor_ang_z),
+    lin_z: motors.lin_z,
+    ang_x: motors.ang_x,
+    ang_y: motors.ang_y,
+    ang_z: motors.ang_z,
   }
+  let updated_motor = joint_motor_for_axis(updated_motors, angular_axis).set_impulse(
+    motor_ang_z,
+  )
+  joint.data.motors = joint_motors_set_axis(
+    updated_motors, angular_axis, updated_motor,
+  )
   let limits = joint.data.limits
-  joint.data.limits = JointLimits3::{
+  let updated_limits = JointLimits3::{
     lin_x: limits.lin_x.set_impulse(limit_lin_x),
     lin_y: limits.lin_y.set_impulse(limit_lin_y),
-    ang_z: limits.ang_z.set_impulse(limit_ang_z),
+    lin_z: limits.lin_z,
+    ang_x: limits.ang_x,
+    ang_y: limits.ang_y,
+    ang_z: limits.ang_z,
   }
+  let updated_limit = joint_limits_for_axis(updated_limits, angular_axis).set_impulse(
+    limit_ang_z,
+  )
+  joint.data.limits = joint_limits_set_axis(
+    updated_limits, angular_axis, updated_limit,
+  )
   self.graph_edges[edge_id] = JointGraphEdge::{
     node1: edge.node1,
     node2: edge.node2,

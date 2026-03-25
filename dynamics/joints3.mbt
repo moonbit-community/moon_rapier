@@ -398,12 +398,18 @@ pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(
     lnk.joint.data.motors = JointMotors3::{
       lin_x: motors.lin_x,
       lin_y: motors.lin_y,
+      lin_z: motors.lin_z,
+      ang_x: motors.ang_x,
+      ang_y: motors.ang_y,
       ang_z: motors.ang_z.set_impulse(motor_impulse),
     }
     let limits = lnk.joint.data.limits
     lnk.joint.data.limits = JointLimits3::{
       lin_x: limits.lin_x,
       lin_y: limits.lin_y,
+      lin_z: limits.lin_z,
+      ang_x: limits.ang_x,
+      ang_y: limits.ang_y,
       ang_z: limits.ang_z.set_impulse(limit_impulse),
     }
     mb.links[link.id] = lnk
@@ -1224,52 +1230,54 @@ fn mb3_multibody_body_to_parent(
     joint.local_anchor2_3,
     joint.local_frame2_rotation,
   )
-  let last_displacement = if displacements.length() > 0 {
-    displacements[displacements.length() - 1]
-  } else {
-    0.0F
+  let mut linear = joint.lin_coords3
+  let mut angular = joint.ang_coords3
+  let mut curr = 0
+  if (locked & (1 << 0)) == 0 && curr < displacements.length() {
+    linear = @core.Vec3::new(linear.x + displacements[curr], linear.y, linear.z)
+    curr = curr + 1
   }
-  let angle = if (locked & (1 << 2)) == 0 {
-    joint.angle + last_displacement
-  } else {
-    0.0F
+  if (locked & (1 << 1)) == 0 && curr < displacements.length() {
+    linear = @core.Vec3::new(linear.x, linear.y + displacements[curr], linear.z)
+    curr = curr + 1
   }
-  let lin_x_disp = if displacements.length() > 0 {
-    displacements[0]
-  } else {
-    0.0F
+  if (locked & (1 << 2)) == 0 && curr < displacements.length() {
+    linear = @core.Vec3::new(linear.x, linear.y, linear.z + displacements[curr])
+    curr = curr + 1
   }
-  let lin_y_disp = if displacements.length() > 1 {
-    displacements[1]
-  } else if (locked & (1 << 0)) != 0 && displacements.length() > 0 {
-    displacements[0]
-  } else {
-    0.0F
+  for ang_index in 0..<3 {
+    let bit = 3 + ang_index
+    if (locked & (1 << bit)) == 0 && curr < displacements.length() {
+      angular = match ang_index {
+        0 =>
+          @core.Vec3::new(angular.x + displacements[curr], angular.y, angular.z)
+        1 =>
+          @core.Vec3::new(angular.x, angular.y + displacements[curr], angular.z)
+        _ =>
+          @core.Vec3::new(angular.x, angular.y, angular.z + displacements[curr])
+      }
+      curr = curr + 1
+    }
   }
+
   let mut transform = @core.Isometry3::new(
     @core.Vec3::zero(),
-    @core.rotation_from_scaled_axis(@core.Vec3::new(angle, 0.0F, 0.0F)),
+    @core.rotation_from_scaled_axis(angular),
   ).mul(frame2.inverse())
-
-  let lin_x = if (locked & (1 << 0)) == 0 {
-    joint.coords.x + lin_x_disp
-  } else {
-    0.0F
-  }
-  let lin_y = if (locked & (1 << 1)) == 0 {
-    joint.coords.y + lin_y_disp
-  } else {
-    0.0F
-  }
 
   if (locked & (1 << 0)) == 0 {
     transform = @core.Isometry3::from_translation(
-      @core.Vec3::new(lin_x, 0.0F, 0.0F),
+      @core.Vec3::new(linear.x, 0.0F, 0.0F),
     ).mul(transform)
   }
   if (locked & (1 << 1)) == 0 {
     transform = @core.Isometry3::from_translation(
-      @core.Vec3::new(0.0F, lin_y, 0.0F),
+      @core.Vec3::new(0.0F, linear.y, 0.0F),
+    ).mul(transform)
+  }
+  if (locked & (1 << 2)) == 0 {
+    transform = @core.Isometry3::from_translation(
+      @core.Vec3::new(0.0F, 0.0F, linear.z),
     ).mul(transform)
   }
 
@@ -1308,45 +1316,42 @@ fn mb3_compute_link_pose(
     let joint_base_col = mb3_joint_logical_column(multibody, link.assembly_id)
     let joint_disp : Array[@core.Real] = []
     let mut local_col = 0
-    if (locked & (1 << 0)) == 0 {
-      let axis = frame1_rot.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-      dof_positions.push(joint_origin)
-      dof_axes.push(axis)
-      dof_cols.push(joint_base_col + local_col)
-      dof_is_angular.push(false)
-      if displacements is Some(disp) &&
-        joint_base_col + local_col < disp.length() {
-        joint_disp.push(disp[joint_base_col + local_col])
-      } else {
-        joint_disp.push(0.0F)
+    let linear_axes : Array[@core.Vec3] = [
+      @core.Vec3::new(1.0F, 0.0F, 0.0F),
+      @core.Vec3::new(0.0F, 1.0F, 0.0F),
+      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    ]
+    for axis_index in 0..<3 {
+      if (locked & (1 << axis_index)) == 0 {
+        let axis = frame1_rot.rotate_vec3(linear_axes[axis_index])
+        dof_positions.push(joint_origin)
+        dof_axes.push(axis)
+        dof_cols.push(joint_base_col + local_col)
+        dof_is_angular.push(false)
+        if displacements is Some(disp) &&
+          joint_base_col + local_col < disp.length() {
+          joint_disp.push(disp[joint_base_col + local_col])
+        } else {
+          joint_disp.push(0.0F)
+        }
+        local_col = local_col + 1
       }
-      local_col = local_col + 1
     }
-    if (locked & (1 << 1)) == 0 {
-      let axis = frame1_rot.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-      dof_positions.push(joint_origin)
-      dof_axes.push(axis)
-      dof_cols.push(joint_base_col + local_col)
-      dof_is_angular.push(false)
-      if displacements is Some(disp) &&
-        joint_base_col + local_col < disp.length() {
-        joint_disp.push(disp[joint_base_col + local_col])
-      } else {
-        joint_disp.push(0.0F)
-      }
-      local_col = local_col + 1
-    }
-    if (locked & (1 << 2)) == 0 {
-      let axis = current_pose.rotation.rotate_vec3(link.joint.axis3)
-      dof_positions.push(joint_origin)
-      dof_axes.push(axis)
-      dof_cols.push(joint_base_col + local_col)
-      dof_is_angular.push(true)
-      if displacements is Some(disp) &&
-        joint_base_col + local_col < disp.length() {
-        joint_disp.push(disp[joint_base_col + local_col])
-      } else {
-        joint_disp.push(0.0F)
+    for axis_index in 0..<3 {
+      let bit = 3 + axis_index
+      if (locked & (1 << bit)) == 0 {
+        let axis = frame1_rot.rotate_vec3(linear_axes[axis_index])
+        dof_positions.push(joint_origin)
+        dof_axes.push(axis)
+        dof_cols.push(joint_base_col + local_col)
+        dof_is_angular.push(true)
+        if displacements is Some(disp) &&
+          joint_base_col + local_col < disp.length() {
+          joint_disp.push(disp[joint_base_col + local_col])
+        } else {
+          joint_disp.push(0.0F)
+        }
+        local_col = local_col + 1
       }
     }
 
@@ -1692,6 +1697,15 @@ pub fn Multibody3::inverse_kinematics(
     }
     if !options.constrained_axes.contains(JointAxesMask::lin_y()) {
       desired[1] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::lin_z()) {
+      desired[2] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_x()) {
+      desired[3] = 0.0F
+    }
+    if !options.constrained_axes.contains(JointAxesMask::ang_y()) {
+      desired[4] = 0.0F
     }
     if !options.constrained_axes.contains(JointAxesMask::ang_z()) {
       desired[5] = 0.0F
