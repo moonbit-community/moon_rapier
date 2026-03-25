@@ -51,10 +51,12 @@ pub fn BodyPair::new(RigidBodyHandle, RigidBodyHandle) -> Self
 pub struct CCDSolver {
 }
 pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit
+pub fn CCDSolver::clamp_motions3(Self, Float, RigidBodySet3, PredictedImpacts) -> Unit
 pub fn CCDSolver::find_first_impact(Self, PredictedImpacts) -> (RigidBodyHandle, Float)?
 pub fn CCDSolver::new() -> Self
 pub fn CCDSolver::predict_impacts_at_next_positions(Self, RigidBodySet, Float) -> PredictedImpacts
 pub fn CCDSolver::update_ccd_active_flags(Self, IslandManager, RigidBodySet, Float, Bool) -> Bool
+pub fn CCDSolver::update_ccd_active_flags3(Self, IslandManager3, RigidBodySet3, Float, Bool) -> Bool
 
 pub(all) enum CoefficientCombineRule {
   Average
@@ -507,8 +509,12 @@ pub struct IslandManager3 {
 }
 pub fn IslandManager3::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3::as_2d(Self) -> IslandManager
+pub fn IslandManager3::interaction_started_or_stopped(Self, RigidBodySet3, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
 pub fn IslandManager3::new() -> Self
+pub fn IslandManager3::rigid_body_removed_or_disabled(Self, RigidBodyHandle, RigidBodySet3) -> Unit
+pub fn IslandManager3::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet3) -> Unit
 pub fn IslandManager3::update_islands(Self, Float, Float, RigidBodySet3, ContactGraph, ImpulseJointSet3, MultibodyJointSet3) -> Unit
+pub fn IslandManager3::wake_up(Self, RigidBodySet3, RigidBodyHandle, Bool) -> Unit
 
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
@@ -1624,10 +1630,13 @@ pub fn RigidBodySet3::as_2d(Self) -> RigidBodySet
 pub fn RigidBodySet3::get(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet3::get_mut(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet3::insert(Self, RigidBody) -> RigidBodyHandle
+pub fn RigidBodySet3::iter(Self) -> Array[(RigidBodyHandle, RigidBody)]
+pub fn RigidBodySet3::iter_mut(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet3::len(Self) -> Int
 pub fn RigidBodySet3::new() -> Self
 pub fn RigidBodySet3::remove(Self, RigidBodyHandle, IslandManager3, Unit, ImpulseJointSet3, MultibodyJointSet3, Bool) -> RigidBody?
 pub fn RigidBodySet3::rotation(Self, RigidBodyHandle) -> @core.Quat
+pub fn RigidBodySet3::take_modified(Self) -> Array[RigidBodyHandle]
 pub fn RigidBodySet3::translation(Self, RigidBodyHandle) -> @core.Vec3
 
 pub struct RigidBodySet3D {

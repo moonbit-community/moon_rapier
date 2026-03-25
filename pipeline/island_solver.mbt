@@ -104,8 +104,8 @@ fn IslandSolver::solve(
 ///|
 fn solve_joints_and_contacts_interleaved3(
   parameters : IntegrationParameters,
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
   physics_hooks : PhysicsHooks,
   narrow_phase : @collision.NarrowPhase,
   impulse_joints : @dynamics.ImpulseJointSet3,
@@ -126,8 +126,8 @@ fn solve_joints_and_contacts_interleaved3(
   let contact_constraints = ContactConstraintsSet::new()
   contact_constraints.init(
     parameters,
-    bodies,
-    colliders,
+    bodies.inner,
+    colliders.inner,
     physics_hooks,
     narrow_phase,
     dt,
@@ -136,9 +136,9 @@ fn solve_joints_and_contacts_interleaved3(
     island_stamps,
     stamp,
   )
-  joint_constraints.warmstart(bodies, solver_bodies)
+  joint_constraints.warmstart(bodies.inner, solver_bodies)
   if contact_constraints.constraints.length() > 0 {
-    contact_constraints.warmstart(bodies, solver_bodies)
+    contact_constraints.warmstart(bodies.inner, solver_bodies)
   }
   let base_iters0 = if parameters.num_solver_iterations <= 0 {
     1
@@ -160,27 +160,41 @@ fn solve_joints_and_contacts_interleaved3(
   }
   for i in 0..<iters {
     if joint_constraints.constraints.length() > 0 && i < joint_iters {
-      joint_constraints.solve_velocity_constraints(bodies, solver_bodies, dt, 1)
+      joint_constraints.solve_velocity_constraints(
+        bodies.inner,
+        solver_bodies,
+        dt,
+        1,
+      )
     }
     if contact_constraints.constraints.length() > 0 {
       contact_constraints.solve_velocity_constraints(
-        bodies, solver_bodies, dt, 1,
+        bodies.inner,
+        solver_bodies,
+        dt,
+        1,
       )
     }
   }
   if contact_constraints.constraints.length() > 0 {
-    contact_constraints.solve_restitution_constraints(bodies, solver_bodies)
+    contact_constraints.solve_restitution_constraints(
+      bodies.inner,
+      solver_bodies,
+    )
     contact_constraints.position_correction(
-      bodies,
-      colliders,
+      bodies.inner,
+      colliders.inner,
       parameters.allowed_linear_error(),
     )
   }
-  joint_constraints.position_correction(bodies)
+  joint_constraints.position_correction(bodies.inner)
   joint_constraints.writeback_impulses3(impulse_joints, multibody_joints)
   if contact_constraints.constraints.length() > 0 {
     contact_constraints.emit_contact_force_events(
-      bodies, colliders, dt, event_handler,
+      bodies.inner,
+      colliders.inner,
+      dt,
+      event_handler,
     )
     contact_constraints.append_cache_entries(contact_cache_out)
   }
@@ -190,9 +204,9 @@ fn solve_joints_and_contacts_interleaved3(
 fn IslandSolver::solve3(
   self : IslandSolver,
   parameters : IntegrationParameters,
-  islands : @dynamics.IslandManager,
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
+  islands : @dynamics.IslandManager3,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
   physics_hooks : PhysicsHooks,
   narrow_phase : @collision.NarrowPhase,
   impulse_joints : @dynamics.ImpulseJointSet3,
@@ -202,21 +216,21 @@ fn IslandSolver::solve3(
   contact_cache_in : Array[ContactImpulseCacheEntry],
   contact_cache_out : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  let n = bodies.bodies.length()
+  let n = bodies.inner.bodies.length()
   self.velocity_solver.solver_bodies.clear()
   self.velocity_solver.solver_bodies.resize(n)
   while self.velocity_solver.island_stamps.length() < n {
     self.velocity_solver.island_stamps.push(0)
   }
   for i in 0..<n {
-    if bodies.bodies[i] is Some(rb) {
+    if bodies.inner.bodies[i] is Some(rb) {
       self.velocity_solver.solver_bodies.copy_from(i, rb)
     }
   }
-  let active_islands = islands.active_islands()
+  let active_islands = islands.inner.active_islands()
   for ai in 0..<active_islands.length() {
     let island_id = active_islands[ai]
-    let island_bodies = islands.island_bodies(island_id)
+    let island_bodies = islands.inner.island_bodies(island_id)
     if island_bodies.length() == 0 {
       continue
     }
@@ -229,7 +243,9 @@ fn IslandSolver::solve3(
         self.velocity_solver.island_stamps[id] = stamp
       }
     }
-    let extra_iters = islands.island_additional_solver_iterations(island_id)
+    let extra_iters = islands.inner.island_additional_solver_iterations(
+      island_id,
+    )
     solve_joints_and_contacts_interleaved3(
       parameters,
       bodies,
@@ -248,5 +264,5 @@ fn IslandSolver::solve3(
       contact_cache_out,
     )
   }
-  self.velocity_solver.solver_bodies.writeback_vels(bodies)
+  self.velocity_solver.solver_bodies.writeback_vels(bodies.inner)
 }

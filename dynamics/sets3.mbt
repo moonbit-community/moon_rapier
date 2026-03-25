@@ -38,6 +38,52 @@ pub fn IslandManager3::active_bodies(
 }
 
 ///|
+pub fn IslandManager3::wake_up(
+  self : IslandManager3,
+  bodies : RigidBodySet3,
+  handle : RigidBodyHandle,
+  strong : Bool,
+) -> Unit {
+  self.inner.wake_up(bodies.inner, handle, strong)
+}
+
+///|
+pub fn IslandManager3::interaction_started_or_stopped(
+  self : IslandManager3,
+  bodies : RigidBodySet3,
+  handle1 : RigidBodyHandle?,
+  handle2 : RigidBodyHandle?,
+  started : Bool,
+  stop_on_same_island : Bool,
+) -> Unit {
+  self.inner.interaction_started_or_stopped(
+    bodies.inner,
+    handle1,
+    handle2,
+    started,
+    stop_on_same_island,
+  )
+}
+
+///|
+pub fn IslandManager3::rigid_body_updated(
+  self : IslandManager3,
+  handle : RigidBodyHandle,
+  bodies : RigidBodySet3,
+) -> Unit {
+  self.inner.rigid_body_updated(handle, bodies.inner)
+}
+
+///|
+pub fn IslandManager3::rigid_body_removed_or_disabled(
+  self : IslandManager3,
+  handle : RigidBodyHandle,
+  bodies : RigidBodySet3,
+) -> Unit {
+  self.inner.rigid_body_removed_or_disabled(handle, bodies.inner)
+}
+
+///|
 fn IslandManager::push_linked_bodies3(
   self : IslandManager,
   bodies : RigidBodySet,
@@ -220,7 +266,7 @@ pub fn IslandManager3::update_islands(
   impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
 ) -> Unit {
-  let bodies2 = bodies.as_2d()
+  let bodies2 = bodies.inner
   for handle in self.inner.active_bodies() {
     if handle.id < 0 {
       continue
@@ -317,7 +363,7 @@ pub fn RigidBodySet3::remove(
   let empty_impulse_joints = ImpulseJointSet::new()
   let removed = self.inner.remove(
     handle,
-    islands.as_2d(),
+    islands.inner,
     (),
     empty_impulse_joints,
     MultibodyJointSet::new(),
@@ -344,6 +390,27 @@ pub fn RigidBodySet3::get_mut(
   handle : RigidBodyHandle,
 ) -> RigidBody? {
   self.inner.get_mut(handle)
+}
+
+///|
+pub fn RigidBodySet3::iter(
+  self : RigidBodySet3,
+) -> Array[(RigidBodyHandle, RigidBody)] {
+  self.inner.iter()
+}
+
+///|
+pub fn RigidBodySet3::iter_mut(
+  self : RigidBodySet3,
+) -> Array[(RigidBodyHandle, RigidBody)] {
+  self.inner.iter_mut()
+}
+
+///|
+pub fn RigidBodySet3::take_modified(
+  self : RigidBodySet3,
+) -> Array[RigidBodyHandle] {
+  self.inner.take_modified()
 }
 
 ///|

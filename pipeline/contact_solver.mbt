@@ -1599,3 +1599,64 @@ pub fn solve_contacts(
   emit_contact_force_events(bodies, colliders, dt, event_handler, constraints)
   reset_cache(cache, constraints)
 }
+
+///|
+fn build_constraints3(
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  hooks : PhysicsHooks,
+  narrow_phase : @collision.NarrowPhase,
+  dt : @core.Real,
+  cache : Array[ContactImpulseCacheEntry],
+  warmstart_coefficient : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
+) -> (Array[SolverConstraint], Array[SolverManifold]) {
+  build_constraints(
+    parameters,
+    bodies.inner,
+    colliders.inner,
+    hooks,
+    narrow_phase,
+    dt,
+    cache,
+    warmstart_coefficient,
+    island_stamps,
+    stamp,
+  )
+}
+
+///|
+fn position_correction3(
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  constraints : Array[SolverConstraint],
+  manifolds : Array[SolverManifold],
+  allowed_error : @core.Real,
+) -> Unit {
+  position_correction(
+    bodies.inner,
+    colliders.inner,
+    constraints,
+    manifolds,
+    allowed_error,
+  )
+}
+
+///|
+fn position_correction_all3(
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  constraints : Array[SolverConstraint],
+  manifolds : Array[SolverManifold],
+  allowed_error : @core.Real,
+) -> Unit {
+  position_correction_all(
+    bodies.inner,
+    colliders.inner,
+    constraints,
+    manifolds,
+    allowed_error,
+  )
+}

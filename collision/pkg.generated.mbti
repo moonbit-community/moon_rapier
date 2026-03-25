@@ -121,6 +121,8 @@ pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Flo
 
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
+pub fn handle_user_changes_to_colliders3(@dynamics.RigidBodySet3, ColliderSet3, Array[ColliderHandle]) -> Unit
+
 pub fn heightfield_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
 
 pub fn heightfield_closest_point_query_with_flags(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
@@ -212,6 +214,7 @@ pub fn BroadPhaseBvh::pairs(Self) -> Array[(ColliderHandle, ColliderHandle)]
 pub fn BroadPhaseBvh::set_aabb(Self, ColliderHandle, @core.Aabb) -> Unit
 pub fn BroadPhaseBvh::take_events(Self) -> Array[BroadPhasePairEvent]
 pub fn BroadPhaseBvh::update(Self, Float, @dynamics.RigidBodySet, ColliderSet) -> Unit
+pub fn BroadPhaseBvh::update3(Self, Float, @dynamics.RigidBodySet3, ColliderSet3) -> Unit
 pub fn BroadPhaseBvh::with_optimization_strategy(BvhOptimizationStrategy) -> Self
 
 pub(all) enum BroadPhasePairEvent {
@@ -685,6 +688,7 @@ pub struct ColliderSet3 {
   fn new() -> ColliderSet3
 }
 pub fn ColliderSet3::as_2d(Self) -> ColliderSet
+pub fn ColliderSet3::clear_changes_for(Self, Array[ColliderHandle]) -> Unit
 pub fn ColliderSet3::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle]
 pub fn ColliderSet3::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
@@ -693,6 +697,8 @@ pub fn ColliderSet3::len(Self) -> Int
 pub fn ColliderSet3::new() -> Self
 pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
 pub fn ColliderSet3::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3) -> Unit
+pub fn ColliderSet3::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
+pub fn ColliderSet3::take_modified(Self) -> Array[ColliderHandle]
 
 pub struct ColliderSet3D {
   colliders : Array[Collider3D?]
@@ -991,6 +997,7 @@ pub fn NarrowPhase::new() -> Self
 pub fn NarrowPhase::query_dispatcher(Self) -> Unit
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Float, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
+pub fn NarrowPhase::update_with_pairs3(Self, @dynamics.RigidBodySet3, ColliderSet3, Float, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3) -> Unit
 pub fn NarrowPhase::with_query_dispatcher(Self, Unit) -> Self
 
 pub struct NarrowPhase3D {
@@ -1125,6 +1132,7 @@ pub fn QueryPipeline::cast_ray(Self, @dynamics.RigidBodySet, ColliderSet, Ray, F
 pub fn QueryPipeline::cast_ray_and_get_normal(Self, @dynamics.RigidBodySet, ColliderSet, Ray, Float, Bool) -> (ColliderHandle, RayIntersection)?
 pub fn QueryPipeline::cast_shape(Self, @dynamics.RigidBodySet, ColliderSet, @core.Isometry2, @core.Vec2, Shape, ShapeCastOptions) -> (ColliderHandle, ShapeCastHit)?
 pub fn QueryPipeline::cast_shape_nonlinear(Self, @dynamics.RigidBodySet, ColliderSet, NonlinearRigidMotion, Shape, Float, Float, Bool) -> (ColliderHandle, ShapeCastHit)?
+pub fn QueryPipeline::cast_shape_nonlinear3(Self, @dynamics.RigidBodySet3, ColliderSet3, NonlinearRigidMotion, Shape, Float, Float, Bool) -> (ColliderHandle, ShapeCastHit)?
 pub fn QueryPipeline::collider(Self, ColliderSet, ColliderHandle) -> Collider?
 pub fn QueryPipeline::intersect_aabb_conservative(Self, @dynamics.RigidBodySet, ColliderSet, @core.Aabb) -> Array[ColliderHandle]
 pub fn QueryPipeline::intersect_point(Self, @dynamics.RigidBodySet, ColliderSet, @core.Vec2) -> Array[ColliderHandle]

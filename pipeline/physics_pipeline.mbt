@@ -1534,3 +1534,45 @@ pub fn PhysicsPipeline::step(
   clear_modified_bodies(bodies, modified_bodies_before_step)
   clear_modified_bodies(bodies, modified_bodies_after_step)
 }
+
+///|
+fn populate_contact_impulses_from_cache3(
+  narrow_phase : @collision.NarrowPhase,
+  cache : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  populate_contact_impulses_from_cache(narrow_phase, cache)
+}
+
+///|
+fn PhysicsPipeline::emit_collision_events3(
+  self : PhysicsPipeline,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  narrow_phase : @collision.NarrowPhase,
+  event_handler : EventHandler,
+) -> Unit {
+  PhysicsPipeline::emit_collision_events(
+    self,
+    bodies.inner,
+    colliders.inner,
+    narrow_phase,
+    event_handler,
+  )
+}
+
+///|
+fn PhysicsPipeline::emit_intersection_events3(
+  self : PhysicsPipeline,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  narrow_phase : @collision.NarrowPhase,
+  event_handler : EventHandler,
+) -> Unit {
+  PhysicsPipeline::emit_intersection_events(
+    self,
+    bodies.inner,
+    colliders.inner,
+    narrow_phase,
+    event_handler,
+  )
+}

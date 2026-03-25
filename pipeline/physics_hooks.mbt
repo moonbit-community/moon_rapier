@@ -472,6 +472,17 @@ fn PhysicsHooks::test_contact_pair(
 }
 
 ///|
+fn PhysicsHooks::test_contact_pair3(
+  self : PhysicsHooks,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+) -> Bool {
+  self.test_contact_pair(bodies.inner, colliders.inner, collider1, collider2)
+}
+
+///|
 fn PhysicsHooks::test_intersection_pair(
   self : PhysicsHooks,
   bodies : @dynamics.RigidBodySet,
@@ -484,6 +495,22 @@ fn PhysicsHooks::test_intersection_pair(
   } else {
     true
   }
+}
+
+///|
+fn PhysicsHooks::test_intersection_pair3(
+  self : PhysicsHooks,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+) -> Bool {
+  self.test_intersection_pair(
+    bodies.inner,
+    colliders.inner,
+    collider1,
+    collider2,
+  )
 }
 
 ///|

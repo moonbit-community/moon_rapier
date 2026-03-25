@@ -59,6 +59,16 @@ pub fn CCDSolver::clamp_motions(
 }
 
 ///|
+pub fn CCDSolver::clamp_motions3(
+  self : CCDSolver,
+  dt : @core.Real,
+  bodies : RigidBodySet3,
+  impacts : PredictedImpacts,
+) -> Unit {
+  self.clamp_motions(dt, bodies.inner, impacts)
+}
+
+///|
 pub fn CCDSolver::update_ccd_active_flags(
   self : CCDSolver,
   islands : IslandManager,
@@ -91,6 +101,17 @@ pub fn CCDSolver::update_ccd_active_flags(
     }
   }
   any_active
+}
+
+///|
+pub fn CCDSolver::update_ccd_active_flags3(
+  self : CCDSolver,
+  islands : IslandManager3,
+  bodies : RigidBodySet3,
+  dt : @core.Real,
+  include_forces : Bool,
+) -> Bool {
+  self.update_ccd_active_flags(islands.inner, bodies.inner, dt, include_forces)
 }
 
 ///|

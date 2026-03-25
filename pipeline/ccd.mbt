@@ -314,3 +314,35 @@ fn find_first_ccd_impact(
     None
   }
 }
+
+///|
+fn predict_ccd_impacts_at_next_positions3(
+  dt : @core.Real,
+  islands : @dynamics.IslandManager3,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+) -> @dynamics.PredictedImpacts {
+  predict_ccd_impacts_at_next_positions(
+    dt,
+    islands.inner,
+    bodies.inner,
+    colliders.inner,
+  )
+}
+
+///|
+fn find_first_ccd_impact3(
+  gravity : @core.Vec3,
+  dt : @core.Real,
+  islands : @dynamics.IslandManager3,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : @collision.ColliderSet3,
+) -> @core.Real? {
+  find_first_ccd_impact(
+    @core.Vec2::new(gravity.x, gravity.y),
+    dt,
+    islands.inner,
+    bodies.inner,
+    colliders.inner,
+  )
+}
