@@ -1286,6 +1286,353 @@ fn append_multibody_joint_constraints(
 }
 
 ///|
+fn append_impulse_joint_constraints3(
+  constraints : Array[JointConstraint],
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
+  dt : @core.Real,
+  island_stamps : Array[Int]?,
+  stamp : Int,
+) -> Unit {
+  let joints = impulse_joints.iter()
+  let warmstart = parameters.warmstart_coefficient
+  for i in 0..<joints.length() {
+    let (handle, joint) = joints[i]
+    if !joint.is_enabled() {
+      continue
+    }
+    if island_stamps is Some(stamps) {
+      let id1 = joint.body1.id
+      let id2 = joint.body2.id
+      let in1 = id1 >= 0 && id1 < stamps.length() && stamps[id1] == stamp
+      let in2 = id2 >= 0 && id2 < stamps.length() && stamps[id2] == stamp
+      if !in1 && !in2 {
+        continue
+      }
+    }
+    if bodies.get(joint.body1) is None || bodies.get(joint.body2) is None {
+      continue
+    }
+    let rb1 = bodies.get(joint.body1).unwrap()
+    let rb2 = bodies.get(joint.body2).unwrap()
+    if !rb1.is_enabled() || !rb2.is_enabled() {
+      continue
+    }
+    let local_anchor1 = joint.data.local_anchor1()
+    let local_anchor2 = joint.data.local_anchor2()
+    let frame1 = joint.data.local_frame1()
+    let frame2 = joint.data.local_frame2()
+    let angular_axis = joint_solver_angular_axis(joint.data)
+    let angular_axis_mask = joint_solver_axis_mask(angular_axis)
+    let local_rot1 = frame1.rotation
+    let local_rot2 = frame2.rotation
+    let world1 = rb1.position().transform_point(local_anchor1)
+    let world2 = rb2.position().transform_point(local_anchor2)
+    let error = world1.sub(world2)
+    let lock_axes = joint.data.locked_axes()
+    let lock_x = lock_axes.contains(@dynamics.JointAxesMask::lin_x())
+    let lock_y = lock_axes.contains(@dynamics.JointAxesMask::lin_y())
+    let lock_ang = lock_axes.contains(angular_axis_mask)
+
+    let joint_rot1 = rb1.rotation().mul(local_rot1)
+    let (basis_x, basis_y) = if lock_x && lock_y {
+      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+    } else {
+      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
+      (x, @core.Vec2::new(-x.y, x.x))
+    }
+    let bias = if dt > 0.0F {
+      @core.Vec2::new(
+        if lock_x {
+          error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
+        } else {
+          0.0F
+        },
+        if lock_y {
+          error.dot(basis_y) * JOINT_SOLVER_BAUMGARTE / dt
+        } else {
+          0.0F
+        },
+      )
+    } else {
+      @core.Vec2::zero()
+    }
+
+    let com1 = rb1.world_com()
+    let com2 = rb2.world_com()
+    let r1 = world1.sub(com1)
+    let r2 = world2.sub(com2)
+    let mut inv_mass1 = 0.0F
+    let mut inv_inertia1 = 0.0F
+    if rb1.is_dynamic() && rb1.is_enabled() {
+      inv_mass1 = if rb1.locked_translations { 0.0F } else { rb1.inv_mass() }
+      inv_inertia1 = if rb1.locked_rotations { 0.0F } else { rb1.inv_inertia() }
+    }
+    let mut inv_mass2 = 0.0F
+    let mut inv_inertia2 = 0.0F
+    if rb2.is_dynamic() && rb2.is_enabled() {
+      inv_mass2 = if rb2.locked_translations { 0.0F } else { rb2.inv_mass() }
+      inv_inertia2 = if rb2.locked_rotations { 0.0F } else { rb2.inv_inertia() }
+    }
+    let ru1 = r1.cross(basis_x)
+    let rv1 = r1.cross(basis_y)
+    let ru2 = r2.cross(basis_x)
+    let rv2 = r2.cross(basis_y)
+    let k00 = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * ru1 * ru1 +
+      inv_inertia2 * ru2 * ru2
+    let k01 = inv_inertia1 * ru1 * rv1 + inv_inertia2 * ru2 * rv2
+    let k11 = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * rv1 * rv1 +
+      inv_inertia2 * rv2 * rv2
+    let denom_ang = inv_inertia1 + inv_inertia2
+    let det = k00 * k11 - k01 * k01
+    let inv_mass00 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k11 / det }
+    let inv_mass01 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { -k01 / det }
+    let inv_mass11 = if @core.abs(det) <= 1.0e-12F { 0.0F } else { k00 / det }
+    let inv_mass_x = joint_inv(k00)
+    let inv_mass_y = joint_inv(k11)
+    let inv_mass_ang = if denom_ang <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / denom_ang
+    }
+    let coupled_axes = joint.data.coupled_axes()
+    let coupled_lin = coupled_axes.contains(@dynamics.JointAxesMask::lin_axes())
+    let motor_axes = joint.data.motor_axes()
+    let motor_enabled = motor_axes.contains(angular_axis_mask)
+    let mut motor_lin_x_enabled = motor_axes.contains(
+      @dynamics.JointAxesMask::lin_x(),
+    )
+    let mut motor_lin_y_enabled = motor_axes.contains(
+      @dynamics.JointAxesMask::lin_y(),
+    )
+    let motors = joint.data.motors()
+    let motor = joint.data
+      .motor(angular_axis)
+      .unwrap_or(@dynamics.JointMotor::default())
+    let motor_lin_x = motors.lin_x
+    let motor_lin_y = motors.lin_y
+    let limit_axes = joint.data.limit_axes()
+    let limits_all = joint.data.limits()
+
+    let mut coupled_motor_enabled = false
+    let mut coupled_motor = motors.lin_x
+    let mut coupled_motor_impulse = 0.0F
+    if coupled_lin && motor_axes.contains(@dynamics.JointAxesMask::lin_x()) {
+      coupled_motor_enabled = true
+      coupled_motor = motors.lin_x
+      coupled_motor_impulse = motors.lin_x.impulse() * warmstart
+      motor_lin_x_enabled = false
+      motor_lin_y_enabled = false
+    }
+
+    let mut coupled_dir = @core.Vec2::zero()
+    let mut coupled_dist = 0.0F
+    let mut coupled_inv_mass = 0.0F
+    if coupled_lin &&
+      (
+        limit_axes.contains(@dynamics.JointAxesMask::lin_x()) ||
+        motor_axes.contains(@dynamics.JointAxesMask::lin_x())
+      ) {
+      let delta = world2.sub(world1)
+      let dist = delta.length()
+      coupled_dist = dist
+      coupled_dir = if dist > 1.0e-12F {
+        joint_vec2_scale(delta, 1.0F / dist)
+      } else {
+        @core.Vec2::new(1.0F, 0.0F)
+      }
+      let rn1 = r1.cross(coupled_dir)
+      let rn2 = r2.cross(coupled_dir)
+      let denom = inv_mass1 +
+        inv_mass2 +
+        inv_inertia1 * rn1 * rn1 +
+        inv_inertia2 * rn2 * rn2
+      coupled_inv_mass = joint_inv(denom)
+    }
+
+    let mut coupled_limit_enabled = false
+    let mut coupled_limit_min = 0.0F
+    let mut coupled_limit_max = 0.0F
+    let mut coupled_limit_active = 0
+    let mut coupled_limit_bias = 0.0F
+    let mut coupled_limit_impulse = 0.0F
+    if coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_x()) &&
+      dt > 0.0F {
+      coupled_limit_enabled = true
+      coupled_limit_min = limits_all.lin_x.min()
+      coupled_limit_max = limits_all.lin_x.max()
+      if coupled_dist < coupled_limit_min - 1.0e-6F {
+        coupled_limit_active = -1
+        coupled_limit_bias = (coupled_dist - coupled_limit_min) *
+          JOINT_SOLVER_BAUMGARTE /
+          dt
+        coupled_limit_impulse = limits_all.lin_x.impulse() * warmstart
+      } else if coupled_dist > coupled_limit_max + 1.0e-6F {
+        coupled_limit_active = 1
+        coupled_limit_bias = (coupled_dist - coupled_limit_max) *
+          JOINT_SOLVER_BAUMGARTE /
+          dt
+        coupled_limit_impulse = limits_all.lin_x.impulse() * warmstart
+      }
+    }
+
+    let mut lin_limit_x_min = 0.0F
+    let mut lin_limit_x_max = 0.0F
+    let mut lin_limit_x_active = 0
+    let mut lin_limit_x_bias = 0.0F
+    let mut lin_limit_x_impulse = 0.0F
+    if !coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_x()) &&
+      dt > 0.0F {
+      let bounds_min = -limits_all.lin_x.max()
+      let bounds_max = -limits_all.lin_x.min()
+      lin_limit_x_min = bounds_min
+      lin_limit_x_max = bounds_max
+      let coord = error.dot(basis_x)
+      if coord < bounds_min {
+        lin_limit_x_active = -1
+        lin_limit_x_bias = (coord - bounds_min) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_x_impulse = limits_all.lin_x.impulse() * warmstart
+      } else if coord > bounds_max {
+        lin_limit_x_active = 1
+        lin_limit_x_bias = (coord - bounds_max) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_x_impulse = limits_all.lin_x.impulse() * warmstart
+      }
+    }
+    let mut lin_limit_y_min = 0.0F
+    let mut lin_limit_y_max = 0.0F
+    let mut lin_limit_y_active = 0
+    let mut lin_limit_y_bias = 0.0F
+    let mut lin_limit_y_impulse = 0.0F
+    if !coupled_lin &&
+      limit_axes.contains(@dynamics.JointAxesMask::lin_y()) &&
+      dt > 0.0F {
+      let bounds_min = -limits_all.lin_y.max()
+      let bounds_max = -limits_all.lin_y.min()
+      lin_limit_y_min = bounds_min
+      lin_limit_y_max = bounds_max
+      let coord = error.dot(basis_y)
+      if coord < bounds_min {
+        lin_limit_y_active = -1
+        lin_limit_y_bias = (coord - bounds_min) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
+      } else if coord > bounds_max {
+        lin_limit_y_active = 1
+        lin_limit_y_bias = (coord - bounds_max) * JOINT_SOLVER_BAUMGARTE / dt
+        lin_limit_y_impulse = limits_all.lin_y.impulse() * warmstart
+      }
+    }
+
+    let limits_enabled = limit_axes.contains(angular_axis_mask)
+    let limits = joint.data
+      .limits_axis(angular_axis)
+      .unwrap_or(@dynamics.JointLimits::default())
+    let rot2 = rb2.rotation()
+    let joint_rot2 = rot2.mul(local_rot2)
+    let rel_rot = joint_rot1.inverse().mul(joint_rot2)
+    let rel_angle = rel_rot.angle()
+    let mut limit_impulse = 0.0F
+    if limits_enabled && (rel_angle < limits.min() || rel_angle > limits.max()) {
+      limit_impulse = limits.impulse() * warmstart
+    }
+    let mut impulses = joint_vec2_scale(joint.impulses, warmstart)
+    if !lock_x {
+      impulses = @core.Vec2::new(0.0F, impulses.y)
+    }
+    if !lock_y {
+      impulses = @core.Vec2::new(impulses.x, 0.0F)
+    }
+    let ang_impulse = if lock_ang {
+      joint.ang_impulse * warmstart
+    } else {
+      0.0F
+    }
+    let motor_impulse = if motor_enabled {
+      motor.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    let motor_lin_x_impulse = if motor_lin_x_enabled {
+      motors.lin_x.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    let motor_lin_y_impulse = if motor_lin_y_enabled {
+      motors.lin_y.impulse() * warmstart
+    } else {
+      0.0F
+    }
+    constraints.push(JointConstraint::{
+      handle: Some(handle),
+      mb_link: None,
+      body1: joint.body1,
+      body2: joint.body2,
+      local_anchor1,
+      local_anchor2,
+      local_rot1,
+      local_rot2,
+      anchor1: world1,
+      anchor2: world2,
+      basis_x,
+      basis_y,
+      lock_x,
+      lock_y,
+      lock_ang,
+      bias,
+      inv_mass00,
+      inv_mass01,
+      inv_mass11,
+      inv_mass_x,
+      inv_mass_y,
+      inv_mass_ang,
+      motor_enabled,
+      motor,
+      motor_impulse,
+      motor_lin_x_enabled,
+      motor_lin_x,
+      motor_lin_x_impulse,
+      motor_lin_y_enabled,
+      motor_lin_y,
+      motor_lin_y_impulse,
+      limits_enabled,
+      limit_min: limits.min(),
+      limit_max: limits.max(),
+      limit_impulse,
+      lin_limit_x_active,
+      lin_limit_x_bias,
+      lin_limit_x_impulse,
+      lin_limit_x_min,
+      lin_limit_x_max,
+      lin_limit_y_active,
+      lin_limit_y_bias,
+      lin_limit_y_impulse,
+      lin_limit_y_min,
+      lin_limit_y_max,
+      impulses,
+      ang_impulse,
+      coupled_dir,
+      coupled_dist,
+      coupled_inv_mass,
+      coupled_limit_enabled,
+      coupled_limit_min,
+      coupled_limit_max,
+      coupled_limit_active,
+      coupled_limit_bias,
+      coupled_limit_impulse,
+      coupled_motor_enabled,
+      coupled_motor,
+      coupled_motor_impulse,
+    })
+  }
+}
+
+///|
 fn build_joint_constraints3(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
@@ -1295,14 +1642,9 @@ fn build_joint_constraints3(
   island_stamps : Array[Int]?,
   stamp : Int,
 ) -> Array[JointConstraint] {
-  let constraints = build_joint_constraints(
-    parameters,
-    bodies,
-    impulse_joints.as_2d(),
-    @dynamics.MultibodyJointSet::new(),
-    dt,
-    island_stamps,
-    stamp,
+  let constraints : Array[JointConstraint] = []
+  append_impulse_joint_constraints3(
+    constraints, parameters, bodies, impulse_joints, dt, island_stamps, stamp,
   )
   append_multibody_joint_constraints(
     constraints,
