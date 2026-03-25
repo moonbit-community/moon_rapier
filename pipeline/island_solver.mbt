@@ -100,3 +100,153 @@ fn IslandSolver::solve(
   // Scatter updated velocities back into the rigid-body set for integration.
   self.velocity_solver.solver_bodies.writeback_vels(bodies)
 }
+
+///|
+fn solve_joints_and_contacts_interleaved3(
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  physics_hooks : PhysicsHooks,
+  narrow_phase : @collision.NarrowPhase,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet3,
+  solver_bodies : SolverBodies,
+  island_stamps : Array[Int]?,
+  stamp : Int,
+  additional_solver_iterations : Int,
+  dt : @core.Real,
+  event_handler : EventHandler,
+  contact_cache_in : Array[ContactImpulseCacheEntry],
+  contact_cache_out : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  let joint_constraints = JointConstraintsSet::new()
+  joint_constraints.init3(
+    parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
+  )
+  let contact_constraints = ContactConstraintsSet::new()
+  contact_constraints.init(
+    parameters,
+    bodies,
+    colliders,
+    physics_hooks,
+    narrow_phase,
+    dt,
+    contact_cache_in,
+    parameters.warmstart_coefficient,
+    island_stamps,
+    stamp,
+  )
+  joint_constraints.warmstart(bodies, solver_bodies)
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.warmstart(bodies, solver_bodies)
+  }
+  let base_iters0 = if parameters.num_solver_iterations <= 0 {
+    1
+  } else {
+    parameters.num_solver_iterations
+  }
+  let extra_iters = if additional_solver_iterations <= 0 {
+    0
+  } else {
+    additional_solver_iterations
+  }
+  let base_iters = base_iters0 + extra_iters
+  let joint_iters = base_iters
+  let contact_iters = base_iters
+  let iters = if contact_iters > joint_iters {
+    contact_iters
+  } else {
+    joint_iters
+  }
+  for i in 0..<iters {
+    if joint_constraints.constraints.length() > 0 && i < joint_iters {
+      joint_constraints.solve_velocity_constraints(bodies, solver_bodies, dt, 1)
+    }
+    if contact_constraints.constraints.length() > 0 {
+      contact_constraints.solve_velocity_constraints(
+        bodies, solver_bodies, dt, 1,
+      )
+    }
+  }
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.solve_restitution_constraints(bodies, solver_bodies)
+    contact_constraints.position_correction(
+      bodies,
+      colliders,
+      parameters.allowed_linear_error(),
+    )
+  }
+  joint_constraints.position_correction(bodies)
+  joint_constraints.writeback_impulses3(impulse_joints, multibody_joints)
+  if contact_constraints.constraints.length() > 0 {
+    contact_constraints.emit_contact_force_events(
+      bodies, colliders, dt, event_handler,
+    )
+    contact_constraints.append_cache_entries(contact_cache_out)
+  }
+}
+
+///|
+fn IslandSolver::solve3(
+  self : IslandSolver,
+  parameters : IntegrationParameters,
+  islands : @dynamics.IslandManager,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  physics_hooks : PhysicsHooks,
+  narrow_phase : @collision.NarrowPhase,
+  impulse_joints : @dynamics.ImpulseJointSet,
+  multibody_joints : @dynamics.MultibodyJointSet3,
+  dt : @core.Real,
+  event_handler : EventHandler,
+  contact_cache_in : Array[ContactImpulseCacheEntry],
+  contact_cache_out : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  let n = bodies.bodies.length()
+  self.velocity_solver.solver_bodies.clear()
+  self.velocity_solver.solver_bodies.resize(n)
+  while self.velocity_solver.island_stamps.length() < n {
+    self.velocity_solver.island_stamps.push(0)
+  }
+  for i in 0..<n {
+    if bodies.bodies[i] is Some(rb) {
+      self.velocity_solver.solver_bodies.copy_from(i, rb)
+    }
+  }
+  let active_islands = islands.active_islands()
+  for ai in 0..<active_islands.length() {
+    let island_id = active_islands[ai]
+    let island_bodies = islands.island_bodies(island_id)
+    if island_bodies.length() == 0 {
+      continue
+    }
+    self.velocity_solver.stamp = self.velocity_solver.stamp + 1
+    let stamp = self.velocity_solver.stamp
+    for i in 0..<island_bodies.length() {
+      let h = island_bodies[i]
+      let id = h.id
+      if id >= 0 && id < self.velocity_solver.island_stamps.length() {
+        self.velocity_solver.island_stamps[id] = stamp
+      }
+    }
+    let extra_iters = islands.island_additional_solver_iterations(island_id)
+    solve_joints_and_contacts_interleaved3(
+      parameters,
+      bodies,
+      colliders,
+      physics_hooks,
+      narrow_phase,
+      impulse_joints,
+      multibody_joints,
+      self.velocity_solver.solver_bodies,
+      Some(self.velocity_solver.island_stamps),
+      stamp,
+      extra_iters,
+      dt,
+      event_handler,
+      contact_cache_in,
+      contact_cache_out,
+    )
+  }
+  self.velocity_solver.solver_bodies.writeback_vels(bodies)
+}

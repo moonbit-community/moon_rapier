@@ -234,3 +234,50 @@ test "physics pipeline3 joint step delta time 0" {
   inspect(rotation.z == rotation.z, content="true")
   inspect(rotation.w == rotation.w, content="true")
 }
+
+///|
+test "physics pipeline3 multibody joint step" {
+  let colliders = @collision.ColliderSet3::new()
+  let impulse_joints = @dynamics.ImpulseJointSet3::new()
+  let multibody_joints = @dynamics.MultibodyJointSet3::new()
+  let pipeline = PhysicsPipeline3::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager3::new()
+  let bodies = @dynamics.RigidBodySet3::new()
+  let h_fixed = bodies.insert(
+    @dynamics.RigidBodyBuilder3::fixed().additional_mass(1.0F).build(),
+  )
+  let h_dynamic = bodies.insert(
+    @dynamics.RigidBodyBuilder3::dynamic().additional_mass(1.0F).build(),
+  )
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+    .local_anchor1(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .local_anchor2(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  let handle = multibody_joints.insert(h_fixed, h_dynamic, joint, true)
+  inspect(handle is Some(_), content="true")
+  pipeline.step(
+    @core.Vec3::new(0.0F, -9.81F, 0.0F),
+    @dynamics.IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  if handle is Some(joint_handle) {
+    inspect(multibody_joints.get(joint_handle) is Some(_), content="true")
+  }
+  let translation = bodies.translation(h_dynamic)
+  inspect(translation.x == translation.x, content="true")
+  inspect(translation.y == translation.y, content="true")
+  inspect(translation.z == translation.z, content="true")
+}

@@ -38,6 +38,242 @@ pub fn IslandManager3::active_bodies(
 }
 
 ///|
+fn IslandManager::push_linked_bodies3(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet3,
+  handle : RigidBodyHandle,
+) -> Unit {
+  bodies |> ignore
+  let attached = impulse_joints.attached_enabled_joints(handle)
+  for i in 0..<attached.length() {
+    let joint = attached[i]
+    let other = if handle_equals(joint.0, handle) { joint.1 } else { joint.0 }
+    self.stack.push(other)
+  }
+  let attached = multibody_joints.bodies_attached_with_enabled_joint(handle)
+  for i in 0..<attached.length() {
+    self.stack.push(attached[i])
+  }
+}
+
+///|
+fn IslandManager::extract_sleeping_island3(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet3,
+  sleep_root : RigidBodyHandle,
+) -> Int {
+  if sleep_root.id < 0 {
+    return 0
+  }
+  if bodies.get(sleep_root) is None {
+    return 0
+  }
+  if bodies.get_mut(sleep_root) is Some(root_body) {
+    if !(root_body.activation.sleep_root_state
+      is SleepRootState::TraversalPending) {
+      return 0
+    }
+    root_body.activation.sleep_root_state = SleepRootState::Traversed
+  } else {
+    return 0
+  }
+  if self.island_id_for(sleep_root) is Some(island_id) {
+    if self.islands[island_id] is Some(active_island) {
+      if active_island.id_in_awake_list is None {
+        return 0
+      }
+      let new_island_bodies : Array[RigidBodyHandle] = []
+      self.stack.clear()
+      self.stack.push(sleep_root)
+      self.traversal_timestamp = self.traversal_timestamp + 1
+      let mut visited_count = 0
+      while self.stack.pop() is Some(handle) {
+        if bodies.get_mut(handle) is Some(body) {
+          if body.is_fixed() {
+            continue
+          }
+          if body.ids.active_set_timestamp == self.traversal_timestamp {
+            continue
+          }
+          body.ids.active_set_timestamp = self.traversal_timestamp
+          visited_count = visited_count + 1
+          if body.activation.is_eligible_for_sleep() {
+            body.activation.sleep_root_state = SleepRootState::Traversed
+          } else {
+            self.stack.clear()
+            return visited_count
+          }
+          self.push_contacting_bodies(bodies, contacts, handle)
+          self.push_linked_bodies3(
+            bodies, impulse_joints, multibody_joints, handle,
+          )
+          new_island_bodies.push(handle)
+        }
+      }
+      if active_island.bodies.length() == new_island_bodies.length() {
+        for i in 0..<active_island.bodies.length() {
+          let handle = active_island.bodies[i]
+          if bodies.get_mut(handle) is Some(body) {
+            body.activation = body.activation.sleep()
+            body.vels = RigidBodyVelocity::zero()
+          }
+        }
+        self.remove_from_awake_list(island_id)
+        self.islands[island_id] = Some(active_island)
+      } else {
+        visited_count = visited_count + new_island_bodies.length()
+        self.extract_sub_island(bodies, island_id, new_island_bodies, true)
+      }
+      visited_count
+    } else {
+      0
+    }
+  } else {
+    0
+  }
+}
+
+///|
+fn IslandManager::update_optimizer3(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet3,
+) -> Unit {
+  if self.optimizer.mode % 2 == 0 {
+    self.incremental_merge(bodies)
+  } else {
+    self.incremental_split3(bodies, contacts, impulse_joints, multibody_joints)
+  }
+  self.optimizer.mode = self.optimizer.mode + 1
+}
+
+///|
+fn IslandManager::incremental_split3(
+  self : IslandManager,
+  bodies : RigidBodySet,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet,
+  multibody_joints : MultibodyJointSet3,
+) -> Unit {
+  if self.optimizer.split_state.curr_awake_id >= self.awake_islands.length() {
+    self.optimizer.split_state.curr_awake_id = 0
+  }
+  for
+    awake_id in self.optimizer.split_state.curr_awake_id..<self.awake_islands.length() {
+    let island_id = self.awake_islands[awake_id]
+    if self.islands[island_id] is Some(island) {
+      if island.bodies.length() > self.optimizer.max_island_size {
+        self.stack.clear()
+        let new_island_bodies : Array[RigidBodyHandle] = []
+        self.traversal_timestamp = self.traversal_timestamp + 1
+        for root_index in 0..<island.bodies.length() {
+          self.stack.push(island.bodies[root_index])
+          let len_before = new_island_bodies.length()
+          while self.stack.pop() is Some(handle) {
+            if bodies.get_mut(handle) is Some(body) {
+              if body.is_fixed() {
+                continue
+              }
+              if body.ids.active_set_timestamp == self.traversal_timestamp {
+                continue
+              }
+              body.ids.active_set_timestamp = self.traversal_timestamp
+              self.push_contacting_bodies(bodies, contacts, handle)
+              self.push_linked_bodies3(
+                bodies, impulse_joints, multibody_joints, handle,
+              )
+              new_island_bodies.push(handle)
+              if new_island_bodies.length() > self.optimizer.max_island_size {
+                truncate_handles(new_island_bodies, len_before)
+                self.stack.clear()
+                break
+              }
+            }
+          }
+          if new_island_bodies.length() == 0 {
+            return
+          } else if new_island_bodies.length() >= self.optimizer.min_island_size {
+            self.extract_sub_island(bodies, island_id, new_island_bodies, false)
+            return
+          }
+        }
+      }
+      self.optimizer.split_state.curr_awake_id = awake_id + 1
+    }
+  }
+}
+
+///|
+pub fn IslandManager3::update_islands(
+  self : IslandManager3,
+  dt : @core.Real,
+  length_unit : @core.Real,
+  bodies : RigidBodySet3,
+  contacts : ContactGraph,
+  impulse_joints : ImpulseJointSet3,
+  multibody_joints : MultibodyJointSet3,
+) -> Unit {
+  let bodies2 = bodies.as_2d()
+  let impulse_joints2 = impulse_joints.as_2d()
+  for handle in self.inner.active_bodies() {
+    if handle.id < 0 {
+      continue
+    }
+    if bodies2.get_mut(handle) is Some(body) {
+      self.inner.sync_body_state_generation(handle)
+      let linvel = body.vels.linvel
+      let sq_linvel = linvel.x * linvel.x + linvel.y * linvel.y
+      let angvel = body.vels.angvel
+      let sq_angvel = angvel * angvel
+      body.activation = body.activation.update_energy(
+        body.body_type,
+        length_unit,
+        sq_linvel,
+        sq_angvel,
+        dt,
+      )
+      let eligible = body.activation.is_eligible_for_sleep()
+      if eligible {
+        if body.activation.sleep_root_state is SleepRootState::Unknown {
+          self.inner.traversal_candidates.push(SleepCandidate::{ handle, })
+          body.activation.sleep_root_state = SleepRootState::TraversalPending
+        }
+      } else {
+        body.activation.sleep_root_state = SleepRootState::Unknown
+      }
+    }
+  }
+  let mut cost = 0
+  while true {
+    if self.inner.pop_traversal_candidate() is Some(candidate) {
+      cost = cost +
+        self.inner.extract_sleeping_island3(
+          bodies2,
+          contacts,
+          impulse_joints2,
+          multibody_joints,
+          candidate.handle,
+        )
+      if cost > MAX_SLEEP_TRAVERSAL_COST {
+        break
+      }
+    } else {
+      break
+    }
+  }
+  self.inner.update_optimizer3(
+    bodies2, contacts, impulse_joints2, multibody_joints,
+  )
+}
+
+///|
 /// 3D-flavored rigid-body set.
 pub struct RigidBodySet3 {
   inner : RigidBodySet

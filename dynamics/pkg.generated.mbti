@@ -488,6 +488,7 @@ pub struct IslandManager3 {
 pub fn IslandManager3::active_bodies(Self) -> Array[RigidBodyHandle]
 pub fn IslandManager3::as_2d(Self) -> IslandManager
 pub fn IslandManager3::new() -> Self
+pub fn IslandManager3::update_islands(Self, Float, Float, RigidBodySet3, ContactGraph, ImpulseJointSet3, MultibodyJointSet3) -> Unit
 
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
@@ -835,7 +836,9 @@ pub fn MultibodyJointSet3::multibodies(Self) -> Array[Multibody3]
 pub fn MultibodyJointSet3::new() -> Self
 pub fn MultibodyJointSet3::remove(Self, MultibodyJointHandle, Bool) -> Unit
 pub fn MultibodyJointSet3::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
+pub fn MultibodyJointSet3::revolute_joint_descriptors(Self) -> Array[MultibodyRevoluteJointDesc]
 pub fn MultibodyJointSet3::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(Self, MultibodyLinkId, @core.Vec2, Float, Float) -> Unit
 pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(Self, RigidBodySet3) -> Unit
 pub fn MultibodyJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]

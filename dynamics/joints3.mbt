@@ -345,6 +345,74 @@ pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(
 }
 
 ///|
+pub fn MultibodyJointSet3::revolute_joint_descriptors(
+  self : MultibodyJointSet3,
+) -> Array[MultibodyRevoluteJointDesc] {
+  let result : Array[MultibodyRevoluteJointDesc] = []
+  let items = self.multibodies.iter()
+  for i in 0..<items.length() {
+    let (mb_handle, mb) = items[i]
+    let mb_index = MultibodyIndex::new(mb_handle)
+    for link_id in 1..<mb.links.length() {
+      let link = mb.links[link_id]
+      let parent_id = link.parent_internal_id
+      if parent_id < 0 || parent_id >= mb.links.length() || parent_id == link_id {
+        continue
+      }
+      if !link.joint.is_revolute() {
+        continue
+      }
+      let parent_link = mb.links[parent_id]
+      let graph_id = if self.rb2mb.get(rb_handle_index(link.rigid_body))
+        is Some(ids) {
+        ids.graph_id
+      } else {
+        -1
+      }
+      result.push(MultibodyRevoluteJointDesc::{
+        link: MultibodyLinkId::new(graph_id, mb_index, link_id),
+        parent: parent_link.rigid_body,
+        child: link.rigid_body,
+        joint: link.joint.as_revolute_joint(),
+        solver_lin_impulses: link.joint.solver_lin_impulses,
+      })
+    }
+  }
+  result
+}
+
+///|
+pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(
+  self : MultibodyJointSet3,
+  link : MultibodyLinkId,
+  lin_impulses : @core.Vec2,
+  motor_impulse : @core.Real,
+  limit_impulse : @core.Real,
+) -> Unit {
+  if self.multibodies.get(link.multibody.arena_index()) is Some(mb) {
+    if link.id <= 0 || link.id >= mb.links.length() {
+      return
+    }
+    let lnk = mb.links[link.id]
+    lnk.joint.solver_lin_impulses = lin_impulses
+    let motors = lnk.joint.data.motors
+    lnk.joint.data.motors = JointMotors3::{
+      lin_x: motors.lin_x,
+      lin_y: motors.lin_y,
+      ang_z: motors.ang_z.set_impulse(motor_impulse),
+    }
+    let limits = lnk.joint.data.limits
+    lnk.joint.data.limits = JointLimits3::{
+      lin_x: limits.lin_x,
+      lin_y: limits.lin_y,
+      ang_z: limits.ang_z.set_impulse(limit_impulse),
+    }
+    mb.links[link.id] = lnk
+    self.multibodies.set(link.multibody.arena_index(), mb) |> ignore
+  }
+}
+
+///|
 pub fn MultibodyJointSet3::insert(
   self : MultibodyJointSet3,
   parent : RigidBodyHandle,

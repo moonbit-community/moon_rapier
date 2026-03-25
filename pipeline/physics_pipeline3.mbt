@@ -48,6 +48,7 @@ pub fn PhysicsPipeline3::step(
   let bodies2 = bodies.as_2d()
   let colliders2 = colliders.as_2d()
   let impulse_joints2 = impulse_joints.as_2d()
+  let empty_multibody_joints = @dynamics.MultibodyJointSet::new()
   self.inner.counters.reset()
   self.inner.counters.step_started()
 
@@ -65,9 +66,8 @@ pub fn PhysicsPipeline3::step(
     bodies2, colliders2, modified_colliders_before_step,
   )
   let modified_bodies_before_step = bodies2.take_modified()
-  let multibody_joints2 = multibody_joints.as_2d()
   handle_user_changes_to_bodies(
-    islands2, bodies2, colliders2, impulse_joints2, multibody_joints2, modified_bodies_before_step,
+    islands2, bodies2, colliders2, impulse_joints2, empty_multibody_joints, modified_bodies_before_step,
   )
   update_body_mass_properties_from_colliders(
     bodies2, colliders2, modified_bodies_before_step,
@@ -158,7 +158,7 @@ pub fn PhysicsPipeline3::step(
 
     collision_pipeline.step(
       prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, multibody_joints2, hooks, events,
+      impulse_joints2, empty_multibody_joints, hooks, events,
     )
     for i in 0..<bodies2.bodies.length() {
       if bodies2.bodies[i] is Some(body) {
@@ -203,7 +203,7 @@ pub fn PhysicsPipeline3::step(
       contact_cache_prev.push(self.inner.contact_solver_cache[i])
     }
     self.inner.contact_solver_cache.clear()
-    island_solver.solve(
+    island_solver.solve3(
       parameters,
       islands2,
       bodies2,
@@ -211,7 +211,7 @@ pub fn PhysicsPipeline3::step(
       hooks,
       narrow_phase,
       impulse_joints2,
-      multibody_joints2,
+      multibody_joints,
       dt,
       events,
       contact_cache_prev,
@@ -261,7 +261,7 @@ pub fn PhysicsPipeline3::step(
 
     collision_pipeline.step(
       prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, multibody_joints2, hooks, events,
+      impulse_joints2, empty_multibody_joints, hooks, events,
     )
     let (post_constraints, post_manifolds) = build_constraints(
       parameters,
@@ -291,11 +291,11 @@ pub fn PhysicsPipeline3::step(
         parameters.allowed_linear_error(),
       )
     }
-    let post_joint_constraints = build_joint_constraints(
+    let post_joint_constraints = build_joint_constraints3(
       parameters,
       bodies2,
       impulse_joints2,
-      multibody_joints2,
+      multibody_joints,
       dt,
       None,
       0,
@@ -305,7 +305,7 @@ pub fn PhysicsPipeline3::step(
     }
     collision_pipeline.step(
       prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, multibody_joints2, hooks, events,
+      impulse_joints2, empty_multibody_joints, hooks, events,
     )
   }
 
@@ -339,13 +339,13 @@ pub fn PhysicsPipeline3::step(
       }
     }
   }
-  islands2.update_islands(
+  islands.update_islands(
     parameters.dt,
     1.0F,
-    bodies2,
+    bodies,
     contacts,
-    impulse_joints2,
-    multibody_joints2,
+    impulse_joints,
+    multibody_joints,
   )
   let modified_colliders_after_step = colliders2.take_modified()
   let modified_bodies_after_step = bodies2.take_modified()
