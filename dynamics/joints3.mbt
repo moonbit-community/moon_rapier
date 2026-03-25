@@ -330,6 +330,21 @@ pub fn MultibodyJointSet3::take_to_join(
 }
 
 ///|
+pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(
+  self : MultibodyJointSet3,
+  bodies : RigidBodySet3,
+) -> Unit {
+  let bodies2 = bodies.as_2d()
+  let items = self.multibodies.iter()
+  for i in 0..<items.length() {
+    let (mb_handle, mb) = items[i]
+    mb.forward_kinematics(bodies2, true)
+    mb.update_rigid_bodies(bodies2)
+    self.multibodies.set(mb_handle, mb) |> ignore
+  }
+}
+
+///|
 pub fn MultibodyJointSet3::insert(
   self : MultibodyJointSet3,
   parent : RigidBodyHandle,

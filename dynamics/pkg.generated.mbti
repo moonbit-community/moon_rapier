@@ -836,6 +836,7 @@ pub fn MultibodyJointSet3::new() -> Self
 pub fn MultibodyJointSet3::remove(Self, MultibodyJointHandle, Bool) -> Unit
 pub fn MultibodyJointSet3::remove_multibody_articulations(Self, RigidBodyHandle, Bool) -> Unit
 pub fn MultibodyJointSet3::rigid_body_link(Self, RigidBodyHandle) -> MultibodyLinkId?
+pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(Self, RigidBodySet3) -> Unit
 pub fn MultibodyJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
 
