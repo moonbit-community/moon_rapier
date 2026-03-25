@@ -234,3 +234,29 @@ test "collider3d builder default helpers and delta update pose" {
     content="true",
   )
 }
+
+///|
+test "collider_builder3 aliases the real dim3 builder" {
+  let rotation = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, @core.pi() / 3.0F, 0.25F),
+  )
+  let co = ColliderBuilder3::cuboid(1.0F, 2.0F, 3.0F)
+    .translation(@core.Vec3::new(4.0F, 5.0F, 6.0F))
+    .rotation(rotation)
+    .contact_skin(0.15F)
+    .build()
+  inspect(
+    co.position().translation.sub(@core.Vec3::new(4.0F, 5.0F, 6.0F)).length() <
+    1.0e-6F,
+    content="true",
+  )
+  inspect(@core.abs(co.contact_skin() - 0.15F) < 1.0e-6F, content="true")
+  inspect(
+    co.position().rotation
+    .rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .sub(rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F)))
+    .length() <
+    1.0e-6F,
+    content="true",
+  )
+}

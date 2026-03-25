@@ -57,6 +57,27 @@ fn step_world3d_with_joints_n(
 }
 
 ///|
+fn step_world3d_with_rope_joints_n(
+  pipeline : @pipeline.PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  steps : Int,
+) -> Unit {
+  for _ in 0..<steps {
+    pipeline.step_with_rope_joints(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      rope_joints,
+    )
+  }
+}
+
+///|
 fn run_examples3d_real_compound3() -> Bool {
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -552,6 +573,83 @@ fn run_examples3d_real_keva3() -> Bool {
 }
 
 ///|
+fn run_examples3d_real_joints3() -> Bool {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let joints = @dynamics.JointSet3DReal::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default()
+
+  let rad = 0.4F
+  let num_i = 4
+  let num_k = 4
+  let shift = 1.0F
+  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let handles : Array[@dynamics.RigidBodyHandle] = []
+  for k in 0..<num_k {
+    for i in 0..<num_i {
+      let child = bodies.insert(
+        (if i == 0 && k == 0 {
+          @dynamics.RigidBodyBuilder3D::fixed()
+        } else {
+          @dynamics.RigidBodyBuilder3D::dynamic().can_sleep(false)
+        })
+        .translation(
+          @core.Vec3::new(
+            Float::from_int(k) * shift,
+            -Float::from_int(i) * shift,
+            0.0F,
+          ),
+        )
+        .build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder3D::ball(rad).build(),
+        child,
+        bodies,
+      )
+      |> ignore
+
+      if i > 0 {
+        let parent = handles[handles.length() - 1]
+        let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
+          .local_anchor2(@core.Vec3::new(0.0F, shift, 0.0F))
+          .build()
+        joints.insert_generic(parent, child, joint, true) |> ignore
+      }
+      if k > 0 {
+        let parent = handles[handles.length() - num_i]
+        let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
+          .local_anchor2(@core.Vec3::new(-shift, 0.0F, 0.0F))
+          .build()
+        joints.insert_generic(parent, child, joint, true) |> ignore
+      }
+      handles.push(child)
+    }
+  }
+
+  step_world3d_with_joints_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    joints, 240,
+  )
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(body) {
+      let p = body.translation()
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn run_examples3d_real_newton_cradle3() -> Bool {
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -687,6 +785,284 @@ fn run_examples3d_real_spring_joints3() -> Bool {
   )
   for i in 0..<balls.length() {
     if bodies.get(balls[i]) is Some(body) {
+      let p = body.translation()
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn run_examples3d_real_rope_joints3() -> Bool {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let rope_joints = @dynamics.RopeJointSet3DReal::new()
+  let parameters = @dynamics.IntegrationParameters::default()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let inv_dt = parameters.inv_dt()
+  let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
+
+  let ground_size = 0.75F
+  let ground_height = 0.1F
+  let floor0 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
+    floor0,
+    bodies,
+  )
+  |> ignore
+  let floor1 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(
+      @core.Vec3::new(-ground_size - ground_height, ground_size, 0.0F),
+    )
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(
+      ground_height, ground_size, ground_size,
+    ).build(),
+    floor1,
+    bodies,
+  )
+  |> ignore
+  let floor2 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(
+      @core.Vec3::new(ground_size + ground_height, ground_size, 0.0F),
+    )
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(
+      ground_height, ground_size, ground_size,
+    ).build(),
+    floor2,
+    bodies,
+  )
+  |> ignore
+
+  let character = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::kinematic_position_based()
+    .translation(@core.Vec3::new(0.0F, 0.3F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(0.15F, 0.3F, 0.15F).build(),
+    character,
+    bodies,
+  )
+  |> ignore
+
+  let rad = 0.04F
+  let child = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(1.0F, 1.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(rad).build(),
+    child,
+    bodies,
+  )
+  |> ignore
+  rope_joints.insert(character, child, 2.0F)
+
+  let mut time = 0.0F
+  for _ in 0..<600 {
+    time = time + dt
+    if bodies.get_mut(character) is Some(ch) {
+      ch.set_next_kinematic_translation(
+        @core.Vec3::new(
+          Float::from_double(@math.sin(time.to_double())) * 2.0F,
+          0.3F,
+          0.0F,
+        ),
+      )
+    } else {
+      return false
+    }
+    step_world3d_with_rope_joints_n(
+      pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies,
+      colliders, rope_joints, 1,
+    )
+  }
+  if bodies.get(character) is Some(ch) && bodies.get(child) is Some(ball) {
+    let d = ball.translation().sub(ch.translation()).length()
+    d == d && d <= 2.05F
+  } else {
+    false
+  }
+}
+
+///|
+fn run_examples3d_real_trimesh3() -> Bool {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let parameters = @dynamics.IntegrationParameters::default()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+
+  let ground_size = 25.0F
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(ground_size, 1.2F, 1.2F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let wall_rot = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, 0.0F, @core.pi() / 2.0F),
+  )
+  let wall_r = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(ground_size, ground_size, 0.0F))
+    .rotation(wall_rot)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(ground_size, 1.2F, 1.2F).build(),
+    wall_r,
+    bodies,
+  )
+  |> ignore
+  let wall_l = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(-ground_size, ground_size, 0.0F))
+    .rotation(wall_rot)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(ground_size, 1.2F, 1.2F).build(),
+    wall_l,
+    bodies,
+  )
+  |> ignore
+
+  let vtx = [
+    @core.Vec3::new(-1.0F, -1.0F, 0.0F),
+    @core.Vec3::new(1.0F, -1.0F, 0.0F),
+    @core.Vec3::new(1.0F, 1.0F, 0.0F),
+    @core.Vec3::new(-1.0F, 1.0F, 0.0F),
+  ]
+  let idx = [(0, 1, 2), (0, 2, 3)]
+  let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
+  let builder = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap()
+  for k in 0..<5 {
+    let handle = bodies.insert(
+      @dynamics.RigidBodyBuilder3D::dynamic()
+      .translation(
+        @core.Vec3::new(0.0F, 20.0F + Float::from_int(k) * 5.0F, 0.0F),
+      )
+      .build(),
+    )
+    colliders.insert_with_parent(
+      builder.contact_skin(0.2F).build(),
+      handle,
+      bodies,
+    )
+    |> ignore
+    dyn_handles.push(handle)
+  }
+
+  step_world3d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    120,
+  )
+  for i in 0..<dyn_handles.length() {
+    if bodies.get(dyn_handles[i]) is Some(body) {
+      let p = body.translation()
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+      if !(p.y > -10.0F) {
+        return false
+      }
+    } else {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn run_examples3d_real_urdf3() -> Bool {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let joints = @dynamics.JointSet3DReal::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+
+  colliders.insert(
+    @collision.ColliderBuilder3D::cuboid(50.0F, 0.05F, 0.05F)
+    .translation(@core.Vec3::new(0.0F, -0.05F, 0.0F))
+    .build(),
+  )
+  |> ignore
+
+  let base = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .build(),
+  )
+  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let mut parent = base
+  let links : Array[@dynamics.RigidBodyHandle] = []
+  for i in 0..<3 {
+    let link = bodies.insert(
+      @dynamics.RigidBodyBuilder3D::dynamic()
+      .translation(
+        @core.Vec3::new(Float::from_int(i) * 2.0F + 1.0F, 2.0F, 0.0F),
+      )
+      .can_sleep(false)
+      .build(),
+    )
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder3D::cuboid(0.6F, 0.1F, 0.1F).build(),
+      link,
+      bodies,
+    )
+    |> ignore
+    let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
+      .local_anchor1(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+      .local_anchor2(@core.Vec3::new(-1.0F, 0.0F, 0.0F))
+      .limits(-0.5F, 0.5F)
+      .build()
+    joints.insert_generic(parent, link, joint, true) |> ignore
+    parent = link
+    links.push(link)
+  }
+
+  step_world3d_with_joints_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    joints, 240,
+  )
+  for i in 0..<links.length() {
+    if bodies.get(links[i]) is Some(body) {
       let p = body.translation()
       if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
         return false
@@ -838,6 +1214,11 @@ test "examples3d/joint_motor_position3.rs parity (3DReal headless)" {
 }
 
 ///|
+test "examples3d/joints3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_joints3(), content="true")
+}
+
+///|
 test "examples3d/keva3.rs parity (3DReal headless)" {
   inspect(run_examples3d_real_keva3(), content="true")
 }
@@ -848,6 +1229,21 @@ test "examples3d/newton_cradle3.rs parity (3DReal headless)" {
 }
 
 ///|
+test "examples3d/rope_joints3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_rope_joints3(), content="true")
+}
+
+///|
 test "examples3d/spring_joints3.rs parity (3DReal headless)" {
   inspect(run_examples3d_real_spring_joints3(), content="true")
+}
+
+///|
+test "examples3d/trimesh3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_trimesh3(), content="true")
+}
+
+///|
+test "examples3d/urdf3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_urdf3(), content="true")
 }

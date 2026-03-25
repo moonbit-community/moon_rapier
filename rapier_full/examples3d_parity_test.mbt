@@ -259,7 +259,7 @@ fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
     heights.push(Float::from_double(@math.sin(t.to_double())) * 2.0F / scale_y)
   }
   colliders.insert(
-    @collision.ColliderBuilder3::heightfield(
+    @collision.ColliderBuilder3Compat::heightfield(
       heights,
       @core.Vec3::new(scale_x, scale_y, 0.0F),
     ).build(),
@@ -278,27 +278,28 @@ fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
   for k in 0..<10 {
     let x = Float::from_double(k.to_double()) * 2.5F - 10.0F
     let rb = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(x, 8.0F, 0.0F))
       .build(),
     )
     if use_decomposition {
       // Compatibility decomposition: multiple colliders on the same rigid-body.
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(0.5F, 0.2F, 0.2F).build(),
+        @collision.ColliderBuilder3Compat::cuboid(0.5F, 0.2F, 0.2F).build(),
         rb,
         bodies,
       )
       |> ignore
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(0.2F, 0.5F, 0.2F)
+        @collision.ColliderBuilder3Compat::cuboid(0.2F, 0.5F, 0.2F)
         .translation(@core.Vec3::new(0.6F, 0.0F, 0.0F))
         .build(),
         rb,
         bodies,
       )
       |> ignore
-    } else if @collision.ColliderBuilder3::trimesh(vtx, idx) is Some(builder) {
+    } else if @collision.ColliderBuilder3Compat::trimesh(vtx, idx)
+      is Some(builder) {
       colliders.insert_with_parent(
         builder.contact_skin(0.1F).build(),
         rb,
@@ -379,9 +380,9 @@ fn run_examples3d_heightfield3() -> Bool {
       )
     }
   }
-  let ground = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3Compat::fixed().build())
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::heightfield(heights, ground_size).build(),
+    @collision.ColliderBuilder3Compat::heightfield(heights, ground_size).build(),
     ground,
     bodies,
   )
@@ -399,17 +400,21 @@ fn run_examples3d_heightfield3() -> Bool {
         let y = Float::from_int(j) * shift + centery + 3.0F
         let z = Float::from_int(k) * shift - centerz
         let handle = bodies.insert(
-          @dynamics.RigidBodyBuilder3::dynamic()
+          @dynamics.RigidBodyBuilder3Compat::dynamic()
           .translation(@core.Vec3::new(x, y, z))
           .build(),
         )
         let collider = match j % 6 {
-          0 => @collision.ColliderBuilder3::cuboid(rad, rad, rad)
-          1 => @collision.ColliderBuilder3::ball(rad)
+          0 => @collision.ColliderBuilder3Compat::cuboid(rad, rad, rad)
+          1 => @collision.ColliderBuilder3Compat::ball(rad)
           2 =>
-            @collision.ColliderBuilder3::round_cylinder(rad, rad, rad / 10.0F)
-          3 => @collision.ColliderBuilder3::cone(rad, rad)
-          4 => @collision.ColliderBuilder3::capsule_y(rad, rad)
+            @collision.ColliderBuilder3Compat::round_cylinder(
+              rad,
+              rad,
+              rad / 10.0F,
+            )
+          3 => @collision.ColliderBuilder3Compat::cone(rad, rad)
+          4 => @collision.ColliderBuilder3Compat::capsule_y(rad, rad)
           _ => {
             let shapes : Array[(@core.Isometry3, @collision.SharedShape)] = [
               (
@@ -429,7 +434,7 @@ fn run_examples3d_heightfield3() -> Bool {
                 @collision.SharedShape::cuboid(rad / 2.0F, rad),
               ),
             ]
-            @collision.ColliderBuilder3::compound(shapes)
+            @collision.ColliderBuilder3Compat::compound(shapes)
           }
         }
         colliders.insert_with_parent(collider.build(), handle, bodies) |> ignore
@@ -479,12 +484,14 @@ fn run_examples3d_convex_polyhedron3() -> Bool {
   let ground_size = 40.0F
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3Compat::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
     ground,
     bodies,
   )
@@ -513,12 +520,14 @@ fn run_examples3d_convex_polyhedron3() -> Bool {
           points.push(@core.Vec3::new(rx * scale, ry * scale, rz * scale))
         }
         let handle = bodies.insert(
-          @dynamics.RigidBodyBuilder3::dynamic()
+          @dynamics.RigidBodyBuilder3Compat::dynamic()
           .translation(@core.Vec3::new(x, y, z))
           .build(),
         )
         handles.push(handle)
-        if @collision.ColliderBuilder3::round_convex_hull(points, border_rad)
+        if @collision.ColliderBuilder3Compat::round_convex_hull(
+            points, border_rad,
+          )
           is Some(builder) {
           colliders.insert_with_parent(builder.build(), handle, bodies)
           |> ignore
@@ -582,20 +591,20 @@ fn run_examples3d_joint_motor_position3() -> Bool {
   }
 
   let ground_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed().build(),
+    @dynamics.RigidBodyBuilder3Compat::fixed().build(),
   )
   let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
   let target_positions : Array[(@dynamics.RigidBodyHandle, @core.Real)] = []
   for num in 0..<9 {
     let x_pos = -6.0F + 1.5F * Float::from_double(num.to_double())
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(x_pos, 2.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(0.1F, 0.5F, 0.1F).build(),
+      @collision.ColliderBuilder3Compat::cuboid(0.1F, 0.5F, 0.1F).build(),
       handle,
       bodies,
     )
@@ -616,14 +625,14 @@ fn run_examples3d_joint_motor_position3() -> Bool {
   for num in 0..<8 {
     let x_pos = -6.0F + 1.5F * Float::from_double(num.to_double())
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(x_pos, 4.5F, 0.0F))
       .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, @core.pi()))
       .can_sleep(false)
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(0.1F, 0.5F, 0.1F).build(),
+      @collision.ColliderBuilder3Compat::cuboid(0.1F, 0.5F, 0.1F).build(),
       handle,
       bodies,
     )
@@ -682,7 +691,8 @@ fn run_examples3d_joint_motor_position3() -> Bool {
 ///|
 fn run_examples3d_inverse_kinematics3() -> Bool {
   // Ported from `rapier-reference/examples3d/inverse_kinematics3.rs`
-  // (headless; legacy compatibility mode, mirrored by `examples3d_real_unique_parity_test.mbt`).
+  // (headless legacy wrapper mirror; source-aligned dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`).
   let mut ok = true
   let bodies = @dynamics.RigidBodySet3::new()
   let colliders = @collision.ColliderSet3::new()
@@ -691,12 +701,12 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
   // Ground (kept for parity with upstream, though IK doesn't depend on it).
   let ground_height = 0.01F
   let floor_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(1.0F, ground_height, 1.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(1.0F, ground_height, 1.0F).build(),
     floor_handle,
     bodies,
   )
@@ -704,16 +714,20 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
   let num_segments = 10
   let size = 1.0F / Float::from_double(num_segments.to_double())
   let mut last_body = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed().build(),
+    @dynamics.RigidBodyBuilder3Compat::fixed().build(),
   )
   let mut last_link = @dynamics.MultibodyJointHandle::invalid()
   let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
   for i in 0..<num_segments {
     let new_body = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+      @dynamics.RigidBodyBuilder3Compat::dynamic().can_sleep(false).build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(size / 8.0F, size / 2.0F, size / 8.0F)
+      @collision.ColliderBuilder3Compat::cuboid(
+        size / 8.0F,
+        size / 2.0F,
+        size / 8.0F,
+      )
       .density(0.0F)
       .sensor(true)
       .build(),
@@ -782,7 +796,9 @@ fn run_examples3d_inverse_kinematics3() -> Bool {
 
 ///|
 fn run_examples3d_joints3() -> Bool {
-  // Ported from `rapier-reference/examples3d/joints3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/joints3.rs`
+  // (headless legacy wrapper mirror; source-aligned dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`).
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -818,15 +834,15 @@ fn run_examples3d_joints3() -> Bool {
       let fi = Float::from_double(i.to_double())
       let child_handle = bodies.insert(
         (if i == 0 && k == 0 {
-          @dynamics.RigidBodyBuilder3::fixed()
+          @dynamics.RigidBodyBuilder3Compat::fixed()
         } else {
-          @dynamics.RigidBodyBuilder3::dynamic()
+          @dynamics.RigidBodyBuilder3Compat::dynamic()
         })
         .translation(@core.Vec3::new(fk * shift, -fi * shift, 0.0F))
         .build(),
       )
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::ball(rad).build(),
+        @collision.ColliderBuilder3Compat::ball(rad).build(),
         child_handle,
         bodies,
       )
@@ -874,7 +890,8 @@ fn run_examples3d_joints3() -> Bool {
 ///|
 fn run_examples3d_keva3() -> Bool {
   // Ported from `rapier-reference/examples3d/keva3.rs`
-  // (headless; legacy compatibility mode, mirrored by `examples3d_real_unique_parity_test.mbt`).
+  // (headless legacy wrapper mirror; source-aligned dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`).
   let mut ok = true
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -895,12 +912,12 @@ fn run_examples3d_keva3() -> Bool {
   // Ground.
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(50.0F, ground_height, 50.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(50.0F, ground_height, 50.0F).build(),
     ground,
     bodies,
   )
@@ -917,15 +934,15 @@ fn run_examples3d_keva3() -> Bool {
     for i in 0..<3 {
       let x = (Float::from_double(i.to_double()) - 1.0F) * 0.9F
       let rb = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3Compat::dynamic()
         .translation(@core.Vec3::new(x, y, 0.0F))
         .can_sleep(false)
         .build(),
       )
       let co = if horizontal {
-        @collision.ColliderBuilder3::cuboid(half_x, half_y, half_y)
+        @collision.ColliderBuilder3Compat::cuboid(half_x, half_y, half_y)
       } else {
-        @collision.ColliderBuilder3::cuboid(half_y, half_x, half_y)
+        @collision.ColliderBuilder3Compat::cuboid(half_y, half_x, half_y)
       }
       colliders.insert_with_parent(co.build(), rb, bodies) |> ignore
       handles.push(rb)
@@ -995,19 +1012,19 @@ fn run_examples3d_newton_cradle3() -> Bool {
       @core.Vec3::zero()
     }
     let ground = bodies.insert(
-      @dynamics.RigidBodyBuilder3::fixed()
+      @dynamics.RigidBodyBuilder3Compat::fixed()
       .translation(ball_pos.add(attach))
       .build(),
     )
     let h = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(ball_pos)
       .linvel(vel)
       .can_sleep(false)
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::ball(radius).restitution(1.0F).build(),
+      @collision.ColliderBuilder3Compat::ball(radius).restitution(1.0F).build(),
       h,
       bodies,
     )
@@ -1064,7 +1081,7 @@ fn run_examples3d_spring_joints3() -> Bool {
     }
   }
 
-  let ground = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3Compat::fixed().build())
   let num = 12
   let radius = 0.5F
   let softness = @dynamics.SpringCoefficients::joint_defaults()
@@ -1074,13 +1091,13 @@ fn run_examples3d_spring_joints3() -> Bool {
     let x = -6.0F + 1.0F * Float::from_double(i.to_double())
     let ball_pos = @core.Vec3::new(x, 4.5F, 0.0F)
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(ball_pos)
       .can_sleep(false)
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::ball(radius).build(),
+      @collision.ColliderBuilder3Compat::ball(radius).build(),
       handle,
       bodies,
     )
@@ -1095,12 +1112,12 @@ fn run_examples3d_spring_joints3() -> Bool {
     impulse_joints.insert(ground, handle, joint, true) |> ignore
     balls.push(handle)
     let box = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(ball_pos.add(@core.Vec3::new(0.0F, 5.0F, 0.0F)))
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(radius, radius, radius)
+      @collision.ColliderBuilder3Compat::cuboid(radius, radius, radius)
       .density(100.0F)
       .build(),
       box,
@@ -1120,7 +1137,9 @@ fn run_examples3d_spring_joints3() -> Bool {
 
 ///|
 fn run_examples3d_urdf3() -> Bool {
-  // Ported from `rapier-reference/examples3d/urdf3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/urdf3.rs`
+  // (headless legacy wrapper mirror; source-aligned dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`).
   //
   // Full URDF parsing isn't available in this MoonBit port yet. Instead, we build a tiny
   // articulated chain (like a robot arm) to exercise multibody + joint limits.
@@ -1143,7 +1162,7 @@ fn run_examples3d_urdf3() -> Bool {
 
   // Ground.
   colliders.insert(
-    @collision.ColliderBuilder3::segment(
+    @collision.ColliderBuilder3Compat::segment(
       @core.Vec3::new(-50.0F, 0.0F, 0.0F),
       @core.Vec3::new(50.0F, 0.0F, 0.0F),
     ).build(),
@@ -1152,7 +1171,7 @@ fn run_examples3d_urdf3() -> Bool {
 
   // Base + 3 links.
   let base = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
     .build(),
   )
@@ -1161,13 +1180,13 @@ fn run_examples3d_urdf3() -> Bool {
   let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
   for i in 0..<3 {
     let link = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(x + 1.0F, 2.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(0.6F, 0.1F, 0.1F).build(),
+      @collision.ColliderBuilder3Compat::cuboid(0.6F, 0.1F, 0.1F).build(),
       link,
       bodies,
     )
@@ -1222,12 +1241,14 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let ground_size = 5.0F
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3Compat::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
     ground,
     bodies,
   )
@@ -1237,13 +1258,13 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let hw = 0.3F
   let hh = 0.15F
   let chassis = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(hw * 2.0F, hh, hw)
+    @collision.ColliderBuilder3Compat::cuboid(hw * 2.0F, hh, hw)
     .density(100.0F)
     .build(),
     chassis,
@@ -1290,12 +1311,12 @@ fn run_examples3d_vehicle_controller3() -> Bool {
         let y = Float::from_int(j) * shift + centery
         let z = Float::from_int(k) * shift + centerx
         let h = bodies.insert(
-          @dynamics.RigidBodyBuilder3::dynamic()
+          @dynamics.RigidBodyBuilder3Compat::dynamic()
           .translation(@core.Vec3::new(x, y, z))
           .build(),
         )
         colliders.insert_with_parent(
-          @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+          @collision.ColliderBuilder3Compat::cuboid(rad, rad, rad).build(),
           h,
           bodies,
         )
@@ -1308,7 +1329,9 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let slope_angle = 0.2F
   let slope_size = 2.0F
   colliders.insert(
-    @collision.ColliderBuilder3::cuboid(slope_size, ground_height, ground_size)
+    @collision.ColliderBuilder3Compat::cuboid(
+      slope_size, ground_height, ground_size,
+    )
     .translation(
       @core.Vec3::new(ground_size + slope_size, -ground_height + 0.4F, 0.0F),
     )
@@ -1321,7 +1344,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let impossible_slope_angle = 0.9F
   let impossible_slope_size = 2.0F
   colliders.insert(
-    @collision.ColliderBuilder3::cuboid(
+    @collision.ColliderBuilder3Compat::cuboid(
       impossible_slope_size, ground_height, ground_size,
     )
     .translation(
@@ -1344,7 +1367,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
     heights.push(Float::from_double(@math.cos(t.to_double())) * 2.0F)
   }
   colliders.insert(
-    @collision.ColliderBuilder3::heightfield(
+    @collision.ColliderBuilder3Compat::heightfield(
       heights,
       @core.Vec3::new(10.0F, 0.4F, 0.0F),
     )
@@ -1396,12 +1419,12 @@ fn run_examples3d_vehicle_joints3() -> Bool {
 
   // Flat ground (large cuboid).
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(200.0F, 0.1F, 200.0F)
+    @collision.ColliderBuilder3Compat::cuboid(200.0F, 0.1F, 200.0F)
     .friction(1.0F)
     .build(),
     ground,
@@ -1410,13 +1433,15 @@ fn run_examples3d_vehicle_joints3() -> Bool {
   |> ignore
   let car_pos = @core.Vec3::new(-10.0F, 2.0F, 0.0F)
   let chassis = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(car_pos)
     .can_sleep(false)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(1.0F, 0.3F, 0.3F).density(50.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(1.0F, 0.3F, 0.3F)
+    .density(50.0F)
+    .build(),
     chassis,
     bodies,
   )
@@ -1425,19 +1450,19 @@ fn run_examples3d_vehicle_joints3() -> Bool {
   let wheel_off = 1.2F
   let wheel_y = -0.4F
   let wheel_left = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(car_pos.add(@core.Vec3::new(-wheel_off, wheel_y, 0.0F)))
     .can_sleep(false)
     .build(),
   )
   let wheel_right = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(car_pos.add(@core.Vec3::new(wheel_off, wheel_y, 0.0F)))
     .can_sleep(false)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(wheel_r)
+    @collision.ColliderBuilder3Compat::ball(wheel_r)
     .friction(2.0F)
     .density(100.0F)
     .build(),
@@ -1446,7 +1471,7 @@ fn run_examples3d_vehicle_joints3() -> Bool {
   )
   |> ignore
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(wheel_r)
+    @collision.ColliderBuilder3Compat::ball(wheel_r)
     .friction(2.0F)
     .density(100.0F)
     .build(),
@@ -1513,12 +1538,12 @@ fn run_examples3d_voxels3() -> Bool {
     poly_idx.push((i, (i + 1) % polyline.length()))
   }
   let mesh_body = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(-20.0F, -10.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::voxelized_mesh(
+    @collision.ColliderBuilder3Compat::voxelized_mesh(
       polyline,
       poly_idx,
       0.2F,
@@ -1544,7 +1569,7 @@ fn run_examples3d_voxels3() -> Bool {
     voxels.push(@core.Vec3::new(x, y * voxel_size.y, 0.0F))
   }
   colliders.insert(
-    @collision.ColliderBuilder3::voxels_from_points(voxel_size, voxels).build(),
+    @collision.ColliderBuilder3Compat::voxels_from_points(voxel_size, voxels).build(),
   )
   |> ignore
   let nx = 20
@@ -1557,19 +1582,19 @@ fn run_examples3d_voxels3() -> Bool {
         Float::from_double(nx.to_double()) / 2.0F
       let y = 20.0F + Float::from_double(j.to_double()) * 2.0F
       let rb_handle = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3Compat::dynamic()
         .translation(@core.Vec3::new(x, y, 0.0F))
         .build(),
       )
       let kind = j % 3
       let co = if kind == 0 {
-        @collision.ColliderBuilder3::ball(ball_radius)
+        @collision.ColliderBuilder3Compat::ball(ball_radius)
       } else if kind == 1 {
-        @collision.ColliderBuilder3::cuboid(
+        @collision.ColliderBuilder3Compat::cuboid(
           ball_radius, ball_radius, ball_radius,
         )
       } else {
-        @collision.ColliderBuilder3::capsule_y(ball_radius, ball_radius)
+        @collision.ColliderBuilder3Compat::capsule_y(ball_radius, ball_radius)
       }
       colliders.insert_with_parent(co.build(), rb_handle, bodies) |> ignore
       dyn_handles.push(rb_handle)
@@ -1620,12 +1645,12 @@ test "examples3d/all_examples3.rs parity" {
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(10.0F, 1.0F, 10.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(10.0F, 1.0F, 10.0F).build(),
     ground,
     bodies,
   )
@@ -3433,12 +3458,12 @@ test "examples3d/domino3.rs parity" {
   )
   let ground_height = 0.1F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(200.0F, ground_height, 200.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(200.0F, ground_height, 200.0F).build(),
     ground,
     bodies,
   )
@@ -3453,7 +3478,7 @@ test "examples3d/domino3.rs parity" {
   for i in 0..<num {
     let x = Float::from_double(i.to_double()) * spacing
     let tilt = if i == 0 { 0.8F } else { 0.0F }
-    let builder0 = @dynamics.RigidBodyBuilder3::dynamic()
+    let builder0 = @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(x, width * 2.0F, 0.0F))
       .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, tilt))
       .can_sleep(false)
@@ -3467,7 +3492,7 @@ test "examples3d/domino3.rs parity" {
     }
     let h = bodies.insert(builder.build())
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(thickness, width * 2.0F, width).build(),
+      @collision.ColliderBuilder3Compat::cuboid(thickness, width * 2.0F, width).build(),
       h,
       bodies,
     )
@@ -3520,12 +3545,12 @@ test "examples3d/fountain3.rs parity" {
   for k in 0..<3 {
     let y = -ground_height - Float::from_double(k.to_double())
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder3::fixed()
+      @dynamics.RigidBodyBuilder3Compat::fixed()
       .translation(@core.Vec3::new(0.0F, y, 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
-      @collision.ColliderBuilder3::cuboid(
+      @collision.ColliderBuilder3Compat::cuboid(
         ground_size, ground_height, ground_size,
       ).build(),
       handle,
@@ -3539,15 +3564,16 @@ test "examples3d/fountain3.rs parity" {
   for step in 0..<240 {
     // Spawn one body per step (like the testbed callback).
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder3::dynamic()
+      @dynamics.RigidBodyBuilder3Compat::dynamic()
       .translation(@core.Vec3::new(0.0F, 10.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
     let builder = match step % 3 {
-      0 => @collision.ColliderBuilder3::round_cylinder(rad, rad, rad / 10.0F)
-      1 => @collision.ColliderBuilder3::cone(rad, rad)
-      _ => @collision.ColliderBuilder3::cuboid(rad, rad, rad)
+      0 =>
+        @collision.ColliderBuilder3Compat::round_cylinder(rad, rad, rad / 10.0F)
+      1 => @collision.ColliderBuilder3Compat::cone(rad, rad)
+      _ => @collision.ColliderBuilder3Compat::cuboid(rad, rad, rad)
     }
     colliders.insert_with_parent(builder.build(), handle, bodies) |> ignore
     spawned.push(handle)
@@ -3682,9 +3708,11 @@ test "examples3d/one_way_platforms3.rs parity" {
     16,
   )
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
-  let ground_body = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
+  let ground_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3Compat::fixed().build(),
+  )
   let platform1 = colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(9.0F, 0.5F, 9.0F)
+    @collision.ColliderBuilder3Compat::cuboid(9.0F, 0.5F, 9.0F)
     .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
     .active_hooks(@collision.ActiveHooks::modify_solver_contacts())
     .build(),
@@ -3692,7 +3720,7 @@ test "examples3d/one_way_platforms3.rs parity" {
     bodies,
   )
   let platform2 = colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(9.0F, 0.5F, 9.0F)
+    @collision.ColliderBuilder3Compat::cuboid(9.0F, 0.5F, 9.0F)
     .translation(@core.Vec3::new(0.0F, -2.0F, 0.0F))
     .active_hooks(@collision.ActiveHooks::modify_solver_contacts())
     .build(),
@@ -3757,13 +3785,13 @@ test "examples3d/one_way_platforms3.rs parity" {
   for step in 0..<800 {
     if step % 200 == 0 && bodies.len() <= 7 {
       let body = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3Compat::dynamic()
         .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
         .can_sleep(false)
         .build(),
       )
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(1.0F, 2.0F, 1.0F).build(),
+        @collision.ColliderBuilder3Compat::cuboid(1.0F, 2.0F, 1.0F).build(),
         body,
         bodies,
       )
@@ -3818,12 +3846,12 @@ test "examples3d/platform3.rs parity" {
   // Ground.
   let ground_height = 0.1F
   let ground_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(10.0F, ground_height, 10.0F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(10.0F, ground_height, 10.0F).build(),
     ground_handle,
     bodies,
   )
@@ -3840,12 +3868,12 @@ test "examples3d/platform3.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift + centery
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3Compat::dynamic()
         .translation(@core.Vec3::new(x, y, 0.0F))
         .build(),
       )
       colliders.insert_with_parent(
-        @collision.ColliderBuilder3::cuboid(rad, rad, rad).build(),
+        @collision.ColliderBuilder3Compat::cuboid(rad, rad, rad).build(),
         handle,
         bodies,
       )
@@ -3855,23 +3883,23 @@ test "examples3d/platform3.rs parity" {
 
   // Two kinematic platforms: velocity-based and position-based.
   let vel_based_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::kinematic_velocity_based()
+    @dynamics.RigidBodyBuilder3Compat::kinematic_velocity_based()
     .translation(@core.Vec3::new(0.0F, 1.5F + 0.8F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(rad * 10.0F, rad, rad).build(),
+    @collision.ColliderBuilder3Compat::cuboid(rad * 10.0F, rad, rad).build(),
     vel_based_handle,
     bodies,
   )
   |> ignore
   let pos_based_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::kinematic_position_based()
+    @dynamics.RigidBodyBuilder3Compat::kinematic_position_based()
     .translation(@core.Vec3::new(0.0F, 3.0F + 1.5F + 0.8F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(rad * 10.0F, rad, rad).build(),
+    @collision.ColliderBuilder3Compat::cuboid(rad * 10.0F, rad, rad).build(),
     pos_based_handle,
     bodies,
   )
@@ -3952,42 +3980,49 @@ test "examples3d/rope_joints3.rs parity" {
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
 
-  // Ground (walls; 2D compatibility mode).
+  // Ground (walls; legacy wrapper mirror. Real dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`.)
   let ground_size = 0.75F
   let ground_height = 0.1F
   let floor0 = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, ground_height, ground_size).build(),
+    @collision.ColliderBuilder3Compat::cuboid(
+      ground_size, ground_height, ground_size,
+    ).build(),
     floor0,
     bodies,
   )
   |> ignore
   let floor1 = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(
       @core.Vec3::new(-ground_size - ground_height, ground_size, 0.0F),
     )
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_height, ground_size, ground_size).build(),
+    @collision.ColliderBuilder3Compat::cuboid(
+      ground_height, ground_size, ground_size,
+    ).build(),
     floor1,
     bodies,
   )
   |> ignore
   let floor2 = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(
       @core.Vec3::new(ground_size + ground_height, ground_size, 0.0F),
     )
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_height, ground_size, ground_size).build(),
+    @collision.ColliderBuilder3Compat::cuboid(
+      ground_height, ground_size, ground_size,
+    ).build(),
     floor2,
     bodies,
   )
@@ -3995,12 +4030,12 @@ test "examples3d/rope_joints3.rs parity" {
 
   // Kinematic character.
   let character_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::kinematic_position_based()
+    @dynamics.RigidBodyBuilder3Compat::kinematic_position_based()
     .translation(@core.Vec3::new(0.0F, 0.3F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(0.15F, 0.3F, 0.15F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(0.15F, 0.3F, 0.15F).build(),
     character_handle,
     bodies,
   )
@@ -4009,13 +4044,13 @@ test "examples3d/rope_joints3.rs parity" {
   // Tethered ball.
   let rad = 0.04F
   let child_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::new(1.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(rad).build(),
+    @collision.ColliderBuilder3Compat::ball(rad).build(),
     child_handle,
     bodies,
   )
@@ -4084,36 +4119,37 @@ test "examples3d/trimesh3.rs parity" {
     }
   }
 
-  // Ground + walls (2D compatibility mode).
+  // Ground + walls (legacy wrapper mirror. Real dim3 coverage lives in
+  // `examples3d_real_unique_parity_test.mbt`.)
   let ground_size = 25.0F
-  let ground = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
+  let ground = bodies.insert(@dynamics.RigidBodyBuilder3Compat::fixed().build())
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, 1.2F, 1.2F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(ground_size, 1.2F, 1.2F).build(),
     ground,
     bodies,
   )
   |> ignore
   let wall_rot = @core.Vec3::new(0.0F, 0.0F, @core.pi() / 2.0F)
   let wall_r = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(ground_size, ground_size, 0.0F))
     .rotation_scaled_axis(wall_rot)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, 1.2F, 1.2F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(ground_size, 1.2F, 1.2F).build(),
     wall_r,
     bodies,
   )
   |> ignore
   let wall_l = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed()
+    @dynamics.RigidBodyBuilder3Compat::fixed()
     .translation(@core.Vec3::new(-ground_size, ground_size, 0.0F))
     .rotation_scaled_axis(wall_rot)
     .build(),
   )
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::cuboid(ground_size, 1.2F, 1.2F).build(),
+    @collision.ColliderBuilder3Compat::cuboid(ground_size, 1.2F, 1.2F).build(),
     wall_l,
     bodies,
   )
@@ -4129,9 +4165,9 @@ test "examples3d/trimesh3.rs parity" {
   let idx = [(0, 1, 2), (0, 2, 3)]
   let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
   for k in 0..<5 {
-    if @collision.ColliderBuilder3::trimesh(vtx, idx) is Some(builder) {
+    if @collision.ColliderBuilder3Compat::trimesh(vtx, idx) is Some(builder) {
       let h = bodies.insert(
-        @dynamics.RigidBodyBuilder3::dynamic()
+        @dynamics.RigidBodyBuilder3Compat::dynamic()
         .translation(
           @core.Vec3::new(
             0.0F,

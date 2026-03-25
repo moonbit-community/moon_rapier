@@ -132,3 +132,34 @@ test "rigid_body3d builder pose aliases and sleeping flag" {
     content="true",
   )
 }
+
+///|
+test "rigid_body_builder3 aliases the real dim3 builder" {
+  let rotation = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.2F, 0.3F, 0.4F),
+  )
+  let rb = RigidBodyBuilder3::dynamic()
+    .translation(@core.Vec3::new(1.0F, 2.0F, 3.0F))
+    .rotation(rotation)
+    .angvel(@core.Vec3::new(4.0F, 5.0F, 6.0F))
+    .enabled_translations(true, false, true)
+    .build()
+  inspect(
+    rb.translation().sub(@core.Vec3::new(1.0F, 2.0F, 3.0F)).length() < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    rb
+    .rotation()
+    .rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .sub(rotation.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F)))
+    .length() <
+    1.0e-6F,
+    content="true",
+  )
+  inspect(rb.linvel().y == 0.0F, content="true")
+  inspect(
+    rb.angvel().sub(@core.Vec3::new(4.0F, 5.0F, 6.0F)).length() < 1.0e-6F,
+    content="true",
+  )
+}

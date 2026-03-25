@@ -89,11 +89,11 @@ test "one link fwd kinematics (dim3)" {
   let multibodies = MultibodyJointSet3::new()
   let num_segments = 10
   let num_segments_real = Float::from_double(num_segments.to_double())
-  let mut last_body = bodies.insert(RigidBodyBuilder3::fixed().build())
+  let mut last_body = bodies.insert(RigidBodyBuilder3Compat::fixed().build())
   let mut last_link = MultibodyJointHandle::invalid()
   for _ in 0..<num_segments {
     let new_body = bodies.insert(
-      RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+      RigidBodyBuilder3Compat::dynamic().can_sleep(false).build(),
     )
     let anchor_delta = 0.5F / num_segments_real
     let builder = RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
@@ -176,9 +176,9 @@ test "one link fwd kinematics (dim3)" {
 test "one link fwd kinematics uses 3d axis and z anchors" {
   let bodies = RigidBodySet3::new()
   let multibodies = MultibodyJointSet3::new()
-  let root = bodies.insert(RigidBodyBuilder3::fixed().build())
+  let root = bodies.insert(RigidBodyBuilder3Compat::fixed().build())
   let child = bodies.insert(
-    RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+    RigidBodyBuilder3Compat::dynamic().can_sleep(false).build(),
   )
   let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
     .local_anchor1(@core.Vec3::zero())
@@ -223,9 +223,9 @@ test "one link fwd kinematics uses 3d axis and z anchors" {
 test "one link inverse kinematics follows 3d hinge axis" {
   let bodies = RigidBodySet3::new()
   let multibodies = MultibodyJointSet3::new()
-  let root = bodies.insert(RigidBodyBuilder3::fixed().build())
+  let root = bodies.insert(RigidBodyBuilder3Compat::fixed().build())
   let child = bodies.insert(
-    RigidBodyBuilder3::dynamic().can_sleep(false).build(),
+    RigidBodyBuilder3Compat::dynamic().can_sleep(false).build(),
   )
   let builder = RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
     .local_anchor1(@core.Vec3::zero())

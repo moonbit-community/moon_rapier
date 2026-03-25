@@ -13,33 +13,35 @@
 // limitations under the License.
 
 ///|
-/// 3D-flavored collider builder (dim3,f32) used by the rapier3d parity tests.
-///
-/// NOTE: This currently projects to the existing 2D collider builder by dropping the `z`
-/// coordinate. It is a compatibility layer to enable strict porting of the rapier-reference
-/// dim3 unit tests.
-pub struct ColliderBuilder3 {
+/// Source-aligned dim3 collider builder alias.
+pub type ColliderBuilder3 = ColliderBuilder3D
+
+///|
+/// Legacy dim3 compatibility builder that projects to the historical 2D wrapper collider.
+pub struct ColliderBuilder3Compat {
   inner : ColliderBuilder
 }
 
 ///|
-pub fn ColliderBuilder3::cuboid(
+pub fn ColliderBuilder3Compat::cuboid(
   hx : @core.Real,
   hy : @core.Real,
   _hz : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::cuboid(hx, hy) }
 }
 
 ///|
-pub fn ColliderBuilder3::ball(radius : @core.Real) -> ColliderBuilder3 {
+pub fn ColliderBuilder3Compat::ball(
+  radius : @core.Real,
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::ball(radius) }
 }
 
 ///|
-pub fn ColliderBuilder3::compound(
+pub fn ColliderBuilder3Compat::compound(
   shapes : Array[(@core.Isometry3, SharedShape)],
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let shapes2 : Array[(@core.Isometry2, Shape)] = []
   for i in 0..<shapes.length() {
     let (iso3, shared) = shapes[i]
@@ -54,44 +56,44 @@ pub fn ColliderBuilder3::compound(
 }
 
 ///|
-pub fn ColliderBuilder3::capsule_x(
+pub fn ColliderBuilder3Compat::capsule_x(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::capsule_x(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::capsule_y(
+pub fn ColliderBuilder3Compat::capsule_y(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::capsule_y(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::round_cylinder(
+pub fn ColliderBuilder3Compat::round_cylinder(
   radius : @core.Real,
   half_height : @core.Real,
   _border_radius : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: approximate a (rounded) cylinder with a capsule aligned with the Y axis.
   { inner: ColliderBuilder::capsule_y(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::cone(
+pub fn ColliderBuilder3Compat::cone(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: approximate a cone with a cuboid of similar extents.
   { inner: ColliderBuilder::cuboid(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::convex_hull(
+pub fn ColliderBuilder3Compat::convex_hull(
   points : Array[@core.Vec3],
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -105,10 +107,10 @@ pub fn ColliderBuilder3::convex_hull(
 }
 
 ///|
-pub fn ColliderBuilder3::round_convex_hull(
+pub fn ColliderBuilder3Compat::round_convex_hull(
   points : Array[@core.Vec3],
   border_radius : @core.Real,
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -122,10 +124,10 @@ pub fn ColliderBuilder3::round_convex_hull(
 }
 
 ///|
-pub fn ColliderBuilder3::trimesh(
+pub fn ColliderBuilder3Compat::trimesh(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let verts2 : Array[@core.Vec2] = []
   for i in 0..<vertices.length() {
     let v = vertices[i]
@@ -139,10 +141,10 @@ pub fn ColliderBuilder3::trimesh(
 }
 
 ///|
-pub fn ColliderBuilder3::heightfield(
+pub fn ColliderBuilder3Compat::heightfield(
   heights : Array[@core.Real],
   scale : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: interpret `scale.x` as the horizontal extent and `scale.y` as the vertical
   // scaling factor. The Z axis is ignored.
   {
@@ -154,10 +156,10 @@ pub fn ColliderBuilder3::heightfield(
 }
 
 ///|
-pub fn ColliderBuilder3::segment(
+pub fn ColliderBuilder3Compat::segment(
   a : @core.Vec3,
   b : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   {
     inner: ColliderBuilder::segment(
       @core.Vec2::new(a.x, a.y),
@@ -167,12 +169,12 @@ pub fn ColliderBuilder3::segment(
 }
 
 ///|
-pub fn ColliderBuilder3::voxelized_mesh(
+pub fn ColliderBuilder3Compat::voxelized_mesh(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int)],
   voxel_size : @core.Real,
   fill_mode : FillMode,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let verts2 : Array[@core.Vec2] = []
   for i in 0..<vertices.length() {
     let v = vertices[i]
@@ -186,10 +188,10 @@ pub fn ColliderBuilder3::voxelized_mesh(
 }
 
 ///|
-pub fn ColliderBuilder3::voxels_from_points(
+pub fn ColliderBuilder3Compat::voxels_from_points(
   voxel_size : @core.Vec3,
   points : Array[@core.Vec3],
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -204,115 +206,115 @@ pub fn ColliderBuilder3::voxels_from_points(
 }
 
 ///|
-pub fn ColliderBuilder3::translation(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::translation(
+  self : ColliderBuilder3Compat,
   translation : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   {
     inner: self.inner.translation(@core.Vec2::new(translation.x, translation.y)),
   }
 }
 
 ///|
-pub fn ColliderBuilder3::rotation(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::rotation(
+  self : ColliderBuilder3Compat,
   rotation : @core.Quat,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: keep only the rotation around +Z (yaw).
   let axis = rotation.to_scaled_axis()
   { inner: self.inner.rotation(axis.z) }
 }
 
 ///|
-pub fn ColliderBuilder3::rotation_scaled_axis(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::rotation_scaled_axis(
+  self : ColliderBuilder3Compat,
   scaled_axis : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.rotation(scaled_axis.z) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_collision_types(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_collision_types(
+  self : ColliderBuilder3Compat,
   types : ActiveCollisionTypes,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_collision_types(types) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_events(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_events(
+  self : ColliderBuilder3Compat,
   events : ActiveEvents,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_events(events) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_hooks(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_hooks(
+  self : ColliderBuilder3Compat,
   hooks : ActiveHooks,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_hooks(hooks) }
 }
 
 ///|
-pub fn ColliderBuilder3::collision_groups(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::collision_groups(
+  self : ColliderBuilder3Compat,
   groups : @dynamics.InteractionGroups,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.collision_groups(groups) }
 }
 
 ///|
-pub fn ColliderBuilder3::solver_groups(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::solver_groups(
+  self : ColliderBuilder3Compat,
   groups : @dynamics.InteractionGroups,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.solver_groups(groups) }
 }
 
 ///|
-pub fn ColliderBuilder3::restitution(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::restitution(
+  self : ColliderBuilder3Compat,
   restitution : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.restitution(restitution) }
 }
 
 ///|
-pub fn ColliderBuilder3::friction(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::friction(
+  self : ColliderBuilder3Compat,
   friction : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.friction(friction) }
 }
 
 ///|
-pub fn ColliderBuilder3::density(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::density(
+  self : ColliderBuilder3Compat,
   density : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.density(density) }
 }
 
 ///|
-pub fn ColliderBuilder3::contact_skin(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::contact_skin(
+  self : ColliderBuilder3Compat,
   skin : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.contact_skin(skin) }
 }
 
 ///|
-pub fn ColliderBuilder3::sensor(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::sensor(
+  self : ColliderBuilder3Compat,
   enabled : Bool,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.sensor(enabled) }
 }
 
 ///|
-pub fn ColliderBuilder3::build(self : ColliderBuilder3) -> Collider {
+pub fn ColliderBuilder3Compat::build(self : ColliderBuilder3Compat) -> Collider {
   self.inner.build()
 }
 

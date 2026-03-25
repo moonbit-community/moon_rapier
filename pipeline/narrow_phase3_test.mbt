@@ -17,9 +17,9 @@
 test "collider set parent depenetration (dim3)" {
   let rigid_body_set = @dynamics.RigidBodySet3::new()
   let collider_set = @collision.ColliderSet3::new()
-  let collider = @collision.ColliderBuilder3::ball(0.5F)
+  let collider = @collision.ColliderBuilder3Compat::ball(0.5F)
   let body_1_handle = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::zero())
     .build(),
   )
@@ -34,7 +34,7 @@ test "collider set parent depenetration (dim3)" {
     rigid_body_set,
   )
   let body_2_handle = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::zero())
     .build(),
   )
@@ -135,9 +135,9 @@ test "collider set parent depenetration (dim3)" {
 test "collider set parent no self intersection (dim3)" {
   let rigid_body_set = @dynamics.RigidBodySet3::new()
   let collider_set = @collision.ColliderSet3::new()
-  let collider = @collision.ColliderBuilder3::ball(0.5F)
+  let collider = @collision.ColliderBuilder3Compat::ball(0.5F)
   let body_1_handle = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::zero())
     .build(),
   )
@@ -147,7 +147,7 @@ test "collider set parent no self intersection (dim3)" {
     rigid_body_set,
   )
   let body_2_handle = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder3::dynamic()
+    @dynamics.RigidBodyBuilder3Compat::dynamic()
     .translation(@core.Vec3::zero())
     .build(),
   )
