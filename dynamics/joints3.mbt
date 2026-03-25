@@ -14,20 +14,228 @@
 
 ///|
 /// 3D-flavored impulse joint set.
-pub struct ImpulseJointSet3 {
-  inner : ImpulseJointSet
-
-  fn new() -> ImpulseJointSet3
+struct ImpulseJointSet3 {
+  rb_graph_ids : Array[Int]
+  rb_graph_generations : Array[Int]
+  graph_nodes : Array[RigidBodyHandle]
+  graph_edges : Array[JointGraphEdge]
+  adjacency : Array[Array[Int]]
+  joint_generations : Array[Int]
+  joint_edge_ids : Array[Int]
+  free_handles : Array[Int]
+  to_wake_up : Array[RigidBodyHandle]
+  to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
 
 ///|
 pub fn ImpulseJointSet3::new() -> ImpulseJointSet3 {
-  { inner: ImpulseJointSet::new() }
+  {
+    rb_graph_ids: [],
+    rb_graph_generations: [],
+    graph_nodes: [],
+    graph_edges: [],
+    adjacency: [],
+    joint_generations: [],
+    joint_edge_ids: [],
+    free_handles: [],
+    to_wake_up: [],
+    to_join: [],
+  }
 }
 
 ///|
 pub fn ImpulseJointSet3::as_2d(self : ImpulseJointSet3) -> ImpulseJointSet {
-  self.inner
+  ImpulseJointSet::{
+    rb_graph_ids: self.rb_graph_ids,
+    rb_graph_generations: self.rb_graph_generations,
+    graph_nodes: self.graph_nodes,
+    graph_edges: self.graph_edges,
+    adjacency: self.adjacency,
+    joint_generations: self.joint_generations,
+    joint_edge_ids: self.joint_edge_ids,
+    free_handles: self.free_handles,
+    to_wake_up: self.to_wake_up,
+    to_join: self.to_join,
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::take_wake_up(
+  self : ImpulseJointSet3,
+) -> Array[RigidBodyHandle] {
+  let result : Array[RigidBodyHandle] = []
+  for i in 0..<self.to_wake_up.length() {
+    result.push(self.to_wake_up[i])
+  }
+  self.to_wake_up.clear()
+  result
+}
+
+///|
+pub fn ImpulseJointSet3::take_to_join(
+  self : ImpulseJointSet3,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let result : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for i in 0..<self.to_join.length() {
+    result.push(self.to_join[i])
+  }
+  self.to_join.clear()
+  result
+}
+
+///|
+fn ImpulseJointSet3::ensure_body_mapping_capacity(
+  self : ImpulseJointSet3,
+  id : Int,
+) -> Unit {
+  if id < 0 {
+    return
+  }
+  let mut i = self.rb_graph_ids.length()
+  while i <= id {
+    self.rb_graph_ids.push(-1)
+    self.rb_graph_generations.push(0)
+    i = i + 1
+  }
+}
+
+///|
+fn ImpulseJointSet3::graph_node_for(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+) -> Int? {
+  if handle.id < 0 || handle.id >= self.rb_graph_ids.length() {
+    return None
+  }
+  let node_id = self.rb_graph_ids[handle.id]
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return None
+  }
+  if self.rb_graph_generations[handle.id] != handle.generation {
+    return None
+  }
+  if !handle_equals(self.graph_nodes[node_id], handle) {
+    return None
+  }
+  Some(node_id)
+}
+
+///|
+fn ImpulseJointSet3::ensure_graph_node(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+) -> Int {
+  self.ensure_body_mapping_capacity(handle.id)
+  if self.graph_node_for(handle) is Some(node_id) {
+    node_id
+  } else {
+    let node_id = self.graph_nodes.length()
+    self.graph_nodes.push(handle)
+    self.adjacency.push([])
+    self.rb_graph_ids[handle.id] = node_id
+    self.rb_graph_generations[handle.id] = handle.generation
+    node_id
+  }
+}
+
+///|
+fn ImpulseJointSet3::allocate_joint_handle(
+  self : ImpulseJointSet3,
+) -> ImpulseJointHandle {
+  if self.free_handles.pop() is Some(index) {
+    let generation = self.joint_generations[index]
+    ImpulseJointHandle::new(index, generation)
+  } else {
+    let index = self.joint_generations.length()
+    self.joint_generations.push(0)
+    self.joint_edge_ids.push(-1)
+    ImpulseJointHandle::new(index, 0)
+  }
+}
+
+///|
+fn ImpulseJointSet3::is_handle_valid(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+) -> Bool {
+  if handle.id < 0 || handle.id >= self.joint_generations.length() {
+    return false
+  }
+  if self.joint_generations[handle.id] != handle.generation {
+    return false
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  edge_id >= 0 && edge_id < self.graph_edges.length()
+}
+
+///|
+fn ImpulseJointSet3::remove_edge(
+  self : ImpulseJointSet3,
+  edge_id : Int,
+) -> ImpulseJoint? {
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let removed_edge = self.graph_edges[edge_id]
+  remove_edge_index(self.adjacency[removed_edge.node1], edge_id)
+  if removed_edge.node2 != removed_edge.node1 {
+    remove_edge_index(self.adjacency[removed_edge.node2], edge_id)
+  }
+  let last_index = self.graph_edges.length() - 1
+  if edge_id != last_index {
+    let moved_edge = self.graph_edges[last_index]
+    self.graph_edges[edge_id] = moved_edge
+    replace_edge_index(self.adjacency[moved_edge.node1], last_index, edge_id)
+    if moved_edge.node2 != moved_edge.node1 {
+      replace_edge_index(self.adjacency[moved_edge.node2], last_index, edge_id)
+    }
+    let handle_id = moved_edge.joint.handle.id
+    if handle_id >= 0 && handle_id < self.joint_edge_ids.length() {
+      self.joint_edge_ids[handle_id] = edge_id
+    }
+  }
+  self.graph_edges.pop() |> ignore
+  Some(removed_edge.joint)
+}
+
+///|
+fn ImpulseJointSet3::remove_node(
+  self : ImpulseJointSet3,
+  node_id : Int,
+) -> Unit {
+  if node_id < 0 || node_id >= self.graph_nodes.length() {
+    return
+  }
+  let removed_handle = self.graph_nodes[node_id]
+  if removed_handle.id >= 0 && removed_handle.id < self.rb_graph_ids.length() {
+    self.rb_graph_ids[removed_handle.id] = -1
+  }
+  let last_index = self.graph_nodes.length() - 1
+  if node_id != last_index {
+    let moved_handle = self.graph_nodes[last_index]
+    self.graph_nodes[node_id] = moved_handle
+    self.adjacency[node_id] = self.adjacency[last_index]
+    if moved_handle.id >= 0 && moved_handle.id < self.rb_graph_ids.length() {
+      self.rb_graph_ids[moved_handle.id] = node_id
+      self.rb_graph_generations[moved_handle.id] = moved_handle.generation
+    }
+    let edges = self.adjacency[node_id]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        if edge.node1 == last_index {
+          edge.node1 = node_id
+        }
+        if edge.node2 == last_index {
+          edge.node2 = node_id
+        }
+        self.graph_edges[edge_id] = edge
+      }
+    }
+  }
+  self.graph_nodes.pop() |> ignore
+  self.adjacency.pop() |> ignore
 }
 
 ///|
@@ -38,7 +246,481 @@ pub fn ImpulseJointSet3::insert(
   joint : GenericJoint,
   wake_up : Bool,
 ) -> ImpulseJointHandle {
-  self.inner.insert(body1, body2, joint, wake_up)
+  let handle = self.allocate_joint_handle()
+  if body1.id < 0 || body2.id < 0 {
+    return handle
+  }
+  let node1 = self.ensure_graph_node(body1)
+  let node2 = self.ensure_graph_node(body2)
+  let joint_data = GenericJoint::{
+    local_frame1: joint.local_frame1,
+    local_frame2: joint.local_frame2,
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
+    locked_axes: joint.locked_axes,
+    limit_axes: joint.limit_axes,
+    motor_axes: joint.motor_axes,
+    coupled_axes: joint.coupled_axes,
+    limits: joint.limits,
+    motors: joint.motors,
+    softness: joint.softness,
+    contacts_enabled: joint.contacts_enabled,
+    enabled: joint.enabled,
+    user_data: joint.user_data,
+  }
+  let impulse_joint = ImpulseJoint::{
+    body1,
+    body2,
+    data: joint_data,
+    impulses: @core.Vec2::zero(),
+    ang_impulse: 0.0F,
+    handle,
+  }
+  let edge_id = self.graph_edges.length()
+  self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
+  self.adjacency[node1].push(edge_id)
+  if node2 != node1 {
+    self.adjacency[node2].push(edge_id)
+  }
+  self.joint_edge_ids[handle.id] = edge_id
+  if wake_up {
+    push_unique_handle(self.to_wake_up, body1)
+    push_unique_handle(self.to_wake_up, body2)
+  }
+  push_unique_pair(self.to_join, (body1, body2))
+  handle
+}
+
+///|
+pub fn ImpulseJointSet3::len(self : ImpulseJointSet3) -> Int {
+  self.graph_edges.length()
+}
+
+///|
+pub fn ImpulseJointSet3::is_empty(self : ImpulseJointSet3) -> Bool {
+  self.graph_edges.length() == 0
+}
+
+///|
+pub fn ImpulseJointSet3::joint_graph(
+  self : ImpulseJointSet3,
+) -> ImpulseJointGraph {
+  let nodes : Array[RigidBodyHandle] = []
+  for i in 0..<self.graph_nodes.length() {
+    nodes.push(self.graph_nodes[i])
+  }
+  let edges : Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJoint)] = []
+  for i in 0..<self.graph_edges.length() {
+    let edge = self.graph_edges[i]
+    let body1 = if edge.node1 >= 0 && edge.node1 < self.graph_nodes.length() {
+      self.graph_nodes[edge.node1]
+    } else {
+      RigidBodyHandle::invalid()
+    }
+    let body2 = if edge.node2 >= 0 && edge.node2 < self.graph_nodes.length() {
+      self.graph_nodes[edge.node2]
+    } else {
+      RigidBodyHandle::invalid()
+    }
+    edges.push((body1, body2, edge.joint))
+  }
+  { nodes, edges }
+}
+
+///|
+pub fn ImpulseJointSet3::contains(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+) -> Bool {
+  self.is_handle_valid(handle)
+}
+
+///|
+pub fn ImpulseJointSet3::get(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  Some(self.graph_edges[edge_id].joint)
+}
+
+///|
+pub fn ImpulseJointSet3::get_mut(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let joint = self.graph_edges[edge_id].joint
+  if wake_up {
+    push_unique_handle(self.to_wake_up, joint.body1)
+    push_unique_handle(self.to_wake_up, joint.body2)
+  }
+  Some(joint)
+}
+
+///|
+pub fn ImpulseJointSet3::set_enabled(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+  enabled : Bool,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint: edge.joint.set_enabled(enabled),
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::set_impulses(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  let joint = edge.joint
+  joint.impulses = impulses
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint,
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::set_solver_impulses(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+  impulses : @core.Vec2,
+  ang_impulse : @core.Real,
+  motor_lin_x : @core.Real,
+  motor_lin_y : @core.Real,
+  motor_ang_z : @core.Real,
+  limit_lin_x : @core.Real,
+  limit_lin_y : @core.Real,
+  limit_ang_z : @core.Real,
+) -> Unit {
+  if !self.is_handle_valid(handle) {
+    return
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return
+  }
+  let edge = self.graph_edges[edge_id]
+  let joint = edge.joint
+  let angular_axis = impulse_joint_solver_angular_axis(joint.data)
+  joint.impulses = impulses
+  joint.ang_impulse = ang_impulse
+  let motors = joint.data.motors
+  let updated_motors = JointMotors3::{
+    lin_x: motors.lin_x.set_impulse(motor_lin_x),
+    lin_y: motors.lin_y.set_impulse(motor_lin_y),
+    lin_z: motors.lin_z,
+    ang_x: motors.ang_x,
+    ang_y: motors.ang_y,
+    ang_z: motors.ang_z,
+  }
+  let updated_motor = joint_motor_for_axis(updated_motors, angular_axis).set_impulse(
+    motor_ang_z,
+  )
+  joint.data.motors = joint_motors_set_axis(
+    updated_motors, angular_axis, updated_motor,
+  )
+  let limits = joint.data.limits
+  let updated_limits = JointLimits3::{
+    lin_x: limits.lin_x.set_impulse(limit_lin_x),
+    lin_y: limits.lin_y.set_impulse(limit_lin_y),
+    lin_z: limits.lin_z,
+    ang_x: limits.ang_x,
+    ang_y: limits.ang_y,
+    ang_z: limits.ang_z,
+  }
+  let updated_limit = joint_limits_for_axis(updated_limits, angular_axis).set_impulse(
+    limit_ang_z,
+  )
+  joint.data.limits = joint_limits_set_axis(
+    updated_limits, angular_axis, updated_limit,
+  )
+  self.graph_edges[edge_id] = JointGraphEdge::{
+    node1: edge.node1,
+    node2: edge.node2,
+    joint,
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::get_unknown_gen(
+  self : ImpulseJointSet3,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  if id < 0 || id >= self.joint_edge_ids.length() {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[id]
+  if edge_id < 0 || edge_id >= self.graph_edges.length() {
+    return None
+  }
+  let handle = ImpulseJointHandle::new(id, self.joint_generations[id])
+  Some((self.graph_edges[edge_id].joint, handle))
+}
+
+///|
+pub fn ImpulseJointSet3::get_unknown_gen_mut(
+  self : ImpulseJointSet3,
+  id : Int,
+) -> (ImpulseJoint, ImpulseJointHandle)? {
+  self.get_unknown_gen(id)
+}
+
+///|
+pub fn ImpulseJointSet3::iter(
+  self : ImpulseJointSet3,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  let result : Array[(ImpulseJointHandle, ImpulseJoint)] = []
+  for i in 0..<self.graph_edges.length() {
+    let joint = self.graph_edges[i].joint
+    result.push((joint.handle, joint))
+  }
+  result
+}
+
+///|
+pub fn ImpulseJointSet3::iter_mut(
+  self : ImpulseJointSet3,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  self.iter()
+}
+
+///|
+pub fn ImpulseJointSet3::remove(
+  self : ImpulseJointSet3,
+  handle : ImpulseJointHandle,
+  wake_up : Bool,
+) -> ImpulseJoint? {
+  if !self.is_handle_valid(handle) {
+    return None
+  }
+  let edge_id = self.joint_edge_ids[handle.id]
+  let removed = self.remove_edge(edge_id)
+  if removed is Some(joint) {
+    self.joint_edge_ids[handle.id] = -1
+    self.joint_generations[handle.id] = self.joint_generations[handle.id] + 1
+    self.free_handles.push(handle.id)
+    if wake_up {
+      push_unique_handle(self.to_wake_up, joint.body1)
+      push_unique_handle(self.to_wake_up, joint.body2)
+    }
+    Some(joint)
+  } else {
+    None
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::remove_joints_attached_to_rigid_body(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+) -> Array[ImpulseJointHandle] {
+  if self.graph_node_for(handle) is Some(node_index) {
+    let to_remove : Array[ImpulseJointHandle] = []
+    let edges_snapshot = self.adjacency[node_index]
+    for i in 0..<edges_snapshot.length() {
+      let edge_id = edges_snapshot[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        to_remove.push(self.graph_edges[edge_id].joint.handle)
+      }
+    }
+    let removed : Array[ImpulseJointHandle] = []
+    for i in 0..<to_remove.length() {
+      let handle_to_remove = to_remove[i]
+      if self.remove(handle_to_remove, true) is Some(_) {
+        removed.push(handle_to_remove)
+      }
+    }
+    if node_index >= 0 &&
+      node_index < self.adjacency.length() &&
+      self.adjacency[node_index].length() == 0 {
+      self.remove_node(node_index)
+    }
+    removed
+  } else {
+    []
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::map_attached_joints_mut(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+  f : (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit,
+) -> Unit {
+  if self.graph_node_for(handle) is Some(node_index) {
+    let edges = self.adjacency[node_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let joint = self.graph_edges[edge_id].joint
+        f(joint.body1, joint.body2, joint.handle, joint)
+      }
+    }
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::attached_joints(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
+  if self.graph_node_for(handle) is Some(node_index) {
+    let result : Array[
+      (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint),
+    ] = []
+    let edges = self.adjacency[node_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let joint = self.graph_edges[edge_id].joint
+        result.push((joint.body1, joint.body2, joint.handle, joint))
+      }
+    }
+    result
+  } else {
+    []
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::attached_enabled_joints(
+  self : ImpulseJointSet3,
+  handle : RigidBodyHandle,
+) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)] {
+  let attached = self.attached_joints(handle)
+  let result : Array[
+    (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint),
+  ] = []
+  for i in 0..<attached.length() {
+    let joint = attached[i]
+    if joint.3.is_enabled() {
+      result.push(joint)
+    }
+  }
+  result
+}
+
+///|
+pub fn ImpulseJointSet3::joints_between(
+  self : ImpulseJointSet3,
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> Array[(ImpulseJointHandle, ImpulseJoint)] {
+  if self.graph_node_for(body1) is Some(node1_index) &&
+    self.graph_node_for(body2) is Some(node2_index) {
+    let result : Array[(ImpulseJointHandle, ImpulseJoint)] = []
+    let edges = self.adjacency[node1_index]
+    for i in 0..<edges.length() {
+      let edge_id = edges[i]
+      if edge_id >= 0 && edge_id < self.graph_edges.length() {
+        let edge = self.graph_edges[edge_id]
+        if edge.node1 == node2_index || edge.node2 == node2_index {
+          result.push((edge.joint.handle, edge.joint))
+        }
+      }
+    }
+    result
+  } else {
+    []
+  }
+}
+
+///|
+pub fn ImpulseJointSet3::select_active_interactions(
+  self : ImpulseJointSet3,
+  islands : IslandManager,
+  bodies : RigidBodySet,
+  out : Array[Array[Int]],
+) -> Unit {
+  let awake_len = islands.awake_islands.length()
+  for i in 0..<awake_len {
+    if i < out.length() {
+      out[i].clear()
+    }
+  }
+  for i in 0..<self.graph_edges.length() {
+    let joint = self.graph_edges[i].joint
+    if bodies.get(joint.body1) is Some(body1) &&
+      bodies.get(joint.body2) is Some(body2) {
+      if !joint.is_enabled() {
+        continue
+      }
+      if !(body1.is_dynamic_or_kinematic() || body2.is_dynamic_or_kinematic()) {
+        continue
+      }
+      if (body1.is_dynamic_or_kinematic() && body1.is_sleeping()) ||
+        (body2.is_dynamic_or_kinematic() && body2.is_sleeping()) {
+        continue
+      }
+      let mut island_awake_index = -1
+      if !body1.is_dynamic_or_kinematic() {
+        let island_id = body2.ids.active_island_id
+        if island_id < 0 || island_id >= islands.islands.length() {
+          continue
+        }
+        if islands.islands[island_id] is Some(island) {
+          if island.id_in_awake_list is Some(awake_index) {
+            island_awake_index = awake_index
+          }
+        }
+      } else {
+        let island_id = body1.ids.active_island_id
+        if island_id < 0 || island_id >= islands.islands.length() {
+          continue
+        }
+        if islands.islands[island_id] is Some(island) {
+          if island.id_in_awake_list is Some(awake_index) {
+            island_awake_index = awake_index
+          }
+        }
+      }
+      if island_awake_index < 0 {
+        continue
+      }
+      if island_awake_index >= 0 && island_awake_index < out.length() {
+        out[island_awake_index].push(i)
+      }
+    }
+  }
 }
 
 ///|

@@ -28,6 +28,40 @@ pub fn PhysicsPipeline3::new() -> PhysicsPipeline3 {
 }
 
 ///|
+fn handle_user_changes_to_bodies3(
+  islands : @dynamics.IslandManager,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
+  multibody_joints : @dynamics.MultibodyJointSet3,
+  modified_bodies : Array[@dynamics.RigidBodyHandle],
+) -> Unit {
+  multibody_joints |> ignore
+  for i in 0..<modified_bodies.length() {
+    let handle = modified_bodies[i]
+    if bodies.get(handle) is Some(body) {
+      if body.is_enabled() {
+        islands.rigid_body_updated(handle, bodies)
+      } else {
+        islands.rigid_body_removed_or_disabled(handle, bodies)
+      }
+      colliders.set_parent_enabled(handle, body.is_enabled())
+      impulse_joints.map_attached_joints_mut(handle, (
+        parent,
+        child,
+        joint_handle,
+        joint,
+      ) => {
+        parent |> ignore
+        child |> ignore
+        joint_handle |> ignore
+        joint.set_enabled_by_attached_body(body.is_enabled()) |> ignore
+      })
+    }
+  }
+}
+
+///|
 pub fn PhysicsPipeline3::step(
   self : PhysicsPipeline3,
   gravity : @core.Vec3,
@@ -47,12 +81,11 @@ pub fn PhysicsPipeline3::step(
   let islands2 = islands.as_2d()
   let bodies2 = bodies.as_2d()
   let colliders2 = colliders.as_2d()
-  let impulse_joints2 = impulse_joints.as_2d()
   let empty_multibody_joints = @dynamics.MultibodyJointSet::new()
   self.inner.counters.reset()
   self.inner.counters.step_started()
 
-  let wake_from_impulse = impulse_joints2.take_wake_up()
+  let wake_from_impulse = impulse_joints.take_wake_up()
   for i in 0..<wake_from_impulse.length() {
     islands2.wake_up(bodies2, wake_from_impulse[i], true)
   }
@@ -66,14 +99,14 @@ pub fn PhysicsPipeline3::step(
     bodies2, colliders2, modified_colliders_before_step,
   )
   let modified_bodies_before_step = bodies2.take_modified()
-  handle_user_changes_to_bodies(
-    islands2, bodies2, colliders2, impulse_joints2, empty_multibody_joints, modified_bodies_before_step,
+  handle_user_changes_to_bodies3(
+    islands2, bodies2, colliders2, impulse_joints, multibody_joints, modified_bodies_before_step,
   )
   update_body_mass_properties_from_colliders(
     bodies2, colliders2, modified_bodies_before_step,
   )
 
-  let join_from_impulse = impulse_joints2.take_to_join()
+  let join_from_impulse = impulse_joints.take_to_join()
   for i in 0..<join_from_impulse.length() {
     let pair = join_from_impulse[i]
     islands2.interaction_started_or_stopped(
@@ -157,8 +190,16 @@ pub fn PhysicsPipeline3::step(
     }
 
     collision_pipeline.step(
-      prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, empty_multibody_joints, hooks, events,
+      prediction_distance,
+      islands2,
+      broad_phase,
+      narrow_phase,
+      bodies2,
+      colliders2,
+      impulse_joints.as_2d(),
+      empty_multibody_joints,
+      hooks,
+      events,
     )
     for i in 0..<bodies2.bodies.length() {
       if bodies2.bodies[i] is Some(body) {
@@ -210,7 +251,7 @@ pub fn PhysicsPipeline3::step(
       colliders2,
       hooks,
       narrow_phase,
-      impulse_joints2,
+      impulse_joints,
       multibody_joints,
       dt,
       events,
@@ -260,8 +301,16 @@ pub fn PhysicsPipeline3::step(
     }
 
     collision_pipeline.step(
-      prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, empty_multibody_joints, hooks, events,
+      prediction_distance,
+      islands2,
+      broad_phase,
+      narrow_phase,
+      bodies2,
+      colliders2,
+      impulse_joints.as_2d(),
+      empty_multibody_joints,
+      hooks,
+      events,
     )
     let (post_constraints, post_manifolds) = build_constraints(
       parameters,
@@ -294,7 +343,7 @@ pub fn PhysicsPipeline3::step(
     let post_joint_constraints = build_joint_constraints3(
       parameters,
       bodies2,
-      impulse_joints2,
+      impulse_joints,
       multibody_joints,
       dt,
       None,
@@ -304,8 +353,16 @@ pub fn PhysicsPipeline3::step(
       position_correction_joints(bodies2, post_joint_constraints)
     }
     collision_pipeline.step(
-      prediction_distance, islands2, broad_phase, narrow_phase, bodies2, colliders2,
-      impulse_joints2, empty_multibody_joints, hooks, events,
+      prediction_distance,
+      islands2,
+      broad_phase,
+      narrow_phase,
+      bodies2,
+      colliders2,
+      impulse_joints.as_2d(),
+      empty_multibody_joints,
+      hooks,
+      events,
     )
   }
 

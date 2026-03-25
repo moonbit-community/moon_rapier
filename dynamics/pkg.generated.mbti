@@ -356,14 +356,32 @@ pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct ImpulseJointSet3 {
-  inner : ImpulseJointSet
-
-  fn new() -> ImpulseJointSet3
-}
+type ImpulseJointSet3
 pub fn ImpulseJointSet3::as_2d(Self) -> ImpulseJointSet
+pub fn ImpulseJointSet3::attached_enabled_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet3::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet3::contains(Self, ImpulseJointHandle) -> Bool
+pub fn ImpulseJointSet3::get(Self, ImpulseJointHandle) -> ImpulseJoint?
+pub fn ImpulseJointSet3::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
+pub fn ImpulseJointSet3::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet3::get_unknown_gen_mut(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
 pub fn ImpulseJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
+pub fn ImpulseJointSet3::is_empty(Self) -> Bool
+pub fn ImpulseJointSet3::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet3::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet3::joint_graph(Self) -> ImpulseJointGraph
+pub fn ImpulseJointSet3::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[(ImpulseJointHandle, ImpulseJoint)]
+pub fn ImpulseJointSet3::len(Self) -> Int
+pub fn ImpulseJointSet3::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
 pub fn ImpulseJointSet3::new() -> Self
+pub fn ImpulseJointSet3::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
+pub fn ImpulseJointSet3::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
+pub fn ImpulseJointSet3::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
+pub fn ImpulseJointSet3::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
+pub fn ImpulseJointSet3::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
+pub fn ImpulseJointSet3::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float) -> Unit
+pub fn ImpulseJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
+pub fn ImpulseJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type IndexSequence
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit

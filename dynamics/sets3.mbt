@@ -41,7 +41,7 @@ pub fn IslandManager3::active_bodies(
 fn IslandManager::push_linked_bodies3(
   self : IslandManager,
   bodies : RigidBodySet,
-  impulse_joints : ImpulseJointSet,
+  impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
   handle : RigidBodyHandle,
 ) -> Unit {
@@ -63,7 +63,7 @@ fn IslandManager::extract_sleeping_island3(
   self : IslandManager,
   bodies : RigidBodySet,
   contacts : ContactGraph,
-  impulse_joints : ImpulseJointSet,
+  impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
   sleep_root : RigidBodyHandle,
 ) -> Int {
@@ -143,7 +143,7 @@ fn IslandManager::update_optimizer3(
   self : IslandManager,
   bodies : RigidBodySet,
   contacts : ContactGraph,
-  impulse_joints : ImpulseJointSet,
+  impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
 ) -> Unit {
   if self.optimizer.mode % 2 == 0 {
@@ -159,7 +159,7 @@ fn IslandManager::incremental_split3(
   self : IslandManager,
   bodies : RigidBodySet,
   contacts : ContactGraph,
-  impulse_joints : ImpulseJointSet,
+  impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
 ) -> Unit {
   if self.optimizer.split_state.curr_awake_id >= self.awake_islands.length() {
@@ -221,7 +221,6 @@ pub fn IslandManager3::update_islands(
   multibody_joints : MultibodyJointSet3,
 ) -> Unit {
   let bodies2 = bodies.as_2d()
-  let impulse_joints2 = impulse_joints.as_2d()
   for handle in self.inner.active_bodies() {
     if handle.id < 0 {
       continue
@@ -257,7 +256,7 @@ pub fn IslandManager3::update_islands(
         self.inner.extract_sleeping_island3(
           bodies2,
           contacts,
-          impulse_joints2,
+          impulse_joints,
           multibody_joints,
           candidate.handle,
         )
@@ -269,7 +268,7 @@ pub fn IslandManager3::update_islands(
     }
   }
   self.inner.update_optimizer3(
-    bodies2, contacts, impulse_joints2, multibody_joints,
+    bodies2, contacts, impulse_joints, multibody_joints,
   )
 }
 
@@ -315,15 +314,17 @@ pub fn RigidBodySet3::remove(
   wake_up : Bool,
 ) -> RigidBody? {
   colliders |> ignore
+  let empty_impulse_joints = ImpulseJointSet::new()
   let removed = self.inner.remove(
     handle,
     islands.as_2d(),
     (),
-    impulse_joints.as_2d(),
+    empty_impulse_joints,
     MultibodyJointSet::new(),
     wake_up,
   )
   if removed is Some(_) {
+    impulse_joints.remove_joints_attached_to_rigid_body(handle) |> ignore
     multibody_joints.remove_joints_attached_to_rigid_body(handle)
   }
   removed

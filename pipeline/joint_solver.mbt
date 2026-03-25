@@ -1289,7 +1289,7 @@ fn append_multibody_joint_constraints(
 fn build_joint_constraints3(
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
-  impulse_joints : @dynamics.ImpulseJointSet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   dt : @core.Real,
   island_stamps : Array[Int]?,
@@ -1298,7 +1298,7 @@ fn build_joint_constraints3(
   let constraints = build_joint_constraints(
     parameters,
     bodies,
-    impulse_joints,
+    impulse_joints.as_2d(),
     @dynamics.MultibodyJointSet::new(),
     dt,
     island_stamps,
@@ -2292,7 +2292,7 @@ fn writeback_joint_impulses(
 
 ///|
 fn writeback_joint_impulses3(
-  impulse_joints : @dynamics.ImpulseJointSet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   constraints : Array[JointConstraint],
 ) -> Unit {
@@ -2376,7 +2376,7 @@ fn JointConstraintsSet::init3(
   self : JointConstraintsSet,
   parameters : IntegrationParameters,
   bodies : @dynamics.RigidBodySet,
-  impulse_joints : @dynamics.ImpulseJointSet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   dt : @core.Real,
   island_stamps : Array[Int]?,
@@ -2445,7 +2445,7 @@ fn JointConstraintsSet::writeback_impulses(
 ///|
 fn JointConstraintsSet::writeback_impulses3(
   self : JointConstraintsSet,
-  impulse_joints : @dynamics.ImpulseJointSet,
+  impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
 ) -> Unit {
   if self.constraints.length() == 0 {
