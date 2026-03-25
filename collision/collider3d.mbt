@@ -716,9 +716,19 @@ fn collider_builder3d_default(
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
     contact_skin: 0.0F,
-    friction: 0.7F,
+    friction: ColliderBuilder3D::default_friction(),
     restitution: 0.0F,
   }
+}
+
+///|
+pub fn ColliderBuilder3D::default_density() -> @core.Real {
+  1.0F
+}
+
+///|
+pub fn ColliderBuilder3D::default_friction() -> @core.Real {
+  0.7F
 }
 
 ///|
@@ -1372,6 +1382,15 @@ pub fn ColliderBuilder3D::rotation(
   r : @core.Quat,
 ) -> ColliderBuilder3D {
   self.position = @core.Isometry3::new(self.position.translation, r)
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::delta(
+  self : ColliderBuilder3D,
+  delta : @core.Isometry3,
+) -> ColliderBuilder3D {
+  self.position = delta
   self
 }
 

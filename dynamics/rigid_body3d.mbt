@@ -879,6 +879,7 @@ pub struct RigidBodyBuilder3D {
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
+  mut sleeping : Bool
   mut user_data : @core.UserData128
   mut dominance_group : Int
 }
@@ -911,9 +912,25 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
       @core.Vec3::zero(),
     ),
     can_sleep: true,
+    sleeping: false,
     user_data: @core.UserData128::zero(),
     dominance_group: 0,
   }
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_static() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::fixed()
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_kinematic_position_based() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::kinematic_position_based()
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_kinematic_velocity_based() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::kinematic_velocity_based()
 }
 
 ///|
@@ -953,6 +970,15 @@ pub fn RigidBodyBuilder3D::can_sleep(
 }
 
 ///|
+pub fn RigidBodyBuilder3D::sleeping(
+  self : RigidBodyBuilder3D,
+  sleeping : Bool,
+) -> RigidBodyBuilder3D {
+  self.sleeping = sleeping
+  self
+}
+
+///|
 pub fn RigidBodyBuilder3D::user_data(
   self : RigidBodyBuilder3D,
   data : Int,
@@ -977,6 +1003,24 @@ pub fn RigidBodyBuilder3D::translation(
 ) -> RigidBodyBuilder3D {
   self.translation = t
   self
+}
+
+///|
+pub fn RigidBodyBuilder3D::position(
+  self : RigidBodyBuilder3D,
+  pos : @core.Isometry3,
+) -> RigidBodyBuilder3D {
+  self.translation = pos.translation
+  self.rotation = pos.rotation
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::pose(
+  self : RigidBodyBuilder3D,
+  pos : @core.Isometry3,
+) -> RigidBodyBuilder3D {
+  self.position(pos)
 }
 
 ///|
@@ -1039,6 +1083,24 @@ pub fn RigidBodyBuilder3D::gravity_scale(
   scale : @core.Real,
 ) -> RigidBodyBuilder3D {
   self.gravity_scale = scale
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::additional_mass(
+  self : RigidBodyBuilder3D,
+  mass : @core.Real,
+) -> RigidBodyBuilder3D {
+  self.mass_properties = self.mass_properties.set_mass(mass, true)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::additional_mass_properties(
+  self : RigidBodyBuilder3D,
+  props : @core.MassProperties3,
+) -> RigidBodyBuilder3D {
+  self.mass_properties = props
   self
 }
 
@@ -1186,6 +1248,11 @@ pub fn RigidBodyBuilder3D::mass_properties(
 ///|
 pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
   let pos = @core.Isometry3::new(self.translation, self.rotation)
+  let activation = RigidBodyActivation3D::active()
+  if self.sleeping {
+    activation.sleeping = true
+    activation.time_since_can_sleep = activation.time_until_sleep
+  }
   {
     body_type: self.body_type,
     user_data: self.user_data,
@@ -1220,7 +1287,7 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
     angular_damping: self.angular_damping,
     gravity_scale: self.gravity_scale,
     mass_properties: self.mass_properties,
-    activation: RigidBodyActivation3D::active(),
+    activation,
     can_sleep: self.can_sleep,
     dominance_group: self.dominance_group,
   }

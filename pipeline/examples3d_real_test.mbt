@@ -387,6 +387,97 @@ test "examples3d voxels3: real backend smoke" {
 }
 
 ///|
+test "examples3d trimesh3: real backend smoke" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default()
+  let handles : Array[@dynamics.RigidBodyHandle] = []
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -1.2F, 0.0F))
+    .build(),
+  )
+  handles.push(ground)
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(25.0F, 1.2F, 25.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+  let wall_rot = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, 0.0F, @core.pi() / 2.0F),
+  )
+  let wall_r = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(25.0F, 25.0F, 0.0F))
+    .rotation(wall_rot)
+    .build(),
+  )
+  handles.push(wall_r)
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(25.0F, 1.2F, 25.0F).build(),
+    wall_r,
+    bodies,
+  )
+  |> ignore
+  let wall_l = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(-25.0F, 25.0F, 0.0F))
+    .rotation(wall_rot)
+    .build(),
+  )
+  handles.push(wall_l)
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(25.0F, 1.2F, 25.0F).build(),
+    wall_l,
+    bodies,
+  )
+  |> ignore
+  let vtx = [
+    @core.Vec3::new(-1.0F, -1.0F, -0.5F),
+    @core.Vec3::new(1.0F, -1.0F, -0.5F),
+    @core.Vec3::new(1.0F, 1.0F, 0.5F),
+    @core.Vec3::new(-1.0F, 1.0F, 0.5F),
+  ]
+  let idx = [(0, 1, 2), (0, 2, 3)]
+  for k in 0..<5 {
+    if @collision.ColliderBuilder3D::trimesh(vtx, idx) is Some(builder) {
+      let handle = bodies.insert(
+        @dynamics.RigidBodyBuilder3D::dynamic()
+        .translation(
+          @core.Vec3::new(
+            0.0F,
+            18.0F + Float::from_int(k) * 4.0F,
+            Float::from_int(k % 3) * 1.2F - 1.2F,
+          ),
+        )
+        .build(),
+      )
+      handles.push(handle)
+      colliders.insert_with_parent(
+        builder.contact_skin(0.2F).build(),
+        handle,
+        bodies,
+      )
+      |> ignore
+    } else {
+      inspect(false, content="true")
+      return
+    }
+  }
+  step_world3_real(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    80,
+  )
+  inspect(bodies_have_finite_positions3(bodies, handles), content="true")
+}
+
+///|
 test "examples3d restitution3: real backend smoke" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()

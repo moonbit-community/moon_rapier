@@ -1436,9 +1436,12 @@ pub struct RigidBodyBuilder3D {
   mut gravity_scale : Float
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
+  mut sleeping : Bool
   mut user_data : @core.UserData128
   mut dominance_group : Int
 }
+pub fn RigidBodyBuilder3D::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder3D::additional_mass_properties(Self, @core.MassProperties3) -> Self
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
@@ -1459,10 +1462,16 @@ pub fn RigidBodyBuilder3D::lock_rotations(Self) -> Self
 pub fn RigidBodyBuilder3D::lock_translations(Self) -> Self
 pub fn RigidBodyBuilder3D::locked_axes(Self, LockedAxes) -> Self
 pub fn RigidBodyBuilder3D::mass_properties(Self, @core.MassProperties3) -> Self
+pub fn RigidBodyBuilder3D::new_kinematic_position_based() -> Self
+pub fn RigidBodyBuilder3D::new_kinematic_velocity_based() -> Self
+pub fn RigidBodyBuilder3D::new_static() -> Self
+pub fn RigidBodyBuilder3D::pose(Self, @core.Isometry3) -> Self
+pub fn RigidBodyBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn RigidBodyBuilder3D::restrict_rotations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::restrict_translations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn RigidBodyBuilder3D::rotation_scaled_axis(Self, @core.Vec3) -> Self
+pub fn RigidBodyBuilder3D::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::translation(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::user_data(Self, Int) -> Self

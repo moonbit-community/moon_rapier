@@ -185,3 +185,30 @@ test "collider3d contact skin builder and setter update values" {
   co.set_contact_skin(0.05F) |> ignore
   inspect(@core.abs(co.contact_skin() - 0.05F) < 1.0e-6F, content="true")
 }
+
+///|
+test "collider3d builder default helpers and delta update pose" {
+  inspect(
+    @core.abs(ColliderBuilder3D::default_density() - 1.0F) < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    @core.abs(ColliderBuilder3D::default_friction() - 0.7F) < 1.0e-6F,
+    content="true",
+  )
+  let delta = @core.Isometry3::new(
+    @core.Vec3::new(4.0F, 5.0F, 6.0F),
+    @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, @core.pi() / 4.0F, 0.0F),
+    ),
+  )
+  let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).delta(delta).build()
+  inspect(
+    co.position().translation.sub(delta.translation).length() < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    @core.abs(co.friction() - ColliderBuilder3D::default_friction()) < 1.0e-6F,
+    content="true",
+  )
+}

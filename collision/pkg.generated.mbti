@@ -529,6 +529,9 @@ pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?
 pub fn ColliderBuilder3D::convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
+pub fn ColliderBuilder3D::default_density() -> Float
+pub fn ColliderBuilder3D::default_friction() -> Float
+pub fn ColliderBuilder3D::delta(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::density(Self, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
