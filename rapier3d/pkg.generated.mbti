@@ -2,7 +2,11 @@
 package "Milky2018/moon_rapier/rapier3d"
 
 import {
+  "Milky2018/moon_rapier/collision",
   "Milky2018/moon_rapier/control",
+  "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/pipeline",
 }
 
 // Values
@@ -12,9 +16,61 @@ import {
 // Types and methods
 
 // Type aliases
+pub using @collision {type BroadPhase3D as BroadPhase}
+
+pub using @collision {type Collider3D as Collider}
+
+pub using @collision {type ColliderBuilder3D as ColliderBuilder}
+
+pub using @collision {type ColliderHandle3D as ColliderHandle}
+
+pub using @collision {type ColliderSet3D as ColliderSet}
+
 pub using @control {type DynamicRayCastVehicleController3DReal as DynamicRayCastVehicleController}
 
 pub using @control {type EffectiveMovement3DReal as EffectiveCharacterMovement}
+
+pub using @pipeline {type EventHandler3D as EventHandler}
+
+pub using @dynamics {type GenericJoint}
+
+pub using @dynamics {type GenericJoint3DRealBuilder as GenericJointBuilder}
+
+pub using @dynamics {type JointSet3DReal as ImpulseJointSet}
+
+pub using @dynamics {type IntegrationParameters}
+
+pub using @dynamics {type IslandManager3D as IslandManager}
+
+pub using @dynamics {type Multibody3DReal as Multibody}
+
+pub using @dynamics {type MultibodyJointSet3DReal as MultibodyJointSet}
+
+pub using @collision {type NarrowPhase3D as NarrowPhase}
+
+pub using @pipeline {type PhysicsHooks3D as PhysicsHooks}
+
+pub using @pipeline {type PhysicsPipeline3DReal as PhysicsPipeline}
+
+pub using @collision {type QueryPipeline3DReal as QueryPipeline}
+
+pub using @dynamics {type RevoluteJoint}
+
+pub using @dynamics {type RevoluteJointBuilder3 as RevoluteJointBuilder}
+
+pub using @dynamics {type RigidBody3D as RigidBody}
+
+pub using @dynamics {type RigidBodyBuilder3D as RigidBodyBuilder}
+
+pub using @dynamics {type RigidBodyHandle}
+
+pub using @dynamics {type RigidBodySet3D as RigidBodySet}
+
+pub using @dynamics {type RopeJointSet3DReal as RopeJointSet}
+
+pub using @collision {type Shape3D as Shape}
+
+pub using @core {type Vec3}
 
 // Traits
 
