@@ -681,7 +681,8 @@ fn run_examples3d_joint_motor_position3() -> Bool {
 
 ///|
 fn run_examples3d_inverse_kinematics3() -> Bool {
-  // Ported from `rapier-reference/examples3d/inverse_kinematics3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/inverse_kinematics3.rs`
+  // (headless; legacy compatibility mode, mirrored by `examples3d_real_unique_parity_test.mbt`).
   let mut ok = true
   let bodies = @dynamics.RigidBodySet3::new()
   let colliders = @collision.ColliderSet3::new()
@@ -872,7 +873,8 @@ fn run_examples3d_joints3() -> Bool {
 
 ///|
 fn run_examples3d_keva3() -> Bool {
-  // Ported from `rapier-reference/examples3d/keva3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/keva3.rs`
+  // (headless; legacy compatibility mode, mirrored by `examples3d_real_unique_parity_test.mbt`).
   let mut ok = true
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()

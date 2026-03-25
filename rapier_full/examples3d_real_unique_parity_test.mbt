@@ -370,6 +370,188 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
 }
 
 ///|
+fn run_examples3d_real_inverse_kinematics3() -> Bool {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let multibody_joints = @dynamics.MultibodyJointSet3DReal::new()
+
+  let ground_height = 0.01F
+  let floor_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(1.0F, ground_height, 1.0F).build(),
+    floor_handle,
+    bodies,
+  )
+  |> ignore
+
+  let num_segments = 10
+  let size = 1.0F / Float::from_int(num_segments)
+  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let mut last_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed().build(),
+  )
+  let mut last_link = @dynamics.MultibodyJointHandle::invalid()
+  for i in 0..<num_segments {
+    let new_body = bodies.insert(
+      @dynamics.RigidBodyBuilder3D::dynamic().can_sleep(false).build(),
+    )
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder3D::cuboid(
+        size / 8.0F,
+        size / 2.0F,
+        size / 8.0F,
+      )
+      .density(0.0F)
+      .sensor(true)
+      .build(),
+      new_body,
+      bodies,
+    )
+    |> ignore
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder3::new(axis_z)
+      .local_anchor1(
+        @core.Vec3::new(
+          0.0F,
+          size / 2.0F * (if i != 0 { 1.0F } else { 0.0F }),
+          0.0F,
+        ),
+      )
+      .local_anchor2(@core.Vec3::new(0.0F, -size / 2.0F, 0.0F))
+      .build(),
+    )
+    if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
+      last_link = handle
+    } else {
+      return false
+    }
+    last_body = new_body
+  }
+
+  if multibody_joints.get_mut(last_link) is Some((multibody, link_id)) {
+    let displacements = @dynamics.DVector::from_fn(multibody.ndofs(), fn(
+      _ : Int,
+    ) -> @core.Real {
+      0.0F
+    })
+    let target_point = @core.Vec3::new(0.25F, 0.4F, 0.0F)
+    let options = @dynamics.InverseKinematicsOption::default()
+      .set_constrained_axes(@dynamics.JointAxesMask::lin_axes())
+      .set_max_iters(200)
+    multibody.inverse_kinematics(
+      bodies,
+      link_id,
+      options,
+      @core.Isometry3::from_translation(target_point),
+      fn(_link : @dynamics.MultibodyLink) -> Bool { true },
+      displacements,
+    )
+    multibody.apply_displacements(displacements.as_array())
+    let pose = multibody.forward_kinematics_single_link(
+      bodies,
+      link_id,
+      None,
+      None,
+    )
+    let err = pose.translation.sub(target_point).length()
+    err == err && err < 5.0e-2F
+  } else {
+    false
+  }
+}
+
+///|
+fn run_examples3d_real_keva3() -> Bool {
+  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
+    16,
+  )
+
+  let ground_height = 0.1F
+  let ground = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(50.0F, ground_height, 50.0F).build(),
+    ground,
+    bodies,
+  )
+  |> ignore
+
+  let half_x = 1.2F
+  let half_y = 0.1F
+  let handles : Array[@dynamics.RigidBodyHandle] = []
+  for layer in 0..<18 {
+    let y = half_y * 2.0F * Float::from_int(layer) + 0.2F
+    let along_z = layer % 2 == 1
+    for i in 0..<3 {
+      let offset = (Float::from_int(i) - 1.0F) * 0.9F
+      let translation = if along_z {
+        @core.Vec3::new(0.0F, y, offset)
+      } else {
+        @core.Vec3::new(offset, y, 0.0F)
+      }
+      let rotation = if along_z {
+        @core.Vec3::new(0.0F, @core.pi() / 2.0F, 0.0F)
+      } else {
+        @core.Vec3::zero()
+      }
+      let rb = bodies.insert(
+        @dynamics.RigidBodyBuilder3D::dynamic()
+        .translation(translation)
+        .rotation_scaled_axis(rotation)
+        .can_sleep(false)
+        .build(),
+      )
+      colliders.insert_with_parent(
+        @collision.ColliderBuilder3D::cuboid(half_x, half_y, half_y).build(),
+        rb,
+        bodies,
+      )
+      |> ignore
+      handles.push(rb)
+    }
+  }
+
+  step_world3d_n(
+    pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    360,
+  )
+  let mut min_y = 1.0e30F
+  let mut max_abs_z = 0.0F
+  for i in 0..<handles.length() {
+    if bodies.get(handles[i]) is Some(body) {
+      let p = body.translation()
+      if !(p.x == p.x) || !(p.y == p.y) || !(p.z == p.z) {
+        return false
+      }
+      if p.y < min_y {
+        min_y = p.y
+      }
+      let abs_z = @core.abs(p.z)
+      if abs_z > max_abs_z {
+        max_abs_z = abs_z
+      }
+    } else {
+      return false
+    }
+  }
+  min_y > -1000.0F && max_abs_z > 0.2F
+}
+
+///|
 fn run_examples3d_real_newton_cradle3() -> Bool {
   let pipeline = @pipeline.PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
@@ -646,8 +828,18 @@ test "examples3d/harness_capsules3.rs parity (3DReal headless)" {
 }
 
 ///|
+test "examples3d/inverse_kinematics3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_inverse_kinematics3(), content="true")
+}
+
+///|
 test "examples3d/joint_motor_position3.rs parity (3DReal headless)" {
   inspect(run_examples3d_real_joint_motor_position3(), content="true")
+}
+
+///|
+test "examples3d/keva3.rs parity (3DReal headless)" {
+  inspect(run_examples3d_real_keva3(), content="true")
 }
 
 ///|
