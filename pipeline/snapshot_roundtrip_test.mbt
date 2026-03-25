@@ -50,10 +50,12 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
     bodies,
   )
   |> ignore
-  let mb_joint = @dynamics.RevoluteJointBuilder::new()
+  let mb_joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::new()
     .local_anchor1(@core.Vec2::zero())
     .local_anchor2(@core.Vec2::zero())
-    .build()
+    .build(),
+  )
   multibody_joints.insert(mb_parent, mb_child, mb_joint, true) |> ignore
 
   // An impulse-joint between two bodies.

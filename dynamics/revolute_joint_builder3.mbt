@@ -14,18 +14,23 @@
 
 ///|
 /// 3D-flavored revolute joint builder used by the rapier3d parity tests.
-///
-/// NOTE: This maps to the existing 2D revolute joint builder. The `axis` is ignored and the
-/// z-component of anchors is dropped.
 pub struct RevoluteJointBuilder3 {
   inner : RevoluteJointBuilder
+  axis : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
 
-  fn new(_axis : @core.Vec3) -> RevoluteJointBuilder3
+  fn new(axis : @core.Vec3) -> RevoluteJointBuilder3
 }
 
 ///|
-pub fn RevoluteJointBuilder3::new(_axis : @core.Vec3) -> RevoluteJointBuilder3 {
-  { inner: RevoluteJointBuilder::new() }
+pub fn RevoluteJointBuilder3::new(axis : @core.Vec3) -> RevoluteJointBuilder3 {
+  {
+    inner: RevoluteJointBuilder::new(),
+    axis: revolute_joint_axis3_or_default(axis),
+    local_anchor1_3: @core.Vec3::zero(),
+    local_anchor2_3: @core.Vec3::zero(),
+  }
 }
 
 ///|
@@ -33,7 +38,12 @@ pub fn RevoluteJointBuilder3::local_anchor1(
   self : RevoluteJointBuilder3,
   anchor1 : @core.Vec3,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.local_anchor1(@core.Vec2::new(anchor1.x, anchor1.y)) }
+  {
+    inner: self.inner.local_anchor1(@core.Vec2::new(anchor1.x, anchor1.y)),
+    axis: self.axis,
+    local_anchor1_3: anchor1,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
@@ -41,7 +51,12 @@ pub fn RevoluteJointBuilder3::local_anchor2(
   self : RevoluteJointBuilder3,
   anchor2 : @core.Vec3,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.local_anchor2(@core.Vec2::new(anchor2.x, anchor2.y)) }
+  {
+    inner: self.inner.local_anchor2(@core.Vec2::new(anchor2.x, anchor2.y)),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: anchor2,
+  }
 }
 
 ///|
@@ -49,7 +64,25 @@ pub fn RevoluteJointBuilder3::softness(
   self : RevoluteJointBuilder3,
   softness : SpringCoefficients,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.softness(softness) }
+  {
+    inner: self.inner.softness(softness),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
+}
+
+///|
+pub fn RevoluteJointBuilder3::motor_model(
+  self : RevoluteJointBuilder3,
+  model : MotorModel,
+) -> RevoluteJointBuilder3 {
+  {
+    inner: self.inner.motor_model(model),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
@@ -58,7 +91,12 @@ pub fn RevoluteJointBuilder3::motor_velocity(
   target_vel : @core.Real,
   factor : @core.Real,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.motor_velocity(target_vel, factor) }
+  {
+    inner: self.inner.motor_velocity(target_vel, factor),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
@@ -68,7 +106,12 @@ pub fn RevoluteJointBuilder3::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.motor_position(target_pos, stiffness, damping) }
+  {
+    inner: self.inner.motor_position(target_pos, stiffness, damping),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
@@ -76,7 +119,12 @@ pub fn RevoluteJointBuilder3::motor_max_force(
   self : RevoluteJointBuilder3,
   max_force : @core.Real,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.motor_max_force(max_force) }
+  {
+    inner: self.inner.motor_max_force(max_force),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
@@ -85,12 +133,34 @@ pub fn RevoluteJointBuilder3::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> RevoluteJointBuilder3 {
-  { inner: self.inner.limits(min, max) }
+  {
+    inner: self.inner.limits(min, max),
+    axis: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+  }
 }
 
 ///|
 pub fn RevoluteJointBuilder3::build(
   self : RevoluteJointBuilder3,
 ) -> RevoluteJoint {
-  self.inner.build()
+  let joint = self.inner.build()
+  let frame = revolute_joint_frame_from_axis3(self.axis)
+  {
+    local_anchor1: joint.local_anchor1,
+    local_anchor2: joint.local_anchor2,
+    axis3: self.axis,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    local_frame1_rotation: frame,
+    local_frame2_rotation: frame,
+    is_spatial: true,
+    softness: joint.softness,
+    motor: joint.motor,
+    motor_enabled: joint.motor_enabled,
+    limits: joint.limits,
+    limits_enabled: joint.limits_enabled,
+    solver_lin_impulses: joint.solver_lin_impulses,
+  }
 }

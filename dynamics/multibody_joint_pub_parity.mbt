@@ -24,8 +24,15 @@ pub struct MultibodyJoint {
   mut coords : @core.Vec2
   mut angle : @core.Real
   mut joint_rot : @core.Rot2
-
-  fn new(data : GenericJoint, kinematic : Bool) -> MultibodyJoint
+  mut lin_coords3 : @core.Vec3
+  mut ang_coords3 : @core.Vec3
+  mut joint_rot3 : @core.Quat
+  axis3 : @core.Vec3
+  local_anchor1_3 : @core.Vec3
+  local_anchor2_3 : @core.Vec3
+  local_frame1_rotation : @core.Quat
+  local_frame2_rotation : @core.Quat
+  mut solver_lin_impulses : @core.Vec2
 }
 
 ///|
@@ -39,26 +46,150 @@ pub fn MultibodyJoint::new(
     coords: @core.Vec2::zero(),
     angle: 0.0F,
     joint_rot: @core.Rot2::identity(),
+    lin_coords3: @core.Vec3::zero(),
+    ang_coords3: @core.Vec3::zero(),
+    joint_rot3: @core.Quat::identity(),
+    axis3: data.axis3,
+    local_anchor1_3: data.local_anchor1_3,
+    local_anchor2_3: data.local_anchor2_3,
+    local_frame1_rotation: data.local_frame1_rotation,
+    local_frame2_rotation: data.local_frame2_rotation,
+    solver_lin_impulses: @core.Vec2::zero(),
   }
+}
+
+///|
+fn MultibodyJoint::from_revolute(
+  joint : RevoluteJoint,
+  kinematic : Bool,
+) -> MultibodyJoint {
+  {
+    data: GenericJoint::from_revolute(joint),
+    kinematic,
+    coords: @core.Vec2::zero(),
+    angle: 0.0F,
+    joint_rot: @core.Rot2::identity(),
+    lin_coords3: @core.Vec3::zero(),
+    ang_coords3: @core.Vec3::zero(),
+    joint_rot3: @core.Quat::identity(),
+    axis3: joint.axis3,
+    local_anchor1_3: joint.local_anchor1_3,
+    local_anchor2_3: joint.local_anchor2_3,
+    local_frame1_rotation: joint.local_frame1_rotation,
+    local_frame2_rotation: joint.local_frame2_rotation,
+    solver_lin_impulses: joint.solver_lin_impulses,
+  }
+}
+
+///|
+fn MultibodyJoint::as_revolute_joint(self : MultibodyJoint) -> RevoluteJoint {
+  let spatial = self.data.locked_axes().bits() ==
+    JointAxesMask::locked_revolute_axes3().bits()
+  let motor_enabled = self.data.motor_axes.contains(
+    if spatial {
+      JointAxesMask::ang_x()
+    } else {
+      JointAxesMask::ang_z()
+    },
+  )
+  let limits_enabled = self.data.limit_axes.contains(
+    if spatial {
+      JointAxesMask::ang_x()
+    } else {
+      JointAxesMask::ang_z()
+    },
+  )
+  let limits = if spatial {
+    self.data.limits.ang_x
+  } else {
+    self.data.limits.ang_z
+  }
+  let motor = if spatial {
+    self.data.motors.ang_x
+  } else {
+    self.data.motors.ang_z
+  }
+  {
+    local_anchor1: self.data.local_anchor1(),
+    local_anchor2: self.data.local_anchor2(),
+    axis3: self.axis3,
+    local_anchor1_3: self.local_anchor1_3,
+    local_anchor2_3: self.local_anchor2_3,
+    local_frame1_rotation: self.local_frame1_rotation,
+    local_frame2_rotation: self.local_frame2_rotation,
+    is_spatial: spatial,
+    softness: self.data.softness,
+    motor,
+    motor_enabled,
+    limits,
+    limits_enabled,
+    solver_lin_impulses: self.solver_lin_impulses,
+  }
+}
+
+///|
+fn MultibodyJoint::is_revolute(self : MultibodyJoint) -> Bool {
+  self.data.as_revolute() is Some(_)
+}
+
+///|
+fn multibody_joint_is_spatial(joint : MultibodyJoint) -> Bool {
+  let extra_bits = JointAxesMask::lin_z()
+    .or(JointAxesMask::ang_x())
+    .or(JointAxesMask::ang_y())
+    .bits()
+  (
+    (
+      joint.data.locked_axes().bits() |
+      joint.data.limit_axes().bits() |
+      joint.data.motor_axes().bits() |
+      joint.data.coupled_axes().bits()
+    ) &
+    extra_bits
+  ) !=
+  0 ||
+  @core.abs(joint.local_anchor1_3.z) > 1.0e-6F ||
+  @core.abs(joint.local_anchor2_3.z) > 1.0e-6F
+}
+
+///|
+fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int {
+  let locked = self.data.locked_axes().bits()
+  let mut ndofs = 0
+  if multibody_joint_is_spatial(self) {
+    for i in 0..<6 {
+      if (locked & (1 << i)) == 0 {
+        ndofs = ndofs + 1
+      }
+    }
+  } else {
+    let planar_axes : Array[Int] = [0, 1, 5]
+    for axis in planar_axes {
+      if (locked & (1 << axis)) == 0 {
+        ndofs = ndofs + 1
+      }
+    }
+  }
+  ndofs
 }
 
 ///|
 pub fn MultibodyJoint::body_to_parent(self : MultibodyJoint) -> @core.Isometry2 {
   let locked = self.data.locked_axes().bits()
-  // rot * local_frame2^{-1}
-  let mut transform = @core.Isometry2::new(@core.Vec2::zero(), self.joint_rot).mul(
-    self.data.local_frame2().inverse(),
-  )
+  let mut transform = @core.Isometry2::new(
+    @core.Vec2::zero(),
+    @core.Rot2::from_angle(self.ang_coords3.z),
+  ).mul(self.data.local_frame2().inverse())
 
   // Apply free translations in joint coordinates (LinX/LinY).
   if (locked & (1 << 0)) == 0 {
     transform = @core.Isometry2::from_translation(
-      @core.Vec2::new(self.coords.x, 0.0F),
+      @core.Vec2::new(self.lin_coords3.x, 0.0F),
     ).mul(transform)
   }
   if (locked & (1 << 1)) == 0 {
     transform = @core.Isometry2::from_translation(
-      @core.Vec2::new(0.0F, self.coords.y),
+      @core.Vec2::new(0.0F, self.lin_coords3.y),
     ).mul(transform)
   }
   self.data.local_frame1().mul(transform)
@@ -73,15 +204,70 @@ pub fn MultibodyJoint::apply_displacement(
   let mut curr = 0
   if (locked & (1 << 0)) == 0 && curr < disp.length() {
     self.coords = @core.Vec2::new(self.coords.x + disp[curr], self.coords.y)
+    self.lin_coords3 = @core.Vec3::new(
+      self.lin_coords3.x + disp[curr],
+      self.lin_coords3.y,
+      self.lin_coords3.z,
+    )
     curr = curr + 1
   }
   if (locked & (1 << 1)) == 0 && curr < disp.length() {
     self.coords = @core.Vec2::new(self.coords.x, self.coords.y + disp[curr])
+    self.lin_coords3 = @core.Vec3::new(
+      self.lin_coords3.x,
+      self.lin_coords3.y + disp[curr],
+      self.lin_coords3.z,
+    )
     curr = curr + 1
   }
-  if (locked & (1 << 2)) == 0 && curr < disp.length() {
-    self.angle = self.angle + disp[curr]
+  if multibody_joint_is_spatial(self) {
+    if (locked & (1 << 2)) == 0 && curr < disp.length() {
+      self.lin_coords3 = @core.Vec3::new(
+        self.lin_coords3.x,
+        self.lin_coords3.y,
+        self.lin_coords3.z + disp[curr],
+      )
+      curr = curr + 1
+    }
+    for ang_index in 0..<3 {
+      let bit = 3 + ang_index
+      if (locked & (1 << bit)) == 0 && curr < disp.length() {
+        self.ang_coords3 = match ang_index {
+          0 =>
+            @core.Vec3::new(
+              self.ang_coords3.x + disp[curr],
+              self.ang_coords3.y,
+              self.ang_coords3.z,
+            )
+          1 =>
+            @core.Vec3::new(
+              self.ang_coords3.x,
+              self.ang_coords3.y + disp[curr],
+              self.ang_coords3.z,
+            )
+          _ =>
+            @core.Vec3::new(
+              self.ang_coords3.x,
+              self.ang_coords3.y,
+              self.ang_coords3.z + disp[curr],
+            )
+        }
+        curr = curr + 1
+      }
+    }
+    self.angle = self.ang_coords3.z
     self.joint_rot = @core.Rot2::from_angle(self.angle)
+    self.joint_rot3 = @core.rotation_from_scaled_axis(self.ang_coords3)
+  } else if (locked & JointAxesMask::ang_z().bits()) == 0 &&
+    curr < disp.length() {
+    self.angle = self.angle + disp[curr]
+    self.ang_coords3 = @core.Vec3::new(
+      self.ang_coords3.x,
+      self.ang_coords3.y,
+      self.ang_coords3.z + disp[curr],
+    )
+    self.joint_rot = @core.Rot2::from_angle(self.angle)
+    self.joint_rot3 = @core.rotation_from_scaled_axis(self.ang_coords3)
   }
 }
 
@@ -92,15 +278,36 @@ pub fn MultibodyJoint::default_damping(
 ) -> Unit {
   let locked = self.data.locked_axes().bits()
   let mut lin_free = 0
-  if (locked & (1 << 0)) == 0 {
-    lin_free = lin_free + 1
+  for i in 0..<3 {
+    if (locked & (1 << i)) == 0 {
+      lin_free = lin_free + 1
+    }
   }
-  if (locked & (1 << 1)) == 0 {
-    lin_free = lin_free + 1
-  }
-  if (locked & (1 << 2)) == 0 && lin_free < out.len() {
+  if multibody_joint_is_spatial(self) {
+    for i in 3..<6 {
+      if (locked & (1 << i)) == 0 && lin_free < out.len() {
+        out.set_value(lin_free, 0.1F)
+        lin_free = lin_free + 1
+      }
+    }
+  } else if (locked & JointAxesMask::ang_z().bits()) == 0 &&
+    lin_free < out.len() {
     out.set_value(lin_free, 0.1F)
+    lin_free = lin_free + 1
   }
+}
+
+///|
+fn multibody_joint_planar_ndofs(joint : MultibodyJoint) -> Int {
+  let locked = joint.data.locked_axes().bits()
+  let planar_axes : Array[Int] = [0, 1, 5]
+  let mut ndofs = 0
+  for axis in planar_axes {
+    if (locked & (1 << axis)) == 0 {
+      ndofs = ndofs + 1
+    }
+  }
+  ndofs
 }
 
 ///|
@@ -110,16 +317,10 @@ pub fn MultibodyJoint::jacobian(
   out : Jacobian,
 ) -> Unit {
   let locked = self.data.locked_axes().bits()
-  // Number of free dofs.
-  let mut ndofs = 0
-  if (locked & (1 << 0)) == 0 {
-    ndofs = ndofs + 1
-  }
-  if (locked & (1 << 1)) == 0 {
-    ndofs = ndofs + 1
-  }
-  if (locked & (1 << 2)) == 0 {
-    ndofs = ndofs + 1
+  let ndofs = if multibody_joint_is_spatial(self) {
+    self.ndofs()
+  } else {
+    multibody_joint_planar_ndofs(self)
   }
   out.ensure_cols(ndofs)
   let mut curr = 0
@@ -137,7 +338,8 @@ pub fn MultibodyJoint::jacobian(
     out.set_value(2, curr, 0.0F)
     curr = curr + 1
   }
-  if (locked & (1 << 2)) == 0 {
+  if !multibody_joint_is_spatial(self) &&
+    (locked & JointAxesMask::ang_z().bits()) == 0 {
     out.set_value(0, curr, 0.0F)
     out.set_value(1, curr, 0.0F)
     out.set_value(2, curr, 1.0F)
@@ -160,7 +362,9 @@ pub fn MultibodyJoint::jacobian_mul_coordinates(
     result.linvel = result.linvel.add(@core.Vec2::new(0.0F, coords[curr]))
     curr = curr + 1
   }
-  if (locked & (1 << 2)) == 0 && curr < coords.length() {
+  if !multibody_joint_is_spatial(self) &&
+    (locked & JointAxesMask::ang_z().bits()) == 0 &&
+    curr < coords.length() {
     result.angvel = result.angvel + coords[curr]
   }
   result
@@ -172,12 +376,17 @@ pub fn MultibodyJoint::num_velocity_constraints(self : MultibodyJoint) -> Int {
   let limit = self.data.limit_axes().bits()
   let motor = self.data.motor_axes().bits()
   let mut n = 0
-  for i in 0..<3 {
-    if (locked & (1 << i)) == 0 {
-      if (limit & (1 << i)) != 0 {
+  let axes : Array[Int] = if multibody_joint_is_spatial(self) {
+    [0, 1, 2, 3, 4, 5]
+  } else {
+    [0, 1, 5]
+  }
+  for axis in axes {
+    if (locked & (1 << axis)) == 0 {
+      if (limit & (1 << axis)) != 0 {
         n = n + 1
       }
-      if (motor & (1 << i)) != 0 {
+      if (motor & (1 << axis)) != 0 {
         n = n + 1
       }
     }

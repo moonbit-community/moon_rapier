@@ -110,6 +110,36 @@ pub fn[T] Coarena::get_mut(self : Coarena[T], index : Index) -> T? {
 }
 
 ///|
+pub fn[T] Coarena::set(
+  self : Coarena[T],
+  index : Index,
+  value : T,
+  default : T,
+) -> Unit {
+  let (i, g) = index.into_raw_parts()
+  if i < 0 {
+    panic()
+  }
+  if self.data.length() <= i {
+    self.data.resize(i + 1, (INVALID_GENERATION, default))
+  }
+  self.data[i] = (g, value)
+}
+
+///|
+pub fn[T] Coarena::get_gen(self : Coarena[T], index : Int) -> Int? {
+  if index < 0 || index >= self.data.length() {
+    return None
+  }
+  let (generation, _) = self.data[index]
+  if generation == INVALID_GENERATION {
+    None
+  } else {
+    Some(generation)
+  }
+}
+
+///|
 pub fn[T : Default] Coarena::insert(
   self : Coarena[T],
   index : Index,

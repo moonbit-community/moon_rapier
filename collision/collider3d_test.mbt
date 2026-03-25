@@ -128,3 +128,135 @@ test "collider3d active flags setters update values" {
     content="true",
   )
 }
+
+///|
+test "collider3d group and material setters update values" {
+  let collision_groups = @dynamics.InteractionGroups::new(
+    @dynamics.Group::group_1(),
+    @dynamics.Group::group_2(),
+    @dynamics.InteractionTestMode::And,
+  )
+  let solver_groups = @dynamics.InteractionGroups::none()
+  let co = ColliderBuilder3D::ball(0.5F)
+    .collision_groups(collision_groups)
+    .solver_groups(solver_groups)
+    .friction(0.25F)
+    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
+    .restitution(0.5F)
+    .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
+    .build()
+  inspect(
+    co.collision_groups().memberships().equals(@dynamics.Group::group_1()),
+    content="true",
+  )
+  inspect(
+    co.solver_groups().memberships().equals(@dynamics.Group::none()),
+    content="true",
+  )
+  inspect(@core.abs(co.friction() - 0.25F) < 1.0e-6F, content="true")
+  inspect(
+    co.friction_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
+  inspect(@core.abs(co.restitution() - 0.5F) < 1.0e-6F, content="true")
+  inspect(
+    co.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Min,
+    content="true",
+  )
+
+  co.set_collision_groups(@dynamics.InteractionGroups::all()) |> ignore
+  co.set_solver_groups(
+    @dynamics.InteractionGroups::default().with_filter(
+      @dynamics.Group::group_3(),
+    ),
+  )
+  |> ignore
+  co.set_friction(0.9F) |> ignore
+  co.set_friction_combine_rule(@dynamics.CoefficientCombineRule::Average)
+  |> ignore
+  co.set_restitution(0.1F) |> ignore
+  co.set_restitution_combine_rule(@dynamics.CoefficientCombineRule::Max)
+  |> ignore
+
+  inspect(
+    co.collision_groups().test_mode() is @dynamics.InteractionTestMode::And,
+    content="true",
+  )
+  inspect(
+    co.solver_groups().filter().equals(@dynamics.Group::group_3()),
+    content="true",
+  )
+  inspect(@core.abs(co.friction() - 0.9F) < 1.0e-6F, content="true")
+  inspect(
+    co.friction_combine_rule() is @dynamics.CoefficientCombineRule::Average,
+    content="true",
+  )
+  inspect(@core.abs(co.restitution() - 0.1F) < 1.0e-6F, content="true")
+  inspect(
+    co.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
+}
+
+///|
+test "collider3d contact skin builder and setter update values" {
+  let co = ColliderBuilder3D::ball(0.5F).contact_skin(0.2F).build()
+  inspect(@core.abs(co.contact_skin() - 0.2F) < 1.0e-6F, content="true")
+  let collision_aabb = co.compute_collision_aabb(0.1F)
+  inspect(@core.abs(collision_aabb.maxs.x - 0.8F) < 1.0e-6F, content="true")
+  co.set_contact_skin(0.05F) |> ignore
+  inspect(@core.abs(co.contact_skin() - 0.05F) < 1.0e-6F, content="true")
+}
+
+///|
+test "collider3d builder default helpers and delta update pose" {
+  inspect(
+    @core.abs(ColliderBuilder3D::default_density() - 1.0F) < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    @core.abs(ColliderBuilder3D::default_friction() - 0.5F) < 1.0e-6F,
+    content="true",
+  )
+  let delta = @core.Isometry3::new(
+    @core.Vec3::new(4.0F, 5.0F, 6.0F),
+    @core.rotation_from_scaled_axis(
+      @core.Vec3::new(0.0F, @core.pi() / 4.0F, 0.0F),
+    ),
+  )
+  let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).delta(delta).build()
+  inspect(
+    co.position().translation.sub(delta.translation).length() < 1.0e-6F,
+    content="true",
+  )
+  inspect(
+    @core.abs(co.friction() - ColliderBuilder3D::default_friction()) < 1.0e-6F,
+    content="true",
+  )
+}
+
+///|
+test "collider_builder3 aliases the real dim3 builder" {
+  let rotation = @core.rotation_from_scaled_axis(
+    @core.Vec3::new(0.0F, @core.pi() / 3.0F, 0.25F),
+  )
+  let co = ColliderBuilder3::cuboid(1.0F, 2.0F, 3.0F)
+    .translation(@core.Vec3::new(4.0F, 5.0F, 6.0F))
+    .rotation(rotation)
+    .contact_skin(0.15F)
+    .build()
+  inspect(
+    co.position().translation.sub(@core.Vec3::new(4.0F, 5.0F, 6.0F)).length() <
+    1.0e-6F,
+    content="true",
+  )
+  inspect(@core.abs(co.contact_skin() - 0.15F) < 1.0e-6F, content="true")
+  inspect(
+    co.position().rotation
+    .rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .sub(rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F)))
+    .length() <
+    1.0e-6F,
+    content="true",
+  )
+}

@@ -694,7 +694,37 @@ pub fn QueryPipeline::new3(
   bodies : @dynamics.RigidBodySet3,
   colliders : ColliderSet3,
 ) -> QueryPipeline {
-  QueryPipeline::new(filter, bodies.as_2d(), colliders.as_2d())
+  colliders.sync_with_bodies(bodies)
+  let aabbs : Array[@core.Aabb?] = []
+  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let mut global_aabb : @core.Aabb? = None
+  for i in 0..<colliders.inner.colliders.length() {
+    if colliders.inner.colliders[i] is Some(collider) && collider.is_enabled() {
+      if collider.shape is Shape::HalfSpace(_) {
+        let p = collider.world_translation
+        halfspaces.push((i, p))
+        aabbs.push(Some(@core.Aabb::new(p, p)))
+      } else {
+        let aabb = compute_collider_aabb(collider)
+        if global_aabb is Some(existing) {
+          global_aabb = Some(existing.combine(aabb))
+        } else {
+          global_aabb = Some(aabb)
+        }
+        aabbs.push(Some(aabb))
+      }
+    } else {
+      aabbs.push(None)
+    }
+  }
+  if global_aabb is Some(global) {
+    for j in 0..<halfspaces.length() {
+      let (idx, p) = halfspaces[j]
+      let expanded = global.combine(@core.Aabb::new(p, p))
+      aabbs[idx] = Some(expanded)
+    }
+  }
+  { bvh: Bvh::new(aabbs), filter, dispatcher: QueryDispatcher::new() }
 }
 
 ///|
@@ -759,7 +789,8 @@ pub fn QueryPipelineMut::new3(
   bodies : @dynamics.RigidBodySet3,
   colliders : ColliderSet3,
 ) -> QueryPipelineMut {
-  QueryPipelineMut::new(filter, bodies.as_2d(), colliders.as_2d())
+  let pipeline = QueryPipeline::new3(filter, bodies, colliders)
+  { pipeline, dispatcher: pipeline.dispatcher }
 }
 
 ///|
@@ -4333,4 +4364,26 @@ pub fn QueryPipeline::intersect_point(
     }
   }
   result
+}
+
+///|
+pub fn QueryPipeline::cast_shape_nonlinear3(
+  self : QueryPipeline,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+  shape_motion : NonlinearRigidMotion,
+  shape : Shape,
+  start_time : @core.Real,
+  end_time : @core.Real,
+  stop_at_penetration : Bool,
+) -> (ColliderHandle, ShapeCastHit)? {
+  self.cast_shape_nonlinear(
+    bodies.inner,
+    colliders.inner,
+    shape_motion,
+    shape,
+    start_time,
+    end_time,
+    stop_at_penetration,
+  )
 }

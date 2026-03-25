@@ -23,14 +23,14 @@ test "physics pipeline3 kinematic and fixed contact crash" {
   let nf = @collision.NarrowPhase::new()
   let bodies = @dynamics.RigidBodySet3::new()
   let islands = @dynamics.IslandManager3::new()
-  let rb_fixed = @dynamics.RigidBodyBuilder3::fixed().build()
+  let rb_fixed = @dynamics.RigidBodyBuilder3Compat::fixed().build()
   let h1 = bodies.insert(rb_fixed)
-  let co = @collision.ColliderBuilder3::ball(10.0F).build()
+  let co = @collision.ColliderBuilder3Compat::ball(10.0F).build()
   colliders.insert_with_parent(co, h1, bodies) |> ignore
-  let rb_kinematic = @dynamics.RigidBodyBuilder3::kinematic_position_based().build()
+  let rb_kinematic = @dynamics.RigidBodyBuilder3Compat::kinematic_position_based().build()
   let h2 = bodies.insert(rb_kinematic)
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(10.0F).build(),
+    @collision.ColliderBuilder3Compat::ball(10.0F).build(),
     h2,
     bodies,
   )
@@ -62,13 +62,13 @@ test "physics pipeline3 rigid body removal before step" {
   let nf = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager3::new()
   let bodies = @dynamics.RigidBodySet3::new()
-  let rb_dyn = @dynamics.RigidBodyBuilder3::dynamic().build()
+  let rb_dyn = @dynamics.RigidBodyBuilder3Compat::dynamic().build()
   let h1 = bodies.insert(rb_dyn)
-  let h2 = bodies.insert(@dynamics.RigidBodyBuilder3::dynamic().build())
+  let h2 = bodies.insert(@dynamics.RigidBodyBuilder3Compat::dynamic().build())
   let h3 = bodies.insert(
-    @dynamics.RigidBodyBuilder3::kinematic_position_based().build(),
+    @dynamics.RigidBodyBuilder3Compat::kinematic_position_based().build(),
   )
-  let h4 = bodies.insert(@dynamics.RigidBodyBuilder3::fixed().build())
+  let h4 = bodies.insert(@dynamics.RigidBodyBuilder3Compat::fixed().build())
   for h in [h1, h2, h3, h4] {
     bodies.remove(h, islands, (), impulse_joints, multibody_joints, true)
     |> ignore
@@ -103,9 +103,11 @@ test "physics pipeline3 collider removal before step" {
   let impulse_joints = @dynamics.ImpulseJointSet3::new()
   let multibody_joints = @dynamics.MultibodyJointSet3::new()
   let islands = @dynamics.IslandManager3::new()
-  let b_handle = bodies.insert(@dynamics.RigidBodyBuilder3::dynamic().build())
+  let b_handle = bodies.insert(
+    @dynamics.RigidBodyBuilder3Compat::dynamic().build(),
+  )
   let c_handle = colliders.insert_with_parent(
-    @collision.ColliderBuilder3::ball(1.0F).build(),
+    @collision.ColliderBuilder3Compat::ball(1.0F).build(),
     b_handle,
     bodies,
   )
@@ -141,7 +143,7 @@ test "physics pipeline3 rigid body type changed dynamic is in active set" {
   let nf = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager3::new()
   let bodies = @dynamics.RigidBodySet3::new()
-  let rb = @dynamics.RigidBodyBuilder3::kinematic_position_based()
+  let rb = @dynamics.RigidBodyBuilder3Compat::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
   let h = bodies.insert(rb)
@@ -196,10 +198,10 @@ test "physics pipeline3 joint step delta time 0" {
   let islands = @dynamics.IslandManager3::new()
   let bodies = @dynamics.RigidBodySet3::new()
   let h_fixed = bodies.insert(
-    @dynamics.RigidBodyBuilder3::fixed().additional_mass(1.0F).build(),
+    @dynamics.RigidBodyBuilder3Compat::fixed().additional_mass(1.0F).build(),
   )
   let h_dynamic = bodies.insert(
-    @dynamics.RigidBodyBuilder3::dynamic().additional_mass(1.0F).build(),
+    @dynamics.RigidBodyBuilder3Compat::dynamic().additional_mass(1.0F).build(),
   )
   let joint = @dynamics.GenericJoint::from_revolute(
     @dynamics.RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
@@ -233,4 +235,51 @@ test "physics pipeline3 joint step delta time 0" {
   inspect(rotation.y == rotation.y, content="true")
   inspect(rotation.z == rotation.z, content="true")
   inspect(rotation.w == rotation.w, content="true")
+}
+
+///|
+test "physics pipeline3 multibody joint step" {
+  let colliders = @collision.ColliderSet3::new()
+  let impulse_joints = @dynamics.ImpulseJointSet3::new()
+  let multibody_joints = @dynamics.MultibodyJointSet3::new()
+  let pipeline = PhysicsPipeline3::new()
+  let broad_phase = @collision.BroadPhaseBvh::new()
+  let narrow_phase = @collision.NarrowPhase::new()
+  let islands = @dynamics.IslandManager3::new()
+  let bodies = @dynamics.RigidBodySet3::new()
+  let h_fixed = bodies.insert(
+    @dynamics.RigidBodyBuilder3Compat::fixed().additional_mass(1.0F).build(),
+  )
+  let h_dynamic = bodies.insert(
+    @dynamics.RigidBodyBuilder3Compat::dynamic().additional_mass(1.0F).build(),
+  )
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+    .local_anchor1(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .local_anchor2(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  let handle = multibody_joints.insert(h_fixed, h_dynamic, joint, true)
+  inspect(handle is Some(_), content="true")
+  pipeline.step(
+    @core.Vec3::new(0.0F, -9.81F, 0.0F),
+    @dynamics.IntegrationParameters::default(),
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    impulse_joints,
+    multibody_joints,
+    @dynamics.CCDSolver::new(),
+    PhysicsHooks::new(),
+    EventHandler::new(),
+  )
+  if handle is Some(joint_handle) {
+    inspect(multibody_joints.get(joint_handle) is Some(_), content="true")
+  }
+  let translation = bodies.translation(h_dynamic)
+  inspect(translation.x == translation.x, content="true")
+  inspect(translation.y == translation.y, content="true")
+  inspect(translation.z == translation.z, content="true")
 }

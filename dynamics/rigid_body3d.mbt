@@ -190,11 +190,14 @@ pub struct RigidBody3D {
   mut next_position : @core.Isometry3
   mut velocity : RigidBodyVelocity3D
   // Locks/flags (compatible with Rapier's LockedAxes API).
-  locked_translations : Bool
-  locked_rotations : Bool
-  rot_x_enabled : Bool
-  rot_y_enabled : Bool
-  rot_z_enabled : Bool
+  mut locked_translations : Bool
+  mut trans_x_enabled : Bool
+  mut trans_y_enabled : Bool
+  mut trans_z_enabled : Bool
+  mut locked_rotations : Bool
+  mut rot_x_enabled : Bool
+  mut rot_y_enabled : Bool
+  mut rot_z_enabled : Bool
   // CCD/solver-related flags.
   ccd_enabled : Bool
   soft_ccd_prediction : @core.Real
@@ -205,6 +208,90 @@ pub struct RigidBody3D {
   mass_properties : @core.MassProperties3
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
+  mut dominance_group : Int
+}
+
+///|
+fn rigid_body3d_mask_translation(
+  v : @core.Vec3,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> @core.Vec3 {
+  @core.Vec3::new(
+    if x {
+      v.x
+    } else {
+      0.0F
+    },
+    if y {
+      v.y
+    } else {
+      0.0F
+    },
+    if z {
+      v.z
+    } else {
+      0.0F
+    },
+  )
+}
+
+///|
+fn rigid_body3d_mask_rotation(
+  v : @core.Vec3,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> @core.Vec3 {
+  @core.Vec3::new(
+    if x {
+      v.x
+    } else {
+      0.0F
+    },
+    if y {
+      v.y
+    } else {
+      0.0F
+    },
+    if z {
+      v.z
+    } else {
+      0.0F
+    },
+  )
+}
+
+///|
+fn rigid_body3d_locked_axes(
+  trans_x_enabled : Bool,
+  trans_y_enabled : Bool,
+  trans_z_enabled : Bool,
+  rot_x_enabled : Bool,
+  rot_y_enabled : Bool,
+  rot_z_enabled : Bool,
+) -> LockedAxes {
+  let mut axes = LockedAxes::empty()
+  if !trans_x_enabled {
+    axes = axes.insert(LockedAxes::translation_locked_x())
+  }
+  if !trans_y_enabled {
+    axes = axes.insert(LockedAxes::translation_locked_y())
+  }
+  if !trans_z_enabled {
+    axes = axes.insert(LockedAxes::translation_locked_z())
+  }
+  if !rot_x_enabled {
+    axes = axes.insert(LockedAxes::rotation_locked_x())
+  }
+  if !rot_y_enabled {
+    axes = axes.insert(LockedAxes::rotation_locked_y())
+  }
+  if !rot_z_enabled {
+    axes = axes.insert(LockedAxes::rotation_locked_z())
+  }
+  axes
 }
 
 ///|
@@ -239,33 +326,23 @@ pub fn RigidBody3D::angvel(self : RigidBody3D) -> @core.Vec3 {
 
 ///|
 pub fn RigidBody3D::set_linvel(self : RigidBody3D, v : @core.Vec3) -> Unit {
-  let vv = if self.locked_translations { @core.Vec3::zero() } else { v }
+  let vv = rigid_body3d_mask_translation(
+    v,
+    self.trans_x_enabled,
+    self.trans_y_enabled,
+    self.trans_z_enabled,
+  )
   self.velocity = { linvel: vv, angvel: self.velocity.angvel }
 }
 
 ///|
 pub fn RigidBody3D::set_angvel(self : RigidBody3D, w : @core.Vec3) -> Unit {
-  let ww = if self.locked_rotations {
-    @core.Vec3::zero()
-  } else {
-    @core.Vec3::new(
-      if self.rot_x_enabled {
-        w.x
-      } else {
-        0.0F
-      },
-      if self.rot_y_enabled {
-        w.y
-      } else {
-        0.0F
-      },
-      if self.rot_z_enabled {
-        w.z
-      } else {
-        0.0F
-      },
-    )
-  }
+  let ww = rigid_body3d_mask_rotation(
+    w,
+    self.rot_x_enabled,
+    self.rot_y_enabled,
+    self.rot_z_enabled,
+  )
   self.velocity = { linvel: self.velocity.linvel, angvel: ww }
 }
 
@@ -305,6 +382,143 @@ pub fn RigidBody3D::locked_translations(self : RigidBody3D) -> Bool {
 ///|
 pub fn RigidBody3D::locked_rotations(self : RigidBody3D) -> Bool {
   self.locked_rotations
+}
+
+///|
+pub fn RigidBody3D::locked_axes(self : RigidBody3D) -> LockedAxes {
+  rigid_body3d_locked_axes(
+    self.trans_x_enabled,
+    self.trans_y_enabled,
+    self.trans_z_enabled,
+    self.rot_x_enabled,
+    self.rot_y_enabled,
+    self.rot_z_enabled,
+  )
+}
+
+///|
+pub fn RigidBody3D::set_locked_axes(
+  self : RigidBody3D,
+  locked_axes : LockedAxes,
+  wake_up : Bool,
+) -> Unit {
+  self.trans_x_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_x(),
+  )
+  self.trans_y_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_y(),
+  )
+  self.trans_z_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_z(),
+  )
+  self.rot_x_enabled = !locked_axes.contains(LockedAxes::rotation_locked_x())
+  self.rot_y_enabled = !locked_axes.contains(LockedAxes::rotation_locked_y())
+  self.rot_z_enabled = !locked_axes.contains(LockedAxes::rotation_locked_z())
+  self.locked_translations = !(self.trans_x_enabled ||
+    self.trans_y_enabled ||
+    self.trans_z_enabled)
+  self.locked_rotations = !(self.rot_x_enabled ||
+    self.rot_y_enabled ||
+    self.rot_z_enabled)
+  self.set_linvel(self.velocity.linvel)
+  self.set_angvel(self.velocity.angvel)
+  if wake_up && self.body_type.is_dynamic_or_kinematic() {
+    self.wake_up()
+  }
+}
+
+///|
+pub fn RigidBody3D::set_enabled_translations(
+  self : RigidBody3D,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> Unit {
+  let mut axes = self.locked_axes()
+  axes = if allow_x {
+    axes.remove(LockedAxes::translation_locked_x())
+  } else {
+    axes.insert(LockedAxes::translation_locked_x())
+  }
+  axes = if allow_y {
+    axes.remove(LockedAxes::translation_locked_y())
+  } else {
+    axes.insert(LockedAxes::translation_locked_y())
+  }
+  axes = if allow_z {
+    axes.remove(LockedAxes::translation_locked_z())
+  } else {
+    axes.insert(LockedAxes::translation_locked_z())
+  }
+  self.set_locked_axes(axes, wake_up)
+}
+
+///|
+pub fn RigidBody3D::set_enabled_rotations(
+  self : RigidBody3D,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> Unit {
+  let mut axes = self.locked_axes()
+  axes = if allow_x {
+    axes.remove(LockedAxes::rotation_locked_x())
+  } else {
+    axes.insert(LockedAxes::rotation_locked_x())
+  }
+  axes = if allow_y {
+    axes.remove(LockedAxes::rotation_locked_y())
+  } else {
+    axes.insert(LockedAxes::rotation_locked_y())
+  }
+  axes = if allow_z {
+    axes.remove(LockedAxes::rotation_locked_z())
+  } else {
+    axes.insert(LockedAxes::rotation_locked_z())
+  }
+  self.set_locked_axes(axes, wake_up)
+}
+
+///|
+pub fn RigidBody3D::restrict_translations(
+  self : RigidBody3D,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> Unit {
+  self.set_enabled_translations(allow_x, allow_y, allow_z, wake_up)
+}
+
+///|
+pub fn RigidBody3D::restrict_rotations(
+  self : RigidBody3D,
+  allow_x : Bool,
+  allow_y : Bool,
+  allow_z : Bool,
+  wake_up : Bool,
+) -> Unit {
+  self.set_enabled_rotations(allow_x, allow_y, allow_z, wake_up)
+}
+
+///|
+pub fn RigidBody3D::dominance_group(self : RigidBody3D) -> Int {
+  self.dominance_group
+}
+
+///|
+pub fn RigidBody3D::effective_dominance_group(self : RigidBody3D) -> Int {
+  RigidBodyDominance::new(self.dominance_group).effective_group(self.body_type)
+}
+
+///|
+pub fn RigidBody3D::set_dominance_group(
+  self : RigidBody3D,
+  group : Int,
+) -> Unit {
+  self.dominance_group = group
 }
 
 ///|
@@ -384,7 +598,13 @@ pub fn RigidBody3D::apply_impulse_at_point(
   }
   let inv_m = self.mass_properties.inv_mass
   if inv_m > 0.0F && !self.locked_translations {
-    self.set_linvel(self.linvel().add(impulse.scale(inv_m)))
+    let delta_v = rigid_body3d_mask_translation(
+      impulse.scale(inv_m),
+      self.trans_x_enabled,
+      self.trans_y_enabled,
+      self.trans_z_enabled,
+    )
+    self.set_linvel(self.linvel().add(delta_v))
   }
   if self.locked_rotations {
     return
@@ -481,10 +701,9 @@ pub fn RigidBody3D::apply_gravity(
     self.set_linvel(@core.Vec3::zero())
     return
   }
-  self.velocity = {
-    linvel: self.velocity.linvel.add(gravity.scale(self.gravity_scale * dt)),
-    angvel: self.velocity.angvel,
-  }
+  self.set_linvel(
+    self.velocity.linvel.add(gravity.scale(self.gravity_scale * dt)),
+  )
 }
 
 ///|
@@ -500,10 +719,7 @@ pub fn RigidBody3D::apply_damping(self : RigidBody3D, dt : @core.Real) -> Unit {
     self.linear_damping,
     self.angular_damping,
   )
-  // Enforce locks after damping.
-  if self.locked_translations {
-    self.set_linvel(@core.Vec3::zero())
-  }
+  self.set_linvel(self.velocity.linvel())
   self.set_angvel(self.velocity.angvel())
 }
 
@@ -556,16 +772,18 @@ pub fn RigidBody3D::advance_position(
       if self.activation.is_sleeping() {
         return
       }
-      let linvel = if self.locked_translations {
-        @core.Vec3::zero()
-      } else {
-        self.velocity.linvel()
-      }
-      let angvel = if self.locked_rotations {
-        @core.Vec3::zero()
-      } else {
-        self.velocity.angvel()
-      }
+      let linvel = rigid_body3d_mask_translation(
+        self.velocity.linvel(),
+        self.trans_x_enabled,
+        self.trans_y_enabled,
+        self.trans_z_enabled,
+      )
+      let angvel = rigid_body3d_mask_rotation(
+        self.velocity.angvel(),
+        self.rot_x_enabled,
+        self.rot_y_enabled,
+        self.rot_z_enabled,
+      )
       let vels : RigidBodyVelocity3D = { linvel, angvel }
       self.position = vels.integrate(
         dt,
@@ -574,16 +792,18 @@ pub fn RigidBody3D::advance_position(
       )
     }
     RigidBodyType::KinematicVelocityBased => {
-      let linvel = if self.locked_translations {
-        @core.Vec3::zero()
-      } else {
-        self.velocity.linvel()
-      }
-      let angvel = if self.locked_rotations {
-        @core.Vec3::zero()
-      } else {
-        self.velocity.angvel()
-      }
+      let linvel = rigid_body3d_mask_translation(
+        self.velocity.linvel(),
+        self.trans_x_enabled,
+        self.trans_y_enabled,
+        self.trans_z_enabled,
+      )
+      let angvel = rigid_body3d_mask_rotation(
+        self.velocity.angvel(),
+        self.rot_x_enabled,
+        self.rot_y_enabled,
+        self.rot_z_enabled,
+      )
       let vels : RigidBodyVelocity3D = { linvel, angvel }
       self.position = vels.integrate(
         dt,
@@ -593,9 +813,28 @@ pub fn RigidBody3D::advance_position(
     }
     RigidBodyType::KinematicPositionBased => {
       let mut next = self.next_position
-      if self.locked_translations {
-        next = @core.Isometry3::new(self.position.translation, next.rotation)
-      }
+      let curr_t = self.position.translation
+      let next_t = next.translation
+      next = @core.Isometry3::new(
+        @core.Vec3::new(
+          if self.trans_x_enabled {
+            next_t.x
+          } else {
+            curr_t.x
+          },
+          if self.trans_y_enabled {
+            next_t.y
+          } else {
+            curr_t.y
+          },
+          if self.trans_z_enabled {
+            next_t.z
+          } else {
+            curr_t.z
+          },
+        ),
+        next.rotation,
+      )
       if self.locked_rotations {
         next = @core.Isometry3::new(next.translation, self.position.rotation)
       }
@@ -625,6 +864,9 @@ pub struct RigidBodyBuilder3D {
   mut linvel : @core.Vec3
   mut angvel : @core.Vec3
   mut locked_translations : Bool
+  mut trans_x_enabled : Bool
+  mut trans_y_enabled : Bool
+  mut trans_z_enabled : Bool
   mut locked_rotations : Bool
   mut rot_x_enabled : Bool
   mut rot_y_enabled : Bool
@@ -637,7 +879,9 @@ pub struct RigidBodyBuilder3D {
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
   mut can_sleep : Bool
+  mut sleeping : Bool
   mut user_data : @core.UserData128
+  mut dominance_group : Int
 }
 
 ///|
@@ -649,6 +893,9 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
     linvel: @core.Vec3::zero(),
     angvel: @core.Vec3::zero(),
     locked_translations: false,
+    trans_x_enabled: true,
+    trans_y_enabled: true,
+    trans_z_enabled: true,
     locked_rotations: false,
     rot_x_enabled: true,
     rot_y_enabled: true,
@@ -665,8 +912,25 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
       @core.Vec3::zero(),
     ),
     can_sleep: true,
+    sleeping: false,
     user_data: @core.UserData128::zero(),
+    dominance_group: 0,
   }
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_static() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::fixed()
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_kinematic_position_based() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::kinematic_position_based()
+}
+
+///|
+pub fn RigidBodyBuilder3D::new_kinematic_velocity_based() -> RigidBodyBuilder3D {
+  RigidBodyBuilder3D::kinematic_velocity_based()
 }
 
 ///|
@@ -706,6 +970,15 @@ pub fn RigidBodyBuilder3D::can_sleep(
 }
 
 ///|
+pub fn RigidBodyBuilder3D::sleeping(
+  self : RigidBodyBuilder3D,
+  sleeping : Bool,
+) -> RigidBodyBuilder3D {
+  self.sleeping = sleeping
+  self
+}
+
+///|
 pub fn RigidBodyBuilder3D::user_data(
   self : RigidBodyBuilder3D,
   data : Int,
@@ -730,6 +1003,24 @@ pub fn RigidBodyBuilder3D::translation(
 ) -> RigidBodyBuilder3D {
   self.translation = t
   self
+}
+
+///|
+pub fn RigidBodyBuilder3D::position(
+  self : RigidBodyBuilder3D,
+  pos : @core.Isometry3,
+) -> RigidBodyBuilder3D {
+  self.translation = pos.translation
+  self.rotation = pos.rotation
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::pose(
+  self : RigidBodyBuilder3D,
+  pos : @core.Isometry3,
+) -> RigidBodyBuilder3D {
+  self.position(pos)
 }
 
 ///|
@@ -796,10 +1087,80 @@ pub fn RigidBodyBuilder3D::gravity_scale(
 }
 
 ///|
+pub fn RigidBodyBuilder3D::additional_mass(
+  self : RigidBodyBuilder3D,
+  mass : @core.Real,
+) -> RigidBodyBuilder3D {
+  self.mass_properties = self.mass_properties.set_mass(mass, true)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::additional_mass_properties(
+  self : RigidBodyBuilder3D,
+  props : @core.MassProperties3,
+) -> RigidBodyBuilder3D {
+  self.mass_properties = props
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::dominance_group(
+  self : RigidBodyBuilder3D,
+  group : Int,
+) -> RigidBodyBuilder3D {
+  self.dominance_group = group
+  self
+}
+
+///|
 pub fn RigidBodyBuilder3D::lock_translations(
   self : RigidBodyBuilder3D,
 ) -> RigidBodyBuilder3D {
+  self.trans_x_enabled = false
+  self.trans_y_enabled = false
+  self.trans_z_enabled = false
   self.locked_translations = true
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::locked_axes(
+  self : RigidBodyBuilder3D,
+  locked_axes : LockedAxes,
+) -> RigidBodyBuilder3D {
+  self.trans_x_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_x(),
+  )
+  self.trans_y_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_y(),
+  )
+  self.trans_z_enabled = !locked_axes.contains(
+    LockedAxes::translation_locked_z(),
+  )
+  self.rot_x_enabled = !locked_axes.contains(LockedAxes::rotation_locked_x())
+  self.rot_y_enabled = !locked_axes.contains(LockedAxes::rotation_locked_y())
+  self.rot_z_enabled = !locked_axes.contains(LockedAxes::rotation_locked_z())
+  self.locked_translations = !(self.trans_x_enabled ||
+    self.trans_y_enabled ||
+    self.trans_z_enabled)
+  self.locked_rotations = !(self.rot_x_enabled ||
+    self.rot_y_enabled ||
+    self.rot_z_enabled)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::enabled_translations(
+  self : RigidBodyBuilder3D,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> RigidBodyBuilder3D {
+  self.trans_x_enabled = x
+  self.trans_y_enabled = y
+  self.trans_z_enabled = z
+  self.locked_translations = !(x || y || z)
   self
 }
 
@@ -821,11 +1182,31 @@ pub fn RigidBodyBuilder3D::enabled_rotations(
   y : Bool,
   z : Bool,
 ) -> RigidBodyBuilder3D {
-  self.locked_rotations = false
+  self.locked_rotations = !(x || y || z)
   self.rot_x_enabled = x
   self.rot_y_enabled = y
   self.rot_z_enabled = z
   self
+}
+
+///|
+pub fn RigidBodyBuilder3D::restrict_translations(
+  self : RigidBodyBuilder3D,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> RigidBodyBuilder3D {
+  self.enabled_translations(x, y, z)
+}
+
+///|
+pub fn RigidBodyBuilder3D::restrict_rotations(
+  self : RigidBodyBuilder3D,
+  x : Bool,
+  y : Bool,
+  z : Bool,
+) -> RigidBodyBuilder3D {
+  self.enabled_rotations(x, y, z)
 }
 
 ///|
@@ -867,13 +1248,34 @@ pub fn RigidBodyBuilder3D::mass_properties(
 ///|
 pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
   let pos = @core.Isometry3::new(self.translation, self.rotation)
+  let activation = RigidBodyActivation3D::active()
+  if self.sleeping {
+    activation.sleeping = true
+    activation.time_since_can_sleep = activation.time_until_sleep
+  }
   {
     body_type: self.body_type,
     user_data: self.user_data,
     position: pos,
     next_position: pos,
-    velocity: { linvel: self.linvel, angvel: self.angvel },
+    velocity: {
+      linvel: rigid_body3d_mask_translation(
+        self.linvel,
+        self.trans_x_enabled,
+        self.trans_y_enabled,
+        self.trans_z_enabled,
+      ),
+      angvel: rigid_body3d_mask_rotation(
+        self.angvel,
+        self.rot_x_enabled,
+        self.rot_y_enabled,
+        self.rot_z_enabled,
+      ),
+    },
     locked_translations: self.locked_translations,
+    trans_x_enabled: self.trans_x_enabled,
+    trans_y_enabled: self.trans_y_enabled,
+    trans_z_enabled: self.trans_z_enabled,
     locked_rotations: self.locked_rotations,
     rot_x_enabled: self.rot_x_enabled,
     rot_y_enabled: self.rot_y_enabled,
@@ -885,8 +1287,9 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
     angular_damping: self.angular_damping,
     gravity_scale: self.gravity_scale,
     mass_properties: self.mass_properties,
-    activation: RigidBodyActivation3D::active(),
+    activation,
     can_sleep: self.can_sleep,
+    dominance_group: self.dominance_group,
   }
 }
 

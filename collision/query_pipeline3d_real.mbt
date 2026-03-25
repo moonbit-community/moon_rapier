@@ -1758,6 +1758,34 @@ pub fn QueryPipeline3DReal::intersect_aabb_conservative(
 }
 
 ///|
+fn qp3d_real_abs_mat3(m : @core.Mat3) -> @core.Mat3 {
+  @core.Mat3::new(
+    @core.abs(m.m00),
+    @core.abs(m.m01),
+    @core.abs(m.m02),
+    @core.abs(m.m10),
+    @core.abs(m.m11),
+    @core.abs(m.m12),
+    @core.abs(m.m20),
+    @core.abs(m.m21),
+    @core.abs(m.m22),
+  )
+}
+
+///|
+fn qp3d_real_aabb_transform(
+  iso : @core.Isometry3,
+  aabb : @core.Aabb3,
+) -> @core.Aabb3 {
+  let center = aabb.mins.add(aabb.maxs).scale(0.5F)
+  let half = aabb.maxs.sub(aabb.mins).scale(0.5F)
+  let rot = qp3d_real_abs_mat3(iso.rotation.to_mat3())
+  let ext = rot.mul_vec3(half)
+  let world_center = iso.transform_point(center)
+  @core.Aabb3::new(world_center.sub(ext), world_center.add(ext))
+}
+
+///|
 priv struct Qp3dRealGjkSupportPoint {
   p : @core.Vec3
   sup_a : @core.Vec3
@@ -2425,6 +2453,40 @@ pub fn QueryPipeline3DReal::intersect_point(
         continue
       }
       if qp3d_real_contains_point(co.position(), co.shape(), point) {
+        out.push(h)
+      }
+    }
+  }
+  out
+}
+
+///|
+pub fn QueryPipeline3DReal::intersect_shape(
+  self : QueryPipeline3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+  shape_pos : @core.Isometry3,
+  shape : Shape3D,
+) -> Array[ColliderHandle3D] {
+  let shape_aabb = qp3d_real_aabb_transform(shape_pos, shape.local_aabb())
+  let out : Array[ColliderHandle3D] = []
+  let n = colliders.colliders.length()
+  for i in 0..<n {
+    if colliders.colliders[i] is Some(co) {
+      let h = ColliderHandle3D::from_raw_parts(i, colliders.generations[i])
+      if !filter_pass_3d_real(self.filter, bodies, h, co) {
+        continue
+      }
+      if self.cached_aabbs[i] is Some(aabb) && !shape_aabb.intersects(aabb) {
+        continue
+      }
+      if qp3d_real_best_contact_for_pair(
+          shape_pos,
+          shape,
+          co.position(),
+          co.shape(),
+        )
+        is Some(_) {
         out.push(h)
       }
     }

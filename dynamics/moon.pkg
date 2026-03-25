@@ -1,5 +1,6 @@
 import {
   "Milky2018/moon_rapier/core",
+  "Milky2018/moon_rapier/data",
   "moonbitlang/core/uint64",
   "moonbitlang/core/strconv",
 }

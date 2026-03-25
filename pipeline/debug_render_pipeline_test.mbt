@@ -52,7 +52,13 @@ test "debug-render output is deterministic (best-effort)" {
     true,
   )
   |> ignore
-  multibody_joints.insert(a, b, revolute, true) |> ignore
+  multibody_joints.insert(
+    a,
+    b,
+    @dynamics.GenericJoint::from_revolute(revolute),
+    true,
+  )
+  |> ignore
   fn render_snapshot() -> String {
     let renderer = DebugRenderPipeline::default()
     let backend = DebugRenderBackend::new()

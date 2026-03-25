@@ -317,6 +317,7 @@ pub struct PhysicsPipeline3DReal {
   sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   contact_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   intersection_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
+  // private fields
 
   fn new() -> PhysicsPipeline3DReal
 }
@@ -324,6 +325,8 @@ pub fn PhysicsPipeline3DReal::new() -> Self
 pub fn PhysicsPipeline3DReal::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_events(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D, PhysicsHooks3D) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_events_and_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D, @dynamics.RopeJointSet3DReal, @dynamics.JointSet3DReal) -> Unit
+pub fn PhysicsPipeline3DReal::step_with_events_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, EventHandler3D, @dynamics.RopeJointSet3DReal, @dynamics.JointSet3DReal, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, PhysicsHooks3D) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_joints(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal) -> Unit
 pub fn PhysicsPipeline3DReal::step_with_joints_and_hooks(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3D, @collision.BroadPhase3D, @collision.NarrowPhase3D, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @dynamics.JointSet3DReal, PhysicsHooks3D) -> Unit

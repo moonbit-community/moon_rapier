@@ -18,6 +18,10 @@
 /// This is an incremental replacement for the current dim3 compatibility layer.
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
+  priv mut contact_twist_cache : @hashmap.HashMap[
+    (Int, Int, Int, Int),
+    @core.Real,
+  ]
   sensor_pairs : Array[
     (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
   ]
@@ -35,6 +39,7 @@ pub struct PhysicsPipeline3DReal {
 pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
   {
     contact_cache: ContactSolverCache3D::new(),
+    contact_twist_cache: @hashmap.new(),
     sensor_pairs: [],
     contact_pairs: [],
     intersection_pairs: [],
@@ -715,6 +720,67 @@ pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(
 }
 
 ///|
+pub fn PhysicsPipeline3DReal::step_with_events_and_joints(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    Some(hooks),
+  )
+}
+
+///|
 pub fn PhysicsPipeline3DReal::step_with_rope_joints(
   self : PhysicsPipeline3DReal,
   gravity : @core.Vec3,
@@ -958,17 +1024,21 @@ fn PhysicsPipeline3DReal::step_impl_one(
   )
   narrow_phase.update(pairs, bodies, colliders)
   let cache_out = ContactSolverCache3D::new()
-  solve_contacts_3d(
+  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+  solve_contacts_3d_impl(
     parameters,
     bodies,
     colliders,
     narrow_phase,
     self.contact_cache,
     cache_out,
+    self.contact_twist_cache,
+    twist_cache_out,
     hooks,
     events,
   )
   self.contact_cache = cache_out
+  self.contact_twist_cache = twist_cache_out
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
 

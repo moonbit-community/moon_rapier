@@ -104,6 +104,8 @@
 "rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::motor_position" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::motor_position"
 "rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::motor_velocity" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::motor_velocity"
 "rapier3d::dynamics::joint::spherical_joint::SphericalJointBuilder::new" = "Milky2018/moon_rapier/dynamics::SphericalJoint3DRealBuilder::new"
+"rapier2d::dynamics::joint::multibody_joint::multibody_joint_set::MultibodyLinkId::multibody" = "Milky2018/moon_rapier/dynamics::MultibodyLinkId::multibody"
+"rapier3d::dynamics::joint::multibody_joint::multibody_joint_set::MultibodyLinkId::multibody" = "Milky2018/moon_rapier/dynamics::MultibodyLinkId::multibody"
 
 "rapier2d::utils::DIM_MINUS_ONE" = "Milky2018/moon_rapier/utils::DIM_MINUS_ONE2"
 "rapier3d::utils::DIM_MINUS_ONE" = "Milky2018/moon_rapier/utils::DIM_MINUS_ONE3"

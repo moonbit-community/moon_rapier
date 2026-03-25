@@ -2929,6 +2929,37 @@ pub fn compute_cuboid_cuboid_contact(
   // Track the best (minimum) penetration axis.
   let mut best = CuboidBestAxis::A(0)
   let mut min_overlap = 1.0e30F
+  let min_extent1 = if a[0] < a[1] {
+    if a[0] < a[2] {
+      a[0]
+    } else {
+      a[2]
+    }
+  } else if a[1] < a[2] {
+    a[1]
+  } else {
+    a[2]
+  }
+  let min_extent2 = if b[0] < b[1] {
+    if b[0] < b[2] {
+      b[0]
+    } else {
+      b[2]
+    }
+  } else if b[1] < b[2] {
+    b[1]
+  } else {
+    b[2]
+  }
+  let edge_axis_bias = (if min_extent1 < min_extent2 {
+      min_extent1
+    } else {
+      min_extent2
+    }) *
+    0.05F
+  // Bias edge-edge axes slightly so face manifolds remain stable for nearly face-on stacks.
+  // Rapier/Parry keep persistent manifolds across frames; this SAT-only fallback needs a small
+  // preference for face axes to avoid degenerating into a single edge contact on tiny tilts.
 
   // Test L = A_i.
   for i in 0..<3 {
@@ -2984,7 +3015,7 @@ pub fn compute_cuboid_cuboid_contact(
       // Skip near-parallel axes when choosing the best axis.
       let axis = a_axis[i].cross(b_axis[j])
       if axis.length_squared() > 1.0e-12F {
-        if overlap < min_overlap {
+        if overlap + edge_axis_bias < min_overlap {
           min_overlap = overlap
           best = CuboidBestAxis::Cross(i, j)
         }
@@ -3214,6 +3245,34 @@ fn compute_cuboid_cuboid_contacts(
 
   let mut best = CuboidBestAxis::A(0)
   let mut min_overlap = 1.0e30F
+  let min_extent1 = if a0 < a1 {
+    if a0 < a2 {
+      a0
+    } else {
+      a2
+    }
+  } else if a1 < a2 {
+    a1
+  } else {
+    a2
+  }
+  let min_extent2 = if b0 < b1 {
+    if b0 < b2 {
+      b0
+    } else {
+      b2
+    }
+  } else if b1 < b2 {
+    b1
+  } else {
+    b2
+  }
+  let edge_axis_bias = (if min_extent1 < min_extent2 {
+      min_extent1
+    } else {
+      min_extent2
+    }) *
+    0.05F
 
   // Test L = A_i.
   for i in 0..<3 {
@@ -3317,7 +3376,7 @@ fn compute_cuboid_cuboid_contacts(
         b_axis_at(b_axis0, b_axis1, b_axis2, j),
       )
       if axis.length_squared() > 1.0e-12F {
-        if overlap < min_overlap {
+        if overlap + edge_axis_bias < min_overlap {
           min_overlap = overlap
           best = CuboidBestAxis::Cross(i, j)
         }
@@ -3424,14 +3483,15 @@ fn compute_cuboid_cuboid_contacts(
     if poly.length() == 0 {
       return []
     }
+    let plane_eps = 1.0e-6F
     let out : Array[@core.Vec3] = []
     let mut prev = poly[poly.length() - 1]
     let mut prev_d = prev.sub(plane_point).dot(plane_normal)
     for i in 0..<poly.length() {
       let cur = poly[i]
       let cur_d = cur.sub(plane_point).dot(plane_normal)
-      let prev_in = prev_d <= 0.0F
-      let cur_in = cur_d <= 0.0F
+      let prev_in = prev_d <= plane_eps
+      let cur_in = cur_d <= plane_eps
       if prev_in && cur_in {
         out.push(cur)
       } else if prev_in && !cur_in {

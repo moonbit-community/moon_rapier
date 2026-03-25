@@ -13,33 +13,35 @@
 // limitations under the License.
 
 ///|
-/// 3D-flavored collider builder (dim3,f32) used by the rapier3d parity tests.
-///
-/// NOTE: This currently projects to the existing 2D collider builder by dropping the `z`
-/// coordinate. It is a compatibility layer to enable strict porting of the rapier-reference
-/// dim3 unit tests.
-pub struct ColliderBuilder3 {
+/// Source-aligned dim3 collider builder alias.
+pub type ColliderBuilder3 = ColliderBuilder3D
+
+///|
+/// Legacy dim3 compatibility builder that projects to the historical 2D wrapper collider.
+pub struct ColliderBuilder3Compat {
   inner : ColliderBuilder
 }
 
 ///|
-pub fn ColliderBuilder3::cuboid(
+pub fn ColliderBuilder3Compat::cuboid(
   hx : @core.Real,
   hy : @core.Real,
   _hz : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::cuboid(hx, hy) }
 }
 
 ///|
-pub fn ColliderBuilder3::ball(radius : @core.Real) -> ColliderBuilder3 {
+pub fn ColliderBuilder3Compat::ball(
+  radius : @core.Real,
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::ball(radius) }
 }
 
 ///|
-pub fn ColliderBuilder3::compound(
+pub fn ColliderBuilder3Compat::compound(
   shapes : Array[(@core.Isometry3, SharedShape)],
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let shapes2 : Array[(@core.Isometry2, Shape)] = []
   for i in 0..<shapes.length() {
     let (iso3, shared) = shapes[i]
@@ -54,44 +56,44 @@ pub fn ColliderBuilder3::compound(
 }
 
 ///|
-pub fn ColliderBuilder3::capsule_x(
+pub fn ColliderBuilder3Compat::capsule_x(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::capsule_x(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::capsule_y(
+pub fn ColliderBuilder3Compat::capsule_y(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: ColliderBuilder::capsule_y(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::round_cylinder(
+pub fn ColliderBuilder3Compat::round_cylinder(
   radius : @core.Real,
   half_height : @core.Real,
   _border_radius : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: approximate a (rounded) cylinder with a capsule aligned with the Y axis.
   { inner: ColliderBuilder::capsule_y(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::cone(
+pub fn ColliderBuilder3Compat::cone(
   radius : @core.Real,
   half_height : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: approximate a cone with a cuboid of similar extents.
   { inner: ColliderBuilder::cuboid(radius, half_height) }
 }
 
 ///|
-pub fn ColliderBuilder3::convex_hull(
+pub fn ColliderBuilder3Compat::convex_hull(
   points : Array[@core.Vec3],
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -105,10 +107,10 @@ pub fn ColliderBuilder3::convex_hull(
 }
 
 ///|
-pub fn ColliderBuilder3::round_convex_hull(
+pub fn ColliderBuilder3Compat::round_convex_hull(
   points : Array[@core.Vec3],
   border_radius : @core.Real,
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -122,10 +124,10 @@ pub fn ColliderBuilder3::round_convex_hull(
 }
 
 ///|
-pub fn ColliderBuilder3::trimesh(
+pub fn ColliderBuilder3Compat::trimesh(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int, Int)],
-) -> ColliderBuilder3? {
+) -> ColliderBuilder3Compat? {
   let verts2 : Array[@core.Vec2] = []
   for i in 0..<vertices.length() {
     let v = vertices[i]
@@ -139,10 +141,10 @@ pub fn ColliderBuilder3::trimesh(
 }
 
 ///|
-pub fn ColliderBuilder3::heightfield(
+pub fn ColliderBuilder3Compat::heightfield(
   heights : Array[@core.Real],
   scale : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: interpret `scale.x` as the horizontal extent and `scale.y` as the vertical
   // scaling factor. The Z axis is ignored.
   {
@@ -154,10 +156,10 @@ pub fn ColliderBuilder3::heightfield(
 }
 
 ///|
-pub fn ColliderBuilder3::segment(
+pub fn ColliderBuilder3Compat::segment(
   a : @core.Vec3,
   b : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   {
     inner: ColliderBuilder::segment(
       @core.Vec2::new(a.x, a.y),
@@ -167,12 +169,12 @@ pub fn ColliderBuilder3::segment(
 }
 
 ///|
-pub fn ColliderBuilder3::voxelized_mesh(
+pub fn ColliderBuilder3Compat::voxelized_mesh(
   vertices : Array[@core.Vec3],
   indices : Array[(Int, Int)],
   voxel_size : @core.Real,
   fill_mode : FillMode,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let verts2 : Array[@core.Vec2] = []
   for i in 0..<vertices.length() {
     let v = vertices[i]
@@ -186,10 +188,10 @@ pub fn ColliderBuilder3::voxelized_mesh(
 }
 
 ///|
-pub fn ColliderBuilder3::voxels_from_points(
+pub fn ColliderBuilder3Compat::voxels_from_points(
   voxel_size : @core.Vec3,
   points : Array[@core.Vec3],
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   let pts2 : Array[@core.Vec2] = []
   for i in 0..<points.length() {
     let p = points[i]
@@ -204,115 +206,115 @@ pub fn ColliderBuilder3::voxels_from_points(
 }
 
 ///|
-pub fn ColliderBuilder3::translation(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::translation(
+  self : ColliderBuilder3Compat,
   translation : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   {
     inner: self.inner.translation(@core.Vec2::new(translation.x, translation.y)),
   }
 }
 
 ///|
-pub fn ColliderBuilder3::rotation(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::rotation(
+  self : ColliderBuilder3Compat,
   rotation : @core.Quat,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   // 2D compatibility: keep only the rotation around +Z (yaw).
   let axis = rotation.to_scaled_axis()
   { inner: self.inner.rotation(axis.z) }
 }
 
 ///|
-pub fn ColliderBuilder3::rotation_scaled_axis(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::rotation_scaled_axis(
+  self : ColliderBuilder3Compat,
   scaled_axis : @core.Vec3,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.rotation(scaled_axis.z) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_collision_types(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_collision_types(
+  self : ColliderBuilder3Compat,
   types : ActiveCollisionTypes,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_collision_types(types) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_events(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_events(
+  self : ColliderBuilder3Compat,
   events : ActiveEvents,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_events(events) }
 }
 
 ///|
-pub fn ColliderBuilder3::active_hooks(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::active_hooks(
+  self : ColliderBuilder3Compat,
   hooks : ActiveHooks,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.active_hooks(hooks) }
 }
 
 ///|
-pub fn ColliderBuilder3::collision_groups(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::collision_groups(
+  self : ColliderBuilder3Compat,
   groups : @dynamics.InteractionGroups,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.collision_groups(groups) }
 }
 
 ///|
-pub fn ColliderBuilder3::solver_groups(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::solver_groups(
+  self : ColliderBuilder3Compat,
   groups : @dynamics.InteractionGroups,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.solver_groups(groups) }
 }
 
 ///|
-pub fn ColliderBuilder3::restitution(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::restitution(
+  self : ColliderBuilder3Compat,
   restitution : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.restitution(restitution) }
 }
 
 ///|
-pub fn ColliderBuilder3::friction(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::friction(
+  self : ColliderBuilder3Compat,
   friction : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.friction(friction) }
 }
 
 ///|
-pub fn ColliderBuilder3::density(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::density(
+  self : ColliderBuilder3Compat,
   density : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.density(density) }
 }
 
 ///|
-pub fn ColliderBuilder3::contact_skin(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::contact_skin(
+  self : ColliderBuilder3Compat,
   skin : @core.Real,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.contact_skin(skin) }
 }
 
 ///|
-pub fn ColliderBuilder3::sensor(
-  self : ColliderBuilder3,
+pub fn ColliderBuilder3Compat::sensor(
+  self : ColliderBuilder3Compat,
   enabled : Bool,
-) -> ColliderBuilder3 {
+) -> ColliderBuilder3Compat {
   { inner: self.inner.sensor(enabled) }
 }
 
 ///|
-pub fn ColliderBuilder3::build(self : ColliderBuilder3) -> Collider {
+pub fn ColliderBuilder3Compat::build(self : ColliderBuilder3Compat) -> Collider {
   self.inner.build()
 }
 
@@ -320,6 +322,60 @@ pub fn ColliderBuilder3::build(self : ColliderBuilder3) -> Collider {
 pub fn Collider::translation3(self : Collider) -> @core.Vec3 {
   let t = self.translation()
   @core.Vec3::new(t.x, t.y, 0.0F)
+}
+
+///|
+fn recompute_body_mass_properties_from_attached_colliders3(
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+  body_handle : @dynamics.RigidBodyHandle,
+) -> Unit {
+  if bodies.get_mut(body_handle) is Some(body) {
+    let attached = colliders.colliders_with_parent(body_handle)
+    let mut mprops = @core.MassProperties::default()
+    for j in 0..<attached.length() {
+      let co_handle = attached[j]
+      if colliders.get(co_handle) is Some(collider) {
+        let local_pos = @core.Isometry2::new(
+          collider.local_translation,
+          @core.Rot2::from_angle(collider.local_rotation),
+        )
+        mprops = mprops.add(collider.mass_properties().transform_by(local_pos))
+      }
+    }
+    let added_mass = body.additional_mass()
+    if added_mass != 0.0F {
+      mprops = mprops.set_mass(mprops.mass + added_mass, true)
+    }
+    body.mark_local_mass_properties_changed() |> ignore
+    body.set_local_mass_properties(mprops) |> ignore
+  }
+}
+
+///|
+fn ColliderSet3::sync_with_bodies(
+  self : ColliderSet3,
+  bodies : @dynamics.RigidBodySet3,
+) -> Unit {
+  for i in 0..<self.inner.colliders.length() {
+    if self.inner.colliders[i] is Some(collider) {
+      if collider.parent is Some(parent) {
+        if bodies.get(parent) is Some(body) {
+          let body_pos = body.position()
+          let local_pos = @core.Isometry2::new(
+            collider.local_translation,
+            @core.Rot2::from_angle(collider.local_rotation),
+          )
+          let world_pos = body_pos.mul(local_pos)
+          collider.world_translation = world_pos.translation
+          collider.world_rotation = world_pos.rotation.angle()
+          continue
+        }
+      }
+      collider.world_translation = collider.local_translation
+      collider.world_rotation = collider.local_rotation
+    }
+  }
 }
 
 ///|
@@ -360,7 +416,29 @@ pub fn ColliderSet3::insert_with_parent(
   parent : @dynamics.RigidBodyHandle,
   bodies : @dynamics.RigidBodySet3,
 ) -> ColliderHandle {
-  self.inner.insert_with_parent(collider, parent, bodies.as_2d())
+  let handle = self.inner.allocate_handle()
+  let updated = collider
+  updated.changes = ColliderChanges::all()
+  updated.parent = Some(parent)
+  if bodies.get(parent) is Some(body) {
+    let body_pos = body.position()
+    let local_pos = @core.Isometry2::new(
+      updated.local_translation,
+      @core.Rot2::from_angle(updated.local_rotation),
+    )
+    let world_pos = body_pos.mul(local_pos)
+    updated.world_translation = world_pos.translation
+    updated.world_rotation = world_pos.rotation.angle()
+  } else {
+    updated.world_translation = updated.local_translation
+    updated.world_rotation = updated.local_rotation
+  }
+  self.inner.colliders[handle.id] = Some(updated)
+  if self.inner.colliders[handle.id] is Some(collider_ref) {
+    self.inner.push_modified_unchecked(handle, collider_ref)
+  }
+  recompute_body_mass_properties_from_attached_colliders3(bodies, self, parent)
+  handle
 }
 
 ///|
@@ -371,7 +449,43 @@ pub fn ColliderSet3::remove(
   bodies : @dynamics.RigidBodySet3,
   wake_up : Bool,
 ) -> Unit {
-  self.inner.remove(handle, islands.as_2d(), bodies.as_2d(), wake_up)
+  if handle.id < 0 || handle.id >= self.inner.colliders.length() {
+    return
+  }
+  if self.inner.generations[handle.id] != handle.generation {
+    return
+  }
+  if self.inner.colliders[handle.id] is Some(collider) {
+    let parent = collider.parent
+    if parent is Some(parent_handle) {
+      if bodies.get_mut(parent_handle) is Some(body) {
+        body.mark_local_mass_properties_changed() |> ignore
+        if wake_up && body.is_dynamic_or_kinematic() {
+          body.wake_up(true) |> ignore
+        }
+      }
+    }
+    self.inner.colliders[handle.id] = None
+    self.inner.removed_colliders.push(handle)
+    self.inner.generations[handle.id] = self.inner.generations[handle.id] + 1
+    self.inner.free_list.push(handle.id)
+    if parent is Some(parent_handle) {
+      recompute_body_mass_properties_from_attached_colliders3(
+        bodies, self, parent_handle,
+      )
+      if wake_up {
+        islands.wake_up(bodies, parent_handle, true)
+      }
+    }
+  }
+}
+
+///|
+pub fn ColliderSet3::colliders_with_parent(
+  self : ColliderSet3,
+  parent : @dynamics.RigidBodyHandle,
+) -> Array[ColliderHandle] {
+  self.inner.colliders_with_parent(parent)
 }
 
 ///|
@@ -389,5 +503,60 @@ pub fn ColliderSet3::set_parent(
   parent : @dynamics.RigidBodyHandle?,
   bodies : @dynamics.RigidBodySet3,
 ) -> Unit {
-  self.inner.set_parent(handle, parent, bodies.as_2d())
+  if self.inner.get_mut_internal_with_modification_tracking(handle)
+    is Some(collider) {
+    let old_parent = collider.parent
+    collider.parent = parent
+    collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
+    if parent is Some(parent_handle) {
+      if bodies.get(parent_handle) is Some(body) {
+        let body_pos = body.position()
+        let local_pos = @core.Isometry2::new(
+          collider.local_translation,
+          @core.Rot2::from_angle(collider.local_rotation),
+        )
+        let world_pos = body_pos.mul(local_pos)
+        collider.world_translation = world_pos.translation
+        collider.world_rotation = world_pos.rotation.angle()
+      } else {
+        collider.world_translation = collider.local_translation
+        collider.world_rotation = collider.local_rotation
+      }
+      recompute_body_mass_properties_from_attached_colliders3(
+        bodies, self, parent_handle,
+      )
+    } else {
+      collider.world_translation = collider.local_translation
+      collider.world_rotation = collider.local_rotation
+    }
+    if old_parent is Some(old_parent_handle) {
+      recompute_body_mass_properties_from_attached_colliders3(
+        bodies, self, old_parent_handle,
+      )
+    }
+  }
+}
+
+///|
+pub fn ColliderSet3::take_modified(
+  self : ColliderSet3,
+) -> Array[ColliderHandle] {
+  self.inner.take_modified()
+}
+
+///|
+pub fn ColliderSet3::set_parent_enabled(
+  self : ColliderSet3,
+  handle : @dynamics.RigidBodyHandle,
+  enabled : Bool,
+) -> Unit {
+  self.inner.set_parent_enabled(handle, enabled)
+}
+
+///|
+pub fn ColliderSet3::clear_changes_for(
+  self : ColliderSet3,
+  modified_colliders : Array[ColliderHandle],
+) -> Unit {
+  self.inner.clear_changes_for(modified_colliders)
 }

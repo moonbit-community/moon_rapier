@@ -3852,6 +3852,52 @@ pub fn handle_user_changes_to_colliders(
 }
 
 ///|
+pub fn handle_user_changes_to_colliders3(
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+  modified_colliders : Array[ColliderHandle],
+) -> Unit {
+  for i in 0..<modified_colliders.length() {
+    let handle = modified_colliders[i]
+    if colliders.inner.get_mut_internal(handle) is Some(collider) {
+      let changes = collider.changes
+      let parent = collider.parent
+      if changes.contains(COLLIDER_CHANGES_PARENT) {
+        if collider.parent is Some(parent_handle) {
+          if bodies.get(parent_handle) is Some(body) {
+            let body_pos = body.position()
+            let local_pos = @core.Isometry2::new(
+              collider.local_translation,
+              @core.Rot2::from_angle(collider.local_rotation),
+            )
+            let world_pos = body_pos.mul(local_pos)
+            collider.world_translation = world_pos.translation
+            collider.world_rotation = world_pos.rotation.angle()
+          } else {
+            collider.world_translation = collider.local_translation
+            collider.world_rotation = collider.local_rotation
+          }
+        } else {
+          collider.world_translation = collider.local_translation
+          collider.world_rotation = collider.local_rotation
+        }
+        collider.changes = collider.changes.insert(COLLIDER_CHANGES_POSITION)
+      }
+      if changes.contains(COLLIDER_CHANGES_PARENT) ||
+        changes.contains(COLLIDER_CHANGES_SHAPE) ||
+        changes.contains(COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES) ||
+        changes.contains(COLLIDER_CHANGES_ENABLED_OR_DISABLED) {
+        if parent is Some(rb_handle) {
+          if bodies.get_mut(rb_handle) is Some(body) {
+            body.mark_local_mass_properties_changed() |> ignore
+          }
+        }
+      }
+    }
+  }
+}
+
+///|
 pub struct ContactPair {
   manifolds : Array[ContactManifold]
 }
@@ -7938,6 +7984,104 @@ pub fn NarrowPhase::update_with_pairs(
 }
 
 ///|
+pub fn NarrowPhase::update_with_pairs3(
+  self : NarrowPhase,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+  prediction_distance : @core.Real,
+  pairs : Array[(ColliderHandle, ColliderHandle)],
+  impulse_joints : @dynamics.ImpulseJointSet3,
+  multibody_joints : @dynamics.MultibodyJointSet3,
+) -> Unit {
+  multibody_joints |> ignore
+  let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
+  let intersections : Array[IntersectionPair] = []
+  let contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<pairs.length() {
+    let pair = pairs[i]
+    let handle1 = pair.0
+    let handle2 = pair.1
+    if colliders.get(handle1) is Some(collider1) &&
+      colliders.get(handle2) is Some(collider2) {
+      if !collider1.is_enabled() || !collider2.is_enabled() {
+        continue
+      }
+      if is_same_parent(collider1, collider2) {
+        continue
+      }
+      if collider1.parent is Some(parent1) && collider2.parent is Some(parent2) {
+        if !@dynamics.RigidBodyHandle::equals(parent1, parent2) {
+          let joints = impulse_joints.joints_between(parent1, parent2)
+          let mut disabled = false
+          for j in 0..<joints.length() {
+            let joint = joints[j].1
+            if !joint.data.contacts_enabled {
+              disabled = true
+              break
+            }
+          }
+          if disabled {
+            continue
+          }
+        }
+      }
+      let mut rb_type1 = @dynamics.RigidBodyType::Fixed
+      let mut rb_type2 = @dynamics.RigidBodyType::Fixed
+      if collider1.parent is Some(parent1) {
+        if bodies.get(parent1) is Some(body1) {
+          rb_type1 = body1.body_type()
+        }
+      }
+      if collider2.parent is Some(parent2) {
+        if bodies.get(parent2) is Some(body2) {
+          rb_type2 = body2.body_type()
+        }
+      }
+      if !collider1.active_collision_types.test_body_types(rb_type1, rb_type2) &&
+        !collider2.active_collision_types.test_body_types(rb_type1, rb_type2) {
+        continue
+      }
+      if !collider1.collision_groups.test_groups(collider2.collision_groups) {
+        continue
+      }
+      let pos1 = collider1.world_translation
+      let pos2 = collider2.world_translation
+      let intersecting = shapes_intersect(
+        collider1.shape,
+        pos1,
+        collider1.world_rotation,
+        collider2.shape,
+        pos2,
+        collider2.world_rotation,
+      )
+      if intersecting {
+        if collider1.sensor || collider2.sensor {
+          intersections.push(IntersectionPair::{
+            collider1: handle1,
+            collider2: handle2,
+            intersecting,
+          })
+        } else {
+          let contact = build_contact_pair(pd, collider1, collider2)
+          let mut keep = false
+          for mi in 0..<contact.manifolds.length() {
+            if contact.manifolds[mi].points.length() > 0 {
+              keep = true
+              break
+            }
+          }
+          if keep {
+            contacts.push((handle1, handle2, contact))
+          }
+        }
+      }
+    }
+  }
+  self.intersections = intersections
+  self.contacts = contacts
+}
+
+///|
 pub fn NarrowPhase::intersection_pairs_with(
   self : NarrowPhase,
   handle : ColliderHandle,
@@ -8606,6 +8750,120 @@ pub fn BroadPhaseBvh::update(
   }
 
   // Update pair list and generate deterministic pair events.
+  self.pairs.clear()
+  self.pairs.append(next_pairs[:])
+  self.events.clear()
+  let mut i = 0
+  let mut j = 0
+  while i < prev_pairs.length() && j < next_pairs.length() {
+    let a = prev_pairs[i]
+    let b = next_pairs[j]
+    if ColliderHandle::equals(a.0, b.0) && ColliderHandle::equals(a.1, b.1) {
+      i = i + 1
+      j = j + 1
+    } else if pair_less(a, b) {
+      self.events.push(
+        BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)),
+      )
+      i = i + 1
+    } else {
+      self.events.push(
+        BroadPhasePairEvent::AddPair(ColliderPair::new(b.0, b.1)),
+      )
+      j = j + 1
+    }
+  }
+  while i < prev_pairs.length() {
+    let a = prev_pairs[i]
+    self.events.push(
+      BroadPhasePairEvent::DeletePair(ColliderPair::new(a.0, a.1)),
+    )
+    i = i + 1
+  }
+  while j < next_pairs.length() {
+    let b = next_pairs[j]
+    self.events.push(BroadPhasePairEvent::AddPair(ColliderPair::new(b.0, b.1)))
+    j = j + 1
+  }
+}
+
+///|
+pub fn BroadPhaseBvh::update3(
+  self : BroadPhaseBvh,
+  prediction_distance : @core.Real,
+  bodies : @dynamics.RigidBodySet3,
+  colliders : ColliderSet3,
+) -> Unit {
+  colliders.sync_with_bodies(bodies)
+  let prev_pairs = self.pairs.copy()
+  let leaves : Array[BvhLeaf] = []
+  let mut global_aabb : Aabb? = None
+  let halfspaces : Array[(ColliderHandle, Aabb)] = []
+  fn find_override(
+    overrides : Array[(ColliderHandle, @core.Aabb)],
+    h : ColliderHandle,
+  ) -> @core.Aabb? {
+    for j in 0..<overrides.length() {
+      let (oh, oaabb) = overrides[j]
+      if ColliderHandle::equals(oh, h) {
+        return Some(oaabb)
+      }
+    }
+    None
+  }
+
+  for i in 0..<colliders.inner.colliders.length() {
+    if colliders.inner.colliders[i] is Some(collider) && collider.is_enabled() {
+      let handle = ColliderHandle::new(i, colliders.inner.generations[i])
+      let override_aabb = find_override(self.override_aabbs, handle)
+      if override_aabb is None && collider.shape is Shape::HalfSpace(_) {
+        halfspaces.push(
+          (
+            handle,
+            compute_shape_aabb(
+              collider.shape,
+              collider.world_translation,
+              collider.world_rotation,
+              prediction_distance,
+            ),
+          ),
+        )
+      } else {
+        let aabb = if override_aabb is Some(core_aabb) {
+          core_aabb_to_internal(core_aabb)
+        } else {
+          compute_shape_aabb(
+            collider.shape,
+            collider.world_translation,
+            collider.world_rotation,
+            prediction_distance,
+          )
+        }
+        if global_aabb is Some(existing) {
+          global_aabb = Some(aabb_union(existing, aabb))
+        } else {
+          global_aabb = Some(aabb)
+        }
+        leaves.push(BvhLeaf::{ handle, aabb, center: aabb_center(aabb) })
+      }
+    }
+  }
+  for i in 0..<halfspaces.length() {
+    let (handle, point_aabb) = halfspaces[i]
+    let aabb = if global_aabb is Some(g) {
+      aabb_union(g, point_aabb)
+    } else {
+      point_aabb
+    }
+    leaves.push(BvhLeaf::{ handle, aabb, center: aabb_center(aabb) })
+  }
+  let next_pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  if leaves.length() > 1 {
+    let nodes : Array[BvhNode] = []
+    let root = build_bvh(nodes, leaves, 0, leaves.length())
+    collect_bvh_pairs(nodes, root, root, next_pairs)
+    sort_pairs(next_pairs)
+  }
   self.pairs.clear()
   self.pairs.append(next_pairs[:])
   self.events.clear()
