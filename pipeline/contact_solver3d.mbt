@@ -100,6 +100,16 @@ priv struct ContactSolveEntry3D {
   points : Array[ContactSolvePoint3D]
   cached : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]
   friction : @core.Real
+  friction_model : @dynamics.FrictionModel
+  friction_normal : @core.Vec3
+  friction_center : @core.Vec3
+  friction_t1 : @core.Vec3
+  friction_t2 : @core.Vec3
+  friction_r0 : @core.Real
+  friction_r1 : @core.Real
+  friction_r01 : @core.Real
+  twist_r : @core.Real
+  twist_dists : Array[@core.Real]
   surface_vel : @core.Vec3
 }
 
@@ -115,6 +125,7 @@ priv struct ContactSolvePoint3D {
   kt2 : @core.Real
   target_vn : @core.Real
   bias : @core.Real
+  penetration : @core.Real
 }
 
 ///|
@@ -173,13 +184,81 @@ fn apply_impulse(
 }
 
 ///|
-pub fn solve_contacts_3d(
+fn apply_angular_impulse(
+  body : @dynamics.RigidBody3D,
+  ang_impulse : @core.Vec3,
+) -> Unit {
+  let mprops = body.mass_properties()
+  if mprops.inv_mass <= 0.0F {
+    return
+  }
+  if !body.is_active() && ang_impulse.length_squared() > 1.0e-12F {
+    body.wake_up()
+  }
+  let dw = world_inv_inertia(body).mul_vec3(ang_impulse)
+  body.set_angvel(body.angvel().add(dw))
+}
+
+///|
+fn apply_translation_correction(
+  body : @dynamics.RigidBody3D,
+  correction : @core.Vec3,
+) -> Unit {
+  let curr = body.translation()
+  let locked_axes = body.locked_axes()
+  let next = @core.Vec3::new(
+    if locked_axes.contains(@dynamics.LockedAxes::translation_locked_x()) {
+      curr.x
+    } else {
+      curr.x + correction.x
+    },
+    if locked_axes.contains(@dynamics.LockedAxes::translation_locked_y()) {
+      curr.y
+    } else {
+      curr.y + correction.y
+    },
+    if locked_axes.contains(@dynamics.LockedAxes::translation_locked_z()) {
+      curr.z
+    } else {
+      curr.z + correction.z
+    },
+  )
+  body.set_translation(next)
+}
+
+///|
+fn midpoint3(a : @core.Vec3, b : @core.Vec3) -> @core.Vec3 {
+  a.add(b).scale(0.5F)
+}
+
+///|
+fn tangent_contact_directions(
+  n : @core.Vec3,
+  linvel1 : @core.Vec3,
+  linvel2 : @core.Vec3,
+) -> (@core.Vec3, @core.Vec3) {
+  let tangent_vel = linvel2
+    .sub(linvel1)
+    .sub(n.scale(linvel2.sub(linvel1).dot(n)))
+  if tangent_vel.length_squared() > 1.0e-12F {
+    let t1 = tangent_vel.normalize()
+    let t2 = n.cross(t1)
+    (t1, t2)
+  } else {
+    orthonormal_basis(n)
+  }
+}
+
+///|
+fn solve_contacts_3d_impl(
   parameters : @dynamics.IntegrationParameters,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   narrow_phase : @collision.NarrowPhase3D,
   cache_in : ContactSolverCache3D,
   cache_out : ContactSolverCache3D,
+  twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real],
+  twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real],
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
 ) -> Unit {
@@ -323,6 +402,7 @@ pub fn solve_contacts_3d(
       if contacts.length() == 0 {
         continue
       }
+      let friction_model = parameters.friction_model
       let (accept, hook_normal) = resolve_modify_hook(
         physics_hooks,
         bodies,
@@ -334,27 +414,41 @@ pub fn solve_contacts_3d(
       if !accept {
         continue
       }
+      let contact_normal = hook_normal_or_fallback(
+        hook_normal,
+        contacts[0].normal,
+      )
       let current : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)] = []
       for k in 0..<contacts.length() {
         let c = contacts[k]
         let imp = match_impulse(prev, c.point1, c.point2)
         current.push((c.point1, c.point2, imp))
         if !(dyn_sleeping1 && dyn_sleeping2) {
-          let ws = imp.scaled(warmstart_coeff)
-          let normal = hook_normal_or_fallback(hook_normal, c.normal)
-          let (t1, t2) = orthonormal_basis(normal)
-          let total = normal
-            .scale(ws.normal)
-            .add(t1.scale(ws.tangent1))
-            .add(t2.scale(ws.tangent2))
+          let normal = contact_normal
+          let ws_normal = normal.scale(imp.normal * warmstart_coeff)
           if p1 is Some(h1) {
             if bodies.get(h1) is Some(rb1) && rb1.body_type().is_dynamic() {
-              apply_impulse(rb1, total.scale(-1.0F), c.point1)
+              apply_impulse(rb1, ws_normal.scale(-1.0F), c.point1)
             }
           }
           if p2 is Some(h2) {
             if bodies.get(h2) is Some(rb2) && rb2.body_type().is_dynamic() {
-              apply_impulse(rb2, total, c.point2)
+              apply_impulse(rb2, ws_normal, c.point2)
+            }
+          }
+          if friction_model is @dynamics.FrictionModel::Coulomb {
+            let ws = imp.scaled(warmstart_coeff)
+            let (t1, t2) = orthonormal_basis(normal)
+            let tangent_total = t1.scale(ws.tangent1).add(t2.scale(ws.tangent2))
+            if p1 is Some(h1) {
+              if bodies.get(h1) is Some(rb1) && rb1.body_type().is_dynamic() {
+                apply_impulse(rb1, tangent_total.scale(-1.0F), c.point1)
+              }
+            }
+            if p2 is Some(h2) {
+              if bodies.get(h2) is Some(rb2) && rb2.body_type().is_dynamic() {
+                apply_impulse(rb2, tangent_total, c.point2)
+              }
             }
           }
         }
@@ -366,9 +460,16 @@ pub fn solve_contacts_3d(
 
   // Solve.
   let dt = parameters.dt
-  let iters = parameters.num_solver_iterations
-  let slop = 1.0e-3F
-  let beta = 0.2F
+  let extra_pgs = if parameters.num_internal_pgs_iterations < 0 {
+    0
+  } else {
+    parameters.num_internal_pgs_iterations
+  }
+  let iters = parameters.num_solver_iterations * (extra_pgs + 1)
+  let allowed_error = parameters.allowed_linear_error()
+  let max_corr = parameters.max_corrective_velocity()
+  let erp_inv_dt = parameters.contact_softness.erp_inv_dt(dt)
+  let cfm_factor = parameters.contact_softness.cfm_factor(dt)
   fn vel_at(body : @dynamics.RigidBody3D, point : @core.Vec3) -> @core.Vec3 {
     let r = point.sub(body.world_com())
     body.linvel().add(body.angvel().cross(r))
@@ -387,6 +488,8 @@ pub fn solve_contacts_3d(
   // Small impacts don't bounce (matches Rapier's restitution velocity threshold).
   let restitution_threshold = 1.0F
   let solve_entries : Array[ContactSolveEntry3D] = []
+  let pair_friction_impulses : Array[(@core.Real, @core.Real, @core.Real)] = []
+  let pair_keys : Array[(Int, Int, Int, Int)] = []
   for i in 0..<all_pairs.length() {
     let entry = all_pairs[i]
     let pair = entry.0
@@ -418,6 +521,10 @@ pub fn solve_contacts_3d(
       if !accept {
         continue
       }
+      let shared_normal = hook_normal_or_fallback(
+        hook_normal,
+        contacts[0].normal,
+      )
       let mut rb1 : @dynamics.RigidBody3D? = None
       let mut rb2 : @dynamics.RigidBody3D? = None
       if co1.parent() is Some(h1) {
@@ -453,7 +560,12 @@ pub fn solve_contacts_3d(
           continue
         }
       }
-      let friction = 0.5F * (co1.friction() + co2.friction())
+      let friction = @dynamics.CoefficientCombineRule::combine(
+        co1.friction(),
+        co2.friction(),
+        co1.friction_combine_rule(),
+        co2.friction_combine_rule(),
+      )
       let inv_m1 = if rb1 is Some(b1) && b1.body_type().is_dynamic() {
         b1.mass_properties().inv_mass
       } else {
@@ -487,12 +599,17 @@ pub fn solve_contacts_3d(
         }
         cache_set(cache_out, a, b, cached)
       }
-      let restitution = 0.5F * (co1.restitution() + co2.restitution())
-      let max_corr = parameters.max_corrective_velocity()
+      let restitution = @dynamics.CoefficientCombineRule::combine(
+        co1.restitution(),
+        co2.restitution(),
+        co1.restitution_combine_rule(),
+        co2.restitution_combine_rule(),
+      )
+      let friction_model = parameters.friction_model
       let points : Array[ContactSolvePoint3D] = []
       for k in 0..<contacts.length() {
         let c0 = contacts[k]
-        let n = hook_normal_or_fallback(hook_normal, c0.normal)
+        let n = shared_normal
         let (t1, t2) = orthonormal_basis(n)
         let r1 = if rb1 is Some(b1) {
           c0.point1.sub(b1.world_com())
@@ -526,16 +643,13 @@ pub fn solve_contacts_3d(
         let bias = if dt <= 0.0F {
           0.0F
         } else {
-          let pen = c0.penetration - slop
-          if pen > 0.0F {
-            let raw = -beta * pen / dt
-            if raw < -max_corr {
-              -max_corr
-            } else {
-              raw
-            }
-          } else {
+          let raw = erp_inv_dt * (allowed_error - c0.penetration)
+          if raw < -max_corr {
+            -max_corr
+          } else if raw > 0.0F {
             0.0F
+          } else {
+            raw
           }
         }
         points.push({
@@ -549,9 +663,140 @@ pub fn solve_contacts_3d(
           kt2,
           target_vn,
           bias,
+          penetration: c0.penetration,
         })
       }
-      solve_entries.push({ rb1, rb2, points, cached, friction, surface_vel })
+      let friction_center = if points.length() == 0 {
+        @core.Vec3::zero()
+      } else {
+        let mut sum = @core.Vec3::zero()
+        for k in 0..<points.length() {
+          let p = points[k]
+          sum = sum.add(midpoint3(p.point1, p.point2))
+        }
+        sum.scale(1.0F / Float::from_double(points.length().to_double()))
+      }
+      let linvel1 = if rb1 is Some(b1) {
+        b1.linvel()
+      } else {
+        @core.Vec3::zero()
+      }
+      let linvel2 = if rb2 is Some(b2) {
+        b2.linvel()
+      } else {
+        @core.Vec3::zero()
+      }
+      let friction_normal = if points.length() > 0 {
+        points[0].normal
+      } else {
+        @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      }
+      let (friction_t1, friction_t2) = tangent_contact_directions(
+        friction_normal,
+        linvel1,
+        linvel2.add(surface_vel),
+      )
+      let dp1 = if rb1 is Some(b1) {
+        friction_center.sub(b1.world_com())
+      } else {
+        @core.Vec3::zero()
+      }
+      let dp2 = if rb2 is Some(b2) {
+        friction_center.sub(b2.world_com())
+      } else {
+        @core.Vec3::zero()
+      }
+      let friction_r0 = inv_m1 +
+        inv_m2 +
+        k_term(i1, dp1, friction_t1) +
+        k_term(i2, dp2, friction_t1)
+      let friction_r1 = inv_m1 +
+        inv_m2 +
+        k_term(i1, dp1, friction_t2) +
+        k_term(i2, dp2, friction_t2)
+      let c11 = dp1.cross(friction_t1)
+      let c12 = dp1.cross(friction_t2)
+      let c21 = dp2.cross(friction_t1)
+      let c22 = dp2.cross(friction_t2)
+      let friction_r01 = i1.mul_vec3(c11).dot(c12) + i2.mul_vec3(c21).dot(c22)
+      let twist_r = if points.length() > 1 {
+        friction_normal.dot(i1.mul_vec3(friction_normal)) +
+        friction_normal.dot(i2.mul_vec3(friction_normal))
+      } else {
+        0.0F
+      }
+      let twist_dists : Array[@core.Real] = []
+      for k in 0..<points.length() {
+        let p = points[k]
+        twist_dists.push(
+          midpoint3(p.point1, p.point2).sub(friction_center).length(),
+        )
+      }
+      let mut warm_t1 = 0.0F
+      let mut warm_t2 = 0.0F
+      let warm_twist = if twist_cache_in.get(cache_key(a, b)) is Some(value) {
+        value
+      } else {
+        0.0F
+      }
+      if cached.length() > 0 {
+        for k in 0..<cached.length() {
+          warm_t1 = warm_t1 + cached[k].2.tangent1
+          warm_t2 = warm_t2 + cached[k].2.tangent2
+        }
+        let inv_cached_len = 1.0F /
+          Float::from_double(cached.length().to_double())
+        warm_t1 = warm_t1 * inv_cached_len
+        warm_t2 = warm_t2 * inv_cached_len
+      }
+      pair_friction_impulses.push((warm_t1, warm_t2, warm_twist))
+      pair_keys.push(cache_key(a, b))
+      solve_entries.push({
+        rb1,
+        rb2,
+        points,
+        cached,
+        friction,
+        friction_model,
+        friction_normal,
+        friction_center,
+        friction_t1,
+        friction_t2,
+        friction_r0,
+        friction_r1,
+        friction_r01,
+        twist_r,
+        twist_dists,
+        surface_vel,
+      })
+    }
+  }
+  for i in 0..<solve_entries.length() {
+    let e = solve_entries[i]
+    if e.friction_model is @dynamics.FrictionModel::Simplified {
+      let (warm_t1, warm_t2, warm_twist) = pair_friction_impulses[i]
+      let warm_tangent = e.friction_t1
+        .scale(warm_t1 * warmstart_coeff)
+        .add(e.friction_t2.scale(warm_t2 * warmstart_coeff))
+      if warm_tangent.length_squared() > 1.0e-12F {
+        if e.rb1 is Some(b1) && b1.body_type().is_dynamic() {
+          apply_impulse(b1, warm_tangent.scale(-1.0F), e.friction_center)
+        }
+        if e.rb2 is Some(b2) && b2.body_type().is_dynamic() {
+          apply_impulse(b2, warm_tangent, e.friction_center)
+        }
+      }
+      if warm_twist != 0.0F {
+        let twist_impulse = e.friction_normal.scale(
+          warm_twist * warmstart_coeff,
+        )
+        if e.rb1 is Some(b1) && b1.body_type().is_dynamic() {
+          apply_angular_impulse(b1, twist_impulse.scale(-1.0F))
+        }
+        if e.rb2 is Some(b2) && b2.body_type().is_dynamic() {
+          apply_angular_impulse(b2, twist_impulse)
+        }
+      }
     }
   }
   for _ in 0..<iters {
@@ -560,6 +805,7 @@ pub fn solve_contacts_3d(
       let points = e.points
       let cached = e.cached
       let friction = e.friction
+      let friction_model = e.friction_model
       let surface_vel = e.surface_vel
       let rb1 = e.rb1
       let rb2 = e.rb2
@@ -587,9 +833,9 @@ pub fn solve_contacts_3d(
         let rv = v2.sub(v1)
         let vn = rv.dot(n)
         if kn > 0.0F {
-          let jn = -(vn - target_vn + bias) / kn
           let prev_n = acc.normal
-          let next_n = if prev_n + jn < 0.0F { 0.0F } else { prev_n + jn }
+          let cand_n = prev_n - (vn - target_vn + bias) / kn
+          let next_n = if cand_n < 0.0F { 0.0F } else { cfm_factor * cand_n }
           let delta_n = next_n - prev_n
           if delta_n != 0.0F {
             let p = n.scale(delta_n)
@@ -606,7 +852,9 @@ pub fn solve_contacts_3d(
             tangent2: acc.tangent2,
           }
         }
-        if friction > 0.0F && acc.normal > 0.0F {
+        if friction_model is @dynamics.FrictionModel::Coulomb &&
+          friction > 0.0F &&
+          acc.normal > 0.0F {
           // Recompute after normal impulse.
           let v1b = if rb1 is Some(b1) {
             vel_at(b1, p0.point1)
@@ -651,6 +899,162 @@ pub fn solve_contacts_3d(
         }
         cached[k] = (p0.point1, p0.point2, acc)
       }
+      if friction_model is @dynamics.FrictionModel::Simplified &&
+        friction > 0.0F {
+        let mut tangent_limit = 0.0F
+        let mut twist_limit = 0.0F
+        for k in 0..<points.length() {
+          let normal_impulse = cached[k].2.normal
+          tangent_limit = tangent_limit + normal_impulse
+          if k < e.twist_dists.length() {
+            twist_limit = twist_limit + normal_impulse * e.twist_dists[k]
+          }
+        }
+        tangent_limit = tangent_limit * friction
+        twist_limit = twist_limit * friction
+        let (prev_t1, prev_t2, prev_twist) = pair_friction_impulses[i]
+        let mut next_t1 = prev_t1
+        let mut next_t2 = prev_t2
+        if tangent_limit > 0.0F &&
+          (e.friction_r0 > 0.0F || e.friction_r1 > 0.0F) {
+          let v1f = if rb1 is Some(b1) {
+            vel_at(b1, e.friction_center)
+          } else {
+            @core.Vec3::zero()
+          }
+          let v2f = if rb2 is Some(b2) {
+            vel_at(b2, e.friction_center)
+          } else {
+            @core.Vec3::zero()
+          }
+          let rvf = v2f.sub(v1f).add(surface_vel)
+          let dvel0 = rvf.dot(e.friction_t1)
+          let dvel1 = rvf.dot(e.friction_t2)
+          let dvel00 = dvel0 * dvel0
+          let dvel11 = dvel1 * dvel1
+          let dvel01 = dvel0 * dvel1
+          let lhs = dvel00 * e.friction_r0 +
+            dvel11 * e.friction_r1 +
+            dvel01 * (2.0F * e.friction_r01)
+          let inv_lhs = if lhs > 1.0e-12F {
+            (dvel00 + dvel11) / lhs
+          } else {
+            0.0F
+          }
+          let cand_t1 = prev_t1 - inv_lhs * dvel0
+          let cand_t2 = prev_t2 - inv_lhs * dvel1
+          let cand_mag2 = cand_t1 * cand_t1 + cand_t2 * cand_t2
+          let max_mag2 = tangent_limit * tangent_limit
+          if cand_mag2 > max_mag2 && cand_mag2 > 1.0e-12F {
+            let scale = tangent_limit / local_sqrt(cand_mag2)
+            next_t1 = cand_t1 * scale
+            next_t2 = cand_t2 * scale
+          } else {
+            next_t1 = cand_t1
+            next_t2 = cand_t2
+          }
+          let delta_t = e.friction_t1
+            .scale(next_t1 - prev_t1)
+            .add(e.friction_t2.scale(next_t2 - prev_t2))
+          if delta_t.length_squared() > 1.0e-12F {
+            if rb1 is Some(b1) && b1.body_type().is_dynamic() {
+              apply_impulse(b1, delta_t.scale(-1.0F), e.friction_center)
+            }
+            if rb2 is Some(b2) && b2.body_type().is_dynamic() {
+              apply_impulse(b2, delta_t, e.friction_center)
+            }
+          }
+        }
+        let mut next_twist = prev_twist
+        if twist_limit > 0.0F && e.twist_r > 1.0e-12F {
+          let w1 = if rb1 is Some(b1) {
+            b1.angvel()
+          } else {
+            @core.Vec3::zero()
+          }
+          let w2 = if rb2 is Some(b2) {
+            b2.angvel()
+          } else {
+            @core.Vec3::zero()
+          }
+          let rel_twist = w2.sub(w1).dot(e.friction_normal)
+          let cand_twist = prev_twist - rel_twist / e.twist_r
+          if cand_twist < -twist_limit {
+            next_twist = -twist_limit
+          } else if cand_twist > twist_limit {
+            next_twist = twist_limit
+          } else {
+            next_twist = cand_twist
+          }
+          let delta_twist = next_twist - prev_twist
+          if delta_twist != 0.0F {
+            let twist_impulse = e.friction_normal.scale(delta_twist)
+            if rb1 is Some(b1) && b1.body_type().is_dynamic() {
+              apply_angular_impulse(b1, twist_impulse.scale(-1.0F))
+            }
+            if rb2 is Some(b2) && b2.body_type().is_dynamic() {
+              apply_angular_impulse(b2, twist_impulse)
+            }
+          }
+        }
+        pair_friction_impulses[i] = (next_t1, next_t2, next_twist)
+        for k in 0..<points.length() {
+          let prev_cached = cached[k].2
+          cached[k] = (
+            points[k].point1,
+            points[k].point2,
+            { normal: prev_cached.normal, tangent1: next_t1, tangent2: next_t2 },
+          )
+        }
+      }
+    }
+  }
+  for i in 0..<solve_entries.length() {
+    let e = solve_entries[i]
+    if e.friction_model is @dynamics.FrictionModel::Simplified {
+      twist_cache_out.set(pair_keys[i], pair_friction_impulses[i].2)
+    }
+  }
+
+  // Positional stabilization for resting contacts.
+  let pos_slop = 1.0e-3F
+  let pos_beta = 0.35F
+  for i in 0..<solve_entries.length() {
+    let e = solve_entries[i]
+    let rb1 = e.rb1
+    let rb2 = e.rb2
+    let mut inv_m1 = 0.0F
+    let mut inv_m2 = 0.0F
+    if rb1 is Some(b1) && b1.body_type().is_dynamic() {
+      inv_m1 = b1.mass_properties().inv_mass
+    }
+    if rb2 is Some(b2) && b2.body_type().is_dynamic() {
+      inv_m2 = b2.mass_properties().inv_mass
+    }
+    let denom = inv_m1 + inv_m2
+    if denom <= 1.0e-12F {
+      continue
+    }
+    let mut best_depth = 0.0F
+    let mut best_normal = @core.Vec3::zero()
+    for k in 0..<e.points.length() {
+      let p = e.points[k]
+      if p.penetration > best_depth {
+        best_depth = p.penetration
+        best_normal = p.normal
+      }
+    }
+    if best_depth <= pos_slop {
+      continue
+    }
+    let correction = best_normal.scale((best_depth - pos_slop) * pos_beta)
+    let ratio1 = inv_m1 / denom
+    let ratio2 = inv_m2 / denom
+    if rb1 is Some(b1) && b1.body_type().is_dynamic() {
+      apply_translation_correction(b1, correction.scale(-ratio1))
+    }
+    if rb2 is Some(b2) && b2.body_type().is_dynamic() {
+      apply_translation_correction(b2, correction.scale(ratio2))
     }
   }
 
@@ -677,7 +1081,7 @@ pub fn solve_contacts_3d(
       if contacts.length() == 0 {
         continue
       }
-      let (_, hook_normal) = resolve_modify_hook(
+      let hook_result = resolve_modify_hook(
         physics_hooks,
         bodies,
         colliders,
@@ -685,6 +1089,7 @@ pub fn solve_contacts_3d(
         b,
         contacts[0].normal,
       )
+      let hook_normal = hook_result.1
       let n = contacts.length()
       let m = cached.length()
       let k = if n < m { n } else { m }
@@ -741,4 +1146,23 @@ pub fn solve_contacts_3d(
       }
     }
   }
+}
+
+///|
+pub fn solve_contacts_3d(
+  parameters : @dynamics.IntegrationParameters,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  cache_in : ContactSolverCache3D,
+  cache_out : ContactSolverCache3D,
+  physics_hooks : PhysicsHooks3D?,
+  event_handler : EventHandler3D?,
+) -> Unit {
+  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+  solve_contacts_3d_impl(
+    parameters, bodies, colliders, narrow_phase, cache_in, cache_out, twist_cache_in,
+    twist_cache_out, physics_hooks, event_handler,
+  )
 }

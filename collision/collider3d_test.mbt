@@ -141,7 +141,9 @@ test "collider3d group and material setters update values" {
     .collision_groups(collision_groups)
     .solver_groups(solver_groups)
     .friction(0.25F)
+    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
     .restitution(0.5F)
+    .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
     .build()
   inspect(
     co.collision_groups().memberships().equals(@dynamics.Group::group_1()),
@@ -152,7 +154,15 @@ test "collider3d group and material setters update values" {
     content="true",
   )
   inspect(@core.abs(co.friction() - 0.25F) < 1.0e-6F, content="true")
+  inspect(
+    co.friction_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
   inspect(@core.abs(co.restitution() - 0.5F) < 1.0e-6F, content="true")
+  inspect(
+    co.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Min,
+    content="true",
+  )
 
   co.set_collision_groups(@dynamics.InteractionGroups::all()) |> ignore
   co.set_solver_groups(
@@ -162,7 +172,11 @@ test "collider3d group and material setters update values" {
   )
   |> ignore
   co.set_friction(0.9F) |> ignore
+  co.set_friction_combine_rule(@dynamics.CoefficientCombineRule::Average)
+  |> ignore
   co.set_restitution(0.1F) |> ignore
+  co.set_restitution_combine_rule(@dynamics.CoefficientCombineRule::Max)
+  |> ignore
 
   inspect(
     co.collision_groups().test_mode() is @dynamics.InteractionTestMode::And,
@@ -173,7 +187,15 @@ test "collider3d group and material setters update values" {
     content="true",
   )
   inspect(@core.abs(co.friction() - 0.9F) < 1.0e-6F, content="true")
+  inspect(
+    co.friction_combine_rule() is @dynamics.CoefficientCombineRule::Average,
+    content="true",
+  )
   inspect(@core.abs(co.restitution() - 0.1F) < 1.0e-6F, content="true")
+  inspect(
+    co.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Max,
+    content="true",
+  )
 }
 
 ///|
@@ -193,7 +215,7 @@ test "collider3d builder default helpers and delta update pose" {
     content="true",
   )
   inspect(
-    @core.abs(ColliderBuilder3D::default_friction() - 0.7F) < 1.0e-6F,
+    @core.abs(ColliderBuilder3D::default_friction() - 0.5F) < 1.0e-6F,
     content="true",
   )
   let delta = @core.Isometry3::new(

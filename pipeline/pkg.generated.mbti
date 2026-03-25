@@ -317,6 +317,7 @@ pub struct PhysicsPipeline3DReal {
   sensor_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   contact_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
   intersection_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)]
+  // private fields
 
   fn new() -> PhysicsPipeline3DReal
 }

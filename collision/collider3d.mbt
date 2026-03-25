@@ -364,7 +364,9 @@ pub struct Collider3D {
   mut solver_groups : @dynamics.InteractionGroups
   mut contact_skin : @core.Real
   mut friction : @core.Real
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
 
 ///|
@@ -631,6 +633,22 @@ pub fn Collider3D::set_friction(
 }
 
 ///|
+pub fn Collider3D::friction_combine_rule(
+  self : Collider3D,
+) -> @dynamics.CoefficientCombineRule {
+  self.friction_combine_rule
+}
+
+///|
+pub fn Collider3D::set_friction_combine_rule(
+  self : Collider3D,
+  rule : @dynamics.CoefficientCombineRule,
+) -> Collider3D {
+  self.friction_combine_rule = rule
+  self
+}
+
+///|
 pub fn Collider3D::restitution(self : Collider3D) -> @core.Real {
   self.restitution
 }
@@ -641,6 +659,22 @@ pub fn Collider3D::set_restitution(
   restitution : @core.Real,
 ) -> Collider3D {
   self.restitution = restitution
+  self
+}
+
+///|
+pub fn Collider3D::restitution_combine_rule(
+  self : Collider3D,
+) -> @dynamics.CoefficientCombineRule {
+  self.restitution_combine_rule
+}
+
+///|
+pub fn Collider3D::set_restitution_combine_rule(
+  self : Collider3D,
+  rule : @dynamics.CoefficientCombineRule,
+) -> Collider3D {
+  self.restitution_combine_rule = rule
   self
 }
 
@@ -689,7 +723,9 @@ pub struct ColliderBuilder3D {
   mut solver_groups : @dynamics.InteractionGroups
   mut contact_skin : @core.Real
   mut friction : @core.Real
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : @core.Real
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
 
 ///|
@@ -717,7 +753,9 @@ fn collider_builder3d_default(
     solver_groups: @dynamics.InteractionGroups::all(),
     contact_skin: 0.0F,
     friction: ColliderBuilder3D::default_friction(),
+    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
     restitution: 0.0F,
+    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
   }
 }
 
@@ -728,7 +766,7 @@ pub fn ColliderBuilder3D::default_density() -> @core.Real {
 
 ///|
 pub fn ColliderBuilder3D::default_friction() -> @core.Real {
-  0.7F
+  0.5F
 }
 
 ///|
@@ -1550,11 +1588,29 @@ pub fn ColliderBuilder3D::friction(
 }
 
 ///|
+pub fn ColliderBuilder3D::friction_combine_rule(
+  self : ColliderBuilder3D,
+  rule : @dynamics.CoefficientCombineRule,
+) -> ColliderBuilder3D {
+  self.friction_combine_rule = rule
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::restitution(
   self : ColliderBuilder3D,
   restitution : @core.Real,
 ) -> ColliderBuilder3D {
   self.restitution = restitution
+  self
+}
+
+///|
+pub fn ColliderBuilder3D::restitution_combine_rule(
+  self : ColliderBuilder3D,
+  rule : @dynamics.CoefficientCombineRule,
+) -> ColliderBuilder3D {
+  self.restitution_combine_rule = rule
   self
 }
 
@@ -1580,6 +1636,8 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     solver_groups: self.solver_groups,
     contact_skin: self.contact_skin,
     friction: self.friction,
+    friction_combine_rule: self.friction_combine_rule,
     restitution: self.restitution,
+    restitution_combine_rule: self.restitution_combine_rule,
   }
 }

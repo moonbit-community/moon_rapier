@@ -343,7 +343,9 @@ pub struct Collider3D {
   mut solver_groups : @dynamics.InteractionGroups
   mut contact_skin : Float
   mut friction : Float
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
 pub fn Collider3D::active_collision_types(Self) -> ActiveCollisionTypes
 pub fn Collider3D::active_events(Self) -> ActiveEvents
@@ -356,12 +358,14 @@ pub fn Collider3D::contact_force_event_threshold(Self) -> Float
 pub fn Collider3D::contact_skin(Self) -> Float
 pub fn Collider3D::enabled(Self) -> Bool
 pub fn Collider3D::friction(Self) -> Float
+pub fn Collider3D::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider3D::is_sensor(Self) -> Bool
 pub fn Collider3D::local_position(Self) -> @core.Isometry3
 pub fn Collider3D::one_way(Self) -> (Float, Int)?
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
 pub fn Collider3D::restitution(Self) -> Float
+pub fn Collider3D::restitution_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider3D::set_active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn Collider3D::set_active_events(Self, ActiveEvents) -> Self
 pub fn Collider3D::set_active_hooks(Self, ActiveHooks) -> Self
@@ -370,12 +374,14 @@ pub fn Collider3D::set_contact_force_event_threshold(Self, Float) -> Self
 pub fn Collider3D::set_contact_skin(Self, Float) -> Self
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
 pub fn Collider3D::set_friction(Self, Float) -> Self
+pub fn Collider3D::set_friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_one_way_above(Self, Float) -> Unit
 pub fn Collider3D::set_one_way_below(Self, Float) -> Unit
 pub fn Collider3D::set_parent(Self, @dynamics.RigidBodyHandle?) -> Unit
 pub fn Collider3D::set_position(Self, @core.Isometry3) -> Unit
 pub fn Collider3D::set_restitution(Self, Float) -> Self
+pub fn Collider3D::set_restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn Collider3D::set_shape(Self, Shape3D) -> Unit
 pub fn Collider3D::set_solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider3D::set_surface_velocity(Self, @core.Vec3) -> Unit
@@ -509,7 +515,9 @@ pub struct ColliderBuilder3D {
   mut solver_groups : @dynamics.InteractionGroups
   mut contact_skin : Float
   mut friction : Float
+  mut friction_combine_rule : @dynamics.CoefficientCombineRule
   mut restitution : Float
+  mut restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
 pub fn ColliderBuilder3D::active_collision_types(Self, ActiveCollisionTypes) -> Self
 pub fn ColliderBuilder3D::active_events(Self, ActiveEvents) -> Self
@@ -535,6 +543,7 @@ pub fn ColliderBuilder3D::delta(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::density(Self, Float) -> Self
 pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
+pub fn ColliderBuilder3D::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder3D::halfspace(@core.Vec3) -> Self
 pub fn ColliderBuilder3D::heightfield(Array[Float], Int, Int, @core.Vec3) -> Self?
 pub fn ColliderBuilder3D::heightfield_with_flags(Array[Float], Int, Int, @core.Vec3, Int) -> Self?
@@ -543,6 +552,7 @@ pub fn ColliderBuilder3D::one_way_above(Self, Float) -> Self
 pub fn ColliderBuilder3D::one_way_below(Self, Float) -> Self
 pub fn ColliderBuilder3D::position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::restitution(Self, Float) -> Self
+pub fn ColliderBuilder3D::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::round_cone(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::round_convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)], Float) -> Self?

@@ -67,6 +67,57 @@ test "physics_pipeline3d_real: ball rests on ground" {
 }
 
 ///|
+test "physics_pipeline3d_real: stacked cuboids keep a face manifold" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let parameters = @dynamics.IntegrationParameters::default()
+    .set_dt(1.0F / 60.0F)
+    .set_num_solver_iterations(16)
+  let dyn_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  let dyn_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build(),
+    dyn_body,
+    bodies,
+  )
+  let fixed = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let fixed_co = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build(),
+    fixed,
+    bodies,
+  )
+
+  for _ in 0..<240 {
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+  }
+
+  if bodies.get(dyn_body) is Some(rb) {
+    let p = rb.translation()
+    inspect(p.x == p.x && p.y == p.y && p.z == p.z, content="true")
+    inspect(p.y > 0.95F, content="true")
+    inspect(p.length() < 2.0F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if narrow_phase.contact_pair(dyn_co, fixed_co) is Some(pair) {
+    inspect(pair.manifolds_len() >= 3, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "physics_pipeline3d_real: sleeping and wake-up" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
