@@ -334,12 +334,11 @@ pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(
   self : MultibodyJointSet3,
   bodies : RigidBodySet3,
 ) -> Unit {
-  let bodies2 = bodies.as_2d()
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
     let (mb_handle, mb) = items[i]
-    mb.forward_kinematics(bodies2, true)
-    mb.update_rigid_bodies(bodies2)
+    mb3_forward_kinematics(mb, bodies, true)
+    mb3_update_rigid_bodies(mb, bodies)
     self.multibodies.set(mb_handle, mb) |> ignore
   }
 }
@@ -1025,24 +1024,71 @@ fn mb3_set_spatial_column(
 }
 
 ///|
+fn mb3_project_pose_to_2d(pose : @core.Isometry3) -> @core.Isometry2 {
+  let axis = pose.rotation.to_scaled_axis()
+  @core.Isometry2::new(
+    @core.Vec2::new(pose.translation.x, pose.translation.y),
+    @core.Rot2::from_angle(axis.z),
+  )
+}
+
+///|
 fn mb3_cached_root_pose(multibody : Multibody) -> @core.Isometry3 {
   if multibody.links.length() > 0 {
-    let pose2 = multibody.links[0].local_to_world
     @core.Isometry3::new(
       @core.Vec3::new(
-        pose2.translation.x,
-        pose2.translation.y,
+        multibody.root_translation.x,
+        multibody.root_translation.y,
         multibody.root_translation3_z,
       ),
       multibody.root_rotation3_extra.mul(
         @core.rotation_from_scaled_axis(
-          @core.Vec3::new(0.0F, 0.0F, pose2.rotation.angle()),
+          @core.Vec3::new(0.0F, 0.0F, multibody.root_angle),
         ),
       ),
     )
   } else {
     @core.Isometry3::identity()
   }
+}
+
+///|
+fn mb3_update_root_from_bodies(
+  multibody : Multibody,
+  bodies : RigidBodySet3,
+) -> Unit {
+  if multibody.links.length() > 0 {
+    let root = multibody.links[0].rigid_body
+    let translation = bodies.translation(root)
+    multibody.root_translation = @core.Vec2::new(translation.x, translation.y)
+    multibody.root_angle = bodies.rotation(root).to_scaled_axis().z
+  }
+}
+
+///|
+fn mb3_update_ndofs_with_root(
+  multibody : Multibody,
+  bodies : RigidBodySet3,
+) -> Unit {
+  if multibody.links.length() <= 0 {
+    multibody.ndofs = 0
+    return
+  }
+  let root = multibody.links[0]
+  let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
+    !(body.body_type is RigidBodyType::Fixed)
+  } else {
+    true
+  }
+  let root_dofs = if is_dynamic { 6 } else { 0 }
+  let mut joint_ndofs = 0
+  for i in 1..<multibody.links.length() {
+    joint_ndofs = joint_ndofs + multibody.links[i].joint.ndofs()
+  }
+  multibody.root_is_dynamic = is_dynamic
+  multibody.ndofs = root_dofs + joint_ndofs
+  multibody.rebuild_indices(root_dofs)
+  multibody.ensure_buffers()
 }
 
 ///|
@@ -1096,6 +1142,72 @@ fn mb3_root_pose_from_bodies(
   }
 
   pose
+}
+
+///|
+fn mb3_store_projected_link_poses(
+  multibody : Multibody,
+  root_pose : @core.Isometry3,
+) -> Unit {
+  if multibody.links.length() <= 0 {
+    return
+  }
+
+  let world_poses : Array[@core.Isometry3] = []
+  for _ in 0..<multibody.links.length() {
+    world_poses.push(@core.Isometry3::identity())
+  }
+  world_poses[0] = root_pose
+
+  let root_link = multibody.links[0]
+  let root_pose2 = mb3_project_pose_to_2d(root_pose)
+  root_link.local_to_parent = root_pose2
+  root_link.local_to_world = root_pose2
+  multibody.links[0] = root_link
+
+  for i in 1..<multibody.links.length() {
+    let link = multibody.links[i]
+    let parent_pose = world_poses[link.parent_internal_id]
+    let local_to_parent3 = mb3_multibody_body_to_parent(
+      link.joint,
+      multibody_joint_local_displacements(link.joint, None, link.assembly_id),
+    )
+    let world_pose = parent_pose.mul(local_to_parent3)
+    world_poses[i] = world_pose
+    link.local_to_parent = mb3_project_pose_to_2d(local_to_parent3)
+    link.local_to_world = mb3_project_pose_to_2d(world_pose)
+    multibody.links[i] = link
+  }
+}
+
+///|
+fn mb3_forward_kinematics(
+  multibody : Multibody,
+  bodies : RigidBodySet3,
+  update_dofs : Bool,
+) -> Unit {
+  mb3_update_ndofs_with_root(multibody, bodies)
+  if multibody.links.length() <= 0 {
+    update_dofs |> ignore
+    return
+  }
+  if update_dofs {
+    mb3_update_root_from_bodies(multibody, bodies)
+  }
+  mb3_store_projected_link_poses(multibody, mb3_cached_root_pose(multibody))
+}
+
+///|
+fn mb3_update_rigid_bodies(
+  multibody : Multibody,
+  bodies : RigidBodySet3,
+) -> Unit {
+  for i in 0..<multibody.links.length() {
+    let link = multibody.links[i]
+    if bodies.get_mut(link.rigid_body) is Some(body) {
+      body.set_position(link.local_to_world, false) |> ignore
+    }
+  }
 }
 
 ///|
@@ -1413,7 +1525,7 @@ pub fn Multibody3::forward_kinematics(
   bodies : RigidBodySet3,
   update_dofs : Bool,
 ) -> Unit {
-  self.inner.forward_kinematics(bodies.as_2d(), update_dofs)
+  mb3_forward_kinematics(self.inner, bodies, update_dofs)
 }
 
 ///|
@@ -1509,7 +1621,7 @@ pub fn Multibody3::forward_kinematics_single_link(
   displacements : Array[@core.Real]?,
   jacobian : Jacobian3?,
 ) -> @core.Isometry3 {
-  self.inner.update_ndofs_with_root(bodies.as_2d())
+  mb3_update_ndofs_with_root(self.inner, bodies)
   mb3_compute_link_pose(
     self.inner,
     id,

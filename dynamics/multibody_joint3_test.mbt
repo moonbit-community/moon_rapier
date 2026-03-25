@@ -200,6 +200,60 @@ test "multibody generic prismatic joint follows 3d local axis" {
 }
 
 ///|
+test "multibody forward kinematics updates projected link poses (dim3)" {
+  let bodies = RigidBodySet3::new()
+  let joints = MultibodyJointSet3::new()
+  let root = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let child = bodies.insert(RigidBodyBuilder3::dynamic().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+    .local_anchor2(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .build(),
+  )
+  let handle = joints.insert(root, child, joint, true)
+  if handle is Some(link_handle) {
+    if joints.get_mut(link_handle) is Some((multibody, _)) {
+      multibody.apply_displacements([
+        0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.5707963F,
+      ])
+      multibody.forward_kinematics(bodies, false)
+    } else {
+      inspect(false, content="true")
+    }
+
+    if joints.joint_between(root, child) is Some((_, updated_multibody, link)) {
+      if updated_multibody.link_pose(link.link_id()) is Some(pose) {
+        let projected = link.local_to_world()
+        inspect(
+          @core.abs(projected.translation.x - pose.translation.x) < 1.0e-5F,
+          content="true",
+        )
+        inspect(
+          @core.abs(projected.translation.y - pose.translation.y) < 1.0e-5F,
+          content="true",
+        )
+        joints.sync_rigid_bodies_from_multibodies(bodies)
+        let child_translation = bodies.translation(child)
+        inspect(
+          @core.abs(child_translation.x - pose.translation.x) < 1.0e-5F,
+          content="true",
+        )
+        inspect(
+          @core.abs(child_translation.y - pose.translation.y) < 1.0e-5F,
+          content="true",
+        )
+      } else {
+        inspect(false, content="true")
+      }
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_insert) for dim3.
 test "multibody insert (dim3)" {
   let spatial_dim : Int = TEST_SPATIAL_DIM3
