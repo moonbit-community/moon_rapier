@@ -175,3 +175,13 @@ test "collider3d group and material setters update values" {
   inspect(@core.abs(co.friction() - 0.9F) < 1.0e-6F, content="true")
   inspect(@core.abs(co.restitution() - 0.1F) < 1.0e-6F, content="true")
 }
+
+///|
+test "collider3d contact skin builder and setter update values" {
+  let co = ColliderBuilder3D::ball(0.5F).contact_skin(0.2F).build()
+  inspect(@core.abs(co.contact_skin() - 0.2F) < 1.0e-6F, content="true")
+  let collision_aabb = co.compute_collision_aabb(0.1F)
+  inspect(@core.abs(collision_aabb.maxs.x - 0.8F) < 1.0e-6F, content="true")
+  co.set_contact_skin(0.05F) |> ignore
+  inspect(@core.abs(co.contact_skin() - 0.05F) < 1.0e-6F, content="true")
+}

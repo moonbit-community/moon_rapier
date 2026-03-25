@@ -362,6 +362,7 @@ pub struct Collider3D {
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut contact_skin : @core.Real
   mut friction : @core.Real
   mut restitution : @core.Real
 }
@@ -602,6 +603,20 @@ pub fn Collider3D::set_solver_groups(
 }
 
 ///|
+pub fn Collider3D::contact_skin(self : Collider3D) -> @core.Real {
+  self.contact_skin
+}
+
+///|
+pub fn Collider3D::set_contact_skin(
+  self : Collider3D,
+  skin : @core.Real,
+) -> Collider3D {
+  self.contact_skin = skin
+  self
+}
+
+///|
 pub fn Collider3D::friction(self : Collider3D) -> @core.Real {
   self.friction
 }
@@ -639,7 +654,7 @@ pub fn Collider3D::compute_collision_aabb(
   self : Collider3D,
   prediction_distance : @core.Real,
 ) -> @core.Aabb3 {
-  self.compute_aabb().dilated(prediction_distance)
+  self.compute_aabb().dilated(prediction_distance + self.contact_skin)
 }
 
 ///|
@@ -672,6 +687,7 @@ pub struct ColliderBuilder3D {
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut contact_skin : @core.Real
   mut friction : @core.Real
   mut restitution : @core.Real
 }
@@ -699,6 +715,7 @@ fn collider_builder3d_default(
     user_data: @core.UserData128::zero(),
     collision_groups: @dynamics.InteractionGroups::all(),
     solver_groups: @dynamics.InteractionGroups::all(),
+    contact_skin: 0.0F,
     friction: 0.7F,
     restitution: 0.0F,
   }
@@ -1496,6 +1513,15 @@ pub fn ColliderBuilder3D::solver_groups(
 }
 
 ///|
+pub fn ColliderBuilder3D::contact_skin(
+  self : ColliderBuilder3D,
+  skin : @core.Real,
+) -> ColliderBuilder3D {
+  self.contact_skin = skin
+  self
+}
+
+///|
 pub fn ColliderBuilder3D::friction(
   self : ColliderBuilder3D,
   friction : @core.Real,
@@ -1533,6 +1559,7 @@ pub fn ColliderBuilder3D::build(self : ColliderBuilder3D) -> Collider3D {
     user_data: self.user_data,
     collision_groups: self.collision_groups,
     solver_groups: self.solver_groups,
+    contact_skin: self.contact_skin,
     friction: self.friction,
     restitution: self.restitution,
   }

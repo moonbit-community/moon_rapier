@@ -222,6 +222,7 @@ fn run_examples3d_compound3() -> Bool {
 ///|
 fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/dynamic_trimesh3.rs` (headless; deterministic geometry).
+  // Mirrored by `pipeline/examples3d_real_test.mbt` real-backend smoke coverage.
   //
   // The upstream example loads OBJ meshes and optionally performs convex decomposition. Here we
   // exercise the same "bucket" (mesh/heightfield contacts + optional multi-collider bodies) using
@@ -338,7 +339,8 @@ fn run_examples3d_convex_decomposition3() -> Bool {
 
 ///|
 fn run_examples3d_heightfield3() -> Bool {
-  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless).
+  // Real dim3 backend coverage lives in `pipeline/examples3d_real_test.mbt`.
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
@@ -1476,7 +1478,8 @@ fn run_examples3d_vehicle_joints3() -> Bool {
 
 ///|
 fn run_examples3d_voxels3() -> Bool {
-  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; 2D compatibility mode).
+  // Ported from `rapier-reference/examples3d/voxels3.rs` (headless).
+  // Real dim3 backend coverage lives in `pipeline/examples3d_real_test.mbt`.
   let mut ok = true
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
@@ -4056,6 +4059,7 @@ test "examples3d/spring_joints3.rs parity" {
 ///|
 test "examples3d/trimesh3.rs parity" {
   // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless; simplified mesh input).
+  // Real dim3 backend coverage lives in `pipeline/examples3d_real_test.mbt`.
   let pipeline = @pipeline.PhysicsPipeline3::new()
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()

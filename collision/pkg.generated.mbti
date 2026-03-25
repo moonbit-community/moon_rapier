@@ -341,6 +341,7 @@ pub struct Collider3D {
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut contact_skin : Float
   mut friction : Float
   mut restitution : Float
 }
@@ -352,6 +353,7 @@ pub fn Collider3D::collision_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::compute_aabb(Self) -> @core.Aabb3
 pub fn Collider3D::compute_collision_aabb(Self, Float) -> @core.Aabb3
 pub fn Collider3D::contact_force_event_threshold(Self) -> Float
+pub fn Collider3D::contact_skin(Self) -> Float
 pub fn Collider3D::enabled(Self) -> Bool
 pub fn Collider3D::friction(Self) -> Float
 pub fn Collider3D::is_sensor(Self) -> Bool
@@ -365,6 +367,7 @@ pub fn Collider3D::set_active_events(Self, ActiveEvents) -> Self
 pub fn Collider3D::set_active_hooks(Self, ActiveHooks) -> Self
 pub fn Collider3D::set_collision_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider3D::set_contact_force_event_threshold(Self, Float) -> Self
+pub fn Collider3D::set_contact_skin(Self, Float) -> Self
 pub fn Collider3D::set_enabled(Self, Bool) -> Self
 pub fn Collider3D::set_friction(Self, Float) -> Self
 pub fn Collider3D::set_local_position(Self, @core.Isometry3) -> Unit
@@ -504,6 +507,7 @@ pub struct ColliderBuilder3D {
   mut user_data : @core.UserData128
   mut collision_groups : @dynamics.InteractionGroups
   mut solver_groups : @dynamics.InteractionGroups
+  mut contact_skin : Float
   mut friction : Float
   mut restitution : Float
 }
@@ -519,6 +523,7 @@ pub fn ColliderBuilder3D::collision_groups(Self, @dynamics.InteractionGroups) ->
 pub fn ColliderBuilder3D::compound(Array[(@core.Isometry3, Self)]) -> Self?
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::contact_force_event_threshold(Self, Float) -> Self
+pub fn ColliderBuilder3D::contact_skin(Self, Float) -> Self
 pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
 pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?
 pub fn ColliderBuilder3D::convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
