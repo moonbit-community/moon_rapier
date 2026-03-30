@@ -172,9 +172,7 @@ fn update_ccd_active_flags_3d_real(
   for i in 0..<body_handles.length() {
     let bh = body_handles[i]
     if bodies.get_mut(bh) is Some(rb) {
-      if !rb.is_ccd_enabled() ||
-        !rb.body_type().is_dynamic_or_kinematic() ||
-        !rb.is_active() {
+      if !rb.body_type().is_dynamic_or_kinematic() || !rb.is_active() {
         rb.set_ccd_active(false)
         continue
       }
@@ -187,6 +185,15 @@ fn update_ccd_active_flags_3d_real(
       }
       let max_point_velocity = rb.linvel().length() +
         rb.angvel().length() * ccd_max_dist
+      // Upstream hard-CCD path for explicit CCD bodies, plus a high-speed auto path for
+      // non-CCD bodies to prevent known fast-motion tunneling regressions on the 3DReal backend.
+      let auto_ccd_candidate = !rb.is_ccd_enabled() &&
+        dt <= 0.1F &&
+        rb.linvel().length() > 8.0F
+      if !rb.is_ccd_enabled() && !auto_ccd_candidate {
+        rb.set_ccd_active(false)
+        continue
+      }
       let threshold = ccd_thickness / 10.0F
       let moving_fast = max_point_velocity * dt > threshold
       rb.set_ccd_active(moving_fast)
@@ -1268,15 +1275,6 @@ fn PhysicsPipeline3DReal::step_impl(
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Unit {
-  fn ceil_pos(x : @core.Real) -> Int {
-    let i = x.to_int()
-    if Float::from_int(i) == x {
-      i
-    } else {
-      i + 1
-    }
-  }
-
   let dt = parameters.dt
   if dt <= 0.0F {
     return
@@ -1292,29 +1290,12 @@ fn PhysicsPipeline3DReal::step_impl(
     multibody.sync_rigid_bodies_from_multibodies(bodies)
     colliders.sync_with_bodies(bodies)
   }
-  let has_ccd_bodies = bodies.has_ccd_enabled()
-  let ccd_enabled = has_ccd_bodies && parameters.max_ccd_substeps > 0
-  let max_speed = bodies.max_linvel_len()
-  let non_ccd_motion_clamping = !has_ccd_bodies &&
-    dt <= 0.1F &&
-    max_speed > 8.0F
-  let motion_clamping_enabled = ccd_enabled || non_ccd_motion_clamping
-  let mut non_ccd_substeps = 1
-  if !ccd_enabled && !has_ccd_bodies {
-    // Fallback stabilization for scenes without hard-CCD-enabled bodies.
-    let max_disp = 0.03F * parameters.length_unit
-    if max_disp > 0.0F && max_speed * dt > max_disp {
-      non_ccd_substeps = ceil_pos(max_speed * dt / max_disp)
-    }
-    if non_ccd_substeps > 64 {
-      non_ccd_substeps = 64
-    }
-  }
+  let ccd_enabled = parameters.max_ccd_substeps > 0
   let mut remaining_time = dt
   let mut remaining_substeps = if ccd_enabled {
     parameters.max_ccd_substeps
   } else {
-    non_ccd_substeps
+    1
   }
   while remaining_substeps > 0 && remaining_time > 0.0F {
     let mut sub_dt = remaining_time
@@ -1345,10 +1326,6 @@ fn PhysicsPipeline3DReal::step_impl(
         remaining_time = 0.0F
         remaining_substeps = 0
       }
-    } else if !ccd_enabled && remaining_substeps > 1 {
-      sub_dt = remaining_time / Float::from_int(remaining_substeps)
-      remaining_time = remaining_time - sub_dt
-      remaining_substeps = remaining_substeps - 1
     } else {
       remaining_time = 0.0F
       remaining_substeps = 0
@@ -1357,7 +1334,7 @@ fn PhysicsPipeline3DReal::step_impl(
       let sub_params = parameters.with_dt(sub_dt)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints, multibody_joints, hooks, ccd_enabled, motion_clamping_enabled,
+        events, rope_joints, joints, multibody_joints, hooks, ccd_enabled,
       )
     }
   }
@@ -1379,7 +1356,6 @@ fn PhysicsPipeline3DReal::step_impl_one(
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
   ccd_enabled : Bool,
-  motion_clamping_enabled : Bool,
 ) -> Unit {
   let dt = parameters.dt
   bodies.apply_gravity_all(gravity, dt)
@@ -1419,24 +1395,17 @@ fn PhysicsPipeline3DReal::step_impl_one(
   )
   self.contact_cache = cache_out
   self.contact_twist_cache = twist_cache_out
-  let mut motion_clamped = false
   if ccd_enabled {
     let ccd_active = update_ccd_active_flags_3d_real(
       dt, bodies, colliders, false,
     )
     if ccd_active {
       clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, true)
-      motion_clamped = true
     }
-  }
-  if motion_clamping_enabled && !motion_clamped {
-    clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, false)
   }
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
-
-  // Joint constraints are applied after integrating positions so they can clamp fast motion
-  // deterministically (sufficient for the current parity tests).
+  // Keep deterministic post-integration joint solve for 3DReal joint-set semantics.
   let mut applied_constraints = false
   if rope_joints is Some(rj) {
     rj.solve(bodies, dt)
@@ -1453,24 +1422,38 @@ fn PhysicsPipeline3DReal::step_impl_one(
   if applied_constraints {
     colliders.sync_with_bodies(bodies)
   }
+  // The 3DReal joint sets are solved in a post-integration pass. Run a second clamp pass
+  // after joint corrections to keep fast joint-driven bodies from tunneling.
+  if ccd_enabled {
+    let ccd_active_after_joints = update_ccd_active_flags_3d_real(
+      dt, bodies, colliders, false,
+    )
+    if ccd_active_after_joints {
+      clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, true)
+    }
+    if dt <= 0.1F && bodies.max_linvel_len() > 8.0F {
+      clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, false)
+    }
+  }
 
-  // Collision events (Started/Stopped) are based on the end-of-step collision state.
+  // Always refresh collision state after integration so narrow-phase queries reflect
+  // end-of-step positions even when no event handler is provided.
+  broad_phase.update(prediction_distance, colliders)
+  let pairs = filter_broad_phase_pairs_3d(
+    broad_phase.pairs(),
+    bodies,
+    colliders,
+    joints,
+    multibody_joints,
+    hooks,
+  )
+  narrow_phase.update(pairs, bodies, colliders)
+  restore_contact_pair_impulses_from_cache(narrow_phase, self.contact_cache)
+
+  // Collision events (Started/Stopped) are emitted from the refreshed end-of-step state.
   // - sensor pairs: from intersection pairs, flagged with CollisionEventFlags::sensor().
   // - contact pairs: from contact pairs, flagged with CollisionEventFlags::empty().
   if events is Some(handler) {
-    // Update the collision state after integrating positions so queries and sensor events reflect
-    // the end-of-step configuration.
-    broad_phase.update(prediction_distance, colliders)
-    let pairs = filter_broad_phase_pairs_3d(
-      broad_phase.pairs(),
-      bodies,
-      colliders,
-      joints,
-      multibody_joints,
-      hooks,
-    )
-    narrow_phase.update(pairs, bodies, colliders)
-    restore_contact_pair_impulses_from_cache(narrow_phase, self.contact_cache)
     let next_sensor_pairs = collect_sensor_pairs(narrow_phase, colliders)
     let next_intersection_pairs = collect_intersection_pairs(
       narrow_phase, colliders,
