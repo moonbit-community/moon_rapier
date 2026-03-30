@@ -321,3 +321,84 @@ test "capsule-capsule contact: overlap" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "halfspace-ball contact: normal and penetration" {
+  let halfspace_pos = @core.Isometry3::identity()
+  let halfspace_normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  let ball_pos = @core.Isometry3::from_translation(
+    @core.Vec3::new(0.0F, -0.25F, 0.0F),
+  )
+  let c = compute_halfspace_contact(
+    halfspace_pos,
+    halfspace_normal,
+    ball_pos,
+    Shape3D::Ball(0.5F),
+  )
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.normal.y - 1.0F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.normal.z) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.penetration - 0.75F) < 1.0e-6F, content="true")
+    inspect(@core.abs(cp.point1.y - 0.0F) < 1.0e-6F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "ball-heightfield contact: flat patch overlap" {
+  let heightfield_pos = @core.Isometry3::identity()
+  let vertices = [
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    @core.Vec3::new(1.0F, 0.0F, 1.0F),
+  ]
+  let c = compute_ball_heightfield_contact(
+    @core.Vec3::new(0.5F, -0.2F, 0.5F),
+    0.3F,
+    heightfield_pos,
+    vertices,
+    2,
+    2,
+  )
+  if c is Some(cp) {
+    inspect(@core.abs(cp.normal.x) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.normal.y - 1.0F) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.normal.z) < 1.0e-5F, content="true")
+    inspect(@core.abs(cp.penetration - 0.1F) < 1.0e-4F, content="true")
+    inspect(@core.abs(cp.point2.y - 0.0F) < 1.0e-5F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "ball-voxels contact: overlap above voxel slab" {
+  let voxel_size = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let points = [@core.Vec3::new(0.2F, 0.2F, 0.2F)]
+  if ColliderBuilder3D::voxels_from_points(voxel_size, points) is Some(builder) {
+    let collider = builder.build()
+    match collider.shape() {
+      Shape3D::Voxels(voxels) => {
+        let c = compute_ball_voxels_contact(
+          @core.Vec3::new(0.5F, -0.2F, 0.5F),
+          0.4F,
+          @core.Isometry3::identity(),
+          voxels,
+        )
+        if c is Some(cp) {
+          inspect(cp.normal.y > 0.9F, content="true")
+          inspect(cp.penetration > 0.0F, content="true")
+          inspect(@core.abs(cp.point2.y - 0.0F) < 1.0e-5F, content="true")
+        } else {
+          inspect(false, content="true")
+        }
+      }
+      _ => inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
