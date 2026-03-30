@@ -226,7 +226,6 @@ pub fn NarrowPhase3D::update(
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
 ) -> Unit {
-  bodies |> ignore
   self.clear()
   for i in 0..<pairs.length() {
     let pa = pairs[i].0
@@ -235,6 +234,26 @@ pub fn NarrowPhase3D::update(
     if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
       if !co1.enabled() || !co2.enabled() {
         continue
+      }
+      let mut soft_ccd_prediction1 = 0.0F
+      let mut soft_ccd_prediction2 = 0.0F
+      if co1.parent() is Some(parent1) && bodies.get(parent1) is Some(rb1) {
+        soft_ccd_prediction1 = rb1.soft_ccd_prediction()
+      }
+      if co2.parent() is Some(parent2) && bodies.get(parent2) is Some(rb2) {
+        soft_ccd_prediction2 = rb2.soft_ccd_prediction()
+      }
+      if soft_ccd_prediction1 > 0.0F || soft_ccd_prediction2 > 0.0F {
+        let prediction_distance = if soft_ccd_prediction1 > soft_ccd_prediction2 {
+          soft_ccd_prediction1
+        } else {
+          soft_ccd_prediction2
+        }
+        let aabb1 = co1.compute_collision_aabb(prediction_distance)
+        let aabb2 = co2.compute_collision_aabb(prediction_distance)
+        if !aabb1.intersects(aabb2) {
+          continue
+        }
       }
       if !co1.collision_groups.test_groups(co2.collision_groups) {
         self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))

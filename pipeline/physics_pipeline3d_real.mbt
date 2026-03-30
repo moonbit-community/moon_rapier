@@ -548,17 +548,6 @@ fn collect_contact_pairs(
 }
 
 ///|
-fn has_nonempty_contact_pair(narrow_phase : @collision.NarrowPhase3D) -> Bool {
-  let all = narrow_phase.all_contact_pairs()
-  for i in 0..<all.length() {
-    if all[i].1.manifolds_len() > 0 {
-      return true
-    }
-  }
-  false
-}
-
-///|
 /// Restore contact-pair impulse data from the solver cache after a narrow-phase refresh.
 ///
 /// `PhysicsPipeline3DReal::step_impl_one` refreshes the narrow-phase after integrating positions
@@ -1384,69 +1373,50 @@ fn PhysicsPipeline3DReal::step_impl_one(
     hooks,
   )
   narrow_phase.update(pairs, bodies, colliders)
-  let has_noncontact_constraints = rope_joints is Some(_) ||
+  let has_joint_constraints = rope_joints is Some(_) ||
     joints is Some(_) ||
     multibody_joints is Some(_)
-  let first_pass_events = if has_noncontact_constraints { None } else { events }
-  let cache_out = ContactSolverCache3D::new()
-  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
-  solve_contacts_3d_impl(
-    parameters,
-    bodies,
-    colliders,
-    narrow_phase,
-    self.contact_cache,
-    cache_out,
-    self.contact_twist_cache,
-    twist_cache_out,
-    hooks,
-    first_pass_events,
-  )
-  self.contact_cache = cache_out
-  self.contact_twist_cache = twist_cache_out
-  if has_noncontact_constraints {
-    // Solve all non-contact constraints in the same pre-integration phase.
+  let coupling_passes = if has_joint_constraints { 2 } else { 1 }
+  let mut cache_in = self.contact_cache
+  let mut twist_cache_in = self.contact_twist_cache
+  for pass in 0..<coupling_passes {
+    let cache_out = ContactSolverCache3D::new()
+    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+    let pass_events = if pass + 1 == coupling_passes { events } else { None }
+    solve_contacts_3d_impl(
+      parameters, bodies, colliders, narrow_phase, cache_in, cache_out, twist_cache_in,
+      twist_cache_out, hooks, pass_events,
+    )
+    // Solve non-contact constraints in the same pre-integration phase.
     if rope_joints is Some(rj) {
       rj.solve(bodies, dt)
     }
     if joints is Some(js) {
-      js.solve(bodies, dt)
+      js.solve(bodies, dt, parameters.num_solver_iterations)
     }
     if multibody_joints is Some(multibody) {
       multibody.sync_rigid_bodies_from_multibodies(bodies)
     }
-    // Joint corrections can modify body states before the final contact solve.
-    colliders.sync_with_bodies(bodies)
-    broad_phase.update(prediction_distance, colliders)
-    let pairs_after_constraints = filter_broad_phase_pairs_3d(
-      broad_phase.pairs(),
-      bodies,
-      colliders,
-      joints,
-      multibody_joints,
-      hooks,
-    )
-    narrow_phase.update(pairs_after_constraints, bodies, colliders)
-    let refined_cache_out = ContactSolverCache3D::new()
-    let refined_twist_cache_out : @hashmap.HashMap[
-      (Int, Int, Int, Int),
-      @core.Real,
-    ] = @hashmap.new()
-    solve_contacts_3d_impl(
-      parameters,
-      bodies,
-      colliders,
-      narrow_phase,
-      self.contact_cache,
-      refined_cache_out,
-      self.contact_twist_cache,
-      refined_twist_cache_out,
-      hooks,
-      events,
-    )
-    self.contact_cache = refined_cache_out
-    self.contact_twist_cache = refined_twist_cache_out
+    cache_in = cache_out
+    twist_cache_in = twist_cache_out
+    if pass + 1 < coupling_passes {
+      // Rebuild contacts after joint corrections for the next coupled pass.
+      colliders.sync_with_bodies(bodies)
+      broad_phase.update(prediction_distance, colliders)
+      let pairs = filter_broad_phase_pairs_3d(
+        broad_phase.pairs(),
+        bodies,
+        colliders,
+        joints,
+        multibody_joints,
+        hooks,
+      )
+      narrow_phase.update(pairs, bodies, colliders)
+    }
   }
+  self.contact_cache = cache_in
+  self.contact_twist_cache = twist_cache_in
+  // Joint/contact corrections may modify body states before CCD clamping.
   colliders.sync_with_bodies(bodies)
   if ccd_enabled {
     let ccd_active = update_ccd_active_flags_3d_real(
@@ -1455,29 +1425,9 @@ fn PhysicsPipeline3DReal::step_impl_one(
     if ccd_active {
       clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, true)
     }
-    if has_noncontact_constraints &&
-      has_nonempty_contact_pair(narrow_phase) &&
-      gravity.length_squared() > 0.0F &&
-      dt <= 0.1F &&
-      bodies.max_linvel_len() > 8.0F {
-      clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, false)
-    }
   }
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)
-  if has_noncontact_constraints && !has_nonempty_contact_pair(narrow_phase) {
-    // Keep one post-integration stabilization pass for pure joint scenes.
-    if rope_joints is Some(rj) {
-      rj.solve(bodies, dt)
-    }
-    if joints is Some(js) {
-      js.solve(bodies, dt)
-    }
-    if multibody_joints is Some(multibody) {
-      multibody.sync_rigid_bodies_from_multibodies(bodies)
-    }
-    colliders.sync_with_bodies(bodies)
-  }
 
   // Always refresh collision state after integration so narrow-phase queries reflect
   // end-of-step positions even when no event handler is provided.

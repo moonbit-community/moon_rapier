@@ -730,7 +730,7 @@ pub fn JointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidB
 pub fn JointSet3DReal::new() -> Self
 pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
-pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
+pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float, Int) -> Unit
 
 pub struct JointSolverBody {
   im : @core.Vec2
