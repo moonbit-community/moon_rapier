@@ -172,7 +172,9 @@ fn update_ccd_active_flags_3d_real(
   for i in 0..<body_handles.length() {
     let bh = body_handles[i]
     if bodies.get_mut(bh) is Some(rb) {
-      if !rb.body_type().is_dynamic_or_kinematic() || !rb.is_active() {
+      if !rb.is_ccd_enabled() ||
+        !rb.body_type().is_dynamic_or_kinematic() ||
+        !rb.is_active() {
         rb.set_ccd_active(false)
         continue
       }
@@ -185,15 +187,6 @@ fn update_ccd_active_flags_3d_real(
       }
       let max_point_velocity = rb.linvel().length() +
         rb.angvel().length() * ccd_max_dist
-      // Upstream hard-CCD path for explicit CCD bodies, plus a high-speed auto path for
-      // non-CCD bodies to prevent known fast-motion tunneling regressions on the 3DReal backend.
-      let auto_ccd_candidate = !rb.is_ccd_enabled() &&
-        dt <= 0.1F &&
-        rb.linvel().length() > 8.0F
-      if !rb.is_ccd_enabled() && !auto_ccd_candidate {
-        rb.set_ccd_active(false)
-        continue
-      }
       let threshold = ccd_thickness / 10.0F
       let moving_fast = max_point_velocity * dt > threshold
       rb.set_ccd_active(moving_fast)

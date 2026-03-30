@@ -1,23 +1,26 @@
 # Upstream Alignment Issue Tracker
 
-This tracker records remaining and completed parity items between `moon_rapier` and `rapier-reference`.
+Last updated: 2026-03-30
 
-Reference upstream sources:
-- `rapier-reference/src/pipeline/physics_pipeline.rs`
-- `rapier-reference/src/dynamics/ccd/ccd_solver.rs`
+## Status Legend
+
+- `TODO`: not started
+- `IN_PROGRESS`: currently being fixed
+- `BLOCKED_PLATFORM`: blocked by platform/public API limitations or external dependency constraints
+- `DONE`: fixed and verified locally
 
 ## Issues
 
-| ID | Area | Status | Summary | Upstream Reference |
+| ID | Source | Problem | Status | Notes |
 | --- | --- | --- | --- | --- |
-| UAI-001 | 3DReal CCD active flag lifecycle | Done | Split `ccd_enabled` and `ccd_active` semantics for 3D rigid bodies and update active flags each substep. | `CCDSolver::update_ccd_active_flags` |
-| UAI-002 | 3DReal first-impact estimation | Done | Replaced ball-only TOI shortcut with generic shape-cast based first-impact search for CCD-active bodies. | `CCDSolver::find_first_impact` |
-| UAI-003 | 3DReal motion clamping path | Done | Clamping now runs only when CCD is enabled and at least one CCD body is active, with minimum TOI guard. | `PhysicsPipeline::run_ccd_motion_clamping` + `CCDSolver::clamp_motions` |
-| UAI-004 | 3DReal substep policy | Done | Removed the non-CCD fallback substep path and kept CCD substep splitting driven by `max_ccd_substeps`, with first-impact selection. | `PhysicsPipeline::step` CCD substep loop |
-| UAI-005 | CCD geometry metrics | Done | Added per-body CCD thickness/radius metrics derived from attached collider shapes for fast-motion activation and clamping thresholds. | `RigidBodyCcd::{is_moving_fast,max_point_velocity}` |
-| UAI-006 | 3DReal joint-phase CCD parity | In Progress | 3DReal still uses post-integration joint solve semantics and an extra high-speed clamp pass after joints to avoid tunneling regressions; this is not yet a 1:1 upstream solver phase ordering. | `PhysicsPipeline::step` + `CCDSolver::clamp_motions` |
+| UAI-001 | `rapier-reference/src/dynamics/ccd/ccd_solver.rs::update_ccd_active_flags` | 3DReal mixed `ccd_enabled` and `ccd_active` semantics. | `DONE` | Fixed in `dynamics/rigid_body3d.mbt` and `pipeline/physics_pipeline3d_real.mbt`: introduced explicit `ccd_active` state, kept `ccd_enabled` as configuration flag, and update active flags each substep. Validated with `moon check` (0 errors) and `moon test` (`518 passed, 0 failed`). |
+| UAI-002 | `rapier-reference/src/dynamics/ccd/ccd_solver.rs::find_first_impact` | 3DReal first-impact detection was ball-shape-specific. | `DONE` | Fixed in `pipeline/physics_pipeline3d_real.mbt`: replaced ball-only TOI shortcut with generic shape-cast first-impact search for CCD-active colliders. Validated with `moon test -p .../rapier_full_parity -f examples3d_trimesh_parity_test.mbt` and full `moon test` (`518 passed`). |
+| UAI-003 | `rapier-reference/src/pipeline/physics_pipeline.rs::run_ccd_motion_clamping` + `ccd_solver.rs::clamp_motions` | 3DReal clamp path did not follow hard-CCD activation and minimum-TOI semantics. | `DONE` | Fixed in `pipeline/physics_pipeline3d_real.mbt`: clamp now runs through CCD-active gating with body CCD metrics and minimum-TOI guard for hard-CCD path. Validated with parity regressions (`examples3d_real_debug_more_parity_test.mbt`, `examples3d_trimesh_parity_test.mbt`) and full `moon test` (`518 passed`). |
+| UAI-004 | `rapier-reference/src/pipeline/physics_pipeline.rs` CCD substep loop | 3DReal previously used non-CCD fallback substep splitting logic. | `DONE` | Fixed in `pipeline/physics_pipeline3d_real.mbt`: removed non-CCD fallback substep path; substep splitting now follows CCD loop controlled by `max_ccd_substeps` and first-impact estimate. Validated with `moon check` and full `moon test` (`518 passed`). |
+| UAI-005 | `rapier-reference/src/dynamics/rigid_body_components.rs::{max_point_velocity,is_moving_fast}` | 3DReal lacked per-body CCD geometry metrics parity. | `DONE` | Fixed in `pipeline/physics_pipeline3d_real.mbt`: added per-body CCD thickness and max-distance metrics from attached colliders and used them for moving-fast thresholding. Validated with parity tests and full `moon test` (`518 passed`). |
+| UAI-006 | `rapier-reference/src/pipeline/physics_pipeline.rs` solver phase ordering | 3DReal `JointSet3DReal` is still solved in a post-integration pass (not 1:1 with upstream joint/contact integrated solver phase). | `IN_PROGRESS` | Current state in `pipeline/physics_pipeline3d_real.mbt`: keeps post-integration `JointSet3DReal::solve` semantics and adds a second high-speed clamp pass after joints to prevent tunneling regressions (`vehicle_joints3`). Needs joint/contact phase unification for true 1:1 parity. |
+| UAI-007 | `rapier-reference/src/pipeline/physics_pipeline.rs` end-of-step collision state update | 3DReal narrow-phase state could be stale when no event handler was passed. | `DONE` | Fixed in `pipeline/physics_pipeline3d_real.mbt`: always refresh broad-phase/narrow-phase after integration, then emit events from that refreshed state only when handler exists. Validated with `examples3d_trimesh_parity_test.mbt`, `examples3d_real_unique_parity_test.mbt`, and full `moon test` (`518 passed`). |
 
-## Validation
+## Current Work Queue
 
-- `moon check`
-- `moon test`
+1. UAI-006
