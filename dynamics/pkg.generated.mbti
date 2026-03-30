@@ -535,6 +535,7 @@ pub fn IslandManager3::wake_up(Self, RigidBodySet3, RigidBodyHandle, Bool) -> Un
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
   islands : Array[Array[RigidBodyHandle]]
+  island_solver_iterations : Array[Int]
 
   fn new() -> IslandManager3D
 }
@@ -1305,10 +1306,12 @@ pub struct RigidBody3D {
   angular_damping : Float
   mut gravity_scale : Float
   mass_properties : @core.MassProperties3
+  mut additional_solver_iterations : Int
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
   mut dominance_group : Int
 }
+pub fn RigidBody3D::additional_solver_iterations(Self) -> Int
 pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
 pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
@@ -1335,6 +1338,7 @@ pub fn RigidBody3D::position(Self) -> @core.Isometry3
 pub fn RigidBody3D::restrict_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
+pub fn RigidBody3D::set_additional_solver_iterations(Self, Int) -> Unit
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_ccd_active(Self, Bool) -> Unit
 pub fn RigidBody3D::set_dominance_group(Self, Int) -> Unit
@@ -1461,6 +1465,7 @@ pub struct RigidBodyBuilder3Compat {
   inner : RigidBodyBuilder
 }
 pub fn RigidBodyBuilder3Compat::additional_mass(Self, Float) -> Self
+pub fn RigidBodyBuilder3Compat::additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBodyBuilder3Compat::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3Compat::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3Compat::build(Self) -> RigidBody
@@ -1504,6 +1509,7 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : Float
   mut gravity_scale : Float
   mut mass_properties : @core.MassProperties3
+  mut additional_solver_iterations : Int
   mut can_sleep : Bool
   mut sleeping : Bool
   mut user_data : @core.UserData128
@@ -1511,6 +1517,7 @@ pub struct RigidBodyBuilder3D {
 }
 pub fn RigidBodyBuilder3D::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::additional_mass_properties(Self, @core.MassProperties3) -> Self
+pub fn RigidBodyBuilder3D::additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D

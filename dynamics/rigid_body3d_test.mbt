@@ -92,6 +92,14 @@ test "rigid_body3d builder additional mass updates mass properties" {
 }
 
 ///|
+test "rigid_body3d additional solver iterations builder and setter" {
+  let rb = RigidBodyBuilder3D::dynamic().additional_solver_iterations(3).build()
+  inspect(rb.additional_solver_iterations() == 3, content="true")
+  rb.set_additional_solver_iterations(7)
+  inspect(rb.additional_solver_iterations() == 7, content="true")
+}
+
+///|
 test "rigid_body3d builder pose aliases and sleeping flag" {
   let pose = @core.Isometry3::new(
     @core.Vec3::new(1.0F, 2.0F, 3.0F),

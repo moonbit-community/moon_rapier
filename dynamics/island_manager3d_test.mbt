@@ -45,3 +45,40 @@ test "island_manager3d update propagates activation across interactions" {
   }
   inspect(found1 && found2, content="true")
 }
+
+///|
+test "island_manager3d tracks per-island additional solver iterations" {
+  let islands = IslandManager3D::new()
+  let bodies = RigidBodySet3D::new()
+  let b1 = bodies.insert(
+    RigidBodyBuilder3D::dynamic().additional_solver_iterations(2).build(),
+  )
+  let b2 = bodies.insert(
+    RigidBodyBuilder3D::dynamic().additional_solver_iterations(5).build(),
+  )
+  let b3 = bodies.insert(
+    RigidBodyBuilder3D::dynamic().additional_solver_iterations(1).build(),
+  )
+  islands.update(bodies, [(b1, b2)])
+  let active_islands = islands.active_islands()
+  let mut max_iters = 0
+  for i in 0..<active_islands.length() {
+    let island_id = active_islands[i]
+    let island_bodies = islands.island_bodies(island_id)
+    if island_bodies.length() == 2 &&
+      islands.island_additional_solver_iterations(island_id) > max_iters {
+      max_iters = islands.island_additional_solver_iterations(island_id)
+    }
+  }
+  inspect(max_iters == 5, content="true")
+  // Body b3 is disconnected, so it either forms its own island or remains isolated.
+  // In both cases, querying invalid ids must be safe.
+  inspect(islands.island_additional_solver_iterations(-1) == 0, content="true")
+  inspect(
+    islands.island_additional_solver_iterations(active_islands.length() + 10) ==
+    0,
+    content="true",
+  )
+  // Keep handle referenced to avoid accidental "unused" behavior changes.
+  b3 |> ignore
+}

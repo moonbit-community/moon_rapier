@@ -207,6 +207,7 @@ pub struct RigidBody3D {
   angular_damping : @core.Real
   mut gravity_scale : @core.Real
   mass_properties : @core.MassProperties3
+  mut additional_solver_iterations : Int
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
   mut dominance_group : Int
@@ -520,6 +521,19 @@ pub fn RigidBody3D::set_dominance_group(
   group : Int,
 ) -> Unit {
   self.dominance_group = group
+}
+
+///|
+pub fn RigidBody3D::additional_solver_iterations(self : RigidBody3D) -> Int {
+  self.additional_solver_iterations
+}
+
+///|
+pub fn RigidBody3D::set_additional_solver_iterations(
+  self : RigidBody3D,
+  additional_iterations : Int,
+) -> Unit {
+  self.additional_solver_iterations = additional_iterations
 }
 
 ///|
@@ -889,6 +903,7 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : @core.Real
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
+  mut additional_solver_iterations : Int
   mut can_sleep : Bool
   mut sleeping : Bool
   mut user_data : @core.UserData128
@@ -922,6 +937,7 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
       @core.SdpMat3::from_diagonal(@core.Vec3::new(1.0F, 1.0F, 1.0F)),
       @core.Vec3::zero(),
     ),
+    additional_solver_iterations: 0,
     can_sleep: true,
     sleeping: false,
     user_data: @core.UserData128::zero(),
@@ -1103,6 +1119,15 @@ pub fn RigidBodyBuilder3D::additional_mass(
   mass : @core.Real,
 ) -> RigidBodyBuilder3D {
   self.mass_properties = self.mass_properties.set_mass(mass, true)
+  self
+}
+
+///|
+pub fn RigidBodyBuilder3D::additional_solver_iterations(
+  self : RigidBodyBuilder3D,
+  additional_iterations : Int,
+) -> RigidBodyBuilder3D {
+  self.additional_solver_iterations = additional_iterations
   self
 }
 
@@ -1299,6 +1324,7 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
     angular_damping: self.angular_damping,
     gravity_scale: self.gravity_scale,
     mass_properties: self.mass_properties,
+    additional_solver_iterations: self.additional_solver_iterations,
     activation,
     can_sleep: self.can_sleep,
     dominance_group: self.dominance_group,

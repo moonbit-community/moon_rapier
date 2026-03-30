@@ -120,6 +120,14 @@ pub fn RigidBodyBuilder3Compat::additional_mass(
 }
 
 ///|
+pub fn RigidBodyBuilder3Compat::additional_solver_iterations(
+  self : RigidBodyBuilder3Compat,
+  additional_iterations : Int,
+) -> RigidBodyBuilder3Compat {
+  { inner: self.inner.additional_solver_iterations(additional_iterations) }
+}
+
+///|
 pub fn RigidBodyBuilder3Compat::ccd_enabled(
   self : RigidBodyBuilder3Compat,
   enabled : Bool,

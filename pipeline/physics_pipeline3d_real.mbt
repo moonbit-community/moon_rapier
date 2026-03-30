@@ -831,6 +831,25 @@ fn collect_solver_interactions_3d_real(
 }
 
 ///|
+fn island_solver_iterations_3d_real(
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  island_id : Int,
+) -> Int {
+  let base_iters = if parameters.num_solver_iterations > 0 {
+    parameters.num_solver_iterations
+  } else {
+    1
+  }
+  let extra_iters = islands.island_additional_solver_iterations(island_id)
+  if extra_iters > 0 {
+    base_iters + extra_iters
+  } else {
+    base_iters
+  }
+}
+
+///|
 pub fn PhysicsPipeline3DReal::step(
   self : PhysicsPipeline3DReal,
   gravity : @core.Vec3,
@@ -1468,9 +1487,16 @@ fn PhysicsPipeline3DReal::step_impl_one(
     let pass_events = if pass + 1 == coupling_passes { events } else { None }
     if active_island_ids.length() > 0 {
       for island_idx in 0..<active_island_ids.length() {
+        let island_id = active_island_ids[island_idx]
         let stamp = island_stamp_ids[island_idx]
+        let solver_iterations = island_solver_iterations_3d_real(
+          parameters, islands, island_id,
+        )
+        let island_parameters = parameters
+          .with_dt(dt)
+          .set_num_solver_iterations(solver_iterations)
         solve_contacts_3d_impl(
-          parameters,
+          island_parameters,
           bodies,
           colliders,
           narrow_phase,
@@ -1492,7 +1518,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
           js.solve_with_island_stamp(
             bodies,
             dt,
-            parameters.num_solver_iterations,
+            solver_iterations,
             Some(island_stamps),
             stamp,
           )

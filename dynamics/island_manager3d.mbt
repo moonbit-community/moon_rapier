@@ -21,13 +21,14 @@
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
   islands : Array[Array[RigidBodyHandle]]
+  island_solver_iterations : Array[Int]
 
   fn new() -> IslandManager3D
 }
 
 ///|
 pub fn IslandManager3D::new() -> IslandManager3D {
-  { active_bodies: [], islands: [] }
+  { active_bodies: [], islands: [], island_solver_iterations: [] }
 }
 
 ///|
@@ -62,9 +63,15 @@ pub fn IslandManager3D::island_additional_solver_iterations(
   self : IslandManager3D,
   island_id : Int,
 ) -> Int {
-  self |> ignore
-  island_id |> ignore
-  0
+  if island_id < 0 || island_id >= self.island_solver_iterations.length() {
+    return 0
+  }
+  let value = self.island_solver_iterations[island_id]
+  if value > 0 {
+    value
+  } else {
+    0
+  }
 }
 
 ///|
@@ -156,6 +163,7 @@ pub fn IslandManager3D::update(
   }
   self.active_bodies.clear()
   self.islands.clear()
+  self.island_solver_iterations.clear()
   let root_to_island : Array[Int] = []
   for _ in 0..<n {
     root_to_island.push(-1)
@@ -169,9 +177,23 @@ pub fn IslandManager3D::update(
         let island_idx = root_to_island[root]
         if island_idx >= 0 {
           self.islands[island_idx].push(handle)
+          let add_iters = if body.additional_solver_iterations() > 0 {
+            body.additional_solver_iterations()
+          } else {
+            0
+          }
+          if add_iters > self.island_solver_iterations[island_idx] {
+            self.island_solver_iterations[island_idx] = add_iters
+          }
         } else {
           let idx = self.islands.length()
           self.islands.push([handle])
+          let add_iters = if body.additional_solver_iterations() > 0 {
+            body.additional_solver_iterations()
+          } else {
+            0
+          }
+          self.island_solver_iterations.push(add_iters)
           root_to_island[root] = idx
         }
       }
