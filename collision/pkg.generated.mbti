@@ -1032,7 +1032,7 @@ pub fn NarrowPhase3D::contact_pair(Self, ColliderHandle3D, ColliderHandle3D) -> 
 pub fn NarrowPhase3D::intersection_pair(Self, ColliderHandle3D, ColliderHandle3D) -> IntersectionPair3D?
 pub fn NarrowPhase3D::new() -> Self
 pub fn NarrowPhase3D::set_contact_pair_normal_impulses(Self, ColliderHandle3D, ColliderHandle3D, Array[Float]) -> Unit
-pub fn NarrowPhase3D::update(Self, Array[(ColliderHandle3D, ColliderHandle3D)], @dynamics.RigidBodySet3D, ColliderSet3D) -> Unit
+pub fn NarrowPhase3D::update(Self, Array[(ColliderHandle3D, ColliderHandle3D)], @dynamics.RigidBodySet3D, ColliderSet3D, Float, Float) -> Unit
 
 pub struct NonlinearRigidMotion {
   start_pos : @core.Isometry2

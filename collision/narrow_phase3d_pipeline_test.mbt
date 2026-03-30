@@ -34,7 +34,7 @@ test "narrow phase 3d: same-parent colliders have empty manifolds; reparent gene
   let broad_phase = BroadPhase3D::new()
   broad_phase.update(0.0F, colliders)
   let nf = NarrowPhase3D::new()
-  nf.update(broad_phase.pairs(), bodies, colliders)
+  nf.update(broad_phase.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   if nf.contact_pair(c1, c2) is Some(pair) {
     inspect(pair.manifolds_len() == 0, content="true")
   } else {
@@ -46,7 +46,7 @@ test "narrow phase 3d: same-parent colliders have empty manifolds; reparent gene
   colliders.set_parent(c2, Some(body2), bodies)
   colliders.sync_with_bodies(bodies)
   broad_phase.update(0.0F, colliders)
-  nf.update(broad_phase.pairs(), bodies, colliders)
+  nf.update(broad_phase.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   if nf.contact_pair(c1, c2) is Some(pair2) {
     inspect(pair2.manifolds_len() == 1, content="true")
   } else {
@@ -91,7 +91,7 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
   let broad_phase = BroadPhase3D::new()
   broad_phase.update(0.0F, colliders)
   let nf = NarrowPhase3D::new()
-  nf.update(broad_phase.pairs(), bodies, colliders)
+  nf.update(broad_phase.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   if nf.contact_pair(c1, c2) is Some(pair) {
     inspect(pair.manifolds_len() == 0, content="true")
   } else {

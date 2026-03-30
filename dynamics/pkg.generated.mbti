@@ -731,6 +731,7 @@ pub fn JointSet3DReal::new() -> Self
 pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float, Int) -> Unit
+pub fn JointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Int, Array[Int]?, Int) -> Unit
 
 pub struct JointSolverBody {
   im : @core.Vec2
@@ -1861,6 +1862,7 @@ pub fn RopeJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, Float)
 pub fn RopeJointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn RopeJointSet3DReal::new() -> Self
 pub fn RopeJointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
+pub fn RopeJointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Array[Int]?, Int) -> Unit
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool

@@ -58,14 +58,53 @@ pub fn RopeJointSet3DReal::interaction_pairs(
 }
 
 ///|
+fn rope_joint_in_island(
+  joint : RopeJoint3DReal,
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
+) -> Bool {
+  if island_stamps is None {
+    return true
+  }
+  if island_stamp <= 0 {
+    return false
+  }
+  if island_stamps is Some(stamps) {
+    let id1 = joint.body1.id
+    let id2 = joint.body2.id
+    let s1 = if id1 >= 0 && id1 < stamps.length() { stamps[id1] } else { 0 }
+    let s2 = if id2 >= 0 && id2 < stamps.length() { stamps[id2] } else { 0 }
+    if s1 > 0 && s2 > 0 && s1 != s2 {
+      return false
+    }
+    return s1 == island_stamp || s2 == island_stamp
+  }
+  false
+}
+
+///|
 pub fn RopeJointSet3DReal::solve(
   self : RopeJointSet3DReal,
   bodies : RigidBodySet3D,
   dt : @core.Real,
 ) -> Unit {
+  RopeJointSet3DReal::solve_with_island_stamp(self, bodies, dt, None, 0)
+}
+
+///|
+pub fn RopeJointSet3DReal::solve_with_island_stamp(
+  self : RopeJointSet3DReal,
+  bodies : RigidBodySet3D,
+  dt : @core.Real,
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
+) -> Unit {
   dt |> ignore
   for i in 0..<self.joints.length() {
     let j = self.joints[i]
+    if !rope_joint_in_island(j, island_stamps, island_stamp) {
+      continue
+    }
     if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
       let p1 = b1.world_com()
       let p2 = b2.world_com()

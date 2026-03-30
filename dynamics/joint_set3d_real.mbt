@@ -587,11 +587,49 @@ fn shortest_quat(q : @core.Quat) -> @core.Quat {
 }
 
 ///|
+fn joint_pair_in_island(
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
+) -> Bool {
+  if island_stamps is None {
+    return true
+  }
+  if island_stamp <= 0 {
+    return false
+  }
+  if island_stamps is Some(stamps) {
+    let id1 = body1.id
+    let id2 = body2.id
+    let s1 = if id1 >= 0 && id1 < stamps.length() { stamps[id1] } else { 0 }
+    let s2 = if id2 >= 0 && id2 < stamps.length() { stamps[id2] } else { 0 }
+    if s1 > 0 && s2 > 0 && s1 != s2 {
+      return false
+    }
+    return s1 == island_stamp || s2 == island_stamp
+  }
+  false
+}
+
+///|
 pub fn JointSet3DReal::solve(
   self : JointSet3DReal,
   bodies : RigidBodySet3D,
   dt : @core.Real,
   iterations : Int,
+) -> Unit {
+  JointSet3DReal::solve_with_island_stamp(self, bodies, dt, iterations, None, 0)
+}
+
+///|
+pub fn JointSet3DReal::solve_with_island_stamp(
+  self : JointSet3DReal,
+  bodies : RigidBodySet3D,
+  dt : @core.Real,
+  iterations : Int,
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
 ) -> Unit {
   // Deterministic, light positional solver.
   let iters = if iterations > 0 { iterations } else { 1 }
@@ -600,6 +638,9 @@ pub fn JointSet3DReal::solve(
     // Spherical (ball) joints.
     for i in 0..<self.spherical.length() {
       let j = self.spherical[i]
+      if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
+        continue
+      }
       if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
         let p1 = b1.position().transform_point(j.local_anchor1)
         let p2 = b2.position().transform_point(j.local_anchor2)
@@ -615,6 +656,9 @@ pub fn JointSet3DReal::solve(
     // Prismatic joints (positional; only the translation constraints are enforced here).
     for i in 0..<self.prismatic.length() {
       let j = self.prismatic[i]
+      if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
+        continue
+      }
       if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
         let p1 = b1.position().transform_point(j.local_anchor1)
         let p2 = b2.position().transform_point(j.local_anchor2)
@@ -654,6 +698,9 @@ pub fn JointSet3DReal::solve(
     // Spherical angular motors (very approximate).
     for i in 0..<self.spherical_motors.length() {
       let m = self.spherical_motors[i]
+      if !joint_pair_in_island(m.body1, m.body2, island_stamps, island_stamp) {
+        continue
+      }
       if bodies.get(m.body1) is Some(b1) && bodies.get(m.body2) is Some(b2) {
         if !b2.body_type().is_dynamic() {
           continue
@@ -683,6 +730,9 @@ pub fn JointSet3DReal::solve(
     // Generic joints (axis locks/limits/motors).
     for i in 0..<self.generic.length() {
       let gj = self.generic[i]
+      if !joint_pair_in_island(gj.body1, gj.body2, island_stamps, island_stamp) {
+        continue
+      }
       if bodies.get(gj.body1) is Some(rb1) && bodies.get(gj.body2) is Some(rb2) {
         let frame1 = rb1.position().mul(gj.data.local_frame1)
         let frame2 = rb2.position().mul(gj.data.local_frame2)
@@ -879,6 +929,9 @@ pub fn JointSet3DReal::solve(
     // Spring joints (distance constraint with compliance).
     for i in 0..<self.springs.length() {
       let s = self.springs[i]
+      if !joint_pair_in_island(s.body1, s.body2, island_stamps, island_stamp) {
+        continue
+      }
       if bodies.get(s.body1) is Some(b1) && bodies.get(s.body2) is Some(b2) {
         let p1 = b1.position().transform_point(s.local_anchor1)
         let p2 = b2.position().transform_point(s.local_anchor2)

@@ -94,6 +94,41 @@ fn cache_set(
 }
 
 ///|
+fn rigid_body_stamp_for_island_filter(
+  island_stamps : Array[Int]?,
+  handle : @dynamics.RigidBodyHandle?,
+) -> Int {
+  if island_stamps is Some(stamps) && handle is Some(h) {
+    let id = h.id
+    if id >= 0 && id < stamps.length() {
+      return stamps[id]
+    }
+  }
+  0
+}
+
+///|
+fn contact_pair_matches_island(
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
+  body1 : @dynamics.RigidBodyHandle?,
+  body2 : @dynamics.RigidBodyHandle?,
+) -> Bool {
+  if island_stamps is None {
+    return true
+  }
+  if island_stamp <= 0 {
+    return false
+  }
+  let s1 = rigid_body_stamp_for_island_filter(island_stamps, body1)
+  let s2 = rigid_body_stamp_for_island_filter(island_stamps, body2)
+  if s1 > 0 && s2 > 0 && s1 != s2 {
+    return false
+  }
+  s1 == island_stamp || s2 == island_stamp
+}
+
+///|
 priv struct ContactSolveEntry3D {
   rb1 : @dynamics.RigidBody3D?
   rb2 : @dynamics.RigidBody3D?
@@ -261,8 +296,14 @@ fn solve_contacts_3d_impl(
   twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real],
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
+  island_stamps : Array[Int]?,
+  island_stamp : Int,
+  reset_outputs : Bool,
 ) -> Unit {
-  cache_out.clear()
+  if reset_outputs {
+    cache_out.clear()
+    twist_cache_out.clear()
+  }
   fn hook_normal_or_fallback(
     hook_normal : @core.Vec3?,
     fallback : @core.Vec3,
@@ -335,14 +376,17 @@ fn solve_contacts_3d_impl(
     let a = pair.0
     let b = pair.1
     if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      let p1 = co1.parent()
+      let p2 = co2.parent()
+      if !contact_pair_matches_island(island_stamps, island_stamp, p1, p2) {
+        continue
+      }
       if co1.is_sensor() || co2.is_sensor() {
         continue
       }
       if !accept_one_way(co1, co2) || !accept_one_way(co2, co1) {
         continue
       }
-      let p1 = co1.parent()
-      let p2 = co2.parent()
       // Skip warmstarting contacts between sleeping dynamic bodies.
       let mut dyn_sleeping1 = false
       let mut dyn_sleeping2 = false
@@ -500,6 +544,11 @@ fn solve_contacts_3d_impl(
     let a = pair.0
     let b = pair.1
     if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      let p1 = co1.parent()
+      let p2 = co2.parent()
+      if !contact_pair_matches_island(island_stamps, island_stamp, p1, p2) {
+        continue
+      }
       if co1.is_sensor() || co2.is_sensor() {
         continue
       }
@@ -527,10 +576,10 @@ fn solve_contacts_3d_impl(
       )
       let mut rb1 : @dynamics.RigidBody3D? = None
       let mut rb2 : @dynamics.RigidBody3D? = None
-      if co1.parent() is Some(h1) {
+      if p1 is Some(h1) {
         rb1 = bodies.get(h1)
       }
-      if co2.parent() is Some(h2) {
+      if p2 is Some(h2) {
         rb2 = bodies.get(h2)
       }
       // Skip contacts between sleeping dynamic bodies.
@@ -1069,6 +1118,11 @@ fn solve_contacts_3d_impl(
     let a = pair.0
     let b = pair.1
     if colliders.get(a) is Some(co1) && colliders.get(b) is Some(co2) {
+      let p1 = co1.parent()
+      let p2 = co2.parent()
+      if !contact_pair_matches_island(island_stamps, island_stamp, p1, p2) {
+        continue
+      }
       if co1.is_sensor() || co2.is_sensor() {
         continue
       }
@@ -1162,7 +1216,18 @@ pub fn solve_contacts_3d(
   let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
   let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
   solve_contacts_3d_impl(
-    parameters, bodies, colliders, narrow_phase, cache_in, cache_out, twist_cache_in,
-    twist_cache_out, physics_hooks, event_handler,
+    parameters,
+    bodies,
+    colliders,
+    narrow_phase,
+    cache_in,
+    cache_out,
+    twist_cache_in,
+    twist_cache_out,
+    physics_hooks,
+    event_handler,
+    None,
+    0,
+    true,
   )
 }

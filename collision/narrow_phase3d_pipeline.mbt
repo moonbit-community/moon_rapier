@@ -136,6 +136,42 @@ fn canonical_pair(
 }
 
 ///|
+fn clamp_vec3_length_max(v : @core.Vec3, max_len : @core.Real) -> @core.Vec3 {
+  if max_len <= 0.0F {
+    return @core.Vec3::zero()
+  }
+  let len2 = v.length_squared()
+  let max2 = max_len * max_len
+  if len2 <= max2 {
+    return v
+  }
+  if len2 <= 1.0e-12F {
+    return @core.Vec3::zero()
+  }
+  let len = Float::sqrt(len2)
+  v.scale(max_len / len)
+}
+
+///|
+fn translated_aabb3(aabb : @core.Aabb3, delta : @core.Vec3) -> @core.Aabb3 {
+  @core.Aabb3::new(aabb.mins.add(delta), aabb.maxs.add(delta))
+}
+
+///|
+fn intersects_moving_aabb3(
+  aabb1 : @core.Aabb3,
+  aabb2 : @core.Aabb3,
+  movement : @core.Vec3,
+) -> Bool {
+  if aabb1.intersects(aabb2) {
+    return true
+  }
+  let moved = translated_aabb3(aabb1, movement)
+  let swept = aabb1.combine(moved)
+  swept.intersects(aabb2)
+}
+
+///|
 pub struct NarrowPhase3D {
   contact_pairs : Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
   intersection_pairs : Array[
@@ -225,6 +261,8 @@ pub fn NarrowPhase3D::update(
   pairs : Array[(ColliderHandle3D, ColliderHandle3D)],
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
+  prediction_distance : @core.Real,
+  dt : @core.Real,
 ) -> Unit {
   self.clear()
   for i in 0..<pairs.length() {
@@ -237,23 +275,42 @@ pub fn NarrowPhase3D::update(
       }
       let mut soft_ccd_prediction1 = 0.0F
       let mut soft_ccd_prediction2 = 0.0F
+      let mut linvel1 = @core.Vec3::zero()
+      let mut linvel2 = @core.Vec3::zero()
       if co1.parent() is Some(parent1) && bodies.get(parent1) is Some(rb1) {
         soft_ccd_prediction1 = rb1.soft_ccd_prediction()
+        linvel1 = rb1.linvel()
       }
       if co2.parent() is Some(parent2) && bodies.get(parent2) is Some(rb2) {
         soft_ccd_prediction2 = rb2.soft_ccd_prediction()
+        linvel2 = rb2.linvel()
       }
+      let mut effective_prediction_distance = prediction_distance
       if soft_ccd_prediction1 > 0.0F || soft_ccd_prediction2 > 0.0F {
-        let prediction_distance = if soft_ccd_prediction1 > soft_ccd_prediction2 {
-          soft_ccd_prediction1
-        } else {
-          soft_ccd_prediction2
-        }
-        let aabb1 = co1.compute_collision_aabb(prediction_distance)
-        let aabb2 = co2.compute_collision_aabb(prediction_distance)
-        if !aabb1.intersects(aabb2) {
+        let inv_dt = if dt > 1.0e-12F { 1.0F / dt } else { 0.0F }
+        let max_vel1 = soft_ccd_prediction1 * inv_dt
+        let max_vel2 = soft_ccd_prediction2 * inv_dt
+        let clamped_linvel1 = clamp_vec3_length_max(linvel1, max_vel1)
+        let clamped_linvel2 = clamp_vec3_length_max(linvel2, max_vel2)
+        let aabb1 = co1.compute_collision_aabb(0.0F)
+        let aabb2 = co2.compute_collision_aabb(0.0F)
+        let relative_movement = clamped_linvel2.sub(clamped_linvel1)
+        if !intersects_moving_aabb3(aabb1, aabb2, relative_movement) {
           continue
         }
+        let soft_distance = dt * relative_movement.length()
+        if soft_distance > effective_prediction_distance {
+          effective_prediction_distance = soft_distance
+        }
+      }
+      let prediction_aabb1 = co1.compute_collision_aabb(
+        effective_prediction_distance,
+      )
+      let prediction_aabb2 = co2.compute_collision_aabb(
+        effective_prediction_distance,
+      )
+      if !prediction_aabb1.intersects(prediction_aabb2) {
+        continue
       }
       if !co1.collision_groups.test_groups(co2.collision_groups) {
         self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))
