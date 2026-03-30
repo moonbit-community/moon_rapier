@@ -20,13 +20,14 @@
 /// edge list from the pipeline and propagating activation across connected components.
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
+  islands : Array[Array[RigidBodyHandle]]
 
   fn new() -> IslandManager3D
 }
 
 ///|
 pub fn IslandManager3D::new() -> IslandManager3D {
-  { active_bodies: [] }
+  { active_bodies: [], islands: [] }
 }
 
 ///|
@@ -34,6 +35,36 @@ pub fn IslandManager3D::active_bodies(
   self : IslandManager3D,
 ) -> Array[RigidBodyHandle] {
   self.active_bodies
+}
+
+///|
+pub fn IslandManager3D::active_islands(self : IslandManager3D) -> Array[Int] {
+  let out : Array[Int] = []
+  for i in 0..<self.islands.length() {
+    out.push(i)
+  }
+  out
+}
+
+///|
+pub fn IslandManager3D::island_bodies(
+  self : IslandManager3D,
+  island_id : Int,
+) -> Array[RigidBodyHandle] {
+  if island_id < 0 || island_id >= self.islands.length() {
+    return []
+  }
+  self.islands[island_id]
+}
+
+///|
+pub fn IslandManager3D::island_additional_solver_iterations(
+  self : IslandManager3D,
+  island_id : Int,
+) -> Int {
+  self |> ignore
+  island_id |> ignore
+  0
 }
 
 ///|
@@ -124,11 +155,26 @@ pub fn IslandManager3D::update(
     }
   }
   self.active_bodies.clear()
+  self.islands.clear()
+  let root_to_island : Array[Int] = []
+  for _ in 0..<n {
+    root_to_island.push(-1)
+  }
   for i in 0..<n {
     if bodies.bodies[i] is Some(body) && body.is_active() {
-      self.active_bodies.push(
-        RigidBodyHandle::from_raw_parts(i, bodies.generations[i]),
-      )
+      if parent[i] >= 0 {
+        let handle = RigidBodyHandle::from_raw_parts(i, bodies.generations[i])
+        self.active_bodies.push(handle)
+        let root = uf_find(parent, i)
+        let island_idx = root_to_island[root]
+        if island_idx >= 0 {
+          self.islands[island_idx].push(handle)
+        } else {
+          let idx = self.islands.length()
+          self.islands.push([handle])
+          root_to_island[root] = idx
+        }
+      }
     }
   }
 }

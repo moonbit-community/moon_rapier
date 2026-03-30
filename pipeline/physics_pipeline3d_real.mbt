@@ -772,90 +772,34 @@ fn filter_broad_phase_pairs_3d(
 }
 
 ///|
-fn solver_island_find(parent : Array[Int], x : Int) -> Int {
-  let mut x = x
-  while parent[x] != x {
-    let p = parent[x]
-    let gp = parent[p]
-    if gp >= 0 {
-      parent[x] = gp
-    }
-    x = p
-  }
-  x
-}
-
-///|
-fn solver_island_union(
-  parent : Array[Int],
-  size : Array[Int],
-  a : Int,
-  b : Int,
-) -> Unit {
-  let ra = solver_island_find(parent, a)
-  let rb = solver_island_find(parent, b)
-  if ra == rb {
-    return
-  }
-  if size[ra] < size[rb] {
-    parent[ra] = rb
-    size[rb] = size[rb] + size[ra]
-  } else {
-    parent[rb] = ra
-    size[ra] = size[ra] + size[rb]
-  }
-}
-
-///|
-fn build_solver_islands_3d_real(
-  bodies : @dynamics.RigidBodySet3D,
-  colliders : @collision.ColliderSet3D,
+fn collect_solver_interactions_3d_real(
   narrow_phase : @collision.NarrowPhase3D,
+  colliders : @collision.ColliderSet3D,
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
-) -> Array[Array[@dynamics.RigidBodyHandle]] {
-  let n = bodies.bodies.length()
-  let parent : Array[Int] = []
-  let size : Array[Int] = []
-  for _ in 0..<n {
-    parent.push(-1)
-    size.push(1)
-  }
-  for i in 0..<n {
-    if bodies.bodies[i] is Some(body) &&
-      body.body_type().is_dynamic_or_kinematic() &&
-      body.is_active() {
-      parent[i] = i
-    }
-  }
-
-  fn maybe_union(
-    parent : Array[Int],
-    size : Array[Int],
-    bodies : @dynamics.RigidBodySet3D,
-    n : Int,
+) -> Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)] {
+  let interactions : Array[
+    (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
+  ] = []
+  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new()
+  fn push_unique_interaction(
+    interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
+    interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool],
     body1 : @dynamics.RigidBodyHandle,
     body2 : @dynamics.RigidBodyHandle,
   ) -> Unit {
-    let id1 = body1.id
-    let id2 = body2.id
-    if id1 < 0 || id2 < 0 || id1 >= n || id2 >= n {
+    let key = rb_pair_key_3d(body1, body2)
+    if interaction_keys.get(key) is Some(true) {
       return
     }
-    if parent[id1] < 0 || parent[id2] < 0 {
-      return
-    }
-    if bodies.generations[id1] != body1.generation ||
-      bodies.generations[id2] != body2.generation {
-      return
-    }
-    solver_island_union(parent, size, id1, id2)
+    interaction_keys.set(key, true)
+    interactions.push((body1, body2))
   }
 
-  let contact_pairs = narrow_phase.all_contact_pairs()
-  for i in 0..<contact_pairs.length() {
-    let ((c1h, c2h), pair) = contact_pairs[i]
+  let pairs = narrow_phase.all_contact_pairs()
+  for i in 0..<pairs.length() {
+    let ((c1h, c2h), pair) = pairs[i]
     if pair.manifolds_len() <= 0 {
       continue
     }
@@ -864,48 +808,26 @@ fn build_solver_islands_3d_real(
       c1.parent() is Some(b1) &&
       c2.parent() is Some(b2) &&
       !b1.equals(b2) {
-      maybe_union(parent, size, bodies, n, b1, b2)
+      push_unique_interaction(interactions, interaction_keys, b1, b2)
     }
   }
 
   if rope_joints is Some(rope) {
     for pair in rope.interaction_pairs() {
-      maybe_union(parent, size, bodies, n, pair.0, pair.1)
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
     }
   }
   if joints is Some(generic) {
     for pair in generic.interaction_pairs() {
-      maybe_union(parent, size, bodies, n, pair.0, pair.1)
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
     }
   }
   if multibody_joints is Some(multibody) {
     for pair in multibody.interaction_pairs() {
-      maybe_union(parent, size, bodies, n, pair.0, pair.1)
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
     }
   }
-
-  let islands : Array[Array[@dynamics.RigidBodyHandle]] = []
-  let root_to_island : @hashmap.HashMap[Int, Int] = @hashmap.new()
-  for i in 0..<n {
-    if parent[i] < 0 {
-      continue
-    }
-    if bodies.bodies[i] is Some(_) {
-      let root = solver_island_find(parent, i)
-      let handle = @dynamics.RigidBodyHandle::from_raw_parts(
-        i,
-        bodies.generations[i],
-      )
-      if root_to_island.get(root) is Some(idx) {
-        islands[idx].push(handle)
-      } else {
-        let idx = islands.length()
-        islands.push([handle])
-        root_to_island.set(root, idx)
-      }
-    }
-  }
-  islands
+  interactions
 }
 
 ///|
@@ -1510,20 +1432,23 @@ fn PhysicsPipeline3DReal::step_impl_one(
     hooks,
   )
   narrow_phase.update(pairs, bodies, colliders, prediction_distance, dt)
-  let solver_islands = build_solver_islands_3d_real(
-    bodies, colliders, narrow_phase, rope_joints, joints, multibody_joints,
+  let solver_interactions = collect_solver_interactions_3d_real(
+    narrow_phase, colliders, rope_joints, joints, multibody_joints,
   )
+  islands.update(bodies, solver_interactions)
+  let active_island_ids = islands.active_islands()
   let island_stamps : Array[Int] = []
   for _ in 0..<bodies.bodies.length() {
     island_stamps.push(0)
   }
   let island_stamp_ids : Array[Int] = []
   let mut stamp_seed = 1
-  for i in 0..<solver_islands.length() {
+  for i in 0..<active_island_ids.length() {
+    let island_id = active_island_ids[i]
     let stamp = stamp_seed
     stamp_seed = stamp_seed + 1
     island_stamp_ids.push(stamp)
-    let island_bodies = solver_islands[i]
+    let island_bodies = islands.island_bodies(island_id)
     for j in 0..<island_bodies.length() {
       let id = island_bodies[j].id
       if id >= 0 && id < island_stamps.length() {
@@ -1541,8 +1466,8 @@ fn PhysicsPipeline3DReal::step_impl_one(
     let cache_out = ContactSolverCache3D::new()
     let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
     let pass_events = if pass + 1 == coupling_passes { events } else { None }
-    if solver_islands.length() > 0 {
-      for island_idx in 0..<solver_islands.length() {
+    if active_island_ids.length() > 0 {
+      for island_idx in 0..<active_island_ids.length() {
         let stamp = island_stamp_ids[island_idx]
         solve_contacts_3d_impl(
           parameters,
@@ -1685,51 +1610,8 @@ fn PhysicsPipeline3DReal::step_impl_one(
     self.contact_pairs.append(next_contact_pairs[:])
   }
   bodies.update_sleep_all(dt, parameters.length_unit)
-  let interactions : Array[
-    (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
-  ] = []
-  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new()
-  fn push_unique_interaction(
-    interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
-    interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool],
-    body1 : @dynamics.RigidBodyHandle,
-    body2 : @dynamics.RigidBodyHandle,
-  ) -> Unit {
-    let key = rb_pair_key_3d(body1, body2)
-    if interaction_keys.get(key) is Some(true) {
-      return
-    }
-    interaction_keys.set(key, true)
-    interactions.push((body1, body2))
-  }
-
-  let pairs = narrow_phase.all_contact_pairs()
-  for i in 0..<pairs.length() {
-    let ((c1h, c2h), pair) = pairs[i]
-    if pair.manifolds_len() <= 0 {
-      continue
-    }
-    if colliders.get(c1h) is Some(c1) &&
-      colliders.get(c2h) is Some(c2) &&
-      c1.parent() is Some(b1) &&
-      c2.parent() is Some(b2) {
-      push_unique_interaction(interactions, interaction_keys, b1, b2)
-    }
-  }
-  if rope_joints is Some(rope) {
-    for pair in rope.interaction_pairs() {
-      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
-    }
-  }
-  if joints is Some(generic) {
-    for pair in generic.interaction_pairs() {
-      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
-    }
-  }
-  if multibody_joints is Some(multibody) {
-    for pair in multibody.interaction_pairs() {
-      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
-    }
-  }
+  let interactions = collect_solver_interactions_3d_real(
+    narrow_phase, colliders, rope_joints, joints, multibody_joints,
+  )
   islands.update(bodies, interactions)
 }

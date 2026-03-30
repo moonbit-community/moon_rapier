@@ -153,11 +153,6 @@ fn clamp_vec3_length_max(v : @core.Vec3, max_len : @core.Real) -> @core.Vec3 {
 }
 
 ///|
-fn translated_aabb3(aabb : @core.Aabb3, delta : @core.Vec3) -> @core.Aabb3 {
-  @core.Aabb3::new(aabb.mins.add(delta), aabb.maxs.add(delta))
-}
-
-///|
 fn intersects_moving_aabb3(
   aabb1 : @core.Aabb3,
   aabb2 : @core.Aabb3,
@@ -166,9 +161,85 @@ fn intersects_moving_aabb3(
   if aabb1.intersects(aabb2) {
     return true
   }
-  let moved = translated_aabb3(aabb1, movement)
-  let swept = aabb1.combine(moved)
-  swept.intersects(aabb2)
+  let eps = 1.0e-12F
+  let mut t_enter = 0.0F
+  let mut t_exit = 1.0F
+
+  fn update_axis_interval(
+    a_min : @core.Real,
+    a_max : @core.Real,
+    b_min : @core.Real,
+    b_max : @core.Real,
+    velocity : @core.Real,
+    eps : @core.Real,
+    t_enter : @core.Real,
+    t_exit : @core.Real,
+  ) -> (@core.Real, @core.Real, Bool) {
+    if @core.abs(velocity) <= eps {
+      if a_max < b_min || a_min > b_max {
+        return (t_enter, t_exit, false)
+      }
+      return (t_enter, t_exit, true)
+    }
+    let inv = 1.0F / velocity
+    let t1 = (b_min - a_max) * inv
+    let t2 = (b_max - a_min) * inv
+    let axis_enter = if t1 < t2 { t1 } else { t2 }
+    let axis_exit = if t1 > t2 { t1 } else { t2 }
+    let next_enter = if axis_enter > t_enter { axis_enter } else { t_enter }
+    let next_exit = if axis_exit < t_exit { axis_exit } else { t_exit }
+    (next_enter, next_exit, next_enter <= next_exit)
+  }
+
+  let (tx_enter, tx_exit, ok_x) = update_axis_interval(
+    aabb1.mins.x,
+    aabb1.maxs.x,
+    aabb2.mins.x,
+    aabb2.maxs.x,
+    movement.x,
+    eps,
+    t_enter,
+    t_exit,
+  )
+  if !ok_x {
+    return false
+  }
+  t_enter = tx_enter
+  t_exit = tx_exit
+
+  let (ty_enter, ty_exit, ok_y) = update_axis_interval(
+    aabb1.mins.y,
+    aabb1.maxs.y,
+    aabb2.mins.y,
+    aabb2.maxs.y,
+    movement.y,
+    eps,
+    t_enter,
+    t_exit,
+  )
+  if !ok_y {
+    return false
+  }
+  t_enter = ty_enter
+  t_exit = ty_exit
+
+  let (tz_enter, tz_exit, ok_z) = update_axis_interval(
+    aabb1.mins.z,
+    aabb1.maxs.z,
+    aabb2.mins.z,
+    aabb2.maxs.z,
+    movement.z,
+    eps,
+    t_enter,
+    t_exit,
+  )
+  if !ok_z {
+    return false
+  }
+  t_enter = tz_enter
+  t_exit = tz_exit
+
+  t_exit >= 0.0F && t_enter <= 1.0F
 }
 
 ///|

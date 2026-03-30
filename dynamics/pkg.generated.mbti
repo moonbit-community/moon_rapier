@@ -534,10 +534,14 @@ pub fn IslandManager3::wake_up(Self, RigidBodySet3, RigidBodyHandle, Bool) -> Un
 
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
+  islands : Array[Array[RigidBodyHandle]]
 
   fn new() -> IslandManager3D
 }
 pub fn IslandManager3D::active_bodies(Self) -> Array[RigidBodyHandle]
+pub fn IslandManager3D::active_islands(Self) -> Array[Int]
+pub fn IslandManager3D::island_additional_solver_iterations(Self, Int) -> Int
+pub fn IslandManager3D::island_bodies(Self, Int) -> Array[RigidBodyHandle]
 pub fn IslandManager3D::new() -> Self
 pub fn IslandManager3D::update(Self, RigidBodySet3D, Array[(RigidBodyHandle, RigidBodyHandle)]) -> Unit
 
