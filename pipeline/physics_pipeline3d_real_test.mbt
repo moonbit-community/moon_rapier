@@ -528,6 +528,119 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 }
 
 ///|
+test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let handler = EventHandler3D::new()
+  let b1 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  let b2 = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    b1,
+    bodies,
+  )
+  |> ignore
+  let h2 = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(1.0F)
+    .sensor(true)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    b2,
+    bodies,
+  )
+
+  pipeline.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+  )
+  let started = handler.take_collision_events()
+  inspect(started.length() == 1, content="true")
+  inspect(started[0].started(), content="true")
+  inspect(started[0].sensor(), content="true")
+
+  colliders.remove(h2) |> ignore
+  pipeline.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+  )
+  let stopped = handler.take_collision_events()
+  inspect(stopped.length() == 1, content="true")
+  inspect(stopped[0].stopped(), content="true")
+  inspect(stopped[0].sensor(), content="true")
+  inspect(stopped[0].removed(), content="true")
+}
+
+///|
+test "physics_pipeline3d_real: contact stopped event includes removed flag" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+  let handler = EventHandler3D::new()
+  let fixed_body = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let fixed_collider = colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(1.0F).build(),
+    fixed_body,
+    bodies,
+  )
+  let dynamic_body = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .can_sleep(false)
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(1.0F)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    dynamic_body,
+    bodies,
+  )
+  |> ignore
+
+  pipeline.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+  )
+  let started = handler.take_collision_events()
+  inspect(started.length() == 1, content="true")
+  inspect(started[0].started(), content="true")
+  inspect(!started[0].sensor(), content="true")
+
+  colliders.remove(fixed_collider) |> ignore
+  pipeline.step_with_events(
+    gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders, handler,
+  )
+  let stopped = handler.take_collision_events()
+  inspect(stopped.length() == 1, content="true")
+  inspect(stopped[0].stopped(), content="true")
+  inspect(!stopped[0].sensor(), content="true")
+  inspect(stopped[0].removed(), content="true")
+}
+
+///|
 test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled vs enabled)" {
   fn run(ccd_enabled : Bool) -> @core.Real {
     let pipeline = PhysicsPipeline3DReal::new()

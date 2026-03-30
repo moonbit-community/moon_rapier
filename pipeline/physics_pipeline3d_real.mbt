@@ -443,10 +443,24 @@ fn restore_contact_pair_impulses_from_cache(
 ///|
 fn emit_collision_events_for_pair_diffs(
   handler : EventHandler3D,
+  colliders : @collision.ColliderSet3D,
   prev_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
   next_pairs : Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)],
   flags : @collision.CollisionEventFlags,
 ) -> Unit {
+  fn stopped_flags(
+    colliders : @collision.ColliderSet3D,
+    a : @collision.ColliderHandle3D,
+    b : @collision.ColliderHandle3D,
+    flags : @collision.CollisionEventFlags,
+  ) -> @collision.CollisionEventFlags {
+    let mut out = flags
+    if colliders.get(a) is None || colliders.get(b) is None {
+      out = out.insert(@collision.CollisionEventFlags::removed())
+    }
+    out
+  }
+
   sort_pairs_3d(prev_pairs)
   let mut i = 0
   let mut j = 0
@@ -461,8 +475,9 @@ fn emit_collision_events_for_pair_diffs(
     }
     if j >= next_pairs.length() {
       let p = prev_pairs[i]
+      let event_flags = stopped_flags(colliders, p.0, p.1, flags)
       handler.push_collision_event(
-        @collision.CollisionEvent3D::Stopped(p.0, p.1, flags),
+        @collision.CollisionEvent3D::Stopped(p.0, p.1, event_flags),
       )
       i = i + 1
       continue
@@ -470,8 +485,9 @@ fn emit_collision_events_for_pair_diffs(
     let a = prev_pairs[i]
     let b = next_pairs[j]
     if pair_less_3d(a, b) {
+      let event_flags = stopped_flags(colliders, a.0, a.1, flags)
       handler.push_collision_event(
-        @collision.CollisionEvent3D::Stopped(a.0, a.1, flags),
+        @collision.CollisionEvent3D::Stopped(a.0, a.1, event_flags),
       )
       i = i + 1
     } else if pair_less_3d(b, a) {
@@ -1305,6 +1321,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     let prev_sensor_pairs = self.sensor_pairs.copy()
     emit_collision_events_for_pair_diffs(
       handler,
+      colliders,
       prev_sensor_pairs,
       next_sensor_pairs,
       @collision.CollisionEventFlags::sensor(),
@@ -1316,6 +1333,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     let prev_contact_pairs = self.contact_pairs.copy()
     emit_collision_events_for_pair_diffs(
       handler,
+      colliders,
       prev_contact_pairs,
       next_contact_pairs,
       @collision.CollisionEventFlags::empty(),
