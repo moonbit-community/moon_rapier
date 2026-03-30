@@ -526,11 +526,18 @@ fn ray_sphere_toi_normal(
   center : @core.Vec3,
   radius : @core.Real,
   max_toi : @core.Real,
+  solid : Bool,
 ) -> RayIntersection3? {
   let oc = ray.origin.sub(center)
   let a = ray.dir.length_squared()
   if a <= 1.0e-12F {
     return None
+  }
+  if solid && oc.length_squared() <= radius * radius {
+    return Some({
+      toi: 0.0F,
+      normal: qp3d_real_normalized_or_default(ray.dir.scale(-1.0F)),
+    })
   }
   let b = oc.dot(ray.dir)
   let c = oc.length_squared() - radius * radius
@@ -548,7 +555,10 @@ fn ray_sphere_toi_normal(
     return None
   }
   let hit = ray.origin.add(ray.dir.scale(t))
-  let n = qp3d_real_normalized_or_default(hit.sub(center))
+  let n = orient_against_ray(
+    qp3d_real_normalized_or_default(hit.sub(center)),
+    ray.dir,
+  )
   Some({ toi: t, normal: n })
 }
 
@@ -558,14 +568,19 @@ fn ray_obb_toi_normal(
   pos : @core.Isometry3,
   he : @core.Vec3,
   max_toi : @core.Real,
+  solid : Bool,
 ) -> RayIntersection3? {
   // Ray vs OBB via slab test in local-space.
   let inv = pos.inverse()
   let o = inv.transform_point(ray.origin)
   let d = pos.rotation.inverse().rotate_vec3(ray.dir)
+  let starts_inside = @core.abs(o.x) < he.x &&
+    @core.abs(o.y) < he.y &&
+    @core.abs(o.z) < he.z
   let mut tmin = 0.0F
   let mut tmax = max_toi
-  let mut hit_normal = @core.Vec3::zero()
+  let mut enter_normal = @core.Vec3::zero()
+  let mut exit_normal = @core.Vec3::zero()
   fn update_slab(
     p0 : @core.Real,
     v : @core.Real,
@@ -573,36 +588,39 @@ fn ray_obb_toi_normal(
     axis : @core.Vec3,
     tmin : @core.Real,
     tmax : @core.Real,
-    hit_normal : @core.Vec3,
-  ) -> (@core.Real, @core.Real, @core.Vec3)? {
+    enter_normal : @core.Vec3,
+    exit_normal : @core.Vec3,
+  ) -> (@core.Real, @core.Real, @core.Vec3, @core.Vec3)? {
     let mut tmin = tmin
     let mut tmax = tmax
-    let mut hit_normal = hit_normal
+    let mut enter_normal = enter_normal
+    let mut exit_normal = exit_normal
     if @core.abs(v) <= 1.0e-12F {
       if p0 < -he || p0 > he {
         return None
       }
-      return Some((tmin, tmax, hit_normal))
+      return Some((tmin, tmax, enter_normal, exit_normal))
     }
     let inv_v = 1.0F / v
     let t1 = (-he - p0) * inv_v
     let t2 = (he - p0) * inv_v
-    let (lo, hi, n_lo) = if t1 < t2 {
-      (t1, t2, axis.scale(-1.0F))
+    let (lo, hi, n_lo, n_hi) = if t1 < t2 {
+      (t1, t2, axis.scale(-1.0F), axis)
     } else {
-      (t2, t1, axis)
+      (t2, t1, axis, axis.scale(-1.0F))
     }
     if lo > tmin {
       tmin = lo
-      hit_normal = n_lo
+      enter_normal = n_lo
     }
     if hi < tmax {
       tmax = hi
+      exit_normal = n_hi
     }
     if tmin > tmax {
       None
     } else {
-      Some((tmin, tmax, hit_normal))
+      Some((tmin, tmax, enter_normal, exit_normal))
     }
   }
 
@@ -613,12 +631,14 @@ fn ray_obb_toi_normal(
       @core.Vec3::new(1.0F, 0.0F, 0.0F),
       tmin,
       tmax,
-      hit_normal,
+      enter_normal,
+      exit_normal,
     )
     is Some(result) {
     tmin = result.0
     tmax = result.1
-    hit_normal = result.2
+    enter_normal = result.2
+    exit_normal = result.3
   } else {
     return None
   }
@@ -629,12 +649,14 @@ fn ray_obb_toi_normal(
       @core.Vec3::new(0.0F, 1.0F, 0.0F),
       tmin,
       tmax,
-      hit_normal,
+      enter_normal,
+      exit_normal,
     )
     is Some(result) {
     tmin = result.0
     tmax = result.1
-    hit_normal = result.2
+    enter_normal = result.2
+    exit_normal = result.3
   } else {
     return None
   }
@@ -645,21 +667,58 @@ fn ray_obb_toi_normal(
       @core.Vec3::new(0.0F, 0.0F, 1.0F),
       tmin,
       tmax,
-      hit_normal,
+      enter_normal,
+      exit_normal,
     )
     is Some(result) {
     tmin = result.0
     tmax = result.1
-    hit_normal = result.2
+    enter_normal = result.2
+    exit_normal = result.3
   } else {
     return None
   }
-  if tmax < 0.0F || tmin < 0.0F || tmin > max_toi {
+  if tmax < 0.0F || tmin > max_toi {
     return None
   }
-  // Transform normal back to world.
-  let n = pos.rotation.rotate_vec3(hit_normal)
-  Some({ toi: tmin, normal: qp3d_real_normalized_or_default(n) })
+  if starts_inside {
+    if solid {
+      return Some({
+        toi: 0.0F,
+        normal: qp3d_real_normalized_or_default(ray.dir.scale(-1.0F)),
+      })
+    }
+    if tmax > max_toi {
+      return None
+    }
+    let n_exit = orient_against_ray(
+      pos.rotation.rotate_vec3(exit_normal),
+      ray.dir,
+    )
+    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit) })
+  }
+  if tmin < 0.0F {
+    if solid {
+      return Some({
+        toi: 0.0F,
+        normal: qp3d_real_normalized_or_default(ray.dir.scale(-1.0F)),
+      })
+    }
+    if tmax > max_toi {
+      return None
+    }
+    let n_exit = orient_against_ray(
+      pos.rotation.rotate_vec3(exit_normal),
+      ray.dir,
+    )
+    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit) })
+  }
+  // Transform entry normal back to world.
+  let n_enter = orient_against_ray(
+    pos.rotation.rotate_vec3(enter_normal),
+    ray.dir,
+  )
+  Some({ toi: tmin, normal: qp3d_real_normalized_or_default(n_enter) })
 }
 
 ///|
@@ -732,16 +791,33 @@ fn qp3d_real_hit_shape(
   pos : @core.Isometry3,
   shape : Shape3D,
   max_toi : @core.Real,
+  solid : Bool,
 ) -> RayIntersection3Feature? {
+  if solid {
+    let (proj, _) = qp3d_real_project_point_on_shape(
+      pos,
+      shape,
+      ray.origin,
+      true,
+    )
+    if proj.is_inside {
+      return Some({
+        toi: 0.0F,
+        normal: qp3d_real_normalized_or_default(ray.dir.scale(-1.0F)),
+        feature_id: -1,
+      })
+    }
+  }
   match shape {
     Shape3D::Ball(r) =>
-      if ray_sphere_toi_normal(ray, pos.translation, r, max_toi) is Some(it) {
+      if ray_sphere_toi_normal(ray, pos.translation, r, max_toi, solid)
+        is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
     Shape3D::Cuboid(he) =>
-      if ray_obb_toi_normal(ray, pos, he, max_toi) is Some(it) {
+      if ray_obb_toi_normal(ray, pos, he, max_toi, solid) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
@@ -1118,7 +1194,7 @@ fn qp3d_real_hit_shape(
       for i in 0..<parts.length() {
         let (iso, sh) = parts[i]
         let child_pos = pos.mul(iso)
-        if qp3d_real_hit_shape(ray, child_pos, sh, max_toi) is Some(it) &&
+        if qp3d_real_hit_shape(ray, child_pos, sh, max_toi, solid) is Some(it) &&
           it.toi < best_t {
           best_t = it.toi
           best = Some(it)
@@ -1420,7 +1496,8 @@ fn ray_capsule_y_toi_normal(
     best : RayIntersection3?,
   ) -> (@core.Real, RayIntersection3?) {
     let ray_local = Ray3::new(o, d)
-    if ray_sphere_toi_normal(ray_local, center_local, r, max_toi) is Some(it) {
+    if ray_sphere_toi_normal(ray_local, center_local, r, max_toi, false)
+      is Some(it) {
       if it.toi < best_t {
         let hit = o.add(d.scale(it.toi))
         let n_local = qp3d_real_normalized_or_default(hit.sub(center_local))
@@ -1672,7 +1749,7 @@ pub fn QueryPipeline3DReal::intersect_ray(
       if !filter_pass_3d_real(self.filter, bodies, h, co) {
         continue
       }
-      if qp3d_real_hit_shape(ray, co.position(), co.shape(), max_dist)
+      if qp3d_real_hit_shape(ray, co.position(), co.shape(), max_dist, solid)
         is Some(it) {
         results.push((h, it))
       }
@@ -1701,7 +1778,7 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
         continue
       }
       let pos = co.position()
-      let hit = qp3d_real_hit_shape(ray, pos, co.shape(), max_toi)
+      let hit = qp3d_real_hit_shape(ray, pos, co.shape(), max_toi, solid)
       if hit is Some(it) && it.toi < best_t {
         best_t = it.toi
         best = Some((h, it))
@@ -2511,6 +2588,7 @@ fn qp3d_real_cast_ball_against_shape(
           pos2.translation,
           r2 + effective_radius,
           max_toi,
+          false,
         )
         is Some(hit) {
         let point = pos2.translation.add(hit.normal.scale(r2))
@@ -2528,6 +2606,7 @@ fn qp3d_real_cast_ball_against_shape(
             ),
           ),
           max_toi,
+          false,
         )
         is Some(hit) {
         let center_at_hit = center.add(vel.scale(hit.toi))

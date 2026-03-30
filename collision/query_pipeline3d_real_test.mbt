@@ -40,6 +40,42 @@ test "query_pipeline3d_real: cast_ray_and_get_normal cuboid" {
 }
 
 ///|
+test "query_pipeline3d_real: cast_ray solid flag controls inside-origin behavior" {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = ColliderSet3D::new()
+  let body = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+  let collider = colliders.insert_with_parent(
+    ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    body,
+    bodies,
+  )
+  colliders.sync_with_bodies(bodies)
+  let qp = QueryPipeline3DReal::new(QueryFilter3DReal::new(), bodies, colliders)
+  let ray = Ray3::new(
+    @core.Vec3::new(0.0F, 0.0F, 0.0F),
+    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+  )
+
+  if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
+    is Some((h0, hit0)) {
+    inspect(h0.equals(collider), content="true")
+    inspect(hit0.toi() == 0.0F, content="true")
+    inspect(hit0.normal().x < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, false)
+    is Some((h1, hit1)) {
+    inspect(h1.equals(collider), content="true")
+    inspect(hit1.toi() > 0.9F && hit1.toi() < 1.1F, content="true")
+    inspect(hit1.normal().x < -0.9F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "query_pipeline3d_real: cast_ray_and_get_normal trimesh triangle" {
   let bodies = @dynamics.RigidBodySet3D::new()
   let colliders = ColliderSet3D::new()
