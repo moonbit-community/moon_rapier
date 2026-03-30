@@ -1,7 +1,3 @@
 import {
   "Milky2018/moon_rapier/core",
 }
-
-import {
-  "Milky2018/moon_rapier/core",
-} for "test"
