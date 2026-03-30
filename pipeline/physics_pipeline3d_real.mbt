@@ -1331,6 +1331,21 @@ fn PhysicsPipeline3DReal::step_impl_one(
   let interactions : Array[
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ] = []
+  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new()
+  fn push_unique_interaction(
+    interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
+    interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool],
+    body1 : @dynamics.RigidBodyHandle,
+    body2 : @dynamics.RigidBodyHandle,
+  ) -> Unit {
+    let key = rb_pair_key_3d(body1, body2)
+    if interaction_keys.get(key) is Some(true) {
+      return
+    }
+    interaction_keys.set(key, true)
+    interactions.push((body1, body2))
+  }
+
   let pairs = narrow_phase.all_contact_pairs()
   for i in 0..<pairs.length() {
     let ((c1h, c2h), pair) = pairs[i]
@@ -1341,7 +1356,22 @@ fn PhysicsPipeline3DReal::step_impl_one(
       colliders.get(c2h) is Some(c2) &&
       c1.parent() is Some(b1) &&
       c2.parent() is Some(b2) {
-      interactions.push((b1, b2))
+      push_unique_interaction(interactions, interaction_keys, b1, b2)
+    }
+  }
+  if rope_joints is Some(rope) {
+    for pair in rope.interaction_pairs() {
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
+    }
+  }
+  if joints is Some(generic) {
+    for pair in generic.interaction_pairs() {
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
+    }
+  }
+  if multibody_joints is Some(multibody) {
+    for pair in multibody.interaction_pairs() {
+      push_unique_interaction(interactions, interaction_keys, pair.0, pair.1)
     }
   }
   islands.update(bodies, interactions)

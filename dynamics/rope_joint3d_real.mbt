@@ -47,6 +47,17 @@ pub fn RopeJointSet3DReal::insert(
 }
 
 ///|
+pub fn RopeJointSet3DReal::interaction_pairs(
+  self : RopeJointSet3DReal,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let out : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for j in self.joints {
+    out.push((j.body1, j.body2))
+  }
+  out
+}
+
+///|
 pub fn RopeJointSet3DReal::solve(
   self : RopeJointSet3DReal,
   bodies : RigidBodySet3D,

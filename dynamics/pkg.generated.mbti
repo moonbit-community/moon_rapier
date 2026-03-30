@@ -726,6 +726,7 @@ pub fn JointSet3DReal::insert_revolute(Self, RigidBodyHandle, RigidBodyHandle, @
 pub fn JointSet3DReal::insert_spherical(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3) -> Unit
 pub fn JointSet3DReal::insert_spherical_motor_rotation(Self, RigidBodyHandle, RigidBodyHandle, @core.Quat, Float, Float) -> Unit
 pub fn JointSet3DReal::insert_spring(Self, RigidBodyHandle, RigidBodyHandle, @core.Vec3, @core.Vec3, Float, Float, Float, Bool) -> Unit
+pub fn JointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn JointSet3DReal::new() -> Self
 pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
@@ -908,6 +909,7 @@ pub fn MultibodyJointSet3::get_mut_internal(Self, MultibodyJointHandle) -> (Mult
 pub fn MultibodyJointSet3::get_unknown_gen(Self, Int) -> (Multibody3, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody3, MultibodyLink)]
 pub fn MultibodyJointSet3::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody3, MultibodyLink)?
 pub fn MultibodyJointSet3::multibodies(Self) -> Array[Multibody3]
@@ -937,6 +939,7 @@ pub fn MultibodyJointSet3DReal::get_mut(Self, MultibodyJointHandle) -> (Multibod
 pub fn MultibodyJointSet3DReal::get_unknown_gen(Self, Int) -> (Multibody3DReal, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3DReal::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3DReal::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody3DReal, MultibodyLink)]
 pub fn MultibodyJointSet3DReal::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)?
 pub fn MultibodyJointSet3DReal::multibodies(Self) -> Array[Multibody3DReal]
@@ -1852,6 +1855,7 @@ pub struct RopeJointSet3DReal {
   fn new() -> RopeJointSet3DReal
 }
 pub fn RopeJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, Float) -> Unit
+pub fn RopeJointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn RopeJointSet3DReal::new() -> Self
 pub fn RopeJointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
 

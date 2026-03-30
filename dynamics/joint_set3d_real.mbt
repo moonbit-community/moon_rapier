@@ -241,6 +241,29 @@ pub fn JointSet3DReal::disabled_contact_pairs(
 }
 
 ///|
+pub fn JointSet3DReal::interaction_pairs(
+  self : JointSet3DReal,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let out : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  for j in self.spherical {
+    out.push((j.body1, j.body2))
+  }
+  for j in self.prismatic {
+    out.push((j.body1, j.body2))
+  }
+  for j in self.spherical_motors {
+    out.push((j.body1, j.body2))
+  }
+  for j in self.generic {
+    out.push((j.body1, j.body2))
+  }
+  for j in self.springs {
+    out.push((j.body1, j.body2))
+  }
+  out
+}
+
+///|
 pub fn JointSet3DReal::new() -> JointSet3DReal {
   {
     spherical: [],
