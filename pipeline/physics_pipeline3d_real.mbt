@@ -1128,15 +1128,6 @@ fn PhysicsPipeline3DReal::step_impl(
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Unit {
-  fn ceil_pos(x : @core.Real) -> Int {
-    let i = x.to_int()
-    if Float::from_int(i) == x {
-      i
-    } else {
-      i + 1
-    }
-  }
-
   let dt = parameters.dt
   if dt <= 0.0F {
     return
@@ -1152,30 +1143,8 @@ fn PhysicsPipeline3DReal::step_impl(
     multibody.sync_rigid_bodies_from_multibodies(bodies)
     colliders.sync_with_bodies(bodies)
   }
-  // Substep to reduce tunneling in the 3DReal backend.
-  //
-  // This is NOT a full TOI-based CCD, but it is sufficient for the current parity tests and
-  // keeps behavior deterministic.
-  let mut substeps = 1
+  let ccd_enabled = bodies.has_ccd_enabled() && parameters.max_ccd_substeps > 0
   let max_speed = bodies.max_linvel_len()
-  // Keep displacement small enough to avoid crossing thin shapes within a single substep.
-  let max_disp = 0.03F * parameters.length_unit
-  if max_disp > 0.0F && max_speed * dt > max_disp {
-    substeps = ceil_pos(max_speed * dt / max_disp)
-  }
-  if bodies.has_ccd_enabled() {
-    let max_disp_ccd = 0.01F * parameters.length_unit
-    if max_disp_ccd > 0.0F && max_speed * dt > max_disp_ccd {
-      let needed = ceil_pos(max_speed * dt / max_disp_ccd)
-      if needed > substeps {
-        substeps = needed
-      }
-    }
-  }
-  if substeps > 64 {
-    substeps = 64
-  }
-  let sub_dt = dt / Float::from_int(substeps)
   // When splitting a substep at a computed TOI, slightly overshoot the TOI so the next
   // step begins in a strictly-intersecting configuration. This avoids missing the contact
   // solve due to broad-phase boundary cases when the shapes are exactly touching.
@@ -1185,10 +1154,47 @@ fn PhysicsPipeline3DReal::step_impl(
   } else {
     0.0F
   }
-  let sub_params = parameters.with_dt(sub_dt)
-  for _ in 0..<substeps {
-    // TOI-based CCD for fast moving balls.
-    if bodies.has_ccd_enabled() &&
+  let mut remaining_time = dt
+  let mut remaining_substeps = if ccd_enabled {
+    parameters.max_ccd_substeps
+  } else {
+    1
+  }
+  while remaining_substeps > 0 {
+    let mut sub_dt = remaining_time
+    if ccd_enabled && remaining_substeps > 1 {
+      if ccd_min_toi_ball_3d(bodies, colliders, remaining_time) is Some(toi) &&
+        toi > 1.0e-6F &&
+        toi < remaining_time {
+        let mut toi_step = toi
+        if ccd_overlap_time > 0.0F &&
+          toi_step + ccd_overlap_time < remaining_time {
+          toi_step = toi_step + ccd_overlap_time
+        }
+        let interval = remaining_time / Float::from_int(remaining_substeps)
+        sub_dt = if toi_step < interval {
+          toi_step +
+          (remaining_time - toi_step) / Float::from_int(remaining_substeps)
+        } else {
+          interval
+        }
+        remaining_substeps = remaining_substeps - 1
+      } else {
+        sub_dt = remaining_time
+        remaining_substeps = 0
+      }
+      remaining_time = remaining_time - sub_dt
+      if remaining_time <= parameters.min_ccd_dt {
+        sub_dt = sub_dt + remaining_time
+        remaining_time = 0.0F
+        remaining_substeps = 0
+      }
+    } else {
+      remaining_time = 0.0F
+      remaining_substeps = 0
+    }
+    // TOI split for the selected interval.
+    if ccd_enabled &&
       ccd_min_toi_ball_3d(bodies, colliders, sub_dt) is Some(toi) &&
       toi > 1.0e-6F &&
       toi < sub_dt {
@@ -1211,7 +1217,8 @@ fn PhysicsPipeline3DReal::step_impl(
           events, rope_joints, joints, multibody_joints, hooks,
         )
       }
-    } else {
+    } else if sub_dt > 0.0F {
+      let sub_params = parameters.with_dt(sub_dt)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
         events, rope_joints, joints, multibody_joints, hooks,

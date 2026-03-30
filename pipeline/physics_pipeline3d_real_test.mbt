@@ -691,6 +691,58 @@ test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled v
 }
 
 ///|
+test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
+  fn run(max_ccd_substeps : Int) -> @core.Real {
+    let pipeline = PhysicsPipeline3DReal::new()
+    let broad_phase = @collision.BroadPhase3D::new()
+    let narrow_phase = @collision.NarrowPhase3D::new()
+    let islands = @dynamics.IslandManager3D::new()
+    let bodies = @dynamics.RigidBodySet3D::new()
+    let colliders = @collision.ColliderSet3D::new()
+    let gravity = @core.Vec3::zero()
+    let parameters = @dynamics.IntegrationParameters::default()
+      .set_dt(1.0F)
+      .set_max_ccd_substeps(max_ccd_substeps)
+    let wall = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder3D::cuboid(0.1F, 10.0F, 10.0F).build(),
+      wall,
+      bodies,
+    )
+    |> ignore
+    let ball = bodies.insert(
+      @dynamics.RigidBodyBuilder3D::dynamic()
+      .translation(@core.Vec3::new(-10.0F, 0.0F, 0.0F))
+      .ccd_enabled(true)
+      .build(),
+    )
+    colliders.insert_with_parent(
+      @collision.ColliderBuilder3D::ball(1.0F).build(),
+      ball,
+      bodies,
+    )
+    |> ignore
+    if bodies.get_mut(ball) is Some(rb) {
+      rb.set_linvel(@core.Vec3::new(1000.0F, 0.0F, 0.0F))
+      rb.wake_up()
+    }
+    pipeline.step(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+    )
+    if bodies.get(ball) is Some(rb2) {
+      rb2.translation().x
+    } else {
+      0.0F
+    }
+  }
+
+  let x0 = run(0)
+  inspect(x0 > 0.0F, content="true")
+  let x4 = run(4)
+  inspect(x4 < 0.0F, content="true")
+}
+
+///|
 test "physics_pipeline3d_real: collision events do not repeat while contact persists" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()
