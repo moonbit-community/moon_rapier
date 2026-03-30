@@ -1292,6 +1292,7 @@ pub struct RigidBody3D {
   mut rot_x_enabled : Bool
   mut rot_y_enabled : Bool
   mut rot_z_enabled : Bool
+  mut ccd_active : Bool
   ccd_enabled : Bool
   soft_ccd_prediction : Float
   gyroscopic_forces_enabled : Bool
@@ -1317,6 +1318,7 @@ pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::is_active(Self) -> Bool
 pub fn RigidBody3D::is_ccd_active(Self) -> Bool
+pub fn RigidBody3D::is_ccd_enabled(Self) -> Bool
 pub fn RigidBody3D::is_sleeping(Self) -> Bool
 pub fn RigidBody3D::linvel(Self) -> @core.Vec3
 pub fn RigidBody3D::locked_axes(Self) -> LockedAxes
@@ -1329,6 +1331,7 @@ pub fn RigidBody3D::restrict_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
+pub fn RigidBody3D::set_ccd_active(Self, Bool) -> Unit
 pub fn RigidBody3D::set_dominance_group(Self, Int) -> Unit
 pub fn RigidBody3D::set_enabled_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::set_enabled_translations(Self, Bool, Bool, Bool, Bool) -> Unit

@@ -47,201 +47,224 @@ pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
 }
 
 ///|
-fn ccd_toi_ball_ball(
-  center1 : @core.Vec3,
-  radius1 : @core.Real,
-  vel1 : @core.Vec3,
-  center2 : @core.Vec3,
-  radius2 : @core.Real,
-  max_toi : @core.Real,
-) -> @core.Real? {
-  let r = radius1 + radius2
-  let p = center1.sub(center2)
-  let c = p.length_squared() - r * r
-  // Already intersecting.
-  if c <= 0.0F {
-    return Some(0.0F)
-  }
-  let a = vel1.length_squared()
-  if a <= 1.0e-12F {
-    return None
-  }
-  let b = p.dot(vel1)
-  let disc = b * b - a * c
-  if disc < 0.0F {
-    return None
-  }
-  let t = (-b - Float::sqrt(disc)) / a
-  if t >= 0.0F && t <= max_toi {
-    Some(t)
-  } else {
-    None
-  }
-}
-
-///|
-fn ccd_toi_ball_cuboid(
-  ball_center : @core.Vec3,
-  ball_radius : @core.Real,
-  ball_vel : @core.Vec3,
-  cuboid_pos : @core.Isometry3,
-  cuboid_half_extents : @core.Vec3,
-  max_toi : @core.Real,
-) -> @core.Real? {
-  // Sphere vs OBB TOI, approximated as point vs expanded box in the box local-space.
-  let inv = cuboid_pos.inverse()
-  let local_center = inv.transform_point(ball_center)
-  let rot_inv = cuboid_pos.rotation.inverse()
-  let local_vel = rot_inv.rotate_vec3(ball_vel)
-  let he = cuboid_half_extents.add(
-    @core.Vec3::new(ball_radius, ball_radius, ball_radius),
+fn integrate_lin_ang_3d_real(
+  dt : @core.Real,
+  curr_pos : @core.Isometry3,
+  local_com : @core.Vec3,
+  linvel : @core.Vec3,
+  angvel : @core.Vec3,
+) -> @core.Isometry3 {
+  let com = curr_pos.transform_point(local_com)
+  let shift = @core.Isometry3::from_translation(
+    @core.Vec3::new(-com.x, -com.y, -com.z),
   )
-  let mut tmin = 0.0F
-  let mut tmax = max_toi
-  fn axis_slab(
-    p0 : @core.Real,
-    v : @core.Real,
-    he : @core.Real,
-    tmin : @core.Real,
-    tmax : @core.Real,
-  ) -> (@core.Real, @core.Real)? {
-    let mut tmin = tmin
-    let mut tmax = tmax
-    if @core.abs(v) <= 1.0e-12F {
-      if p0 < -he || p0 > he {
-        return None
-      }
-      return Some((tmin, tmax))
-    }
-    let inv_v = 1.0F / v
-    let t1 = (-he - p0) * inv_v
-    let t2 = (he - p0) * inv_v
-    let lo = if t1 < t2 { t1 } else { t2 }
-    let hi = if t1 < t2 { t2 } else { t1 }
-    if lo > tmin {
-      tmin = lo
-    }
-    if hi < tmax {
-      tmax = hi
-    }
-    if tmin > tmax {
-      None
-    } else {
-      Some((tmin, tmax))
-    }
-  }
+  let rot = @core.Isometry3::new(
+    @core.Vec3::zero(),
+    @core.rotation_from_scaled_axis(angvel.scale(dt)),
+  )
+  let translation = linvel.scale(dt)
+  let unshift = @core.Isometry3::from_translation(com.add(translation))
+  unshift.mul(rot).mul(shift).mul(curr_pos)
+}
 
-  if axis_slab(local_center.x, local_vel.x, he.x, tmin, tmax) is Some(pair) {
-    tmin = pair.0
-    tmax = pair.1
-  } else {
-    return None
-  }
-  if axis_slab(local_center.y, local_vel.y, he.y, tmin, tmax) is Some(pair) {
-    tmin = pair.0
-    tmax = pair.1
-  } else {
-    return None
-  }
-  if axis_slab(local_center.z, local_vel.z, he.z, tmin, tmax) is Some(pair) {
-    tmin = pair.0
-    tmax = pair.1
-  } else {
-    return None
-  }
-  if tmax < 0.0F {
-    None
-  } else if tmin < 0.0F {
-    Some(0.0F)
-  } else {
-    Some(tmin)
+///|
+fn shape_bounding_radius_3d_real(shape : @collision.Shape3D) -> @core.Real {
+  match shape {
+    @collision.Shape3D::HalfSpace(_) => 0.0F
+    _ => {
+      let aabb = shape.local_aabb()
+      let he = aabb.maxs.sub(aabb.mins).scale(0.5F)
+      Float::sqrt(he.length_squared())
+    }
   }
 }
 
 ///|
-fn ccd_min_toi_ball_3d(
+fn shape_ccd_thickness_3d_real(shape : @collision.Shape3D) -> @core.Real {
+  match shape {
+    @collision.Shape3D::HalfSpace(_) => 0.0F
+    @collision.Shape3D::Triangle(_, _, _) => 0.0F
+    @collision.Shape3D::Heightfield(_, _, _, _, _) => 0.0F
+    @collision.Shape3D::TriMesh(_, _) => 0.0F
+    @collision.Shape3D::Compound(parts) => {
+      if parts.length() == 0 {
+        return 0.0F
+      }
+      let mut best = 1.0e30F
+      for i in 0..<parts.length() {
+        let t = shape_ccd_thickness_3d_real(parts[i].1)
+        if t < best {
+          best = t
+        }
+      }
+      if best >= 1.0e29F {
+        0.0F
+      } else {
+        best
+      }
+    }
+    _ => {
+      let aabb = shape.local_aabb()
+      let he = aabb.maxs.sub(aabb.mins).scale(0.5F)
+      let mut t = he.x
+      if he.y < t {
+        t = he.y
+      }
+      if he.z < t {
+        t = he.z
+      }
+      if t > 0.0F {
+        t
+      } else {
+        0.0F
+      }
+    }
+  }
+}
+
+///|
+fn body_ccd_metrics_3d_real(
+  handle : @dynamics.RigidBodyHandle,
+  colliders : @collision.ColliderSet3D,
+) -> (@core.Real, @core.Real, Bool) {
+  let mut ccd_thickness = 1.0e30F
+  let mut ccd_max_dist = 0.0F
+  let mut found = false
+  let collider_handles = colliders.all_handles()
+  for i in 0..<collider_handles.length() {
+    let ch = collider_handles[i]
+    if colliders.get(ch) is Some(co) &&
+      co.parent() is Some(parent) &&
+      parent.equals(handle) {
+      found = true
+      let thickness = shape_ccd_thickness_3d_real(co.shape())
+      if thickness < ccd_thickness {
+        ccd_thickness = thickness
+      }
+      let radius = shape_bounding_radius_3d_real(co.shape())
+      let dist = co.local_position().translation.length() + radius
+      if dist > ccd_max_dist {
+        ccd_max_dist = dist
+      }
+    }
+  }
+  if !found {
+    (0.0F, 0.0F, false)
+  } else if ccd_thickness >= 1.0e29F {
+    (0.0F, ccd_max_dist, true)
+  } else {
+    (ccd_thickness, ccd_max_dist, true)
+  }
+}
+
+///|
+fn update_ccd_active_flags_3d_real(
+  dt : @core.Real,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
-  max_toi : @core.Real,
+  _include_forces : Bool,
+) -> Bool {
+  if dt <= 0.0F {
+    return false
+  }
+  let mut any_active = false
+  let body_handles = bodies.all_handles()
+  for i in 0..<body_handles.length() {
+    let bh = body_handles[i]
+    if bodies.get_mut(bh) is Some(rb) {
+      if !rb.is_ccd_enabled() ||
+        !rb.body_type().is_dynamic_or_kinematic() ||
+        !rb.is_active() {
+        rb.set_ccd_active(false)
+        continue
+      }
+      let (ccd_thickness, ccd_max_dist, has_attached_collider) = body_ccd_metrics_3d_real(
+        bh, colliders,
+      )
+      if !has_attached_collider {
+        rb.set_ccd_active(false)
+        continue
+      }
+      let max_point_velocity = rb.linvel().length() +
+        rb.angvel().length() * ccd_max_dist
+      let threshold = ccd_thickness / 10.0F
+      let moving_fast = max_point_velocity * dt > threshold
+      rb.set_ccd_active(moving_fast)
+      if moving_fast {
+        any_active = true
+      }
+    }
+  }
+  any_active
+}
+
+///|
+fn find_first_impact_3d_real(
+  dt : @core.Real,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
 ) -> @core.Real? {
-  let toi_eps = 1.0e-6F
-  let handles = colliders.all_handles()
+  if dt <= 0.0F {
+    return None
+  }
+  let base_query = @collision.QueryPipeline3DReal::new(
+    @collision.QueryFilter3DReal::new(),
+    bodies,
+    colliders,
+  )
   let mut best : @core.Real? = None
-  for i in 0..<handles.length() {
-    let h1 = handles[i]
-    if colliders.get(h1) is Some(c1) {
-      if c1.parent() is Some(bh1) && bodies.get(bh1) is Some(rb1) {
-        if !rb1.body_type().is_dynamic() ||
-          !rb1.is_active() ||
-          !rb1.is_ccd_active() {
-          continue
-        }
-        match c1.shape() {
-          @collision.Shape3D::Ball(r1) => {
-            let p1 = c1.position().translation
-            let v1 = rb1.linvel()
-            for j in 0..<handles.length() {
-              let h2 = handles[j]
-              if h1.equals(h2) {
-                continue
-              }
-              if colliders.get(h2) is Some(c2) {
-                if c2.parent() is Some(bh2) && bh2.equals(bh1) {
-                  continue
-                }
-                if !c1.collision_groups().test_groups(c2.collision_groups()) {
-                  continue
-                }
-                let v2 = if c2.parent() is Some(bh2) &&
-                  bodies.get(bh2) is Some(rb2) &&
-                  rb2.body_type().is_dynamic() &&
-                  rb2.is_active() {
-                  rb2.linvel()
-                } else {
-                  @core.Vec3::zero()
-                }
-                let rel_v = v1.sub(v2)
-                if rel_v.length_squared() <= 1.0e-12F {
-                  continue
-                }
-                let hit : @core.Real? = match c2.shape() {
-                  @collision.Shape3D::Ball(r2) =>
-                    ccd_toi_ball_ball(
-                      p1,
-                      r1,
-                      rel_v,
-                      c2.position().translation,
-                      r2,
-                      max_toi,
-                    )
-                  @collision.Shape3D::Cuboid(he) =>
-                    ccd_toi_ball_cuboid(
-                      p1,
-                      r1,
-                      rel_v,
-                      c2.position(),
-                      he,
-                      max_toi,
-                    )
-                  _ => None
-                }
-                if hit is Some(t) {
-                  // Ignore immediate overlaps/touches so they don't hide an upcoming impact
-                  // later in the same substep.
-                  if t > toi_eps {
-                    if best is Some(curr) {
-                      if t < curr {
-                        best = Some(t)
-                      }
-                    } else {
-                      best = Some(t)
-                    }
-                  }
-                }
-              }
+  let collider_handles = colliders.all_handles()
+  for i in 0..<collider_handles.length() {
+    let ch = collider_handles[i]
+    if colliders.get(ch) is Some(co) &&
+      co.enabled() &&
+      !co.is_sensor() &&
+      co.parent() is Some(bh) &&
+      bodies.get(bh) is Some(rb) {
+      if !rb.is_ccd_active() ||
+        !rb.body_type().is_dynamic_or_kinematic() ||
+        !rb.is_active() {
+        continue
+      }
+      let start_pos = co.position()
+      let end_body_pos = integrate_lin_ang_3d_real(
+        dt,
+        rb.position(),
+        rb.mass_properties().center_of_mass,
+        rb.linvel(),
+        rb.angvel(),
+      )
+      let end_pos = end_body_pos.mul(co.local_position())
+      let delta = end_pos.translation.sub(start_pos.translation)
+      if delta.length_squared() <= 1.0e-12F {
+        continue
+      }
+      let shape_vel = delta.scale(1.0F / dt)
+      let query = base_query.with_filter(
+        @collision.QueryFilter3DReal::new()
+        .exclude_rigid_body(bh)
+        .groups(co.collision_groups())
+        .exclude_sensors(),
+      )
+      let options = @collision.ShapeCastOptions3::new(dt, true)
+      if query.cast_shape(
+          bodies,
+          colliders,
+          start_pos,
+          shape_vel,
+          co.shape(),
+          options,
+        )
+        is Some((_, hit)) {
+        let toi = hit.toi()
+        if toi >= 0.0F && toi < dt {
+          if best is Some(curr) {
+            if toi < curr {
+              best = Some(toi)
             }
+          } else {
+            best = Some(toi)
           }
-          _ => ()
         }
       }
     }
@@ -250,10 +273,11 @@ fn ccd_min_toi_ball_3d(
 }
 
 ///|
-fn clamp_fast_body_motions_3d_real(
+fn clamp_fast_ccd_body_motions_3d_real(
   dt : @core.Real,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
+  require_ccd_active : Bool,
 ) -> Unit {
   if dt <= 0.0F {
     return
@@ -263,34 +287,19 @@ fn clamp_fast_body_motions_3d_real(
     bodies,
     colliders,
   )
-  fn integrate_lin_ang(
-    dt : @core.Real,
-    curr_pos : @core.Isometry3,
-    local_com : @core.Vec3,
-    linvel : @core.Vec3,
-    angvel : @core.Vec3,
-  ) -> @core.Isometry3 {
-    let com = curr_pos.transform_point(local_com)
-    let shift = @core.Isometry3::from_translation(
-      @core.Vec3::new(-com.x, -com.y, -com.z),
-    )
-    let rot = @core.Isometry3::new(
-      @core.Vec3::zero(),
-      @core.rotation_from_scaled_axis(angvel.scale(dt)),
-    )
-    let translation = linvel.scale(dt)
-    let unshift = @core.Isometry3::from_translation(com.add(translation))
-    unshift.mul(rot).mul(shift).mul(curr_pos)
-  }
   let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = @hashmap.new()
   let collider_handles = colliders.all_handles()
   for i in 0..<collider_handles.length() {
     let ch = collider_handles[i]
     if colliders.get(ch) is Some(co) &&
       co.enabled() &&
+      !co.is_sensor() &&
       co.parent() is Some(bh) &&
       bodies.get(bh) is Some(rb) {
       if !rb.body_type().is_dynamic_or_kinematic() || !rb.is_active() {
+        continue
+      }
+      if require_ccd_active && !rb.is_ccd_active() {
         continue
       }
       let v = rb.linvel()
@@ -298,28 +307,26 @@ fn clamp_fast_body_motions_3d_real(
       if v.length_squared() <= 1.0e-12F && w.length_squared() <= 1.0e-12F {
         continue
       }
-      let local_pos = co.local_position()
       let start_pos = co.position()
-      let end_body_pos = integrate_lin_ang(
+      let end_body_pos = integrate_lin_ang_3d_real(
         dt,
         rb.position(),
         rb.mass_properties().center_of_mass,
         v,
         w,
       )
-      let end_pos = end_body_pos.mul(local_pos)
+      let end_pos = end_body_pos.mul(co.local_position())
       let delta = end_pos.translation.sub(start_pos.translation)
       if delta.length_squared() <= 1.0e-12F {
         continue
       }
       let shape_vel = delta.scale(1.0F / dt)
-      let mut filter = @collision.QueryFilter3DReal::new()
+      let query = base_query.with_filter(
+        @collision.QueryFilter3DReal::new()
         .exclude_rigid_body(bh)
         .groups(co.collision_groups())
-      if !co.is_sensor() {
-        filter = filter.exclude_sensors()
-      }
-      let query = base_query.with_filter(filter)
+        .exclude_sensors(),
+      )
       let options = @collision.ShapeCastOptions3::new(dt, true)
       if query.cast_shape(
           bodies,
@@ -349,7 +356,26 @@ fn clamp_fast_body_motions_3d_real(
     let bh = body_handles[i]
     let key = bh.into_raw_parts()
     if best_toi_by_body.get(key) is Some(toi) && bodies.get_mut(bh) is Some(rb) {
-      let s = toi / dt
+      let mut effective_toi = toi
+      if require_ccd_active {
+        let (ccd_thickness, ccd_max_dist, _) = body_ccd_metrics_3d_real(
+          bh, colliders,
+        )
+        let max_point_velocity = rb.linvel().length() +
+          rb.angvel().length() * ccd_max_dist
+        let min_toi = if max_point_velocity > 0.0F {
+          let value = ccd_thickness * 0.15F / max_point_velocity
+          if value < dt {
+            value
+          } else {
+            dt
+          }
+        } else {
+          dt
+        }
+        effective_toi = if toi > min_toi { toi } else { min_toi }
+      }
+      let s = effective_toi / dt
       if s < 1.0F {
         rb.set_linvel(rb.linvel().scale(s))
         rb.set_angvel(rb.angvel().scale(s))
@@ -1275,8 +1301,7 @@ fn PhysicsPipeline3DReal::step_impl(
   let motion_clamping_enabled = ccd_enabled || non_ccd_motion_clamping
   let mut non_ccd_substeps = 1
   if !ccd_enabled && !has_ccd_bodies {
-    // Fallback stabilization for scenes without CCD-enabled bodies.
-    // Keep this path isolated from CCD-enabled scenes so max_ccd_substeps semantics stay intact.
+    // Fallback stabilization for scenes without hard-CCD-enabled bodies.
     let max_disp = 0.03F * parameters.length_unit
     if max_disp > 0.0F && max_speed * dt > max_disp {
       non_ccd_substeps = ceil_pos(max_speed * dt / max_disp)
@@ -1291,12 +1316,18 @@ fn PhysicsPipeline3DReal::step_impl(
   } else {
     non_ccd_substeps
   }
-  while remaining_substeps > 0 {
+  while remaining_substeps > 0 && remaining_time > 0.0F {
     let mut sub_dt = remaining_time
     if ccd_enabled && remaining_substeps > 1 {
-      if ccd_min_toi_ball_3d(bodies, colliders, remaining_time) is Some(toi) &&
-        toi > 1.0e-6F &&
-        toi < remaining_time {
+      let ccd_active = update_ccd_active_flags_3d_real(
+        remaining_time, bodies, colliders, true,
+      )
+      let first_impact = if ccd_active {
+        find_first_impact_3d_real(remaining_time, bodies, colliders)
+      } else {
+        None
+      }
+      if first_impact is Some(toi) {
         let interval = remaining_time / Float::from_int(remaining_substeps)
         sub_dt = if toi < interval {
           interval
@@ -1326,7 +1357,7 @@ fn PhysicsPipeline3DReal::step_impl(
       let sub_params = parameters.with_dt(sub_dt)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints, multibody_joints, hooks, motion_clamping_enabled,
+        events, rope_joints, joints, multibody_joints, hooks, ccd_enabled, motion_clamping_enabled,
       )
     }
   }
@@ -1347,6 +1378,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
   joints : @dynamics.JointSet3DReal?,
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
+  ccd_enabled : Bool,
   motion_clamping_enabled : Bool,
 ) -> Unit {
   let dt = parameters.dt
@@ -1387,8 +1419,18 @@ fn PhysicsPipeline3DReal::step_impl_one(
   )
   self.contact_cache = cache_out
   self.contact_twist_cache = twist_cache_out
-  if motion_clamping_enabled {
-    clamp_fast_body_motions_3d_real(dt, bodies, colliders)
+  let mut motion_clamped = false
+  if ccd_enabled {
+    let ccd_active = update_ccd_active_flags_3d_real(
+      dt, bodies, colliders, false,
+    )
+    if ccd_active {
+      clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, true)
+      motion_clamped = true
+    }
+  }
+  if motion_clamping_enabled && !motion_clamped {
+    clamp_fast_ccd_body_motions_3d_real(dt, bodies, colliders, false)
   }
   bodies.advance_positions_all(dt)
   colliders.sync_with_bodies(bodies)

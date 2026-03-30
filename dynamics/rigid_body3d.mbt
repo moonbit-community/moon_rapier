@@ -199,6 +199,7 @@ pub struct RigidBody3D {
   mut rot_y_enabled : Bool
   mut rot_z_enabled : Bool
   // CCD/solver-related flags.
+  mut ccd_active : Bool
   ccd_enabled : Bool
   soft_ccd_prediction : @core.Real
   gyroscopic_forces_enabled : Bool
@@ -523,7 +524,17 @@ pub fn RigidBody3D::set_dominance_group(
 
 ///|
 pub fn RigidBody3D::is_ccd_active(self : RigidBody3D) -> Bool {
+  self.ccd_active
+}
+
+///|
+pub fn RigidBody3D::is_ccd_enabled(self : RigidBody3D) -> Bool {
   self.ccd_enabled
+}
+
+///|
+pub fn RigidBody3D::set_ccd_active(self : RigidBody3D, active : Bool) -> Unit {
+  self.ccd_active = active
 }
 
 ///|
@@ -1280,6 +1291,7 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
     rot_x_enabled: self.rot_x_enabled,
     rot_y_enabled: self.rot_y_enabled,
     rot_z_enabled: self.rot_z_enabled,
+    ccd_active: false,
     ccd_enabled: self.ccd_enabled,
     soft_ccd_prediction: self.soft_ccd_prediction,
     gyroscopic_forces_enabled: self.gyroscopic_forces_enabled,
@@ -1457,7 +1469,7 @@ pub fn RigidBodySet3D::update_kinematic_velocities_all(
 ///|
 pub fn RigidBodySet3D::has_ccd_enabled(self : RigidBodySet3D) -> Bool {
   for i in 0..<self.bodies.length() {
-    if self.bodies[i] is Some(body) && body.is_ccd_active() {
+    if self.bodies[i] is Some(body) && body.is_ccd_enabled() {
       return true
     }
   }
