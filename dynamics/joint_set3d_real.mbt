@@ -593,7 +593,7 @@ pub fn JointSet3DReal::solve(
   dt : @core.Real,
 ) -> Unit {
   // Deterministic, light positional solver.
-  let iters = 8
+  let iters = 16
   let inv_dt = if dt > 1.0e-12F { 1.0F / dt } else { 0.0F }
   for _ in 0..<iters {
     // Spherical (ball) joints.
