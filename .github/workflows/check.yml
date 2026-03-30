@@ -44,7 +44,7 @@ jobs:
 
       - name: Moon test
         run: |
-          moon test --frozen
+          tools/run_ci_tests.sh
 
       - name: Moon build (release)
         run: |

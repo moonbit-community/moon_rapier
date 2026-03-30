@@ -14,7 +14,7 @@ This document defines the current runtime profiles for selected parity tests in 
   - `moon build` now defaults to debug output.
   - Any script requiring optimized binaries must use `moon build --release`.
 - Default profile (fast):
-  - `moon test --frozen --release --target native -p rapier_full`
+  - `moon test --frozen --release --target native -p Milky2018/moon_rapier/rapier_full_parity`
 - Tiered profile gate (opt-in):
   - `tools/run_rapier_full_heavy_gate.sh` (defaults to `RAPIER_FULL_PROFILE=heavy`)
   - `RAPIER_FULL_PROFILE=medium tools/run_rapier_full_heavy_gate.sh`
@@ -52,7 +52,7 @@ This document defines the current runtime profiles for selected parity tests in 
 
 - Pull requests:
   - `moon check --frozen`
-  - `moon test --frozen`
+  - `tools/run_ci_tests.sh` (does not run `rapier_full_parity` by default)
   - `tools/run_rapier_full_heavy_gate.sh` (default `HEAVY`)
 - Nightly:
   - `RAPIER_FULL_PROFILE=medium tools/run_rapier_full_heavy_gate.sh`

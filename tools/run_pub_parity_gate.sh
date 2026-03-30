@@ -52,7 +52,7 @@ print(f"style parity: renamed={renamed}")
 PY
 
 echo "[parity-gate] run representative 2D/3D parity tests"
-moon test --frozen -p rapier_full -f examples2d_parity_test.mbt
-moon test --frozen -p rapier_full -f examples3d_parity_test.mbt
+moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples2d_parity_test.mbt
+moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples3d_parity_test.mbt
 
 echo "[parity-gate] success"

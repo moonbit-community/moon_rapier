@@ -46,7 +46,7 @@ TOTAL_REAL_SEC="0"
 
 if [[ "${RAPIER_FULL_SKIP_WARMUP:-0}" != "1" ]]; then
   echo "==> WARMUP native release build (excluded from runtime budget)" | tee -a "$LOG_FILE"
-  moon build --frozen --release --target native rapier_full \
+  moon build --frozen --release --target native Milky2018/moon_rapier/rapier_full_parity \
     2>&1 | tee -a "$LOG_FILE"
   echo | tee -a "$LOG_FILE"
 fi
@@ -59,7 +59,7 @@ run_file() {
   echo "==> ${PROFILE_UPPER} ${file} (${filter})" | tee -a "$LOG_FILE"
   tmp="$(mktemp)"
   /usr/bin/time -p moon test --frozen --release --target native \
-    --include-skipped -p rapier_full -f "$file" -F "$filter" \
+    --include-skipped -p Milky2018/moon_rapier/rapier_full_parity -f "$file" -F "$filter" \
     2>&1 | tee -a "$LOG_FILE" | tee "$tmp"
   real_sec="$(awk '/^real / { print $2 }' "$tmp" | tail -n1)"
   rm -f "$tmp"

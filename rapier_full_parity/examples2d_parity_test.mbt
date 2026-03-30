@@ -4277,7 +4277,7 @@ test "examples2d/trimesh2.rs parity" {
     bodies,
   )
   |> ignore
-  let rapier_logo_buffers = @rapier_full.rapier_logo_buffers_2d()
+  let rapier_logo_buffers = rapier_logo_buffers_2d()
   let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
   for ith in 0..<rapier_logo_buffers.length() {
     let buffer = rapier_logo_buffers[ith]

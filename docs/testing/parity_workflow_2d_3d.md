@@ -25,8 +25,8 @@ The gate enforces all of the following in one run:
 2. `python3 tools/rapier_pub_style_audit.py run`
    - requires style class `renamed=0`.
 3. Representative parity tests:
-   - `moon test --frozen -p rapier_full -f examples2d_parity_test.mbt`
-   - `moon test --frozen -p rapier_full -f examples3d_parity_test.mbt`
+   - `moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples2d_parity_test.mbt`
+   - `moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples3d_parity_test.mbt`
 
 ## CI Integration
 
