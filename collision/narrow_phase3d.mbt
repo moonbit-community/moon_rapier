@@ -3067,597 +3067,440 @@ pub fn compute_cuboid_cuboid_contact(
 }
 
 ///|
-/// Generate a contact manifold (up to 4 points) for a cuboid-cuboid contact.
-///
-/// This is a simplified BoxBox manifold generator:
-/// - For face-face contacts (best axis is a face normal), it computes the incident face corners,
-///   clips them against the reference face side planes, and keeps up to 4 extreme points.
-/// - For edge-edge contacts (best axis is a cross product), it falls back to a single support-point
-///   contact.
+priv struct CuboidFeature3D {
+  vertices : Array[@core.Vec3]
+}
+
+///|
+fn cuboid_local_support_point(he : @core.Vec3, dir : @core.Vec3) -> @core.Vec3 {
+  @core.Vec3::new(
+    if dir.x >= 0.0F {
+      he.x
+    } else {
+      -he.x
+    },
+    if dir.y >= 0.0F {
+      he.y
+    } else {
+      -he.y
+    },
+    if dir.z >= 0.0F {
+      he.z
+    } else {
+      -he.z
+    },
+  )
+}
+
+///|
+fn vec3_component(v : @core.Vec3, i : Int) -> @core.Real {
+  match i {
+    0 => v.x
+    1 => v.y
+    _ => v.z
+  }
+}
+
+///|
+fn vec3_axis(i : Int, sign : @core.Real) -> @core.Vec3 {
+  match i {
+    0 => @core.Vec3::new(sign, 0.0F, 0.0F)
+    1 => @core.Vec3::new(0.0F, sign, 0.0F)
+    _ => @core.Vec3::new(0.0F, 0.0F, sign)
+  }
+}
+
+///|
+fn cuboid_support_face_feature(
+  he : @core.Vec3,
+  local_dir : @core.Vec3,
+) -> CuboidFeature3D {
+  let abs_x = @core.abs(local_dir.x)
+  let abs_y = @core.abs(local_dir.y)
+  let abs_z = @core.abs(local_dir.z)
+  let imax = if abs_x >= abs_y && abs_x >= abs_z {
+    0
+  } else if abs_y >= abs_z {
+    1
+  } else {
+    2
+  }
+  let sign = if vec3_component(local_dir, imax) >= 0.0F { 1.0F } else { -1.0F }
+  let vertices = match imax {
+    0 =>
+      [
+        @core.Vec3::new(he.x * sign, he.y, he.z),
+        @core.Vec3::new(he.x * sign, -he.y, he.z),
+        @core.Vec3::new(he.x * sign, -he.y, -he.z),
+        @core.Vec3::new(he.x * sign, he.y, -he.z),
+      ]
+    1 =>
+      [
+        @core.Vec3::new(he.x, he.y * sign, he.z),
+        @core.Vec3::new(-he.x, he.y * sign, he.z),
+        @core.Vec3::new(-he.x, he.y * sign, -he.z),
+        @core.Vec3::new(he.x, he.y * sign, -he.z),
+      ]
+    _ =>
+      [
+        @core.Vec3::new(he.x, he.y, he.z * sign),
+        @core.Vec3::new(he.x, -he.y, he.z * sign),
+        @core.Vec3::new(-he.x, -he.y, he.z * sign),
+        @core.Vec3::new(-he.x, he.y, he.z * sign),
+      ]
+  }
+  { vertices, }
+}
+
+///|
+fn cuboid_cuboid_compute_separation_wrt_local_line(
+  he1 : @core.Vec3,
+  he2 : @core.Vec3,
+  pos12 : @core.Isometry3,
+  axis1 : @core.Vec3,
+) -> (@core.Real, @core.Vec3) {
+  let sign = if pos12.translation.dot(axis1) >= 0.0F { 1.0F } else { -1.0F }
+  let axis1_signed = axis1.scale(sign)
+  let axis2 = pos12.rotation.inverse().rotate_vec3(axis1_signed.scale(-1.0F))
+  let local_pt1 = cuboid_local_support_point(he1, axis1_signed)
+  let local_pt2 = cuboid_local_support_point(he2, axis2)
+  let pt2 = pos12.transform_point(local_pt2)
+  let separation = pt2.sub(local_pt1).dot(axis1_signed)
+  (separation, axis1_signed)
+}
+
+///|
+fn cuboid_cuboid_find_local_separating_normal_oneway(
+  he1 : @core.Vec3,
+  he2 : @core.Vec3,
+  pos12 : @core.Isometry3,
+) -> (@core.Real, @core.Vec3) {
+  let mut best_separation = -1.0e30F
+  let mut best_dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  for i in 0..<3 {
+    let sign = if vec3_component(pos12.translation, i) >= 0.0F {
+      1.0F
+    } else {
+      -1.0F
+    }
+    let axis1 = vec3_axis(i, sign)
+    let axis2 = pos12.rotation.inverse().rotate_vec3(axis1.scale(-1.0F))
+    let local_pt2 = cuboid_local_support_point(he2, axis2)
+    let pt2 = pos12.transform_point(local_pt2)
+    let separation = vec3_component(pt2, i) * sign - vec3_component(he1, i)
+    if separation > best_separation {
+      best_separation = separation
+      best_dir = axis1
+    }
+  }
+  (best_separation, best_dir)
+}
+
+///|
+fn cuboid_cuboid_find_local_separating_edge_twoway(
+  he1 : @core.Vec3,
+  he2 : @core.Vec3,
+  pos12 : @core.Isometry3,
+) -> (@core.Real, @core.Vec3) {
+  let x2 = pos12.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+  let y2 = pos12.rotation.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+  let z2 = pos12.rotation.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+  let axes = [
+    @core.Vec3::new(0.0F, -x2.z, x2.y),
+    @core.Vec3::new(x2.z, 0.0F, -x2.x),
+    @core.Vec3::new(-x2.y, x2.x, 0.0F),
+    @core.Vec3::new(0.0F, -y2.z, y2.y),
+    @core.Vec3::new(y2.z, 0.0F, -y2.x),
+    @core.Vec3::new(-y2.y, y2.x, 0.0F),
+    @core.Vec3::new(0.0F, -z2.z, z2.y),
+    @core.Vec3::new(z2.z, 0.0F, -z2.x),
+    @core.Vec3::new(-z2.y, z2.x, 0.0F),
+  ]
+  let mut best_separation = -1.0e30F
+  let mut best_dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  for axis in axes {
+    let norm = axis.length()
+    if norm > 1.0e-6F {
+      let (separation, dir) = cuboid_cuboid_compute_separation_wrt_local_line(
+        he1,
+        he2,
+        pos12,
+        axis.scale(1.0F / norm),
+      )
+      if separation > best_separation {
+        best_separation = separation
+        best_dir = dir
+      }
+    }
+  }
+  (best_separation, best_dir)
+}
+
+///|
+fn local_perp_dot_2d(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
+  a.x * b.y - a.y * b.x
+}
+
+///|
+fn local_orthonormal_basis(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
+  if n.length_squared() <= 1.0e-12F {
+    return (
+      @core.Vec3::new(1.0F, 0.0F, 0.0F),
+      @core.Vec3::new(0.0F, 1.0F, 0.0F),
+    )
+  }
+  let base = if @core.abs(n.x) < 0.9F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  let t0 = n.cross(base)
+  if t0.length_squared() <= 1.0e-12F {
+    return (
+      @core.Vec3::new(0.0F, 1.0F, 0.0F),
+      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    )
+  }
+  let u = t0.normalize()
+  let v = n.cross(u)
+  (u, v)
+}
+
+///|
+fn local_point_in_convex_polygon2(
+  p : @core.Vec2,
+  poly : Array[@core.Vec2],
+) -> Bool {
+  if poly.length() < 3 {
+    return false
+  }
+  let eps = 1.0e-8F
+  let mut sign = 0.0F
+  for i in 0..<poly.length() {
+    let a = poly[i]
+    let b = poly[(i + 1) % poly.length()]
+    let edge = b.sub(a)
+    let rel = p.sub(a)
+    let s = local_perp_dot_2d(edge, rel)
+    if @core.abs(s) <= eps {
+      continue
+    }
+    if sign == 0.0F {
+      sign = s
+    } else if sign * s < 0.0F {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn local_closest_points_line2d(
+  edge1 : (@core.Vec2, @core.Vec2),
+  edge2 : (@core.Vec2, @core.Vec2),
+) -> (@core.Real, @core.Real)? {
+  let dir1 = edge1.1.sub(edge1.0)
+  let dir2 = edge2.1.sub(edge2.0)
+  let r = edge1.0.sub(edge2.0)
+  let a = dir1.dot(dir1)
+  let e = dir2.dot(dir2)
+  let f = dir2.dot(r)
+  let eps = 1.0e-12F
+  if a <= eps && e <= eps {
+    return Some((0.0F, 0.0F))
+  }
+  if a <= eps {
+    return Some((0.0F, f / e))
+  }
+  let c = dir1.dot(r)
+  if e <= eps {
+    return Some((-c / a, 0.0F))
+  }
+  let b = dir1.dot(dir2)
+  let ae = a * e
+  let bb = b * b
+  let denom = ae - bb
+  let scale = local_max(1.0F, local_max(@core.abs(ae), @core.abs(bb)))
+  let parallel = denom <= eps || @core.abs(denom) <= 1.0e-7F * scale
+  if parallel {
+    return None
+  }
+  let s = (b * f - c * e) / denom
+  Some((s, (b * s + f) / e))
+}
+
+///|
+fn local_push_contact_if_unique(
+  contacts : Array[(@core.Vec3, @core.Vec3, @core.Real)],
+  p1 : @core.Vec3,
+  p2 : @core.Vec3,
+  dist : @core.Real,
+) -> Unit {
+  let eps2 = 1.0e-8F
+  for i in 0..<contacts.length() {
+    let c = contacts[i]
+    if c.0.sub(p1).length_squared() <= eps2 &&
+      c.1.sub(p2).length_squared() <= eps2 {
+      if dist < c.2 {
+        contacts[i] = (p1, p2, dist)
+      }
+      return
+    }
+  }
+  contacts.push((p1, p2, dist))
+}
+
+///|
+fn local_compute_feature_contacts_face_face(
+  pos12 : @core.Isometry3,
+  pos21 : @core.Isometry3,
+  sep_axis1 : @core.Vec3,
+  feature1 : CuboidFeature3D,
+  feature2 : CuboidFeature3D,
+) -> Array[(@core.Vec3, @core.Vec3, @core.Real)] {
+  let contacts : Array[(@core.Vec3, @core.Vec3, @core.Real)] = []
+  let (basis_u, basis_v) = local_orthonormal_basis(sep_axis1)
+
+  let projected_face1 : Array[@core.Vec2] = []
+  for p in feature1.vertices {
+    projected_face1.push(@core.Vec2::new(p.dot(basis_u), p.dot(basis_v)))
+  }
+  let vertices2_1 : Array[@core.Vec3] = []
+  for p in feature2.vertices {
+    vertices2_1.push(pos12.transform_point(p))
+  }
+  let projected_face2 : Array[@core.Vec2] = []
+  for p in vertices2_1 {
+    projected_face2.push(@core.Vec2::new(p.dot(basis_u), p.dot(basis_v)))
+  }
+
+  if feature2.vertices.length() > 2 {
+    let normal2_1 = vertices2_1[2]
+      .sub(vertices2_1[1])
+      .cross(vertices2_1[0].sub(vertices2_1[1]))
+    let denom = normal2_1.dot(sep_axis1)
+    if @core.abs(denom) > 1.0e-10F {
+      for i in 0..<feature1.vertices.length() {
+        let p1_proj = projected_face1[i]
+        if local_point_in_convex_polygon2(p1_proj, projected_face2) {
+          let local_p1 = feature1.vertices[i]
+          let dist = vertices2_1[0].sub(local_p1).dot(normal2_1) / denom
+          let local_p2_1 = local_p1.add(sep_axis1.scale(dist))
+          let local_p2 = pos21.transform_point(local_p2_1)
+          local_push_contact_if_unique(contacts, local_p1, local_p2, dist)
+        }
+      }
+    }
+  }
+
+  if feature1.vertices.length() > 2 {
+    let normal1 = feature1.vertices[2]
+      .sub(feature1.vertices[1])
+      .cross(feature1.vertices[0].sub(feature1.vertices[1]))
+    let denom = -normal1.dot(sep_axis1)
+    if @core.abs(denom) > 1.0e-10F {
+      for i in 0..<vertices2_1.length() {
+        let p2_proj = projected_face2[i]
+        if local_point_in_convex_polygon2(p2_proj, projected_face1) {
+          let local_p2_1 = vertices2_1[i]
+          let dist = feature1.vertices[0].sub(local_p2_1).dot(normal1) / denom
+          let local_p1 = local_p2_1.sub(sep_axis1.scale(dist))
+          let local_p2 = pos21.transform_point(local_p2_1)
+          local_push_contact_if_unique(contacts, local_p1, local_p2, dist)
+        }
+      }
+    }
+  }
+
+  for j in 0..<vertices2_1.length() {
+    let edge2_2d = (
+      projected_face2[j],
+      projected_face2[(j + 1) % projected_face2.length()],
+    )
+    for i in 0..<feature1.vertices.length() {
+      let edge1_2d = (
+        projected_face1[i],
+        projected_face1[(i + 1) % projected_face1.length()],
+      )
+      if local_closest_points_line2d(edge1_2d, edge2_2d) is Some((b1, b2)) {
+        if b1 > 0.0F && b1 < 1.0F && b2 > 0.0F && b2 < 1.0F {
+          let edge1a = feature1.vertices[i]
+          let edge1b = feature1.vertices[(i + 1) % feature1.vertices.length()]
+          let edge2a = vertices2_1[j]
+          let edge2b = vertices2_1[(j + 1) % vertices2_1.length()]
+          let local_p1 = edge1a.scale(1.0F - b1).add(edge1b.scale(b1))
+          let local_p2_1 = edge2a.scale(1.0F - b2).add(edge2b.scale(b2))
+          let dist = local_p2_1.sub(local_p1).dot(sep_axis1)
+          let local_p2 = pos21.transform_point(local_p2_1)
+          local_push_contact_if_unique(contacts, local_p1, local_p2, dist)
+        }
+      }
+    }
+  }
+
+  contacts
+}
+
+///|
 fn compute_cuboid_cuboid_contacts(
   pos1 : @core.Isometry3,
   he1 : @core.Vec3,
   pos2 : @core.Isometry3,
   he2 : @core.Vec3,
+  prediction : @core.Real,
 ) -> Array[ContactPoint3D] {
   let out : Array[ContactPoint3D] = []
-  let a0 = he1.x
-  let a1 = he1.y
-  let a2 = he1.z
-  let b0 = he2.x
-  let b1 = he2.y
-  let b2 = he2.z
-  let ra = pos1.rotation.to_mat3()
-  let rb = pos2.rotation.to_mat3()
-  fn col(m : @core.Mat3, i : Int) -> @core.Vec3 {
-    match i {
-      0 => @core.Vec3::new(m.m00, m.m10, m.m20)
-      1 => @core.Vec3::new(m.m01, m.m11, m.m21)
-      _ => @core.Vec3::new(m.m02, m.m12, m.m22)
-    }
+  let pos12 = pos1.inverse().mul(pos2)
+  let sep1 = cuboid_cuboid_find_local_separating_normal_oneway(he1, he2, pos12)
+  if sep1.0 > prediction {
+    return out
+  }
+  let pos21 = pos12.inverse()
+  let sep2 = cuboid_cuboid_find_local_separating_normal_oneway(he2, he1, pos21)
+  if sep2.0 > prediction {
+    return out
+  }
+  let sep3 = cuboid_cuboid_find_local_separating_edge_twoway(he1, he2, pos12)
+  if sep3.0 > prediction {
+    return out
   }
 
-  let a_axis0 = col(ra, 0)
-  let a_axis1 = col(ra, 1)
-  let a_axis2 = col(ra, 2)
-  let b_axis0 = col(rb, 0)
-  let b_axis1 = col(rb, 1)
-  let b_axis2 = col(rb, 2)
-  let d = pos2.translation.sub(pos1.translation)
-  let t0 = d.dot(a_axis0)
-  let t1 = d.dot(a_axis1)
-  let t2 = d.dot(a_axis2)
-  let eps = 1.0e-6F
-  let r00 = a_axis0.dot(b_axis0)
-  let r01 = a_axis0.dot(b_axis1)
-  let r02 = a_axis0.dot(b_axis2)
-  let r10 = a_axis1.dot(b_axis0)
-  let r11 = a_axis1.dot(b_axis1)
-  let r12 = a_axis1.dot(b_axis2)
-  let r20 = a_axis2.dot(b_axis0)
-  let r21 = a_axis2.dot(b_axis1)
-  let r22 = a_axis2.dot(b_axis2)
-  let abs_r00 = @core.abs(r00) + eps
-  let abs_r01 = @core.abs(r01) + eps
-  let abs_r02 = @core.abs(r02) + eps
-  let abs_r10 = @core.abs(r10) + eps
-  let abs_r11 = @core.abs(r11) + eps
-  let abs_r12 = @core.abs(r12) + eps
-  let abs_r20 = @core.abs(r20) + eps
-  let abs_r21 = @core.abs(r21) + eps
-  let abs_r22 = @core.abs(r22) + eps
-  fn a_extent_at(
-    a0 : @core.Real,
-    a1 : @core.Real,
-    a2 : @core.Real,
-    i : Int,
-  ) -> @core.Real {
-    match i {
-      0 => a0
-      1 => a1
-      _ => a2
+  let mut best_sep = sep1
+  if sep2.0 > sep1.0 && sep2.0 > sep3.0 {
+    best_sep = (sep2.0, pos12.rotation.rotate_vec3(sep2.1.scale(-1.0F)))
+  } else if sep3.0 > sep1.0 {
+    best_sep = sep3
+  }
+  let local_n1 = best_sep.1
+  let local_n2 = pos21.rotation.rotate_vec3(local_n1.scale(-1.0F))
+  let base_penetration = local_max(0.0F, -best_sep.0)
+  let feature1 = cuboid_support_face_feature(he1, local_n1)
+  let feature2 = cuboid_support_face_feature(he2, local_n2)
+  let local_contacts = local_compute_feature_contacts_face_face(
+    pos12, pos21, local_n1, feature1, feature2,
+  )
+  let normal_world = pos1.rotation.rotate_vec3(local_n1)
+  let eps = 1.0e-5F
+  for contact in local_contacts {
+    let local_p1 = contact.0
+    let local_p2 = contact.1
+    let dist = contact.2
+    if dist <= prediction + eps || base_penetration > 0.0F {
+      let penetration = base_penetration
+      out.push({
+        point1: pos1.transform_point(local_p1),
+        point2: pos2.transform_point(local_p2),
+        normal: normal_world,
+        penetration,
+      })
     }
   }
-
-  fn b_extent_at(
-    b0 : @core.Real,
-    b1 : @core.Real,
-    b2 : @core.Real,
-    i : Int,
-  ) -> @core.Real {
-    match i {
-      0 => b0
-      1 => b1
-      _ => b2
+  if out.length() == 0 {
+    if compute_cuboid_cuboid_contact(pos1, he1, pos2, he2) is Some(cp) {
+      out.push(cp)
     }
   }
-
-  fn a_axis_at(
-    a0 : @core.Vec3,
-    a1 : @core.Vec3,
-    a2 : @core.Vec3,
-    i : Int,
-  ) -> @core.Vec3 {
-    match i {
-      0 => a0
-      1 => a1
-      _ => a2
-    }
-  }
-
-  fn b_axis_at(
-    b0 : @core.Vec3,
-    b1 : @core.Vec3,
-    b2 : @core.Vec3,
-    i : Int,
-  ) -> @core.Vec3 {
-    match i {
-      0 => b0
-      1 => b1
-      _ => b2
-    }
-  }
-
-  fn t_at(
-    t0 : @core.Real,
-    t1 : @core.Real,
-    t2 : @core.Real,
-    i : Int,
-  ) -> @core.Real {
-    match i {
-      0 => t0
-      1 => t1
-      _ => t2
-    }
-  }
-
-  fn r_at(
-    r00 : @core.Real,
-    r01 : @core.Real,
-    r02 : @core.Real,
-    r10 : @core.Real,
-    r11 : @core.Real,
-    r12 : @core.Real,
-    r20 : @core.Real,
-    r21 : @core.Real,
-    r22 : @core.Real,
-    i : Int,
-    j : Int,
-  ) -> @core.Real {
-    match (i, j) {
-      (0, 0) => r00
-      (0, 1) => r01
-      (0, 2) => r02
-      (1, 0) => r10
-      (1, 1) => r11
-      (1, 2) => r12
-      (2, 0) => r20
-      (2, 1) => r21
-      _ => r22
-    }
-  }
-
-  fn abs_r_at(
-    r00 : @core.Real,
-    r01 : @core.Real,
-    r02 : @core.Real,
-    r10 : @core.Real,
-    r11 : @core.Real,
-    r12 : @core.Real,
-    r20 : @core.Real,
-    r21 : @core.Real,
-    r22 : @core.Real,
-    i : Int,
-    j : Int,
-  ) -> @core.Real {
-    match (i, j) {
-      (0, 0) => r00
-      (0, 1) => r01
-      (0, 2) => r02
-      (1, 0) => r10
-      (1, 1) => r11
-      (1, 2) => r12
-      (2, 0) => r20
-      (2, 1) => r21
-      _ => r22
-    }
-  }
-
-  let mut best = CuboidBestAxis::A(0)
-  let mut min_overlap = 1.0e30F
-  let min_extent1 = if a0 < a1 {
-    if a0 < a2 {
-      a0
-    } else {
-      a2
-    }
-  } else if a1 < a2 {
-    a1
-  } else {
-    a2
-  }
-  let min_extent2 = if b0 < b1 {
-    if b0 < b2 {
-      b0
-    } else {
-      b2
-    }
-  } else if b1 < b2 {
-    b1
-  } else {
-    b2
-  }
-  let edge_axis_bias = (if min_extent1 < min_extent2 {
-      min_extent1
-    } else {
-      min_extent2
-    }) *
-    0.05F
-
-  // Test L = A_i.
-  for i in 0..<3 {
-    let ra_i = a_extent_at(a0, a1, a2, i)
-    let rb_i = b0 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        i, 0,
-      ) +
-      b1 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        i, 1,
-      ) +
-      b2 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        i, 2,
-      )
-    let dist = @core.abs(t_at(t0, t1, t2, i))
-    let overlap = ra_i + rb_i - dist
-    if overlap < 0.0F {
-      return out
-    }
-    if overlap < min_overlap {
-      min_overlap = overlap
-      best = CuboidBestAxis::A(i)
-    }
-  }
-
-  // Test L = B_j.
-  for j in 0..<3 {
-    let ra_j = a0 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        0, j,
-      ) +
-      a1 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        1, j,
-      ) +
-      a2 *
-      abs_r_at(
-        abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21, abs_r22,
-        2, j,
-      )
-    let rb_j = b_extent_at(b0, b1, b2, j)
-    let proj = t0 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 0, j) +
-      t1 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 1, j) +
-      t2 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 2, j)
-    let dist = @core.abs(proj)
-    let overlap = ra_j + rb_j - dist
-    if overlap < 0.0F {
-      return out
-    }
-    if overlap < min_overlap {
-      min_overlap = overlap
-      best = CuboidBestAxis::B(j)
-    }
-  }
-
-  // Test L = A_i x B_j.
-  for i in 0..<3 {
-    let i1 = (i + 1) % 3
-    let i2 = (i + 2) % 3
-    for j in 0..<3 {
-      let j1 = (j + 1) % 3
-      let j2 = (j + 2) % 3
-      let ra_c = a_extent_at(a0, a1, a2, i1) *
-        abs_r_at(
-          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
-          abs_r22, i2, j,
-        ) +
-        a_extent_at(a0, a1, a2, i2) *
-        abs_r_at(
-          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
-          abs_r22, i1, j,
-        )
-      let rb_c = b_extent_at(b0, b1, b2, j1) *
-        abs_r_at(
-          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
-          abs_r22, i, j2,
-        ) +
-        b_extent_at(b0, b1, b2, j2) *
-        abs_r_at(
-          abs_r00, abs_r01, abs_r02, abs_r10, abs_r11, abs_r12, abs_r20, abs_r21,
-          abs_r22, i, j1,
-        )
-      let dist = @core.abs(
-        t_at(t0, t1, t2, i2) *
-        r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, i1, j) -
-        t_at(t0, t1, t2, i1) *
-        r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, i2, j),
-      )
-      let overlap = ra_c + rb_c - dist
-      if overlap < 0.0F {
-        return out
-      }
-      let axis = a_axis_at(a_axis0, a_axis1, a_axis2, i).cross(
-        b_axis_at(b_axis0, b_axis1, b_axis2, j),
-      )
-      if axis.length_squared() > 1.0e-12F {
-        if overlap + edge_axis_bias < min_overlap {
-          min_overlap = overlap
-          best = CuboidBestAxis::Cross(i, j)
-        }
-      }
-    }
-  }
-
-  // Contact normal pointing from box1 to box2.
-  let mut normal = match best {
-    CuboidBestAxis::A(i) => {
-      let s = if t_at(t0, t1, t2, i) < 0.0F { -1.0F } else { 1.0F }
-      a_axis_at(a_axis0, a_axis1, a_axis2, i).scale(s)
-    }
-    CuboidBestAxis::B(j) => {
-      let proj = t0 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 0, j) +
-        t1 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 1, j) +
-        t2 * r_at(r00, r01, r02, r10, r11, r12, r20, r21, r22, 2, j)
-      let s = if proj < 0.0F { -1.0F } else { 1.0F }
-      b_axis_at(b_axis0, b_axis1, b_axis2, j).scale(s)
-    }
-    CuboidBestAxis::Cross(i, j) => {
-      let axis = a_axis_at(a_axis0, a_axis1, a_axis2, i).cross(
-        b_axis_at(b_axis0, b_axis1, b_axis2, j),
-      )
-      let len = local_sqrt(axis.length_squared())
-      if len <= 1.0e-6F {
-        @core.Vec3::new(1.0F, 0.0F, 0.0F)
-      } else {
-        axis.scale(1.0F / len)
-      }
-    }
-  }
-  if normal.dot(d) < 0.0F {
-    normal = normal.scale(-1.0F)
-  }
-  fn support(
-    pos : @core.Isometry3,
-    he : @core.Vec3,
-    dir : @core.Vec3,
-  ) -> @core.Vec3 {
-    let local_dir = pos.rotation.inverse().rotate_vec3(dir)
-    let sx = if local_dir.x >= 0.0F { he.x } else { -he.x }
-    let sy = if local_dir.y >= 0.0F { he.y } else { -he.y }
-    let sz = if local_dir.z >= 0.0F { he.z } else { -he.z }
-    pos.transform_point(@core.Vec3::new(sx, sy, sz))
-  }
-
-  // Edge-edge contact: fall back to a single point.
-  match best {
-    CuboidBestAxis::Cross(_, _) => {
-      let point1 = support(pos1, he1, normal)
-      let point2 = support(pos2, he2, normal.scale(-1.0F))
-      out.push({ point1, point2, normal, penetration: min_overlap })
-      return out
-    }
-    _ => ()
-  }
-  fn incident_face_corners(
-    pos : @core.Isometry3,
-    axis0 : @core.Vec3,
-    axis1 : @core.Vec3,
-    axis2 : @core.Vec3,
-    e0 : @core.Real,
-    e1 : @core.Real,
-    e2 : @core.Real,
-    ref_normal : @core.Vec3,
-  ) -> Array[@core.Vec3] {
-    // Choose the face normal most anti-parallel to `ref_normal`.
-    let mut best_k = 0
-    let mut best_abs = @core.abs(axis0.dot(ref_normal))
-    let abs1 = @core.abs(axis1.dot(ref_normal))
-    if abs1 > best_abs {
-      best_abs = abs1
-      best_k = 1
-    }
-    let abs2 = @core.abs(axis2.dot(ref_normal))
-    if abs2 > best_abs {
-      best_abs = abs2
-      best_k = 2
-    }
-    let (best_axis, best_extent, u_axis, u_extent, v_axis, v_extent) = match
-      best_k {
-      0 => (axis0, e0, axis1, e1, axis2, e2)
-      1 => (axis1, e1, axis2, e2, axis0, e0)
-      _ => (axis2, e2, axis0, e0, axis1, e1)
-    }
-    let sign = if best_axis.dot(ref_normal) > 0.0F { -1.0F } else { 1.0F }
-    let face_center = pos.translation.add(best_axis.scale(sign * best_extent))
-    let au = u_axis.scale(u_extent)
-    let av = v_axis.scale(v_extent)
-    [
-      face_center.add(au).add(av),
-      face_center.add(au).sub(av),
-      face_center.sub(au).add(av),
-      face_center.sub(au).sub(av),
-    ]
-  }
-
-  fn clip_polygon_plane(
-    poly : Array[@core.Vec3],
-    plane_point : @core.Vec3,
-    plane_normal : @core.Vec3,
-  ) -> Array[@core.Vec3] {
-    if poly.length() == 0 {
-      return []
-    }
-    let plane_eps = 1.0e-6F
-    let out : Array[@core.Vec3] = []
-    let mut prev = poly[poly.length() - 1]
-    let mut prev_d = prev.sub(plane_point).dot(plane_normal)
-    for i in 0..<poly.length() {
-      let cur = poly[i]
-      let cur_d = cur.sub(plane_point).dot(plane_normal)
-      let prev_in = prev_d <= plane_eps
-      let cur_in = cur_d <= plane_eps
-      if prev_in && cur_in {
-        out.push(cur)
-      } else if prev_in && !cur_in {
-        let denom = prev_d - cur_d
-        if @core.abs(denom) > 1.0e-12F {
-          let t = prev_d / denom
-          out.push(prev.add(cur.sub(prev).scale(t)))
-        }
-      } else if !prev_in && cur_in {
-        let denom = prev_d - cur_d
-        if @core.abs(denom) > 1.0e-12F {
-          let t = prev_d / denom
-          out.push(prev.add(cur.sub(prev).scale(t)))
-        }
-        out.push(cur)
-      }
-      prev = cur
-      prev_d = cur_d
-    }
-    out
-  }
-
-  fn reduce_face_contacts(
-    candidates : Array[@core.Vec3],
-    origin : @core.Vec3,
-    u_axis : @core.Vec3,
-    v_axis : @core.Vec3,
-  ) -> Array[@core.Vec3] {
-    if candidates.length() <= 4 {
-      return candidates
-    }
-    let mut min_u_i = 0
-    let mut max_u_i = 0
-    let mut min_v_i = 0
-    let mut max_v_i = 0
-    let mut min_u = 1.0e30F
-    let mut max_u = -1.0e30F
-    let mut min_v = 1.0e30F
-    let mut max_v = -1.0e30F
-    for i in 0..<candidates.length() {
-      let rel = candidates[i].sub(origin)
-      let u = rel.dot(u_axis)
-      let v = rel.dot(v_axis)
-      if u < min_u {
-        min_u = u
-        min_u_i = i
-      }
-      if u > max_u {
-        max_u = u
-        max_u_i = i
-      }
-      if v < min_v {
-        min_v = v
-        min_v_i = i
-      }
-      if v > max_v {
-        max_v = v
-        max_v_i = i
-      }
-    }
-    let idxs = [min_u_i, max_u_i, min_v_i, max_v_i]
-    let out : Array[@core.Vec3] = []
-    let eps2 = 1.0e-8F
-    for k in 0..<idxs.length() {
-      let p = candidates[idxs[k]]
-      let mut dup = false
-      for j in 0..<out.length() {
-        if out[j].sub(p).length_squared() <= eps2 {
-          dup = true
-          break
-        }
-      }
-      if !dup {
-        out.push(p)
-      }
-    }
-    out
-  }
-
-  fn face_axes(i : Int) -> (Int, Int) {
-    ((i + 1) % 3, (i + 2) % 3)
-  }
-
-  match best {
-    CuboidBestAxis::A(i) => {
-      let (u_i, v_i) = face_axes(i)
-      let u_axis = a_axis_at(a_axis0, a_axis1, a_axis2, u_i)
-      let v_axis = a_axis_at(a_axis0, a_axis1, a_axis2, v_i)
-      let ref_center = pos1.translation.add(
-        normal.scale(a_extent_at(a0, a1, a2, i)),
-      )
-      // Incident face is on box2.
-      let corners = incident_face_corners(
-        pos2, b_axis0, b_axis1, b_axis2, b0, b1, b2, normal,
-      )
-      let mut poly = corners
-      // Clip against the 4 side planes of the reference face.
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.add(u_axis.scale(a_extent_at(a0, a1, a2, u_i))),
-        u_axis,
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.sub(u_axis.scale(a_extent_at(a0, a1, a2, u_i))),
-        u_axis.scale(-1.0F),
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.add(v_axis.scale(a_extent_at(a0, a1, a2, v_i))),
-        v_axis,
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.sub(v_axis.scale(a_extent_at(a0, a1, a2, v_i))),
-        v_axis.scale(-1.0F),
-      )
-      let pts = reduce_face_contacts(poly, ref_center, u_axis, v_axis)
-      for p2 in pts {
-        let p1 = p2.sub(normal.scale(min_overlap))
-        out.push({ point1: p1, point2: p2, normal, penetration: min_overlap })
-      }
-      out
-    }
-    CuboidBestAxis::B(j) => {
-      let (u_j, v_j) = face_axes(j)
-      let u_axis = b_axis_at(b_axis0, b_axis1, b_axis2, u_j)
-      let v_axis = b_axis_at(b_axis0, b_axis1, b_axis2, v_j)
-      let ref_normal = normal.scale(-1.0F)
-      let ref_center = pos2.translation.add(
-        ref_normal.scale(b_extent_at(b0, b1, b2, j)),
-      )
-      // Incident face is on box1.
-      let corners = incident_face_corners(
-        pos1, a_axis0, a_axis1, a_axis2, a0, a1, a2, ref_normal,
-      )
-      let mut poly = corners
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.add(u_axis.scale(b_extent_at(b0, b1, b2, u_j))),
-        u_axis,
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.sub(u_axis.scale(b_extent_at(b0, b1, b2, u_j))),
-        u_axis.scale(-1.0F),
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.add(v_axis.scale(b_extent_at(b0, b1, b2, v_j))),
-        v_axis,
-      )
-      poly = clip_polygon_plane(
-        poly,
-        ref_center.sub(v_axis.scale(b_extent_at(b0, b1, b2, v_j))),
-        v_axis.scale(-1.0F),
-      )
-      let pts = reduce_face_contacts(poly, ref_center, u_axis, v_axis)
-      for p1 in pts {
-        let p2 = p1.add(normal.scale(min_overlap))
-        out.push({ point1: p1, point2: p2, normal, penetration: min_overlap })
-      }
-      out
-    }
-    _ => out
-  }
+  out
 }
 
 ///|

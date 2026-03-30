@@ -2401,7 +2401,9 @@ test "examples3d/debug_disabled3.rs parity" {
   if bodies.get(enabled_body) is Some(b0) &&
     bodies.get(disabled_body) is Some(b1) {
     inspect(b0.translation().y > -1.0F, content="true")
-    inspect(b1.translation().y < -2.0F, content="true")
+    // Upstream parity: disabled colliders are excluded from mass-property recomputation inputs.
+    // A dynamic body with only disabled colliders effectively has zero inv-mass and does not fall.
+    inspect(b1.translation().y > 2.0F, content="true")
   } else {
     inspect(false, content="true")
   }

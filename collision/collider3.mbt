@@ -336,19 +336,20 @@ fn recompute_body_mass_properties_from_attached_colliders3(
     for j in 0..<attached.length() {
       let co_handle = attached[j]
       if colliders.get(co_handle) is Some(collider) {
-        let local_pos = @core.Isometry2::new(
-          collider.local_translation,
-          @core.Rot2::from_angle(collider.local_rotation),
-        )
-        mprops = mprops.add(collider.mass_properties().transform_by(local_pos))
+        if collider.is_enabled() {
+          let local_pos = @core.Isometry2::new(
+            collider.local_translation,
+            @core.Rot2::from_angle(collider.local_rotation),
+          )
+          mprops = mprops.add(
+            collider.mass_properties().transform_by(local_pos),
+          )
+        }
       }
-    }
-    let added_mass = body.additional_mass()
-    if added_mass != 0.0F {
-      mprops = mprops.set_mass(mprops.mass + added_mass, true)
     }
     body.mark_local_mass_properties_changed() |> ignore
     body.set_local_mass_properties(mprops) |> ignore
+    body.recompute_mass_properties_from_colliders() |> ignore
   }
 }
 
@@ -437,6 +438,10 @@ pub fn ColliderSet3::insert_with_parent(
   if self.inner.colliders[handle.id] is Some(collider_ref) {
     self.inner.push_modified_unchecked(handle, collider_ref)
   }
+  if bodies.get_mut(parent) is Some(body) {
+    let (collider_id, collider_generation) = handle.into_raw_parts()
+    body.attach_collider_raw(collider_id, collider_generation) |> ignore
+  }
   recompute_body_mass_properties_from_attached_colliders3(bodies, self, parent)
   handle
 }
@@ -457,8 +462,10 @@ pub fn ColliderSet3::remove(
   }
   if self.inner.colliders[handle.id] is Some(collider) {
     let parent = collider.parent
+    let (collider_id, collider_generation) = handle.into_raw_parts()
     if parent is Some(parent_handle) {
       if bodies.get_mut(parent_handle) is Some(body) {
+        body.detach_collider_raw(collider_id, collider_generation) |> ignore
         body.mark_local_mass_properties_changed() |> ignore
         if wake_up && body.is_dynamic_or_kinematic() {
           body.wake_up(true) |> ignore
@@ -506,9 +513,18 @@ pub fn ColliderSet3::set_parent(
   if self.inner.get_mut_internal_with_modification_tracking(handle)
     is Some(collider) {
     let old_parent = collider.parent
+    let (collider_id, collider_generation) = handle.into_raw_parts()
     collider.parent = parent
     collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
+    if old_parent is Some(old_parent_handle) {
+      if bodies.get_mut(old_parent_handle) is Some(body) {
+        body.detach_collider_raw(collider_id, collider_generation) |> ignore
+      }
+    }
     if parent is Some(parent_handle) {
+      if bodies.get_mut(parent_handle) is Some(body) {
+        body.attach_collider_raw(collider_id, collider_generation) |> ignore
+      }
       if bodies.get(parent_handle) is Some(body) {
         let body_pos = body.position()
         let local_pos = @core.Isometry2::new(

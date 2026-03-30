@@ -531,3 +531,56 @@ test "collider world pose respects parent rotation" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "apply pending body position propagation updates attached colliders" {
+  let bodies = @dynamics.RigidBodySet::new()
+  let body = @dynamics.RigidBodyBuilder::dynamic().build()
+  let body_handle = bodies.insert(body)
+  let colliders = ColliderSet::new()
+  let handle = colliders.insert_with_parent(
+    ColliderBuilder::ball(0.25F)
+    .translation(@core.Vec2::new(0.5F, 0.0F))
+    .build(),
+    body_handle,
+    bodies,
+  )
+  let (expected_id, expected_generation) = handle.into_raw_parts()
+  if bodies.get(body_handle) is Some(stored_body) {
+    let attached = stored_body.colliders()
+    inspect(attached.length() == 1, content="true")
+    inspect(attached[0].0 == expected_id, content="true")
+    inspect(attached[0].1 == expected_generation, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+  if bodies.get_mut_internal_with_modification_tracking(body_handle) is Some(rb) {
+    rb.set_position(
+      @core.Isometry2::new(
+        @core.Vec2::new(3.0F, 4.0F),
+        @core.Rot2::from_angle(@core.pi() * 0.5F),
+      ),
+      false,
+    )
+    |> ignore
+  } else {
+    inspect(false, content="true")
+  }
+  colliders.apply_pending_body_position_propagation(bodies)
+  if colliders.get(handle) is Some(stored) {
+    let tol = 1.0e-5F
+    inspect(@core.abs(stored.translation().x - 3.0F) < tol, content="true")
+    inspect(@core.abs(stored.translation().y - 4.5F) < tol, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
+test "narrow phase query dispatcher roundtrip" {
+  let narrow_phase = NarrowPhase::new()
+  let dispatcher = QueryDispatcher::new()
+  let narrow_phase = narrow_phase.with_query_dispatcher(dispatcher)
+  let _dispatcher = narrow_phase.query_dispatcher()
+  inspect(true, content="true")
+}

@@ -13,14 +13,12 @@
 // limitations under the License.
 
 ///|
-/// Public-surface placeholder for Rapier's `RigidBodyColliders` component.
+/// Public-surface parity for Rapier's `RigidBodyColliders` component.
 ///
-/// In Rapier, this stores the set of colliders attached to a rigid-body. In this port,
-/// collider parenting is handled by the `collision` package (which depends on `dynamics`),
-/// so we expose a minimal record here without introducing a dependency cycle.
+/// We store collider handles as `(id, generation)` raw parts so this package stays
+/// independent from `collision::ColliderHandle` while preserving full handle identity.
 pub struct RigidBodyColliders {
-  // Collider handles are represented opaquely in this port's public dynamics surface.
-  colliders : Array[Int]
+  mut colliders : Array[(Int, Int)]
 
   fn new() -> RigidBodyColliders
 }
@@ -31,28 +29,76 @@ pub fn RigidBodyColliders::new() -> RigidBodyColliders {
 }
 
 ///|
-pub fn RigidBodyColliders::attach_collider(
+pub fn RigidBodyColliders::len(self : RigidBodyColliders) -> Int {
+  self.colliders.length()
+}
+
+///|
+pub fn RigidBodyColliders::handles(
   self : RigidBodyColliders,
-  handle : Int,
-) -> RigidBodyColliders {
-  let out = { colliders: [] }
+) -> Array[(Int, Int)] {
+  let out : Array[(Int, Int)] = []
   for i in 0..<self.colliders.length() {
-    out.colliders.push(self.colliders[i])
+    out.push(self.colliders[i])
   }
-  out.colliders.push(handle)
   out
 }
 
 ///|
+fn rigid_body_collider_handle_equals(
+  left : (Int, Int),
+  id : Int,
+  generation : Int,
+) -> Bool {
+  left.0 == id && left.1 == generation
+}
+
+///|
+pub fn RigidBodyColliders::attach_collider_raw(
+  self : RigidBodyColliders,
+  id : Int,
+  generation : Int,
+) -> RigidBodyColliders {
+  for i in 0..<self.colliders.length() {
+    if rigid_body_collider_handle_equals(self.colliders[i], id, generation) {
+      return self
+    }
+  }
+  self.colliders.push((id, generation))
+  self
+}
+
+///|
+pub fn RigidBodyColliders::detach_collider_raw(
+  self : RigidBodyColliders,
+  id : Int,
+  generation : Int,
+) -> RigidBodyColliders {
+  let out : Array[(Int, Int)] = []
+  for i in 0..<self.colliders.length() {
+    let current = self.colliders[i]
+    if !rigid_body_collider_handle_equals(current, id, generation) {
+      out.push(current)
+    }
+  }
+  self.colliders = out
+  self
+}
+
+///|
+/// Backward-compatible helper that attaches a raw collider id with generation `0`.
+pub fn RigidBodyColliders::attach_collider(
+  self : RigidBodyColliders,
+  handle : Int,
+) -> RigidBodyColliders {
+  self.attach_collider_raw(handle, 0)
+}
+
+///|
+/// Backward-compatible helper that detaches a raw collider id with generation `0`.
 pub fn RigidBodyColliders::detach_collider(
   self : RigidBodyColliders,
   handle : Int,
 ) -> RigidBodyColliders {
-  let out = { colliders: [] }
-  for i in 0..<self.colliders.length() {
-    if self.colliders[i] != handle {
-      out.colliders.push(self.colliders[i])
-    }
-  }
-  out
+  self.detach_collider_raw(handle, 0)
 }

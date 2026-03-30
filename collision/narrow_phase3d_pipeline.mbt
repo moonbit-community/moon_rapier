@@ -466,7 +466,10 @@ pub fn NarrowPhase3D::update(
                   })
                 }
               (Shape3D::Cuboid(he1), Shape3D::Cuboid(he2)) =>
-                for cp in compute_cuboid_cuboid_contacts(p1, he1, p2, he2) {
+                for
+                  cp in compute_cuboid_cuboid_contacts(
+                    p1, he1, p2, he2, effective_prediction_distance,
+                  ) {
                   contacts.push(cp)
                 }
               (Shape3D::Ball(r), Shape3D::CapsuleY(cr, ch)) =>

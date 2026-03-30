@@ -106,3 +106,45 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "vhacd parameters expose upstream-equivalent configuration surface" {
+  let defaults = VHACDParameters::default()
+  inspect(@core.abs(defaults.concavity() - 0.01F) < 1.0e-6F, content="true")
+  inspect(@core.abs(defaults.alpha() - 0.05F) < 1.0e-6F, content="true")
+  inspect(@core.abs(defaults.beta() - 0.05F) < 1.0e-6F, content="true")
+  inspect(defaults.resolution() == 64, content="true")
+  inspect(defaults.plane_downsampling() == 4, content="true")
+  inspect(defaults.convex_hull_downsampling() == 4, content="true")
+  inspect(defaults.convex_hull_approximation(), content="true")
+  inspect(defaults.max_convex_hulls() == 1024, content="true")
+  if defaults.fill_mode() is FillMode::FloodFill(false, false) {
+    inspect(true, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+
+  let tuned = defaults
+    .set_concavity(0.02F)
+    .set_alpha(0.1F)
+    .set_beta(0.15F)
+    .set_resolution(96)
+    .set_plane_downsampling(2)
+    .set_convex_hull_downsampling(3)
+    .set_fill_mode(FillMode::SurfaceOnly)
+    .set_convex_hull_approximation(false)
+    .set_max_convex_hulls(24)
+  inspect(@core.abs(tuned.concavity() - 0.02F) < 1.0e-6F, content="true")
+  inspect(@core.abs(tuned.alpha() - 0.1F) < 1.0e-6F, content="true")
+  inspect(@core.abs(tuned.beta() - 0.15F) < 1.0e-6F, content="true")
+  inspect(tuned.resolution() == 96, content="true")
+  inspect(tuned.plane_downsampling() == 2, content="true")
+  inspect(tuned.convex_hull_downsampling() == 3, content="true")
+  inspect(!tuned.convex_hull_approximation(), content="true")
+  inspect(tuned.max_convex_hulls() == 24, content="true")
+  if tuned.fill_mode() is FillMode::SurfaceOnly {
+    inspect(true, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

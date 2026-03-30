@@ -2202,10 +2202,7 @@ fn ij_split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn ij_parse_int_value(text : String) -> Int {
-  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_int(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -2215,9 +2212,7 @@ fn ij_parse_int_value(text : String) -> Int {
 
 ///|
 fn ij_parse_real_value(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
-    text[:],
-  )
+  let result = try? @string.parse_double(text[:])
   if result is Ok(value) {
     Float::from_double(value)
   } else {

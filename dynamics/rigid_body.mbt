@@ -716,9 +716,11 @@ pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : @core.Real
+  // Mass-properties contributed by attached colliders only.
+  mut collider_local_mprops : @core.MassProperties
   mut local_mprops : @core.MassProperties
-  // Rapier's `additional_local_mprops` (used for additional mass/inertia).
-  additional_local_mprops : @core.MassProperties
+  // Additional user-provided mass-properties (Rapier's `additional_local_mprops` equivalent).
+  mut additional_local_mprops : @core.MassProperties
 }
 
 ///|
@@ -727,6 +729,11 @@ pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
     world_com: @core.Vec2::zero(),
     effective_inv_mass: @core.Vec2::zero(),
     effective_world_inv_inertia: 0.0F,
+    collider_local_mprops: @core.MassProperties::new(
+      0.0F,
+      0.0F,
+      @core.Vec2::zero(),
+    ),
     local_mprops: @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero()),
     additional_local_mprops: @core.MassProperties::new(
       0.0F,
@@ -808,6 +815,11 @@ pub fn RigidBodyMassProps::effective_angular_inertia(
 pub fn RigidBodyMassProps::recompute_mass_properties_from_colliders(
   self : RigidBodyMassProps,
 ) -> RigidBodyMassProps {
+  // Mirror Rapier semantics: start from attached colliders mass-properties then
+  // apply additional user-provided mass-properties.
+  self.local_mprops = self.collider_local_mprops.add(
+    self.additional_local_mprops,
+  )
   self
 }
 
@@ -856,6 +868,7 @@ pub struct RigidBody {
   mut forces : RigidBodyForces
   mut ccd : RigidBodyCcd
   mut mass_props : RigidBodyMassProps
+  mut colliders : RigidBodyColliders
   mut additional_mass : @core.Real
   mut additional_solver_iterations : Int
   mut changes : RigidBodyChanges
@@ -1002,13 +1015,52 @@ pub fn RigidBody::additional_mass(self : RigidBody) -> @core.Real {
 }
 
 ///|
+pub fn RigidBody::colliders(self : RigidBody) -> Array[(Int, Int)] {
+  self.colliders.handles()
+}
+
+///|
+pub fn RigidBody::attach_collider_raw(
+  self : RigidBody,
+  id : Int,
+  generation : Int,
+) -> RigidBody {
+  let prev_len = self.colliders.len()
+  self.colliders = self.colliders.attach_collider_raw(id, generation)
+  if self.colliders.len() != prev_len {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_COLLIDERS)
+  }
+  self
+}
+
+///|
+pub fn RigidBody::detach_collider_raw(
+  self : RigidBody,
+  id : Int,
+  generation : Int,
+) -> RigidBody {
+  let prev_len = self.colliders.len()
+  self.colliders = self.colliders.detach_collider_raw(id, generation)
+  if self.colliders.len() != prev_len {
+    self.changes = self.changes.insert(RIGID_BODY_CHANGES_COLLIDERS)
+  }
+  self
+}
+
+///|
 pub fn RigidBody::set_additional_mass(
   self : RigidBody,
   mass : @core.Real,
   wake_up : Bool,
 ) -> RigidBody {
-  if self.additional_mass != mass {
+  let should_clear_additional_mprops = !mass_properties_equal(
+    self.mass_props.additional_local_mprops,
+    @core.MassProperties::default(),
+  )
+  if self.additional_mass != mass || should_clear_additional_mprops {
     self.additional_mass = mass
+    // Setting scalar additional mass overrides any previously configured additional mass-properties.
+    self.mass_props.additional_local_mprops = @core.MassProperties::default()
     self.mark_local_mass_properties_changed() |> ignore
     if wake_up && self.is_dynamic_or_kinematic() {
       self.wake_up(true) |> ignore
@@ -1384,6 +1436,7 @@ pub fn RigidBody::set_local_mass_properties(
   mprops : @core.MassProperties,
 ) -> RigidBody {
   let mass_props = self.mass_props
+  mass_props.collider_local_mprops = mprops
   mass_props.local_mprops = mprops
   self.mass_props = mass_props.update_world_mass_properties(
     self.body_type,
@@ -1646,6 +1699,7 @@ pub struct RigidBodyBuilder {
   mut lock_translations : Bool
   mut lock_rotations : Bool
   mut additional_mass : @core.Real
+  mut additional_local_mprops : @core.MassProperties
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
   mut sleeping : Bool
@@ -1671,6 +1725,7 @@ pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
     lock_translations: false,
     lock_rotations: false,
     additional_mass: 0.0F,
+    additional_local_mprops: @core.MassProperties::default(),
     additional_solver_iterations: 0,
     can_sleep: true,
     sleeping: false,
@@ -1798,6 +1853,7 @@ pub fn RigidBodyBuilder::additional_mass(
   mass : @core.Real,
 ) -> RigidBodyBuilder {
   self.additional_mass = mass
+  self.additional_local_mprops = @core.MassProperties::default()
   self
 }
 
@@ -1949,14 +2005,14 @@ pub fn RigidBodyBuilder::additional_mass_properties(
   match props {
     RigidBodyAdditionalMassProps::Mass(m) => self.additional_mass(m)
     RigidBodyAdditionalMassProps::MassProps(mprops) => {
-      let inv_m = mprops.inv_mass
-      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
-      self.additional_mass(m)
+      self.additional_mass = 0.0F
+      self.additional_local_mprops = mprops
+      self
     }
     RigidBodyAdditionalMassProps::MassProperties(mprops) => {
-      let inv_m = mprops.inv_mass
-      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
-      self.additional_mass(m)
+      self.additional_mass = 0.0F
+      self.additional_local_mprops = mprops
+      self
     }
   }
 }
@@ -1989,10 +2045,13 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     forces,
     ccd: RigidBodyCcd::default(),
     mass_props: RigidBodyMassProps::default(),
+    colliders: RigidBodyColliders::new(),
     additional_mass: self.additional_mass,
     additional_solver_iterations: self.additional_solver_iterations,
     changes: RigidBodyChanges::all(),
   }
+  rb.mass_props.additional_local_mprops = self.additional_local_mprops
+  rb.recompute_mass_properties_from_colliders() |> ignore
   rb = rb.enable_ccd(self.ccd_enabled)
   rb = rb.set_soft_ccd_prediction(self.soft_ccd_prediction)
   if self.can_sleep && self.sleeping {
@@ -2007,13 +2066,20 @@ pub struct RigidBodySet {
   generations : Array[Int]
   free_list : Array[Int]
   modified_bodies : Array[RigidBodyHandle]
+  pending_collider_position_updates : Array[(Int, Int, @core.Isometry2)]
 
   fn new() -> RigidBodySet
 }
 
 ///|
 pub fn RigidBodySet::new() -> RigidBodySet {
-  { bodies: [], generations: [], free_list: [], modified_bodies: [] }
+  {
+    bodies: [],
+    generations: [],
+    free_list: [],
+    modified_bodies: [],
+    pending_collider_position_updates: [],
+  }
 }
 
 ///|
@@ -2322,10 +2388,7 @@ fn split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn parse_int_value(text : String) -> Int {
-  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_int(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -2335,9 +2398,7 @@ fn parse_int_value(text : String) -> Int {
 
 ///|
 fn parse_real_value(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
-    text[:],
-  )
+  let result = try? @string.parse_double(text[:])
   if result is Ok(value) {
     Float::from_double(value)
   } else {
@@ -2347,10 +2408,7 @@ fn parse_real_value(text : String) -> @core.Real {
 
 ///|
 fn parse_u64_value(text : String) -> UInt64 {
-  let result : Result[UInt64, @strconv.StrConvError] = try? @strconv.parse_uint64(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_uint64(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -2371,6 +2429,19 @@ fn vec2_equal(left : @core.Vec2, right : @core.Vec2) -> Bool {
 ///|
 fn rot2_equal(left : @core.Rot2, right : @core.Rot2) -> Bool {
   left.sin == right.sin && left.cos == right.cos
+}
+
+///|
+fn mass_properties_equal(
+  left : @core.MassProperties,
+  right : @core.MassProperties,
+) -> Bool {
+  left.mass == right.mass &&
+  left.inv_mass == right.inv_mass &&
+  left.inertia == right.inertia &&
+  left.inv_inertia == right.inv_inertia &&
+  left.center_of_mass.x == right.center_of_mass.x &&
+  left.center_of_mass.y == right.center_of_mass.y
 }
 
 ///|
@@ -2751,10 +2822,12 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
               soft_ccd_prediction,
             },
             mass_props: RigidBodyMassProps::default(),
+            colliders: RigidBodyColliders::new(),
             additional_mass,
             additional_solver_iterations,
             changes: RigidBodyChanges::all(),
           }
+          let body = body.recompute_mass_properties_from_colliders()
           bodies.push(Some(body))
         } else {
           bodies.push(None)
@@ -2774,7 +2847,13 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
       modified_bodies.push(RigidBodyHandle::new(i, generations[i]))
     }
   }
-  { bodies, generations, free_list, modified_bodies }
+  {
+    bodies,
+    generations,
+    free_list,
+    modified_bodies,
+    pending_collider_position_updates: [],
+  }
 }
 
 ///|
@@ -2894,14 +2973,28 @@ pub fn RigidBody::set_additional_mass_properties(
     RigidBodyAdditionalMassProps::Mass(m) =>
       self.set_additional_mass(m, wake_up)
     RigidBodyAdditionalMassProps::MassProps(mprops) => {
-      let inv_m = mprops.inv_mass
-      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
-      self.set_additional_mass(m, wake_up)
+      if self.additional_mass != 0.0F ||
+        !mass_properties_equal(self.mass_props.additional_local_mprops, mprops) {
+        self.additional_mass = 0.0F
+        self.mass_props.additional_local_mprops = mprops
+        self.mark_local_mass_properties_changed() |> ignore
+        if wake_up && self.is_dynamic_or_kinematic() {
+          self.wake_up(true) |> ignore
+        }
+      }
+      self
     }
     RigidBodyAdditionalMassProps::MassProperties(mprops) => {
-      let inv_m = mprops.inv_mass
-      let m = if inv_m == 0.0F { 0.0F } else { 1.0F / inv_m }
-      self.set_additional_mass(m, wake_up)
+      if self.additional_mass != 0.0F ||
+        !mass_properties_equal(self.mass_props.additional_local_mprops, mprops) {
+        self.additional_mass = 0.0F
+        self.mass_props.additional_local_mprops = mprops
+        self.mark_local_mass_properties_changed() |> ignore
+        if wake_up && self.is_dynamic_or_kinematic() {
+          self.wake_up(true) |> ignore
+        }
+      }
+      self
     }
   }
 }
@@ -2960,6 +3053,16 @@ pub fn RigidBody::recompute_mass_properties_from_colliders(
   self : RigidBody,
 ) -> RigidBody {
   self.mass_props = self.mass_props.recompute_mass_properties_from_colliders()
+  if self.additional_mass != 0.0F {
+    self.mass_props.local_mprops = self.mass_props.local_mprops.set_mass(
+      self.mass_props.local_mprops.mass + self.additional_mass,
+      true,
+    )
+  }
+  self.mass_props = self.mass_props.update_world_mass_properties(
+    self.body_type,
+    self.position.position,
+  )
   self
 }
 

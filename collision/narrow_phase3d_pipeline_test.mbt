@@ -98,3 +98,41 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
     inspect(false, content="true")
   }
 }
+
+///|
+test "narrow phase 3d: cuboid-cuboid normal points from collider1 to collider2" {
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = ColliderSet3D::new()
+  let top = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .build(),
+  )
+  let bottom = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::fixed()
+    .translation(@core.Vec3::zero())
+    .build(),
+  )
+  let c_top = colliders.insert_with_parent(
+    ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build(),
+    top,
+    bodies,
+  )
+  let c_bottom = colliders.insert_with_parent(
+    ColliderBuilder3D::cuboid(0.5F, 0.5F, 0.5F).build(),
+    bottom,
+    bodies,
+  )
+  let broad_phase = BroadPhase3D::new()
+  broad_phase.update(0.0F, colliders)
+  let nf = NarrowPhase3D::new()
+  nf.update(broad_phase.pairs(), bodies, colliders, 0.01F, 1.0F / 60.0F)
+  if nf.contact_pair(c_top, c_bottom) is Some(pair) && pair.manifolds_len() > 0 {
+    let cp0 = pair.manifolds()[0]
+    inspect(cp0.normal.y < 0.0F, content="true")
+    inspect(cp0.penetration >= 0.0F, content="true")
+    inspect(cp0.point1.y >= cp0.point2.y - 1.0e-5F, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}

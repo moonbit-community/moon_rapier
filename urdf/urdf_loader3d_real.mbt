@@ -193,9 +193,7 @@ pub struct UrdfRobot3DReal {
 
 ///|
 fn urdf_parse_real(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
-    text[:],
-  )
+  let result = try? @string.parse_double(text[:])
   if result is Ok(v) {
     Float::from_double(v)
   } else {

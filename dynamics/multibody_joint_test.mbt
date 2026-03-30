@@ -109,6 +109,50 @@ test "multibody append" {
 }
 
 ///|
+test "multibody computes non-placeholder inv_augmented_mass" {
+  let bodies = RigidBodySet::new()
+  let joints = MultibodyJointSet::new()
+  let root = bodies.insert(
+    RigidBodyBuilder::dynamic().additional_mass(2.0F).build(),
+  )
+  let child = bodies.insert(
+    RigidBodyBuilder::dynamic()
+    .additional_mass(3.0F)
+    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .build(),
+  )
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::new()
+    .local_anchor2(@core.Vec2::new(-1.0F, 0.0F))
+    .build(),
+  )
+  if joints.insert(root, child, joint, true) is Some(handle) {
+    if joints.get_mut(handle) is Some((multibody, _)) {
+      multibody.forward_kinematics(bodies, true)
+      let inv_augmented = multibody.inv_augmented_mass()
+      inspect(inv_augmented.rows() == multibody.ndofs(), content="true")
+      inspect(inv_augmented.cols() == multibody.ndofs(), content="true")
+      let mut non_identity = false
+      for r in 0..<inv_augmented.rows() {
+        for c in 0..<inv_augmented.cols() {
+          if inv_augmented.get(r, c) is Some(value) {
+            let expected = if r == c { 1.0F } else { 0.0F }
+            if @core.abs(value - expected) > 1.0e-4F {
+              non_identity = true
+            }
+          }
+        }
+      }
+      inspect(non_identity, content="true")
+    } else {
+      inspect(false, content="true")
+    }
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_insert).
 test "multibody insert" {
   let spatial_dim : Int = TEST_SPATIAL_DIM

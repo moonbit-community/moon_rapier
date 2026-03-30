@@ -679,6 +679,7 @@ pub struct ColliderSet {
 
   fn new() -> ColliderSet
 }
+pub fn ColliderSet::apply_pending_body_position_propagation(Self, @dynamics.RigidBodySet) -> Unit
 pub fn ColliderSet::clear_changes_for(Self, Array[ColliderHandle]) -> Unit
 pub fn ColliderSet::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle]
 pub fn ColliderSet::deserialize(String) -> Self
@@ -995,6 +996,7 @@ pub fn MeshConverterError::to_string(Self) -> String
 pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
+  mut query_dispatcher : QueryDispatcher
 
   fn new() -> NarrowPhase
 }
@@ -1013,11 +1015,11 @@ pub fn NarrowPhase::intersection_pairs(Self) -> Array[IntersectionPair]
 pub fn NarrowPhase::intersection_pairs_with(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::intersection_pairs_with_unknown_gen(Self, ColliderHandle) -> Array[IntersectionPair]
 pub fn NarrowPhase::new() -> Self
-pub fn NarrowPhase::query_dispatcher(Self) -> Unit
+pub fn NarrowPhase::query_dispatcher(Self) -> QueryDispatcher
 pub fn NarrowPhase::update(Self, @dynamics.RigidBodySet, ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
 pub fn NarrowPhase::update_with_pairs(Self, @dynamics.RigidBodySet, ColliderSet, Float, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet) -> Unit
 pub fn NarrowPhase::update_with_pairs3(Self, @dynamics.RigidBodySet3, ColliderSet3, Float, Array[(ColliderHandle, ColliderHandle)], @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3) -> Unit
-pub fn NarrowPhase::with_query_dispatcher(Self, Unit) -> Self
+pub fn NarrowPhase::with_query_dispatcher(Self, QueryDispatcher) -> Self
 
 pub struct NarrowPhase3D {
   contact_pairs : Array[((ColliderHandle3D, ColliderHandle3D), ContactPair3D)]
@@ -1414,11 +1416,35 @@ pub fn Triangle::as_shape(Self) -> Shape
 pub fn Triangle::new(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
 
 pub struct VHACDParameters {
+  concavity : Float
+  alpha : Float
+  beta : Float
+  resolution : Int
+  plane_downsampling : Int
+  convex_hull_downsampling : Int
+  fill_mode : FillMode
+  convex_hull_approximation : Bool
   max_convex_hulls : Int
 }
+pub fn VHACDParameters::alpha(Self) -> Float
+pub fn VHACDParameters::beta(Self) -> Float
+pub fn VHACDParameters::concavity(Self) -> Float
+pub fn VHACDParameters::convex_hull_approximation(Self) -> Bool
+pub fn VHACDParameters::convex_hull_downsampling(Self) -> Int
 pub fn VHACDParameters::default() -> Self
+pub fn VHACDParameters::fill_mode(Self) -> FillMode
 pub fn VHACDParameters::max_convex_hulls(Self) -> Int
+pub fn VHACDParameters::plane_downsampling(Self) -> Int
+pub fn VHACDParameters::resolution(Self) -> Int
+pub fn VHACDParameters::set_alpha(Self, Float) -> Self
+pub fn VHACDParameters::set_beta(Self, Float) -> Self
+pub fn VHACDParameters::set_concavity(Self, Float) -> Self
+pub fn VHACDParameters::set_convex_hull_approximation(Self, Bool) -> Self
+pub fn VHACDParameters::set_convex_hull_downsampling(Self, Int) -> Self
+pub fn VHACDParameters::set_fill_mode(Self, FillMode) -> Self
 pub fn VHACDParameters::set_max_convex_hulls(Self, Int) -> Self
+pub fn VHACDParameters::set_plane_downsampling(Self, Int) -> Self
+pub fn VHACDParameters::set_resolution(Self, Int) -> Self
 
 pub struct Voxels3DReal {
   voxel_size : @core.Vec3

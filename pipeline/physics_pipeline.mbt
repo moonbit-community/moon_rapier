@@ -707,11 +707,9 @@ fn update_body_mass_properties_from_colliders(
   for i in 0..<modified_bodies.length() {
     let handle = modified_bodies[i]
     if bodies.get_mut_internal(handle) is Some(body) {
-      // Recompute like Rapier: sum all colliders mass properties transformed by their
-      // local pose relative to the rigid-body, then apply `additional_mass` as a mass scaling.
-      //
-      // NOTE: Collider enable/disable controls collision detection/solver participation.
-      // It must not make the attached rigid-body lose its mass/inertia.
+      // Recompute like Rapier: sum all enabled colliders mass-properties transformed by
+      // their local pose relative to the rigid-body, then let rigid-body recompute apply
+      // additional user mass-properties.
       let attached = colliders.colliders_with_parent(handle)
       let mut mprops = @core.MassProperties::default()
       let default_ccd = @dynamics.RigidBodyCcd::default()
@@ -720,29 +718,28 @@ fn update_body_mass_properties_from_colliders(
       for j in 0..<attached.length() {
         let co_handle = attached[j]
         if colliders.get(co_handle) is Some(collider) {
-          let local_pos = @core.Isometry2::new(
-            collider.local_translation,
-            @core.Rot2::from_angle(collider.local_rotation),
-          )
-          mprops = mprops.add(
-            collider.mass_properties().transform_by(local_pos),
-          )
-          let thickness = shape_ccd_thickness(collider.shape)
-          if thickness < ccd_thickness {
-            ccd_thickness = thickness
-          }
-          let radius = shape_bounding_radius(collider.shape)
-          let dist = collider.local_translation.length() + radius
-          if dist > ccd_max_dist {
-            ccd_max_dist = dist
+          if collider.is_enabled() {
+            let local_pos = @core.Isometry2::new(
+              collider.local_translation,
+              @core.Rot2::from_angle(collider.local_rotation),
+            )
+            mprops = mprops.add(
+              collider.mass_properties().transform_by(local_pos),
+            )
+            let thickness = shape_ccd_thickness(collider.shape)
+            if thickness < ccd_thickness {
+              ccd_thickness = thickness
+            }
+            let radius = shape_bounding_radius(collider.shape)
+            let dist = collider.local_translation.length() + radius
+            if dist > ccd_max_dist {
+              ccd_max_dist = dist
+            }
           }
         }
       }
-      let added_mass = body.additional_mass()
-      if added_mass != 0.0F {
-        mprops = mprops.set_mass(mprops.mass + added_mass, true)
-      }
       body.set_local_mass_properties(mprops) |> ignore
+      body.recompute_mass_properties_from_colliders() |> ignore
       body.set_ccd_properties(ccd_thickness, ccd_max_dist) |> ignore
     }
   }

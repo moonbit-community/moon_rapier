@@ -546,16 +546,15 @@ pub fn NarrowPhase::handle_user_changes(
 }
 
 ///|
-pub fn NarrowPhase::query_dispatcher(self : NarrowPhase) -> Unit {
-  // Placeholder for pub parity with Rapier's dispatcher-based narrow-phase.
-  self |> ignore
+pub fn NarrowPhase::query_dispatcher(self : NarrowPhase) -> QueryDispatcher {
+  self.query_dispatcher
 }
 
 ///|
 pub fn NarrowPhase::with_query_dispatcher(
   self : NarrowPhase,
-  _dispatcher : Unit,
+  dispatcher : QueryDispatcher,
 ) -> NarrowPhase {
-  // Placeholder for pub parity with Rapier's dispatcher-based narrow-phase.
+  self.query_dispatcher = dispatcher
   self
 }

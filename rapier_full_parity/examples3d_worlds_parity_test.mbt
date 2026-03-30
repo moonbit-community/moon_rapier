@@ -324,7 +324,7 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
     } else if profile is WorldsMedium {
       60
     } else {
-      30
+      60
     },
   )
 

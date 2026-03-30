@@ -425,18 +425,226 @@ pub fn ActiveHooks::from_name(name : String) -> ActiveHooks? {
 }
 
 ///|
-/// Capability-equivalent placeholder for Rapier's `parry::transformation::vhacd::VHACDParameters`.
-///
-/// The actual convex decomposition implementation lives in Rapier/Parry. This port keeps a
-/// minimal public type to avoid blocking pub-surface parity.
 pub struct VHACDParameters {
-  // Maximum number of convex parts to generate. If <= 1, this falls back to the convex hull.
+  concavity : @core.Real
+  alpha : @core.Real
+  beta : @core.Real
+  resolution : Int
+  plane_downsampling : Int
+  convex_hull_downsampling : Int
+  fill_mode : FillMode
+  convex_hull_approximation : Bool
   max_convex_hulls : Int
 }
 
 ///|
 pub fn VHACDParameters::default() -> VHACDParameters {
-  { max_convex_hulls: 64 }
+  {
+    // Match Parry dim3 defaults used by Rapier.
+    concavity: 0.01F,
+    alpha: 0.05F,
+    beta: 0.05F,
+    resolution: 64,
+    plane_downsampling: 4,
+    convex_hull_downsampling: 4,
+    fill_mode: FillMode::default(),
+    convex_hull_approximation: true,
+    max_convex_hulls: 1024,
+  }
+}
+
+///|
+pub fn VHACDParameters::concavity(self : VHACDParameters) -> @core.Real {
+  self.concavity
+}
+
+///|
+pub fn VHACDParameters::set_concavity(
+  self : VHACDParameters,
+  concavity : @core.Real,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::alpha(self : VHACDParameters) -> @core.Real {
+  self.alpha
+}
+
+///|
+pub fn VHACDParameters::set_alpha(
+  self : VHACDParameters,
+  alpha : @core.Real,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::beta(self : VHACDParameters) -> @core.Real {
+  self.beta
+}
+
+///|
+pub fn VHACDParameters::set_beta(
+  self : VHACDParameters,
+  beta : @core.Real,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::resolution(self : VHACDParameters) -> Int {
+  self.resolution
+}
+
+///|
+pub fn VHACDParameters::set_resolution(
+  self : VHACDParameters,
+  resolution : Int,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::plane_downsampling(self : VHACDParameters) -> Int {
+  self.plane_downsampling
+}
+
+///|
+pub fn VHACDParameters::set_plane_downsampling(
+  self : VHACDParameters,
+  plane_downsampling : Int,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::convex_hull_downsampling(self : VHACDParameters) -> Int {
+  self.convex_hull_downsampling
+}
+
+///|
+pub fn VHACDParameters::set_convex_hull_downsampling(
+  self : VHACDParameters,
+  convex_hull_downsampling : Int,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::fill_mode(self : VHACDParameters) -> FillMode {
+  self.fill_mode
+}
+
+///|
+pub fn VHACDParameters::set_fill_mode(
+  self : VHACDParameters,
+  fill_mode : FillMode,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
+}
+
+///|
+pub fn VHACDParameters::convex_hull_approximation(
+  self : VHACDParameters,
+) -> Bool {
+  self.convex_hull_approximation
+}
+
+///|
+pub fn VHACDParameters::set_convex_hull_approximation(
+  self : VHACDParameters,
+  convex_hull_approximation : Bool,
+) -> VHACDParameters {
+  self |> ignore
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation,
+    max_convex_hulls: self.max_convex_hulls,
+  }
 }
 
 ///|
@@ -450,7 +658,17 @@ pub fn VHACDParameters::set_max_convex_hulls(
   max : Int,
 ) -> VHACDParameters {
   self |> ignore
-  { max_convex_hulls: max }
+  {
+    concavity: self.concavity,
+    alpha: self.alpha,
+    beta: self.beta,
+    resolution: self.resolution,
+    plane_downsampling: self.plane_downsampling,
+    convex_hull_downsampling: self.convex_hull_downsampling,
+    fill_mode: self.fill_mode,
+    convex_hull_approximation: self.convex_hull_approximation,
+    max_convex_hulls: max,
+  }
 }
 
 ///|
@@ -2574,10 +2792,7 @@ fn split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn parse_int_value(text : String) -> Int {
-  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_int(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -2587,9 +2802,7 @@ fn parse_int_value(text : String) -> Int {
 
 ///|
 fn parse_real_value(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
-    text[:],
-  )
+  let result = try? @string.parse_double(text[:])
   if result is Ok(value) {
     Float::from_double(value)
   } else {
@@ -2599,10 +2812,7 @@ fn parse_real_value(text : String) -> @core.Real {
 
 ///|
 fn parse_u64_value(text : String) -> UInt64 {
-  let result : Result[UInt64, @strconv.StrConvError] = try? @strconv.parse_uint64(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_uint64(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -3494,6 +3704,34 @@ fn ColliderSet::sync_with_bodies(
 }
 
 ///|
+/// Applies pending rigid-body position propagation commands generated from
+/// `RigidBodySet::propagate_modified_body_positions_to_colliders`.
+pub fn ColliderSet::apply_pending_body_position_propagation(
+  self : ColliderSet,
+  bodies : @dynamics.RigidBodySet,
+) -> Unit {
+  bodies.propagate_modified_body_positions_to_colliders()
+  let updates = bodies.take_pending_collider_position_updates()
+  for i in 0..<updates.length() {
+    let (collider_id, collider_generation, parent_pos) = updates[i]
+    let handle = ColliderHandle::from_raw_parts(
+      collider_id, collider_generation,
+    )
+    if self.get_mut_internal_with_modification_tracking(handle)
+      is Some(collider) {
+      let local_pos = @core.Isometry2::new(
+        collider.local_translation,
+        @core.Rot2::from_angle(collider.local_rotation),
+      )
+      let world_pos = parent_pos.mul(local_pos)
+      collider.world_translation = world_pos.translation
+      collider.world_rotation = world_pos.rotation.angle()
+      collider.changes = collider.changes.insert(COLLIDER_CHANGES_POSITION)
+    }
+  }
+}
+
+///|
 pub fn ColliderSet::insert(
   self : ColliderSet,
   collider : Collider,
@@ -3538,19 +3776,20 @@ fn recompute_body_mass_properties_from_attached_colliders(
     for j in 0..<attached.length() {
       let co_handle = attached[j]
       if colliders.get(co_handle) is Some(collider) {
-        let local_pos = @core.Isometry2::new(
-          collider.local_translation,
-          @core.Rot2::from_angle(collider.local_rotation),
-        )
-        mprops = mprops.add(collider.mass_properties().transform_by(local_pos))
+        if collider.is_enabled() {
+          let local_pos = @core.Isometry2::new(
+            collider.local_translation,
+            @core.Rot2::from_angle(collider.local_rotation),
+          )
+          mprops = mprops.add(
+            collider.mass_properties().transform_by(local_pos),
+          )
+        }
       }
-    }
-    let added_mass = body.additional_mass()
-    if added_mass != 0.0F {
-      mprops = mprops.set_mass(mprops.mass + added_mass, true)
     }
     body.mark_local_mass_properties_changed() |> ignore
     body.set_local_mass_properties(mprops) |> ignore
+    body.recompute_mass_properties_from_colliders() |> ignore
   }
 }
 
@@ -3582,6 +3821,10 @@ pub fn ColliderSet::insert_with_parent(
   self.colliders[handle.id] = Some(updated)
   if self.colliders[handle.id] is Some(collider_ref) {
     self.push_modified_unchecked(handle, collider_ref)
+  }
+  if bodies.get_mut_internal_with_modification_tracking(parent) is Some(body) {
+    let (collider_id, collider_generation) = handle.into_raw_parts()
+    body.attach_collider_raw(collider_id, collider_generation) |> ignore
   }
   // Match Rapier behavior: attaching a collider must immediately update the rigid-body
   // mass properties, so impulses applied before the next pipeline step behave correctly.
@@ -3664,6 +3907,8 @@ pub fn ColliderSet::remove(
     if collider.parent is Some(parent) {
       if bodies.get_mut_internal_with_modification_tracking(parent)
         is Some(body) {
+        let (collider_id, collider_generation) = handle.into_raw_parts()
+        body.detach_collider_raw(collider_id, collider_generation) |> ignore
         body.mark_local_mass_properties_changed() |> ignore
         if wake_up && body.is_dynamic_or_kinematic() {
           body.wake_up(true) |> ignore
@@ -3738,6 +3983,19 @@ pub fn ColliderSet::set_parent(
     let old_parent = collider.parent
     collider.parent = parent
     collider.changes = collider.changes.insert(COLLIDER_CHANGES_PARENT)
+    let (collider_id, collider_generation) = handle.into_raw_parts()
+    if old_parent is Some(old_rb) {
+      if bodies.get_mut_internal_with_modification_tracking(old_rb)
+        is Some(body) {
+        body.detach_collider_raw(collider_id, collider_generation) |> ignore
+      }
+    }
+    if parent is Some(new_rb) {
+      if bodies.get_mut_internal_with_modification_tracking(new_rb)
+        is Some(body) {
+        body.attach_collider_raw(collider_id, collider_generation) |> ignore
+      }
+    }
     if collider.parent is Some(parent) {
       if bodies.get(parent) is Some(body) {
         // Rapier semantics: world_position = body_position * local_position_wrt_parent.
@@ -4007,13 +4265,14 @@ pub fn ContactManifold::points(
 pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
+  mut query_dispatcher : QueryDispatcher
 
   fn new() -> NarrowPhase
 }
 
 ///|
 pub fn NarrowPhase::new() -> NarrowPhase {
-  { intersections: [], contacts: [] }
+  { intersections: [], contacts: [], query_dispatcher: QueryDispatcher::new() }
 }
 
 ///|

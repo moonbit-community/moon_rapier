@@ -1204,6 +1204,7 @@ pub struct RigidBody {
   mut forces : RigidBodyForces
   mut ccd : RigidBodyCcd
   mut mass_props : RigidBodyMassProps
+  mut colliders : RigidBodyColliders
   mut additional_mass : Float
   mut additional_solver_iterations : Int
   mut changes : RigidBodyChanges
@@ -1222,11 +1223,14 @@ pub fn RigidBody::angvel_with_gyroscopic_forces(Self, Float) -> Float
 pub fn RigidBody::apply_impulse(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_impulse_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_torque_impulse(Self, Float, Bool) -> Self
+pub fn RigidBody::attach_collider_raw(Self, Int, Int) -> Self
 pub fn RigidBody::body_type(Self) -> RigidBodyType
 pub fn RigidBody::ccd(Self) -> RigidBodyCcd
 pub fn RigidBody::center_of_mass(Self) -> @core.Vec2
 pub fn RigidBody::clear_changes(Self) -> Self
+pub fn RigidBody::colliders(Self) -> Array[(Int, Int)]
 pub fn RigidBody::damping(Self) -> RigidBodyDamping
+pub fn RigidBody::detach_collider_raw(Self, Int, Int) -> Self
 pub fn RigidBody::dominance_group(Self) -> Int
 pub fn RigidBody::effective_active_set_offset(Self) -> Int
 pub fn RigidBody::effective_dominance_group(Self) -> Int
@@ -1441,6 +1445,7 @@ pub struct RigidBodyBuilder {
   mut lock_translations : Bool
   mut lock_rotations : Bool
   mut additional_mass : Float
+  mut additional_local_mprops : @core.MassProperties
   mut additional_solver_iterations : Int
   mut can_sleep : Bool
   mut sleeping : Bool
@@ -1606,12 +1611,16 @@ pub fn RigidBodyChanges::sleep() -> Int
 pub fn RigidBodyChanges::sleep_flag() -> Int
 
 pub struct RigidBodyColliders {
-  colliders : Array[Int]
+  mut colliders : Array[(Int, Int)]
 
   fn new() -> RigidBodyColliders
 }
 pub fn RigidBodyColliders::attach_collider(Self, Int) -> Self
+pub fn RigidBodyColliders::attach_collider_raw(Self, Int, Int) -> Self
 pub fn RigidBodyColliders::detach_collider(Self, Int) -> Self
+pub fn RigidBodyColliders::detach_collider_raw(Self, Int, Int) -> Self
+pub fn RigidBodyColliders::handles(Self) -> Array[(Int, Int)]
+pub fn RigidBodyColliders::len(Self) -> Int
 pub fn RigidBodyColliders::new() -> Self
 
 pub struct RigidBodyDamping {
@@ -1663,8 +1672,9 @@ pub struct RigidBodyMassProps {
   mut world_com : @core.Vec2
   mut effective_inv_mass : @core.Vec2
   mut effective_world_inv_inertia : Float
+  mut collider_local_mprops : @core.MassProperties
   mut local_mprops : @core.MassProperties
-  additional_local_mprops : @core.MassProperties
+  mut additional_local_mprops : @core.MassProperties
 }
 pub fn RigidBodyMassProps::default() -> Self
 pub fn RigidBodyMassProps::effective_angular_inertia(Self) -> Float
@@ -1708,6 +1718,7 @@ pub struct RigidBodySet {
   generations : Array[Int]
   free_list : Array[Int]
   modified_bodies : Array[RigidBodyHandle]
+  pending_collider_position_updates : Array[(Int, Int, @core.Isometry2)]
 
   fn new() -> RigidBodySet
 }
@@ -1730,6 +1741,7 @@ pub fn RigidBodySet::propagate_modified_body_positions_to_colliders(Self) -> Uni
 pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> RigidBody?
 pub fn RigidBodySet::serialize(Self) -> String
 pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
+pub fn RigidBodySet::take_pending_collider_position_updates(Self) -> Array[(Int, Int, @core.Isometry2)]
 pub fn RigidBodySet::with_capacity(Int) -> Self
 
 pub struct RigidBodySet3 {

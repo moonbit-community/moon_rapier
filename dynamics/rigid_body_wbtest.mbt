@@ -188,6 +188,43 @@ test "rigid body additional mass" {
 }
 
 ///|
+test "rigid body recompute mass properties applies additional scalar mass" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let collider_mprops = @core.MassProperties::new(
+    2.0F,
+    4.0F,
+    @core.Vec2::new(1.0F, 0.0F),
+  )
+  let body = body.set_local_mass_properties(collider_mprops)
+  let body = body.set_additional_mass(3.0F, false)
+  let body = body.recompute_mass_properties_from_colliders()
+  inspect(@core.abs(body.mass() - 5.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(body.inertia() - 10.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(body.center_of_mass().x - 1.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(body.center_of_mass().y) < 1.0e-6F, content="true")
+}
+
+///|
+test "rigid body additional mass properties override scalar additional mass" {
+  let body = RigidBodyBuilder::dynamic().build()
+  let base = @core.MassProperties::new(2.0F, 4.0F, @core.Vec2::zero())
+  let extra = @core.MassProperties::new(1.0F, 1.0F, @core.Vec2::new(2.0F, 0.0F))
+  let body = body.set_local_mass_properties(base)
+  let body = body.set_additional_mass(3.0F, false)
+  let body = body.set_additional_mass_properties(
+    RigidBodyAdditionalMassProps::MassProps(extra),
+    false,
+  )
+  let body = body.recompute_mass_properties_from_colliders()
+  inspect(body.additional_mass() == 0.0F, content="true")
+  inspect(@core.abs(body.mass() - 3.0F) < 1.0e-6F, content="true")
+  inspect(
+    @core.abs(body.center_of_mass().x - 2.0F / 3.0F) < 1.0e-6F,
+    content="true",
+  )
+}
+
+///|
 /// Ported from rapier rigid_body impulse application.
 test "rigid body impulse application" {
   let body = RigidBodyBuilder::dynamic().build()
@@ -222,4 +259,39 @@ test "rigid body mass properties" {
   let world_com = body.world_com()
   inspect(world_com.x == 0.0F, content="true")
   inspect(world_com.y == 0.0F, content="true")
+}
+
+///|
+test "rigid body set queues collider position propagation for moved bodies" {
+  let bodies = RigidBodySet::new()
+  let body = RigidBodyBuilder::dynamic()
+    .build()
+    .attach_collider_raw(7, 3)
+    .attach_collider_raw(11, 4)
+  let handle = bodies.insert(body)
+  if bodies.get_mut_internal_with_modification_tracking(handle) is Some(rb) {
+    rb.set_position(
+      @core.Isometry2::new(@core.Vec2::new(2.0F, -1.0F), @core.Rot2::identity()),
+      false,
+    )
+    |> ignore
+  }
+  bodies.propagate_modified_body_positions_to_colliders()
+  let updates = bodies.take_pending_collider_position_updates()
+  inspect(updates.length() == 2, content="true")
+  let mut found_first = false
+  let mut found_second = false
+  for i in 0..<updates.length() {
+    let (collider_id, collider_generation, parent_pos) = updates[i]
+    if collider_id == 7 && collider_generation == 3 {
+      found_first = true
+      inspect(parent_pos.translation.x == 2.0F, content="true")
+      inspect(parent_pos.translation.y == -1.0F, content="true")
+    }
+    if collider_id == 11 && collider_generation == 4 {
+      found_second = true
+    }
+  }
+  inspect(found_first, content="true")
+  inspect(found_second, content="true")
 }

@@ -488,9 +488,178 @@ fn Multibody::ensure_buffers(self : Multibody) -> Unit {
     copy_prefix(self.accelerations, new_acc, n)
     self.accelerations = new_acc
   }
-
-  // This port currently doesn't compute the augmented mass; keep a deterministic placeholder.
   self.inv_augmented_mass = @core.DMatrix::identity(n)
+}
+
+///|
+fn dmatrix_get_or_zero(
+  matrix : @core.DMatrix,
+  row : Int,
+  col : Int,
+) -> @core.Real {
+  if matrix.get(row, col) is Some(value) {
+    value
+  } else {
+    0.0F
+  }
+}
+
+///|
+fn dmatrix_inverse_or_identity(matrix : @core.DMatrix) -> @core.DMatrix {
+  let n = matrix.rows()
+  if n <= 0 || n != matrix.cols() {
+    return @core.DMatrix::identity(0)
+  }
+  let cols = n * 2
+  let aug : Array[@core.Real] = []
+  for r in 0..<n {
+    for c in 0..<n {
+      aug.push(dmatrix_get_or_zero(matrix, r, c))
+    }
+    for c in 0..<n {
+      aug.push(if r == c { 1.0F } else { 0.0F })
+    }
+  }
+
+  fn idx(cols : Int, row : Int, col : Int) -> Int {
+    row * cols + col
+  }
+
+  let eps = 1.0e-9F
+  fn diagonal_inverse_fallback(
+    matrix : @core.DMatrix,
+    n : Int,
+    eps : @core.Real,
+  ) -> @core.DMatrix {
+    let mut out = @core.DMatrix::zeros(n, n)
+    for i in 0..<n {
+      let diag = @core.abs(dmatrix_get_or_zero(matrix, i, i))
+      let inv = if diag <= eps { 1.0F } else { 1.0F / diag }
+      out = out.set(i, i, inv)
+    }
+    out
+  }
+  for pivot in 0..<n {
+    let mut best_row = pivot
+    let mut best_abs = @core.abs(aug[idx(cols, pivot, pivot)])
+    for r in (pivot + 1)..<n {
+      let candidate = @core.abs(aug[idx(cols, r, pivot)])
+      if candidate > best_abs {
+        best_abs = candidate
+        best_row = r
+      }
+    }
+    if best_abs <= eps {
+      return diagonal_inverse_fallback(matrix, n, eps)
+    }
+    if best_row != pivot {
+      for c in 0..<cols {
+        let a = idx(cols, pivot, c)
+        let b = idx(cols, best_row, c)
+        let tmp = aug[a]
+        aug[a] = aug[b]
+        aug[b] = tmp
+      }
+    }
+    let pivot_value = aug[idx(cols, pivot, pivot)]
+    for c in 0..<cols {
+      let index = idx(cols, pivot, c)
+      aug[index] = aug[index] / pivot_value
+    }
+    for r in 0..<n {
+      if r == pivot {
+        continue
+      }
+      let factor = aug[idx(cols, r, pivot)]
+      if factor == 0.0F {
+        continue
+      }
+      for c in 0..<cols {
+        let irc = idx(cols, r, c)
+        aug[irc] = aug[irc] - factor * aug[idx(cols, pivot, c)]
+      }
+    }
+  }
+
+  let mut inv = @core.DMatrix::zeros(n, n)
+  for r in 0..<n {
+    for c in 0..<n {
+      inv = inv.set(r, c, aug[idx(cols, r, n + c)])
+    }
+  }
+  inv
+}
+
+///|
+fn Multibody::update_inv_augmented_mass(
+  self : Multibody,
+  bodies : RigidBodySet,
+) -> Unit {
+  let n = self.ndofs
+  if n <= 0 {
+    self.inv_augmented_mass = @core.DMatrix::identity(0)
+    return
+  }
+
+  let mut mass = @core.DMatrix::zeros(n, n)
+  let kinematic_cols : Array[Bool] = []
+  for _ in 0..<n {
+    kinematic_cols.push(false)
+  }
+
+  for i in 0..<self.links.length() {
+    let link = self.links[i]
+    if link.joint.kinematic {
+      let ndofs = link.joint.ndofs()
+      for k in 0..<ndofs {
+        let col = link.assembly_id + k
+        if col >= 0 && col < n {
+          kinematic_cols[col] = true
+        }
+      }
+    }
+    if bodies.get(link.rigid_body) is Some(body) {
+      let eff_mass = body.mass_props.effective_mass()
+      let eff_inertia = body.mass_props.effective_angular_inertia()
+      let jacobian = self.body_jacobian({ value: link.internal_id })
+      for r in 0..<n {
+        let j0r = jacobian.value_at(0, r)
+        let j1r = jacobian.value_at(1, r)
+        let j2r = jacobian.value_at(2, r)
+        for c in r..<n {
+          let j0c = jacobian.value_at(0, c)
+          let j1c = jacobian.value_at(1, c)
+          let j2c = jacobian.value_at(2, c)
+          let contribution = j0r * eff_mass.x * j0c +
+            j1r * eff_mass.y * j1c +
+            j2r * eff_inertia * j2c
+          let current = dmatrix_get_or_zero(mass, r, c)
+          let updated = current + contribution
+          mass = mass.set(r, c, updated)
+          if c != r {
+            mass = mass.set(c, r, updated)
+          }
+        }
+      }
+    }
+  }
+
+  for i in 0..<n {
+    if kinematic_cols[i] {
+      for j in 0..<n {
+        mass = mass.set(i, j, 0.0F)
+        mass = mass.set(j, i, 0.0F)
+      }
+      mass = mass.set(i, i, 1.0F)
+    } else {
+      let diag = dmatrix_get_or_zero(mass, i, i)
+      if @core.abs(diag) <= 1.0e-9F {
+        mass = mass.set(i, i, 1.0F)
+      }
+    }
+  }
+
+  self.inv_augmented_mass = dmatrix_inverse_or_identity(mass)
 }
 
 ///|
@@ -507,6 +676,7 @@ fn Multibody::recompute_ndofs(self : Multibody) -> Unit {
     self.rebuild_indices(SPATIAL_DIM)
   }
   self.ensure_buffers()
+  self.inv_augmented_mass = @core.DMatrix::identity(self.ndofs)
 }
 
 ///|
@@ -533,6 +703,7 @@ fn Multibody::update_ndofs_with_root(
   self.ndofs = root_dofs + joint_ndofs
   self.rebuild_indices(root_dofs)
   self.ensure_buffers()
+  self.update_inv_augmented_mass(bodies)
 }
 
 ///|
@@ -1661,10 +1832,7 @@ fn mb_split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn mb_parse_int_value(text : String) -> Int {
-  let result : Result[Int, @strconv.StrConvError] = try? @strconv.parse_int(
-    text[:],
-    base=10,
-  )
+  let result = try? @string.parse_int(text[:], base=10)
   if result is Ok(value) {
     value
   } else {
@@ -1674,9 +1842,7 @@ fn mb_parse_int_value(text : String) -> Int {
 
 ///|
 fn mb_parse_real_value(text : String) -> @core.Real {
-  let result : Result[Double, @strconv.StrConvError] = try? @strconv.parse_double(
-    text[:],
-  )
+  let result = try? @string.parse_double(text[:])
   if result is Ok(value) {
     Float::from_double(value)
   } else {
