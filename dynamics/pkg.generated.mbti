@@ -492,6 +492,8 @@ pub fn InverseKinematicsOption::set_max_iters(Self, Int) -> Self
 
 type Island
 
+type Island3D
+
 pub struct IslandManager {
   islands : Array[Island?]
   awake_islands : Array[Int]
@@ -536,6 +538,18 @@ pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
   islands : Array[Array[RigidBodyHandle]]
   island_solver_iterations : Array[Int]
+  island_nodes : Array[Island3D?]
+  awake_island_ids : Array[Int]
+  free_island_ids : Array[Int]
+  body_island_ids : Array[Int]
+  body_island_generations : Array[Int]
+  body_island_indices : Array[Int]
+  body_sleep_state_generations : Array[Int]
+  body_sleep_states : Array[Int]
+  body_traversal_timestamps : Array[Int]
+  stack : Array[RigidBodyHandle]
+  optimizer : IslandsOptimizer3D
+  mut traversal_timestamp : Int
 
   fn new() -> IslandManager3D
 }
@@ -547,6 +561,8 @@ pub fn IslandManager3D::new() -> Self
 pub fn IslandManager3D::update(Self, RigidBodySet3D, Array[(RigidBodyHandle, RigidBodyHandle)]) -> Unit
 
 type IslandsOptimizer
+
+type IslandsOptimizer3D
 
 type Jacobian
 pub fn Jacobian::cols(Self) -> Int
@@ -721,6 +737,16 @@ pub struct JointSet3DReal {
   spherical_motors : Array[SphericalMotor3DReal]
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
+  spherical_impulses : Array[@core.Vec3]
+  prismatic_lock_impulses : Array[@core.Vec2]
+  prismatic_motor_impulses : Array[Float]
+  prismatic_angular_impulses : Array[@core.Vec3]
+  spherical_motor_impulses : Array[@core.Vec3]
+  generic_lock_impulses : Array[Array[Float]]
+  generic_limit_impulses : Array[Array[Float]]
+  generic_motor_impulses : Array[Array[Float]]
+  generic_coupled_impulses : Array[Float]
+  spring_impulses : Array[Float]
 
   fn new() -> JointSet3DReal
 }

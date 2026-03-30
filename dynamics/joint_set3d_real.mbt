@@ -223,6 +223,16 @@ pub struct JointSet3DReal {
   spherical_motors : Array[SphericalMotor3DReal]
   generic : Array[GenericJointConstraint3DReal]
   springs : Array[SpringJoint3DReal]
+  spherical_impulses : Array[@core.Vec3]
+  prismatic_lock_impulses : Array[@core.Vec2]
+  prismatic_motor_impulses : Array[@core.Real]
+  prismatic_angular_impulses : Array[@core.Vec3]
+  spherical_motor_impulses : Array[@core.Vec3]
+  generic_lock_impulses : Array[Array[@core.Real]]
+  generic_limit_impulses : Array[Array[@core.Real]]
+  generic_motor_impulses : Array[Array[@core.Real]]
+  generic_coupled_impulses : Array[@core.Real]
+  spring_impulses : Array[@core.Real]
 
   fn new() -> JointSet3DReal
 }
@@ -271,6 +281,16 @@ pub fn JointSet3DReal::new() -> JointSet3DReal {
     spherical_motors: [],
     generic: [],
     springs: [],
+    spherical_impulses: [],
+    prismatic_lock_impulses: [],
+    prismatic_motor_impulses: [],
+    prismatic_angular_impulses: [],
+    spherical_motor_impulses: [],
+    generic_lock_impulses: [],
+    generic_limit_impulses: [],
+    generic_motor_impulses: [],
+    generic_coupled_impulses: [],
+    spring_impulses: [],
   }
 }
 
@@ -283,6 +303,7 @@ pub fn JointSet3DReal::insert_spherical(
   local_anchor2 : @core.Vec3,
 ) -> Unit {
   self.spherical.push({ body1, body2, local_anchor1, local_anchor2 })
+  self.spherical_impulses.push(@core.Vec3::zero())
 }
 
 ///|
@@ -308,6 +329,9 @@ pub fn JointSet3DReal::insert_prismatic_motor_position(
     motor_damping: damping,
     motor_enabled: true,
   })
+  self.prismatic_lock_impulses.push(@core.Vec2::zero())
+  self.prismatic_motor_impulses.push(0.0F)
+  self.prismatic_angular_impulses.push(@core.Vec3::zero())
 }
 
 ///|
@@ -326,6 +350,7 @@ pub fn JointSet3DReal::insert_spherical_motor_rotation(
     stiffness,
     damping,
   })
+  self.spherical_motor_impulses.push(@core.Vec3::zero())
 }
 
 ///|
@@ -339,6 +364,18 @@ pub fn JointSet3DReal::insert_generic(
   wake_up |> ignore
   let idx = self.generic.length()
   self.generic.push({ body1, body2, data })
+  let lock_impulses : Array[@core.Real] = []
+  let limit_impulses : Array[@core.Real] = []
+  let motor_impulses : Array[@core.Real] = []
+  for _ in 0..<6 {
+    lock_impulses.push(0.0F)
+    limit_impulses.push(0.0F)
+    motor_impulses.push(0.0F)
+  }
+  self.generic_lock_impulses.push(lock_impulses)
+  self.generic_limit_impulses.push(limit_impulses)
+  self.generic_motor_impulses.push(motor_impulses)
+  self.generic_coupled_impulses.push(0.0F)
   { index: idx }
 }
 
@@ -389,6 +426,7 @@ pub fn JointSet3DReal::insert_spring(
     stiffness,
     damping,
   })
+  self.spring_impulses.push(0.0F)
 }
 
 ///|
@@ -433,6 +471,15 @@ pub fn JointSet3DReal::set_motor_velocity(
 }
 
 ///|
+const JOINT_SOLVER_BAUMGARTE_3D_REAL : @core.Real = 0.2F
+
+///|
+const JOINT_SOLVER_MAX_IMPULSE_3D_REAL : @core.Real = 1.0e30F
+
+///|
+const JOINT_SOLVER_EPSILON_3D_REAL : @core.Real = 1.0e-9F
+
+///|
 fn inv_mass3(rb : RigidBody3D) -> @core.Real {
   if rb.body_type().is_dynamic() {
     rb.mass_properties().inv_mass
@@ -442,53 +489,39 @@ fn inv_mass3(rb : RigidBody3D) -> @core.Real {
 }
 
 ///|
-fn solve_pair_translation(
-  rb1 : RigidBody3D,
-  rb2 : RigidBody3D,
-  corr : @core.Vec3,
-) -> Unit {
-  let inv_m1 = inv_mass3(rb1)
-  let inv_m2 = inv_mass3(rb2)
-  let inv_sum = inv_m1 + inv_m2
-  if inv_sum <= 0.0F {
-    return
+fn world_inv_inertia3(rb : RigidBody3D) -> @core.Mat3 {
+  if !rb.body_type().is_dynamic() {
+    return @core.Mat3::zero()
   }
-  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-  if inv_m1 > 0.0F {
-    rb1.set_translation(rb1.translation().add(corr.scale(w1)))
-    rb1.wake_up()
-  }
-  if inv_m2 > 0.0F {
-    rb2.set_translation(rb2.translation().sub(corr.scale(w2)))
-    rb2.wake_up()
-  }
+  let rot = rb.rotation().to_mat3()
+  let inv_local = rb.mass_properties().inv_inertia.into_mat3()
+  rot.mul(inv_local).mul(rot.transpose())
 }
 
 ///|
-fn damp_pair_along(
-  rb1 : RigidBody3D,
-  rb2 : RigidBody3D,
-  dir : @core.Vec3,
-  factor : @core.Real,
+fn apply_body_impulse_delta3(
+  body : RigidBody3D,
+  linear_impulse : @core.Vec3,
+  angular_impulse : @core.Vec3,
 ) -> Unit {
-  let inv_m1 = inv_mass3(rb1)
-  let inv_m2 = inv_mass3(rb2)
-  let inv_sum = inv_m1 + inv_m2
-  if inv_sum <= 0.0F {
+  let inv_m = inv_mass3(body)
+  if inv_m <= 0.0F {
     return
   }
-  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-  let rel = rb2.linvel().sub(rb1.linvel()).dot(dir)
-  if rel > 0.0F {
-    let dv = dir.scale(rel * factor)
-    if inv_m1 > 0.0F {
-      rb1.set_linvel(rb1.linvel().add(dv.scale(w1)))
-    }
-    if inv_m2 > 0.0F {
-      rb2.set_linvel(rb2.linvel().sub(dv.scale(w2)))
-    }
+  if !body.is_active() &&
+    (
+      linear_impulse.length_squared() > 1.0e-12F ||
+      angular_impulse.length_squared() > 1.0e-12F
+    ) {
+    body.wake_up()
+  }
+  if linear_impulse.length_squared() > 0.0F {
+    body.set_linvel(body.linvel().add(linear_impulse.scale(inv_m)))
+  }
+  if angular_impulse.length_squared() > 0.0F {
+    body.set_angvel(
+      body.angvel().add(world_inv_inertia3(body).mul_vec3(angular_impulse)),
+    )
   }
 }
 
@@ -503,29 +536,20 @@ fn normalized_or_default(v : @core.Vec3) -> @core.Vec3 {
 }
 
 ///|
-fn solve_pair_rotation(
+fn apply_row_impulse3(
   rb1 : RigidBody3D,
   rb2 : RigidBody3D,
-  scaled_axis_world : @core.Vec3,
+  lin_j1 : @core.Vec3,
+  ang_j1 : @core.Vec3,
+  lin_j2 : @core.Vec3,
+  ang_j2 : @core.Vec3,
+  impulse : @core.Real,
 ) -> Unit {
-  let inv_m1 = inv_mass3(rb1)
-  let inv_m2 = inv_mass3(rb2)
-  let inv_sum = inv_m1 + inv_m2
-  if inv_sum <= 0.0F {
+  if @core.abs(impulse) <= JOINT_SOLVER_EPSILON_3D_REAL {
     return
   }
-  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-  if inv_m1 > 0.0F {
-    let dq = @core.rotation_from_scaled_axis(scaled_axis_world.scale(-w1))
-    rb1.set_rotation(dq.mul(rb1.rotation()))
-    rb1.wake_up()
-  }
-  if inv_m2 > 0.0F {
-    let dq = @core.rotation_from_scaled_axis(scaled_axis_world.scale(w2))
-    rb2.set_rotation(dq.mul(rb2.rotation()))
-    rb2.wake_up()
-  }
+  apply_body_impulse_delta3(rb1, lin_j1.scale(impulse), ang_j1.scale(impulse))
+  apply_body_impulse_delta3(rb2, lin_j2.scale(impulse), ang_j2.scale(impulse))
 }
 
 ///|
@@ -536,6 +560,43 @@ fn axis_value_from_vec3(v : @core.Vec3, axis_i : Int) -> @core.Real {
     v.y
   } else {
     v.z
+  }
+}
+
+///|
+fn set_axis_value_vec3(
+  value : @core.Vec3,
+  axis_i : Int,
+  component : @core.Real,
+) -> @core.Vec3 {
+  if axis_i == 0 {
+    @core.Vec3::new(component, value.y, value.z)
+  } else if axis_i == 1 {
+    @core.Vec3::new(value.x, component, value.z)
+  } else {
+    @core.Vec3::new(value.x, value.y, component)
+  }
+}
+
+///|
+fn axis_value_from_vec2(v : @core.Vec2, axis_i : Int) -> @core.Real {
+  if axis_i == 0 {
+    v.x
+  } else {
+    v.y
+  }
+}
+
+///|
+fn set_axis_value_vec2(
+  value : @core.Vec2,
+  axis_i : Int,
+  component : @core.Real,
+) -> @core.Vec2 {
+  if axis_i == 0 {
+    @core.Vec2::new(component, value.y)
+  } else {
+    @core.Vec2::new(value.x, component)
   }
 }
 
@@ -551,6 +612,18 @@ fn axis_unit(axis_i : Int) -> @core.Vec3 {
 }
 
 ///|
+fn orthonormal_basis3(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
+  let tangent = if @core.abs(n.x) < 0.57735026F {
+    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  } else {
+    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  }
+  let t1 = normalized_or_default(n.cross(tangent))
+  let t2 = normalized_or_default(n.cross(t1))
+  (t1, t2)
+}
+
+///|
 fn clamp_real(x : @core.Real, lo : @core.Real, hi : @core.Real) -> @core.Real {
   if x < lo {
     lo
@@ -563,7 +636,6 @@ fn clamp_real(x : @core.Real, lo : @core.Real, hi : @core.Real) -> @core.Real {
 
 ///|
 fn shortest_angle_diff(curr : @core.Real, target : @core.Real) -> @core.Real {
-  // Returns the signed smallest difference in [-pi, pi] such that curr + diff ~= target.
   let mut diff = target - curr
   let pi = @core.pi()
   let two_pi = @core.two_pi()
@@ -584,6 +656,65 @@ fn shortest_quat(q : @core.Quat) -> @core.Quat {
   } else {
     qq
   }
+}
+
+///|
+fn baumgarte_bias3(
+  dt : @core.Real,
+  positional_error : @core.Real,
+  scale : @core.Real,
+) -> @core.Real {
+  if dt <= JOINT_SOLVER_EPSILON_3D_REAL {
+    0.0F
+  } else {
+    positional_error * JOINT_SOLVER_BAUMGARTE_3D_REAL * scale / dt
+  }
+}
+
+///|
+fn solve_row_impulse3(
+  rb1 : RigidBody3D,
+  rb2 : RigidBody3D,
+  lin_j1 : @core.Vec3,
+  ang_j1 : @core.Vec3,
+  lin_j2 : @core.Vec3,
+  ang_j2 : @core.Vec3,
+  bias : @core.Real,
+  target_vel : @core.Real,
+  min_impulse : @core.Real,
+  max_impulse : @core.Real,
+  impulse : @core.Real,
+) -> @core.Real {
+  let inv_m1 = inv_mass3(rb1)
+  let inv_m2 = inv_mass3(rb2)
+  let inv_i1 = if inv_m1 > 0.0F {
+    world_inv_inertia3(rb1)
+  } else {
+    @core.Mat3::zero()
+  }
+  let inv_i2 = if inv_m2 > 0.0F {
+    world_inv_inertia3(rb2)
+  } else {
+    @core.Mat3::zero()
+  }
+  let denom = inv_m1 * lin_j1.length_squared() +
+    ang_j1.dot(inv_i1.mul_vec3(ang_j1)) +
+    inv_m2 * lin_j2.length_squared() +
+    ang_j2.dot(inv_i2.mul_vec3(ang_j2))
+  if denom <= JOINT_SOLVER_EPSILON_3D_REAL {
+    return impulse
+  }
+  let jv = lin_j1.dot(rb1.linvel()) +
+    ang_j1.dot(rb1.angvel()) +
+    lin_j2.dot(rb2.linvel()) +
+    ang_j2.dot(rb2.angvel())
+  let delta = -(jv - target_vel + bias) / denom
+  let total = clamp_real(impulse + delta, min_impulse, max_impulse)
+  let applied = total - impulse
+  if @core.abs(applied) > JOINT_SOLVER_EPSILON_3D_REAL {
+    apply_row_impulse3(rb1, rb2, lin_j1, ang_j1, lin_j2, ang_j2, applied)
+  }
+  total
 }
 
 ///|
@@ -613,6 +744,42 @@ fn joint_pair_in_island(
 }
 
 ///|
+fn JointSet3DReal::ensure_solver_cache(self : JointSet3DReal) -> Unit {
+  while self.spherical_impulses.length() < self.spherical.length() {
+    self.spherical_impulses.push(@core.Vec3::zero())
+  }
+  while self.prismatic_lock_impulses.length() < self.prismatic.length() {
+    self.prismatic_lock_impulses.push(@core.Vec2::zero())
+  }
+  while self.prismatic_motor_impulses.length() < self.prismatic.length() {
+    self.prismatic_motor_impulses.push(0.0F)
+  }
+  while self.prismatic_angular_impulses.length() < self.prismatic.length() {
+    self.prismatic_angular_impulses.push(@core.Vec3::zero())
+  }
+  while self.spherical_motor_impulses.length() < self.spherical_motors.length() {
+    self.spherical_motor_impulses.push(@core.Vec3::zero())
+  }
+  while self.generic_lock_impulses.length() < self.generic.length() {
+    let lock_impulses : Array[@core.Real] = []
+    let limit_impulses : Array[@core.Real] = []
+    let motor_impulses : Array[@core.Real] = []
+    for _ in 0..<6 {
+      lock_impulses.push(0.0F)
+      limit_impulses.push(0.0F)
+      motor_impulses.push(0.0F)
+    }
+    self.generic_lock_impulses.push(lock_impulses)
+    self.generic_limit_impulses.push(limit_impulses)
+    self.generic_motor_impulses.push(motor_impulses)
+    self.generic_coupled_impulses.push(0.0F)
+  }
+  while self.spring_impulses.length() < self.springs.length() {
+    self.spring_impulses.push(0.0F)
+  }
+}
+
+///|
 pub fn JointSet3DReal::solve(
   self : JointSet3DReal,
   bodies : RigidBodySet3D,
@@ -631,11 +798,238 @@ pub fn JointSet3DReal::solve_with_island_stamp(
   island_stamps : Array[Int]?,
   island_stamp : Int,
 ) -> Unit {
-  // Deterministic, light positional solver.
+  self.ensure_solver_cache()
+  if dt <= JOINT_SOLVER_EPSILON_3D_REAL {
+    return
+  }
   let iters = if iterations > 0 { iterations } else { 1 }
-  let inv_dt = if dt > 1.0e-12F { 1.0F / dt } else { 0.0F }
+  // Warmstart from persistent cached impulses.
+  for i in 0..<self.spherical.length() {
+    let j = self.spherical[i]
+    if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
+      continue
+    }
+    if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
+      let p1 = b1.position().transform_point(j.local_anchor1)
+      let p2 = b2.position().transform_point(j.local_anchor2)
+      let r1 = p1.sub(b1.world_com())
+      let r2 = p2.sub(b2.world_com())
+      let impulse = self.spherical_impulses[i]
+      for axis_i in 0..<3 {
+        let axis = axis_unit(axis_i)
+        let warm = axis_value_from_vec3(impulse, axis_i)
+        apply_row_impulse3(
+          b1,
+          b2,
+          axis.scale(-1.0F),
+          r1.cross(axis).scale(-1.0F),
+          axis,
+          r2.cross(axis),
+          warm,
+        )
+      }
+    }
+  }
+
+  for i in 0..<self.prismatic.length() {
+    let j = self.prismatic[i]
+    if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
+      continue
+    }
+    if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
+      let p1 = b1.position().transform_point(j.local_anchor1)
+      let p2 = b2.position().transform_point(j.local_anchor2)
+      let axis = normalized_or_default(b1.rotation().rotate_vec3(j.local_axis1))
+      let (t1, t2) = orthonormal_basis3(axis)
+      let r1 = p1.sub(b1.world_com())
+      let r2 = p2.sub(b2.world_com())
+      let lock_impulses = self.prismatic_lock_impulses[i]
+      let lock_axes : Array[@core.Vec3] = [t1, t2]
+      for axis_i in 0..<2 {
+        let n = lock_axes[axis_i]
+        let warm = axis_value_from_vec2(lock_impulses, axis_i)
+        apply_row_impulse3(
+          b1,
+          b2,
+          n.scale(-1.0F),
+          r1.cross(n).scale(-1.0F),
+          n,
+          r2.cross(n),
+          warm,
+        )
+      }
+      let ang_impulses = self.prismatic_angular_impulses[i]
+      for axis_i in 0..<3 {
+        let n = b1.rotation().rotate_vec3(axis_unit(axis_i))
+        let warm = axis_value_from_vec3(ang_impulses, axis_i)
+        apply_row_impulse3(
+          b1,
+          b2,
+          @core.Vec3::zero(),
+          n.scale(-1.0F),
+          @core.Vec3::zero(),
+          n,
+          warm,
+        )
+      }
+      if j.motor_enabled {
+        apply_row_impulse3(
+          b1,
+          b2,
+          axis.scale(-1.0F),
+          r1.cross(axis).scale(-1.0F),
+          axis,
+          r2.cross(axis),
+          self.prismatic_motor_impulses[i],
+        )
+      }
+    }
+  }
+
+  for i in 0..<self.spherical_motors.length() {
+    let m = self.spherical_motors[i]
+    if !joint_pair_in_island(m.body1, m.body2, island_stamps, island_stamp) {
+      continue
+    }
+    if bodies.get(m.body1) is Some(b1) && bodies.get(m.body2) is Some(b2) {
+      let warm = self.spherical_motor_impulses[i]
+      for axis_i in 0..<3 {
+        let n = b1.rotation().rotate_vec3(axis_unit(axis_i))
+        let imp = axis_value_from_vec3(warm, axis_i)
+        apply_row_impulse3(
+          b1,
+          b2,
+          @core.Vec3::zero(),
+          n.scale(-1.0F),
+          @core.Vec3::zero(),
+          n,
+          imp,
+        )
+      }
+    }
+  }
+
+  for i in 0..<self.generic.length() {
+    let gj = self.generic[i]
+    if !joint_pair_in_island(gj.body1, gj.body2, island_stamps, island_stamp) {
+      continue
+    }
+    if bodies.get(gj.body1) is Some(rb1) && bodies.get(gj.body2) is Some(rb2) {
+      let frame1 = rb1.position().mul(gj.data.local_frame1)
+      let frame2 = rb2.position().mul(gj.data.local_frame2)
+      let rot1 = frame1.rotation
+      let r1 = frame1.translation.sub(rb1.world_com())
+      let r2 = frame2.translation.sub(rb2.world_com())
+      let lock_impulses = self.generic_lock_impulses[i]
+      let limit_impulses = self.generic_limit_impulses[i]
+      let motor_impulses = self.generic_motor_impulses[i]
+      for axis_i in 0..<3 {
+        let n = rot1.rotate_vec3(axis_unit(axis_i))
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          n.scale(-1.0F),
+          r1.cross(n).scale(-1.0F),
+          n,
+          r2.cross(n),
+          lock_impulses[axis_i],
+        )
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          n.scale(-1.0F),
+          r1.cross(n).scale(-1.0F),
+          n,
+          r2.cross(n),
+          limit_impulses[axis_i],
+        )
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          n.scale(-1.0F),
+          r1.cross(n).scale(-1.0F),
+          n,
+          r2.cross(n),
+          motor_impulses[axis_i],
+        )
+      }
+      for axis_i in 0..<3 {
+        let n = rot1.rotate_vec3(axis_unit(axis_i))
+        let idx = 3 + axis_i
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          @core.Vec3::zero(),
+          n.scale(-1.0F),
+          @core.Vec3::zero(),
+          n,
+          lock_impulses[idx],
+        )
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          @core.Vec3::zero(),
+          n.scale(-1.0F),
+          @core.Vec3::zero(),
+          n,
+          limit_impulses[idx],
+        )
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          @core.Vec3::zero(),
+          n.scale(-1.0F),
+          @core.Vec3::zero(),
+          n,
+          motor_impulses[idx],
+        )
+      }
+      if gj.data.coupled_axes.contains(JointAxesMask3DReal::lin_y()) &&
+        gj.data.coupled_axes.contains(JointAxesMask3DReal::lin_z()) {
+        let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+        let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+        let n = ay.sub(az)
+        apply_row_impulse3(
+          rb1,
+          rb2,
+          n.scale(-1.0F),
+          r1.cross(n).scale(-1.0F),
+          n,
+          r2.cross(n),
+          self.generic_coupled_impulses[i],
+        )
+      }
+    }
+  }
+
+  for i in 0..<self.springs.length() {
+    let s = self.springs[i]
+    if !joint_pair_in_island(s.body1, s.body2, island_stamps, island_stamp) {
+      continue
+    }
+    if bodies.get(s.body1) is Some(b1) && bodies.get(s.body2) is Some(b2) {
+      let p1 = b1.position().transform_point(s.local_anchor1)
+      let p2 = b2.position().transform_point(s.local_anchor2)
+      let delta = p2.sub(p1)
+      if delta.length_squared() <= JOINT_SOLVER_EPSILON_3D_REAL {
+        continue
+      }
+      let dir = normalized_or_default(delta)
+      let r1 = p1.sub(b1.world_com())
+      let r2 = p2.sub(b2.world_com())
+      apply_row_impulse3(
+        b1,
+        b2,
+        dir.scale(-1.0F),
+        r1.cross(dir).scale(-1.0F),
+        dir,
+        r2.cross(dir),
+        self.spring_impulses[i],
+      )
+    }
+  }
+
   for _ in 0..<iters {
-    // Spherical (ball) joints.
     for i in 0..<self.spherical.length() {
       let j = self.spherical[i]
       if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
@@ -644,16 +1038,37 @@ pub fn JointSet3DReal::solve_with_island_stamp(
       if bodies.get(j.body1) is Some(b1) && bodies.get(j.body2) is Some(b2) {
         let p1 = b1.position().transform_point(j.local_anchor1)
         let p2 = b2.position().transform_point(j.local_anchor2)
-        let err = p2.sub(p1)
-        if err.length_squared() <= 1.0e-10F {
-          continue
+        let error = p2.sub(p1)
+        let r1 = p1.sub(b1.world_com())
+        let r2 = p2.sub(b2.world_com())
+        let mut impulse = self.spherical_impulses[i]
+        for axis_i in 0..<3 {
+          let axis = axis_unit(axis_i)
+          let bias = baumgarte_bias3(
+            dt,
+            axis_value_from_vec3(error, axis_i),
+            1.0F,
+          )
+          let curr = axis_value_from_vec3(impulse, axis_i)
+          let next = solve_row_impulse3(
+            b1,
+            b2,
+            axis.scale(-1.0F),
+            r1.cross(axis).scale(-1.0F),
+            axis,
+            r2.cross(axis),
+            bias,
+            0.0F,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            curr,
+          )
+          impulse = set_axis_value_vec3(impulse, axis_i, next)
         }
-        solve_pair_translation(b1, b2, err)
-        damp_pair_along(b1, b2, normalized_or_default(err), 0.25F)
+        self.spherical_impulses[i] = impulse
       }
     }
 
-    // Prismatic joints (positional; only the translation constraints are enforced here).
     for i in 0..<self.prismatic.length() {
       let j = self.prismatic[i]
       if !joint_pair_in_island(j.body1, j.body2, island_stamps, island_stamp) {
@@ -666,68 +1081,132 @@ pub fn JointSet3DReal::solve_with_island_stamp(
           b1.rotation().rotate_vec3(j.local_axis1),
         )
         let diff = p2.sub(p1)
-
-        // Lock the 2 translations orthogonal to `axis`.
-        let along = axis.scale(diff.dot(axis))
-        let perp = diff.sub(along)
-        if perp.length_squared() > 1.0e-10F {
-          solve_pair_translation(b1, b2, perp)
-          damp_pair_along(b1, b2, normalized_or_default(perp), 0.25F)
+        let (t1, t2) = orthonormal_basis3(axis)
+        let lock_axes : Array[@core.Vec3] = [t1, t2]
+        let r1 = p1.sub(b1.world_com())
+        let r2 = p2.sub(b2.world_com())
+        let mut lock_impulses = self.prismatic_lock_impulses[i]
+        for axis_i in 0..<2 {
+          let n = lock_axes[axis_i]
+          let bias = baumgarte_bias3(dt, diff.dot(n), 1.0F)
+          let curr = axis_value_from_vec2(lock_impulses, axis_i)
+          let next = solve_row_impulse3(
+            b1,
+            b2,
+            n.scale(-1.0F),
+            r1.cross(n).scale(-1.0F),
+            n,
+            r2.cross(n),
+            bias,
+            0.0F,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            curr,
+          )
+          lock_impulses = set_axis_value_vec2(lock_impulses, axis_i, next)
         }
+        self.prismatic_lock_impulses[i] = lock_impulses
 
-        // Optional motor position along the axis.
+        let rel_rot = shortest_quat(b1.rotation().inverse().mul(b2.rotation()))
+        let ang_error_local = rel_rot.to_scaled_axis()
+        let mut angular_impulses = self.prismatic_angular_impulses[i]
+        for axis_i in 0..<3 {
+          let n = b1.rotation().rotate_vec3(axis_unit(axis_i))
+          let bias = baumgarte_bias3(
+            dt,
+            axis_value_from_vec3(ang_error_local, axis_i),
+            1.0F,
+          )
+          let curr = axis_value_from_vec3(angular_impulses, axis_i)
+          let next = solve_row_impulse3(
+            b1,
+            b2,
+            @core.Vec3::zero(),
+            n.scale(-1.0F),
+            @core.Vec3::zero(),
+            n,
+            bias,
+            0.0F,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            curr,
+          )
+          angular_impulses = set_axis_value_vec3(angular_impulses, axis_i, next)
+        }
+        self.prismatic_angular_impulses[i] = angular_impulses
+
         if j.motor_enabled {
-          let s = diff.dot(axis)
-          let err = s - j.motor_target
-          // Scale to a unitless compliance factor. This is not a physical model, just a stable knob
-          // that matches the typical stiffness range used in the reference examples.
-          let k = @core.clamp(j.motor_stiffness * 10.0F, 0.0F, 1.0F)
-          if @core.abs(err) > 1.0e-6F && k > 0.0F {
-            solve_pair_translation(b1, b2, axis.scale(err * k))
-          }
-          // Damp along the axis using the provided damping coefficient.
-          let c = @core.clamp(j.motor_damping, 0.0F, 1.0F)
-          if c > 0.0F && inv_dt > 0.0F {
-            // The factor scales the velocity correction and is intentionally small.
-            damp_pair_along(b1, b2, axis, c * 0.25F)
-          }
+          let err = diff.dot(axis) - j.motor_target
+          let stiffness_scale = clamp_real(
+            j.motor_stiffness * 0.01F,
+            0.0F,
+            1.0F,
+          )
+          let damping_scale = clamp_real(j.motor_damping * 0.01F, 0.0F, 1.0F)
+          let bias = baumgarte_bias3(dt, err, stiffness_scale)
+          let target_vel = -damping_scale * err
+          self.prismatic_motor_impulses[i] = solve_row_impulse3(
+            b1,
+            b2,
+            axis.scale(-1.0F),
+            r1.cross(axis).scale(-1.0F),
+            axis,
+            r2.cross(axis),
+            bias,
+            target_vel,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            self.prismatic_motor_impulses[i],
+          )
+        } else {
+          self.prismatic_motor_impulses[i] = 0.0F
         }
       }
     }
 
-    // Spherical angular motors (very approximate).
     for i in 0..<self.spherical_motors.length() {
       let m = self.spherical_motors[i]
       if !joint_pair_in_island(m.body1, m.body2, island_stamps, island_stamp) {
         continue
       }
       if bodies.get(m.body1) is Some(b1) && bodies.get(m.body2) is Some(b2) {
-        if !b2.body_type().is_dynamic() {
-          continue
-        }
         let q1 = b1.rotation()
         let q2 = b2.rotation()
         let curr_rel = q1.inverse().mul(q2)
-        let err = m.target_rel_rotation.mul(curr_rel.inverse())
-        let axis_err = err.to_scaled_axis()
-        if axis_err.length_squared() <= 1.0e-12F {
-          continue
+        let err_local = shortest_quat(
+          m.target_rel_rotation.mul(curr_rel.inverse()),
+        ).to_scaled_axis()
+        let stiffness_scale = clamp_real(m.stiffness * 0.01F, 0.0F, 1.0F)
+        let damping_scale = clamp_real(m.damping * 0.01F, 0.0F, 1.0F)
+        let mut impulses = self.spherical_motor_impulses[i]
+        for axis_i in 0..<3 {
+          let n = q1.rotate_vec3(axis_unit(axis_i))
+          let err = axis_value_from_vec3(err_local, axis_i)
+          let bias = baumgarte_bias3(
+            dt,
+            err,
+            clamp_real(stiffness_scale + damping_scale, 0.0F, 1.0F),
+          )
+          let curr = axis_value_from_vec3(impulses, axis_i)
+          let next = solve_row_impulse3(
+            b1,
+            b2,
+            @core.Vec3::zero(),
+            n.scale(-1.0F),
+            @core.Vec3::zero(),
+            n,
+            bias,
+            0.0F,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            curr,
+          )
+          impulses = set_axis_value_vec3(impulses, axis_i, next)
         }
-        let k = @core.clamp(m.stiffness * dt * 0.01F, 0.0F, 0.5F)
-        if k > 0.0F {
-          let dq = @core.rotation_from_scaled_axis(axis_err.scale(k))
-          b2.set_rotation(dq.mul(q2))
-          b2.wake_up()
-        }
-        let c = @core.clamp(m.damping, 0.0F, 1.0F)
-        if c > 0.0F {
-          // Damp angular velocity in proportion to the current error direction.
-          b2.set_angvel(b2.angvel().sub(axis_err.scale(c * 0.1F)))
-        }
+        self.spherical_motor_impulses[i] = impulses
       }
     }
 
-    // Generic joints (axis locks/limits/motors).
     for i in 0..<self.generic.length() {
       let gj = self.generic[i]
       if !joint_pair_in_island(gj.body1, gj.body2, island_stamps, island_stamp) {
@@ -740,193 +1219,256 @@ pub fn JointSet3DReal::solve_with_island_stamp(
         let rot1_inv = rot1.inverse()
         let diff_world = frame2.translation.sub(frame1.translation)
         let diff_local = rot1_inv.rotate_vec3(diff_world)
-
-        // Coupled LIN_Y/LIN_Z (like rapier's `coupled_axes(LIN_Y | LIN_Z)`).
+        let r1 = frame1.translation.sub(rb1.world_com())
+        let r2 = frame2.translation.sub(rb2.world_com())
+        let lock_impulses = self.generic_lock_impulses[i]
+        let limit_impulses = self.generic_limit_impulses[i]
+        let motor_impulses = self.generic_motor_impulses[i]
         let coupled = gj.data.coupled_axes
         if coupled.contains(JointAxesMask3DReal::lin_y()) &&
           coupled.contains(JointAxesMask3DReal::lin_z()) {
           let err = diff_local.y - diff_local.z
-          if @core.abs(err) > 1.0e-6F {
-            let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-            let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
-            solve_pair_translation(
-              rb1,
-              rb2,
-              ay.scale(err * 0.5F).add(az.scale(-err * 0.5F)),
-            )
-          }
+          let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+          let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+          let n = ay.sub(az)
+          let bias = baumgarte_bias3(dt, err, 1.0F)
+          self.generic_coupled_impulses[i] = solve_row_impulse3(
+            rb1,
+            rb2,
+            n.scale(-1.0F),
+            r1.cross(n).scale(-1.0F),
+            n,
+            r2.cross(n),
+            bias,
+            0.0F,
+            -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+            self.generic_coupled_impulses[i],
+          )
+        } else {
+          self.generic_coupled_impulses[i] = 0.0F
         }
 
-        // Linear constraints + motors.
         for axis_i in 0..<3 {
           let state = gj.data.axis_states[axis_i]
           let comp = axis_value_from_vec3(diff_local, axis_i)
           let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
           match state {
             AxisState3DReal::Locked =>
-              if @core.abs(comp) > 1.0e-6F {
-                solve_pair_translation(rb1, rb2, axis_w.scale(comp))
+              lock_impulses[axis_i] = solve_row_impulse3(
+                rb1,
+                rb2,
+                axis_w.scale(-1.0F),
+                r1.cross(axis_w).scale(-1.0F),
+                axis_w,
+                r2.cross(axis_w),
+                baumgarte_bias3(dt, comp, 1.0F),
+                0.0F,
+                -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                lock_impulses[axis_i],
+              )
+            AxisState3DReal::Limited(min, max) =>
+              if comp < min - 1.0e-6F {
+                limit_impulses[axis_i] = solve_row_impulse3(
+                  rb1,
+                  rb2,
+                  axis_w.scale(-1.0F),
+                  r1.cross(axis_w).scale(-1.0F),
+                  axis_w,
+                  r2.cross(axis_w),
+                  baumgarte_bias3(dt, comp - min, 1.0F),
+                  0.0F,
+                  0.0F,
+                  JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                  limit_impulses[axis_i],
+                )
+              } else if comp > max + 1.0e-6F {
+                limit_impulses[axis_i] = solve_row_impulse3(
+                  rb1,
+                  rb2,
+                  axis_w.scale(-1.0F),
+                  r1.cross(axis_w).scale(-1.0F),
+                  axis_w,
+                  r2.cross(axis_w),
+                  baumgarte_bias3(dt, comp - max, 1.0F),
+                  0.0F,
+                  -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                  0.0F,
+                  limit_impulses[axis_i],
+                )
+              } else {
+                limit_impulses[axis_i] = 0.0F
               }
-            AxisState3DReal::Limited(min, max) => {
-              let clamped = clamp_real(comp, min, max)
-              let err = comp - clamped
-              if @core.abs(err) > 1.0e-6F {
-                solve_pair_translation(rb1, rb2, axis_w.scale(err))
-              }
-            }
-            AxisState3DReal::Free => ()
+            AxisState3DReal::Free => lock_impulses[axis_i] = 0.0F
           }
 
-          // Motors apply even on free/limited axes.
           match gj.data.motors[axis_i] {
-            MotorState3DReal::Disabled => ()
+            MotorState3DReal::Disabled => motor_impulses[axis_i] = 0.0F
             MotorState3DReal::Position(target, stiffness, damping, max_force) => {
               let err = comp - target
-              let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
-              if @core.abs(err) > 1.0e-6F && k > 0.0F {
-                let max_corr = max_force * dt * 0.001F
-                let corr = clamp_real(err * k, -max_corr, max_corr)
-                solve_pair_translation(rb1, rb2, axis_w.scale(corr))
+              let stiffness_scale = clamp_real(stiffness * 0.01F, 0.0F, 1.0F)
+              let damping_scale = clamp_real(damping * 0.01F, 0.0F, 1.0F)
+              let max_impulse = if max_force > 0.0F {
+                max_force * dt
+              } else {
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL
               }
-              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
-              if c > 0.0F {
-                damp_pair_along(rb1, rb2, axis_w, c * 0.25F)
-              }
+              motor_impulses[axis_i] = solve_row_impulse3(
+                rb1,
+                rb2,
+                axis_w.scale(-1.0F),
+                r1.cross(axis_w).scale(-1.0F),
+                axis_w,
+                r2.cross(axis_w),
+                baumgarte_bias3(
+                  dt,
+                  err,
+                  clamp_real(stiffness_scale + damping_scale, 0.0F, 1.0F),
+                ),
+                0.0F,
+                -max_impulse,
+                max_impulse,
+                motor_impulses[axis_i],
+              )
             }
             MotorState3DReal::Velocity(target_vel, damping, max_force) => {
-              let rel = rb2.linvel().sub(rb1.linvel()).dot(axis_w)
-              let err = rel - target_vel
-              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
-              if @core.abs(err) > 1.0e-6F {
-                // Velocity correction is intentionally mild to avoid instability.
-                let dv = axis_w.scale(err * clamp_real(0.25F + c, 0.25F, 1.0F))
-                let inv_m1 = inv_mass3(rb1)
-                let inv_m2 = inv_mass3(rb2)
-                let inv_sum = inv_m1 + inv_m2
-                if inv_sum > 0.0F {
-                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-                  let max_dv = if max_force > 0.0F {
-                    max_force * dt / inv_sum
-                  } else {
-                    0.0F
-                  }
-                  let dv_mag = dv.length()
-                  let dv_clamped = if max_dv > 0.0F && dv_mag > max_dv {
-                    dv.scale(max_dv / dv_mag)
-                  } else {
-                    dv
-                  }
-                  if inv_m1 > 0.0F {
-                    rb1.set_linvel(rb1.linvel().add(dv_clamped.scale(w1)))
-                  }
-                  if inv_m2 > 0.0F {
-                    rb2.set_linvel(rb2.linvel().sub(dv_clamped.scale(w2)))
-                  }
-                }
+              let max_impulse = if max_force > 0.0F {
+                max_force * dt
+              } else {
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL
               }
+              motor_impulses[axis_i] = solve_row_impulse3(
+                rb1,
+                rb2,
+                axis_w.scale(-1.0F),
+                r1.cross(axis_w).scale(-1.0F),
+                axis_w,
+                r2.cross(axis_w),
+                0.0F,
+                target_vel * clamp_real(1.0F - damping * 0.01F, 0.0F, 1.0F),
+                -max_impulse,
+                max_impulse,
+                motor_impulses[axis_i],
+              )
             }
           }
         }
 
-        // Angular constraints + motors (approximate; uses scaled-axis in the joint frame).
-        // Follow Rapier's convention: use the quaternion imaginary components (sin(theta/2) * axis)
-        // as the per-axis angular coordinates, and keep the shortest-arc representation.
-        let q_rel = shortest_quat(
+        let ang_local = shortest_quat(
           frame1.rotation.inverse().mul(frame2.rotation),
-        )
-        let ang_sin_local = q_rel.imag()
+        ).to_scaled_axis()
         for axis_i in 0..<3 {
           let state = gj.data.axis_states[3 + axis_i]
-          let comp_s = axis_value_from_vec3(ang_sin_local, axis_i)
+          let idx = 3 + axis_i
+          let comp = axis_value_from_vec3(ang_local, axis_i)
           let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
           match state {
             AxisState3DReal::Locked =>
-              if @core.abs(comp_s) > 1.0e-6F {
-                // Small-angle: sin(theta/2) ~= theta/2.
-                solve_pair_rotation(rb1, rb2, axis_w.scale(comp_s * 2.0F))
+              lock_impulses[idx] = solve_row_impulse3(
+                rb1,
+                rb2,
+                @core.Vec3::zero(),
+                axis_w.scale(-1.0F),
+                @core.Vec3::zero(),
+                axis_w,
+                baumgarte_bias3(dt, comp, 1.0F),
+                0.0F,
+                -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                lock_impulses[idx],
+              )
+            AxisState3DReal::Limited(min, max) =>
+              if comp < min - 1.0e-6F {
+                limit_impulses[idx] = solve_row_impulse3(
+                  rb1,
+                  rb2,
+                  @core.Vec3::zero(),
+                  axis_w.scale(-1.0F),
+                  @core.Vec3::zero(),
+                  axis_w,
+                  baumgarte_bias3(dt, comp - min, 1.0F),
+                  0.0F,
+                  0.0F,
+                  JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                  limit_impulses[idx],
+                )
+              } else if comp > max + 1.0e-6F {
+                limit_impulses[idx] = solve_row_impulse3(
+                  rb1,
+                  rb2,
+                  @core.Vec3::zero(),
+                  axis_w.scale(-1.0F),
+                  @core.Vec3::zero(),
+                  axis_w,
+                  baumgarte_bias3(dt, comp - max, 1.0F),
+                  0.0F,
+                  -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+                  0.0F,
+                  limit_impulses[idx],
+                )
+              } else {
+                limit_impulses[idx] = 0.0F
               }
-            AxisState3DReal::Limited(min, max) => {
-              let smin = @core.sin(min * 0.5F)
-              let smax = @core.sin(max * 0.5F)
-              let clamped = clamp_real(comp_s, smin, smax)
-              let err = comp_s - clamped
-              if @core.abs(err) > 1.0e-6F {
-                solve_pair_rotation(rb1, rb2, axis_w.scale(err * 2.0F))
-              }
-            }
-            AxisState3DReal::Free => ()
+            AxisState3DReal::Free => lock_impulses[idx] = 0.0F
           }
-          match gj.data.motors[3 + axis_i] {
-            MotorState3DReal::Disabled => ()
+          match gj.data.motors[idx] {
+            MotorState3DReal::Disabled => motor_impulses[idx] = 0.0F
             MotorState3DReal::Position(target, stiffness, damping, max_force) => {
-              let s_clamped = clamp_real(comp_s, -1.0F, 1.0F)
-              let ang_dist = @core.asin(s_clamped) * 2.0F
-              let diff = shortest_angle_diff(ang_dist, target)
-              let k = clamp_real(stiffness * dt * 0.001F, 0.0F, 0.5F)
-              if @core.abs(diff) > 1.0e-6F && k > 0.0F {
-                let max_corr = max_force * dt * 0.001F
-                let corr = clamp_real(diff * k, -max_corr, max_corr)
-                solve_pair_rotation(rb1, rb2, axis_w.scale(corr))
+              let diff = shortest_angle_diff(comp, target)
+              let stiffness_scale = clamp_real(stiffness * 0.01F, 0.0F, 1.0F)
+              let damping_scale = clamp_real(damping * 0.01F, 0.0F, 1.0F)
+              let max_impulse = if max_force > 0.0F {
+                max_force * dt
+              } else {
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL
               }
-              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
-              if c > 0.0F {
-                // Rough angular damping along the axis.
-                let rel = rb2.angvel().sub(rb1.angvel()).dot(axis_w)
-                let dw = axis_w.scale(rel * c * 0.25F)
-                let inv_m1 = inv_mass3(rb1)
-                let inv_m2 = inv_mass3(rb2)
-                let inv_sum = inv_m1 + inv_m2
-                if inv_sum > 0.0F {
-                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-                  if inv_m1 > 0.0F {
-                    rb1.set_angvel(rb1.angvel().add(dw.scale(w1)))
-                  }
-                  if inv_m2 > 0.0F {
-                    rb2.set_angvel(rb2.angvel().sub(dw.scale(w2)))
-                  }
-                }
-              }
+              motor_impulses[idx] = solve_row_impulse3(
+                rb1,
+                rb2,
+                @core.Vec3::zero(),
+                axis_w.scale(-1.0F),
+                @core.Vec3::zero(),
+                axis_w,
+                baumgarte_bias3(
+                  dt,
+                  diff,
+                  clamp_real(stiffness_scale + damping_scale, 0.0F, 1.0F),
+                ),
+                0.0F,
+                -max_impulse,
+                max_impulse,
+                motor_impulses[idx],
+              )
             }
             MotorState3DReal::Velocity(target_vel, damping, max_force) => {
-              let rel = rb2.angvel().sub(rb1.angvel()).dot(axis_w)
-              let err = rel - target_vel
-              let c = clamp_real(damping * dt * 0.01F, 0.0F, 1.0F)
-              if @core.abs(err) > 1.0e-6F {
-                let dw = axis_w.scale(err * clamp_real(0.25F + c, 0.25F, 1.0F))
-                let inv_m1 = inv_mass3(rb1)
-                let inv_m2 = inv_mass3(rb2)
-                let inv_sum = inv_m1 + inv_m2
-                if inv_sum > 0.0F {
-                  let w1 = if inv_m1 > 0.0F { inv_m1 / inv_sum } else { 0.0F }
-                  let w2 = if inv_m2 > 0.0F { inv_m2 / inv_sum } else { 0.0F }
-                  let max_dw = if max_force > 0.0F {
-                    max_force * dt / inv_sum
-                  } else {
-                    0.0F
-                  }
-                  let dw_mag = dw.length()
-                  let dw_clamped = if max_dw > 0.0F && dw_mag > max_dw {
-                    dw.scale(max_dw / dw_mag)
-                  } else {
-                    dw
-                  }
-                  if inv_m1 > 0.0F {
-                    rb1.set_angvel(rb1.angvel().add(dw_clamped.scale(w1)))
-                  }
-                  if inv_m2 > 0.0F {
-                    rb2.set_angvel(rb2.angvel().sub(dw_clamped.scale(w2)))
-                  }
-                }
+              let max_impulse = if max_force > 0.0F {
+                max_force * dt
+              } else {
+                JOINT_SOLVER_MAX_IMPULSE_3D_REAL
               }
+              motor_impulses[idx] = solve_row_impulse3(
+                rb1,
+                rb2,
+                @core.Vec3::zero(),
+                axis_w.scale(-1.0F),
+                @core.Vec3::zero(),
+                axis_w,
+                0.0F,
+                target_vel * clamp_real(1.0F - damping * 0.01F, 0.0F, 1.0F),
+                -max_impulse,
+                max_impulse,
+                motor_impulses[idx],
+              )
             }
           }
         }
+        self.generic_lock_impulses[i] = lock_impulses
+        self.generic_limit_impulses[i] = limit_impulses
+        self.generic_motor_impulses[i] = motor_impulses
       }
     }
 
-    // Spring joints (distance constraint with compliance).
     for i in 0..<self.springs.length() {
       let s = self.springs[i]
       if !joint_pair_in_island(s.body1, s.body2, island_stamps, island_stamp) {
@@ -935,22 +1477,35 @@ pub fn JointSet3DReal::solve_with_island_stamp(
       if bodies.get(s.body1) is Some(b1) && bodies.get(s.body2) is Some(b2) {
         let p1 = b1.position().transform_point(s.local_anchor1)
         let p2 = b2.position().transform_point(s.local_anchor2)
-        let d = p2.sub(p1)
-        let dist2 = d.length_squared()
-        if dist2 <= 1.0e-12F {
+        let delta = p2.sub(p1)
+        let dist2 = delta.length_squared()
+        if dist2 <= JOINT_SOLVER_EPSILON_3D_REAL {
           continue
         }
         let dist = Float::sqrt(dist2)
         let err = dist - s.rest_length
-        let dir = d.scale(1.0F / dist)
-        let k = clamp_real(s.stiffness * dt * 0.001F, 0.0F, 0.5F)
-        if @core.abs(err) > 1.0e-6F && k > 0.0F {
-          solve_pair_translation(b1, b2, dir.scale(err * k))
-        }
-        let c = clamp_real(s.damping * dt * 0.01F, 0.0F, 1.0F)
-        if c > 0.0F {
-          damp_pair_along(b1, b2, dir, c)
-        }
+        let dir = delta.scale(1.0F / dist)
+        let r1 = p1.sub(b1.world_com())
+        let r2 = p2.sub(b2.world_com())
+        let stiffness_scale = clamp_real(s.stiffness * 0.01F, 0.0F, 1.0F)
+        let damping_scale = clamp_real(s.damping * 0.01F, 0.0F, 1.0F)
+        self.spring_impulses[i] = solve_row_impulse3(
+          b1,
+          b2,
+          dir.scale(-1.0F),
+          r1.cross(dir).scale(-1.0F),
+          dir,
+          r2.cross(dir),
+          baumgarte_bias3(
+            dt,
+            err,
+            clamp_real(stiffness_scale + damping_scale, 0.0F, 1.0F),
+          ),
+          0.0F,
+          -JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+          JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
+          self.spring_impulses[i],
+        )
       }
     }
   }
