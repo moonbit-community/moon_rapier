@@ -77,7 +77,7 @@ test "rapier3d multibody reexports expose real 3d API" {
     RevoluteJointBuilder::new(Vec3::new(0.0F, 1.0F, 0.0F))
     .local_anchor2(Vec3::new(0.0F, 0.0F, -1.0F))
     .build(),
-  )
+  ).to_3d_real()
   let inserted = joints.insert(root, child, joint, true)
   if inserted is Some(handle) {
     if joints.get_mut(handle) is Some((multibody, link)) {

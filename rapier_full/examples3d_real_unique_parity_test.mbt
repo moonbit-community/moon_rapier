@@ -433,8 +433,7 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder3::new(axis_z)
+    let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
       .local_anchor1(
         @core.Vec3::new(
           0.0F,
@@ -443,8 +442,7 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
         ),
       )
       .local_anchor2(@core.Vec3::new(0.0F, -size / 2.0F, 0.0F))
-      .build(),
-    )
+      .build()
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
       last_link = handle
     } else {

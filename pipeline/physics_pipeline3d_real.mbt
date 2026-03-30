@@ -551,20 +551,27 @@ fn filter_broad_phase_pairs_3d(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   joints : @dynamics.JointSet3DReal?,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] {
   let mut disabled : @hashmap.HashMap[(Int, Int, Int, Int), Bool]? = None
+  let disabled_body_pairs : Array[
+    (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
+  ] = []
   if joints is Some(js) {
-    let disabled_body_pairs = js.disabled_contact_pairs()
-    if disabled_body_pairs.length() > 0 {
-      let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
-        capacity=disabled_body_pairs.length() * 2,
-      )
-      for p in disabled_body_pairs {
-        out.set(rb_pair_key_3d(p.0, p.1), true)
-      }
-      disabled = Some(out)
+    disabled_body_pairs.append(js.disabled_contact_pairs()[:])
+  }
+  if multibody_joints is Some(multibody) {
+    disabled_body_pairs.append(multibody.disabled_contact_pairs()[:])
+  }
+  if disabled_body_pairs.length() > 0 {
+    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
+      capacity=disabled_body_pairs.length() * 2,
+    )
+    for p in disabled_body_pairs {
+      out.set(rb_pair_key_3d(p.0, p.1), true)
     }
+    disabled = Some(out)
   }
   let filtered : Array[
     (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
@@ -631,6 +638,7 @@ pub fn PhysicsPipeline3DReal::step(
     None,
     None,
     None,
+    None,
   )
 }
 
@@ -655,6 +663,7 @@ pub fn PhysicsPipeline3DReal::step_with_hooks(
     narrow_phase,
     bodies,
     colliders,
+    None,
     None,
     None,
     None,
@@ -687,6 +696,7 @@ pub fn PhysicsPipeline3DReal::step_with_events(
     None,
     None,
     None,
+    None,
   )
 }
 
@@ -713,6 +723,7 @@ pub fn PhysicsPipeline3DReal::step_with_events_and_hooks(
     bodies,
     colliders,
     Some(events),
+    None,
     None,
     None,
     Some(hooks),
@@ -746,6 +757,7 @@ pub fn PhysicsPipeline3DReal::step_with_events_and_joints(
     Some(rope_joints),
     Some(joints),
     None,
+    None,
   )
 }
 
@@ -776,6 +788,72 @@ pub fn PhysicsPipeline3DReal::step_with_events_joints_and_hooks(
     Some(events),
     Some(rope_joints),
     Some(joints),
+    None,
+    Some(hooks),
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_and_joint_sets(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    Some(multibody_joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_joint_sets_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  rope_joints : @dynamics.RopeJointSet3DReal,
+  joints : @dynamics.JointSet3DReal,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    Some(rope_joints),
+    Some(joints),
+    Some(multibody_joints),
     Some(hooks),
   )
 }
@@ -803,6 +881,7 @@ pub fn PhysicsPipeline3DReal::step_with_rope_joints(
     colliders,
     None,
     Some(rope_joints),
+    None,
     None,
     None,
   )
@@ -833,6 +912,7 @@ pub fn PhysicsPipeline3DReal::step_with_rope_joints_and_hooks(
     None,
     Some(rope_joints),
     None,
+    None,
     Some(hooks),
   )
 }
@@ -862,6 +942,7 @@ pub fn PhysicsPipeline3DReal::step_with_joints(
     None,
     Some(joints),
     None,
+    None,
   )
 }
 
@@ -890,6 +971,127 @@ pub fn PhysicsPipeline3DReal::step_with_joints_and_hooks(
     None,
     None,
     Some(joints),
+    None,
+    Some(hooks),
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_multibody_joints(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    None,
+    None,
+    Some(multibody_joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_multibody_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    None,
+    None,
+    None,
+    Some(multibody_joints),
+    Some(hooks),
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_and_multibody_joints(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    None,
+    None,
+    Some(multibody_joints),
+    None,
+  )
+}
+
+///|
+pub fn PhysicsPipeline3DReal::step_with_events_multibody_joints_and_hooks(
+  self : PhysicsPipeline3DReal,
+  gravity : @core.Vec3,
+  parameters : @dynamics.IntegrationParameters,
+  islands : @dynamics.IslandManager3D,
+  broad_phase : @collision.BroadPhase3D,
+  narrow_phase : @collision.NarrowPhase3D,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : @collision.ColliderSet3D,
+  events : EventHandler3D,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal,
+  hooks : PhysicsHooks3D,
+) -> Unit {
+  PhysicsPipeline3DReal::step_impl(
+    self,
+    gravity,
+    parameters,
+    islands,
+    broad_phase,
+    narrow_phase,
+    bodies,
+    colliders,
+    Some(events),
+    None,
+    None,
+    Some(multibody_joints),
     Some(hooks),
   )
 }
@@ -907,6 +1109,7 @@ fn PhysicsPipeline3DReal::step_impl(
   events : EventHandler3D?,
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Unit {
   fn ceil_pos(x : @core.Real) -> Int {
@@ -921,6 +1124,17 @@ fn PhysicsPipeline3DReal::step_impl(
   let dt = parameters.dt
   if dt <= 0.0F {
     return
+  }
+  if multibody_joints is Some(multibody) {
+    let to_wake_up = multibody.take_wake_up()
+    for handle in to_wake_up {
+      if bodies.get(handle) is Some(body) {
+        body.wake_up()
+      }
+    }
+    multibody.take_to_join() |> ignore
+    multibody.sync_rigid_bodies_from_multibodies(bodies)
+    colliders.sync_with_bodies(bodies)
   }
   // Substep to reduce tunneling in the 3DReal backend.
   //
@@ -971,20 +1185,20 @@ fn PhysicsPipeline3DReal::step_impl(
       let p1 = parameters.with_dt(toi_step)
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, p1, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints, hooks,
+        events, rope_joints, joints, multibody_joints, hooks,
       )
       let rem = sub_dt - toi_step
       if rem > 0.0F {
         let p2 = parameters.with_dt(rem)
         PhysicsPipeline3DReal::step_impl_one(
           self, gravity, p2, islands, broad_phase, narrow_phase, bodies, colliders,
-          events, rope_joints, joints, hooks,
+          events, rope_joints, joints, multibody_joints, hooks,
         )
       }
     } else {
       PhysicsPipeline3DReal::step_impl_one(
         self, gravity, sub_params, islands, broad_phase, narrow_phase, bodies, colliders,
-        events, rope_joints, joints, hooks,
+        events, rope_joints, joints, multibody_joints, hooks,
       )
     }
   }
@@ -1003,6 +1217,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
   events : EventHandler3D?,
   rope_joints : @dynamics.RopeJointSet3DReal?,
   joints : @dynamics.JointSet3DReal?,
+  multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Unit {
   let dt = parameters.dt
@@ -1010,6 +1225,9 @@ fn PhysicsPipeline3DReal::step_impl_one(
   bodies.apply_damping_all(dt)
   bodies.apply_gyroscopic_forces_all(dt)
   bodies.update_kinematic_velocities_all(dt)
+  if multibody_joints is Some(multibody) {
+    multibody.sync_rigid_bodies_from_multibodies(bodies)
+  }
 
   // Sync colliders to body motion before detecting contacts.
   colliders.sync_with_bodies(bodies)
@@ -1020,6 +1238,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
     bodies,
     colliders,
     joints,
+    multibody_joints,
     hooks,
   )
   narrow_phase.update(pairs, bodies, colliders)
@@ -1053,6 +1272,10 @@ fn PhysicsPipeline3DReal::step_impl_one(
     js.solve(bodies, dt)
     applied_constraints = true
   }
+  if multibody_joints is Some(multibody) {
+    multibody.sync_rigid_bodies_from_multibodies(bodies)
+    applied_constraints = true
+  }
   if applied_constraints {
     colliders.sync_with_bodies(bodies)
   }
@@ -1069,6 +1292,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
       bodies,
       colliders,
       joints,
+      multibody_joints,
       hooks,
     )
     narrow_phase.update(pairs, bodies, colliders)

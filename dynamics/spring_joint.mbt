@@ -46,6 +46,11 @@ pub fn SpringJoint::data(self : SpringJoint) -> GenericJoint {
 }
 
 ///|
+pub fn GenericJoint::from_spring(joint : SpringJoint) -> GenericJoint {
+  joint.data
+}
+
+///|
 pub fn SpringJoint::contacts_enabled(self : SpringJoint) -> Bool {
   self.data.contacts_enabled()
 }

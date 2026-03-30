@@ -23,9 +23,7 @@ test "multibody append (dim3 real bodies)" {
   let b = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let c = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let d = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build(),
-  )
+  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
@@ -51,11 +49,9 @@ test "multibody jacobian cols match ndofs for dynamic root (dim3 real bodies)" {
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -0.5F))
-    .build(),
-  )
+    .build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, link_id)) {
@@ -81,9 +77,7 @@ test "multibody apply_displacements preserves dynamic root 3d dofs (real bodies)
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build(),
-  )
+  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, link_id)) {
@@ -125,11 +119,9 @@ test "multibody sync_rigid_bodies writes back full 3d poses" {
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
-    .build(),
-  )
+    .build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, _)) {

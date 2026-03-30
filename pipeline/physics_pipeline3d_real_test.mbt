@@ -361,6 +361,71 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
 }
 
 ///|
+test "physics_pipeline3d_real: multibody joints are part of step path" {
+  let pipeline = PhysicsPipeline3DReal::new()
+  let broad_phase = @collision.BroadPhase3D::new()
+  let narrow_phase = @collision.NarrowPhase3D::new()
+  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D::new()
+  let colliders = @collision.ColliderSet3D::new()
+  let handler = EventHandler3D::new()
+  let multibody_joints = @dynamics.MultibodyJointSet3DReal::new()
+  let gravity = @core.Vec3::zero()
+  let parameters = @dynamics.IntegrationParameters::default().set_dt(
+    1.0F / 60.0F,
+  )
+
+  let parent = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  let child = bodies.insert(
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .build(),
+  )
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.6F)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    parent,
+    bodies,
+  )
+  |> ignore
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder3D::ball(0.6F)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .build(),
+    child,
+    bodies,
+  )
+  |> ignore
+
+  if multibody_joints.insert(
+      parent,
+      child,
+      @dynamics.FixedJoint3DRealBuilder::new()
+      .local_anchor1(@core.Vec3::zero())
+      .local_anchor2(@core.Vec3::zero())
+      .build()
+      .to_generic_joint()
+      .set_contacts_enabled(false)
+      .to_3d_real(),
+      true,
+    )
+    is Some(_) {
+    pipeline.step_with_events_and_multibody_joints(
+      gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
+      handler, multibody_joints,
+    )
+    inspect(handler.take_collision_events().length() == 0, content="true")
+  } else {
+    inspect(false, content="true")
+  }
+}
+
+///|
 test "physics_pipeline3d_real: collision events for sensor intersections" {
   let pipeline = PhysicsPipeline3DReal::new()
   let broad_phase = @collision.BroadPhase3D::new()

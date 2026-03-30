@@ -1416,6 +1416,16 @@ pub fn GenericJoint::local_frame2(self : GenericJoint) -> @core.Isometry2 {
 }
 
 ///|
+pub fn GenericJoint::local_frame1_3(self : GenericJoint) -> @core.Isometry3 {
+  @core.Isometry3::new(self.local_anchor1_3, self.local_frame1_rotation)
+}
+
+///|
+pub fn GenericJoint::local_frame2_3(self : GenericJoint) -> @core.Isometry3 {
+  @core.Isometry3::new(self.local_anchor2_3, self.local_frame2_rotation)
+}
+
+///|
 pub fn GenericJoint::set_local_frame1(
   self : GenericJoint,
   frame : @core.Isometry2,
@@ -1428,6 +1438,21 @@ pub fn GenericJoint::set_local_frame1(
   )
   self.local_frame1_rotation = @core.rotation_from_scaled_axis(
     @core.Vec3::new(0.0F, 0.0F, frame.rotation.angle()),
+  )
+  self
+}
+
+///|
+pub fn GenericJoint::set_local_frame1_3(
+  self : GenericJoint,
+  frame : @core.Isometry3,
+) -> GenericJoint {
+  self.local_anchor1_3 = frame.translation
+  self.local_frame1_rotation = frame.rotation
+  self.axis3 = frame.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+  self.local_frame1 = @core.Isometry2::new(
+    @core.Vec2::new(frame.translation.x, frame.translation.y),
+    @core.Rot2::from_angle(frame.rotation.to_scaled_axis().z),
   )
   self
 }
@@ -1450,6 +1475,20 @@ pub fn GenericJoint::set_local_frame2(
 }
 
 ///|
+pub fn GenericJoint::set_local_frame2_3(
+  self : GenericJoint,
+  frame : @core.Isometry3,
+) -> GenericJoint {
+  self.local_anchor2_3 = frame.translation
+  self.local_frame2_rotation = frame.rotation
+  self.local_frame2 = @core.Isometry2::new(
+    @core.Vec2::new(frame.translation.x, frame.translation.y),
+    @core.Rot2::from_angle(frame.rotation.to_scaled_axis().z),
+  )
+  self
+}
+
+///|
 pub fn GenericJoint::local_anchor1(self : GenericJoint) -> @core.Vec2 {
   self.local_frame1.translation
 }
@@ -1457,6 +1496,16 @@ pub fn GenericJoint::local_anchor1(self : GenericJoint) -> @core.Vec2 {
 ///|
 pub fn GenericJoint::local_anchor2(self : GenericJoint) -> @core.Vec2 {
   self.local_frame2.translation
+}
+
+///|
+pub fn GenericJoint::local_anchor1_3(self : GenericJoint) -> @core.Vec3 {
+  self.local_anchor1_3
+}
+
+///|
+pub fn GenericJoint::local_anchor2_3(self : GenericJoint) -> @core.Vec3 {
+  self.local_anchor2_3
 }
 
 ///|
@@ -1474,6 +1523,19 @@ pub fn GenericJoint::set_local_anchor1(
 }
 
 ///|
+pub fn GenericJoint::set_local_anchor1_3(
+  self : GenericJoint,
+  anchor : @core.Vec3,
+) -> GenericJoint {
+  self.local_anchor1_3 = anchor
+  self.local_frame1 = @core.Isometry2::new(
+    @core.Vec2::new(anchor.x, anchor.y),
+    self.local_frame1.rotation,
+  )
+  self
+}
+
+///|
 pub fn GenericJoint::set_local_anchor2(
   self : GenericJoint,
   anchor : @core.Vec2,
@@ -1483,6 +1545,56 @@ pub fn GenericJoint::set_local_anchor2(
     anchor.x,
     anchor.y,
     self.local_anchor2_3.z,
+  )
+  self
+}
+
+///|
+pub fn GenericJoint::set_local_anchor2_3(
+  self : GenericJoint,
+  anchor : @core.Vec3,
+) -> GenericJoint {
+  self.local_anchor2_3 = anchor
+  self.local_frame2 = @core.Isometry2::new(
+    @core.Vec2::new(anchor.x, anchor.y),
+    self.local_frame2.rotation,
+  )
+  self
+}
+
+///|
+pub fn GenericJoint::local_frame1_rotation(self : GenericJoint) -> @core.Quat {
+  self.local_frame1_rotation
+}
+
+///|
+pub fn GenericJoint::local_frame2_rotation(self : GenericJoint) -> @core.Quat {
+  self.local_frame2_rotation
+}
+
+///|
+pub fn GenericJoint::set_local_frame1_rotation(
+  self : GenericJoint,
+  rotation : @core.Quat,
+) -> GenericJoint {
+  self.local_frame1_rotation = rotation
+  self.axis3 = rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+  self.local_frame1 = @core.Isometry2::new(
+    @core.Vec2::new(self.local_anchor1_3.x, self.local_anchor1_3.y),
+    @core.Rot2::from_angle(rotation.to_scaled_axis().z),
+  )
+  self
+}
+
+///|
+pub fn GenericJoint::set_local_frame2_rotation(
+  self : GenericJoint,
+  rotation : @core.Quat,
+) -> GenericJoint {
+  self.local_frame2_rotation = rotation
+  self.local_frame2 = @core.Isometry2::new(
+    @core.Vec2::new(self.local_anchor2_3.x, self.local_anchor2_3.y),
+    @core.Rot2::from_angle(rotation.to_scaled_axis().z),
   )
   self
 }

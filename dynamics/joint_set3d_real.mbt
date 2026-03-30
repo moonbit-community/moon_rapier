@@ -72,6 +72,132 @@ pub struct GenericJoint3DReal {
 }
 
 ///|
+fn generic_joint_axis_from_index(index : Int) -> JointAxis {
+  match index {
+    0 => JointAxis::LinX
+    1 => JointAxis::LinY
+    2 => JointAxis::LinZ
+    3 => JointAxis::AngX
+    4 => JointAxis::AngY
+    _ => JointAxis::AngZ
+  }
+}
+
+///|
+fn generic_joint_mask_from_index(index : Int) -> JointAxesMask {
+  JointAxesMask::new(1 << index)
+}
+
+///|
+fn axis_state_from_generic_joint(
+  joint : GenericJoint,
+  index : Int,
+) -> AxisState3DReal {
+  let axis = generic_joint_axis_from_index(index)
+  let mask = generic_joint_mask_from_index(index)
+  if joint.locked_axes().contains(mask) {
+    AxisState3DReal::Locked
+  } else if joint.limit_axes().contains(mask) {
+    let limits = joint_limits_for_axis(joint.limits(), axis)
+    AxisState3DReal::Limited(limits.min(), limits.max())
+  } else {
+    AxisState3DReal::Free
+  }
+}
+
+///|
+fn motor_state_from_generic_joint(
+  joint : GenericJoint,
+  index : Int,
+) -> MotorState3DReal {
+  let axis = generic_joint_axis_from_index(index)
+  let mask = generic_joint_mask_from_index(index)
+  if !joint.motor_axes().contains(mask) {
+    return MotorState3DReal::Disabled
+  }
+  let motor = joint_motor_for_axis(joint.motors(), axis)
+  if motor.stiffness != 0.0F || motor.target_pos != 0.0F {
+    MotorState3DReal::Position(
+      motor.target_pos,
+      motor.stiffness,
+      motor.damping,
+      motor.max_force,
+    )
+  } else {
+    MotorState3DReal::Velocity(motor.target_vel, motor.damping, motor.max_force)
+  }
+}
+
+///|
+pub fn GenericJoint::to_3d_real(self : GenericJoint) -> GenericJoint3DReal {
+  let axis_states : Array[AxisState3DReal] = []
+  let motors : Array[MotorState3DReal] = []
+  for index in 0..<6 {
+    axis_states.push(axis_state_from_generic_joint(self, index))
+    motors.push(motor_state_from_generic_joint(self, index))
+  }
+  GenericJoint3DReal::{
+    local_frame1: self.local_frame1_3(),
+    local_frame2: self.local_frame2_3(),
+    axis_states,
+    motors,
+    coupled_axes: JointAxesMask3DReal::new(self.coupled_axes().bits()),
+    contacts_enabled: self.contacts_enabled(),
+  }
+}
+
+///|
+pub fn GenericJoint::from_3d_real(joint : GenericJoint3DReal) -> GenericJoint {
+  let mut out = GenericJoint::default()
+    .set_local_frame1_3(joint.local_frame1)
+    .set_local_frame2_3(joint.local_frame2)
+    .set_coupled_axes(JointAxesMask::new(joint.coupled_axes.bits()))
+    .set_contacts_enabled(joint.contacts_enabled)
+  for index in 0..<6 {
+    let axis = generic_joint_axis_from_index(index)
+    let mask = generic_joint_mask_from_index(index)
+    let state = if index < joint.axis_states.length() {
+      joint.axis_states[index]
+    } else {
+      AxisState3DReal::Free
+    }
+    match state {
+      AxisState3DReal::Free => ()
+      AxisState3DReal::Locked =>
+        out = out.set_locked_axes(out.locked_axes().or(mask))
+      AxisState3DReal::Limited(min, max) =>
+        out = out
+          .set_limit_axes(out.limit_axes().or(mask))
+          .set_limits_axis(axis, min, max)
+    }
+    let motor = if index < joint.motors.length() {
+      joint.motors[index]
+    } else {
+      MotorState3DReal::Disabled
+    }
+    match motor {
+      MotorState3DReal::Disabled => ()
+      MotorState3DReal::Velocity(target_vel, damping, max_force) =>
+        out = out
+          .set_motor_velocity(axis, target_vel, damping)
+          .set_motor_max_force(axis, max_force)
+      MotorState3DReal::Position(target_pos, stiffness, damping, max_force) =>
+        out = out
+          .set_motor_position(axis, target_pos, stiffness, damping)
+          .set_motor_max_force(axis, max_force)
+    }
+  }
+  out
+}
+
+///|
+pub fn GenericJoint3DReal::to_generic_joint(
+  self : GenericJoint3DReal,
+) -> GenericJoint {
+  GenericJoint::from_3d_real(self)
+}
+
+///|
 /// Internal storage type for generic constraints in `JointSet3DReal`.
 pub struct GenericJointConstraint3DReal {
   body1 : RigidBodyHandle

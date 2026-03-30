@@ -150,19 +150,27 @@ pub fn GenericJoint::contacts_enabled(Self) -> Bool
 pub fn GenericJoint::coupled_axes(Self) -> JointAxesMask
 pub fn GenericJoint::default() -> Self
 pub fn GenericJoint::flip(Self) -> Self
+pub fn GenericJoint::from_3d_real(GenericJoint3DReal) -> Self
 pub fn GenericJoint::from_fixed(FixedJoint) -> Self
 pub fn GenericJoint::from_pin_slot(PinSlotJoint) -> Self
 pub fn GenericJoint::from_prismatic(PrismaticJoint) -> Self
 pub fn GenericJoint::from_revolute(RevoluteJoint) -> Self
 pub fn GenericJoint::from_rope(RopeJoint) -> Self
+pub fn GenericJoint::from_spring(SpringJoint) -> Self
 pub fn GenericJoint::is_enabled(Self) -> Bool
 pub fn GenericJoint::limit_axes(Self) -> JointAxesMask
 pub fn GenericJoint::limits(Self) -> JointLimits3
 pub fn GenericJoint::limits_axis(Self, JointAxis) -> JointLimits?
 pub fn GenericJoint::local_anchor1(Self) -> @core.Vec2
+pub fn GenericJoint::local_anchor1_3(Self) -> @core.Vec3
 pub fn GenericJoint::local_anchor2(Self) -> @core.Vec2
+pub fn GenericJoint::local_anchor2_3(Self) -> @core.Vec3
 pub fn GenericJoint::local_frame1(Self) -> @core.Isometry2
+pub fn GenericJoint::local_frame1_3(Self) -> @core.Isometry3
+pub fn GenericJoint::local_frame1_rotation(Self) -> @core.Quat
 pub fn GenericJoint::local_frame2(Self) -> @core.Isometry2
+pub fn GenericJoint::local_frame2_3(Self) -> @core.Isometry3
+pub fn GenericJoint::local_frame2_rotation(Self) -> @core.Quat
 pub fn GenericJoint::lock_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::locked_axes(Self) -> JointAxesMask
 pub fn GenericJoint::motor(Self, JointAxis) -> JointMotor?
@@ -178,9 +186,15 @@ pub fn GenericJoint::set_limit_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_limits(Self, JointLimits3) -> Self
 pub fn GenericJoint::set_limits_axis(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_local_anchor1(Self, @core.Vec2) -> Self
+pub fn GenericJoint::set_local_anchor1_3(Self, @core.Vec3) -> Self
 pub fn GenericJoint::set_local_anchor2(Self, @core.Vec2) -> Self
+pub fn GenericJoint::set_local_anchor2_3(Self, @core.Vec3) -> Self
 pub fn GenericJoint::set_local_frame1(Self, @core.Isometry2) -> Self
+pub fn GenericJoint::set_local_frame1_3(Self, @core.Isometry3) -> Self
+pub fn GenericJoint::set_local_frame1_rotation(Self, @core.Quat) -> Self
 pub fn GenericJoint::set_local_frame2(Self, @core.Isometry2) -> Self
+pub fn GenericJoint::set_local_frame2_3(Self, @core.Isometry3) -> Self
+pub fn GenericJoint::set_local_frame2_rotation(Self, @core.Quat) -> Self
 pub fn GenericJoint::set_locked_axes(Self, JointAxesMask) -> Self
 pub fn GenericJoint::set_motor(Self, JointAxis, Float, Float, Float, Float) -> Self
 pub fn GenericJoint::set_motor_axes(Self, JointAxesMask) -> Self
@@ -191,6 +205,7 @@ pub fn GenericJoint::set_motor_velocity(Self, JointAxis, Float, Float) -> Self
 pub fn GenericJoint::set_motors(Self, JointMotors3) -> Self
 pub fn GenericJoint::set_softness(Self, SpringCoefficients) -> Self
 pub fn GenericJoint::softness(Self) -> SpringCoefficients
+pub fn GenericJoint::to_3d_real(Self) -> GenericJoint3DReal
 
 pub struct GenericJoint3DReal {
   local_frame1 : @core.Isometry3
@@ -200,6 +215,7 @@ pub struct GenericJoint3DReal {
   coupled_axes : JointAxesMask3DReal
   contacts_enabled : Bool
 }
+pub fn GenericJoint3DReal::to_generic_joint(Self) -> GenericJoint
 
 pub struct GenericJoint3DRealBuilder {
   locked_axes : JointAxesMask3DReal
@@ -882,6 +898,7 @@ pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
 pub fn MultibodyJointSet3::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet3::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
 pub fn MultibodyJointSet3::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet3::disabled_contact_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3::get(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
 pub fn MultibodyJointSet3::get_multibody(Self, MultibodyIndex) -> Multibody3?
 pub fn MultibodyJointSet3::get_multibody_mut(Self, MultibodyIndex) -> Multibody3?
@@ -912,13 +929,14 @@ pub struct MultibodyJointSet3DReal {
 pub fn MultibodyJointSet3DReal::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet3DReal::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
 pub fn MultibodyJointSet3DReal::bodies_attached_with_enabled_joint(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
+pub fn MultibodyJointSet3DReal::disabled_contact_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3DReal::get(Self, MultibodyJointHandle) -> (Multibody3DReal, LinkId)?
 pub fn MultibodyJointSet3DReal::get_multibody(Self, MultibodyIndex) -> Multibody3DReal?
 pub fn MultibodyJointSet3DReal::get_multibody_mut(Self, MultibodyIndex) -> Multibody3DReal?
 pub fn MultibodyJointSet3DReal::get_mut(Self, MultibodyJointHandle) -> (Multibody3DReal, LinkId)?
 pub fn MultibodyJointSet3DReal::get_unknown_gen(Self, Int) -> (Multibody3DReal, LinkId, MultibodyJointHandle)?
-pub fn MultibodyJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
-pub fn MultibodyJointSet3DReal::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
+pub fn MultibodyJointSet3DReal::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3DReal::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody3DReal, MultibodyLink)]
 pub fn MultibodyJointSet3DReal::joint_between(Self, RigidBodyHandle, RigidBodyHandle) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)?
 pub fn MultibodyJointSet3DReal::multibodies(Self) -> Array[Multibody3DReal]

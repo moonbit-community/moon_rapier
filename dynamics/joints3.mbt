@@ -1012,6 +1012,30 @@ pub fn MultibodyJointSet3::take_to_join(
 }
 
 ///|
+pub fn MultibodyJointSet3::disabled_contact_pairs(
+  self : MultibodyJointSet3,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  let result : Array[(RigidBodyHandle, RigidBodyHandle)] = []
+  let items = self.multibodies.iter()
+  for i in 0..<items.length() {
+    let (_, mb) = items[i]
+    for link_id in 1..<mb.links.length() {
+      let link = mb.links[link_id]
+      let parent_id = link.parent_internal_id
+      if parent_id < 0 || parent_id >= mb.links.length() {
+        continue
+      }
+      if !link.joint.data.contacts_enabled() {
+        let parent = mb.links[parent_id].rigid_body
+        let child = link.rigid_body
+        result.push((parent, child))
+      }
+    }
+  }
+  result
+}
+
+///|
 pub fn MultibodyJointSet3::sync_rigid_bodies_from_multibodies(
   self : MultibodyJointSet3,
   bodies : RigidBodySet3,
@@ -2748,14 +2772,21 @@ pub fn MultibodyJointSet3DReal::take_to_join(
 }
 
 ///|
+pub fn MultibodyJointSet3DReal::disabled_contact_pairs(
+  self : MultibodyJointSet3DReal,
+) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
+  self.inner.disabled_contact_pairs()
+}
+
+///|
 pub fn MultibodyJointSet3DReal::insert(
   self : MultibodyJointSet3DReal,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : GenericJoint,
+  joint : GenericJoint3DReal,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  self.inner.insert(parent, child, joint, wake_up)
+  self.inner.insert(parent, child, GenericJoint::from_3d_real(joint), wake_up)
 }
 
 ///|
@@ -2763,10 +2794,15 @@ pub fn MultibodyJointSet3DReal::insert_kinematic(
   self : MultibodyJointSet3DReal,
   parent : RigidBodyHandle,
   child : RigidBodyHandle,
-  joint : GenericJoint,
+  joint : GenericJoint3DReal,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  self.inner.insert_kinematic(parent, child, joint, wake_up)
+  self.inner.insert_kinematic(
+    parent,
+    child,
+    GenericJoint::from_3d_real(joint),
+    wake_up,
+  )
 }
 
 ///|
