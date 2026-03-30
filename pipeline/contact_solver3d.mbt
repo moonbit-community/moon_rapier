@@ -38,8 +38,9 @@ pub fn ContactImpulse3D::scaled(
 
 ///|
 pub struct ContactSolverCache3D {
-  // For each collider pair, store the per-contact impulse accumulators with associated
-  // contact points (world-space) so we can match them approximately next step.
+  // For each collider pair, store per-contact impulse accumulators with contact
+  // anchors in each collider local-space. This tracks contacts across rigid motion
+  // (closer to Rapier's local-manifold persistence semantics).
   //
   // Performance-critical: use a hash map keyed by canonical raw handle parts.
   entries : @hashmap.HashMap[
@@ -132,6 +133,8 @@ fn contact_pair_matches_island(
 priv struct ContactSolveEntry3D {
   rb1 : @dynamics.RigidBody3D?
   rb2 : @dynamics.RigidBody3D?
+  co1_inv_pos : @core.Isometry3
+  co2_inv_pos : @core.Isometry3
   points : Array[ContactSolvePoint3D]
   cached : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]
   friction : @core.Real
@@ -415,11 +418,13 @@ fn solve_contacts_3d_impl(
         ((dyn_sleeping1 && fixed_or_none2) || (dyn_sleeping2 && fixed_or_none1)) {
         continue
       }
+      let inv_co1 = co1.position().inverse()
+      let inv_co2 = co2.position().inverse()
       let prev = if cache_get(cache_in, a, b) is Some(list) { list } else { [] }
       fn match_impulse(
         prev : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)],
-        p1 : @core.Vec3,
-        p2 : @core.Vec3,
+        local_p1 : @core.Vec3,
+        local_p2 : @core.Vec3,
       ) -> ContactImpulse3D {
         if prev.length() == 0 {
           return ContactImpulse3D::zero()
@@ -428,14 +433,15 @@ fn solve_contacts_3d_impl(
         let mut best_d2 = 1.0e30F
         for i in 0..<prev.length() {
           let e = prev[i]
-          let d2 = e.0.sub(p1).length_squared() + e.1.sub(p2).length_squared()
+          let d2 = e.0.sub(local_p1).length_squared() +
+            e.1.sub(local_p2).length_squared()
           if d2 < best_d2 {
             best_d2 = d2
             best = e.2
           }
         }
-        // Contacts drift slightly between frames; tolerate small motion.
-        if best_d2 <= 1.0e-4F {
+        // Local anchors should remain stable for persistent contacts.
+        if best_d2 <= 1.0e-6F {
           best
         } else {
           ContactImpulse3D::zero()
@@ -465,8 +471,10 @@ fn solve_contacts_3d_impl(
       let current : Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)] = []
       for k in 0..<contacts.length() {
         let c = contacts[k]
-        let imp = match_impulse(prev, c.point1, c.point2)
-        current.push((c.point1, c.point2, imp))
+        let local_p1 = inv_co1.transform_point(c.point1)
+        let local_p2 = inv_co2.transform_point(c.point2)
+        let imp = match_impulse(prev, local_p1, local_p2)
+        current.push((local_p1, local_p2, imp))
         if !(dyn_sleeping1 && dyn_sleeping2) {
           let normal = contact_normal
           let ws_normal = normal.scale(imp.normal * warmstart_coeff)
@@ -635,6 +643,8 @@ fn solve_contacts_3d_impl(
       } else {
         @core.Mat3::zero()
       }
+      let inv_co1 = co1.position().inverse()
+      let inv_co2 = co2.position().inverse()
       let cached = if cache_get(cache_out, a, b) is Some(existing) {
         existing
       } else {
@@ -644,7 +654,13 @@ fn solve_contacts_3d_impl(
         cached.clear()
         for k in 0..<contacts.length() {
           let c = contacts[k]
-          cached.push((c.point1, c.point2, ContactImpulse3D::zero()))
+          cached.push(
+            (
+              inv_co1.transform_point(c.point1),
+              inv_co2.transform_point(c.point2),
+              ContactImpulse3D::zero(),
+            ),
+          )
         }
         cache_set(cache_out, a, b, cached)
       }
@@ -803,6 +819,8 @@ fn solve_contacts_3d_impl(
       solve_entries.push({
         rb1,
         rb2,
+        co1_inv_pos: inv_co1,
+        co2_inv_pos: inv_co2,
         points,
         cached,
         friction,
@@ -946,7 +964,11 @@ fn solve_contacts_3d_impl(
             acc = { normal: acc.normal, tangent1: next_t1, tangent2: next_t2 }
           }
         }
-        cached[k] = (p0.point1, p0.point2, acc)
+        cached[k] = (
+          e.co1_inv_pos.transform_point(p0.point1),
+          e.co2_inv_pos.transform_point(p0.point2),
+          acc,
+        )
       }
       if friction_model is @dynamics.FrictionModel::Simplified &&
         friction > 0.0F {
@@ -1050,8 +1072,8 @@ fn solve_contacts_3d_impl(
         for k in 0..<points.length() {
           let prev_cached = cached[k].2
           cached[k] = (
-            points[k].point1,
-            points[k].point2,
+            e.co1_inv_pos.transform_point(points[k].point1),
+            e.co2_inv_pos.transform_point(points[k].point2),
             { normal: prev_cached.normal, tangent1: next_t1, tangent2: next_t2 },
           )
         }
