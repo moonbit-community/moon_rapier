@@ -5,7 +5,7 @@
 - Epic: `moon_rapier-gap-file-by-file-20260213`
 - Reference: `rapier-reference/src/**/*.rs` (118 files)
 - In-scope parity baseline: `rapier2d/rapier3d v0.32.0 default features`
-- Optional-feature follow-up issue: `moon_rapier-gap-optional-features-followup-20260213`
+- Optional-feature follow-up: closed by `tools/run_optional_feature_parity_gate.sh`
 
 ## Baseline Evidence
 

@@ -52,7 +52,26 @@ print(f"style parity: renamed={renamed}")
 PY
 
 echo "[parity-gate] run representative 2D/3D parity tests"
-moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples2d_parity_test.mbt
-moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f examples3d_parity_test.mbt
+run_nonempty_test() {
+  local file="$1"
+  local tmp
+  local total
+  tmp="$(mktemp)"
+  moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f "$file" \
+    2>&1 | tee "$tmp"
+  total="$(awk -F'[:, ]+' '/^Total tests:/ { print $3 }' "$tmp" | tail -n1)"
+  rm -f "$tmp"
+  if [[ -z "$total" ]]; then
+    echo "[parity-gate] failed to parse test summary for ${file}"
+    exit 1
+  fi
+  if [[ "$total" -eq 0 ]]; then
+    echo "[parity-gate] expected non-zero tests for ${file}"
+    exit 1
+  fi
+}
+
+run_nonempty_test "examples2d_parity_test.mbt"
+run_nonempty_test "examples3d_basics_parity_test.mbt"
 
 echo "[parity-gate] success"

@@ -3,7 +3,13 @@
 Date: 2026-02-13
 Scope baseline already complete: `rapier2d(dim2,f32)` + `rapier3d(dim3,f32)` default features.
 
-This plan tracks all remaining parity slices outside default scope.
+Status: Closed on 2026-03-31.
+
+This plan tracked optional parity slices outside default scope. Closure is now
+enforced by `tools/run_optional_feature_parity_gate.sh`, which runs:
+- optional-feature rustdoc pub audits (f32/f64 profiles),
+- and targeted semantic regression tests (`feature_flags`, `debug_render`,
+  `snapshot_roundtrip`, `counters`, `serde`).
 
 ## Slice A — `parallel`
 - Goal: align parallel pipeline semantics and exposed APIs for stepping/query paths.

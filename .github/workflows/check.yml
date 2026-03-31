@@ -70,3 +70,24 @@ jobs:
       - name: Run parity gate
         run: |
           tools/run_pub_parity_gate.sh
+
+  optional-feature-gate:
+    name: Optional feature parity gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Post install
+        run: |
+          moon version --all
+          moon update
+
+      - name: Run optional feature parity gate
+        run: |
+          tools/run_optional_feature_parity_gate.sh
