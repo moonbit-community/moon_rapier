@@ -45,7 +45,7 @@ test "physics pipeline3 kinematic and fixed contact crash" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -83,7 +83,7 @@ test "physics pipeline3 rigid body removal before step" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -99,7 +99,7 @@ test "physics pipeline3 collider removal before step" {
   let narrow_phase = @collision.NarrowPhase::new()
   let bodies = @dynamics.RigidBodySet3::new()
   let colliders = @collision.ColliderSet3::new()
-  let ccd = @dynamics.CCDSolver::new()
+  let ccd = @dynamics_ccd.CCDSolver::new()
   let impulse_joints = @dynamics.ImpulseJointSet3::new()
   let multibody_joints = @dynamics.MultibodyJointSet3::new()
   let islands = @dynamics.IslandManager3::new()
@@ -158,7 +158,7 @@ test "physics pipeline3 rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -175,7 +175,7 @@ test "physics pipeline3 rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -222,7 +222,7 @@ test "physics pipeline3 joint step delta time 0" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -271,7 +271,7 @@ test "physics pipeline3 multibody joint step" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )

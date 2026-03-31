@@ -139,7 +139,7 @@ pub fn PhysicsPipeline3::step(
   colliders : @collision.ColliderSet3,
   impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : PhysicsHooks,
   events : EventHandler,
 ) -> Unit {
@@ -218,8 +218,8 @@ pub fn PhysicsPipeline3::step(
         islands, bodies, remaining_time, true,
       )
       let first_impact = if ccd_active {
-        find_first_ccd_impact3(
-          gravity, remaining_time, islands, bodies, colliders,
+        ccd_solver.find_first_impact3(
+          remaining_time, islands, bodies, colliders, broad_phase, narrow_phase,
         )
       } else {
         None
@@ -336,8 +336,8 @@ pub fn PhysicsPipeline3::step(
         islands, bodies, dt, false,
       )
       if ccd_active {
-        let impacts = predict_ccd_impacts_at_next_positions3(
-          dt, islands, bodies, colliders,
+        let impacts = ccd_solver.predict_impacts_at_next_positions3(
+          dt, islands, bodies, colliders, broad_phase, narrow_phase,
         )
         ccd_solver.clamp_motions3(dt, bodies, impacts)
       }

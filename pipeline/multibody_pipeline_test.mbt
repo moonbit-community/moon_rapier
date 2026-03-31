@@ -22,7 +22,7 @@ test "physics_pipeline syncs multibody rigid bodies" {
   let broad_phase = @collision.BroadPhaseBvh::new()
   let narrow_phase = @collision.NarrowPhase::new()
   let islands = @dynamics.IslandManager::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let hooks = PhysicsHooks::new()
   let events = EventHandler::new()
   let parent = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())

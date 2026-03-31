@@ -46,7 +46,7 @@ test "examples2d/stress_tests/balls2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -96,7 +96,7 @@ test "examples2d/stress_tests/boxes2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -177,7 +177,7 @@ test "examples2d/stress_tests/capsules2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -228,7 +228,7 @@ test "examples2d/stress_tests/joint_ball2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -303,7 +303,7 @@ test "examples2d/stress_tests/joint_fixed2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -377,7 +377,7 @@ test "examples2d/stress_tests/joint_prismatic2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -466,7 +466,7 @@ test "examples2d/stress_tests/convex_polygons2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -530,7 +530,7 @@ test "examples2d/stress_tests/heightfield2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -607,7 +607,7 @@ test "examples2d/stress_tests/pyramid2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -667,7 +667,7 @@ test "examples2d/stress_tests/vertical_stacks2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )

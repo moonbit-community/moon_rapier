@@ -24,7 +24,7 @@ test "joint solver linear motor (prismatic lin_x velocity)" {
   let islands = @dynamics.IslandManager::new()
   let hooks = PhysicsHooks::new()
   let events = EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,

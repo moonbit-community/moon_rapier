@@ -24,7 +24,7 @@ fn step_pipeline_2d_n_s2d_pyramid(
   colliders : @collision.ColliderSet,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
   nsteps : Int,
@@ -51,7 +51,7 @@ fn run_examples2d_s2d_pyramid(heavy : Bool) -> Bool {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 

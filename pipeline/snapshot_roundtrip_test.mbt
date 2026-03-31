@@ -22,7 +22,7 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let handler = EventHandler::new()
   let params = IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)

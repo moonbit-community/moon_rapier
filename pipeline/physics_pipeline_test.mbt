@@ -41,7 +41,7 @@ test "kinematic and fixed contact crash" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -71,7 +71,7 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -92,7 +92,7 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -154,7 +154,7 @@ test "kinematic position-based next_position advances and affects contacts" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       PhysicsHooks::new(),
       EventHandler::new(),
     )
@@ -184,7 +184,7 @@ test "kinematic position-based next_position advances and affects contacts" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       PhysicsHooks::new(),
       EventHandler::new(),
     )
@@ -234,7 +234,7 @@ test "rigid body removal before step" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -250,7 +250,7 @@ test "collider removal before step" {
   let narrow_phase = @collision.NarrowPhase::new()
   let bodies = @dynamics.RigidBodySet::new()
   let colliders = @collision.ColliderSet::new()
-  let ccd = @dynamics.CCDSolver::new()
+  let ccd = @dynamics_ccd.CCDSolver::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
@@ -305,7 +305,7 @@ test "rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -322,7 +322,7 @@ test "rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -371,7 +371,7 @@ test "joint step delta time 0" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -427,7 +427,7 @@ test "revolute impulse-joint keeps anchors coincident" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       PhysicsHooks::new(),
       EventHandler::new(),
     )
@@ -480,7 +480,7 @@ test "revolute impulse-joint motor position reaches target angle" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -527,7 +527,7 @@ test "revolute impulse-joint motor position reaches target angle" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       PhysicsHooks::new(),
       EventHandler::new(),
     )
@@ -604,7 +604,7 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
   let islands = @dynamics.IslandManager::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd = @dynamics.CCDSolver::new()
+  let ccd = @dynamics_ccd.CCDSolver::new()
   let fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let seg = @collision.ColliderBuilder::segment(
     @core.Vec2::new(-2.0F, -2.0F),
@@ -704,7 +704,7 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -729,7 +729,7 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -748,7 +748,7 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -795,7 +795,7 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -811,7 +811,7 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -863,7 +863,7 @@ test "physics pipeline emits stopped event after removal even if other collider 
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -880,7 +880,7 @@ test "physics pipeline emits stopped event after removal even if other collider 
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -927,7 +927,7 @@ test "physics pipeline emits contact force events when enabled" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -977,7 +977,7 @@ test "physics pipeline contact force events respect thresholds" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -1008,7 +1008,7 @@ test "multi sap disable body" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -1073,7 +1073,7 @@ test "multibody joints participate in pipeline solver (revolute constraint)" {
   let islands = @dynamics.IslandManager::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let params = IntegrationParameters::default()
   let gravity = @core.Vec2::zero()
   let parent = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -1192,7 +1192,7 @@ test "rotated cuboid does not generate false contacts" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )
@@ -1281,7 +1281,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -1304,7 +1304,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -1339,7 +1339,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )
@@ -1361,7 +1361,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     handler,
   )

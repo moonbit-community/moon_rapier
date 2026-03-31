@@ -24,7 +24,7 @@ test "raycast vehicle controller: accelerates on flat ground (2D)" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
@@ -111,7 +111,7 @@ test "raycast vehicle controller: climbs a mild slope (2D port)" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
@@ -213,7 +213,7 @@ test "raycast vehicle controller: braking reduces forward speed (2D)" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 

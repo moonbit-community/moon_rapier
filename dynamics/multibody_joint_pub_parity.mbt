@@ -395,6 +395,99 @@ pub fn MultibodyJoint::num_velocity_constraints(self : MultibodyJoint) -> Int {
 }
 
 ///|
+fn inv_nonzero(value : @core.Real) -> @core.Real {
+  if value == 0.0F {
+    0.0F
+  } else {
+    1.0F / value
+  }
+}
+
+///|
+fn joint_axis_limit_values(
+  limits : JointLimits3,
+  axis : Int,
+) -> (@core.Real, @core.Real) {
+  let limit = match axis {
+    0 => limits.lin_x
+    1 => limits.lin_y
+    2 => limits.lin_z
+    3 => limits.ang_x
+    4 => limits.ang_y
+    _ => limits.ang_z
+  }
+  (limit.min, limit.max)
+}
+
+///|
+fn joint_axis_motor_value(motors : JointMotors3, axis : Int) -> JointMotor {
+  match axis {
+    0 => motors.lin_x
+    1 => motors.lin_y
+    2 => motors.lin_z
+    3 => motors.ang_x
+    4 => motors.ang_y
+    _ => motors.ang_z
+  }
+}
+
+///|
+fn MultibodyJoint::axis_coord(self : MultibodyJoint, axis : Int) -> @core.Real {
+  match axis {
+    0 => self.lin_coords3.x
+    1 => self.lin_coords3.y
+    2 => self.lin_coords3.z
+    3 => self.ang_coords3.x
+    4 => self.ang_coords3.y
+    _ => self.ang_coords3.z
+  }
+}
+
+///|
+fn motor_target_params(
+  motor : JointMotor,
+  dt : @core.Real,
+) -> (@core.Real, @core.Real, @core.Real, @core.Real, @core.Real, @core.Real) {
+  let (erp_inv_dt, cfm_coeff, cfm_gain) = motor.model.combine_coefficients(
+    dt,
+    motor.stiffness,
+    motor.damping,
+  )
+  (
+    erp_inv_dt,
+    cfm_coeff,
+    cfm_gain,
+    motor.target_pos,
+    motor.target_vel,
+    motor.max_force * dt,
+  )
+}
+
+///|
+fn dvector_set_if_in_range(
+  vec : DVector,
+  index : Int,
+  value : @core.Real,
+) -> Unit {
+  if index >= 0 && index < vec.len() {
+    vec.set_value(index, value)
+  }
+}
+
+///|
+fn constraint_set_or_push(
+  constraints : Array[GenericJointConstraint],
+  index : Int,
+  value : GenericJointConstraint,
+) -> Unit {
+  if index >= 0 && index < constraints.length() {
+    constraints[index] = value
+  } else {
+    constraints.push(value)
+  }
+}
+
+///|
 pub fn MultibodyJoint::velocity_constraints(
   self : MultibodyJoint,
   params : IntegrationParameters,
@@ -404,29 +497,110 @@ pub fn MultibodyJoint::velocity_constraints(
   jacobians : DVector,
   constraints : Array[GenericJointConstraint],
 ) -> Int {
-  // This follows Rapier's structure (limits/motors per free dof) but does not currently
-  // compute the exact Jacobian weighting used by Rapier's reduced-coordinate solver.
-  params |> ignore
-  multibody |> ignore
-  link |> ignore
-  jacobians |> ignore
-  j_id |> ignore
   let locked = self.data.locked_axes().bits()
   let limit = self.data.limit_axes().bits()
   let motor = self.data.motor_axes().bits()
   let mut num = 0
-  for dof in 0..<3 {
-    if (locked & (1 << dof)) != 0 {
+  let insert_base = constraints.length()
+  let ndofs = multibody.ndofs()
+  let mut curr_free_dof = 0
+  let linear_axes : Array[Int] = if multibody_joint_is_spatial(self) {
+    [0, 1, 2]
+  } else {
+    [0, 1]
+  }
+  let angular_axes : Array[Int] = if multibody_joint_is_spatial(self) {
+    [3, 4, 5]
+  } else {
+    [5]
+  }
+
+  for axis in linear_axes {
+    if (locked & (1 << axis)) != 0 {
       continue
     }
-    if (motor & (1 << dof)) != 0 {
-      constraints.push(GenericJointConstraint::invalid())
+    let limits = if (limit & (1 << axis)) != 0 {
+      Some(joint_axis_limit_values(self.data.limits, axis))
+    } else {
+      None
+    }
+    let curr_pos = self.axis_coord(axis)
+    if (motor & (1 << axis)) != 0 {
+      unit_joint_motor_constraint(
+        params,
+        multibody,
+        link,
+        joint_axis_motor_value(self.data.motors, axis),
+        curr_pos,
+        limits,
+        curr_free_dof,
+        j_id + num * (2 * ndofs),
+        jacobians,
+        constraints,
+        insert_base + num,
+      )
       num = num + 1
     }
-    if (limit & (1 << dof)) != 0 {
-      constraints.push(GenericJointConstraint::invalid())
+    if limits is Some(limits_value) {
+      unit_joint_limit_constraint(
+        params,
+        multibody,
+        link,
+        limits_value,
+        curr_pos,
+        curr_free_dof,
+        j_id + num * (2 * ndofs),
+        jacobians,
+        constraints,
+        insert_base + num,
+      )
       num = num + 1
     }
+    curr_free_dof = curr_free_dof + 1
+  }
+
+  for axis in angular_axes {
+    if (locked & (1 << axis)) != 0 {
+      continue
+    }
+    let limits = if (limit & (1 << axis)) != 0 {
+      Some(joint_axis_limit_values(self.data.limits, axis))
+    } else {
+      None
+    }
+    let curr_pos = self.axis_coord(axis)
+    if limits is Some(limits_value) {
+      unit_joint_limit_constraint(
+        params,
+        multibody,
+        link,
+        limits_value,
+        curr_pos,
+        curr_free_dof,
+        j_id + num * (2 * ndofs),
+        jacobians,
+        constraints,
+        insert_base + num,
+      )
+      num = num + 1
+    }
+    if (motor & (1 << axis)) != 0 {
+      unit_joint_motor_constraint(
+        params,
+        multibody,
+        link,
+        joint_axis_motor_value(self.data.motors, axis),
+        curr_pos,
+        limits,
+        curr_free_dof,
+        j_id + num * (2 * ndofs),
+        jacobians,
+        constraints,
+        insert_base + num,
+      )
+      num = num + 1
+    }
+    curr_free_dof = curr_free_dof + 1
   }
   num
 }
@@ -445,16 +619,63 @@ pub fn unit_joint_limit_constraint(
   constraints : Array[GenericJointConstraint],
   insert_at : Int,
 ) -> Unit {
-  params |> ignore
-  multibody |> ignore
-  link |> ignore
-  limits |> ignore
-  curr_pos |> ignore
-  dof_id |> ignore
-  j_id |> ignore
-  jacobians |> ignore
-  insert_at |> ignore
-  constraints.push(GenericJointConstraint::invalid())
+  let ndofs = multibody.ndofs()
+  if ndofs <= 0 {
+    return
+  }
+  let min_enabled = curr_pos < limits.0
+  let max_enabled = limits.1 < curr_pos
+  let erp_inv_dt = link.joint.data.softness.erp_inv_dt(params.dt)
+  let cfm_coeff = link.joint.data.softness.cfm_coeff(params.dt)
+  let above_max = if curr_pos > limits.1 { curr_pos - limits.1 } else { 0.0F }
+  let below_min = if curr_pos < limits.0 { limits.0 - curr_pos } else { 0.0F }
+  let rhs_bias = (above_max - below_min) * erp_inv_dt
+  let rhs_wo_bias = 0.0F
+  let dof_col = dof_id + link.assembly_id
+  if dof_col < 0 || dof_col >= ndofs {
+    return
+  }
+  for i in 0..<(2 * ndofs) {
+    dvector_set_if_in_range(jacobians, j_id + i, 0.0F)
+  }
+  dvector_set_if_in_range(jacobians, j_id + dof_col, 1.0F)
+  dvector_set_if_in_range(jacobians, j_id + ndofs + dof_col, 1.0F)
+  let inv_aug = multibody.inv_augmented_mass()
+  for row in 0..<ndofs {
+    let value = if inv_aug.get(row, dof_col) is Some(entry) {
+      entry
+    } else {
+      0.0F
+    }
+    dvector_set_if_in_range(jacobians, j_id + ndofs + row, value)
+  }
+  let lhs = if inv_aug.get(dof_col, dof_col) is Some(entry) {
+    entry
+  } else {
+    0.0F
+  }
+  let impulse_lower = if min_enabled { -1.0e30F } else { 0.0F }
+  let impulse_upper = if max_enabled { 1.0e30F } else { 0.0F }
+  let constraint = GenericJointConstraint::{
+    is_rigid_body1: false,
+    solver_vel1: -1,
+    ndofs1: 0,
+    j_id1: 0,
+    is_rigid_body2: false,
+    solver_vel2: multibody.solver_id,
+    ndofs2: ndofs,
+    j_id2: j_id,
+    joint_id: -1,
+    impulse: 0.0F,
+    impulse_bounds: (impulse_lower, impulse_upper),
+    inv_lhs: inv_nonzero(lhs),
+    rhs: rhs_wo_bias + rhs_bias,
+    rhs_wo_bias,
+    cfm_coeff,
+    cfm_gain: 0.0F,
+    writeback_id: WritebackId::Limit(dof_id),
+  }
+  constraint_set_or_push(constraints, insert_at, constraint)
 }
 
 ///|
@@ -472,15 +693,71 @@ pub fn unit_joint_motor_constraint(
   constraints : Array[GenericJointConstraint],
   insert_at : Int,
 ) -> Unit {
-  params |> ignore
-  multibody |> ignore
-  link |> ignore
-  motor |> ignore
-  curr_pos |> ignore
-  limits |> ignore
-  dof_id |> ignore
-  j_id |> ignore
-  jacobians |> ignore
-  insert_at |> ignore
-  constraints.push(GenericJointConstraint::invalid())
+  let ndofs = multibody.ndofs()
+  if ndofs <= 0 {
+    return
+  }
+  let inv_dt = params.inv_dt()
+  let (
+    erp_inv_dt,
+    cfm_coeff,
+    cfm_gain,
+    target_pos,
+    motor_target_vel,
+    max_impulse,
+  ) = motor_target_params(motor, params.dt)
+  let dof_col = dof_id + link.assembly_id
+  if dof_col < 0 || dof_col >= ndofs {
+    return
+  }
+  for i in 0..<(2 * ndofs) {
+    dvector_set_if_in_range(jacobians, j_id + i, 0.0F)
+  }
+  dvector_set_if_in_range(jacobians, j_id + dof_col, 1.0F)
+  dvector_set_if_in_range(jacobians, j_id + ndofs + dof_col, 1.0F)
+  let inv_aug = multibody.inv_augmented_mass()
+  for row in 0..<ndofs {
+    let value = if inv_aug.get(row, dof_col) is Some(entry) {
+      entry
+    } else {
+      0.0F
+    }
+    dvector_set_if_in_range(jacobians, j_id + ndofs + row, value)
+  }
+  let lhs = if inv_aug.get(dof_col, dof_col) is Some(entry) {
+    entry
+  } else {
+    0.0F
+  }
+  let mut rhs_wo_bias = 0.0F
+  if erp_inv_dt != 0.0F {
+    rhs_wo_bias = rhs_wo_bias + (curr_pos - target_pos) * erp_inv_dt
+  }
+  let mut target_vel = motor_target_vel
+  if limits is Some(limits_range) {
+    let min_vel = (limits_range.0 - curr_pos) * inv_dt
+    let max_vel = (limits_range.1 - curr_pos) * inv_dt
+    target_vel = @core.clamp(target_vel, min_vel, max_vel)
+  }
+  rhs_wo_bias = rhs_wo_bias - target_vel
+  let constraint = GenericJointConstraint::{
+    is_rigid_body1: false,
+    solver_vel1: -1,
+    ndofs1: 0,
+    j_id1: 0,
+    is_rigid_body2: false,
+    solver_vel2: multibody.solver_id,
+    ndofs2: ndofs,
+    j_id2: j_id,
+    joint_id: -1,
+    impulse: 0.0F,
+    impulse_bounds: (-max_impulse, max_impulse),
+    inv_lhs: inv_nonzero(lhs),
+    rhs: rhs_wo_bias,
+    rhs_wo_bias,
+    cfm_coeff,
+    cfm_gain,
+    writeback_id: WritebackId::Limit(dof_id),
+  }
+  constraint_set_or_push(constraints, insert_at, constraint)
 }

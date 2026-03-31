@@ -46,7 +46,7 @@ test "collider set parent depenetration (dim3)" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet3::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet3::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -164,7 +164,7 @@ test "collider set parent no self intersection (dim3)" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet3::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet3::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     gravity,
     integration_parameters,

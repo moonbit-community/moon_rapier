@@ -237,7 +237,7 @@ fn run_examples3d_dynamic_trimesh3_impl(use_decomposition : Bool) -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -352,7 +352,7 @@ fn run_examples3d_heightfield3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -469,7 +469,7 @@ fn run_examples3d_convex_polyhedron3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -578,7 +578,7 @@ fn run_examples3d_joint_motor_position3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -809,7 +809,7 @@ fn run_examples3d_joints3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -903,7 +903,7 @@ fn run_examples3d_keva3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -985,7 +985,7 @@ fn run_examples3d_newton_cradle3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -1069,7 +1069,7 @@ fn run_examples3d_spring_joints3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -1154,7 +1154,7 @@ fn run_examples3d_urdf3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -1231,7 +1231,7 @@ fn run_examples3d_vehicle_controller3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let inv_dt = parameters.inv_dt()
@@ -1405,7 +1405,7 @@ fn run_examples3d_vehicle_joints3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn step_n(steps : Int) -> Unit {
@@ -1518,7 +1518,7 @@ fn run_examples3d_voxels3() -> Bool {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -1641,7 +1641,7 @@ test "examples3d/all_examples3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground = bodies.insert(
@@ -1700,7 +1700,7 @@ test "examples3d/debug_add_remove_collider3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground = bodies.insert(
@@ -1850,7 +1850,7 @@ test "examples3d/debug_balls3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -1919,7 +1919,7 @@ test "examples3d/debug_big_colliders3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     8,
@@ -1999,7 +1999,7 @@ test "examples3d/debug_boxes3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2068,7 +2068,7 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2138,7 +2138,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2248,7 +2248,7 @@ test "examples3d/debug_cylinder3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_height = 0.1F
@@ -2306,7 +2306,7 @@ test "examples3d/debug_deserialize3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground = bodies.insert(
@@ -2351,7 +2351,7 @@ test "examples3d/debug_disabled3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_height = 0.1F
@@ -2422,7 +2422,7 @@ test "examples3d/debug_dynamic_collider_add3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_height = 0.1F
@@ -2479,7 +2479,7 @@ test "examples3d/debug_eccentric_boxes3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2553,7 +2553,7 @@ test "examples3d/debug_friction3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2619,7 +2619,7 @@ test "examples3d/debug_infinite_fall3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let h = bodies.insert(
@@ -2660,7 +2660,7 @@ test "examples3d/debug_internal_edges3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2723,7 +2723,7 @@ test "examples3d/debug_long_chain3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2790,7 +2790,7 @@ test "examples3d/debug_multibody_ang_motor_pos3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     32,
@@ -2855,7 +2855,7 @@ test "examples3d/debug_pop3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -2921,7 +2921,7 @@ test "examples3d/debug_prismatic3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     32,
@@ -2995,7 +2995,7 @@ test "examples3d/debug_rollback3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -3042,7 +3042,7 @@ test "examples3d/debug_shape_modification3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_height = 0.1F
@@ -3101,7 +3101,7 @@ test "examples3d/debug_sleeping_kinematic3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let inv_dt = parameters.inv_dt()
@@ -3211,7 +3211,7 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -3267,7 +3267,7 @@ test "examples3d/debug_triangle3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -3320,7 +3320,7 @@ test "examples3d/debug_trimesh3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -3385,7 +3385,7 @@ test "examples3d/debug_two_cubes3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -3453,7 +3453,7 @@ test "examples3d/domino3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -3536,7 +3536,7 @@ test "examples3d/fountain3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     8,
@@ -3611,7 +3611,7 @@ test "examples3d/harness_capsules3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -3705,7 +3705,7 @@ test "examples3d/one_way_platforms3.rs parity" {
   let multibody_joints = @dynamics.MultibodyJointSet3::new()
   let islands = @dynamics.IslandManager3::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -3839,7 +3839,7 @@ test "examples3d/platform3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let inv_dt = parameters.inv_dt()
@@ -3976,7 +3976,7 @@ test "examples3d/rope_joints3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   let inv_dt = parameters.inv_dt()
@@ -4109,7 +4109,7 @@ test "examples3d/trimesh3.rs parity" {
   let islands = @dynamics.IslandManager3::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
   fn step_n(steps : Int) -> Unit {

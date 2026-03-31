@@ -58,7 +58,7 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       PhysicsHooks::new(),
       EventHandler::new(),
     )

@@ -37,6 +37,28 @@ pub fn CollisionPipeline::step(
   self |> ignore
   islands |> ignore
   event_handler |> ignore
+  let modified_colliders = colliders.take_modified()
+  let removed_colliders = colliders.take_removed()
+  let invalidated_colliders : Array[@collision.ColliderHandle] = []
+  for i in 0..<modified_colliders.length() {
+    invalidated_colliders.push(modified_colliders[i])
+  }
+  for i in 0..<removed_colliders.length() {
+    invalidated_colliders.push(removed_colliders[i])
+  }
+  for i in 0..<modified_colliders.length() {
+    let handle = modified_colliders[i]
+    if colliders.get(handle) is Some(collider) {
+      if !collider.is_enabled() {
+        invalidated_colliders.push(handle)
+      }
+    } else {
+      invalidated_colliders.push(handle)
+    }
+  }
+  if invalidated_colliders.length() > 0 {
+    narrow_phase.handle_user_changes(bodies, colliders, invalidated_colliders)
+  }
   broad_phase.update(prediction_distance, bodies, colliders)
   let pairs = broad_phase.pairs()
   let filtered_pairs = []
@@ -95,4 +117,5 @@ pub fn CollisionPipeline::step(
   narrow_phase.update_with_pairs(
     bodies, colliders, prediction_distance, filtered_pairs, impulse_joints, multibody_joints,
   )
+  colliders.clear_changes_for(modified_colliders)
 }

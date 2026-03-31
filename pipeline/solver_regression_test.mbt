@@ -78,7 +78,7 @@ test "solver regression: stack stability + deterministic stepping" {
         colliders,
         impulse_joints,
         multibody_joints,
-        @dynamics.CCDSolver::new(),
+        @dynamics_ccd.CCDSolver::new(),
         hooks,
         events,
       )

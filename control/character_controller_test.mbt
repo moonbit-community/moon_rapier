@@ -85,7 +85,7 @@ test "character controller climb" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
@@ -258,7 +258,7 @@ test "character controller moving platform keeps grounded and follows platform" 
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
@@ -379,7 +379,7 @@ test "character controller autostep climbs stairs" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
@@ -480,7 +480,7 @@ test "character controller reports sliding on steep slope but not on flat ground
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     @pipeline.PhysicsHooks::new(),
     @pipeline.EventHandler::new(),
   )
@@ -520,7 +520,7 @@ test "character controller reports sliding on steep slope but not on flat ground
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
@@ -784,7 +784,7 @@ test "character controller ground detection" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics.CCDSolver::new(),
+      @dynamics_ccd.CCDSolver::new(),
       @pipeline.PhysicsHooks::new(),
       @pipeline.EventHandler::new(),
     )
@@ -941,7 +941,7 @@ test "character controller transfers impulse to dynamic body" {
   let islands = @dynamics.IslandManager::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
   let pipeline = @pipeline.PhysicsPipeline::new()

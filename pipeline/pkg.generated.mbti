@@ -6,6 +6,7 @@ import {
   "Milky2018/moon_rapier/core",
   "Milky2018/moon_rapier/counters",
   "Milky2018/moon_rapier/dynamics",
+  "Milky2018/moon_rapier/dynamics_ccd",
   "moonbitlang/core/hashmap",
 }
 
@@ -286,7 +287,7 @@ pub struct PhysicsPipeline {
   fn new() -> PhysicsPipeline
 }
 pub fn PhysicsPipeline::new() -> Self
-pub fn PhysicsPipeline::step(Self, @core.Vec2, @dynamics.IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
+pub fn PhysicsPipeline::step(Self, @core.Vec2, @dynamics.IntegrationParameters, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, @dynamics_ccd.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 pub struct PhysicsPipeline3 {
   inner : PhysicsPipeline
@@ -294,7 +295,7 @@ pub struct PhysicsPipeline3 {
   fn new() -> PhysicsPipeline3
 }
 pub fn PhysicsPipeline3::new() -> Self
-pub fn PhysicsPipeline3::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, @dynamics.CCDSolver, PhysicsHooks, EventHandler) -> Unit
+pub fn PhysicsPipeline3::step(Self, @core.Vec3, @dynamics.IntegrationParameters, @dynamics.IslandManager3, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet3, @collision.ColliderSet3, @dynamics.ImpulseJointSet3, @dynamics.MultibodyJointSet3, @dynamics_ccd.CCDSolver, PhysicsHooks, EventHandler) -> Unit
 
 pub struct PhysicsPipeline3D {
   inner : PhysicsPipeline3DReal

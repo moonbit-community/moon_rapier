@@ -433,6 +433,19 @@ fn handle_id_equals(a : ColliderHandle, b : ColliderHandle) -> Bool {
 }
 
 ///|
+fn contains_handle_id(
+  handles : Array[ColliderHandle],
+  target : ColliderHandle,
+) -> Bool {
+  for i in 0..<handles.length() {
+    if handle_id_equals(handles[i], target) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 pub fn NarrowPhase::contact_graph(
   self : NarrowPhase,
 ) -> InteractionGraph[ContactPair] {
@@ -540,9 +553,41 @@ pub fn NarrowPhase::handle_user_changes(
   modified_colliders : Array[ColliderHandle],
 ) -> Unit {
   handle_user_changes_to_colliders(bodies, colliders, modified_colliders)
-  // This simplified narrow-phase rebuilds pairs on `update`, so we don't need to
-  // invalidate any persistent caches here yet.
-  self |> ignore
+  if modified_colliders.length() == 0 {
+    return
+  }
+  let kept_contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)] = []
+  for i in 0..<self.contacts.length() {
+    let pair = self.contacts[i]
+    let h1 = pair.0
+    let h2 = pair.1
+    if contains_handle_id(modified_colliders, h1) ||
+      contains_handle_id(modified_colliders, h2) {
+      continue
+    }
+    if colliders.get(h1) is Some(c1) && colliders.get(h2) is Some(c2) {
+      if c1.is_enabled() && c2.is_enabled() {
+        kept_contacts.push(pair)
+      }
+    }
+  }
+  self.contacts = kept_contacts
+
+  let kept_intersections : Array[IntersectionPair] = []
+  for i in 0..<self.intersections.length() {
+    let pair = self.intersections[i]
+    if contains_handle_id(modified_colliders, pair.collider1) ||
+      contains_handle_id(modified_colliders, pair.collider2) {
+      continue
+    }
+    if colliders.get(pair.collider1) is Some(c1) &&
+      colliders.get(pair.collider2) is Some(c2) {
+      if c1.is_enabled() && c2.is_enabled() {
+        kept_intersections.push(pair)
+      }
+    }
+  }
+  self.intersections = kept_intersections
 }
 
 ///|

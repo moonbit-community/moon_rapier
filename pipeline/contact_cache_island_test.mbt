@@ -94,7 +94,7 @@ test "contact solver cache accumulates across islands" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics.CCDSolver::new(),
+    @dynamics_ccd.CCDSolver::new(),
     PhysicsHooks::new(),
     EventHandler::new(),
   )

@@ -271,7 +271,7 @@ pub fn PhysicsPipeline::step(
   colliders : @collision.ColliderSet,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   physics_hooks : PhysicsHooks,
   event_handler : EventHandler,
 ) -> Unit {

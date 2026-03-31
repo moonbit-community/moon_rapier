@@ -47,7 +47,7 @@ fn step_pipeline_2d_n(
   colliders : @collision.ColliderSet,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
   nsteps : Int,
@@ -131,7 +131,7 @@ test "examples2d/joint_motor_position2.rs parity" {
   }
   let gravity = @core.Vec2::zero()
   let parameters = @dynamics.IntegrationParameters::default()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
   step_pipeline_2d_n(
@@ -185,7 +185,7 @@ test "examples2d/add_remove2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
@@ -377,7 +377,7 @@ test "examples2d/all_examples2.rs parity" {
     let islands = @dynamics.IslandManager::new()
     let hooks = @pipeline.PhysicsHooks::new()
     let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics.CCDSolver::new()
+    let ccd_solver = @dynamics_ccd.CCDSolver::new()
     let gravity = @core.Vec2::new(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -428,7 +428,7 @@ test "examples2d/all_examples2.rs parity" {
     let islands = @dynamics.IslandManager::new()
     let hooks = @pipeline.PhysicsHooks::new()
     let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics.CCDSolver::new()
+    let ccd_solver = @dynamics_ccd.CCDSolver::new()
     let gravity = @core.Vec2::new(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let heights = [2.0F, 0.0F, 1.0F, 0.0F, 2.0F]
@@ -477,7 +477,7 @@ test "examples2d/all_examples2.rs parity" {
     let islands = @dynamics.IslandManager::new()
     let hooks = @pipeline.PhysicsHooks::new()
     let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics.CCDSolver::new()
+    let ccd_solver = @dynamics_ccd.CCDSolver::new()
     let gravity = @core.Vec2::new(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -528,7 +528,7 @@ test "examples2d/all_examples2.rs parity" {
     let islands = @dynamics.IslandManager::new()
     let hooks = @pipeline.PhysicsHooks::new()
     let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics.CCDSolver::new()
+    let ccd_solver = @dynamics_ccd.CCDSolver::new()
     let gravity = @core.Vec2::new(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -592,7 +592,7 @@ test "examples2d/all_examples2.rs parity" {
     let islands = @dynamics.IslandManager::new()
     let hooks = @pipeline.PhysicsHooks::new()
     let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics.CCDSolver::new()
+    let ccd_solver = @dynamics_ccd.CCDSolver::new()
     let gravity = @core.Vec2::new(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(
@@ -640,7 +640,7 @@ test "examples2d/ccd2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -941,7 +941,7 @@ test "examples2d/character_controller2.rs parity" {
   let parameters = @dynamics.IntegrationParameters::default()
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let speed = 0.1F
   let controller = @control.KinematicCharacterController::new()
     .with_max_slope_climb_angle(impossible_slope_angle - 0.02F)
@@ -1126,7 +1126,7 @@ test "examples2d/collision_groups2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = 5.0F
@@ -1260,7 +1260,7 @@ test "examples2d/convex_polygons2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -1377,7 +1377,7 @@ test "examples2d/damping2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let num = 10
   let rad = 0.2F
@@ -1461,7 +1461,7 @@ test "examples2d/debug_box_ball2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let rad = 1.0F
@@ -1517,7 +1517,7 @@ test "examples2d/debug_compression2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::zero()
   let width = 75.0F
@@ -1682,7 +1682,7 @@ test "examples2d/debug_total_overlap2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
@@ -1742,7 +1742,7 @@ test "examples2d/debug_vertical_column2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let num = 80
@@ -1812,7 +1812,7 @@ test "examples2d/drum2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -1928,7 +1928,7 @@ test "examples2d/heightfield2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = @core.Vec2::new(50.0F, 1.0F)
@@ -2024,7 +2024,7 @@ test "examples2d/inv_pyramid2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = 10.0F
@@ -2175,7 +2175,7 @@ test "examples2d/joints2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.4F
@@ -2269,7 +2269,7 @@ test "examples2d/locked_rotations2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -2350,7 +2350,7 @@ test "examples2d/one_way_platforms2.rs parity" {
   let multibody_joints = @dynamics.MultibodyJointSet::new()
   let islands = @dynamics.IslandManager::new()
   let handler = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -2507,7 +2507,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
@@ -2642,7 +2642,7 @@ test "examples2d/platform2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
@@ -2775,7 +2775,7 @@ test "examples2d/polyline2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
@@ -2874,7 +2874,7 @@ test "examples2d/pyramid2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = 10.0F
@@ -2946,7 +2946,7 @@ test "examples2d/restitution2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_height = 1.0F
@@ -3030,7 +3030,7 @@ test "examples2d/rope_joints2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
@@ -3143,7 +3143,7 @@ test "examples2d/s2d_arch.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn scaled(p : @core.Vec2, s : @core.Real) -> @core.Vec2 {
@@ -3284,7 +3284,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
@@ -3407,7 +3407,7 @@ test "examples2d/s2d_bridge.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
@@ -3498,7 +3498,7 @@ test "examples2d/s2d_card_house.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let friction = 0.7F
@@ -3614,7 +3614,7 @@ test "examples2d/s2d_confined.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let radius = 0.5F
@@ -3726,7 +3726,7 @@ test "examples2d/s2d_far_pyramid.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let origin = @core.Vec2::new(100000.0F, -80000.0F)
@@ -3802,7 +3802,7 @@ test "examples2d/s2d_high_mass_ratio_1.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
@@ -3885,7 +3885,7 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
@@ -3967,7 +3967,7 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
@@ -4066,7 +4066,7 @@ test "examples2d/s2d_joint_grid.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.4F
@@ -4155,7 +4155,7 @@ test "examples2d/sensor2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let handler = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
   let ground_size = 200.1F
@@ -4240,7 +4240,7 @@ test "examples2d/trimesh2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 

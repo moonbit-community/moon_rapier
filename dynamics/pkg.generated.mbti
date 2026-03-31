@@ -1280,6 +1280,7 @@ pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
+pub fn RigidBody::set_ccd_active(Self, Bool) -> Self
 pub fn RigidBody::set_ccd_properties(Self, Float, Float) -> Self
 pub fn RigidBody::set_dominance_group(Self, Int) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self

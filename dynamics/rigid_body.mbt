@@ -1426,6 +1426,19 @@ pub fn RigidBody::is_ccd_active(self : RigidBody) -> Bool {
 }
 
 ///|
+pub fn RigidBody::set_ccd_active(self : RigidBody, active : Bool) -> RigidBody {
+  let ccd = self.ccd
+  self.ccd = RigidBodyCcd::{
+    ccd_thickness: ccd.ccd_thickness,
+    ccd_max_dist: ccd.ccd_max_dist,
+    ccd_active: active,
+    ccd_enabled: ccd.ccd_enabled,
+    soft_ccd_prediction: ccd.soft_ccd_prediction,
+  }
+  self
+}
+
+///|
 pub fn RigidBody::mass_props(self : RigidBody) -> RigidBodyMassProps {
   self.mass_props
 }

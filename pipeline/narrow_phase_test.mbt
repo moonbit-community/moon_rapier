@@ -44,7 +44,7 @@ test "collider set parent depenetration" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -156,7 +156,7 @@ test "collider set parent no self intersection" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -266,7 +266,7 @@ test "narrow phase collision groups filtering" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),
@@ -539,7 +539,7 @@ test "narrow phase active collision types filtering" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joint_set = @dynamics.ImpulseJointSet::new()
   let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   physics_pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),

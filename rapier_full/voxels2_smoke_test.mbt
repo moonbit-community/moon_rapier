@@ -24,7 +24,7 @@ fn step_pipeline_2d_n_smoke(
   colliders : @collision.ColliderSet,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
   nsteps : Int,
@@ -49,7 +49,7 @@ test "voxels2 smoke (voxelized_mesh + voxels_from_points)" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )

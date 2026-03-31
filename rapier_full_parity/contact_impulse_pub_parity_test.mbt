@@ -28,7 +28,7 @@ test "ContactPair impulse/force pub parity (2D)" {
   let narrow_phase = @collision.NarrowPhase::new()
   let impulse_joints = @dynamics.ImpulseJointSet::new()
   let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd = @dynamics.CCDSolver::new()
+  let ccd = @dynamics_ccd.CCDSolver::new()
   let hooks = PhysicsHooks::new()
   let events = EventHandler::new()
   let pipeline = PhysicsPipeline::new()

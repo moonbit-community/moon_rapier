@@ -24,7 +24,7 @@ fn step_pipeline_2d_n_voxels2(
   colliders : @collision.ColliderSet,
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
-  ccd_solver : @dynamics.CCDSolver,
+  ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
   nsteps : Int,
@@ -50,7 +50,7 @@ test "examples2d/voxels2.rs parity" {
   let islands = @dynamics.IslandManager::new()
   let hooks = @pipeline.PhysicsHooks::new()
   let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver::new()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::new(0.0F, -9.81F)
 
