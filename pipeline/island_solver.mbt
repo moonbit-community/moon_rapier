@@ -17,10 +17,6 @@
 ///
 /// Port target:
 /// - `rapier-reference/src/dynamics/solver/island_solver.rs`
-///
-/// This port currently keeps the existing constraint-based solvers, but introduces an explicit
-/// `IslandSolver` entry point so we can progressively align the pipeline with Rapier's solver
-/// architecture (solver bodies + constraint sets + per-island solving).
 
 ///|
 priv struct IslandSolver {
@@ -48,8 +44,8 @@ fn IslandSolver::solve(
   contact_cache_in : Array[ContactImpulseCacheEntry],
   contact_cache_out : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  // Keep a solver-side snapshot of body poses/vels. This is currently used only as a
-  // compatibility scaffold: later steps will build constraints from this cache.
+  // Keep a solver-side snapshot of body poses/vels so constraint assembly can operate on
+  // solver-body state for each island.
   let n = bodies.bodies.length()
   self.velocity_solver.solver_bodies.clear()
   self.velocity_solver.solver_bodies.resize(n)
