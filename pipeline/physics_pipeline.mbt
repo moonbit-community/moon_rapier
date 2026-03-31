@@ -1246,9 +1246,8 @@ pub fn PhysicsPipeline::step(
           continue
         }
         match body.body_type {
-          @dynamics.RigidBodyType::Dynamic => {
+          @dynamics.RigidBodyType::Dynamic =>
             body.update_effective_force_and_torque(gravity) |> ignore
-          }
           @dynamics.RigidBodyType::KinematicPositionBased => {
             // Rapier parity: derive velocities from position -> next_position using the
             // current substep dt.
@@ -1324,7 +1323,6 @@ pub fn PhysicsPipeline::step(
       prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
       impulse_joints, multibody_joints, physics_hooks, event_handler,
     )
-
   }
   // Only emit collision events after the final collision detection pass.
   populate_contact_impulses_from_cache(narrow_phase, self.contact_solver_cache)

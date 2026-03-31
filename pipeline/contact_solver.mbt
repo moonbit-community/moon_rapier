@@ -686,26 +686,19 @@ fn update_contact_constraints(
       inv_mass2 +
       inv_inertia1 * rt1 * rt1 +
       inv_inertia2 * rt2 * rt2
-    c.inv_mass_n_nocfm = if denom_n <= 1.0e-12F {
-      0.0F
-    } else {
-      1.0F / denom_n
-    }
+    c.inv_mass_n_nocfm = if denom_n <= 1.0e-12F { 0.0F } else { 1.0F / denom_n }
     c.inv_mass_n = if denom_n + cfm_coeff <= 1.0e-12F {
       0.0F
     } else {
       1.0F / (denom_n + cfm_coeff)
     }
-    c.inv_mass_t = if denom_t <= 1.0e-12F {
-      0.0F
-    } else {
-      1.0F / denom_t
-    }
+    c.inv_mass_t = if denom_t <= 1.0e-12F { 0.0F } else { 1.0F / denom_t }
     c.rhs_bias = solver_clamp_value(
-      erp_inv_dt * (c.dist + allowed_error),
-      -max_corrective_velocity,
-      0.0F,
-    ) * 0.2F
+        erp_inv_dt * (c.dist + allowed_error),
+        -max_corrective_velocity,
+        0.0F,
+      ) *
+      0.2F
 
     let vel1 = v1.add(cross_z_scalar(w1, r1))
     let vel2 = v2.add(cross_z_scalar(w2, r2))

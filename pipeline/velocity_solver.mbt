@@ -194,7 +194,8 @@ fn VelocitySolver::solve_constraints(
 
   for substep in 0..<substeps {
     for i in 0..<self.solver_bodies.vels.length() {
-      if i >= self.island_stamps.length() || self.island_stamps[i] != island_stamp {
+      if i >= self.island_stamps.length() ||
+        self.island_stamps[i] != island_stamp {
         continue
       }
       let vel = self.solver_bodies.vels[i]
@@ -205,12 +206,7 @@ fn VelocitySolver::solve_constraints(
     }
 
     joint_constraints.update(parameters, bodies, self.solver_bodies)
-    contact_constraints.update(
-      parameters,
-      substep,
-      bodies,
-      self.solver_bodies,
-    )
+    contact_constraints.update(parameters, substep, bodies, self.solver_bodies)
 
     if substep == 0 {
       joint_constraints.warmstart(bodies, self.solver_bodies)
@@ -220,16 +216,8 @@ fn VelocitySolver::solve_constraints(
     }
 
     for _ in 0..<pgs_iters {
-      joint_constraints.solve(
-        bodies,
-        self.solver_bodies,
-        parameters.dt,
-      )
-      contact_constraints.solve(
-        bodies,
-        self.solver_bodies,
-        parameters.dt,
-      )
+      joint_constraints.solve(bodies, self.solver_bodies, parameters.dt)
+      contact_constraints.solve(bodies, self.solver_bodies, parameters.dt)
     }
 
     contact_constraints.solve_restitution_constraints(
@@ -241,7 +229,8 @@ fn VelocitySolver::solve_constraints(
     self.integrate_positions(parameters, is_last_substep, bodies, island_stamp)
     if is_last_substep {
       for i in 0..<self.solver_bodies.poses.length() {
-        if i >= self.island_stamps.length() || self.island_stamps[i] != island_stamp {
+        if i >= self.island_stamps.length() ||
+          self.island_stamps[i] != island_stamp {
           continue
         }
         if bodies.bodies[i] is Some(rb) {
@@ -271,7 +260,8 @@ fn VelocitySolver::solve_constraints(
       )
       joint_constraints.position_correction(bodies)
       for i in 0..<self.solver_bodies.poses.length() {
-        if i >= self.island_stamps.length() || self.island_stamps[i] != island_stamp {
+        if i >= self.island_stamps.length() ||
+          self.island_stamps[i] != island_stamp {
           continue
         }
         if bodies.bodies[i] is Some(rb) {
@@ -287,11 +277,7 @@ fn VelocitySolver::solve_constraints(
     }
 
     for _ in 0..<stabilization_iters {
-      joint_constraints.solve_wo_bias(
-        bodies,
-        self.solver_bodies,
-        parameters.dt,
-      )
+      joint_constraints.solve_wo_bias(bodies, self.solver_bodies, parameters.dt)
       contact_constraints.solve_wo_bias(
         bodies,
         self.solver_bodies,

@@ -135,18 +135,8 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
       continue
     }
     island_solver_b.init_and_solve(
-      island_id,
-      staged_params,
-      islands_a,
-      bodies_a,
-      colliders_a,
-      hooks,
-      narrow_a,
-      impulse_a,
-      multibody_a,
-      events,
-      cache_a_in,
-      cache_a_out,
+      island_id, staged_params, islands_a, bodies_a, colliders_a, hooks, narrow_a,
+      impulse_a, multibody_a, events, cache_a_in, cache_a_out,
     )
   }
   let p_a1 = bodies_a.get(a1).unwrap().translation()

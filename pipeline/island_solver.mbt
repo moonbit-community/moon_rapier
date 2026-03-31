@@ -106,11 +106,7 @@ fn IslandSolver::init_and_solve(
     event_handler,
   )
   self.velocity_solver.writeback_bodies(
-    base_parameters,
-    islands,
-    island_id,
-    bodies,
-    multibody_joints,
+    base_parameters, islands, island_id, bodies, multibody_joints,
   )
 }
 
@@ -138,18 +134,8 @@ fn IslandSolver::solve(
       continue
     }
     self.init_and_solve(
-      island_id,
-      step_parameters,
-      islands,
-      bodies,
-      colliders,
-      physics_hooks,
-      narrow_phase,
-      impulse_joints,
-      multibody_joints,
-      event_handler,
-      contact_cache_in,
-      contact_cache_out,
+      island_id, step_parameters, islands, bodies, colliders, physics_hooks, narrow_phase,
+      impulse_joints, multibody_joints, event_handler, contact_cache_in, contact_cache_out,
     )
   }
 }
