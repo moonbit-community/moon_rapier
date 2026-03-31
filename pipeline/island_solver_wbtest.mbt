@@ -119,45 +119,42 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     hooks, events,
   )
 
-  // Unfiltered solve (single call over all interactions).
-  let solver_bodies_a = SolverBodies::default()
-  solver_bodies_a.resize(bodies_a.bodies.length())
-  for i in 0..<bodies_a.bodies.length() {
-    if bodies_a.bodies[i] is Some(rb) {
-      solver_bodies_a.copy_from(i, rb)
-    }
-  }
-  solve_joints_and_contacts_interleaved(
-    params,
-    bodies_a,
-    colliders_a,
-    hooks,
-    narrow_a,
-    impulse_a,
-    multibody_a,
-    solver_bodies_a,
-    None,
-    0,
-    0,
-    dt,
-    events,
-    cache_a_in,
-    cache_a_out,
-  )
-  solver_bodies_a.writeback_vels(bodies_a)
-
-  // Filtered solve (one solve per awake island).
-  let island_solver = IslandSolver::new()
-  island_solver.solve(
+  // Full island solve entrypoint.
+  let island_solver_a = IslandSolver::new()
+  island_solver_a.solve(
     params, islands_b, bodies_b, colliders_b, hooks, narrow_b, impulse_b, multibody_b,
     dt, events, cache_b_in, cache_b_out,
   )
+  // Direct per-island staged entrypoint.
+  let island_solver_b = IslandSolver::new()
+  let staged_params = params.set_dt(dt)
+  let active = islands_a.active_islands()
+  for i in 0..<active.length() {
+    let island_id = active[i]
+    if islands_a.island_bodies(island_id).length() == 0 {
+      continue
+    }
+    island_solver_b.init_and_solve(
+      island_id,
+      staged_params,
+      islands_a,
+      bodies_a,
+      colliders_a,
+      hooks,
+      narrow_a,
+      impulse_a,
+      multibody_a,
+      events,
+      cache_a_in,
+      cache_a_out,
+    )
+  }
   let p_a1 = bodies_a.get(a1).unwrap().translation()
   let p_a2 = bodies_a.get(a2).unwrap().translation()
   let p_b1 = bodies_b.get(b1).unwrap().translation()
   let p_b2 = bodies_b.get(b2).unwrap().translation()
 
-  // Both solvers should perform equivalent depenetration of the two independent islands.
+  // Both entrypoints should produce equivalent island-scoped solve results.
   inspect(@core.abs(p_a1.y - p_b1.y) < 1.0e-6F, content="true")
   inspect(@core.abs(p_a2.y - p_b2.y) < 1.0e-6F, content="true")
 }

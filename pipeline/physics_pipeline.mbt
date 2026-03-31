@@ -878,93 +878,6 @@ fn populate_contact_impulses_from_cache(
 }
 
 ///|
-fn solve_joints_and_contacts_interleaved(
-  parameters : IntegrationParameters,
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  physics_hooks : PhysicsHooks,
-  narrow_phase : @collision.NarrowPhase,
-  impulse_joints : @dynamics.ImpulseJointSet,
-  multibody_joints : @dynamics.MultibodyJointSet,
-  solver_bodies : SolverBodies,
-  island_stamps : Array[Int]?,
-  stamp : Int,
-  additional_solver_iterations : Int,
-  dt : @core.Real,
-  event_handler : EventHandler,
-  contact_cache_in : Array[ContactImpulseCacheEntry],
-  contact_cache_out : Array[ContactImpulseCacheEntry],
-) -> Unit {
-  let joint_constraints = JointConstraintsSet::new()
-  joint_constraints.init(
-    parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
-  )
-  let contact_constraints = ContactConstraintsSet::new()
-  contact_constraints.init(
-    parameters,
-    bodies,
-    colliders,
-    physics_hooks,
-    narrow_phase,
-    dt,
-    contact_cache_in,
-    parameters.warmstart_coefficient,
-    island_stamps,
-    stamp,
-  )
-  joint_constraints.warmstart(bodies, solver_bodies)
-  if contact_constraints.constraints.length() > 0 {
-    contact_constraints.warmstart(bodies, solver_bodies)
-  }
-  let base_iters0 = if parameters.num_solver_iterations <= 0 {
-    1
-  } else {
-    parameters.num_solver_iterations
-  }
-  let extra_iters = if additional_solver_iterations <= 0 {
-    0
-  } else {
-    additional_solver_iterations
-  }
-  let base_iters = base_iters0 + extra_iters
-  // This solver loop is simpler than Rapier's (no island-parallelism, no SIMD).
-  // Keep iteration counts aligned with `num_solver_iterations` for determinism/parity.
-  let joint_iters = base_iters
-  let contact_iters = base_iters
-  let iters = if contact_iters > joint_iters {
-    contact_iters
-  } else {
-    joint_iters
-  }
-  for i in 0..<iters {
-    if joint_constraints.constraints.length() > 0 && i < joint_iters {
-      joint_constraints.solve_velocity_constraints(bodies, solver_bodies, dt, 1)
-    }
-    if contact_constraints.constraints.length() > 0 {
-      contact_constraints.solve_velocity_constraints(
-        bodies, solver_bodies, dt, 1,
-      )
-    }
-  }
-  if contact_constraints.constraints.length() > 0 {
-    contact_constraints.solve_restitution_constraints(bodies, solver_bodies)
-    contact_constraints.position_correction(
-      bodies,
-      colliders,
-      parameters.allowed_linear_error(),
-    )
-  }
-  joint_constraints.position_correction(bodies)
-  joint_constraints.writeback_impulses(impulse_joints, multibody_joints)
-  if contact_constraints.constraints.length() > 0 {
-    contact_constraints.emit_contact_force_events(
-      bodies, colliders, dt, event_handler,
-    )
-    contact_constraints.append_cache_entries(contact_cache_out)
-  }
-}
-
-///|
 fn compute_collision_event_flags(
   colliders : @collision.ColliderSet,
   h1 : @collision.ColliderHandle,
@@ -1335,21 +1248,6 @@ pub fn PhysicsPipeline::step(
         match body.body_type {
           @dynamics.RigidBodyType::Dynamic => {
             body.update_effective_force_and_torque(gravity) |> ignore
-            let forces = body.forces()
-            let raw_vels = forces.integrate(dt, body.vels(), body.mass_props())
-            let damped_vels = raw_vels.apply_damping(dt, body.damping())
-            let linvel = if body.locked_translations {
-              @core.Vec2::zero()
-            } else {
-              damped_vels.linvel
-            }
-            let angvel = if body.locked_rotations {
-              0.0F
-            } else {
-              damped_vels.angvel
-            }
-            body.set_linvel(linvel, false) |> ignore
-            body.set_angvel(angvel, false) |> ignore
           }
           @dynamics.RigidBodyType::KinematicPositionBased => {
             // Rapier parity: derive velocities from position -> next_position using the
@@ -1377,7 +1275,7 @@ pub fn PhysicsPipeline::step(
     }
     self.contact_solver_cache.clear()
     island_solver.solve(
-      parameters,
+      parameters.set_dt(dt),
       islands,
       bodies,
       colliders,
@@ -1395,24 +1293,6 @@ pub fn PhysicsPipeline::step(
     // do any CCD shape casts (the solver may have performed position corrections).
     broad_phase.update(prediction_distance, bodies, colliders)
 
-    // Update `next_position` from the post-solver velocities.
-    for i in 0..<bodies.bodies.length() {
-      if bodies.bodies[i] is Some(body) {
-        if !body.enabled || body.is_sleeping() {
-          continue
-        }
-        match body.body_type {
-          @dynamics.RigidBodyType::Dynamic
-          | @dynamics.RigidBodyType::KinematicVelocityBased => {
-            let next_pos = body
-              .vels()
-              .integrate(dt, body.position(), body.center_of_mass())
-            body.set_next_position_internal(next_pos) |> ignore
-          }
-          _ => ()
-        }
-      }
-    }
     if ccd_is_enabled {
       // Clamp motions of CCD-active bodies before advancing to their final positions.
       let ccd_active = ccd_solver.update_ccd_active_flags(
@@ -1445,56 +1325,6 @@ pub fn PhysicsPipeline::step(
       impulse_joints, multibody_joints, physics_hooks, event_handler,
     )
 
-    // Post-stabilization pass using the final contacts (helps resting stacks with the
-    // "solve-then-advance" substep order).
-    let (post_constraints, post_manifolds) = build_constraints(
-      parameters,
-      bodies,
-      colliders,
-      physics_hooks,
-      narrow_phase,
-      dt,
-      self.contact_solver_cache,
-      0.0F,
-      None,
-      0,
-    )
-    if post_constraints.length() > 0 {
-      // Ensure deep segment-* penetrations get fully depenetrated in one step.
-      position_correction(
-        bodies,
-        colliders,
-        post_constraints,
-        post_manifolds,
-        parameters.allowed_linear_error(),
-      )
-      position_correction_all(
-        bodies,
-        colliders,
-        post_constraints,
-        post_manifolds,
-        parameters.allowed_linear_error(),
-      )
-    }
-    let post_joint_constraints = build_joint_constraints(
-      parameters,
-      bodies,
-      impulse_joints,
-      multibody_joints,
-      dt,
-      None,
-      0,
-    )
-    if post_joint_constraints.length() > 0 {
-      position_correction_joints(bodies, post_joint_constraints)
-    }
-
-    // The post-stabilization pass may have moved bodies. Sync colliders + refresh contacts so
-    // the rest of the pipeline (events, islands, user queries) observes the corrected poses.
-    collision_pipeline.step(
-      prediction_distance, islands, broad_phase, narrow_phase, bodies, colliders,
-      impulse_joints, multibody_joints, physics_hooks, event_handler,
-    )
   }
   // Only emit collision events after the final collision detection pass.
   populate_contact_impulses_from_cache(narrow_phase, self.contact_solver_cache)

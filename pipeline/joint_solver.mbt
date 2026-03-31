@@ -2748,6 +2748,53 @@ fn JointConstraintsSet::warmstart(
 }
 
 ///|
+fn JointConstraintsSet::update(
+  self : JointConstraintsSet,
+  parameters : IntegrationParameters,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+) -> Unit {
+  // The current 2D joint constraints keep their Jacobian/effective-mass data in constraint rows.
+  // Recompute on `init`; keep `update` as an explicit stage to match island/velocity solver flow.
+  self |> ignore
+  parameters |> ignore
+  bodies |> ignore
+  solver_bodies |> ignore
+}
+
+///|
+fn JointConstraintsSet::solve(
+  self : JointConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+) -> Unit {
+  if self.constraints.length() == 0 {
+    return
+  }
+  solve_joint_velocity_constraints(
+    bodies,
+    solver_bodies,
+    self.constraints,
+    dt,
+    1,
+  )
+}
+
+///|
+fn JointConstraintsSet::solve_wo_bias(
+  self : JointConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+) -> Unit {
+  self |> ignore
+  bodies |> ignore
+  solver_bodies |> ignore
+  dt |> ignore
+}
+
+///|
 fn JointConstraintsSet::solve_velocity_constraints(
   self : JointConstraintsSet,
   bodies : @dynamics.RigidBodySet,

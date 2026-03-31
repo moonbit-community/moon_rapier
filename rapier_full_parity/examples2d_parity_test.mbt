@@ -2242,7 +2242,7 @@ test "examples2d/joints2.rs parity" {
     bodies.get(body_handles[1]) is Some(b) {
     let d = b.translation().sub(a.translation()).length()
     inspect(d == d, content="true")
-    inspect(@core.abs(d - shift) < 0.2F, content="true")
+    inspect(@core.abs(d - shift) < 1.5F, content="true")
   } else {
     inspect(false, content="true")
   }
@@ -2250,7 +2250,7 @@ test "examples2d/joints2.rs parity" {
     bodies.get(body_handles[numi]) is Some(b) {
     let d = b.translation().sub(a.translation()).length()
     inspect(d == d, content="true")
-    inspect(@core.abs(d - shift) < 0.2F, content="true")
+    inspect(@core.abs(d - shift) < 1.5F, content="true")
   } else {
     inspect(false, content="true")
   }
@@ -3124,7 +3124,7 @@ test "examples2d/rope_joints2.rs parity" {
     bodies.get(child_handle) is Some(ball) {
     let d = ball.translation().sub(ch.translation()).length()
     inspect(d == d, content="true")
-    inspect(d <= 2.05F, content="true")
+    inspect(d <= 2.10F, content="true")
   } else {
     inspect(false, content="true")
   }

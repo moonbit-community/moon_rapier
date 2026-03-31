@@ -19,8 +19,8 @@
 /// - restitution + Coulomb friction
 /// - warmstarting through a per-pipeline cache keyed by collider handles + feature ids
 ///
-/// This is still simplified compared to Rapier (no island-parallelism, no contact skin / prediction,
-/// no manifold caching inside NarrowPhase), but it matches the "constraint from manifold" design.
+/// It follows Rapier's staged constraint-set flow (`init`/`update`/`warmstart`/`solve`/
+/// `solve_wo_bias`/`writeback_impulses`) in scalar 2D form.
 
 ///|
 pub struct ContactImpulseCacheEntry {
@@ -179,13 +179,14 @@ priv struct SolverConstraint {
   tangent_velocity : @core.Real
   world_p1 : @core.Vec2
   world_p2 : @core.Vec2
-  dist : @core.Real
-  restitution_vel : @core.Real
+  mut dist : @core.Real
+  restitution : @core.Real
+  mut restitution_vel : @core.Real
   friction : @core.Real
-  inv_mass_n : @core.Real
-  inv_mass_n_nocfm : @core.Real
-  inv_mass_t : @core.Real
-  rhs_bias : @core.Real
+  mut inv_mass_n : @core.Real
+  mut inv_mass_n_nocfm : @core.Real
+  mut inv_mass_t : @core.Real
+  mut rhs_bias : @core.Real
   mut impulse_n : @core.Real
   mut impulse_t : @core.Real
 }
@@ -473,6 +474,7 @@ fn build_constraints(
             world_p1,
             world_p2,
             dist,
+            restitution: restitution_in,
             restitution_vel,
             friction: friction_in,
             inv_mass_n,
@@ -630,6 +632,90 @@ fn get_body_inv_mass_inertia(
     }
   } else {
     (0.0F, 0.0F)
+  }
+}
+
+///|
+fn update_contact_constraints(
+  parameters : IntegrationParameters,
+  small_step_id : Int,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  constraints : Array[SolverConstraint],
+) -> Unit {
+  small_step_id |> ignore
+  let allowed_error = parameters.allowed_linear_error()
+  let max_corrective_velocity = parameters.max_corrective_velocity()
+  let erp_inv_dt = parameters.contact_softness.erp_inv_dt(parameters.dt)
+  let cfm_coeff = parameters.contact_softness.cfm_coeff(parameters.dt)
+
+  for i in 0..<constraints.length() {
+    let c = constraints[i]
+    let (v1, w1, com1) = get_body_kinematic_state(
+      bodies,
+      solver_bodies,
+      c.body1,
+    )
+    let (v2, w2, com2) = get_body_kinematic_state(
+      bodies,
+      solver_bodies,
+      c.body2,
+    )
+    let (inv_mass1, inv_inertia1) = get_body_inv_mass_inertia(
+      bodies,
+      solver_bodies,
+      c.body1,
+    )
+    let (inv_mass2, inv_inertia2) = get_body_inv_mass_inertia(
+      bodies,
+      solver_bodies,
+      c.body2,
+    )
+
+    let r1 = c.world_p1.sub(com1)
+    let r2 = c.world_p2.sub(com2)
+    let rt1 = cross_vec2(r1, c.tangent1)
+    let rt2 = cross_vec2(r2, c.tangent1)
+    let rn1 = cross_vec2(r1, c.dir1)
+    let rn2 = cross_vec2(r2, c.dir1)
+    let denom_n = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * rn1 * rn1 +
+      inv_inertia2 * rn2 * rn2
+    let denom_t = inv_mass1 +
+      inv_mass2 +
+      inv_inertia1 * rt1 * rt1 +
+      inv_inertia2 * rt2 * rt2
+    c.inv_mass_n_nocfm = if denom_n <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / denom_n
+    }
+    c.inv_mass_n = if denom_n + cfm_coeff <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / (denom_n + cfm_coeff)
+    }
+    c.inv_mass_t = if denom_t <= 1.0e-12F {
+      0.0F
+    } else {
+      1.0F / denom_t
+    }
+    c.rhs_bias = solver_clamp_value(
+      erp_inv_dt * (c.dist + allowed_error),
+      -max_corrective_velocity,
+      0.0F,
+    ) * 0.2F
+
+    let vel1 = v1.add(cross_z_scalar(w1, r1))
+    let vel2 = v2.add(cross_z_scalar(w2, r2))
+    let vn0 = vel1.sub(vel2).dot(c.dir1)
+    c.restitution_vel = if c.dist <= 0.0F && vn0 < -1.0e-3F {
+      -c.restitution * vn0
+    } else {
+      0.0F
+    }
+    constraints[i] = c
   }
 }
 
@@ -1038,11 +1124,13 @@ fn solve_restitution_constraints(
 priv struct ContactConstraintsSet {
   mut constraints : Array[SolverConstraint]
   mut manifolds : Array[SolverManifold]
+  mut builders : Array[SolverManifold]
+  cache_entries : Array[ContactImpulseCacheEntry]
 }
 
 ///|
 fn ContactConstraintsSet::new() -> ContactConstraintsSet {
-  { constraints: [], manifolds: [] }
+  { constraints: [], manifolds: [], builders: [], cache_entries: [] }
 }
 
 ///|
@@ -1065,6 +1153,29 @@ fn ContactConstraintsSet::init(
   )
   self.constraints = constraints
   self.manifolds = manifolds
+  self.builders = manifolds
+  self.cache_entries.clear()
+  for i in 0..<cache.length() {
+    self.cache_entries.push(cache[i])
+  }
+}
+
+///|
+fn ContactConstraintsSet::update(
+  self : ContactConstraintsSet,
+  parameters : IntegrationParameters,
+  small_step_id : Int,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+) -> Unit {
+  self.builders.length() |> ignore
+  update_contact_constraints(
+    parameters,
+    small_step_id,
+    bodies,
+    solver_bodies,
+    self.constraints,
+  )
 }
 
 ///|
@@ -1074,6 +1185,56 @@ fn ContactConstraintsSet::warmstart(
   solver_bodies : SolverBodies,
 ) -> Unit {
   warmstart(bodies, solver_bodies, self.constraints)
+}
+
+///|
+fn ContactConstraintsSet::solve(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+) -> Unit {
+  solve_velocity_constraints(
+    bodies,
+    solver_bodies,
+    dt,
+    self.constraints,
+    self.manifolds,
+    1,
+  )
+}
+
+///|
+fn ContactConstraintsSet::solve_wo_bias(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  solver_bodies : SolverBodies,
+  dt : @core.Real,
+) -> Unit {
+  let saved_dist : Array[@core.Real] = []
+  let saved_bias : Array[@core.Real] = []
+  for i in 0..<self.constraints.length() {
+    let c = self.constraints[i]
+    saved_dist.push(c.dist)
+    saved_bias.push(c.rhs_bias)
+    c.dist = 0.0F
+    c.rhs_bias = 0.0F
+    self.constraints[i] = c
+  }
+  solve_velocity_constraints(
+    bodies,
+    solver_bodies,
+    dt,
+    self.constraints,
+    self.manifolds,
+    1,
+  )
+  for i in 0..<self.constraints.length() {
+    let c = self.constraints[i]
+    c.dist = saved_dist[i]
+    c.rhs_bias = saved_bias[i]
+    self.constraints[i] = c
+  }
 }
 
 ///|
@@ -1120,6 +1281,22 @@ fn ContactConstraintsSet::position_correction(
 }
 
 ///|
+fn ContactConstraintsSet::position_correction_all(
+  self : ContactConstraintsSet,
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  allowed_linear_error : @core.Real,
+) -> Unit {
+  position_correction_all(
+    bodies,
+    colliders,
+    self.constraints,
+    self.manifolds,
+    allowed_linear_error,
+  )
+}
+
+///|
 fn ContactConstraintsSet::emit_contact_force_events(
   self : ContactConstraintsSet,
   bodies : @dynamics.RigidBodySet,
@@ -1136,6 +1313,19 @@ fn ContactConstraintsSet::append_cache_entries(
   cache : Array[ContactImpulseCacheEntry],
 ) -> Unit {
   append_cache_entries(cache, self.constraints)
+}
+
+///|
+fn ContactConstraintsSet::writeback_impulses(
+  self : ContactConstraintsSet,
+  cache : Array[ContactImpulseCacheEntry],
+) -> Unit {
+  cache.clear()
+  append_cache_entries(cache, self.constraints)
+  self.cache_entries.clear()
+  for i in 0..<cache.length() {
+    self.cache_entries.push(cache[i])
+  }
 }
 
 ///|

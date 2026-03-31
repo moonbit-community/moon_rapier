@@ -618,20 +618,23 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
   let cub_handle = colliders.insert_with_parent(cub, dyn_body, bodies)
 
   // Start with a deep intersection: both shapes overlap at the origin.
-  pipeline.step(
-    @core.Vec2::zero(),
-    IntegrationParameters::default(),
-    islands,
-    broad_phase,
-    narrow_phase,
-    bodies,
-    colliders,
-    impulse_joints,
-    multibody_joints,
-    ccd,
-    PhysicsHooks::new(),
-    EventHandler::new(),
-  )
+  // Under staged solving, this can require more than one frame to fully separate.
+  for _ in 0..<6 {
+    pipeline.step(
+      @core.Vec2::zero(),
+      IntegrationParameters::default(),
+      islands,
+      broad_phase,
+      narrow_phase,
+      bodies,
+      colliders,
+      impulse_joints,
+      multibody_joints,
+      ccd,
+      PhysicsHooks::new(),
+      EventHandler::new(),
+    )
+  }
   if colliders.get(seg_handle) is Some(seg_after) &&
     colliders.get(cub_handle) is Some(cub_after) {
     match (seg_after.shape(), cub_after.shape()) {
