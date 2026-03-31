@@ -1493,33 +1493,8 @@ pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
 pub fn RigidBodyBuilder::user_data(Self, Int) -> Self
 pub fn RigidBodyBuilder::user_data128(Self, @core.UserData128) -> Self
 
-pub struct RigidBodyBuilder3Compat {
-  inner : RigidBodyBuilder
-}
-pub fn RigidBodyBuilder3Compat::additional_mass(Self, Float) -> Self
-pub fn RigidBodyBuilder3Compat::additional_solver_iterations(Self, Int) -> Self
-pub fn RigidBodyBuilder3Compat::angular_damping(Self, Float) -> Self
-pub fn RigidBodyBuilder3Compat::angvel(Self, @core.Vec3) -> Self
-pub fn RigidBodyBuilder3Compat::build(Self) -> RigidBody
-pub fn RigidBodyBuilder3Compat::can_sleep(Self, Bool) -> Self
-pub fn RigidBodyBuilder3Compat::ccd_enabled(Self, Bool) -> Self
-pub fn RigidBodyBuilder3Compat::dynamic() -> Self
-pub fn RigidBodyBuilder3Compat::enabled_rotations(Self, Bool, Bool, Bool) -> Self
-pub fn RigidBodyBuilder3Compat::fixed() -> Self
-pub fn RigidBodyBuilder3Compat::gravity_scale(Self, Float) -> Self
-pub fn RigidBodyBuilder3Compat::gyroscopic_forces_enabled(Self, Bool) -> Self
-pub fn RigidBodyBuilder3Compat::kinematic_position_based() -> Self
-pub fn RigidBodyBuilder3Compat::kinematic_velocity_based() -> Self
-pub fn RigidBodyBuilder3Compat::linear_damping(Self, Float) -> Self
-pub fn RigidBodyBuilder3Compat::linvel(Self, @core.Vec3) -> Self
-pub fn RigidBodyBuilder3Compat::lock_rotations(Self) -> Self
-pub fn RigidBodyBuilder3Compat::lock_translations(Self) -> Self
-pub fn RigidBodyBuilder3Compat::rotation(Self, @core.Quat) -> Self
-pub fn RigidBodyBuilder3Compat::rotation_scaled_axis(Self, @core.Vec3) -> Self
-pub fn RigidBodyBuilder3Compat::soft_ccd_prediction(Self, Float) -> Self
-pub fn RigidBodyBuilder3Compat::translation(Self, @core.Vec3) -> Self
-
 #alias(RigidBodyBuilder3)
+#alias(RigidBodyBuilder3Compat)
 pub struct RigidBodyBuilder3D {
   mut body_type : RigidBodyType
   mut translation : @core.Vec3

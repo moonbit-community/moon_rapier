@@ -463,39 +463,8 @@ pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Flo
 pub fn ColliderBuilder::voxels(@core.Vec2, Array[(Int, Int)]) -> Self
 pub fn ColliderBuilder::voxels_from_points(@core.Vec2, Array[@core.Vec2]) -> Self
 
-pub struct ColliderBuilder3Compat {
-  inner : ColliderBuilder
-}
-pub fn ColliderBuilder3Compat::active_collision_types(Self, ActiveCollisionTypes) -> Self
-pub fn ColliderBuilder3Compat::active_events(Self, ActiveEvents) -> Self
-pub fn ColliderBuilder3Compat::active_hooks(Self, ActiveHooks) -> Self
-pub fn ColliderBuilder3Compat::ball(Float) -> Self
-pub fn ColliderBuilder3Compat::build(Self) -> Collider
-pub fn ColliderBuilder3Compat::capsule_x(Float, Float) -> Self
-pub fn ColliderBuilder3Compat::capsule_y(Float, Float) -> Self
-pub fn ColliderBuilder3Compat::collision_groups(Self, @dynamics.InteractionGroups) -> Self
-pub fn ColliderBuilder3Compat::compound(Array[(@core.Isometry3, SharedShape)]) -> Self
-pub fn ColliderBuilder3Compat::cone(Float, Float) -> Self
-pub fn ColliderBuilder3Compat::contact_skin(Self, Float) -> Self
-pub fn ColliderBuilder3Compat::convex_hull(Array[@core.Vec3]) -> Self?
-pub fn ColliderBuilder3Compat::cuboid(Float, Float, Float) -> Self
-pub fn ColliderBuilder3Compat::density(Self, Float) -> Self
-pub fn ColliderBuilder3Compat::friction(Self, Float) -> Self
-pub fn ColliderBuilder3Compat::heightfield(Array[Float], @core.Vec3) -> Self
-pub fn ColliderBuilder3Compat::restitution(Self, Float) -> Self
-pub fn ColliderBuilder3Compat::rotation(Self, @core.Quat) -> Self
-pub fn ColliderBuilder3Compat::rotation_scaled_axis(Self, @core.Vec3) -> Self
-pub fn ColliderBuilder3Compat::round_convex_hull(Array[@core.Vec3], Float) -> Self?
-pub fn ColliderBuilder3Compat::round_cylinder(Float, Float, Float) -> Self
-pub fn ColliderBuilder3Compat::segment(@core.Vec3, @core.Vec3) -> Self
-pub fn ColliderBuilder3Compat::sensor(Self, Bool) -> Self
-pub fn ColliderBuilder3Compat::solver_groups(Self, @dynamics.InteractionGroups) -> Self
-pub fn ColliderBuilder3Compat::translation(Self, @core.Vec3) -> Self
-pub fn ColliderBuilder3Compat::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
-pub fn ColliderBuilder3Compat::voxelized_mesh(Array[@core.Vec3], Array[(Int, Int)], Float, FillMode) -> Self
-pub fn ColliderBuilder3Compat::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self
-
 #alias(ColliderBuilder3)
+#alias(ColliderBuilder3Compat)
 pub struct ColliderBuilder3D {
   mut position : @core.Isometry3
   mut local_position : @core.Isometry3
