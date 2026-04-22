@@ -1140,8 +1140,6 @@ pub fn RevoluteJoint3::new(@core.Vec3) -> Self
 
 pub struct RevoluteJoint3Builder(RevoluteJoint3)
 pub fn RevoluteJoint3Builder::build(Self) -> RevoluteJoint3
-#deprecated
-pub fn RevoluteJoint3Builder::inner(Self) -> RevoluteJoint3
 pub fn RevoluteJoint3Builder::new(@core.Vec3) -> Self
 
 pub struct RevoluteJoint3DRealBuilder {
