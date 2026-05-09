@@ -19,8 +19,11 @@
 /// independent from `collision::ColliderHandle` while preserving full handle identity.
 pub struct RigidBodyColliders {
   mut colliders : Array[(Int, Int)]
+}
 
-  fn new() -> RigidBodyColliders
+///|
+pub fn RigidBodyColliders::RigidBodyColliders() -> RigidBodyColliders {
+  RigidBodyColliders::new()
 }
 
 ///|

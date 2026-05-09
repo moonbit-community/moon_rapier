@@ -19,8 +19,11 @@ pub struct RevoluteJoint3 {
   axis : @core.Vec3
   local_frame1_rotation : @core.Quat
   local_frame2_rotation : @core.Quat
+}
 
-  fn new(axis : @core.Vec3) -> RevoluteJoint3
+///|
+pub fn RevoluteJoint3::RevoluteJoint3(axis : @core.Vec3) -> RevoluteJoint3 {
+  RevoluteJoint3::new(axis)
 }
 
 ///|

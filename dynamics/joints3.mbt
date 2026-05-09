@@ -2770,8 +2770,11 @@ pub fn Multibody3DReal::inverse_kinematics(
 ///|
 pub struct MultibodyJointSet3DReal {
   inner : MultibodyJointSet3
+}
 
-  fn new() -> MultibodyJointSet3DReal
+///|
+pub fn MultibodyJointSet3DReal::MultibodyJointSet3DReal() -> MultibodyJointSet3DReal {
+  MultibodyJointSet3DReal::new()
 }
 
 ///|

@@ -20,15 +20,20 @@ pub struct PairFilterContext {
   collider2 : @collision.ColliderHandle
   rigid_body1 : @dynamics.RigidBodyHandle?
   rigid_body2 : @dynamics.RigidBodyHandle?
+}
 
-  fn new(
-    bodies : @dynamics.RigidBodySet,
-    colliders : @collision.ColliderSet,
-    collider1 : @collision.ColliderHandle,
-    collider2 : @collision.ColliderHandle,
-    rigid_body1 : @dynamics.RigidBodyHandle?,
-    rigid_body2 : @dynamics.RigidBodyHandle?,
-  ) -> PairFilterContext
+///|
+pub fn PairFilterContext::PairFilterContext(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  rigid_body1 : @dynamics.RigidBodyHandle?,
+  rigid_body2 : @dynamics.RigidBodyHandle?,
+) -> PairFilterContext {
+  PairFilterContext::new(
+    bodies, colliders, collider1, collider2, rigid_body1, rigid_body2,
+  )
 }
 
 ///|
@@ -55,19 +60,25 @@ pub struct ContactModificationContext {
   solver_contacts : Array[@collision.SolverContact]
   mut normal : @core.Vec2
   mut user_data : Int
+}
 
-  fn new(
-    bodies : @dynamics.RigidBodySet,
-    colliders : @collision.ColliderSet,
-    collider1 : @collision.ColliderHandle,
-    collider2 : @collision.ColliderHandle,
-    rigid_body1 : @dynamics.RigidBodyHandle?,
-    rigid_body2 : @dynamics.RigidBodyHandle?,
-    manifold : @collision.ContactManifold,
-    solver_contacts : Array[@collision.SolverContact],
-    normal : @core.Vec2,
-    user_data : Int,
-  ) -> ContactModificationContext
+///|
+pub fn ContactModificationContext::ContactModificationContext(
+  bodies : @dynamics.RigidBodySet,
+  colliders : @collision.ColliderSet,
+  collider1 : @collision.ColliderHandle,
+  collider2 : @collision.ColliderHandle,
+  rigid_body1 : @dynamics.RigidBodyHandle?,
+  rigid_body2 : @dynamics.RigidBodyHandle?,
+  manifold : @collision.ContactManifold,
+  solver_contacts : Array[@collision.SolverContact],
+  normal : @core.Vec2,
+  user_data : Int,
+) -> ContactModificationContext {
+  ContactModificationContext::new(
+    bodies, colliders, collider1, collider2, rigid_body1, rigid_body2, manifold,
+    solver_contacts, normal, user_data,
+  )
 }
 
 ///|
@@ -203,8 +214,11 @@ pub struct PhysicsHooks {
     Array[@collision.SolverContact],
     @collision.SolverFlags,
   ) -> @collision.SolverFlags)?
+}
 
-  fn new() -> PhysicsHooks
+///|
+pub fn PhysicsHooks::PhysicsHooks() -> PhysicsHooks {
+  PhysicsHooks::new()
 }
 
 ///|

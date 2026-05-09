@@ -18,8 +18,11 @@ pub struct CollisionDetectionCounters {
   broad_phase_time : Timer
   final_broad_phase_time : Timer
   narrow_phase_time : Timer
+}
 
-  fn new() -> CollisionDetectionCounters
+///|
+pub fn CollisionDetectionCounters::CollisionDetectionCounters() -> CollisionDetectionCounters {
+  CollisionDetectionCounters::new()
 }
 
 ///|

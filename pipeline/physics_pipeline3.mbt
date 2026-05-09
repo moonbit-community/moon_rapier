@@ -19,8 +19,11 @@
 /// shared solver core.
 pub struct PhysicsPipeline3 {
   inner : PhysicsPipeline
+}
 
-  fn new() -> PhysicsPipeline3
+///|
+pub fn PhysicsPipeline3::PhysicsPipeline3() -> PhysicsPipeline3 {
+  PhysicsPipeline3::new()
 }
 
 ///|

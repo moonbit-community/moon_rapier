@@ -21,8 +21,11 @@ pub struct DMatrix {
   rows : Int
   cols : Int
   data : Array[Real]
+}
 
-  fn new(rows : Int, cols : Int, init : Real) -> DMatrix
+///|
+pub fn DMatrix::DMatrix(rows : Int, cols : Int, init : Real) -> DMatrix {
+  DMatrix::new(rows, cols, init)
 }
 
 ///|

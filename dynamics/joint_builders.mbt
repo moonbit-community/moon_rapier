@@ -73,8 +73,13 @@ pub struct RopeJointBuilder {
   mut softness : SpringCoefficients
   mut motor : JointMotor
   mut motor_enabled : Bool
+}
 
-  fn new(max_length : @core.Real) -> RopeJointBuilder
+///|
+pub fn RopeJointBuilder::RopeJointBuilder(
+  max_length : @core.Real,
+) -> RopeJointBuilder {
+  RopeJointBuilder::new(max_length)
 }
 
 ///|
@@ -294,8 +299,13 @@ pub struct PinSlotJointBuilder {
   mut local_anchor2 : @core.Vec2
   mut limits : JointLimits
   mut limits_enabled : Bool
+}
 
-  fn new(axis : @core.Vec2) -> PinSlotJointBuilder
+///|
+pub fn PinSlotJointBuilder::PinSlotJointBuilder(
+  axis : @core.Vec2,
+) -> PinSlotJointBuilder {
+  PinSlotJointBuilder::new(axis)
 }
 
 ///|

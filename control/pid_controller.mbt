@@ -30,12 +30,15 @@ pub(all) struct PdController {
   ang_kp : @core.Real
   ang_kd : @core.Real
   axes : @dynamics.AxesMask
+}
 
-  fn new(
-    kp : @core.Real,
-    kd : @core.Real,
-    axes : @dynamics.AxesMask,
-  ) -> PdController
+///|
+pub fn PdController::PdController(
+  kp : @core.Real,
+  kd : @core.Real,
+  axes : @dynamics.AxesMask,
+) -> PdController {
+  PdController::new(kp, kd, axes)
 }
 
 ///|
@@ -207,13 +210,16 @@ pub(all) struct PidController {
   mut ang_integral : @core.Real
   lin_ki : @core.Vec2
   ang_ki : @core.Real
+}
 
-  fn new(
-    kp : @core.Real,
-    ki : @core.Real,
-    kd : @core.Real,
-    axes : @dynamics.AxesMask,
-  ) -> PidController
+///|
+pub fn PidController::PidController(
+  kp : @core.Real,
+  ki : @core.Real,
+  kd : @core.Real,
+  axes : @dynamics.AxesMask,
+) -> PidController {
+  PidController::new(kp, ki, kd, axes)
 }
 
 ///|

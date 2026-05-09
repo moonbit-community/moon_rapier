@@ -48,8 +48,11 @@ pub struct Arena[T] {
   mut generation : Int
   mut free_list_head : Int?
   mut len : Int
+}
 
-  fn[T] new() -> Arena[T]
+///|
+pub fn[T] Arena::Arena() -> Arena[T] {
+  Arena::new()
 }
 
 ///|

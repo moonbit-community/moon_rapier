@@ -100,8 +100,11 @@ pub struct KinematicCharacterController3DReal {
   min_slope_slide_angle : @core.Real
   snap_to_ground : CharacterLength?
   normal_nudge_factor : @core.Real
+}
 
-  fn new() -> KinematicCharacterController3DReal
+///|
+pub fn KinematicCharacterController3DReal::KinematicCharacterController3DReal() -> KinematicCharacterController3DReal {
+  KinematicCharacterController3DReal::new()
 }
 
 ///|

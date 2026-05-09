@@ -233,8 +233,11 @@ pub struct JointSet3DReal {
   generic_motor_impulses : Array[Array[@core.Real]]
   generic_coupled_impulses : Array[@core.Real]
   spring_impulses : Array[@core.Real]
+}
 
-  fn new() -> JointSet3DReal
+///|
+pub fn JointSet3DReal::JointSet3DReal() -> JointSet3DReal {
+  JointSet3DReal::new()
 }
 
 ///|

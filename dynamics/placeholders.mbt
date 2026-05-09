@@ -44,8 +44,11 @@ struct SleepCandidate {
 ///|
 pub struct ContactGraph {
   pairs : Array[(RigidBodyHandle, RigidBodyHandle)]
+}
 
-  fn new() -> ContactGraph
+///|
+pub fn ContactGraph::ContactGraph() -> ContactGraph {
+  ContactGraph::new()
 }
 
 ///|
@@ -112,8 +115,11 @@ pub struct IslandManager {
   body_island_generations : Array[Int]
   body_island_indices : Array[Int]
   body_state_generations : Array[Int]
+}
 
-  fn new() -> IslandManager
+///|
+pub fn IslandManager::IslandManager() -> IslandManager {
+  IslandManager::new()
 }
 
 ///|
@@ -1188,8 +1194,6 @@ pub fn ImpulseJointGraph::edges(
 pub struct ImpulseJointHandle {
   id : Int
   generation : Int
-
-  fn new(id : Int, generation : Int) -> ImpulseJointHandle
 }
 
 ///|
@@ -1236,8 +1240,11 @@ pub struct GenericJoint {
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
   user_data : Int
+}
 
-  fn new(locked_axes : JointAxesMask) -> GenericJoint
+///|
+pub fn GenericJoint::GenericJoint(locked_axes : JointAxesMask) -> GenericJoint {
+  GenericJoint::new(locked_axes)
 }
 
 ///|

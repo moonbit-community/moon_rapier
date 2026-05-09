@@ -16,8 +16,6 @@
 pub struct ColliderHandle {
   id : Int
   generation : Int
-
-  fn new(id : Int, generation : Int) -> ColliderHandle
 }
 
 ///|
@@ -731,14 +729,19 @@ pub struct ColliderFlags {
   active_collision_types : ActiveCollisionTypes
   active_hooks : ActiveHooks
   active_events : ActiveEvents
+}
 
-  fn new(
-    collision_groups : @dynamics.InteractionGroups,
-    solver_groups : @dynamics.InteractionGroups,
-    active_collision_types : ActiveCollisionTypes,
-    active_hooks : ActiveHooks,
-    active_events : ActiveEvents,
-  ) -> ColliderFlags
+///|
+pub fn ColliderFlags::ColliderFlags(
+  collision_groups : @dynamics.InteractionGroups,
+  solver_groups : @dynamics.InteractionGroups,
+  active_collision_types : ActiveCollisionTypes,
+  active_hooks : ActiveHooks,
+  active_events : ActiveEvents,
+) -> ColliderFlags {
+  ColliderFlags::new(
+    collision_groups, solver_groups, active_collision_types, active_hooks, active_events,
+  )
 }
 
 ///|
@@ -762,11 +765,14 @@ pub fn ColliderFlags::new(
 pub struct ColliderParent {
   handle : @dynamics.RigidBodyHandle
   pos_wrt_parent : @core.Isometry2
+}
 
-  fn new(
-    handle : @dynamics.RigidBodyHandle,
-    pos_wrt_parent : @core.Isometry2,
-  ) -> ColliderParent
+///|
+pub fn ColliderParent::ColliderParent(
+  handle : @dynamics.RigidBodyHandle,
+  pos_wrt_parent : @core.Isometry2,
+) -> ColliderParent {
+  ColliderParent::new(handle, pos_wrt_parent)
 }
 
 ///|
@@ -780,8 +786,13 @@ pub fn ColliderParent::new(
 ///|
 pub struct ColliderPosition {
   position : @core.Isometry2
+}
 
-  fn new(position : @core.Isometry2) -> ColliderPosition
+///|
+pub fn ColliderPosition::ColliderPosition(
+  position : @core.Isometry2,
+) -> ColliderPosition {
+  ColliderPosition::new(position)
 }
 
 ///|
@@ -2760,8 +2771,11 @@ pub struct ColliderSet {
   free_list : Array[Int]
   modified_colliders : Array[ColliderHandle]
   mut removed_colliders : Array[ColliderHandle]
+}
 
-  fn new() -> ColliderSet
+///|
+pub fn ColliderSet::ColliderSet() -> ColliderSet {
+  ColliderSet::new()
 }
 
 ///|
@@ -4230,11 +4244,14 @@ pub fn ContactManifoldPoint::set_data(
 pub struct ContactManifold {
   normal : @core.Vec2
   points : Array[ContactManifoldPoint]
+}
 
-  fn new(
-    normal : @core.Vec2,
-    points : Array[ContactManifoldPoint],
-  ) -> ContactManifold
+///|
+pub fn ContactManifold::ContactManifold(
+  normal : @core.Vec2,
+  points : Array[ContactManifoldPoint],
+) -> ContactManifold {
+  ContactManifold::new(normal, points)
 }
 
 ///|
@@ -4266,8 +4283,11 @@ pub struct NarrowPhase {
   mut intersections : Array[IntersectionPair]
   mut contacts : Array[(ColliderHandle, ColliderHandle, ContactPair)]
   mut query_dispatcher : QueryDispatcher
+}
 
-  fn new() -> NarrowPhase
+///|
+pub fn NarrowPhase::NarrowPhase() -> NarrowPhase {
+  NarrowPhase::new()
 }
 
 ///|
@@ -8884,8 +8904,11 @@ pub struct BroadPhaseBvh {
   pairs : Array[(ColliderHandle, ColliderHandle)]
   mut events : Array[BroadPhasePairEvent]
   override_aabbs : Array[(ColliderHandle, @core.Aabb)]
+}
 
-  fn new() -> BroadPhaseBvh
+///|
+pub fn BroadPhaseBvh::BroadPhaseBvh() -> BroadPhaseBvh {
+  BroadPhaseBvh::new()
 }
 
 ///|

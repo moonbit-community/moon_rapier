@@ -24,18 +24,21 @@ pub struct Mat3 {
   m20 : Real
   m21 : Real
   m22 : Real
+}
 
-  fn new(
-    m00 : Real,
-    m01 : Real,
-    m02 : Real,
-    m10 : Real,
-    m11 : Real,
-    m12 : Real,
-    m20 : Real,
-    m21 : Real,
-    m22 : Real,
-  ) -> Mat3
+///|
+pub fn Mat3::Mat3(
+  m00 : Real,
+  m01 : Real,
+  m02 : Real,
+  m10 : Real,
+  m11 : Real,
+  m12 : Real,
+  m20 : Real,
+  m21 : Real,
+  m22 : Real,
+) -> Mat3 {
+  Mat3::new(m00, m01, m02, m10, m11, m12, m20, m21, m22)
 }
 
 ///|
@@ -191,15 +194,18 @@ pub struct SdpMat3 {
   m22 : Real
   m23 : Real
   m33 : Real
+}
 
-  fn new(
-    m11 : Real,
-    m12 : Real,
-    m13 : Real,
-    m22 : Real,
-    m23 : Real,
-    m33 : Real,
-  ) -> SdpMat3
+///|
+pub fn SdpMat3::SdpMat3(
+  m11 : Real,
+  m12 : Real,
+  m13 : Real,
+  m22 : Real,
+  m23 : Real,
+  m33 : Real,
+) -> SdpMat3 {
+  SdpMat3::new(m11, m12, m13, m22, m23, m33)
 }
 
 ///|
@@ -278,12 +284,15 @@ pub struct MassProperties3 {
   inertia : SdpMat3
   inv_inertia : SdpMat3
   center_of_mass : Vec3
+}
 
-  fn new(
-    mass : Real,
-    inertia : SdpMat3,
-    center_of_mass : Vec3,
-  ) -> MassProperties3
+///|
+pub fn MassProperties3::MassProperties3(
+  mass : Real,
+  inertia : SdpMat3,
+  center_of_mass : Vec3,
+) -> MassProperties3 {
+  MassProperties3::new(mass, inertia, center_of_mass)
 }
 
 ///|

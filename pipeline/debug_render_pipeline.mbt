@@ -18,13 +18,16 @@ pub struct DebugColor {
   s : @core.Real
   l : @core.Real
   a : @core.Real
+}
 
-  fn new(
-    h : @core.Real,
-    s : @core.Real,
-    l : @core.Real,
-    a : @core.Real,
-  ) -> DebugColor
+///|
+pub fn DebugColor::DebugColor(
+  h : @core.Real,
+  s : @core.Real,
+  l : @core.Real,
+  a : @core.Real,
+) -> DebugColor {
+  DebugColor::new(h, s, l, a)
 }
 
 ///|
@@ -211,8 +214,11 @@ pub struct DebugRenderLine {
 ///|
 pub struct DebugRenderBackend {
   lines : Array[DebugRenderLine]
+}
 
-  fn new() -> DebugRenderBackend
+///|
+pub fn DebugRenderBackend::DebugRenderBackend() -> DebugRenderBackend {
+  DebugRenderBackend::new()
 }
 
 ///|
@@ -368,11 +374,14 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
 pub struct DebugRenderPipeline {
   style : DebugRenderStyle
   mode : DebugRenderMode
+}
 
-  fn new(
-    style : DebugRenderStyle,
-    mode : DebugRenderMode,
-  ) -> DebugRenderPipeline
+///|
+pub fn DebugRenderPipeline::DebugRenderPipeline(
+  style : DebugRenderStyle,
+  mode : DebugRenderMode,
+) -> DebugRenderPipeline {
+  DebugRenderPipeline::new(style, mode)
 }
 
 ///|

@@ -102,8 +102,11 @@ pub struct IslandManager3D {
   stack : Array[RigidBodyHandle]
   optimizer : IslandsOptimizer3D
   mut traversal_timestamp : Int
+}
 
-  fn new() -> IslandManager3D
+///|
+pub fn IslandManager3D::IslandManager3D() -> IslandManager3D {
+  IslandManager3D::new()
 }
 
 ///|

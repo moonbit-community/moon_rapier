@@ -24,8 +24,6 @@ const ACTIVE_EVENTS_INTERSECTION_EVENTS : Int = 1 << 2
 ///|
 pub struct ActiveEvents {
   mut bits : Int
-
-  fn new(bits : Int) -> ActiveEvents
 }
 
 ///|
@@ -175,8 +173,6 @@ const COLLISION_EVENT_FLAG_REMOVED : Int = 1 << 1
 ///|
 pub struct CollisionEventFlags {
   mut bits : Int
-
-  fn new(bits : Int) -> CollisionEventFlags
 }
 
 ///|
@@ -273,12 +269,15 @@ pub struct IntersectionEvent {
   collider1 : ColliderHandle
   collider2 : ColliderHandle
   intersecting : Bool
+}
 
-  fn new(
-    collider1 : ColliderHandle,
-    collider2 : ColliderHandle,
-    intersecting : Bool,
-  ) -> IntersectionEvent
+///|
+pub fn IntersectionEvent::IntersectionEvent(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  intersecting : Bool,
+) -> IntersectionEvent {
+  IntersectionEvent::new(collider1, collider2, intersecting)
 }
 
 ///|
@@ -313,15 +312,21 @@ pub struct ContactForceEvent {
   total_force_magnitude : @core.Real
   max_force_direction : @core.Vec2
   max_force_magnitude : @core.Real
+}
 
-  fn new(
-    collider1 : ColliderHandle,
-    collider2 : ColliderHandle,
-    total_force : @core.Vec2,
-    total_force_magnitude : @core.Real,
-    max_force_direction : @core.Vec2,
-    max_force_magnitude : @core.Real,
-  ) -> ContactForceEvent
+///|
+pub fn ContactForceEvent::ContactForceEvent(
+  collider1 : ColliderHandle,
+  collider2 : ColliderHandle,
+  total_force : @core.Vec2,
+  total_force_magnitude : @core.Real,
+  max_force_direction : @core.Vec2,
+  max_force_magnitude : @core.Real,
+) -> ContactForceEvent {
+  ContactForceEvent::new(
+    collider1, collider2, total_force, total_force_magnitude, max_force_direction,
+    max_force_magnitude,
+  )
 }
 
 ///|

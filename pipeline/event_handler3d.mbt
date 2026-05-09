@@ -17,8 +17,11 @@ pub struct EventHandler3D {
   collision_events : Array[@collision.CollisionEvent3D]
   intersection_events : Array[@collision.IntersectionEvent3D]
   contact_force_events : Array[@collision.ContactForceEvent3D]
+}
 
-  fn new() -> EventHandler3D
+///|
+pub fn EventHandler3D::EventHandler3D() -> EventHandler3D {
+  EventHandler3D::new()
 }
 
 ///|
