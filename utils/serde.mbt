@@ -83,7 +83,7 @@ pub fn serialize_to_vec_tuple(target : HashMap) -> String {
 fn split_values(text : String, sep : String) -> Array[String] {
   let values : Array[String] = []
   for part in text.split(sep[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.length() > 0 {
       values.push(value)
     }
@@ -138,7 +138,7 @@ pub fn deserialize_from_vec_tuple(value : String) -> HashMap {
   let entries : Array[(Int, String)] = []
   if value.strip_prefix("{\"map\":["[:]) is Some(list_view) {
     if list_view.strip_suffix("]}"[:]) is Some(items_view) {
-      let items = items_view.to_string()
+      let items = items_view.to_owned()
       if items.length() > 0 {
         for part in items.split("],["[:]) {
           let mut entry_view = part
@@ -148,15 +148,15 @@ pub fn deserialize_from_vec_tuple(value : String) -> HashMap {
           if entry_view.strip_suffix("]"[:]) is Some(view) {
             entry_view = view
           }
-          let fields = split_values(entry_view.to_string(), ",")
+          let fields = split_values(entry_view.to_owned(), ",")
           if fields.length() >= 2 {
             let key = parse_int_value(fields[0])
             let mut raw_text = fields[1]
             if raw_text.strip_prefix("\""[:]) is Some(view) {
-              raw_text = view.to_string()
+              raw_text = view.to_owned()
             }
             if raw_text.strip_suffix("\""[:]) is Some(view) {
-              raw_text = view.to_string()
+              raw_text = view.to_owned()
             }
             let parsed = unescape_json_string(raw_text)
             entries.push((key, parsed))

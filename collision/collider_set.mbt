@@ -2796,7 +2796,7 @@ pub fn ColliderSet::new() -> ColliderSet {
 fn split_values(text : String, sep : String) -> Array[String] {
   let values : Array[String] = []
   for part in text.split(sep[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.length() > 0 {
       values.push(value)
     }
@@ -3168,41 +3168,41 @@ fn parse_triples(text : String) -> Array[(Int, Int, Int)] {
 fn parse_shape(text : String) -> Shape {
   if text.strip_prefix("r("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_top_level(inner.to_string(), ',')
+    let parts = split_top_level(inner.to_owned(), ',')
     if parts.length() >= 2 {
       let base = parse_shape(parts[0])
       let radius = parse_real_value(parts[1])
       Shape::Round(Ref(base), radius)
     } else {
-      Shape::Round(Ref(parse_shape(inner.to_string())), 0.0F)
+      Shape::Round(Ref(parse_shape(inner.to_owned())), 0.0F)
     }
   } else if text.strip_prefix("b("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    Shape::Ball(parse_real_value(inner.to_string()))
+    Shape::Ball(parse_real_value(inner.to_owned()))
   } else if text.strip_prefix("c("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), ",")
+    let parts = split_values(inner.to_owned(), ",")
     let hw = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
     let hh = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
     Shape::Cuboid(hw, hh)
   } else if text.strip_prefix("h("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    Shape::HalfSpace(parse_vec2(inner.to_string()))
+    Shape::HalfSpace(parse_vec2(inner.to_owned()))
   } else if text.strip_prefix("x("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), ",")
+    let parts = split_values(inner.to_owned(), ",")
     let h = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
     let r = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
     Shape::CapsuleX(h, r)
   } else if text.strip_prefix("y("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), ",")
+    let parts = split_values(inner.to_owned(), ",")
     let h = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
     let r = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
     Shape::CapsuleY(h, r)
   } else if text.strip_prefix("s("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), ",")
+    let parts = split_values(inner.to_owned(), ",")
     let a = if parts.length() > 1 {
       @core.Vec2::new(parse_real_value(parts[0]), parse_real_value(parts[1]))
     } else {
@@ -3216,7 +3216,7 @@ fn parse_shape(text : String) -> Shape {
     Shape::Segment(a, b)
   } else if text.strip_prefix("p("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), "|")
+    let parts = split_values(inner.to_owned(), "|")
     let points = if parts.length() > 0 { parse_points(parts[0]) } else { [] }
     let indices : Array[(Int, Int)]? = if parts.length() > 1 {
       if parts[1] == "-" {
@@ -3230,7 +3230,7 @@ fn parse_shape(text : String) -> Shape {
     Shape::Polyline(points, indices)
   } else if text.strip_prefix("hf("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), "|")
+    let parts = split_values(inner.to_owned(), "|")
     let heights = if parts.length() > 0 { parse_reals(parts[0]) } else { [] }
     let scale = if parts.length() > 1 {
       parse_vec2(parts[1])
@@ -3240,16 +3240,16 @@ fn parse_shape(text : String) -> Shape {
     Shape::HeightField(heights, scale)
   } else if text.strip_prefix("v("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    Shape::ConvexPolygon(parse_points(inner.to_string()))
+    Shape::ConvexPolygon(parse_points(inner.to_owned()))
   } else if text.strip_prefix("t("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_values(inner.to_string(), "|")
+    let parts = split_values(inner.to_owned(), "|")
     let vertices = if parts.length() > 0 { parse_points(parts[0]) } else { [] }
     let indices = if parts.length() > 1 { parse_triples(parts[1]) } else { [] }
     Shape::TriMesh(vertices, indices)
   } else if text.strip_prefix("o("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
-    let parts = split_top_level(inner.to_string(), ';')
+    let parts = split_top_level(inner.to_owned(), ';')
     let items : Array[(@core.Isometry2, Shape)] = []
     if parts.length() > 1 {
       for i in 1..<parts.length() {
@@ -3377,26 +3377,26 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
   let colliders : Array[Collider?] = []
   let modified_colliders : Array[ColliderHandle] = []
   for part in data.split(";"[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.strip_prefix("len="[:]) is Some(raw_view) {
-      len = parse_int_value(raw_view.to_string())
+      len = parse_int_value(raw_view.to_owned())
     } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
-      let items = split_values(raw_view.to_string(), ",")
+      let items = split_values(raw_view.to_owned(), ",")
       for item in items {
         generations.push(parse_int_value(item))
       }
     } else if value.strip_prefix("free="[:]) is Some(raw_view) {
-      let items = split_values(raw_view.to_string(), ",")
+      let items = split_values(raw_view.to_owned(), ",")
       for item in items {
         free_list.push(parse_int_value(item))
       }
     } else if value.strip_prefix("colliders="[:]) is Some(raw_view) {
-      let entries = split_values(raw_view.to_string(), "|")
+      let entries = split_values(raw_view.to_owned(), "|")
       for entry in entries {
         if entry == "N" {
           colliders.push(None)
         } else if entry.strip_prefix("C^"[:]) is Some(rest_view) {
-          let fields = split_values(rest_view.to_string(), "^")
+          let fields = split_values(rest_view.to_owned(), "^")
           let shape = if fields.length() > 0 {
             parse_shape(fields[0])
           } else {
