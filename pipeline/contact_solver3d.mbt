@@ -56,7 +56,7 @@ pub fn ContactSolverCache3D::ContactSolverCache3D() -> ContactSolverCache3D {
 
 ///|
 pub fn ContactSolverCache3D::new() -> ContactSolverCache3D {
-  { entries: @hashmap.new() }
+  { entries: @hashmap.HashMap([]) }
 }
 
 ///|
@@ -1238,8 +1238,10 @@ pub fn solve_contacts_3d(
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
 ) -> Unit {
-  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
-  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+  )
+  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+  )
   solve_contacts_3d_impl(
     parameters,
     bodies,

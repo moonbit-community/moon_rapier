@@ -42,7 +42,7 @@ pub fn PhysicsPipeline3DReal::PhysicsPipeline3DReal() -> PhysicsPipeline3DReal {
 pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
   {
     contact_cache: ContactSolverCache3D::new(),
-    contact_twist_cache: @hashmap.new(),
+    contact_twist_cache: @hashmap.HashMap([]),
     sensor_pairs: [],
     contact_pairs: [],
     intersection_pairs: [],
@@ -291,7 +291,8 @@ fn clamp_fast_ccd_body_motions_3d_real(
     bodies,
     colliders,
   )
-  let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = @hashmap.new()
+  let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = @hashmap.HashMap([],
+  )
   let collider_handles = colliders.all_handles()
   for i in 0..<collider_handles.length() {
     let ch = collider_handles[i]
@@ -725,7 +726,8 @@ fn filter_broad_phase_pairs_3d(
     disabled_body_pairs.append(multibody.disabled_contact_pairs()[:])
   }
   if disabled_body_pairs.length() > 0 {
-    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new(
+    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.HashMap(
+      [],
       capacity=disabled_body_pairs.length() * 2,
     )
     for p in disabled_body_pairs {
@@ -785,7 +787,8 @@ fn collect_solver_interactions_3d_real(
   let interactions : Array[
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ] = []
-  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.new()
+  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.HashMap([],
+  )
   fn push_unique_interaction(
     interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
     interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool],
@@ -1486,7 +1489,8 @@ fn PhysicsPipeline3DReal::step_impl_one(
   let mut twist_cache_in = self.contact_twist_cache
   for pass in 0..<coupling_passes {
     let cache_out = ContactSolverCache3D::new()
-    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.new()
+    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+    )
     let pass_events = if pass + 1 == coupling_passes { events } else { None }
     if active_island_ids.length() > 0 {
       for island_idx in 0..<active_island_ids.length() {

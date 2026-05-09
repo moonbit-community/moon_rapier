@@ -2155,7 +2155,8 @@ pub fn t12_mesh_bounds_map() -> @hashmap.HashMap[
   String,
   (@core.Vec3, @core.Vec3),
 ] {
-  let m : @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)] = @hashmap.new(
+  let m : @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)] = @hashmap.HashMap(
+    [],
     capacity=37,
   )
   m.set(

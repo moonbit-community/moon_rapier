@@ -334,7 +334,7 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
   if name == "" {
     return (None, start + 1)
   }
-  let attrs : @hashmap.HashMap[String, String] = @hashmap.new()
+  let attrs : @hashmap.HashMap[String, String] = @hashmap.HashMap([])
   j = xml_skip_ws(s, j)
   while j < s.length() {
     let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
@@ -710,19 +710,24 @@ pub fn UrdfRobot3DReal::insert_3d_real(
   joints : @dynamics.JointSet3DReal,
   base_transform : @core.Isometry3,
 ) -> Unit {
-  let link_to_body : @hashmap.HashMap[String, @dynamics.RigidBodyHandle] = @hashmap.new(
+  let link_to_body : @hashmap.HashMap[String, @dynamics.RigidBodyHandle] = @hashmap.HashMap(
+    [],
     capacity=self.links.length(),
   )
-  let link_pose_urdf : @hashmap.HashMap[String, @core.Isometry3] = @hashmap.new(
+  let link_pose_urdf : @hashmap.HashMap[String, @core.Isometry3] = @hashmap.HashMap(
+    [],
     capacity=self.links.length(),
   )
-  let link_visuals : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.new(
+  let link_visuals : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.HashMap(
+    [],
     capacity=self.links.length(),
   )
-  let link_collisions : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.new(
+  let link_collisions : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.HashMap(
+    [],
     capacity=self.links.length(),
   )
-  let link_inertials : @hashmap.HashMap[String, UrdfInertial3DReal?] = @hashmap.new(
+  let link_inertials : @hashmap.HashMap[String, UrdfInertial3DReal?] = @hashmap.HashMap(
+    [],
     capacity=self.links.length(),
   )
   for i in 0..<self.links.length() {
@@ -731,7 +736,8 @@ pub fn UrdfRobot3DReal::insert_3d_real(
     link_collisions.set(l.name, l.collisions)
     link_inertials.set(l.name, l.inertial)
   }
-  let children : @hashset.HashSet[String] = @hashset.new(
+  let children : @hashset.HashSet[String] = @hashset.HashSet(
+    [],
     capacity=self.joints.length(),
   )
   for j in self.joints {
