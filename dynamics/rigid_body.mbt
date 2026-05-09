@@ -2411,7 +2411,7 @@ fn body_type_from_int(value : Int) -> RigidBodyType {
 fn split_values(text : String, sep : String) -> Array[String] {
   let values : Array[String] = []
   for part in text.split(sep[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.length() > 0 {
       values.push(value)
     }
@@ -2589,30 +2589,30 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   let free_list : Array[Int] = []
   let bodies : Array[RigidBody?] = []
   for part in data.split(";"[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.strip_prefix("len="[:]) is Some(raw_view) {
-      let raw = raw_view.to_string()
+      let raw = raw_view.to_owned()
       len = parse_int_value(raw)
     } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
-      let raw = raw_view.to_string()
+      let raw = raw_view.to_owned()
       let items = split_values(raw, ",")
       for item in items {
         generations.push(parse_int_value(item))
       }
     } else if value.strip_prefix("free="[:]) is Some(raw_view) {
-      let raw = raw_view.to_string()
+      let raw = raw_view.to_owned()
       let items = split_values(raw, ",")
       for item in items {
         free_list.push(parse_int_value(item))
       }
     } else if value.strip_prefix("bodies="[:]) is Some(raw_view) {
-      let raw = raw_view.to_string()
+      let raw = raw_view.to_owned()
       let entries = split_values(raw, "|")
       for entry in entries {
         if entry == "N" {
           bodies.push(None)
         } else if entry.strip_prefix("B,"[:]) is Some(entry_view) {
-          let fields = split_values(entry_view.to_string(), ",")
+          let fields = split_values(entry_view.to_owned(), ",")
           let body_type = body_type_from_int(
             if fields.length() > 0 {
               parse_int_value(fields[0])

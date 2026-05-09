@@ -1820,7 +1820,7 @@ fn MultibodyJointSet::find_graph_edge_by_child(
 fn mb_split_values(text : String, sep : String) -> Array[String] {
   let values : Array[String] = []
   for part in text.split(sep[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.length() > 0 {
       values.push(value)
     }
@@ -1886,7 +1886,7 @@ fn write_link(sb : StringBuilder, link : MultibodyLink) -> Unit {
 ///|
 fn parse_link(text : String) -> MultibodyLink? {
   if text.strip_prefix("L^"[:]) is Some(view) {
-    let fields = mb_split_values(view.to_string(), "^")
+    let fields = mb_split_values(view.to_owned(), "^")
     if fields.length() < 24 {
       return None
     }
@@ -2074,10 +2074,10 @@ pub fn MultibodyJointSet::serialize(self : MultibodyJointSet) -> String {
 pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
   let set = MultibodyJointSet::new()
   if data.strip_prefix("mbs="[:]) is Some(view) {
-    let raw = view.to_string()
+    let raw = view.to_owned()
     if raw.length() > 0 {
       for mb_text in raw.split("@"[:]) {
-        let mb_str = mb_text.to_string()
+        let mb_str = mb_text.to_owned()
         if mb_str.length() == 0 {
           continue
         }

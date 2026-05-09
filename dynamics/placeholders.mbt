@@ -2199,7 +2199,7 @@ pub fn ImpulseJointSet::new() -> ImpulseJointSet {
 fn ij_split_values(text : String, sep : String) -> Array[String] {
   let values : Array[String] = []
   for part in text.split(sep[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.length() > 0 {
       values.push(value)
     }
@@ -2691,19 +2691,19 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
   let free_handles : Array[Int] = []
   let entries : Array[String] = []
   for part in data.split(";"[:]) {
-    let value = part.to_string()
+    let value = part.to_owned()
     if value.strip_prefix("len="[:]) is Some(raw_view) {
-      len = ij_parse_int_value(raw_view.to_string())
+      len = ij_parse_int_value(raw_view.to_owned())
     } else if value.strip_prefix("gens="[:]) is Some(raw_view) {
-      for item in ij_split_values(raw_view.to_string(), ",") {
+      for item in ij_split_values(raw_view.to_owned(), ",") {
         gens.push(ij_parse_int_value(item))
       }
     } else if value.strip_prefix("free="[:]) is Some(raw_view) {
-      for item in ij_split_values(raw_view.to_string(), ",") {
+      for item in ij_split_values(raw_view.to_owned(), ",") {
         free_handles.push(ij_parse_int_value(item))
       }
     } else if value.strip_prefix("joints="[:]) is Some(raw_view) {
-      for item in ij_split_values(raw_view.to_string(), "|") {
+      for item in ij_split_values(raw_view.to_owned(), "|") {
         entries.push(item)
       }
     }
@@ -2724,7 +2724,7 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
   for i in 0..<entries.length() {
     let entry = entries[i]
     if entry.strip_prefix("J^"[:]) is Some(rest_view) {
-      let fields = ij_split_values(rest_view.to_string(), "^")
+      let fields = ij_split_values(rest_view.to_owned(), "^")
       let id = if fields.length() > 0 {
         ij_parse_int_value(fields[0])
       } else {
