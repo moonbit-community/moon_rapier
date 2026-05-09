@@ -15,8 +15,11 @@
 ///|
 pub struct Group {
   value : Int
+}
 
-  fn new(bits : Int) -> Group
+///|
+pub fn Group::Group(bits : Int) -> Group {
+  Group::new(bits)
 }
 
 ///|
@@ -219,12 +222,15 @@ pub struct InteractionGroups {
   mut memberships : Group
   mut filter : Group
   test_mode : InteractionTestMode
+}
 
-  fn new(
-    memberships : Group,
-    filter : Group,
-    test_mode : InteractionTestMode,
-  ) -> InteractionGroups
+///|
+pub fn InteractionGroups::InteractionGroups(
+  memberships : Group,
+  filter : Group,
+  test_mode : InteractionTestMode,
+) -> InteractionGroups {
+  InteractionGroups::new(memberships, filter, test_mode)
 }
 
 ///|

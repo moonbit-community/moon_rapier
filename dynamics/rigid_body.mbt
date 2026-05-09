@@ -16,8 +16,6 @@
 pub struct RigidBodyHandle {
   id : Int
   generation : Int
-
-  fn new(id : Int, generation : Int) -> RigidBodyHandle
 }
 
 ///|
@@ -167,8 +165,13 @@ pub fn RigidBodyChanges::dominance() -> Int {
 ///|
 pub struct RigidBodyDominance {
   mut group : Int
+}
 
-  fn new(group : Int) -> RigidBodyDominance
+///|
+pub fn RigidBodyDominance::RigidBodyDominance(
+  group : Int,
+) -> RigidBodyDominance {
+  RigidBodyDominance::new(group)
 }
 
 ///|
@@ -222,11 +225,14 @@ pub type BodyStatus = RigidBodyType
 pub struct RigidBodyPosition {
   mut position : @core.Isometry2
   mut next_position : @core.Isometry2
+}
 
-  fn new(
-    position : @core.Isometry2,
-    next_position : @core.Isometry2,
-  ) -> RigidBodyPosition
+///|
+pub fn RigidBodyPosition::RigidBodyPosition(
+  position : @core.Isometry2,
+  next_position : @core.Isometry2,
+) -> RigidBodyPosition {
+  RigidBodyPosition::new(position, next_position)
 }
 
 ///|
@@ -275,8 +281,14 @@ pub fn RigidBodyPosition::integrate_forces_and_velocities(
 pub struct RigidBodyVelocity {
   mut linvel : @core.Vec2
   mut angvel : @core.Real
+}
 
-  fn new(linvel : @core.Vec2, angvel : @core.Real) -> RigidBodyVelocity
+///|
+pub fn RigidBodyVelocity::RigidBodyVelocity(
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> RigidBodyVelocity {
+  RigidBodyVelocity::new(linvel, angvel)
 }
 
 ///|
@@ -1721,8 +1733,13 @@ pub struct RigidBodyBuilder {
   mut soft_ccd_prediction : @core.Real
   mut dominance_group : Int
   mut user_data : @core.UserData128
+}
 
-  fn new(body_type : RigidBodyType) -> RigidBodyBuilder
+///|
+pub fn RigidBodyBuilder::RigidBodyBuilder(
+  body_type : RigidBodyType,
+) -> RigidBodyBuilder {
+  RigidBodyBuilder::new(body_type)
 }
 
 ///|
@@ -2080,8 +2097,11 @@ pub struct RigidBodySet {
   free_list : Array[Int]
   modified_bodies : Array[RigidBodyHandle]
   pending_collider_position_updates : Array[(Int, Int, @core.Isometry2)]
+}
 
-  fn new() -> RigidBodySet
+///|
+pub fn RigidBodySet::RigidBodySet() -> RigidBodySet {
+  RigidBodySet::new()
 }
 
 ///|

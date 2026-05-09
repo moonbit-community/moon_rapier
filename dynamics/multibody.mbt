@@ -313,8 +313,6 @@ fn multibody_joint_with_local_displacements(
 ///|
 pub struct LinkId {
   value : Int
-
-  fn new(value : Int) -> LinkId
 }
 
 ///|

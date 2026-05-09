@@ -24,8 +24,13 @@
 ///|
 pub struct RevoluteJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+}
 
-  fn new(axis : @core.Vec3) -> RevoluteJoint3DRealBuilder
+///|
+pub fn RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+  axis : @core.Vec3,
+) -> RevoluteJoint3DRealBuilder {
+  RevoluteJoint3DRealBuilder::new(axis)
 }
 
 ///|
@@ -112,8 +117,13 @@ pub fn RevoluteJoint3DRealBuilder::build(
 ///|
 pub struct PrismaticJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+}
 
-  fn new(axis : @core.Vec3) -> PrismaticJoint3DRealBuilder
+///|
+pub fn PrismaticJoint3DRealBuilder::PrismaticJoint3DRealBuilder(
+  axis : @core.Vec3,
+) -> PrismaticJoint3DRealBuilder {
+  PrismaticJoint3DRealBuilder::new(axis)
 }
 
 ///|
@@ -200,8 +210,11 @@ pub fn PrismaticJoint3DRealBuilder::build(
 ///|
 pub struct FixedJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+}
 
-  fn new() -> FixedJoint3DRealBuilder
+///|
+pub fn FixedJoint3DRealBuilder::FixedJoint3DRealBuilder() -> FixedJoint3DRealBuilder {
+  FixedJoint3DRealBuilder::new()
 }
 
 ///|
@@ -251,8 +264,11 @@ pub fn FixedJoint3DRealBuilder::build(
 ///|
 pub struct SphericalJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
+}
 
-  fn new() -> SphericalJoint3DRealBuilder
+///|
+pub fn SphericalJoint3DRealBuilder::SphericalJoint3DRealBuilder() -> SphericalJoint3DRealBuilder {
+  SphericalJoint3DRealBuilder::new()
 }
 
 ///|

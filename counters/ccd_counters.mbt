@@ -19,8 +19,11 @@ pub struct CCDCounters {
   solver_time : Timer
   broad_phase_time : Timer
   narrow_phase_time : Timer
+}
 
-  fn new() -> CCDCounters
+///|
+pub fn CCDCounters::CCDCounters() -> CCDCounters {
+  CCDCounters::new()
 }
 
 ///|

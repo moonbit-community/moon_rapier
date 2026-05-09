@@ -16,8 +16,14 @@
 pub struct ModifiedObjects[Handle, Object] {
   handles : Array[Handle]
   object_marker : Object?
+}
 
-  fn[Handle, Object] new() -> ModifiedObjects[Handle, Object]
+///|
+pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> ModifiedObjects[
+  Handle,
+  Object,
+] {
+  ModifiedObjects::new()
 }
 
 ///|

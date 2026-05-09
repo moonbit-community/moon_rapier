@@ -27,8 +27,11 @@ pub struct RopeJoint3DReal {
 ///|
 pub struct RopeJointSet3DReal {
   joints : Array[RopeJoint3DReal]
+}
 
-  fn new() -> RopeJointSet3DReal
+///|
+pub fn RopeJointSet3DReal::RopeJointSet3DReal() -> RopeJointSet3DReal {
+  RopeJointSet3DReal::new()
 }
 
 ///|

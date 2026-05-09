@@ -266,8 +266,13 @@ pub struct DynamicRayCastVehicleController {
   chassis : @dynamics.RigidBodyHandle
   index_up_axis : Int
   index_forward_axis : Int
+}
 
-  fn new(chassis : @dynamics.RigidBodyHandle) -> DynamicRayCastVehicleController
+///|
+pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(
+  chassis : @dynamics.RigidBodyHandle,
+) -> DynamicRayCastVehicleController {
+  DynamicRayCastVehicleController::new(chassis)
 }
 
 ///|

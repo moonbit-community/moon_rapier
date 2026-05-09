@@ -86,8 +86,11 @@ fn ColliderSet3::sync_with_bodies(
 /// 3D-flavored collider set (dim3,f32).
 pub struct ColliderSet3 {
   inner : ColliderSet
+}
 
-  fn new() -> ColliderSet3
+///|
+pub fn ColliderSet3::ColliderSet3() -> ColliderSet3 {
+  ColliderSet3::new()
 }
 
 ///|

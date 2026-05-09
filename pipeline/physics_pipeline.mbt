@@ -27,8 +27,11 @@ pub struct PhysicsPipeline {
   ]
   contact_solver_cache : Array[ContactImpulseCacheEntry]
   counters : @counters.Counters
+}
 
-  fn new() -> PhysicsPipeline
+///|
+pub fn PhysicsPipeline::PhysicsPipeline() -> PhysicsPipeline {
+  PhysicsPipeline::new()
 }
 
 ///|

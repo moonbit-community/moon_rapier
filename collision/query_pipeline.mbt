@@ -47,8 +47,11 @@ const QUERY_FILTER_ONLY_FIXED : Int = QUERY_FILTER_EXCLUDE_DYNAMIC |
 ///|
 pub struct QueryFilterFlags {
   mut bits : Int
+}
 
-  fn new(bits : Int) -> QueryFilterFlags
+///|
+pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
+  QueryFilterFlags::new(bits)
 }
 
 ///|
@@ -272,8 +275,11 @@ pub struct QueryFilter {
   mut groups : @dynamics.InteractionGroups?
   mut flags : QueryFilterFlags
   mut predicate : ((ColliderHandle, Collider) -> Bool)?
+}
 
-  fn new() -> QueryFilter
+///|
+pub fn QueryFilter::QueryFilter() -> QueryFilter {
+  QueryFilter::new()
 }
 
 ///|
@@ -432,8 +438,11 @@ pub struct Bvh {
   // Rapier's "conservative" AABB queries which do not recompute the latest
   // collider AABB.
   aabbs : Array[@core.Aabb?]
+}
 
-  fn new(aabbs : Array[@core.Aabb?]) -> Bvh
+///|
+pub fn Bvh::Bvh(aabbs : Array[@core.Aabb?]) -> Bvh {
+  Bvh::new(aabbs)
 }
 
 ///|
@@ -456,24 +465,30 @@ pub struct QueryPipeline {
   bvh : Bvh
   filter : QueryFilter
   dispatcher : QueryDispatcher
+}
 
-  fn new(
-    filter : QueryFilter,
-    bodies : @dynamics.RigidBodySet,
-    colliders : ColliderSet,
-  ) -> QueryPipeline
+///|
+pub fn QueryPipeline::QueryPipeline(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> QueryPipeline {
+  QueryPipeline::new(filter, bodies, colliders)
 }
 
 ///|
 pub struct QueryPipelineMut {
   pipeline : QueryPipeline
   dispatcher : QueryDispatcher
+}
 
-  fn new(
-    filter : QueryFilter,
-    bodies : @dynamics.RigidBodySet,
-    colliders : ColliderSet,
-  ) -> QueryPipelineMut
+///|
+pub fn QueryPipelineMut::QueryPipelineMut(
+  filter : QueryFilter,
+  bodies : @dynamics.RigidBodySet,
+  colliders : ColliderSet,
+) -> QueryPipelineMut {
+  QueryPipelineMut::new(filter, bodies, colliders)
 }
 
 ///|
@@ -529,8 +544,14 @@ pub struct ShapeCastOptions {
   max_toi : @core.Real
   target_distance : @core.Real
   stop_at_penetration : Bool
+}
 
-  fn new(max_toi : @core.Real, stop_at_penetration : Bool) -> ShapeCastOptions
+///|
+pub fn ShapeCastOptions::ShapeCastOptions(
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastOptions {
+  ShapeCastOptions::new(max_toi, stop_at_penetration)
 }
 
 ///|
@@ -574,12 +595,15 @@ pub struct NonlinearRigidMotion {
   start_pos : @core.Isometry2
   linvel : @core.Vec2
   angvel : @core.Real
+}
 
-  fn new(
-    start_pos : @core.Isometry2,
-    linvel : @core.Vec2,
-    angvel : @core.Real,
-  ) -> NonlinearRigidMotion
+///|
+pub fn NonlinearRigidMotion::NonlinearRigidMotion(
+  start_pos : @core.Isometry2,
+  linvel : @core.Vec2,
+  angvel : @core.Real,
+) -> NonlinearRigidMotion {
+  NonlinearRigidMotion::new(start_pos, linvel, angvel)
 }
 
 ///|

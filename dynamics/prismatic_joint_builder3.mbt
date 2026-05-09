@@ -21,8 +21,13 @@ pub struct PrismaticJointBuilder3 {
   axis : @core.Vec3
   local_anchor1_3 : @core.Vec3
   local_anchor2_3 : @core.Vec3
+}
 
-  fn new(axis : @core.Vec3) -> PrismaticJointBuilder3
+///|
+pub fn PrismaticJointBuilder3::PrismaticJointBuilder3(
+  axis : @core.Vec3,
+) -> PrismaticJointBuilder3 {
+  PrismaticJointBuilder3::new(axis)
 }
 
 ///|

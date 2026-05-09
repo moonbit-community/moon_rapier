@@ -19,8 +19,14 @@
 pub struct BodyPair {
   body1 : RigidBodyHandle
   body2 : RigidBodyHandle
+}
 
-  fn new(body1 : RigidBodyHandle, body2 : RigidBodyHandle) -> BodyPair
+///|
+pub fn BodyPair::BodyPair(
+  body1 : RigidBodyHandle,
+  body2 : RigidBodyHandle,
+) -> BodyPair {
+  BodyPair::new(body1, body2)
 }
 
 ///|

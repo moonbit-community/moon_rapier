@@ -156,10 +156,13 @@ pub struct DynamicRayCastVehicleController3 {
   index_up_axis : Int
   /// The chassis local forward direction (`0 = x, 1 = y, 2 = z`).
   index_forward_axis : Int
+}
 
-  fn new(
-    chassis : @dynamics.RigidBodyHandle,
-  ) -> DynamicRayCastVehicleController3
+///|
+pub fn DynamicRayCastVehicleController3::DynamicRayCastVehicleController3(
+  chassis : @dynamics.RigidBodyHandle,
+) -> DynamicRayCastVehicleController3 {
+  DynamicRayCastVehicleController3::new(chassis)
 }
 
 ///|

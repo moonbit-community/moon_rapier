@@ -31,8 +31,11 @@ pub struct PhysicsPipeline3DReal {
   intersection_pairs : Array[
     (@collision.ColliderHandle3D, @collision.ColliderHandle3D),
   ]
+}
 
-  fn new() -> PhysicsPipeline3DReal
+///|
+pub fn PhysicsPipeline3DReal::PhysicsPipeline3DReal() -> PhysicsPipeline3DReal {
+  PhysicsPipeline3DReal::new()
 }
 
 ///|

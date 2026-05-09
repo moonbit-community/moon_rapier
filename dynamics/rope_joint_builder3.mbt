@@ -20,8 +20,13 @@ pub struct RopeJointBuilder3 {
   inner : RopeJointBuilder
   local_anchor1_3 : @core.Vec3
   local_anchor2_3 : @core.Vec3
+}
 
-  fn new(max_length : @core.Real) -> RopeJointBuilder3
+///|
+pub fn RopeJointBuilder3::RopeJointBuilder3(
+  max_length : @core.Real,
+) -> RopeJointBuilder3 {
+  RopeJointBuilder3::new(max_length)
 }
 
 ///|

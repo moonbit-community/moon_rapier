@@ -19,8 +19,13 @@ pub struct RevoluteJointBuilder3 {
   axis : @core.Vec3
   local_anchor1_3 : @core.Vec3
   local_anchor2_3 : @core.Vec3
+}
 
-  fn new(axis : @core.Vec3) -> RevoluteJointBuilder3
+///|
+pub fn RevoluteJointBuilder3::RevoluteJointBuilder3(
+  axis : @core.Vec3,
+) -> RevoluteJointBuilder3 {
+  RevoluteJointBuilder3::new(axis)
 }
 
 ///|

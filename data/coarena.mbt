@@ -15,8 +15,11 @@
 ///|
 pub struct Coarena[T] {
   data : Array[(Int, T)]
+}
 
-  fn[T] new() -> Coarena[T]
+///|
+pub fn[T] Coarena::Coarena() -> Coarena[T] {
+  Coarena::new()
 }
 
 ///|

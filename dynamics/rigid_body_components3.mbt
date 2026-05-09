@@ -23,11 +23,14 @@ pub struct PdErrors3 {
 pub struct RigidBodyPosition3 {
   position : @core.Isometry3
   next_position : @core.Isometry3
+}
 
-  fn new(
-    position : @core.Isometry3,
-    next_position : @core.Isometry3,
-  ) -> RigidBodyPosition3
+///|
+pub fn RigidBodyPosition3::RigidBodyPosition3(
+  position : @core.Isometry3,
+  next_position : @core.Isometry3,
+) -> RigidBodyPosition3 {
+  RigidBodyPosition3::new(position, next_position)
 }
 
 ///|

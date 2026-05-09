@@ -15,8 +15,11 @@
 ///|
 pub struct AxesMask {
   bits : Int
+}
 
-  fn new(bits : Int) -> AxesMask
+///|
+pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
+  AxesMask::new(bits)
 }
 
 ///|

@@ -37,14 +37,19 @@ pub(all) struct ContactData {
   warmstart_tangent_impulse : @core.Vec2
   // Rapier's dim3-only `warmstart_twist_impulse`.
   warmstart_twist_impulse : @core.Real
+}
 
-  fn new(
-    impulse : @core.Real,
-    tangent_impulse : @core.Vec2,
-    warmstart_impulse : @core.Real,
-    warmstart_tangent_impulse : @core.Vec2,
-    warmstart_twist_impulse : @core.Real,
-  ) -> ContactData
+///|
+pub fn ContactData::ContactData(
+  impulse : @core.Real,
+  tangent_impulse : @core.Vec2,
+  warmstart_impulse : @core.Real,
+  warmstart_tangent_impulse : @core.Vec2,
+  warmstart_twist_impulse : @core.Real,
+) -> ContactData {
+  ContactData::new(
+    impulse, tangent_impulse, warmstart_impulse, warmstart_tangent_impulse, warmstart_twist_impulse,
+  )
 }
 
 ///|
@@ -314,8 +319,11 @@ pub type TemporaryInteractionIndex = Int
 /// Minimal interaction-graph surface for pub parity with Rapier.
 pub struct InteractionGraph[T] {
   interactions : Array[(ColliderHandle, ColliderHandle, T)]
+}
 
-  fn[T] new() -> InteractionGraph[T]
+///|
+pub fn[T] InteractionGraph::InteractionGraph() -> InteractionGraph[T] {
+  InteractionGraph::new()
 }
 
 ///|

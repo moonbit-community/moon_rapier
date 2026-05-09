@@ -19,8 +19,11 @@
 /// rapier-reference dim3 unit tests.
 pub struct CollisionPipeline3 {
   inner : CollisionPipeline
+}
 
-  fn new() -> CollisionPipeline3
+///|
+pub fn CollisionPipeline3::CollisionPipeline3() -> CollisionPipeline3 {
+  CollisionPipeline3::new()
 }
 
 ///|

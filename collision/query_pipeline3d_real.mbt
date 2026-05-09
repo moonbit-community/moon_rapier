@@ -20,8 +20,11 @@
 pub struct Ray3 {
   origin : @core.Vec3
   dir : @core.Vec3
+}
 
-  fn new(origin : @core.Vec3, dir : @core.Vec3) -> Ray3
+///|
+pub fn Ray3::Ray3(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
+  Ray3::new(origin, dir)
 }
 
 ///|
@@ -116,8 +119,14 @@ pub struct ShapeCastOptions3 {
   max_toi : @core.Real
   target_distance : @core.Real
   stop_at_penetration : Bool
+}
 
-  fn new(max_toi : @core.Real, stop_at_penetration : Bool) -> ShapeCastOptions3
+///|
+pub fn ShapeCastOptions3::ShapeCastOptions3(
+  max_toi : @core.Real,
+  stop_at_penetration : Bool,
+) -> ShapeCastOptions3 {
+  ShapeCastOptions3::new(max_toi, stop_at_penetration)
 }
 
 ///|
@@ -192,8 +201,11 @@ pub struct QueryFilter3DReal {
   mut groups : @dynamics.InteractionGroups?
   mut flags : QueryFilterFlags
   mut predicate : ((ColliderHandle3D, Collider3D) -> Bool)?
+}
 
-  fn new() -> QueryFilter3DReal
+///|
+pub fn QueryFilter3DReal::QueryFilter3DReal() -> QueryFilter3DReal {
+  QueryFilter3DReal::new()
 }
 
 ///|
@@ -382,23 +394,29 @@ pub struct QueryPipeline3DReal {
   filter : QueryFilter3DReal
   // Cached world-space AABBs to accelerate repeated queries (e.g. character controller).
   mut cached_aabbs : Array[@core.Aabb3?]
+}
 
-  fn new(
-    filter : QueryFilter3DReal,
-    bodies : @dynamics.RigidBodySet3D,
-    colliders : ColliderSet3D,
-  ) -> QueryPipeline3DReal
+///|
+pub fn QueryPipeline3DReal::QueryPipeline3DReal(
+  filter : QueryFilter3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> QueryPipeline3DReal {
+  QueryPipeline3DReal::new(filter, bodies, colliders)
 }
 
 ///|
 pub struct QueryPipelineMut3DReal {
   pipeline : QueryPipeline3DReal
+}
 
-  fn new(
-    filter : QueryFilter3DReal,
-    bodies : @dynamics.RigidBodySet3D,
-    colliders : ColliderSet3D,
-  ) -> QueryPipelineMut3DReal
+///|
+pub fn QueryPipelineMut3DReal::QueryPipelineMut3DReal(
+  filter : QueryFilter3DReal,
+  bodies : @dynamics.RigidBodySet3D,
+  colliders : ColliderSet3D,
+) -> QueryPipelineMut3DReal {
+  QueryPipelineMut3DReal::new(filter, bodies, colliders)
 }
 
 ///|

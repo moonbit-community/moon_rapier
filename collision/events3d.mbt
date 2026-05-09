@@ -75,12 +75,15 @@ pub struct IntersectionEvent3D {
   collider1 : ColliderHandle3D
   collider2 : ColliderHandle3D
   intersecting : Bool
+}
 
-  fn new(
-    collider1 : ColliderHandle3D,
-    collider2 : ColliderHandle3D,
-    intersecting : Bool,
-  ) -> IntersectionEvent3D
+///|
+pub fn IntersectionEvent3D::IntersectionEvent3D(
+  collider1 : ColliderHandle3D,
+  collider2 : ColliderHandle3D,
+  intersecting : Bool,
+) -> IntersectionEvent3D {
+  IntersectionEvent3D::new(collider1, collider2, intersecting)
 }
 
 ///|
@@ -119,15 +122,21 @@ pub struct ContactForceEvent3D {
   total_force_magnitude : @core.Real
   max_force_direction : @core.Vec3
   max_force_magnitude : @core.Real
+}
 
-  fn new(
-    collider1 : ColliderHandle3D,
-    collider2 : ColliderHandle3D,
-    total_force : @core.Vec3,
-    total_force_magnitude : @core.Real,
-    max_force_direction : @core.Vec3,
-    max_force_magnitude : @core.Real,
-  ) -> ContactForceEvent3D
+///|
+pub fn ContactForceEvent3D::ContactForceEvent3D(
+  collider1 : ColliderHandle3D,
+  collider2 : ColliderHandle3D,
+  total_force : @core.Vec3,
+  total_force_magnitude : @core.Real,
+  max_force_direction : @core.Vec3,
+  max_force_magnitude : @core.Real,
+) -> ContactForceEvent3D {
+  ContactForceEvent3D::new(
+    collider1, collider2, total_force, total_force_magnitude, max_force_direction,
+    max_force_magnitude,
+  )
 }
 
 ///|
