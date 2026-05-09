@@ -329,7 +329,8 @@ pub fn MeshConverter::apply(
           }
         }
 
-        let counts : @hashmap.HashMap[(Int, Int), Int] = @hashmap.new(
+        let counts : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap(
+          [],
           capacity=indices.length() * 3,
         )
         let keys : Array[(Int, Int)] = []

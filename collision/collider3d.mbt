@@ -1083,7 +1083,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       continue
     }
     let end = if start + chunk < tri_count { start + chunk } else { tri_count }
-    let used : @hashset.HashSet[Int] = @hashset.new(capacity=chunk * 3)
+    let used : @hashset.HashSet[Int] = @hashset.HashSet([], capacity=chunk * 3)
     for ii in start..<end {
       let tid = tri_ids[ii]
       let (i0, i1, i2) = tris[tid]
@@ -1132,7 +1132,8 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  let occupied : @hashset.HashSet[(Int, Int, Int)] = @hashset.new(
+  let occupied : @hashset.HashSet[(Int, Int, Int)] = @hashset.HashSet(
+    [],
     capacity=points.length(),
   )
   for i in 0..<points.length() {
@@ -1226,13 +1227,15 @@ pub fn ColliderBuilder3D::voxels_from_points(
       max_key = (max_key.0, max_key.1, iz)
     }
   }
-  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = @hashmap.new(
+  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = @hashmap.HashMap(
+    [],
     capacity=voxels.length(),
   )
   for i in 0..<voxels.length() {
     key_to_id.set(voxels[i], i)
   }
-  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = @hashmap.new(
+  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = @hashmap.HashMap(
+    [],
     capacity=voxels.length(),
   )
   fn push_sorted_unique(ys : Array[Int], y : Int) -> Unit {
