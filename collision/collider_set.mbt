@@ -906,7 +906,7 @@ fn collider_builder_rounded(
   }
   collider_builder_rebuild_with_shape(
     builder,
-    Shape::Round(Ref::new(builder.shape), r),
+    Shape::Round(Ref(builder.shape), r),
   )
 }
 
@@ -3172,9 +3172,9 @@ fn parse_shape(text : String) -> Shape {
     if parts.length() >= 2 {
       let base = parse_shape(parts[0])
       let radius = parse_real_value(parts[1])
-      Shape::Round(Ref::new(base), radius)
+      Shape::Round(Ref(base), radius)
     } else {
-      Shape::Round(Ref::new(parse_shape(inner.to_string())), 0.0F)
+      Shape::Round(Ref(parse_shape(inner.to_string())), 0.0F)
     }
   } else if text.strip_prefix("b("[:]) is Some(v) &&
     v.strip_suffix(")"[:]) is Some(inner) {
