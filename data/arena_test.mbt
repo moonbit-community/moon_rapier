@@ -56,7 +56,7 @@ test "arena drain removes all occupied elements" {
     }
   }
   got.sort()
-  inspect(got, content="[\"hello\", \"world\"]")
+  debug_inspect(got, content="[\"hello\", \"world\"]")
   inspect(arena.get(idx1) is None, content="true")
   inspect(arena.get(idx2) is None, content="true")
   inspect(arena.capacity() == 0, content="true")
