@@ -57,7 +57,7 @@ run_nonempty_test() {
   local tmp
   local total
   tmp="$(mktemp)"
-  moon test --frozen -p Milky2018/moon_rapier/rapier_full_parity -f "$file" \
+  moon test --frozen "rapier_full_parity/$file" \
     2>&1 | tee "$tmp"
   total="$(awk -F'[:, ]+' '/^Total tests:/ { print $3 }' "$tmp" | tail -n1)"
   rm -f "$tmp"

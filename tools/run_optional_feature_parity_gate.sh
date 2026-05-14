@@ -83,10 +83,10 @@ run_audit_profile \
   "rapier2d_f64" "rapier3d_f64"
 
 echo "[optional-gate] run targeted semantic parity tests"
-moon test --frozen -p pipeline -f feature_flags_test.mbt
-moon test --frozen -p pipeline -f debug_render_pipeline_test.mbt
-moon test --frozen -p pipeline -f snapshot_roundtrip_test.mbt
-moon test --frozen -p counters -f counters_test.mbt
-moon test --frozen -p utils -f serde_test.mbt
+moon test --frozen pipeline/feature_flags_test.mbt
+moon test --frozen pipeline/debug_render_pipeline_test.mbt
+moon test --frozen pipeline/snapshot_roundtrip_test.mbt
+moon test --frozen counters/counters_test.mbt
+moon test --frozen utils/serde_test.mbt
 
 echo "[optional-gate] success"
