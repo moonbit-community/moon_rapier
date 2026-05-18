@@ -67,6 +67,11 @@ jobs:
           moon version --all
           moon update
 
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustc --version
+
       - name: Run parity gate
         run: |
           tools/run_pub_parity_gate.sh
@@ -87,6 +92,11 @@ jobs:
         run: |
           moon version --all
           moon update
+
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustc --version
 
       - name: Run optional feature parity gate
         run: |

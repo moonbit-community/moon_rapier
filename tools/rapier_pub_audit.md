@@ -9,7 +9,8 @@ This repository tracks semantic parity with Rapier by:
 ## Requirements
 
 - A local checkout of `rapier-reference/` at the repository root (this folder is gitignored).
-- Rust toolchain available (`cargo`, `rustc`).
+- Rust toolchain available (`cargo`, `rustc`). The audit is pinned by `rust-toolchain.toml` because
+  Rapier v0.32.0's `simd-nightly` dependency chain is sensitive to portable-simd API changes.
 - Python 3.
 
 ## Run
@@ -40,4 +41,3 @@ tools/rapier_pub_mapping.toml
 ```
 
 The audit will count a Rapier symbol as "covered" if it maps to any existing MoonBit symbol.
-
