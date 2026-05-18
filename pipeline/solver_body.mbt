@@ -107,7 +107,7 @@ pub fn SolverBodies::writeback_vels(
       if body.body_type.is_dynamic_or_kinematic() {
         let v = self.vels[i]
         let wake = match body.body_type {
-          @dynamics.RigidBodyType::Dynamic => true
+          Dynamic => true
           _ => false
         }
         body.set_linvel(v.linear, wake) |> ignore

@@ -23,7 +23,7 @@ pub fn HashMap::from_array(items : Array[(Int, String)]) -> HashMap {
   for item in items {
     entries.push(item)
   }
-  HashMap::{ entries, }
+  { entries, }
 }
 
 ///|
@@ -165,5 +165,5 @@ pub fn deserialize_from_vec_tuple(value : String) -> HashMap {
       }
     }
   }
-  HashMap::{ entries, }
+  { entries, }
 }

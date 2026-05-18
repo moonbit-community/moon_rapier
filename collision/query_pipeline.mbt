@@ -132,7 +132,7 @@ pub fn QueryFilterFlags::union(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  QueryFilterFlags::{ bits: self.bits | other.bits }
+  { bits: self.bits | other.bits }
 }
 
 ///|
@@ -140,7 +140,7 @@ pub fn QueryFilterFlags::difference(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  QueryFilterFlags::{ bits: self.bits & Int::lnot(other.bits) }
+  { bits: self.bits & Int::lnot(other.bits) }
 }
 
 ///|
@@ -148,7 +148,7 @@ pub fn QueryFilterFlags::symmetric_difference(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  QueryFilterFlags::{ bits: self.bits ^ other.bits }
+  { bits: self.bits ^ other.bits }
 }
 
 ///|
@@ -163,9 +163,7 @@ pub fn QueryFilterFlags::toggle(
 pub fn QueryFilterFlags::complement(
   self : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  QueryFilterFlags::{
-    bits: query_filter_flags_all_bits() & Int::lnot(self.bits),
-  }
+  { bits: query_filter_flags_all_bits() & Int::lnot(self.bits) }
 }
 
 ///|
@@ -176,7 +174,7 @@ pub fn QueryFilterFlags::is_all(self : QueryFilterFlags) -> Bool {
 ///|
 pub fn QueryFilterFlags::from_bits(bits : Int) -> QueryFilterFlags? {
   if (bits & Int::lnot(query_filter_flags_all_bits())) == 0 {
-    Some(QueryFilterFlags::{ bits, })
+    Some({ bits, })
   } else {
     None
   }
@@ -184,12 +182,12 @@ pub fn QueryFilterFlags::from_bits(bits : Int) -> QueryFilterFlags? {
 
 ///|
 pub fn QueryFilterFlags::from_bits_truncate(bits : Int) -> QueryFilterFlags {
-  QueryFilterFlags::{ bits: bits & query_filter_flags_all_bits() }
+  { bits: bits & query_filter_flags_all_bits() }
 }
 
 ///|
 pub fn QueryFilterFlags::from_bits_retain(bits : Int) -> QueryFilterFlags {
-  QueryFilterFlags::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -684,7 +682,7 @@ pub fn QueryPipeline::new(
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      if collider.shape is Shape::HalfSpace(_) {
+      if collider.shape is HalfSpace(_) {
         // Temporary AABB; expanded below once we know global bounds.
         let p = collider.world_translation
         halfspaces.push((i, p))
@@ -724,7 +722,7 @@ pub fn QueryPipeline::new3(
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.inner.colliders.length() {
     if colliders.inner.colliders[i] is Some(collider) && collider.is_enabled() {
-      if collider.shape is Shape::HalfSpace(_) {
+      if collider.shape is HalfSpace(_) {
         let p = collider.world_translation
         halfspaces.push((i, p))
         aabbs.push(Some(@core.Aabb::new(p, p)))
@@ -763,7 +761,7 @@ pub fn QueryPipeline::update(
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      if collider.shape is Shape::HalfSpace(_) {
+      if collider.shape is HalfSpace(_) {
         let p = collider.world_translation
         halfspaces.push((i, p))
         self.bvh.aabbs.push(Some(@core.Aabb::new(p, p)))
@@ -972,7 +970,7 @@ fn ray_intersect_ball_and_get_normal(
       let p = ray_point(ray, hit)
       normalize_or_fallback(p.sub(center), @core.Vec2::new(1.0F, 0.0F))
     }
-    Some(RayIntersection::{ toi: hit, normal })
+    Some({ toi: hit, normal })
   } else {
     None
   }
@@ -1060,14 +1058,14 @@ fn ray_intersect_cuboid_local_and_get_normal(
         @core.Vec2::new(-ray.dir.x, -ray.dir.y),
         @core.Vec2::new(1.0F, 0.0F),
       )
-      Some(RayIntersection::{ toi: 0.0F, normal })
+      Some({ toi: 0.0F, normal })
     } else if tmax <= max_toi {
-      Some(RayIntersection::{ toi: tmax, normal: exit_normal })
+      Some({ toi: tmax, normal: exit_normal })
     } else {
       None
     }
   } else if tmin >= 0.0F && tmin <= max_toi {
-    Some(RayIntersection::{ toi: tmin, normal: enter_normal })
+    Some({ toi: tmin, normal: enter_normal })
   } else {
     None
   }
@@ -1093,7 +1091,7 @@ fn ray_intersect_cuboid_oriented_and_get_normal(
       local_ray, half_width, half_height, max_toi, solid,
     )
     is Some(hit) {
-    Some(RayIntersection::{ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
   } else {
     None
   }
@@ -1120,7 +1118,7 @@ fn ray_intersect_segment_and_get_normal(
       @core.Vec2::new(-ray.dir.x, -ray.dir.y),
       @core.Vec2::new(1.0F, 0.0F),
     )
-    return Some(RayIntersection::{ toi: 0.0F, normal })
+    return Some({ toi: 0.0F, normal })
   }
   if @core.abs(denom) <= 1.0e-12F {
     return None
@@ -1138,7 +1136,7 @@ fn ray_intersect_segment_and_get_normal(
   if normal.dot(ray.dir) > 0.0F {
     normal = @core.Vec2::new(-normal.x, -normal.y)
   }
-  Some(RayIntersection::{ toi: t, normal })
+  Some({ toi: t, normal })
 }
 
 ///|
@@ -1195,14 +1193,14 @@ fn ray_intersect_convex_polygon_local_and_get_normal(
         @core.Vec2::new(-ray.dir.x, -ray.dir.y),
         @core.Vec2::new(1.0F, 0.0F),
       )
-      Some(RayIntersection::{ toi: 0.0F, normal })
+      Some({ toi: 0.0F, normal })
     } else if tmax <= max_toi {
-      Some(RayIntersection::{ toi: tmax, normal: exit_normal })
+      Some({ toi: tmax, normal: exit_normal })
     } else {
       None
     }
   } else if tmin >= 0.0F && tmin <= max_toi {
-    Some(RayIntersection::{ toi: tmin, normal: enter_normal })
+    Some({ toi: tmin, normal: enter_normal })
   } else {
     None
   }
@@ -1227,7 +1225,7 @@ fn ray_intersect_convex_polygon_oriented_and_get_normal(
       local_ray, vertices, max_toi, solid,
     )
     is Some(hit) {
-    Some(RayIntersection::{ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
   } else {
     None
   }
@@ -1404,7 +1402,7 @@ fn shape_cast_ball_ball(
       return None
     }
     let point = center2.add(vec2_scale(normal, radius2))
-    Some(ShapeCastHit::{ toi, point, normal })
+    Some({ toi, point, normal })
   } else {
     None
   }
@@ -1459,7 +1457,7 @@ fn shape_cast_ball_cuboid(
     }
     let center = ray_point(ray, hit.toi)
     let point = center.sub(vec2_scale(normal, radius))
-    Some(ShapeCastHit::{ toi: hit.toi, point, normal })
+    Some({ toi: hit.toi, point, normal })
   } else {
     None
   }
@@ -1605,7 +1603,7 @@ fn shape_cast_cuboid_ball(
     is Some(hit) {
     let normal = @core.Vec2::new(-hit.normal.x, -hit.normal.y)
     let point = ball_center.add(vec2_scale(normal, ball_radius))
-    Some(ShapeCastHit::{ toi: hit.toi, point, normal })
+    Some({ toi: hit.toi, point, normal })
   } else {
     None
   }
@@ -1724,7 +1722,7 @@ fn shape_cast_cuboid_cuboid(
   let point = shape_cast_support_point_cuboid(
     center2, rotation2, half_width2, half_height2, normal,
   )
-  Some(ShapeCastHit::{ toi, point, normal })
+  Some({ toi, point, normal })
 }
 
 ///|
@@ -1744,9 +1742,9 @@ fn capsule_components_static(
   let a = center.add(offset)
   let b = center.sub(offset)
   [
-    (Shape::Ball(radius), a, 0.0F),
-    (Shape::Ball(radius), b, 0.0F),
-    (Shape::Cuboid(core_half_width, core_half_height), center, rotation),
+    (Ball(radius), a, 0.0F),
+    (Ball(radius), b, 0.0F),
+    (Cuboid(core_half_width, core_half_height), center, rotation),
   ]
 }
 
@@ -1766,9 +1764,9 @@ fn capsule_components_moving(
   let a = shape_pos.translation.add(offset)
   let b = shape_pos.translation.sub(offset)
   [
-    (Shape::Ball(radius), @core.Isometry2::from_translation(a)),
-    (Shape::Ball(radius), @core.Isometry2::from_translation(b)),
-    (Shape::Cuboid(core_half_width, core_half_height), shape_pos),
+    (Ball(radius), @core.Isometry2::from_translation(a)),
+    (Ball(radius), @core.Isometry2::from_translation(b)),
+    (Cuboid(core_half_width, core_half_height), shape_pos),
   ]
 }
 
@@ -1784,7 +1782,7 @@ fn shape_cast_basic(
   stop_at_penetration : Bool,
 ) -> ShapeCastHit? {
   match (moving_shape, static_shape) {
-    (Shape::Ball(r1), Shape::Ball(r2)) =>
+    (Ball(r1), Ball(r2)) =>
       shape_cast_ball_ball(
         moving_pos.translation,
         vel,
@@ -1794,7 +1792,7 @@ fn shape_cast_basic(
         max_toi,
         stop_at_penetration,
       )
-    (Shape::Ball(r), Shape::Cuboid(hw, hh)) =>
+    (Ball(r), Cuboid(hw, hh)) =>
       shape_cast_ball_cuboid(
         moving_pos.translation,
         vel,
@@ -1806,7 +1804,7 @@ fn shape_cast_basic(
         max_toi,
         stop_at_penetration,
       )
-    (Shape::Cuboid(hw, hh), Shape::Ball(r)) =>
+    (Cuboid(hw, hh), Ball(r)) =>
       shape_cast_cuboid_ball(
         moving_pos.translation,
         moving_pos.rotation.angle(),
@@ -1818,7 +1816,7 @@ fn shape_cast_basic(
         max_toi,
         stop_at_penetration,
       )
-    (Shape::Cuboid(hw1, hh1), Shape::Cuboid(hw2, hh2)) =>
+    (Cuboid(hw1, hh1), Cuboid(hw2, hh2)) =>
       shape_cast_cuboid_cuboid(
         moving_pos.translation,
         moving_pos.rotation.angle(),
@@ -1900,19 +1898,18 @@ pub fn QueryPipeline::cast_shape(
   // Match parry/rapier semantics: `target_distance` is an outward offset of the casted (moving)
   // shape (like RoundShapeRef), not an expansion of the target collider.
   let moving_shape = match shape {
-    Shape::Ball(r) => Shape::Ball(r + target_distance)
-    Shape::Cuboid(hw, hh) =>
-      Shape::Cuboid(hw + target_distance, hh + target_distance)
-    Shape::HalfSpace(_) => shape
-    Shape::CapsuleX(h, r) => Shape::CapsuleX(h, r + target_distance)
-    Shape::CapsuleY(h, r) => Shape::CapsuleY(h, r + target_distance)
-    Shape::Round(inner, r) => Shape::Round(inner, r + target_distance)
-    Shape::Segment(_, _) => shape
-    Shape::Polyline(_, _) => shape
-    Shape::HeightField(_, _) => shape
-    Shape::ConvexPolygon(_) => shape
-    Shape::TriMesh(_, _) => shape
-    Shape::Compound(_) => shape
+    Ball(r) => Shape::Ball(r + target_distance)
+    Cuboid(hw, hh) => Cuboid(hw + target_distance, hh + target_distance)
+    HalfSpace(_) => shape
+    CapsuleX(h, r) => CapsuleX(h, r + target_distance)
+    CapsuleY(h, r) => CapsuleY(h, r + target_distance)
+    Round(inner, r) => Round(inner, r + target_distance)
+    Segment(_, _) => shape
+    Polyline(_, _) => shape
+    HeightField(_, _) => shape
+    ConvexPolygon(_) => shape
+    TriMesh(_, _) => shape
+    Compound(_) => shape
   }
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<colliders.colliders.length() {
@@ -1946,7 +1943,7 @@ pub fn QueryPipeline::cast_shape(
         target_shape : Shape,
       ) -> ShapeCastHit? {
         match target_shape {
-          Shape::Compound(parts) => {
+          Compound(parts) => {
             if parts.length() == 0 {
               return None
             }
@@ -1964,44 +1961,44 @@ pub fn QueryPipeline::cast_shape(
             }
             best
           }
-          Shape::Round(inner, radius) => {
+          Round(inner, radius) => {
             let r = if radius < 0.0F { 0.0F } else { radius }
             if r <= 0.0F {
               cast_against_target(target_center, target_rotation, inner.val)
             } else {
               match inner.val {
-                Shape::Ball(br) =>
+                Ball(br) =>
                   cast_against_target(
                     target_center,
                     target_rotation,
-                    Shape::Ball(br + r),
+                    Ball(br + r),
                   )
-                Shape::Cuboid(hw, hh) =>
+                Cuboid(hw, hh) =>
                   cast_against_target(
                     target_center,
                     target_rotation,
-                    Shape::Cuboid(hw + r, hh + r),
+                    Cuboid(hw + r, hh + r),
                   )
-                Shape::CapsuleX(h, cr) =>
+                CapsuleX(h, cr) =>
                   cast_against_target(
                     target_center,
                     target_rotation,
-                    Shape::CapsuleX(h, cr + r),
+                    CapsuleX(h, cr + r),
                   )
-                Shape::CapsuleY(h, cr) =>
+                CapsuleY(h, cr) =>
                   cast_against_target(
                     target_center,
                     target_rotation,
-                    Shape::CapsuleY(h, cr + r),
+                    CapsuleY(h, cr + r),
                   )
                 _ =>
                   cast_against_target(target_center, target_rotation, inner.val)
               }
             }
           }
-          Shape::HalfSpace(_) => None
-          Shape::HeightField(_, _) => None
-          Shape::Segment(a, b) => {
+          HalfSpace(_) => None
+          HeightField(_, _) => None
+          Segment(a, b) => {
             let (sa, sb) = segment_world_endpoints(
               target_center, target_rotation, a, b,
             )
@@ -2012,7 +2009,7 @@ pub fn QueryPipeline::cast_shape(
             // Model the segment as a capsule with radius 0.
             let mut segment_components : Array[(Shape, @core.Vec2, @core.Real)] = []
             if seg_len <= 1.0e-6F {
-              segment_components = [(Shape::Ball(seg_radius), sa, 0.0F)]
+              segment_components = [(Ball(seg_radius), sa, 0.0F)]
             } else {
               let angle = atan2_real(seg_dir.y, seg_dir.x)
               let mid = @core.Vec2::new(
@@ -2020,9 +2017,9 @@ pub fn QueryPipeline::cast_shape(
                 0.5F * (sa.y + sb.y),
               )
               segment_components = [
-                (Shape::Ball(seg_radius), sa, 0.0F),
-                (Shape::Ball(seg_radius), sb, 0.0F),
-                (Shape::Cuboid(0.5F * seg_len, seg_radius), mid, angle),
+                (Ball(seg_radius), sa, 0.0F),
+                (Ball(seg_radius), sb, 0.0F),
+                (Cuboid(0.5F * seg_len, seg_radius), mid, angle),
               ]
             }
 
@@ -2031,7 +2028,7 @@ pub fn QueryPipeline::cast_shape(
               (moving_shape, shape_pos),
             ]
             match moving_shape {
-              Shape::CapsuleX(h, r) =>
+              CapsuleX(h, r) =>
                 moving_components = capsule_components_moving(
                   shape_pos,
                   @core.Vec2::new(1.0F, 0.0F),
@@ -2040,7 +2037,7 @@ pub fn QueryPipeline::cast_shape(
                   h,
                   r,
                 )
-              Shape::CapsuleY(h, r) =>
+              CapsuleY(h, r) =>
                 moving_components = capsule_components_moving(
                   shape_pos,
                   @core.Vec2::new(0.0F, 1.0F),
@@ -2055,7 +2052,7 @@ pub fn QueryPipeline::cast_shape(
             for ci in 0..<moving_components.length() {
               let comp = moving_components[ci]
               match comp.0 {
-                Shape::Ball(r) =>
+                Ball(r) =>
                   best = best_hit(
                     best,
                     shape_cast_ball_segment(
@@ -2092,10 +2089,10 @@ pub fn QueryPipeline::cast_shape(
           }
           target =>
             match (moving_shape, target) {
-              (Shape::Ball(_), Shape::Ball(_))
-              | (Shape::Ball(_), Shape::Cuboid(_, _))
-              | (Shape::Cuboid(_, _), Shape::Ball(_))
-              | (Shape::Cuboid(_, _), Shape::Cuboid(_, _)) =>
+              (Ball(_), Ball(_))
+              | (Ball(_), Cuboid(_, _))
+              | (Cuboid(_, _), Ball(_))
+              | (Cuboid(_, _), Cuboid(_, _)) =>
                 shape_cast_basic(
                   shape_pos,
                   shape_vel,
@@ -2106,7 +2103,7 @@ pub fn QueryPipeline::cast_shape(
                   max_toi,
                   options.stop_at_penetration,
                 )
-              (Shape::Ball(_), Shape::CapsuleX(h, r)) =>
+              (Ball(_), CapsuleX(h, r)) =>
                 shape_cast_against_capsule(
                   shape_pos,
                   shape_vel,
@@ -2121,7 +2118,7 @@ pub fn QueryPipeline::cast_shape(
                   max_toi,
                   options.stop_at_penetration,
                 )
-              (Shape::Ball(_), Shape::CapsuleY(h, r)) =>
+              (Ball(_), CapsuleY(h, r)) =>
                 shape_cast_against_capsule(
                   shape_pos,
                   shape_vel,
@@ -2136,7 +2133,7 @@ pub fn QueryPipeline::cast_shape(
                   max_toi,
                   options.stop_at_penetration,
                 )
-              (Shape::Cuboid(_, _), Shape::CapsuleX(h, r)) =>
+              (Cuboid(_, _), CapsuleX(h, r)) =>
                 shape_cast_against_capsule(
                   shape_pos,
                   shape_vel,
@@ -2151,7 +2148,7 @@ pub fn QueryPipeline::cast_shape(
                   max_toi,
                   options.stop_at_penetration,
                 )
-              (Shape::Cuboid(_, _), Shape::CapsuleY(h, r)) =>
+              (Cuboid(_, _), CapsuleY(h, r)) =>
                 shape_cast_against_capsule(
                   shape_pos,
                   shape_vel,
@@ -2166,7 +2163,7 @@ pub fn QueryPipeline::cast_shape(
                   max_toi,
                   options.stop_at_penetration,
                 )
-              (Shape::CapsuleX(h, r), target) => {
+              (CapsuleX(h, r), target) => {
                 let moving_components = capsule_components_moving(
                   shape_pos,
                   @core.Vec2::new(1.0F, 0.0F),
@@ -2181,7 +2178,7 @@ pub fn QueryPipeline::cast_shape(
                   let comp_shape = comp.0
                   let comp_pos = comp.1
                   let h2 = match target {
-                    Shape::CapsuleX(th, tr) =>
+                    CapsuleX(th, tr) =>
                       shape_cast_against_capsule(
                         comp_pos,
                         shape_vel,
@@ -2196,7 +2193,7 @@ pub fn QueryPipeline::cast_shape(
                         max_toi,
                         options.stop_at_penetration,
                       )
-                    Shape::CapsuleY(th, tr) =>
+                    CapsuleY(th, tr) =>
                       shape_cast_against_capsule(
                         comp_pos,
                         shape_vel,
@@ -2227,7 +2224,7 @@ pub fn QueryPipeline::cast_shape(
                 }
                 best_hit2
               }
-              (Shape::CapsuleY(h, r), target) => {
+              (CapsuleY(h, r), target) => {
                 let moving_components = capsule_components_moving(
                   shape_pos,
                   @core.Vec2::new(0.0F, 1.0F),
@@ -2242,7 +2239,7 @@ pub fn QueryPipeline::cast_shape(
                   let comp_shape = comp.0
                   let comp_pos = comp.1
                   let h2 = match target {
-                    Shape::CapsuleX(th, tr) =>
+                    CapsuleX(th, tr) =>
                       shape_cast_against_capsule(
                         comp_pos,
                         shape_vel,
@@ -2257,7 +2254,7 @@ pub fn QueryPipeline::cast_shape(
                         max_toi,
                         options.stop_at_penetration,
                       )
-                    Shape::CapsuleY(th, tr) =>
+                    CapsuleY(th, tr) =>
                       shape_cast_against_capsule(
                         comp_pos,
                         shape_vel,
@@ -2328,14 +2325,14 @@ pub fn QueryPipeline::cast_shape_nonlinear(
   }
   fn shape_bounding_radius(shape : Shape) -> @core.Real {
     match shape {
-      Shape::Round(inner, r) =>
+      Round(inner, r) =>
         shape_bounding_radius(inner.val) + (if r < 0.0F { 0.0F } else { r })
-      Shape::Ball(r) => r
-      Shape::Cuboid(hw, hh) => sqrt_real(hw * hw + hh * hh)
-      Shape::HalfSpace(_) => 0.0F
-      Shape::CapsuleX(h, r) => h + r
-      Shape::CapsuleY(h, r) => h + r
-      Shape::Segment(a, b) => {
+      Ball(r) => r
+      Cuboid(hw, hh) => sqrt_real(hw * hw + hh * hh)
+      HalfSpace(_) => 0.0F
+      CapsuleX(h, r) => h + r
+      CapsuleY(h, r) => h + r
+      Segment(a, b) => {
         let la = a.length()
         let lb = b.length()
         if la > lb {
@@ -2344,7 +2341,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
           lb
         }
       }
-      Shape::Polyline(vertices, _) => {
+      Polyline(vertices, _) => {
         let mut best = 0.0F
         for i in 0..<vertices.length() {
           let d = vertices[i].length()
@@ -2354,11 +2351,11 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
-      Shape::HeightField(heights, scale) =>
+      HeightField(heights, scale) =>
         shape_bounding_radius(
-          Shape::Polyline(heightfield_vertices(heights, scale), None),
+          Polyline(heightfield_vertices(heights, scale), None),
         )
-      Shape::ConvexPolygon(vertices) => {
+      ConvexPolygon(vertices) => {
         let mut best = 0.0F
         for i in 0..<vertices.length() {
           let d = vertices[i].length()
@@ -2368,7 +2365,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
-      Shape::TriMesh(vertices, _) => {
+      TriMesh(vertices, _) => {
         let mut best = 0.0F
         for i in 0..<vertices.length() {
           let d = vertices[i].length()
@@ -2378,7 +2375,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         }
         best
       }
-      Shape::Compound(parts) => {
+      Compound(parts) => {
         let mut best = 0.0F
         for i in 0..<parts.length() {
           let (pose, part_shape) = parts[i]
@@ -2417,34 +2414,22 @@ pub fn QueryPipeline::cast_shape_nonlinear(
     point : @core.Vec2,
   ) -> @core.Vec2 {
     match shape {
-      Shape::Round(inner, r) =>
-        project_point_on_shape(
-          center,
-          rotation,
-          Shape::Round(inner, r),
-          point,
-          false,
-        ).point
-      Shape::Ball(r) => project_point_on_ball(center, r, point, false).point
-      Shape::Cuboid(hw, hh) =>
+      Round(inner, r) =>
+        project_point_on_shape(center, rotation, Round(inner, r), point, false).point
+      Ball(r) => project_point_on_ball(center, r, point, false).point
+      Cuboid(hw, hh) =>
         project_point_on_cuboid_oriented(center, rotation, hw, hh, point, false).point
-      Shape::HalfSpace(n) =>
+      HalfSpace(n) =>
+        project_point_on_shape(center, rotation, HalfSpace(n), point, false).point
+      HeightField(heights, scale) =>
         project_point_on_shape(
           center,
           rotation,
-          Shape::HalfSpace(n),
+          Polyline(heightfield_vertices(heights, scale), None),
           point,
           false,
         ).point
-      Shape::HeightField(heights, scale) =>
-        project_point_on_shape(
-          center,
-          rotation,
-          Shape::Polyline(heightfield_vertices(heights, scale), None),
-          point,
-          false,
-        ).point
-      Shape::CapsuleX(h, r) =>
+      CapsuleX(h, r) =>
         project_point_on_capsule_oriented(
           center,
           rotation,
@@ -2454,7 +2439,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
           point,
           false,
         ).point
-      Shape::CapsuleY(h, r) =>
+      CapsuleY(h, r) =>
         project_point_on_capsule_oriented(
           center,
           rotation,
@@ -2464,30 +2449,24 @@ pub fn QueryPipeline::cast_shape_nonlinear(
           point,
           false,
         ).point
-      Shape::Segment(a, b) =>
+      Segment(a, b) =>
         project_point_on_segment(center, rotation, a, b, point).point
-      Shape::Polyline(vertices, indices) =>
+      Polyline(vertices, indices) =>
         project_point_on_polyline(center, rotation, vertices, indices, point).point
-      Shape::ConvexPolygon(vertices) =>
+      ConvexPolygon(vertices) =>
         project_point_on_convex_polygon_oriented(
           center, rotation, vertices, point, false,
         ).point
-      Shape::TriMesh(vertices, indices) =>
+      TriMesh(vertices, indices) =>
         project_point_on_shape(
           center,
           rotation,
-          Shape::TriMesh(vertices, indices),
+          TriMesh(vertices, indices),
           point,
           false,
         ).point
-      Shape::Compound(parts) =>
-        project_point_on_shape(
-          center,
-          rotation,
-          Shape::Compound(parts),
-          point,
-          false,
-        ).point
+      Compound(parts) =>
+        project_point_on_shape(center, rotation, Compound(parts), point, false).point
     }
   }
 
@@ -2758,7 +2737,7 @@ fn point_in_shape(
   point : @core.Vec2,
 ) -> Bool {
   match shape {
-    Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let r = if radius < 0.0F { 0.0F } else { radius }
       if r <= 0.0F {
         point_in_shape(inner.val, center, rotation, point)
@@ -2777,19 +2756,19 @@ fn point_in_shape(
         }
       }
     }
-    Shape::Ball(radius) => point.sub(center).length_squared() <= radius * radius
-    Shape::Cuboid(hw, hh) => {
+    Ball(radius) => point.sub(center).length_squared() <= radius * radius
+    Cuboid(hw, hh) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
       @core.abs(local_point.x) <= hw && @core.abs(local_point.y) <= hh
     }
-    Shape::HalfSpace(outward_normal) => {
+    HalfSpace(outward_normal) => {
       let rot = @core.Rot2::from_angle(rotation)
       let n = rot.rotate_vec2(outward_normal)
       n.dot(point.sub(center)) <= 0.0F
     }
-    Shape::CapsuleX(half_height, radius) => {
+    CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
@@ -2797,7 +2776,7 @@ fn point_in_shape(
       let delta = @core.Vec2::new(local_point.x - cx, local_point.y)
       delta.dot(delta) <= radius * radius
     }
-    Shape::CapsuleY(half_height, radius) => {
+    CapsuleY(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
@@ -2805,32 +2784,32 @@ fn point_in_shape(
       let delta = @core.Vec2::new(local_point.x, local_point.y - cy)
       delta.dot(delta) <= radius * radius
     }
-    Shape::Segment(a, b) => {
+    Segment(a, b) => {
       let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
       let q = closest_point_on_segment(wa, wb, point)
       point.sub(q).dot(point.sub(q)) <= 1.0e-12F
     }
-    Shape::Polyline(vertices, indices) => {
+    Polyline(vertices, indices) => {
       let proj = project_point_on_polyline(
         center, rotation, vertices, indices, point,
       )
       let delta = point.sub(proj.point)
       delta.dot(delta) <= 1.0e-12F
     }
-    Shape::HeightField(heights, scale) =>
+    HeightField(heights, scale) =>
       point_in_shape(
-        Shape::Polyline(heightfield_vertices(heights, scale), None),
+        Polyline(heightfield_vertices(heights, scale), None),
         center,
         rotation,
         point,
       )
-    Shape::ConvexPolygon(vertices) => {
+    ConvexPolygon(vertices) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
       point_in_convex_polygon_local(vertices, local_point)
     }
-    Shape::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       let rot = @core.Rot2::from_angle(rotation)
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
@@ -2858,7 +2837,7 @@ fn point_in_shape(
       }
       false
     }
-    Shape::Compound(parts) => {
+    Compound(parts) => {
       if parts.length() == 0 {
         return false
       }
@@ -2903,7 +2882,7 @@ fn compute_query_shape_aabb(
   let center = shape_pos.translation
   let rot = shape_pos.rotation
   match shape {
-    Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let r = if radius < 0.0F { 0.0F } else { radius }
       let aabb = compute_query_shape_aabb(shape_pos, inner.val)
       @core.Aabb::new(
@@ -2911,12 +2890,12 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(aabb.maxs.x + r, aabb.maxs.y + r),
       )
     }
-    Shape::Ball(radius) =>
+    Ball(radius) =>
       @core.Aabb::new(
         @core.Vec2::new(center.x - radius, center.y - radius),
         @core.Vec2::new(center.x + radius, center.y + radius),
       )
-    Shape::Cuboid(half_width, half_height) => {
+    Cuboid(half_width, half_height) => {
       let abs_cos = @core.abs(rot.cos)
       let abs_sin = @core.abs(rot.sin)
       let hw = abs_cos * half_width + abs_sin * half_height
@@ -2926,10 +2905,10 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(center.x + hw, center.y + hh),
       )
     }
-    Shape::HalfSpace(_) =>
+    HalfSpace(_) =>
       // Unbounded AABB: QueryPipeline will expand this dynamically based on world extents.
       @core.Aabb::new(center, center)
-    Shape::CapsuleX(half_height, radius) => {
+    CapsuleX(half_height, radius) => {
       let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
       let a = center.add(offset)
       let b = center.sub(offset)
@@ -2942,7 +2921,7 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(max_x + radius, max_y + radius),
       )
     }
-    Shape::CapsuleY(half_height, radius) => {
+    CapsuleY(half_height, radius) => {
       let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
       let a = center.add(offset)
       let b = center.sub(offset)
@@ -2955,7 +2934,7 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(max_x + radius, max_y + radius),
       )
     }
-    Shape::Segment(a, b) => {
+    Segment(a, b) => {
       let (wa, wb) = segment_world_endpoints_rot(center, rot, a, b)
       let min_x = if wa.x < wb.x { wa.x } else { wb.x }
       let max_x = if wa.x > wb.x { wa.x } else { wb.x }
@@ -2966,7 +2945,7 @@ fn compute_query_shape_aabb(
         @core.Vec2::new(max_x, max_y),
       )
     }
-    Shape::Polyline(vertices, _) =>
+    Polyline(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -2994,12 +2973,12 @@ fn compute_query_shape_aabb(
           @core.Vec2::new(max_x, max_y),
         )
       }
-    Shape::HeightField(heights, scale) =>
+    HeightField(heights, scale) =>
       compute_query_shape_aabb(
         shape_pos,
-        Shape::Polyline(heightfield_vertices(heights, scale), None),
+        Polyline(heightfield_vertices(heights, scale), None),
       )
-    Shape::ConvexPolygon(vertices) =>
+    ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -3027,7 +3006,7 @@ fn compute_query_shape_aabb(
           @core.Vec2::new(max_x, max_y),
         )
       }
-    Shape::TriMesh(vertices, _) =>
+    TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -3055,7 +3034,7 @@ fn compute_query_shape_aabb(
           @core.Vec2::new(max_x, max_y),
         )
       }
-    Shape::Compound(parts) =>
+    Compound(parts) =>
       if parts.length() == 0 {
         @core.Aabb::new(center, center)
       } else {
@@ -3151,18 +3130,12 @@ fn project_point_on_ball(
   let dist2 = v.dot(v)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    PointProjection::{ point, is_inside: true }
+    { point, is_inside: true }
   } else if dist2 <= 1.0e-12F {
-    PointProjection::{
-      point: center.add(@core.Vec2::new(radius, 0.0F)),
-      is_inside: inside,
-    }
+    { point: center.add(@core.Vec2::new(radius, 0.0F)), is_inside: inside }
   } else {
     let dir = v.normalize()
-    PointProjection::{
-      point: center.add(vec2_scale(dir, radius)),
-      is_inside: inside,
-    }
+    { point: center.add(vec2_scale(dir, radius)), is_inside: inside }
   }
 }
 
@@ -3177,7 +3150,7 @@ fn project_point_on_ball_and_get_feature(
   let feature = if projection.is_inside && solid {
     FeatureId::Unknown
   } else {
-    FeatureId::Face(0)
+    Face(0)
   }
   (projection, feature)
 }
@@ -3197,7 +3170,7 @@ fn project_point_on_cuboid_oriented(
   let inside = @core.abs(local_point.x) <= half_width &&
     @core.abs(local_point.y) <= half_height
   if inside && solid {
-    return PointProjection::{ point, is_inside: true }
+    return { point, is_inside: true }
   }
   let projected_local = if inside {
     let dx = half_width - @core.abs(local_point.x)
@@ -3216,7 +3189,7 @@ fn project_point_on_cuboid_oriented(
     )
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  PointProjection::{ point: projected, is_inside: inside }
+  { point: projected, is_inside: inside }
 }
 
 ///|
@@ -3234,7 +3207,7 @@ fn project_point_on_cuboid_oriented_and_get_feature(
   let inside = @core.abs(local_point.x) <= half_width &&
     @core.abs(local_point.y) <= half_height
   if inside && solid {
-    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+    return ({ point, is_inside: true }, Unknown)
   }
   let projected_local = if inside {
     let dx = half_width - @core.abs(local_point.x)
@@ -3272,9 +3245,9 @@ fn project_point_on_cuboid_oriented_and_get_feature(
     }
     FeatureId::Vertex(vid)
   } else if on_x {
-    FeatureId::Edge(if projected_local.x >= 0.0F { 0 } else { 1 })
+    Edge(if projected_local.x >= 0.0F { 0 } else { 1 })
   } else {
-    FeatureId::Edge(if projected_local.y >= 0.0F { 2 } else { 3 })
+    Edge(if projected_local.y >= 0.0F { 2 } else { 3 })
   }
   (projection, feature)
 }
@@ -3313,7 +3286,7 @@ fn project_point_on_convex_polygon_oriented(
   let local_point = inv.rotate_vec2(point.sub(center))
   let inside = point_in_convex_polygon_local(vertices, local_point)
   if inside && solid {
-    return PointProjection::{ point, is_inside: true }
+    return { point, is_inside: true }
   }
   let mut best_dist2 = 1.0e30F
   let mut best_local = local_point
@@ -3336,7 +3309,7 @@ fn project_point_on_convex_polygon_oriented(
     }
   }
   let projected = center.add(rot.rotate_vec2(best_local))
-  PointProjection::{ point: projected, is_inside: inside }
+  { point: projected, is_inside: inside }
 }
 
 ///|
@@ -3352,7 +3325,7 @@ fn project_point_on_convex_polygon_oriented_and_get_feature(
   let local_point = inv.rotate_vec2(point.sub(center))
   let inside = point_in_convex_polygon_local(vertices, local_point)
   if inside && solid {
-    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+    return ({ point, is_inside: true }, Unknown)
   }
   let mut best_dist2 = 1.0e30F
   let mut best_local = local_point
@@ -3375,16 +3348,16 @@ fn project_point_on_convex_polygon_oriented_and_get_feature(
       best_dist2 = dist2
       best_local = proj
       best_feature = if t <= eps {
-        FeatureId::Vertex(i)
+        Vertex(i)
       } else if t >= 1.0F - eps {
-        FeatureId::Vertex((i + 1) % vertices.length())
+        Vertex((i + 1) % vertices.length())
       } else {
-        FeatureId::Edge(i)
+        Edge(i)
       }
     }
   }
   let projected = center.add(rot.rotate_vec2(best_local))
-  (PointProjection::{ point: projected, is_inside: inside }, best_feature)
+  ({ point: projected, is_inside: inside }, best_feature)
 }
 
 ///|
@@ -3411,7 +3384,7 @@ fn project_point_on_capsule_oriented(
   let dist2 = delta.dot(delta)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    return PointProjection::{ point, is_inside: true }
+    return { point, is_inside: true }
   }
   let projected_local = if dist2 <= 1.0e-12F {
     // Arbitrary direction (consistent with project_point_on_ball fallback).
@@ -3420,7 +3393,7 @@ fn project_point_on_capsule_oriented(
     closest_line_point.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  PointProjection::{ point: projected, is_inside: inside }
+  { point: projected, is_inside: inside }
 }
 
 ///|
@@ -3462,7 +3435,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
   let dist2 = delta.dot(delta)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    return (PointProjection::{ point, is_inside: true }, FeatureId::Unknown)
+    return ({ point, is_inside: true }, Unknown)
   }
   let projected_local = if dist2 <= 1.0e-12F {
     clamped.add(@core.Vec2::new(radius, 0.0F))
@@ -3471,11 +3444,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
   let projection = PointProjection::{ point: projected, is_inside: inside }
-  let feature = if cap_id >= 0 {
-    FeatureId::Vertex(cap_id)
-  } else {
-    FeatureId::Edge(0)
-  }
+  let feature = if cap_id >= 0 { FeatureId::Vertex(cap_id) } else { Edge(0) }
   (projection, feature)
 }
 
@@ -3489,7 +3458,7 @@ fn project_point_on_segment(
 ) -> PointProjection {
   let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
   let q = closest_point_on_segment(wa, wb, point)
-  PointProjection::{ point: q, is_inside: false }
+  { point: q, is_inside: false }
 }
 
 ///|
@@ -3511,11 +3480,11 @@ fn project_point_on_segment_and_get_feature(
   let feature = if t <= 1.0e-6F {
     FeatureId::Vertex(0)
   } else if t >= 1.0F - 1.0e-6F {
-    FeatureId::Vertex(1)
+    Vertex(1)
   } else {
-    FeatureId::Edge(0)
+    Edge(0)
   }
-  (PointProjection::{ point: q, is_inside: false }, feature)
+  ({ point: q, is_inside: false }, feature)
 }
 
 ///|
@@ -3571,7 +3540,7 @@ fn project_point_on_polyline(
   if best is Some(p) {
     p
   } else {
-    PointProjection::{ point, is_inside: false }
+    { point, is_inside: false }
   }
 }
 
@@ -3595,13 +3564,13 @@ fn project_point_on_polyline_and_get_feature(
     let dist2 = delta.dot(delta)
     if dist2 < best_dist2 {
       best_dist2 = dist2
-      best = Some((proj, FeatureId::Edge(seg_index)))
+      best = Some((proj, Edge(seg_index)))
     }
   })
   if best is Some(r) {
     r
   } else {
-    (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+    ({ point, is_inside: false }, Unknown)
   }
 }
 
@@ -3654,7 +3623,7 @@ fn ray_intersect_halfspace_and_get_normal(
       @core.Vec2::new(-ray.dir.x, -ray.dir.y),
       @core.Vec2::new(1.0F, 0.0F),
     )
-    return Some(RayIntersection::{ toi: 0.0F, normal })
+    return Some({ toi: 0.0F, normal })
   }
   let denom = n.dot(ray.dir)
   if @core.abs(denom) <= 1.0e-12F {
@@ -3665,7 +3634,7 @@ fn ray_intersect_halfspace_and_get_normal(
     return None
   }
   let normal = if denom < 0.0F { n } else { @core.Vec2::new(-n.x, -n.y) }
-  Some(RayIntersection::{ toi, normal })
+  Some({ toi, normal })
 }
 
 ///|
@@ -3678,7 +3647,7 @@ fn ray_intersect_shape_and_get_normal(
   solid : Bool,
 ) -> RayIntersection? {
   match shape {
-    Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let base = inner.val
       let r = if radius < 0.0F { 0.0F } else { radius }
       if r <= 0.0F {
@@ -3707,7 +3676,7 @@ fn ray_intersect_shape_and_get_normal(
             @core.Vec2::new(-ray.dir.x, -ray.dir.y),
             @core.Vec2::new(1.0F, 0.0F),
           )
-          return Some(RayIntersection::{ toi: 0.0F, normal })
+          return Some({ toi: 0.0F, normal })
         }
         // Treat the ray as starting inside the rounded region; find the first exit.
         start_dist = r - 1.0e-12F
@@ -3776,19 +3745,19 @@ fn ray_intersect_shape_and_get_normal(
           @core.Vec2::new(1.0F, 0.0F),
         )
       }
-      Some(RayIntersection::{ toi, normal })
+      Some({ toi, normal })
     }
-    Shape::Ball(radius) =>
+    Ball(radius) =>
       ray_intersect_ball_and_get_normal(ray, center, radius, max_dist, solid)
-    Shape::Cuboid(hw, hh) =>
+    Cuboid(hw, hh) =>
       ray_intersect_cuboid_oriented_and_get_normal(
         ray, center, rotation, hw, hh, max_dist, solid,
       )
-    Shape::HalfSpace(outward_normal) =>
+    HalfSpace(outward_normal) =>
       ray_intersect_halfspace_and_get_normal(
         ray, center, rotation, outward_normal, max_dist, solid,
       )
-    Shape::CapsuleX(half_height, radius) =>
+    CapsuleX(half_height, radius) =>
       ray_intersect_capsule_oriented_and_get_normal(
         ray,
         center,
@@ -3801,7 +3770,7 @@ fn ray_intersect_shape_and_get_normal(
         max_dist,
         solid,
       )
-    Shape::CapsuleY(half_height, radius) =>
+    CapsuleY(half_height, radius) =>
       ray_intersect_capsule_oriented_and_get_normal(
         ray,
         center,
@@ -3814,15 +3783,15 @@ fn ray_intersect_shape_and_get_normal(
         max_dist,
         solid,
       )
-    Shape::Segment(a, b) =>
+    Segment(a, b) =>
       ray_intersect_segment_and_get_normal(
         ray, center, rotation, a, b, max_dist, solid,
       )
-    Shape::Polyline(vertices, indices) =>
+    Polyline(vertices, indices) =>
       ray_intersect_polyline_and_get_normal(
         ray, center, rotation, vertices, indices, max_dist, solid,
       )
-    Shape::HeightField(heights, scale) =>
+    HeightField(heights, scale) =>
       ray_intersect_polyline_and_get_normal(
         ray,
         center,
@@ -3832,11 +3801,11 @@ fn ray_intersect_shape_and_get_normal(
         max_dist,
         solid,
       )
-    Shape::ConvexPolygon(vertices) =>
+    ConvexPolygon(vertices) =>
       ray_intersect_convex_polygon_oriented_and_get_normal(
         ray, center, rotation, vertices, max_dist, solid,
       )
-    Shape::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       let mut best : RayIntersection? = None
       for i in 0..<indices.length() {
         let (i0, i1, i2) = indices[i]
@@ -3876,7 +3845,7 @@ fn ray_intersect_shape_and_get_normal(
       }
       best
     }
-    Shape::Compound(parts) => {
+    Compound(parts) => {
       if parts.length() == 0 {
         return None
       }
@@ -3917,7 +3886,7 @@ fn project_point_on_shape(
   solid : Bool,
 ) -> PointProjection {
   match shape {
-    Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let base = inner.val
       let r = if radius < 0.0F { 0.0F } else { radius }
       if r <= 0.0F {
@@ -3934,7 +3903,7 @@ fn project_point_on_shape(
         let dist = delta.length()
         let inside_round = inside_inner || dist <= r
         if solid && inside_round {
-          PointProjection::{ point, is_inside: true }
+          { point, is_inside: true }
         } else {
           let mut dir = if inside_inner {
             @core.Vec2::new(-delta.x, -delta.y)
@@ -3947,28 +3916,25 @@ fn project_point_on_shape(
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
           )
-          PointProjection::{ point: boundary, is_inside: inside_round }
+          { point: boundary, is_inside: inside_round }
         }
       }
     }
-    Shape::Ball(radius) => project_point_on_ball(center, radius, point, solid)
-    Shape::Cuboid(hw, hh) =>
+    Ball(radius) => project_point_on_ball(center, radius, point, solid)
+    Cuboid(hw, hh) =>
       project_point_on_cuboid_oriented(center, rotation, hw, hh, point, solid)
-    Shape::HalfSpace(outward_normal) => {
+    HalfSpace(outward_normal) => {
       let rot = @core.Rot2::from_angle(rotation)
       let n = rot.rotate_vec2(outward_normal)
       let dist = n.dot(point.sub(center))
       let inside = dist <= 0.0F
       if solid && inside {
-        PointProjection::{ point, is_inside: true }
+        { point, is_inside: true }
       } else {
-        PointProjection::{
-          point: point.sub(vec2_scale(n, dist)),
-          is_inside: inside,
-        }
+        { point: point.sub(vec2_scale(n, dist)), is_inside: inside }
       }
     }
-    Shape::CapsuleX(half_height, radius) =>
+    CapsuleX(half_height, radius) =>
       project_point_on_capsule_oriented(
         center,
         rotation,
@@ -3978,7 +3944,7 @@ fn project_point_on_shape(
         point,
         solid,
       )
-    Shape::CapsuleY(half_height, radius) =>
+    CapsuleY(half_height, radius) =>
       project_point_on_capsule_oriented(
         center,
         rotation,
@@ -3988,11 +3954,10 @@ fn project_point_on_shape(
         point,
         solid,
       )
-    Shape::Segment(a, b) =>
-      project_point_on_segment(center, rotation, a, b, point)
-    Shape::Polyline(vertices, indices) =>
+    Segment(a, b) => project_point_on_segment(center, rotation, a, b, point)
+    Polyline(vertices, indices) =>
       project_point_on_polyline(center, rotation, vertices, indices, point)
-    Shape::HeightField(heights, scale) =>
+    HeightField(heights, scale) =>
       project_point_on_polyline(
         center,
         rotation,
@@ -4000,11 +3965,11 @@ fn project_point_on_shape(
         None,
         point,
       )
-    Shape::ConvexPolygon(vertices) =>
+    ConvexPolygon(vertices) =>
       project_point_on_convex_polygon_oriented(
         center, rotation, vertices, point, solid,
       )
-    Shape::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       let mut best : PointProjection? = None
       let mut best_dist2 = 1.0e30F
       for i in 0..<indices.length() {
@@ -4042,12 +4007,12 @@ fn project_point_on_shape(
       if best is Some(p) {
         p
       } else {
-        PointProjection::{ point, is_inside: false }
+        { point, is_inside: false }
       }
     }
-    Shape::Compound(parts) => {
+    Compound(parts) => {
       if parts.length() == 0 {
-        return PointProjection::{ point, is_inside: false }
+        return { point, is_inside: false }
       }
       let parent_iso = @core.Isometry2::new(
         center,
@@ -4071,7 +4036,7 @@ fn project_point_on_shape(
       if best is Some(p) {
         p
       } else {
-        PointProjection::{ point, is_inside: false }
+        { point, is_inside: false }
       }
     }
   }
@@ -4091,15 +4056,15 @@ fn project_point_on_shape_and_get_feature(
     }
     let base = prefix * 1000000
     match fid {
-      FeatureId::Unknown => FeatureId::Face(base)
-      FeatureId::Vertex(id) => FeatureId::Vertex(base + id)
-      FeatureId::Edge(id) => FeatureId::Edge(base + id)
-      FeatureId::Face(id) => FeatureId::Face(base + id)
+      Unknown => Face(base)
+      Vertex(id) => Vertex(base + id)
+      Edge(id) => Edge(base + id)
+      Face(id) => Face(base + id)
     }
   }
 
   match shape {
-    Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let base = inner.val
       let r = if radius < 0.0F { 0.0F } else { radius }
       if r <= 0.0F {
@@ -4118,7 +4083,7 @@ fn project_point_on_shape_and_get_feature(
         let dist = delta.length()
         let inside_round = inside_inner || dist <= r
         if solid && inside_round {
-          (PointProjection::{ point, is_inside: true }, fid_solid)
+          ({ point, is_inside: true }, fid_solid)
         } else {
           let mut dir = if inside_inner {
             @core.Vec2::new(-delta.x, -delta.y)
@@ -4131,37 +4096,28 @@ fn project_point_on_shape_and_get_feature(
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
           )
-          (
-            PointProjection::{ point: boundary, is_inside: inside_round },
-            fid_boundary,
-          )
+          ({ point: boundary, is_inside: inside_round }, fid_boundary)
         }
       }
     }
-    Shape::Ball(radius) =>
+    Ball(radius) =>
       project_point_on_ball_and_get_feature(center, radius, point, solid)
-    Shape::Cuboid(hw, hh) =>
+    Cuboid(hw, hh) =>
       project_point_on_cuboid_oriented_and_get_feature(
         center, rotation, hw, hh, point, solid,
       )
-    Shape::HalfSpace(outward_normal) => {
+    HalfSpace(outward_normal) => {
       let rot = @core.Rot2::from_angle(rotation)
       let n = rot.rotate_vec2(outward_normal)
       let dist = n.dot(point.sub(center))
       let inside = dist <= 0.0F
       if solid && inside {
-        (PointProjection::{ point, is_inside: true }, FeatureId::Face(0))
+        ({ point, is_inside: true }, Face(0))
       } else {
-        (
-          PointProjection::{
-            point: point.sub(vec2_scale(n, dist)),
-            is_inside: inside,
-          },
-          FeatureId::Face(0),
-        )
+        ({ point: point.sub(vec2_scale(n, dist)), is_inside: inside }, Face(0))
       }
     }
-    Shape::CapsuleX(half_height, radius) =>
+    CapsuleX(half_height, radius) =>
       project_point_on_capsule_oriented_and_get_feature(
         center,
         rotation,
@@ -4171,7 +4127,7 @@ fn project_point_on_shape_and_get_feature(
         point,
         solid,
       )
-    Shape::CapsuleY(half_height, radius) =>
+    CapsuleY(half_height, radius) =>
       project_point_on_capsule_oriented_and_get_feature(
         center,
         rotation,
@@ -4181,13 +4137,13 @@ fn project_point_on_shape_and_get_feature(
         point,
         solid,
       )
-    Shape::Segment(a, b) =>
+    Segment(a, b) =>
       project_point_on_segment_and_get_feature(center, rotation, a, b, point)
-    Shape::Polyline(vertices, indices) =>
+    Polyline(vertices, indices) =>
       project_point_on_polyline_and_get_feature(
         center, rotation, vertices, indices, point,
       )
-    Shape::HeightField(heights, scale) =>
+    HeightField(heights, scale) =>
       project_point_on_polyline_and_get_feature(
         center,
         rotation,
@@ -4195,11 +4151,11 @@ fn project_point_on_shape_and_get_feature(
         None,
         point,
       )
-    Shape::ConvexPolygon(vertices) =>
+    ConvexPolygon(vertices) =>
       project_point_on_convex_polygon_oriented_and_get_feature(
         center, rotation, vertices, point, solid,
       )
-    Shape::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       let mut best : (PointProjection, FeatureId)? = None
       let mut best_dist2 = 1.0e30F
       for i in 0..<indices.length() {
@@ -4237,15 +4193,12 @@ fn project_point_on_shape_and_get_feature(
       if best is Some(r) {
         r
       } else {
-        (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+        ({ point, is_inside: false }, Unknown)
       }
     }
-    Shape::Compound(parts) => {
+    Compound(parts) => {
       if parts.length() == 0 {
-        return (
-          PointProjection::{ point, is_inside: false },
-          FeatureId::Unknown,
-        )
+        return ({ point, is_inside: false }, Unknown)
       }
       let parent_iso = @core.Isometry2::new(
         center,
@@ -4271,7 +4224,7 @@ fn project_point_on_shape_and_get_feature(
       if best is Some(result) {
         result
       } else {
-        (PointProjection::{ point, is_inside: false }, FeatureId::Unknown)
+        ({ point, is_inside: false }, Unknown)
       }
     }
   }

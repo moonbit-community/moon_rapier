@@ -124,7 +124,7 @@ pub type TangentImpulse3 = Vec2
 
 ///|
 pub fn Vec2::new(x : Real, y : Real) -> Vec2 {
-  Vec2::{ x, y }
+  { x, y }
 }
 
 ///|
@@ -220,12 +220,12 @@ pub struct Rot2 {
 
 ///|
 pub fn Rot2::identity() -> Rot2 {
-  Rot2::{ sin: 0.0F, cos: 1.0F }
+  { sin: 0.0F, cos: 1.0F }
 }
 
 ///|
 pub fn Rot2::from_angle(angle : Real) -> Rot2 {
-  Rot2::{ sin: sin(angle), cos: cos(angle) }
+  { sin: sin(angle), cos: cos(angle) }
 }
 
 ///|
@@ -240,7 +240,7 @@ pub fn Rot2::rotate_vec2(self : Rot2, v : Vec2) -> Vec2 {
 
 ///|
 pub fn Rot2::mul(self : Rot2, other : Rot2) -> Rot2 {
-  Rot2::{
+  {
     sin: self.sin * other.cos + self.cos * other.sin,
     cos: self.cos * other.cos - self.sin * other.sin,
   }
@@ -248,7 +248,7 @@ pub fn Rot2::mul(self : Rot2, other : Rot2) -> Rot2 {
 
 ///|
 pub fn Rot2::inverse(self : Rot2) -> Rot2 {
-  Rot2::{ sin: -self.sin, cos: self.cos }
+  { sin: -self.sin, cos: self.cos }
 }
 
 ///|
@@ -269,12 +269,12 @@ pub fn Isometry2::Isometry2(translation : Vec2, rotation : Rot2) -> Isometry2 {
 
 ///|
 pub fn Isometry2::identity() -> Isometry2 {
-  Isometry2::{ translation: Vec2::zero(), rotation: Rot2::identity() }
+  { translation: Vec2::zero(), rotation: Rot2::identity() }
 }
 
 ///|
 pub fn Isometry2::new(translation : Vec2, rotation : Rot2) -> Isometry2 {
-  Isometry2::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
@@ -317,7 +317,7 @@ pub fn Aabb::Aabb(mins : Vec2, maxs : Vec2) -> Aabb {
 
 ///|
 pub fn Aabb::new(mins : Vec2, maxs : Vec2) -> Aabb {
-  Aabb::{ mins, maxs }
+  { mins, maxs }
 }
 
 ///|
@@ -351,7 +351,7 @@ pub fn Vec3::Vec3(x : Real, y : Real, z : Real) -> Vec3 {
 
 ///|
 pub fn Vec3::new(x : Real, y : Real, z : Real) -> Vec3 {
-  Vec3::{ x, y, z }
+  { x, y, z }
 }
 
 ///|
@@ -439,7 +439,7 @@ pub fn Quat::negated(self : Quat) -> Quat {
 
 ///|
 pub fn Quat::new(x : Real, y : Real, z : Real, w : Real) -> Quat {
-  Quat::{ x, y, z, w }
+  { x, y, z, w }
 }
 
 ///|
@@ -573,12 +573,12 @@ pub fn Isometry3::Isometry3(translation : Vec3, rotation : Quat) -> Isometry3 {
 
 ///|
 pub fn Isometry3::identity() -> Isometry3 {
-  Isometry3::{ translation: Vec3::zero(), rotation: Quat::identity() }
+  { translation: Vec3::zero(), rotation: Quat::identity() }
 }
 
 ///|
 pub fn Isometry3::new(translation : Vec3, rotation : Quat) -> Isometry3 {
-  Isometry3::{ translation, rotation }
+  { translation, rotation }
 }
 
 ///|
@@ -625,7 +625,7 @@ pub fn Aabb3::Aabb3(mins : Vec3, maxs : Vec3) -> Aabb3 {
 
 ///|
 pub fn Aabb3::new(mins : Vec3, maxs : Vec3) -> Aabb3 {
-  Aabb3::{ mins, maxs }
+  { mins, maxs }
 }
 
 ///|
@@ -724,7 +724,7 @@ pub fn MassProperties::new(
 ) -> MassProperties {
   let inv_mass = if mass <= EPSILON { 0.0F } else { 1.0F / mass }
   let inv_inertia = if inertia <= EPSILON { 0.0F } else { 1.0F / inertia }
-  MassProperties::{ mass, inv_mass, inertia, inv_inertia, center_of_mass }
+  { mass, inv_mass, inertia, inv_inertia, center_of_mass }
 }
 
 ///|

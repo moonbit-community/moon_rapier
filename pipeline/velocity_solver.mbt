@@ -358,7 +358,7 @@ fn VelocitySolver::writeback_bodies(
       rb.set_linvel(linvel, wake_up) |> ignore
       rb.set_angvel(angvel, wake_up) |> ignore
 
-      if rb.body_type is @dynamics.RigidBodyType::KinematicPositionBased {
+      if rb.body_type is KinematicPositionBased {
         continue
       }
       let body_translation = solver_pose.translation.sub(

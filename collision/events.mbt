@@ -80,7 +80,7 @@ pub fn ActiveEvents::union(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  ActiveEvents::{ bits: self.bits | other.bits }
+  { bits: self.bits | other.bits }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn ActiveEvents::difference(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  ActiveEvents::{ bits: self.bits & Int::lnot(other.bits) }
+  { bits: self.bits & Int::lnot(other.bits) }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ActiveEvents::symmetric_difference(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  ActiveEvents::{ bits: self.bits ^ other.bits }
+  { bits: self.bits ^ other.bits }
 }
 
 ///|
@@ -109,7 +109,7 @@ pub fn ActiveEvents::toggle(
 
 ///|
 pub fn ActiveEvents::complement(self : ActiveEvents) -> ActiveEvents {
-  ActiveEvents::{ bits: active_events_all_bits() & Int::lnot(self.bits) }
+  { bits: active_events_all_bits() & Int::lnot(self.bits) }
 }
 
 ///|
@@ -120,7 +120,7 @@ pub fn ActiveEvents::is_all(self : ActiveEvents) -> Bool {
 ///|
 pub fn ActiveEvents::from_bits(bits : Int) -> ActiveEvents? {
   if (bits & Int::lnot(active_events_all_bits())) == 0 {
-    Some(ActiveEvents::{ bits, })
+    Some({ bits, })
   } else {
     None
   }
@@ -128,12 +128,12 @@ pub fn ActiveEvents::from_bits(bits : Int) -> ActiveEvents? {
 
 ///|
 pub fn ActiveEvents::from_bits_truncate(bits : Int) -> ActiveEvents {
-  ActiveEvents::{ bits: bits & active_events_all_bits() }
+  { bits: bits & active_events_all_bits() }
 }
 
 ///|
 pub fn ActiveEvents::from_bits_retain(bits : Int) -> ActiveEvents {
-  ActiveEvents::{ bits, }
+  { bits, }
 }
 
 ///|
@@ -215,7 +215,7 @@ pub fn CollisionEventFlags::insert(
 ///|
 pub fn CollisionEvent::started(self : CollisionEvent) -> Bool {
   match self {
-    CollisionEvent::Started(_, _, _) => true
+    Started(_, _, _) => true
     _ => false
   }
 }
@@ -223,7 +223,7 @@ pub fn CollisionEvent::started(self : CollisionEvent) -> Bool {
 ///|
 pub fn CollisionEvent::stopped(self : CollisionEvent) -> Bool {
   match self {
-    CollisionEvent::Stopped(_, _, _) => true
+    Stopped(_, _, _) => true
     _ => false
   }
 }
@@ -231,36 +231,32 @@ pub fn CollisionEvent::stopped(self : CollisionEvent) -> Bool {
 ///|
 pub fn CollisionEvent::collider1(self : CollisionEvent) -> ColliderHandle {
   match self {
-    CollisionEvent::Started(h, _, _) => h
-    CollisionEvent::Stopped(h, _, _) => h
+    Started(h, _, _) => h
+    Stopped(h, _, _) => h
   }
 }
 
 ///|
 pub fn CollisionEvent::collider2(self : CollisionEvent) -> ColliderHandle {
   match self {
-    CollisionEvent::Started(_, h, _) => h
-    CollisionEvent::Stopped(_, h, _) => h
+    Started(_, h, _) => h
+    Stopped(_, h, _) => h
   }
 }
 
 ///|
 pub fn CollisionEvent::sensor(self : CollisionEvent) -> Bool {
   match self {
-    CollisionEvent::Started(_, _, flags) =>
-      flags.contains(CollisionEventFlags::sensor())
-    CollisionEvent::Stopped(_, _, flags) =>
-      flags.contains(CollisionEventFlags::sensor())
+    Started(_, _, flags) => flags.contains(CollisionEventFlags::sensor())
+    Stopped(_, _, flags) => flags.contains(CollisionEventFlags::sensor())
   }
 }
 
 ///|
 pub fn CollisionEvent::removed(self : CollisionEvent) -> Bool {
   match self {
-    CollisionEvent::Started(_, _, flags) =>
-      flags.contains(CollisionEventFlags::removed())
-    CollisionEvent::Stopped(_, _, flags) =>
-      flags.contains(CollisionEventFlags::removed())
+    Started(_, _, flags) => flags.contains(CollisionEventFlags::removed())
+    Stopped(_, _, flags) => flags.contains(CollisionEventFlags::removed())
   }
 }
 

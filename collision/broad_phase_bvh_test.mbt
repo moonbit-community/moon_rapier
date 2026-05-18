@@ -60,7 +60,7 @@ test "broad phase bvh emits add/delete pair events" {
   broad_phase.update(0.0F, bodies, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
-  if ev1[0] is BroadPhasePairEvent::AddPair(pair1) {
+  if ev1[0] is AddPair(pair1) {
     let a = pair1.collider1()
     let b = pair1.collider2()
     inspect(
@@ -79,7 +79,7 @@ test "broad phase bvh emits add/delete pair events" {
   broad_phase.update(0.0F, bodies, colliders)
   let ev2 = broad_phase.take_events()
   inspect(ev2.length() == 1, content="true")
-  if ev2[0] is BroadPhasePairEvent::DeletePair(pair2) {
+  if ev2[0] is DeletePair(pair2) {
     let a = pair2.collider1()
     let b = pair2.collider2()
     inspect(
@@ -154,16 +154,16 @@ fn compute_aabb_for_test(
 ) -> (@core.Vec2, @core.Vec2) {
   let pd = if prediction_distance < 0.0F { 0.0F } else { prediction_distance }
   match shape {
-    Shape::Round(inner, radius) =>
+    Round(inner, radius) =>
       compute_aabb_for_test(inner.val, center, rotation, pd + radius)
-    Shape::Ball(radius) => {
+    Ball(radius) => {
       let r = radius + pd
       (
         @core.Vec2::new(center.x - r, center.y - r),
         @core.Vec2::new(center.x + r, center.y + r),
       )
     }
-    Shape::Cuboid(half_width, half_height) => {
+    Cuboid(half_width, half_height) => {
       let rot = @core.Rot2::from_angle(rotation)
       let abs_cos = @core.abs(rot.cos)
       let abs_sin = @core.abs(rot.sin)
@@ -174,12 +174,12 @@ fn compute_aabb_for_test(
         @core.Vec2::new(center.x + hw, center.y + hh),
       )
     }
-    Shape::HalfSpace(_) =>
+    HalfSpace(_) =>
       (
         @core.Vec2::new(center.x - pd, center.y - pd),
         @core.Vec2::new(center.x + pd, center.y + pd),
       )
-    Shape::CapsuleX(half_height, radius) => {
+    CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
       let a = center.add(offset)
@@ -194,7 +194,7 @@ fn compute_aabb_for_test(
         @core.Vec2::new(max_x + r, max_y + r),
       )
     }
-    Shape::CapsuleY(half_height, radius) => {
+    CapsuleY(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
       let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
       let a = center.add(offset)
@@ -209,7 +209,7 @@ fn compute_aabb_for_test(
         @core.Vec2::new(max_x + r, max_y + r),
       )
     }
-    Shape::Segment(a, b) => {
+    Segment(a, b) => {
       let rot = @core.Rot2::from_angle(rotation)
       let wa = center.add(rot.rotate_vec2(a))
       let wb = center.add(rot.rotate_vec2(b))
@@ -222,7 +222,7 @@ fn compute_aabb_for_test(
         @core.Vec2::new(max_x + pd, max_y + pd),
       )
     }
-    Shape::Polyline(vertices, _) =>
+    Polyline(vertices, _) =>
       if vertices.length() == 0 {
         (center, center)
       } else {
@@ -251,7 +251,7 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
-    Shape::HeightField(heights, scale) => {
+    HeightField(heights, scale) => {
       let vertices : Array[@core.Vec2] = []
       if heights.length() == 0 {
         return (center, center)
@@ -292,7 +292,7 @@ fn compute_aabb_for_test(
         @core.Vec2::new(max_x + pd, max_y + pd),
       )
     }
-    Shape::ConvexPolygon(vertices) =>
+    ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
         (center, center)
       } else {
@@ -321,7 +321,7 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
-    Shape::TriMesh(vertices, _) =>
+    TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         (center, center)
       } else {
@@ -350,7 +350,7 @@ fn compute_aabb_for_test(
           @core.Vec2::new(max_x + pd, max_y + pd),
         )
       }
-    Shape::Compound(parts) =>
+    Compound(parts) =>
       if parts.length() == 0 {
         (center, center)
       } else {

@@ -305,7 +305,7 @@ pub fn BroadPhase3D::update(
         continue
       }
       match c.shape() {
-        Shape3D::HalfSpace(_) => infinite_handles.push(h)
+        HalfSpace(_) => infinite_handles.push(h)
         _ => regular_handles.push(h)
       }
     }
@@ -316,7 +316,7 @@ pub fn BroadPhase3D::update(
     if colliders.get(h) is Some(c) {
       let aabb = c.compute_collision_aabb(prediction_distance)
       // `center` is only used as a sort key in this sweep-and-prune path.
-      leaves.push(BvhLeaf3D::{ handle: h, aabb, center: aabb.mins })
+      leaves.push({ handle: h, aabb, center: aabb.mins })
     }
   }
   if leaves.length() > 1 {
@@ -363,31 +363,23 @@ pub fn BroadPhase3D::update(
   while i < self.prev_pairs.length() || j < self.pairs.length() {
     if i >= self.prev_pairs.length() {
       let p = self.pairs[j]
-      self.events.push(
-        BroadPhasePairEvent3D::AddPair(ColliderPair3D::new(p.0, p.1)),
-      )
+      self.events.push(AddPair(ColliderPair3D::new(p.0, p.1)))
       j = j + 1
       continue
     }
     if j >= self.pairs.length() {
       let p = self.prev_pairs[i]
-      self.events.push(
-        BroadPhasePairEvent3D::DeletePair(ColliderPair3D::new(p.0, p.1)),
-      )
+      self.events.push(DeletePair(ColliderPair3D::new(p.0, p.1)))
       i = i + 1
       continue
     }
     let a = self.prev_pairs[i]
     let b = self.pairs[j]
     if pair_less_3d(a, b) {
-      self.events.push(
-        BroadPhasePairEvent3D::DeletePair(ColliderPair3D::new(a.0, a.1)),
-      )
+      self.events.push(DeletePair(ColliderPair3D::new(a.0, a.1)))
       i = i + 1
     } else if pair_less_3d(b, a) {
-      self.events.push(
-        BroadPhasePairEvent3D::AddPair(ColliderPair3D::new(b.0, b.1)),
-      )
+      self.events.push(AddPair(ColliderPair3D::new(b.0, b.1)))
       j = j + 1
     } else {
       i = i + 1

@@ -141,8 +141,8 @@ test "impulse joint get_mut persists joint data edits" {
   let handle = joints.insert(body1, body2, joint, true)
   if joints.get_mut(handle, true) is Some(j) {
     j.data
-    .set_motor_velocity(JointAxis::AngZ, 2.0F, 0.0F)
-    .set_motor_max_force(JointAxis::AngZ, 123.0F)
+    .set_motor_velocity(AngZ, 2.0F, 0.0F)
+    .set_motor_max_force(AngZ, 123.0F)
     |> ignore
   } else {
     inspect(false, content="true")

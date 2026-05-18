@@ -231,7 +231,7 @@ pub fn RopeJoint::set_max_distance(
   self : RopeJoint,
   max_distance : @core.Real,
 ) -> RopeJoint {
-  RopeJoint::{
+  {
     max_length: max_distance,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
@@ -273,21 +273,21 @@ pub fn GenericJoint::from_rope(joint : RopeJoint) -> GenericJoint {
     motors: JointMotors3::default(),
     softness: joint.softness,
     contacts_enabled: true,
-    enabled: JointEnabled::Enabled,
+    enabled: Enabled,
     user_data: 0,
   }
-  result = result.set_limits_axis(JointAxis::LinX, 0.0F, joint.max_length)
+  result = result.set_limits_axis(LinX, 0.0F, joint.max_length)
   if joint.motor_enabled {
     result = result
       .set_motor(
-        JointAxis::LinX,
+        LinX,
         joint.motor.target_pos,
         joint.motor.target_vel,
         joint.motor.stiffness,
         joint.motor.damping,
       )
-      .set_motor_model(JointAxis::LinX, joint.motor.model)
-      .set_motor_max_force(JointAxis::LinX, joint.motor.max_force)
+      .set_motor_model(LinX, joint.motor.model)
+      .set_motor_max_force(LinX, joint.motor.max_force)
   }
   result
 }
@@ -378,7 +378,7 @@ pub fn PinSlotJoint::set_local_axis1(
   self : PinSlotJoint,
   axis : @core.Vec2,
 ) -> PinSlotJoint {
-  PinSlotJoint::{
+  {
     axis,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
@@ -412,7 +412,7 @@ pub fn GenericJoint::from_pin_slot(joint : PinSlotJoint) -> GenericJoint {
     let limits = result.limits()
     result = result
       .set_limit_axes(JointAxesMask::lin_x())
-      .set_limits(JointLimits3::{
+      .set_limits({
         lin_x: joint.limits,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,
@@ -604,7 +604,7 @@ pub fn PrismaticJoint::set_local_axis1(
   self : PrismaticJoint,
   axis : @core.Vec2,
 ) -> PrismaticJoint {
-  PrismaticJoint::{
+  {
     axis,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
@@ -677,26 +677,26 @@ pub fn GenericJoint::from_prismatic(joint : PrismaticJoint) -> GenericJoint {
     motors: JointMotors3::default(),
     softness: joint.softness,
     contacts_enabled: true,
-    enabled: JointEnabled::Enabled,
+    enabled: Enabled,
     user_data: 0,
   }
   if joint.motor_enabled {
     result = result
       .set_motor(
-        JointAxis::LinX,
+        LinX,
         joint.motor.target_pos,
         joint.motor.target_vel,
         joint.motor.stiffness,
         joint.motor.damping,
       )
-      .set_motor_model(JointAxis::LinX, joint.motor.model)
-      .set_motor_max_force(JointAxis::LinX, joint.motor.max_force)
+      .set_motor_model(LinX, joint.motor.model)
+      .set_motor_max_force(LinX, joint.motor.max_force)
   }
   if joint.limits_enabled {
     let limits = result.limits()
     result = result
       .set_limit_axes(JointAxesMask::lin_x())
-      .set_limits(JointLimits3::{
+      .set_limits({
         lin_x: joint.limits,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,

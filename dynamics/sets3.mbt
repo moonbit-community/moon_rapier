@@ -123,11 +123,10 @@ fn IslandManager::extract_sleeping_island3(
     return 0
   }
   if bodies.get_mut(sleep_root) is Some(root_body) {
-    if !(root_body.activation.sleep_root_state
-      is SleepRootState::TraversalPending) {
+    if !(root_body.activation.sleep_root_state is TraversalPending) {
       return 0
     }
-    root_body.activation.sleep_root_state = SleepRootState::Traversed
+    root_body.activation.sleep_root_state = Traversed
   } else {
     return 0
   }
@@ -152,7 +151,7 @@ fn IslandManager::extract_sleeping_island3(
           body.ids.active_set_timestamp = self.traversal_timestamp
           visited_count = visited_count + 1
           if body.activation.is_eligible_for_sleep() {
-            body.activation.sleep_root_state = SleepRootState::Traversed
+            body.activation.sleep_root_state = Traversed
           } else {
             self.stack.clear()
             return visited_count
@@ -289,12 +288,12 @@ pub fn IslandManager3::update_islands(
       )
       let eligible = body.activation.is_eligible_for_sleep()
       if eligible {
-        if body.activation.sleep_root_state is SleepRootState::Unknown {
-          self.inner.traversal_candidates.push(SleepCandidate::{ handle, })
-          body.activation.sleep_root_state = SleepRootState::TraversalPending
+        if body.activation.sleep_root_state is Unknown {
+          self.inner.traversal_candidates.push({ handle, })
+          body.activation.sleep_root_state = TraversalPending
         }
       } else {
-        body.activation.sleep_root_state = SleepRootState::Unknown
+        body.activation.sleep_root_state = Unknown
       }
     }
   }

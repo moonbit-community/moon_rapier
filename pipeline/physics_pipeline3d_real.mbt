@@ -42,7 +42,7 @@ pub fn PhysicsPipeline3DReal::PhysicsPipeline3DReal() -> PhysicsPipeline3DReal {
 pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
   {
     contact_cache: ContactSolverCache3D::new(),
-    contact_twist_cache: @hashmap.HashMap([]),
+    contact_twist_cache: HashMap([]),
     sensor_pairs: [],
     contact_pairs: [],
     intersection_pairs: [],
@@ -73,7 +73,7 @@ fn integrate_lin_ang_3d_real(
 ///|
 fn shape_bounding_radius_3d_real(shape : @collision.Shape3D) -> @core.Real {
   match shape {
-    @collision.Shape3D::HalfSpace(_) => 0.0F
+    HalfSpace(_) => 0.0F
     _ => {
       let aabb = shape.local_aabb()
       let he = aabb.maxs.sub(aabb.mins).scale(0.5F)
@@ -85,11 +85,11 @@ fn shape_bounding_radius_3d_real(shape : @collision.Shape3D) -> @core.Real {
 ///|
 fn shape_ccd_thickness_3d_real(shape : @collision.Shape3D) -> @core.Real {
   match shape {
-    @collision.Shape3D::HalfSpace(_) => 0.0F
-    @collision.Shape3D::Triangle(_, _, _) => 0.0F
-    @collision.Shape3D::Heightfield(_, _, _, _, _) => 0.0F
-    @collision.Shape3D::TriMesh(_, _) => 0.0F
-    @collision.Shape3D::Compound(parts) => {
+    HalfSpace(_) => 0.0F
+    Triangle(_, _, _) => 0.0F
+    Heightfield(_, _, _, _, _) => 0.0F
+    TriMesh(_, _) => 0.0F
+    Compound(parts) => {
       if parts.length() == 0 {
         return 0.0F
       }
@@ -291,8 +291,7 @@ fn clamp_fast_ccd_body_motions_3d_real(
     bodies,
     colliders,
   )
-  let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = @hashmap.HashMap([],
-  )
+  let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = HashMap([])
   let collider_handles = colliders.all_handles()
   for i in 0..<collider_handles.length() {
     let ch = collider_handles[i]
@@ -612,18 +611,14 @@ fn emit_collision_events_for_pair_diffs(
   while i < prev_pairs.length() || j < next_pairs.length() {
     if i >= prev_pairs.length() {
       let p = next_pairs[j]
-      handler.push_collision_event(
-        @collision.CollisionEvent3D::Started(p.0, p.1, flags),
-      )
+      handler.push_collision_event(Started(p.0, p.1, flags))
       j = j + 1
       continue
     }
     if j >= next_pairs.length() {
       let p = prev_pairs[i]
       let event_flags = stopped_flags(colliders, p.0, p.1, flags)
-      handler.push_collision_event(
-        @collision.CollisionEvent3D::Stopped(p.0, p.1, event_flags),
-      )
+      handler.push_collision_event(Stopped(p.0, p.1, event_flags))
       i = i + 1
       continue
     }
@@ -631,14 +626,10 @@ fn emit_collision_events_for_pair_diffs(
     let b = next_pairs[j]
     if pair_less_3d(a, b) {
       let event_flags = stopped_flags(colliders, a.0, a.1, flags)
-      handler.push_collision_event(
-        @collision.CollisionEvent3D::Stopped(a.0, a.1, event_flags),
-      )
+      handler.push_collision_event(Stopped(a.0, a.1, event_flags))
       i = i + 1
     } else if pair_less_3d(b, a) {
-      handler.push_collision_event(
-        @collision.CollisionEvent3D::Started(b.0, b.1, flags),
-      )
+      handler.push_collision_event(Started(b.0, b.1, flags))
       j = j + 1
     } else {
       i = i + 1
@@ -726,7 +717,7 @@ fn filter_broad_phase_pairs_3d(
     disabled_body_pairs.append(multibody.disabled_contact_pairs()[:])
   }
   if disabled_body_pairs.length() > 0 {
-    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.HashMap(
+    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = HashMap(
       [],
       capacity=disabled_body_pairs.length() * 2,
     )
@@ -787,7 +778,7 @@ fn collect_solver_interactions_3d_real(
   let interactions : Array[
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ] = []
-  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = @hashmap.HashMap([],
+  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = HashMap([],
   )
   fn push_unique_interaction(
     interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
@@ -1489,7 +1480,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
   let mut twist_cache_in = self.contact_twist_cache
   for pass in 0..<coupling_passes {
     let cache_out = ContactSolverCache3D::new()
-    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
     )
     let pass_events = if pass + 1 == coupling_passes { events } else { None }
     if active_island_ids.length() > 0 {

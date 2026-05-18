@@ -112,17 +112,17 @@ pub enum FrictionModel {
 ///|
 pub fn FrictionModel::default() -> FrictionModel {
   // Rapier's 3D default is `Simplified`.
-  FrictionModel::Simplified
+  Simplified
 }
 
 ///|
 pub fn FrictionModel::simplified() -> FrictionModel {
-  FrictionModel::Simplified
+  Simplified
 }
 
 ///|
 pub fn FrictionModel::coulomb() -> FrictionModel {
-  FrictionModel::Coulomb
+  Coulomb
 }
 
 ///|

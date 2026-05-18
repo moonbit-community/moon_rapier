@@ -28,7 +28,7 @@ pub fn CCDSolver::clamp_motions(
   impacts : PredictedImpacts,
 ) -> Unit {
   self |> ignore
-  if impacts is PredictedImpacts::Impacts(tois) {
+  if impacts is Impacts(tois) {
     for i in 0..<tois.length() {
       let pair = tois[i]
       let handle = pair.0
@@ -125,7 +125,7 @@ pub fn CCDSolver::predict_impacts_at_next_positions(
   _dt : @core.Real,
 ) -> PredictedImpacts {
   self |> ignore
-  PredictedImpacts::NoImpacts
+  NoImpacts
 }
 
 ///|
@@ -138,7 +138,7 @@ pub fn CCDSolver::find_first_impact(
 ) -> (RigidBodyHandle, @core.Real)? {
   self |> ignore
   match impacts {
-    PredictedImpacts::Impacts(tois) =>
+    Impacts(tois) =>
       if tois.length() == 0 {
         None
       } else {

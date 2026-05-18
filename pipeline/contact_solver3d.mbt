@@ -56,7 +56,7 @@ pub fn ContactSolverCache3D::ContactSolverCache3D() -> ContactSolverCache3D {
 
 ///|
 pub fn ContactSolverCache3D::new() -> ContactSolverCache3D {
-  { entries: @hashmap.HashMap([]) }
+  { entries: HashMap([]) }
 }
 
 ///|
@@ -491,7 +491,7 @@ fn solve_contacts_3d_impl(
               apply_impulse(rb2, ws_normal, c.point2)
             }
           }
-          if friction_model is @dynamics.FrictionModel::Coulomb {
+          if friction_model is Coulomb {
             let ws = imp.scaled(warmstart_coeff)
             let (t1, t2) = orthonormal_basis(normal)
             let tangent_total = t1.scale(ws.tangent1).add(t2.scale(ws.tangent2))
@@ -843,7 +843,7 @@ fn solve_contacts_3d_impl(
   }
   for i in 0..<solve_entries.length() {
     let e = solve_entries[i]
-    if e.friction_model is @dynamics.FrictionModel::Simplified {
+    if e.friction_model is Simplified {
       let (warm_t1, warm_t2, warm_twist) = pair_friction_impulses[i]
       let warm_tangent = e.friction_t1
         .scale(warm_t1 * warmstart_coeff)
@@ -922,9 +922,7 @@ fn solve_contacts_3d_impl(
             tangent2: acc.tangent2,
           }
         }
-        if friction_model is @dynamics.FrictionModel::Coulomb &&
-          friction > 0.0F &&
-          acc.normal > 0.0F {
+        if friction_model is Coulomb && friction > 0.0F && acc.normal > 0.0F {
           // Recompute after normal impulse.
           let v1b = if rb1 is Some(b1) {
             vel_at(b1, p0.point1)
@@ -973,8 +971,7 @@ fn solve_contacts_3d_impl(
           acc,
         )
       }
-      if friction_model is @dynamics.FrictionModel::Simplified &&
-        friction > 0.0F {
+      if friction_model is Simplified && friction > 0.0F {
         let mut tangent_limit = 0.0F
         let mut twist_limit = 0.0F
         for k in 0..<points.length() {
@@ -1085,7 +1082,7 @@ fn solve_contacts_3d_impl(
   }
   for i in 0..<solve_entries.length() {
     let e = solve_entries[i]
-    if e.friction_model is @dynamics.FrictionModel::Simplified {
+    if e.friction_model is Simplified {
       twist_cache_out.set(pair_keys[i], pair_friction_impulses[i].2)
     }
   }
@@ -1238,9 +1235,9 @@ pub fn solve_contacts_3d(
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
 ) -> Unit {
-  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
   )
-  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = @hashmap.HashMap([],
+  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
   )
   solve_contacts_3d_impl(
     parameters,

@@ -213,7 +213,7 @@ pub fn PhysicsPipeline3::step(
         if !body.enabled || body.is_sleeping() {
           continue
         }
-        if body.body_type is @dynamics.RigidBodyType::Dynamic {
+        if body.body_type is Dynamic {
           body.update_effective_force_and_torque(gravity2) |> ignore
         }
       }
@@ -265,7 +265,7 @@ pub fn PhysicsPipeline3::step(
         continue
       }
       match body.body_type {
-        @dynamics.RigidBodyType::Dynamic => {
+        Dynamic => {
           body.update_effective_force_and_torque(gravity2) |> ignore
           let forces = body.forces()
           let raw_vels = forces.integrate(dt, body.vels(), body.mass_props())
@@ -283,7 +283,7 @@ pub fn PhysicsPipeline3::step(
           body.set_linvel(linvel, false) |> ignore
           body.set_angvel(angvel, false) |> ignore
         }
-        @dynamics.RigidBodyType::KinematicPositionBased => {
+        KinematicPositionBased => {
           let inv_dt = 1.0F / dt
           let derived_vels = @dynamics.RigidBodyPosition::new(
             body.position(),
@@ -291,7 +291,7 @@ pub fn PhysicsPipeline3::step(
           ).interpolate_velocity(inv_dt, body.center_of_mass())
           body.set_kinematic_position_based_vels(derived_vels) |> ignore
         }
-        @dynamics.RigidBodyType::KinematicVelocityBased => ()
+        KinematicVelocityBased => ()
         _ => ()
       }
     }
@@ -324,8 +324,7 @@ pub fn PhysicsPipeline3::step(
         continue
       }
       match body.body_type {
-        @dynamics.RigidBodyType::Dynamic
-        | @dynamics.RigidBodyType::KinematicVelocityBased => {
+        Dynamic | KinematicVelocityBased => {
           let next_pos = body
             .vels()
             .integrate(dt, body.position(), body.center_of_mass())

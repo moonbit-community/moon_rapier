@@ -15,11 +15,11 @@
 ///|
 fn rule_rank(rule : CoefficientCombineRule) -> Int {
   match rule {
-    CoefficientCombineRule::Average => 0
-    CoefficientCombineRule::Min => 1
-    CoefficientCombineRule::Multiply => 2
-    CoefficientCombineRule::Max => 3
-    CoefficientCombineRule::ClampedSum => 4
+    Average => 0
+    Min => 1
+    Multiply => 2
+    Max => 3
+    ClampedSum => 4
   }
 }
 
@@ -44,14 +44,14 @@ pub fn CoefficientCombineRule::combine(
 ) -> @core.Real {
   let effective_rule = max_rule(rule_value1, rule_value2)
   match effective_rule {
-    CoefficientCombineRule::Average => (coeff1 + coeff2) / 2.0F
-    CoefficientCombineRule::Min => {
+    Average => (coeff1 + coeff2) / 2.0F
+    Min => {
       let min_value = if coeff1 < coeff2 { coeff1 } else { coeff2 }
       @core.abs(min_value)
     }
-    CoefficientCombineRule::Multiply => coeff1 * coeff2
-    CoefficientCombineRule::Max => if coeff1 > coeff2 { coeff1 } else { coeff2 }
-    CoefficientCombineRule::ClampedSum => {
+    Multiply => coeff1 * coeff2
+    Max => if coeff1 > coeff2 { coeff1 } else { coeff2 }
+    ClampedSum => {
       let sum = coeff1 + coeff2
       if sum < 0.0F {
         0.0F

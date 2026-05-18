@@ -30,12 +30,12 @@ pub(all) enum MotorState3DReal {
 ///|
 fn axis_index_3d_real(axis : JointAxis3DReal) -> Int {
   match axis {
-    JointAxis3DReal::LinX => 0
-    JointAxis3DReal::LinY => 1
-    JointAxis3DReal::LinZ => 2
-    JointAxis3DReal::AngX => 3
-    JointAxis3DReal::AngY => 4
-    JointAxis3DReal::AngZ => 5
+    LinX => 0
+    LinY => 1
+    LinZ => 2
+    AngX => 3
+    AngY => 4
+    AngZ => 5
   }
 }
 
@@ -68,14 +68,14 @@ pub fn GenericJoint3DRealBuilder::new(
   let motors : Array[MotorState3DReal] = []
   for i in 0..<6 {
     i |> ignore
-    axis_states.push(AxisState3DReal::Free)
-    motors.push(MotorState3DReal::Disabled)
+    axis_states.push(Free)
+    motors.push(Disabled)
   }
   // Locked axes default to "Locked" unless overridden by limits.
   for i in 0..<6 {
     let bit = 1 << i
     if (locked_axes.bits() & bit) != 0 {
-      axis_states[i] = AxisState3DReal::Locked
+      axis_states[i] = Locked
     }
   }
   {
@@ -178,7 +178,7 @@ pub fn GenericJoint3DRealBuilder::limits(
   max : @core.Real,
 ) -> GenericJoint3DRealBuilder {
   let i = axis_index_3d_real(axis)
-  self.axis_states[i] = AxisState3DReal::Limited(min, max)
+  self.axis_states[i] = Limited(min, max)
   self
 }
 
@@ -191,9 +191,7 @@ pub fn GenericJoint3DRealBuilder::motor_position(
   damping : @core.Real,
 ) -> GenericJoint3DRealBuilder {
   let i = axis_index_3d_real(axis)
-  self.motors[i] = MotorState3DReal::Position(
-    target_pos, stiffness, damping, 1.0e30F,
-  )
+  self.motors[i] = Position(target_pos, stiffness, damping, 1.0e30F)
   self
 }
 
@@ -205,7 +203,7 @@ pub fn GenericJoint3DRealBuilder::motor_velocity(
   damping : @core.Real,
 ) -> GenericJoint3DRealBuilder {
   let i = axis_index_3d_real(axis)
-  self.motors[i] = MotorState3DReal::Velocity(target_vel, damping, 1.0e30F)
+  self.motors[i] = Velocity(target_vel, damping, 1.0e30F)
   self
 }
 
@@ -217,15 +215,11 @@ pub fn GenericJoint3DRealBuilder::motor_max_force(
 ) -> GenericJoint3DRealBuilder {
   let i = axis_index_3d_real(axis)
   match self.motors[i] {
-    MotorState3DReal::Disabled => ()
-    MotorState3DReal::Velocity(target_vel, damping, _) =>
-      self.motors[i] = MotorState3DReal::Velocity(
-        target_vel, damping, max_force,
-      )
-    MotorState3DReal::Position(target_pos, stiffness, damping, _) =>
-      self.motors[i] = MotorState3DReal::Position(
-        target_pos, stiffness, damping, max_force,
-      )
+    Disabled => ()
+    Velocity(target_vel, damping, _) =>
+      self.motors[i] = Velocity(target_vel, damping, max_force)
+    Position(target_pos, stiffness, damping, _) =>
+      self.motors[i] = Position(target_pos, stiffness, damping, max_force)
   }
   self
 }
@@ -243,7 +237,7 @@ pub fn GenericJoint3DRealBuilder::coupled_axes(
 pub fn GenericJoint3DRealBuilder::build(
   self : GenericJoint3DRealBuilder,
 ) -> GenericJoint3DReal {
-  GenericJoint3DReal::{
+  {
     local_frame1: @core.Isometry3::new(self.local_anchor1, self.local_basis1),
     local_frame2: @core.Isometry3::new(self.local_anchor2, self.local_basis2),
     axis_states: self.axis_states,

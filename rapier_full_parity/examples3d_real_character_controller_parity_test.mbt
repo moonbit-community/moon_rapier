@@ -238,7 +238,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
     .or(@dynamics.JointAxesMask3DReal::ang_x())
     .or(@dynamics.JointAxesMask3DReal::ang_y())
   let joint = @dynamics.GenericJoint3DRealBuilder::new(locked)
-    .limits(@dynamics.JointAxis3DReal::AngZ, -0.3F, 0.3F)
+    .limits(AngZ, -0.3F, 0.3F)
     .build()
   joints.insert_generic(joint_ground, tilting, joint, true) |> ignore
   let queries = @collision.QueryPipelineMut3DReal::new(

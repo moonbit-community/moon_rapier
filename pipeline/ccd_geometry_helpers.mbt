@@ -15,19 +15,18 @@
 ///|
 fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
   match shape {
-    @collision.Shape::Round(inner, radius) =>
-      shape_ccd_thickness(inner.val) + radius
-    @collision.Shape::Ball(radius) => radius
-    @collision.Shape::Cuboid(hw, hh) => if hw < hh { hw } else { hh }
-    @collision.Shape::HalfSpace(_) => 0.0F
-    @collision.Shape::CapsuleX(_, radius) => radius
-    @collision.Shape::CapsuleY(_, radius) => radius
-    @collision.Shape::Segment(_, _) => 0.0F
-    @collision.Shape::Polyline(_, _) => 0.0F
-    @collision.Shape::HeightField(_, _) => 0.0F
-    @collision.Shape::ConvexPolygon(_) => 0.0F
-    @collision.Shape::TriMesh(_, _) => 0.0F
-    @collision.Shape::Compound(parts) => {
+    Round(inner, radius) => shape_ccd_thickness(inner.val) + radius
+    Ball(radius) => radius
+    Cuboid(hw, hh) => if hw < hh { hw } else { hh }
+    HalfSpace(_) => 0.0F
+    CapsuleX(_, radius) => radius
+    CapsuleY(_, radius) => radius
+    Segment(_, _) => 0.0F
+    Polyline(_, _) => 0.0F
+    HeightField(_, _) => 0.0F
+    ConvexPolygon(_) => 0.0F
+    TriMesh(_, _) => 0.0F
+    Compound(parts) => {
       if parts.length() == 0 {
         return 0.0F
       }
@@ -50,14 +49,13 @@ fn shape_ccd_thickness(shape : @collision.Shape) -> @core.Real {
 ///|
 fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
   match shape {
-    @collision.Shape::Round(inner, radius) =>
-      shape_bounding_radius(inner.val) + radius
-    @collision.Shape::Ball(radius) => radius
-    @collision.Shape::Cuboid(hw, hh) => Float::sqrt(hw * hw + hh * hh)
-    @collision.Shape::HalfSpace(_) => 0.0F
-    @collision.Shape::CapsuleX(half_height, radius)
-    | @collision.Shape::CapsuleY(half_height, radius) => half_height + radius
-    @collision.Shape::Segment(a, b) => {
+    Round(inner, radius) => shape_bounding_radius(inner.val) + radius
+    Ball(radius) => radius
+    Cuboid(hw, hh) => Float::sqrt(hw * hw + hh * hh)
+    HalfSpace(_) => 0.0F
+    CapsuleX(half_height, radius) | CapsuleY(half_height, radius) =>
+      half_height + radius
+    Segment(a, b) => {
       let la = a.length()
       let lb = b.length()
       if la > lb {
@@ -66,7 +64,7 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
         lb
       }
     }
-    @collision.Shape::Polyline(vertices, _) => {
+    Polyline(vertices, _) => {
       let mut best = 0.0F
       for i in 0..<vertices.length() {
         let d = vertices[i].length()
@@ -76,7 +74,7 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
       }
       best
     }
-    @collision.Shape::HeightField(heights, scale) => {
+    HeightField(heights, scale) => {
       let mut max_abs_y = 0.0F
       for i in 0..<heights.length() {
         let ay = @core.abs(heights[i] * scale.y)
@@ -86,7 +84,7 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
       }
       Float::sqrt(0.5F * scale.x * (0.5F * scale.x) + max_abs_y * max_abs_y)
     }
-    @collision.Shape::ConvexPolygon(vertices) => {
+    ConvexPolygon(vertices) => {
       let mut best = 0.0F
       for i in 0..<vertices.length() {
         let d = vertices[i].length()
@@ -96,7 +94,7 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
       }
       best
     }
-    @collision.Shape::TriMesh(vertices, _) => {
+    TriMesh(vertices, _) => {
       let mut best = 0.0F
       for i in 0..<vertices.length() {
         let d = vertices[i].length()
@@ -106,7 +104,7 @@ fn shape_bounding_radius(shape : @collision.Shape) -> @core.Real {
       }
       best
     }
-    @collision.Shape::Compound(parts) => {
+    Compound(parts) => {
       let mut best = 0.0F
       for i in 0..<parts.length() {
         let (pose, part_shape) = parts[i]

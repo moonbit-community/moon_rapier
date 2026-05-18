@@ -25,7 +25,7 @@ test "heightfield flags: FIX_INTERNAL_EDGES smoothes closest-point normal" {
   if ColliderBuilder3D::heightfield(heights0, 2, 2, scale) is Some(b0) {
     let co0 = b0.build()
     match co0.shape() {
-      Shape3D::Heightfield(vertices, _, rows, cols, flags) => {
+      Heightfield(vertices, _, rows, cols, flags) => {
         inspect(flags == 0, content="true")
         if heightfield_closest_point_query_with_flags(
             point, pos, vertices, rows, cols, flags,
@@ -50,7 +50,7 @@ test "heightfield flags: FIX_INTERNAL_EDGES smoothes closest-point normal" {
     is Some(b1) {
     let co1 = b1.build()
     match co1.shape() {
-      Shape3D::Heightfield(vertices, _, rows, cols, flags) => {
+      Heightfield(vertices, _, rows, cols, flags) => {
         inspect(flags == 1, content="true")
         if heightfield_closest_point_query_with_flags(
             point, pos, vertices, rows, cols, flags,

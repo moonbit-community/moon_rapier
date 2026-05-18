@@ -38,8 +38,8 @@ pub fn SpringJoint::new(
 ) -> SpringJoint {
   let joint = GenericJoint::default()
     .set_coupled_axes(JointAxesMask::lin_axes())
-    .set_motor_position(JointAxis::LinX, rest_length, stiffness, damping)
-    .set_motor_model(JointAxis::LinX, MotorModel::ForceBased)
+    .set_motor_position(LinX, rest_length, stiffness, damping)
+    .set_motor_model(LinX, ForceBased)
   { data: joint }
 }
 
@@ -100,7 +100,7 @@ pub fn SpringJoint::set_spring_model(
   self : SpringJoint,
   model : MotorModel,
 ) -> SpringJoint {
-  self.data = self.data.set_motor_model(JointAxis::LinX, model)
+  self.data = self.data.set_motor_model(LinX, model)
   self
 }
 

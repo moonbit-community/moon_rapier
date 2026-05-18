@@ -97,8 +97,8 @@ fn IslandsOptimizer::new() -> IslandsOptimizer {
     min_island_size: MIN_ISLAND_SIZE,
     max_island_size: MAX_ISLAND_SIZE,
     mode: 0,
-    merge_state: IslandsOptimizerMergeState::{ curr_awake_id: 0 },
-    split_state: IslandsOptimizerSplitState::{ curr_awake_id: 0 },
+    merge_state: { curr_awake_id: 0 },
+    split_state: { curr_awake_id: 0 },
   }
 }
 
@@ -770,7 +770,7 @@ fn IslandManager::extract_sub_island(
     return
   }
   if self.islands[island_id] is Some(island) {
-    let new_island_id = self.insert_island(Island::{
+    let new_island_id = self.insert_island({
       bodies: [],
       id_in_awake_list: None,
       additional_solver_iterations: 0,
@@ -872,11 +872,10 @@ fn IslandManager::extract_sleeping_island(
     return 0
   }
   if bodies.get_mut(sleep_root) is Some(root_body) {
-    if !(root_body.activation.sleep_root_state
-      is SleepRootState::TraversalPending) {
+    if !(root_body.activation.sleep_root_state is TraversalPending) {
       return 0
     }
-    root_body.activation.sleep_root_state = SleepRootState::Traversed
+    root_body.activation.sleep_root_state = Traversed
   } else {
     return 0
   }
@@ -901,7 +900,7 @@ fn IslandManager::extract_sleeping_island(
           body.ids.active_set_timestamp = self.traversal_timestamp
           visited_count = visited_count + 1
           if body.activation.is_eligible_for_sleep() {
-            body.activation.sleep_root_state = SleepRootState::Traversed
+            body.activation.sleep_root_state = Traversed
           } else {
             self.stack.clear()
             return visited_count
@@ -1099,12 +1098,12 @@ pub fn IslandManager::update_islands(
       )
       let eligible = body.activation.is_eligible_for_sleep()
       if eligible {
-        if body.activation.sleep_root_state is SleepRootState::Unknown {
-          self.traversal_candidates.push(SleepCandidate::{ handle, })
-          body.activation.sleep_root_state = SleepRootState::TraversalPending
+        if body.activation.sleep_root_state is Unknown {
+          self.traversal_candidates.push({ handle, })
+          body.activation.sleep_root_state = TraversalPending
         }
       } else {
-        body.activation.sleep_root_state = SleepRootState::Unknown
+        body.activation.sleep_root_state = Unknown
       }
     }
   }
@@ -1265,7 +1264,7 @@ pub fn GenericJoint::default() -> GenericJoint {
     motors: JointMotors3::default(),
     softness: SpringCoefficients::joint_defaults(),
     contacts_enabled: true,
-    enabled: JointEnabled::Enabled,
+    enabled: Enabled,
     user_data: 0,
   }
 }
@@ -1368,11 +1367,7 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
   let anchor2 = joint.local_anchor2()
   let frame1 = @core.Isometry2::from_translation(anchor1)
   let frame2 = @core.Isometry2::from_translation(anchor2)
-  let motor_axis = if joint.is_spatial {
-    JointAxis::AngX
-  } else {
-    JointAxis::AngZ
-  }
+  let motor_axis = if joint.is_spatial { JointAxis::AngX } else { AngZ }
   let result = GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
@@ -1393,7 +1388,7 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
     motors: JointMotors3::default(),
     softness: joint.softness(),
     contacts_enabled: true,
-    enabled: JointEnabled::Enabled,
+    enabled: Enabled,
     user_data: 0,
   }
   if joint.motor() is Some(motor) {
@@ -1409,7 +1404,7 @@ pub fn GenericJoint::from_revolute(joint : RevoluteJoint) -> GenericJoint {
 
 ///|
 pub fn GenericJoint::is_enabled(self : GenericJoint) -> Bool {
-  self.enabled is JointEnabled::Enabled
+  self.enabled is Enabled
 }
 
 ///|
@@ -1668,12 +1663,12 @@ fn joint_limits_for_axis(
   axis : JointAxis,
 ) -> JointLimits {
   match axis {
-    JointAxis::LinX => limits.lin_x
-    JointAxis::LinY => limits.lin_y
-    JointAxis::LinZ => limits.lin_z
-    JointAxis::AngX => limits.ang_x
-    JointAxis::AngY => limits.ang_y
-    JointAxis::AngZ => limits.ang_z
+    LinX => limits.lin_x
+    LinY => limits.lin_y
+    LinZ => limits.lin_z
+    AngX => limits.ang_x
+    AngY => limits.ang_y
+    AngZ => limits.ang_z
   }
 }
 
@@ -1684,8 +1679,8 @@ fn joint_limits_set_axis(
   value : JointLimits,
 ) -> JointLimits3 {
   match axis {
-    JointAxis::LinX =>
-      JointLimits3::{
+    LinX =>
+      {
         lin_x: value,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,
@@ -1693,8 +1688,8 @@ fn joint_limits_set_axis(
         ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       }
-    JointAxis::LinY =>
-      JointLimits3::{
+    LinY =>
+      {
         lin_x: limits.lin_x,
         lin_y: value,
         lin_z: limits.lin_z,
@@ -1702,8 +1697,8 @@ fn joint_limits_set_axis(
         ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       }
-    JointAxis::LinZ =>
-      JointLimits3::{
+    LinZ =>
+      {
         lin_x: limits.lin_x,
         lin_y: limits.lin_y,
         lin_z: value,
@@ -1711,8 +1706,8 @@ fn joint_limits_set_axis(
         ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       }
-    JointAxis::AngX =>
-      JointLimits3::{
+    AngX =>
+      {
         lin_x: limits.lin_x,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,
@@ -1720,8 +1715,8 @@ fn joint_limits_set_axis(
         ang_y: limits.ang_y,
         ang_z: limits.ang_z,
       }
-    JointAxis::AngY =>
-      JointLimits3::{
+    AngY =>
+      {
         lin_x: limits.lin_x,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,
@@ -1729,8 +1724,8 @@ fn joint_limits_set_axis(
         ang_y: value,
         ang_z: limits.ang_z,
       }
-    JointAxis::AngZ =>
-      JointLimits3::{
+    AngZ =>
+      {
         lin_x: limits.lin_x,
         lin_y: limits.lin_y,
         lin_z: limits.lin_z,
@@ -1744,12 +1739,12 @@ fn joint_limits_set_axis(
 ///|
 fn joint_motor_for_axis(motors : JointMotors3, axis : JointAxis) -> JointMotor {
   match axis {
-    JointAxis::LinX => motors.lin_x
-    JointAxis::LinY => motors.lin_y
-    JointAxis::LinZ => motors.lin_z
-    JointAxis::AngX => motors.ang_x
-    JointAxis::AngY => motors.ang_y
-    JointAxis::AngZ => motors.ang_z
+    LinX => motors.lin_x
+    LinY => motors.lin_y
+    LinZ => motors.lin_z
+    AngX => motors.ang_x
+    AngY => motors.ang_y
+    AngZ => motors.ang_z
   }
 }
 
@@ -1760,8 +1755,8 @@ fn joint_motors_set_axis(
   value : JointMotor,
 ) -> JointMotors3 {
   match axis {
-    JointAxis::LinX =>
-      JointMotors3::{
+    LinX =>
+      {
         lin_x: value,
         lin_y: motors.lin_y,
         lin_z: motors.lin_z,
@@ -1769,8 +1764,8 @@ fn joint_motors_set_axis(
         ang_y: motors.ang_y,
         ang_z: motors.ang_z,
       }
-    JointAxis::LinY =>
-      JointMotors3::{
+    LinY =>
+      {
         lin_x: motors.lin_x,
         lin_y: value,
         lin_z: motors.lin_z,
@@ -1778,8 +1773,8 @@ fn joint_motors_set_axis(
         ang_y: motors.ang_y,
         ang_z: motors.ang_z,
       }
-    JointAxis::LinZ =>
-      JointMotors3::{
+    LinZ =>
+      {
         lin_x: motors.lin_x,
         lin_y: motors.lin_y,
         lin_z: value,
@@ -1787,8 +1782,8 @@ fn joint_motors_set_axis(
         ang_y: motors.ang_y,
         ang_z: motors.ang_z,
       }
-    JointAxis::AngX =>
-      JointMotors3::{
+    AngX =>
+      {
         lin_x: motors.lin_x,
         lin_y: motors.lin_y,
         lin_z: motors.lin_z,
@@ -1796,8 +1791,8 @@ fn joint_motors_set_axis(
         ang_y: motors.ang_y,
         ang_z: motors.ang_z,
       }
-    JointAxis::AngY =>
-      JointMotors3::{
+    AngY =>
+      {
         lin_x: motors.lin_x,
         lin_y: motors.lin_y,
         lin_z: motors.lin_z,
@@ -1805,8 +1800,8 @@ fn joint_motors_set_axis(
         ang_y: value,
         ang_z: motors.ang_z,
       }
-    JointAxis::AngZ =>
-      JointMotors3::{
+    AngZ =>
+      {
         lin_x: motors.lin_x,
         lin_y: motors.lin_y,
         lin_z: motors.lin_z,
@@ -1834,14 +1829,7 @@ pub fn GenericJoint::flip(self : GenericJoint) -> GenericJoint {
   self.local_frame1_rotation = self.local_frame2_rotation
   self.local_frame2_rotation = frame1_3
   let coupled_bits = self.coupled_axes.bits()
-  let axes : Array[JointAxis] = [
-    JointAxis::LinX,
-    JointAxis::LinY,
-    JointAxis::LinZ,
-    JointAxis::AngX,
-    JointAxis::AngY,
-    JointAxis::AngZ,
-  ]
+  let axes : Array[JointAxis] = [LinX, LinY, LinZ, AngX, AngY, AngZ]
   for index in 0..<axes.length() {
     if (coupled_bits & (1 << index)) == 0 {
       let axis = axes[index]
@@ -1895,12 +1883,12 @@ pub fn GenericJoint::set_motors(
 ///|
 fn joint_axis_mask(axis : JointAxis) -> JointAxesMask {
   match axis {
-    JointAxis::LinX => JointAxesMask::lin_x()
-    JointAxis::LinY => JointAxesMask::lin_y()
-    JointAxis::LinZ => JointAxesMask::lin_z()
-    JointAxis::AngX => JointAxesMask::ang_x()
-    JointAxis::AngY => JointAxesMask::ang_y()
-    JointAxis::AngZ => JointAxesMask::ang_z()
+    LinX => JointAxesMask::lin_x()
+    LinY => JointAxesMask::lin_y()
+    LinZ => JointAxesMask::lin_z()
+    AngX => JointAxesMask::ang_x()
+    AngY => JointAxesMask::ang_y()
+    AngZ => JointAxesMask::ang_z()
   }
 }
 
@@ -2059,14 +2047,8 @@ pub fn GenericJoint::set_enabled(
   enabled : Bool,
 ) -> GenericJoint {
   match self.enabled {
-    JointEnabled::Enabled | JointEnabled::DisabledByAttachedBody =>
-      if !enabled {
-        self.enabled = JointEnabled::Disabled
-      }
-    JointEnabled::Disabled =>
-      if enabled {
-        self.enabled = JointEnabled::Enabled
-      }
+    Enabled | DisabledByAttachedBody => if !enabled { self.enabled = Disabled }
+    Disabled => if enabled { self.enabled = Enabled }
   }
   self
 }
@@ -2077,11 +2059,11 @@ pub fn GenericJoint::set_enabled_by_attached_body(
   attached_enabled : Bool,
 ) -> GenericJoint {
   if attached_enabled {
-    if self.enabled is JointEnabled::DisabledByAttachedBody {
-      self.enabled = JointEnabled::Enabled
+    if self.enabled is DisabledByAttachedBody {
+      self.enabled = Enabled
     }
-  } else if self.enabled is JointEnabled::Enabled {
-    self.enabled = JointEnabled::DisabledByAttachedBody
+  } else if self.enabled is Enabled {
+    self.enabled = DisabledByAttachedBody
   }
   self
 }
@@ -2235,37 +2217,37 @@ fn ij_parse_bool_value(text : String) -> Bool {
 ///|
 fn motor_model_to_int(model : MotorModel) -> Int {
   match model {
-    MotorModel::AccelerationBased => 0
-    MotorModel::ForceBased => 1
+    AccelerationBased => 0
+    ForceBased => 1
   }
 }
 
 ///|
 fn motor_model_from_int(value : Int) -> MotorModel {
   if value == 1 {
-    MotorModel::ForceBased
+    ForceBased
   } else {
-    MotorModel::AccelerationBased
+    AccelerationBased
   }
 }
 
 ///|
 fn joint_enabled_to_int(value : JointEnabled) -> Int {
   match value {
-    JointEnabled::Enabled => 0
-    JointEnabled::Disabled => 1
-    JointEnabled::DisabledByAttachedBody => 2
+    Enabled => 0
+    Disabled => 1
+    DisabledByAttachedBody => 2
   }
 }
 
 ///|
 fn joint_enabled_from_int(value : Int) -> JointEnabled {
   if value == 1 {
-    JointEnabled::Disabled
+    Disabled
   } else if value == 2 {
-    JointEnabled::DisabledByAttachedBody
+    DisabledByAttachedBody
   } else {
-    JointEnabled::Enabled
+    Enabled
   }
 }
 
@@ -2438,17 +2420,9 @@ fn parse_motor(fields : Array[String], start : Int) -> JointMotor {
   let model = if fields.length() > start + 6 {
     motor_model_from_int(ij_parse_int_value(fields[start + 6]))
   } else {
-    MotorModel::AccelerationBased
+    AccelerationBased
   }
-  JointMotor::{
-    target_vel,
-    target_pos,
-    stiffness,
-    damping,
-    max_force,
-    impulse,
-    model,
-  }
+  { target_vel, target_pos, stiffness, damping, max_force, impulse, model }
 }
 
 ///|
@@ -2527,7 +2501,7 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
   let enabled = if fields.length() > start + 73 {
     joint_enabled_from_int(ij_parse_int_value(fields[start + 73]))
   } else {
-    JointEnabled::Enabled
+    Enabled
   }
   let user_data = if fields.length() > start + 74 {
     ij_parse_int_value(fields[start + 74])
@@ -2577,7 +2551,7 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
       @core.Vec3::new(0.0F, 0.0F, frame2.rotation.angle()),
     )
   }
-  GenericJoint::{
+  {
     local_frame1: frame1,
     local_frame2: frame2,
     axis3,
@@ -2597,15 +2571,8 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
     limit_axes,
     motor_axes,
     coupled_axes,
-    limits: JointLimits3::{
-      lin_x: lx,
-      lin_y: ly,
-      lin_z: lz,
-      ang_x: ax,
-      ang_y: ay,
-      ang_z: az,
-    },
-    motors: JointMotors3::{
+    limits: { lin_x: lx, lin_y: ly, lin_z: lz, ang_x: ax, ang_y: ay, ang_z: az },
+    motors: {
       lin_x: mx,
       lin_y: my,
       lin_z: mz_lin,
@@ -2790,7 +2757,7 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       let node1 = set.ensure_graph_node(body1)
       let node2 = set.ensure_graph_node(body2)
       let edge_id = set.graph_edges.length()
-      set.graph_edges.push(JointGraphEdge::{ node1, node2, joint })
+      set.graph_edges.push({ node1, node2, joint })
       set.adjacency[node1].push(edge_id)
       set.adjacency[node2].push(edge_id)
       set.joint_edge_ids[id] = edge_id
@@ -3019,7 +2986,7 @@ pub fn ImpulseJointSet::insert(
     handle,
   }
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
+  self.graph_edges.push({ node1, node2, joint: impulse_joint })
   self.adjacency[node1].push(edge_id)
   if node2 != node1 {
     self.adjacency[node2].push(edge_id)
@@ -3127,7 +3094,7 @@ pub fn ImpulseJointSet::set_enabled(
     return
   }
   let edge = self.graph_edges[edge_id]
-  self.graph_edges[edge_id] = JointGraphEdge::{
+  self.graph_edges[edge_id] = {
     node1: edge.node1,
     node2: edge.node2,
     joint: edge.joint.set_enabled(enabled),
@@ -3150,11 +3117,7 @@ pub fn ImpulseJointSet::set_impulses(
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
   joint.impulses = impulses
-  self.graph_edges[edge_id] = JointGraphEdge::{
-    node1: edge.node1,
-    node2: edge.node2,
-    joint,
-  }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
 }
 
 ///|
@@ -3170,36 +3133,36 @@ fn impulse_joint_solver_angular_axis(data : GenericJoint) -> JointAxis {
       ),
     )
   if spatial_axes.bits() == 0 {
-    return JointAxis::AngZ
+    return AngZ
   }
   let locked_axes = data.locked_axes()
   if !locked_axes.contains(JointAxesMask::ang_x()) {
-    return JointAxis::AngX
+    return AngX
   }
   if !locked_axes.contains(JointAxesMask::ang_y()) {
-    return JointAxis::AngY
+    return AngY
   }
   if !locked_axes.contains(JointAxesMask::ang_z()) {
-    return JointAxis::AngZ
+    return AngZ
   }
   let motor_axes = data.motor_axes()
   if motor_axes.contains(JointAxesMask::ang_x()) {
-    return JointAxis::AngX
+    return AngX
   }
   if motor_axes.contains(JointAxesMask::ang_y()) {
-    return JointAxis::AngY
+    return AngY
   }
   if motor_axes.contains(JointAxesMask::ang_z()) {
-    return JointAxis::AngZ
+    return AngZ
   }
   let limit_axes = data.limit_axes()
   if limit_axes.contains(JointAxesMask::ang_x()) {
-    return JointAxis::AngX
+    return AngX
   }
   if limit_axes.contains(JointAxesMask::ang_y()) {
-    return JointAxis::AngY
+    return AngY
   }
-  JointAxis::AngZ
+  AngZ
 }
 
 ///|
@@ -3257,11 +3220,7 @@ pub fn ImpulseJointSet::set_solver_impulses(
   joint.data.limits = joint_limits_set_axis(
     updated_limits, angular_axis, updated_limit,
   )
-  self.graph_edges[edge_id] = JointGraphEdge::{
-    node1: edge.node1,
-    node2: edge.node2,
-    joint,
-  }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
 }
 
 ///|

@@ -31,8 +31,8 @@ test "collider position setters" {
 /// Ported from rapier collider shape setters.
 test "collider shape setters" {
   let collider = ColliderBuilder::ball(1.0F).build()
-  let collider = collider.set_shape(Shape::Cuboid(0.5F, 1.25F))
-  if collider.shape() is Shape::Cuboid(half_width, half_height) {
+  let collider = collider.set_shape(Cuboid(0.5F, 1.25F))
+  if collider.shape() is Cuboid(half_width, half_height) {
     inspect(half_width == 0.5F, content="true")
     inspect(half_height == 1.25F, content="true")
   } else {
@@ -46,23 +46,23 @@ test "interaction groups behavior" {
   let group_a = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let group_b = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   inspect(group_a.test_groups(group_b), content="true")
   let group_c = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::Or,
+    Or,
   )
   let group_d = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_3(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::Or,
+    Or,
   )
   inspect(group_c.test_groups(group_d), content="true")
   let customized = @dynamics.InteractionGroups::default()
@@ -84,7 +84,7 @@ test "collider groups accessors" {
   let collision_groups = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let solver_groups = @dynamics.InteractionGroups::none()
   let collider = ColliderBuilder::ball(1.0F)
@@ -102,11 +102,7 @@ test "collider groups accessors" {
   let collider = collider.set_collision_groups(
     @dynamics.InteractionGroups::all(),
   )
-  inspect(
-    collider.collision_groups().test_mode()
-    is @dynamics.InteractionTestMode::And,
-    content="true",
-  )
+  inspect(collider.collision_groups().test_mode() is And, content="true")
   let collider = collider.set_solver_groups(
     @dynamics.InteractionGroups::default().with_filter(
       @dynamics.Group::group_3(),
@@ -125,16 +121,15 @@ test "collider builder: triangle + round_triangle" {
   let c = @core.Vec2::new(0.0F, 1.0F)
   let tri = ColliderBuilder::triangle(a, b, c).build()
   match tri.shape() {
-    Shape::ConvexPolygon(vertices) =>
-      inspect(vertices.length() >= 3, content="true")
-    Shape::Polyline(_, _) => inspect(true, content="true")
-    Shape::Segment(_, _) => inspect(true, content="true")
+    ConvexPolygon(vertices) => inspect(vertices.length() >= 3, content="true")
+    Polyline(_, _) => inspect(true, content="true")
+    Segment(_, _) => inspect(true, content="true")
     _ => inspect(false, content="true")
   }
   let round = ColliderBuilder::round_triangle(a, b, c, 0.2F).build()
   inspect(round.contact_skin() == 0.0F, content="true")
   match round.shape() {
-    Shape::Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
+    Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
     _ => inspect(false, content="true")
   }
 }
@@ -142,7 +137,7 @@ test "collider builder: triangle + round_triangle" {
 ///|
 test "collider builder: halfspace" {
   let ground = ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 2.0F)).build()
-  if ground.shape() is Shape::HalfSpace(n) {
+  if ground.shape() is HalfSpace(n) {
     inspect(@core.abs(n.x) < 1.0e-6F, content="true")
     inspect(@core.abs(n.y - 1.0F) < 1.0e-6F, content="true")
     inspect(@core.abs(ground.translation().x) < 1.0e-6F, content="true")
@@ -158,17 +153,17 @@ test "collider builder: compound + round_convex_hull" {
     (@core.Isometry2::identity(), Shape::Cuboid(1.0F, 0.2F)),
     (
       @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.0F)),
-      Shape::Cuboid(0.5F, 0.5F),
+      Cuboid(0.5F, 0.5F),
     ),
   ]
   let co = ColliderBuilder::compound(parts).build()
-  if co.shape() is Shape::Compound(compound_parts) {
+  if co.shape() is Compound(compound_parts) {
     inspect(compound_parts.length() == parts.length(), content="true")
     let p1 = compound_parts[1].0.transform_point(@core.Vec2::zero())
     inspect(@core.abs(p1.x - 2.0F) < 1.0e-6F, content="true")
     inspect(@core.abs(p1.y - 0.0F) < 1.0e-6F, content="true")
     match compound_parts[0].1 {
-      Shape::Cuboid(_, _) => inspect(true, content="true")
+      Cuboid(_, _) => inspect(true, content="true")
       _ => inspect(false, content="true")
     }
   } else {
@@ -184,8 +179,7 @@ test "collider builder: compound + round_convex_hull" {
     let collider = builder.build()
     inspect(collider.contact_skin() == 0.0F, content="true")
     match collider.shape() {
-      Shape::Round(_, r) =>
-        inspect(@core.abs(r - 0.3F) < 1.0e-6F, content="true")
+      Round(_, r) => inspect(@core.abs(r - 0.3F) < 1.0e-6F, content="true")
       _ => inspect(false, content="true")
     }
   } else {
@@ -198,9 +192,9 @@ test "collider builder: compound + round_convex_hull" {
 test "collider material and event accessors" {
   let collider = ColliderBuilder::ball(1.0F)
     .friction(0.75F)
-    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
+    .friction_combine_rule(Max)
     .restitution(0.25F)
-    .restitution_combine_rule(@dynamics.CoefficientCombineRule::Min)
+    .restitution_combine_rule(Min)
     .contact_skin(0.1F)
     .contact_force_event_threshold(3.0F)
     .user_data(7)
@@ -208,15 +202,9 @@ test "collider material and event accessors" {
     .active_events(ActiveEvents::collision_events())
     .build()
   inspect(collider.friction() == 0.75F, content="true")
-  inspect(
-    collider.friction_combine_rule() is @dynamics.CoefficientCombineRule::Max,
-    content="true",
-  )
+  inspect(collider.friction_combine_rule() is Max, content="true")
   inspect(collider.restitution() == 0.25F, content="true")
-  inspect(
-    collider.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Min,
-    content="true",
-  )
+  inspect(collider.restitution_combine_rule() is Min, content="true")
   inspect(collider.contact_skin() == 0.1F, content="true")
   inspect(collider.contact_force_event_threshold() == 3.0F, content="true")
   inspect(collider.user_data() == 7, content="true")
@@ -236,21 +224,10 @@ test "collider material and event accessors" {
   inspect(collider.restitution() == 0.5F, content="true")
   let collider = collider.set_friction(0.25F)
   inspect(collider.friction() == 0.25F, content="true")
-  let collider = collider.set_restitution_combine_rule(
-    @dynamics.CoefficientCombineRule::Max,
-  )
-  inspect(
-    collider.restitution_combine_rule() is @dynamics.CoefficientCombineRule::Max,
-    content="true",
-  )
-  let collider = collider.set_friction_combine_rule(
-    @dynamics.CoefficientCombineRule::Average,
-  )
-  inspect(
-    collider.friction_combine_rule()
-    is @dynamics.CoefficientCombineRule::Average,
-    content="true",
-  )
+  let collider = collider.set_restitution_combine_rule(Max)
+  inspect(collider.restitution_combine_rule() is Max, content="true")
+  let collider = collider.set_friction_combine_rule(Average)
+  inspect(collider.friction_combine_rule() is Average, content="true")
   let collider = collider.set_contact_skin(0.2F)
   inspect(collider.contact_skin() == 0.2F, content="true")
   let collider = collider.set_contact_force_event_threshold(5.0F)
@@ -424,49 +401,19 @@ test "convex polygon cuboid manifold keeps contacts for random hulls" {
 /// Ported from rapier active collision types checks.
 test "active collision types test" {
   let defaults = ActiveCollisionTypes::default()
+  inspect(defaults.test_body_types(Dynamic, Dynamic), content="true")
+  inspect(defaults.test_body_types(Dynamic, Fixed), content="true")
   inspect(
-    defaults.test_body_types(
-      @dynamics.RigidBodyType::Dynamic,
-      @dynamics.RigidBodyType::Dynamic,
-    ),
+    defaults.test_body_types(Dynamic, KinematicPositionBased),
     content="true",
   )
   inspect(
-    defaults.test_body_types(
-      @dynamics.RigidBodyType::Dynamic,
-      @dynamics.RigidBodyType::Fixed,
-    ),
-    content="true",
-  )
-  inspect(
-    defaults.test_body_types(
-      @dynamics.RigidBodyType::Dynamic,
-      @dynamics.RigidBodyType::KinematicPositionBased,
-    ),
-    content="true",
-  )
-  inspect(
-    defaults.test_body_types(
-      @dynamics.RigidBodyType::KinematicPositionBased,
-      @dynamics.RigidBodyType::KinematicVelocityBased,
-    ),
+    defaults.test_body_types(KinematicPositionBased, KinematicVelocityBased),
     content="false",
   )
-  inspect(
-    defaults.test_body_types(
-      @dynamics.RigidBodyType::Fixed,
-      @dynamics.RigidBodyType::Fixed,
-    ),
-    content="false",
-  )
+  inspect(defaults.test_body_types(Fixed, Fixed), content="false")
   let all_types = ActiveCollisionTypes::all()
-  inspect(
-    all_types.test_body_types(
-      @dynamics.RigidBodyType::Fixed,
-      @dynamics.RigidBodyType::Fixed,
-    ),
-    content="true",
-  )
+  inspect(all_types.test_body_types(Fixed, Fixed), content="true")
 }
 
 ///|

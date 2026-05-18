@@ -85,12 +85,12 @@ fn run_examples3d_collision_groups3() -> Bool {
   let green_group = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let blue_group = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let green_platform = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(1.0F, 0.1F, 1.0F)

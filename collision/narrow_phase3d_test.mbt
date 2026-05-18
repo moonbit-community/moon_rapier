@@ -279,9 +279,9 @@ test "convex contact: cylinder-cuboid overlap produces contact" {
   )
   let c = compute_convex_contact(
     cyl_pos,
-    Shape3D::Cylinder(1.0F, 1.0F),
+    Cylinder(1.0F, 1.0F),
     cub_pos,
-    Shape3D::Cuboid(@core.Vec3::new(5.0F, 0.25F, 5.0F)),
+    Cuboid(@core.Vec3::new(5.0F, 0.25F, 5.0F)),
   )
   if c is Some(cp) {
     inspect(cp.normal.y < 0.0F, content="true")
@@ -333,7 +333,7 @@ test "halfspace-ball contact: normal and penetration" {
     halfspace_pos,
     halfspace_normal,
     ball_pos,
-    Shape3D::Ball(0.5F),
+    Ball(0.5F),
   )
   if c is Some(cp) {
     inspect(@core.abs(cp.normal.x) < 1.0e-6F, content="true")
@@ -381,7 +381,7 @@ test "ball-voxels contact: overlap above voxel slab" {
   if ColliderBuilder3D::voxels_from_points(voxel_size, points) is Some(builder) {
     let collider = builder.build()
     match collider.shape() {
-      Shape3D::Voxels(voxels) => {
+      Voxels(voxels) => {
         let c = compute_ball_voxels_contact(
           @core.Vec3::new(0.5F, -0.2F, 0.5F),
           0.4F,

@@ -86,7 +86,7 @@ pub fn[T] Arena::clear(self : Arena[T]) -> Unit {
   self.items.clear()
   for i in 0..<end {
     let next_free : Int? = if i == end - 1 { None } else { Some(i + 1) }
-    self.items.push(Entry::Free(next_free))
+    self.items.push(Free(next_free))
   }
   self.free_list_head = Some(0)
   self.len = 0
@@ -118,9 +118,9 @@ pub fn[T] Arena::reserve(self : Arena[T], additional_capacity : Int) -> Unit {
   self.items.reserve_capacity(additional_capacity)
   for i in start..<end {
     if i == end - 1 {
-      self.items.push(Entry::Free(old_head))
+      self.items.push(Free(old_head))
     } else {
-      self.items.push(Entry::Free(Some(i + 1)))
+      self.items.push(Free(Some(i + 1)))
     }
   }
   self.free_list_head = Some(start)
@@ -133,8 +133,8 @@ fn[T] Arena::try_alloc_next_index(self : Arena[T]) -> Index? {
     Some(i) =>
       match self.items.get(i) {
         None => panic()
-        Some(Entry::Occupied(_, _)) => panic()
-        Some(Entry::Free(next_free)) => {
+        Some(Occupied(_, _)) => panic()
+        Some(Free(next_free)) => {
           self.free_list_head = next_free
           self.len = self.len + 1
           Some(Index::from_raw_parts(i, self.generation))
@@ -149,7 +149,7 @@ pub fn[T] Arena::try_insert(self : Arena[T], value : T) -> Result[Index, T] {
     None => Err(value)
     Some(index) => {
       let (i, _) = index.into_raw_parts()
-      self.items[i] = Entry::Occupied(self.generation, value)
+      self.items[i] = Occupied(self.generation, value)
       Ok(index)
     }
   }
@@ -164,7 +164,7 @@ pub fn[T] Arena::try_insert_with(
     None => Err(create)
     Some(index) => {
       let (i, _) = index.into_raw_parts()
-      self.items[i] = Entry::Occupied(self.generation, create(index))
+      self.items[i] = Occupied(self.generation, create(index))
       Ok(index)
     }
   }
@@ -216,9 +216,9 @@ pub fn[T] Arena::remove(self : Arena[T], index : Index) -> T? {
     return None
   }
   match self.items[i] {
-    Entry::Occupied(gen, value) =>
+    Occupied(gen, value) =>
       if g == gen {
-        self.items[i] = Entry::Free(self.free_list_head)
+        self.items[i] = Free(self.free_list_head)
         self.generation = self.generation + 1
         self.free_list_head = Some(i)
         self.len = self.len - 1
@@ -237,7 +237,7 @@ pub fn[T] Arena::retain(
 ) -> Unit {
   for i in 0..<self.capacity() {
     match self.items[i] {
-      Entry::Occupied(generation, value) => {
+      Occupied(generation, value) => {
         let index = Index::from_raw_parts(i, generation)
         if !predicate(index, value) {
           self.remove(index) |> ignore
@@ -260,7 +260,7 @@ pub fn[T] Arena::get(self : Arena[T], index : Index) -> T? {
     return None
   }
   match self.items.get(i) {
-    Some(Entry::Occupied(gen, value)) if gen == g => Some(value)
+    Some(Occupied(gen, value)) if gen == g => Some(value)
     _ => None
   }
 }
@@ -278,8 +278,8 @@ pub fn[T] Arena::set(self : Arena[T], index : Index, value : T) -> Bool {
     return false
   }
   match self.items[i] {
-    Entry::Occupied(gen, _) if gen == g => {
-      self.items[i] = Entry::Occupied(gen, value)
+    Occupied(gen, _) if gen == g => {
+      self.items[i] = Occupied(gen, value)
       true
     }
     _ => false
@@ -292,7 +292,7 @@ pub fn[T] Arena::get_gen(self : Arena[T], index : Int) -> Int? {
     return None
   }
   match self.items[index] {
-    Entry::Occupied(generation, _) => Some(generation)
+    Occupied(generation, _) => Some(generation)
     _ => None
   }
 }
@@ -322,11 +322,11 @@ pub fn[T] Arena::get2_mut(
   }
   (
     match self.items[i1] {
-      Entry::Occupied(gen, value) if gen == g1 => Some(value)
+      Occupied(gen, value) if gen == g1 => Some(value)
       _ => None
     },
     match self.items[i2] {
-      Entry::Occupied(gen, value) if gen == g2 => Some(value)
+      Occupied(gen, value) if gen == g2 => Some(value)
       _ => None
     },
   )
@@ -337,7 +337,7 @@ pub fn[T] Arena::iter(self : Arena[T]) -> Array[(Index, T)] {
   let result : Array[(Index, T)] = []
   for i in 0..<self.items.length() {
     match self.items[i] {
-      Entry::Occupied(generation, value) =>
+      Occupied(generation, value) =>
         result.push((Index::from_raw_parts(i, generation), value))
       _ => ()
     }
@@ -360,7 +360,7 @@ pub fn[T] Arena::drain(self : Arena[T]) -> Drain[T] {
   let drained : Array[(Index, T)] = []
   for i in 0..<self.items.length() {
     match self.items[i] {
-      Entry::Occupied(generation, value) =>
+      Occupied(generation, value) =>
         drained.push((Index::from_raw_parts(i, generation), value))
       _ => ()
     }
@@ -442,7 +442,7 @@ pub fn[T] IntoIter::from_arena(arena : Arena[T]) -> IntoIter[T] {
   let values : Array[T] = []
   for i in 0..<arena.items.length() {
     match arena.items[i] {
-      Entry::Occupied(_, value) => values.push(value)
+      Occupied(_, value) => values.push(value)
       _ => ()
     }
   }

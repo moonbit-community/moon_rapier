@@ -71,12 +71,12 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
   let g1 = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let g2 = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let c1 = colliders.insert_with_parent(
     ColliderBuilder3D::ball(0.5F).collision_groups(g1).build(),

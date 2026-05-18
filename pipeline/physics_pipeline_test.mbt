@@ -310,7 +310,7 @@ test "rigid body type changed dynamic is in active set" {
     EventHandler::new(),
   )
   if bodies.get_mut(h) is Some(body) {
-    body.set_body_type(@dynamics.RigidBodyType::Dynamic, true) |> ignore
+    body.set_body_type(Dynamic, true) |> ignore
   }
   pipeline.step(
     gravity,
@@ -638,7 +638,7 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
   if colliders.get(seg_handle) is Some(seg_after) &&
     colliders.get(cub_handle) is Some(cub_after) {
     match (seg_after.shape(), cub_after.shape()) {
-      (@collision.Shape::Segment(a, b), @collision.Shape::Cuboid(hw, hh)) => {
+      (Segment(a, b), Cuboid(hw, hh)) => {
         let (sa, sb) = segment_world_endpoints(
           seg_after.translation(),
           seg_after.rotation(),
@@ -715,7 +715,7 @@ test "physics pipeline emits collision started/stopped events" {
   inspect(ev1.length() == 1, content="true")
   inspect(callback_events.length() == 1, content="true")
   match ev1[0] {
-    @collision.CollisionEvent::Started(_, _, flags) =>
+    Started(_, _, flags) =>
       inspect(
         flags.contains(@collision.CollisionEventFlags::sensor()),
         content="true",
@@ -759,7 +759,7 @@ test "physics pipeline emits collision started/stopped events" {
   inspect(ev2.length() == 1, content="true")
   inspect(callback_events.length() == 2, content="true")
   match ev2[0] {
-    @collision.CollisionEvent::Stopped(_, _, _) => inspect(true, content="true")
+    Stopped(_, _, _) => inspect(true, content="true")
     _ => inspect(false, content="true")
   }
 }
@@ -821,7 +821,7 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
   let ev = handler.take_collision_events()
   inspect(ev.length() == 1, content="true")
   match ev[0] {
-    @collision.CollisionEvent::Stopped(_, _, flags) => {
+    Stopped(_, _, flags) => {
       inspect(
         flags.contains(@collision.CollisionEventFlags::sensor()),
         content="true",
@@ -890,7 +890,7 @@ test "physics pipeline emits stopped event after removal even if other collider 
   let stopped = handler.take_collision_events()
   inspect(stopped.length() == 1, content="true")
   match stopped[0] {
-    @collision.CollisionEvent::Stopped(_, _, flags) =>
+    Stopped(_, _, flags) =>
       inspect(
         flags.contains(@collision.CollisionEventFlags::removed()),
         content="true",

@@ -55,7 +55,7 @@ pub fn CollisionPipeline3::step(
   ) -> Bool {
     if collider.parent() is Some(parent) {
       if bodies.get(parent) is Some(body) {
-        body.body_type() is @dynamics.RigidBodyType::Dynamic
+        body.body_type() is Dynamic
       } else {
         false
       }

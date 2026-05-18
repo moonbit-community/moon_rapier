@@ -1543,7 +1543,7 @@ pub fn compute_cuboid_trimesh_contact(
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
+    Cuboid(cuboid_half_extents),
     mesh_pos,
     vertices,
     indices,
@@ -1561,7 +1561,7 @@ pub fn compute_capsule_trimesh_contact(
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     capsule_pos,
-    Shape3D::CapsuleY(capsule_radius, capsule_half_height),
+    CapsuleY(capsule_radius, capsule_half_height),
     mesh_pos,
     vertices,
     indices,
@@ -1579,7 +1579,7 @@ pub fn compute_cylinder_trimesh_contact(
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
+    Cylinder(cyl_radius, cyl_half_height),
     mesh_pos,
     vertices,
     indices,
@@ -1617,7 +1617,7 @@ pub fn compute_cone_trimesh_contact(
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
+    Cone(cone_radius, cone_half_height),
     mesh_pos,
     vertices,
     indices,
@@ -2040,16 +2040,14 @@ pub fn compute_halfspace_contact(
     dir : @core.Vec3,
   ) -> @core.Vec3? {
     match shape {
-      Shape3D::Ball(r) => Some(support_world_for_ball(p.translation, r, dir))
-      Shape3D::Cuboid(he) => Some(support_world_for_cuboid(p, he, dir))
-      Shape3D::CapsuleY(r, hh) =>
-        Some(support_world_for_capsule_y(p, r, hh, dir))
-      Shape3D::Cylinder(r, hh) =>
-        Some(support_world_for_cylinder_y(p, r, hh, dir))
-      Shape3D::RoundCylinder(r, hh, br) =>
+      Ball(r) => Some(support_world_for_ball(p.translation, r, dir))
+      Cuboid(he) => Some(support_world_for_cuboid(p, he, dir))
+      CapsuleY(r, hh) => Some(support_world_for_capsule_y(p, r, hh, dir))
+      Cylinder(r, hh) => Some(support_world_for_cylinder_y(p, r, hh, dir))
+      RoundCylinder(r, hh, br) =>
         Some(support_world_for_cylinder_y(p, r + br, hh + br, dir))
-      Shape3D::Cone(r, hh) => Some(support_world_for_cone_y(p, r, hh, dir))
-      Shape3D::Triangle(a, b, c) => {
+      Cone(r, hh) => Some(support_world_for_cone_y(p, r, hh, dir))
+      Triangle(a, b, c) => {
         let wa = p.transform_point(a)
         let wb = p.transform_point(b)
         let wc = p.transform_point(c)
@@ -2066,9 +2064,9 @@ pub fn compute_halfspace_contact(
         }
         Some(best)
       }
-      Shape3D::ConvexHull(points, br) =>
+      ConvexHull(points, br) =>
         Some(support_world_for_convex(p, points, br, dir))
-      Shape3D::Compound(parts) => {
+      Compound(parts) => {
         let mut best : @core.Vec3? = None
         let mut best_d = -1.0e30F
         for i in 0..<parts.length() {
@@ -2083,7 +2081,7 @@ pub fn compute_halfspace_contact(
         }
         best
       }
-      Shape3D::Voxels(v) => {
+      Voxels(v) => {
         let (ix0, iy0, iz0) = v.min_key
         let (ix1, iy1, iz1) = v.max_key
         let sx = v.voxel_size.x
@@ -2115,7 +2113,7 @@ pub fn compute_halfspace_contact(
         )
         Some(p.transform_point(corner))
       }
-      Shape3D::TriMesh(vertices, _) =>
+      TriMesh(vertices, _) =>
         if vertices.length() == 0 {
           None
         } else {
@@ -2131,7 +2129,7 @@ pub fn compute_halfspace_contact(
           }
           Some(best)
         }
-      Shape3D::Heightfield(vertices, _, _, _, _) =>
+      Heightfield(vertices, _, _, _, _) =>
         if vertices.length() == 0 {
           None
         } else {
@@ -2147,7 +2145,7 @@ pub fn compute_halfspace_contact(
           }
           Some(best)
         }
-      Shape3D::HalfSpace(_) => None
+      HalfSpace(_) => None
     }
   }
 
@@ -2298,9 +2296,9 @@ pub fn compute_cylinder_cuboid_contact(
 ) -> ContactPoint3D? {
   compute_convex_contact(
     cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
+    Cylinder(cyl_radius, cyl_half_height),
     cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
+    Cuboid(cuboid_half_extents),
   )
 }
 
@@ -2315,9 +2313,9 @@ pub fn compute_cylinder_cylinder_contact(
 ) -> ContactPoint3D? {
   compute_convex_contact(
     cyl1_pos,
-    Shape3D::Cylinder(cyl1_radius, cyl1_half_height),
+    Cylinder(cyl1_radius, cyl1_half_height),
     cyl2_pos,
-    Shape3D::Cylinder(cyl2_radius, cyl2_half_height),
+    Cylinder(cyl2_radius, cyl2_half_height),
   )
 }
 
@@ -2332,9 +2330,9 @@ pub fn compute_cone_cylinder_contact(
 ) -> ContactPoint3D? {
   compute_convex_contact(
     cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
+    Cone(cone_radius, cone_half_height),
     cyl_pos,
-    Shape3D::Cylinder(cyl_radius, cyl_half_height),
+    Cylinder(cyl_radius, cyl_half_height),
   )
 }
 
@@ -2349,9 +2347,9 @@ pub fn compute_cone_cone_contact(
 ) -> ContactPoint3D? {
   compute_convex_contact(
     cone1_pos,
-    Shape3D::Cone(cone1_radius, cone1_half_height),
+    Cone(cone1_radius, cone1_half_height),
     cone2_pos,
-    Shape3D::Cone(cone2_radius, cone2_half_height),
+    Cone(cone2_radius, cone2_half_height),
   )
 }
 
@@ -2365,9 +2363,9 @@ pub fn compute_cone_cuboid_contact(
 ) -> ContactPoint3D? {
   compute_convex_contact(
     cone_pos,
-    Shape3D::Cone(cone_radius, cone_half_height),
+    Cone(cone_radius, cone_half_height),
     cuboid_pos,
-    Shape3D::Cuboid(cuboid_half_extents),
+    Cuboid(cuboid_half_extents),
   )
 }
 
@@ -2974,7 +2972,7 @@ pub fn compute_cuboid_cuboid_contact(
     }
     if overlap < min_overlap {
       min_overlap = overlap
-      best = CuboidBestAxis::A(i)
+      best = A(i)
     }
   }
 
@@ -2994,7 +2992,7 @@ pub fn compute_cuboid_cuboid_contact(
     }
     if overlap < min_overlap {
       min_overlap = overlap
-      best = CuboidBestAxis::B(j)
+      best = B(j)
     }
   }
 
@@ -3017,7 +3015,7 @@ pub fn compute_cuboid_cuboid_contact(
       if axis.length_squared() > 1.0e-12F {
         if overlap + edge_axis_bias < min_overlap {
           min_overlap = overlap
-          best = CuboidBestAxis::Cross(i, j)
+          best = Cross(i, j)
         }
       }
     }
@@ -3025,18 +3023,18 @@ pub fn compute_cuboid_cuboid_contact(
 
   // Contact normal pointing from box1 to box2.
   let mut normal = match best {
-    CuboidBestAxis::A(i) => {
+    A(i) => {
       let s = if t[i] < 0.0F { -1.0F } else { 1.0F }
       a_axis[i].scale(s)
     }
-    CuboidBestAxis::B(j) => {
+    B(j) => {
       let proj = t[0] * r_at(r, 0, j) +
         t[1] * r_at(r, 1, j) +
         t[2] * r_at(r, 2, j)
       let s = if proj < 0.0F { -1.0F } else { 1.0F }
       b_axis[j].scale(s)
     }
-    CuboidBestAxis::Cross(i, j) => {
+    Cross(i, j) => {
       let axis = a_axis[i].cross(b_axis[j])
       let len = local_sqrt(axis.length_squared())
       if len <= 1.0e-6F {
@@ -3666,33 +3664,29 @@ fn support_minkowski(
   dir : @core.Vec3,
 ) -> SupportVertex3D? {
   let sup1 = match s1 {
-    Shape3D::ConvexHull(points, br) =>
-      support_world_for_convex(pos1, points, br, dir)
-    Shape3D::Cuboid(he) => support_world_for_cuboid(pos1, he, dir)
-    Shape3D::Ball(r) => support_world_for_ball(pos1.translation, r, dir)
-    Shape3D::CapsuleY(r, hh) => support_world_for_capsule_y(pos1, r, hh, dir)
-    Shape3D::Cylinder(r, hh) => support_world_for_cylinder_y(pos1, r, hh, dir)
-    Shape3D::RoundCylinder(r, hh, br) =>
+    ConvexHull(points, br) => support_world_for_convex(pos1, points, br, dir)
+    Cuboid(he) => support_world_for_cuboid(pos1, he, dir)
+    Ball(r) => support_world_for_ball(pos1.translation, r, dir)
+    CapsuleY(r, hh) => support_world_for_capsule_y(pos1, r, hh, dir)
+    Cylinder(r, hh) => support_world_for_cylinder_y(pos1, r, hh, dir)
+    RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos1, r + br, hh + br, dir)
-    Shape3D::Cone(r, hh) => support_world_for_cone_y(pos1, r, hh, dir)
-    Shape3D::Triangle(a, b, c) => support_world_for_triangle(pos1, a, b, c, dir)
+    Cone(r, hh) => support_world_for_cone_y(pos1, r, hh, dir)
+    Triangle(a, b, c) => support_world_for_triangle(pos1, a, b, c, dir)
     _ => return None
   }
   let neg_dir = dir.scale(-1.0F)
   let sup2 = match s2 {
-    Shape3D::ConvexHull(points, br) =>
+    ConvexHull(points, br) =>
       support_world_for_convex(pos2, points, br, neg_dir)
-    Shape3D::Cuboid(he) => support_world_for_cuboid(pos2, he, neg_dir)
-    Shape3D::Ball(r) => support_world_for_ball(pos2.translation, r, neg_dir)
-    Shape3D::CapsuleY(r, hh) =>
-      support_world_for_capsule_y(pos2, r, hh, neg_dir)
-    Shape3D::Cylinder(r, hh) =>
-      support_world_for_cylinder_y(pos2, r, hh, neg_dir)
-    Shape3D::RoundCylinder(r, hh, br) =>
+    Cuboid(he) => support_world_for_cuboid(pos2, he, neg_dir)
+    Ball(r) => support_world_for_ball(pos2.translation, r, neg_dir)
+    CapsuleY(r, hh) => support_world_for_capsule_y(pos2, r, hh, neg_dir)
+    Cylinder(r, hh) => support_world_for_cylinder_y(pos2, r, hh, neg_dir)
+    RoundCylinder(r, hh, br) =>
       support_world_for_cylinder_y(pos2, r + br, hh + br, neg_dir)
-    Shape3D::Cone(r, hh) => support_world_for_cone_y(pos2, r, hh, neg_dir)
-    Shape3D::Triangle(a, b, c) =>
-      support_world_for_triangle(pos2, a, b, c, neg_dir)
+    Cone(r, hh) => support_world_for_cone_y(pos2, r, hh, neg_dir)
+    Triangle(a, b, c) => support_world_for_triangle(pos2, a, b, c, neg_dir)
     _ => return None
   }
   Some({ p: sup1.sub(sup2), sup1, sup2 })
@@ -4095,7 +4089,7 @@ pub fn compute_convex_contact(
 ) -> ContactPoint3D? {
   // Compound handling.
   match (s1, s2) {
-    (Shape3D::Compound(parts), other) => {
+    (Compound(parts), other) => {
       let mut best : ContactPoint3D? = None
       let mut best_pen = -1.0F
       for i in 0..<parts.length() {
@@ -4109,9 +4103,8 @@ pub fn compute_convex_contact(
       }
       best
     }
-    (other, Shape3D::Compound(parts)) =>
-      if compute_convex_contact(pos2, Shape3D::Compound(parts), pos1, other)
-        is Some(cp) {
+    (other, Compound(parts)) =>
+      if compute_convex_contact(pos2, Compound(parts), pos1, other) is Some(cp) {
         Some({
           point1: cp.point2,
           point2: cp.point1,

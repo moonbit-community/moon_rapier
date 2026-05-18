@@ -20,7 +20,7 @@ pub struct RigidBodyHandle {
 
 ///|
 fn RigidBodyHandle::new(id : Int, generation : Int) -> RigidBodyHandle {
-  RigidBodyHandle::{ id, generation }
+  { id, generation }
 }
 
 ///|
@@ -198,18 +198,17 @@ pub fn RigidBodyDominance::effective_group(
 
 ///|
 pub fn RigidBodyType::is_fixed(self : RigidBodyType) -> Bool {
-  self is RigidBodyType::Fixed
+  self is Fixed
 }
 
 ///|
 pub fn RigidBodyType::is_dynamic(self : RigidBodyType) -> Bool {
-  self is RigidBodyType::Dynamic
+  self is Dynamic
 }
 
 ///|
 pub fn RigidBodyType::is_kinematic(self : RigidBodyType) -> Bool {
-  self is RigidBodyType::KinematicPositionBased ||
-  self is RigidBodyType::KinematicVelocityBased
+  self is KinematicPositionBased || self is KinematicVelocityBased
 }
 
 ///|
@@ -258,7 +257,7 @@ pub fn RigidBodyPosition::interpolate_velocity(
     .mul(shift)
   let angular = dpos.rotation.angle()
   let linear = dpos.translation
-  RigidBodyVelocity::{
+  {
     linvel: @core.Vec2::new(linear.x * inv_dt, linear.y * inv_dt),
     angvel: angular * inv_dt,
   }
@@ -492,7 +491,7 @@ pub fn RigidBodyActivation::active() -> RigidBodyActivation {
     time_until_sleep: RigidBodyActivation::default_time_until_sleep(),
     time_since_can_sleep: 0.0F,
     sleeping: false,
-    sleep_root_state: SleepRootState::Unknown,
+    sleep_root_state: Unknown,
   }
 }
 
@@ -504,7 +503,7 @@ pub fn RigidBodyActivation::inactive() -> RigidBodyActivation {
     time_until_sleep: RigidBodyActivation::default_time_until_sleep(),
     time_since_can_sleep: RigidBodyActivation::default_time_until_sleep(),
     sleeping: true,
-    sleep_root_state: SleepRootState::Unknown,
+    sleep_root_state: Unknown,
   }
 }
 
@@ -527,8 +526,8 @@ pub fn RigidBodyActivation::wake_up(
   strong : Bool,
 ) -> RigidBodyActivation {
   self.sleeping = false
-  if !(self.sleep_root_state is SleepRootState::TraversalPending) {
-    self.sleep_root_state = SleepRootState::Unknown
+  if !(self.sleep_root_state is TraversalPending) {
+    self.sleep_root_state = Unknown
   }
   if strong {
     self.time_since_can_sleep = 0.0F
@@ -566,16 +565,14 @@ pub fn RigidBodyActivation::update_energy(
     return self
   }
   let can_sleep = match body_type {
-    RigidBodyType::Dynamic => {
+    Dynamic => {
       let linear_threshold = self.normalized_linear_threshold * length_unit
       sq_linvel < linear_threshold * linear_threshold &&
       sq_angvel < self.angular_threshold * self.angular_threshold
     }
-    RigidBodyType::KinematicPositionBased =>
-      sq_linvel == 0.0F && sq_angvel == 0.0F
-    RigidBodyType::KinematicVelocityBased =>
-      sq_linvel == 0.0F && sq_angvel == 0.0F
-    RigidBodyType::Fixed => true
+    KinematicPositionBased => sq_linvel == 0.0F && sq_angvel == 0.0F
+    KinematicVelocityBased => sq_linvel == 0.0F && sq_angvel == 0.0F
+    Fixed => true
   }
   if can_sleep {
     self.time_since_can_sleep = self.time_since_can_sleep + dt
@@ -847,21 +844,21 @@ pub enum RigidBodyAdditionalMassProps {
 pub fn RigidBodyAdditionalMassProps::mass(
   mass : @core.Real,
 ) -> RigidBodyAdditionalMassProps {
-  RigidBodyAdditionalMassProps::Mass(mass)
+  Mass(mass)
 }
 
 ///|
 pub fn RigidBodyAdditionalMassProps::mass_props(
   mass_props : @core.MassProperties,
 ) -> RigidBodyAdditionalMassProps {
-  RigidBodyAdditionalMassProps::MassProps(mass_props)
+  MassProps(mass_props)
 }
 
 ///|
 pub fn RigidBodyAdditionalMassProps::mass_properties(
   mass_properties : @core.MassProperties,
 ) -> RigidBodyAdditionalMassProps {
-  RigidBodyAdditionalMassProps::MassProperties(mass_properties)
+  MassProperties(mass_properties)
 }
 
 ///|
@@ -899,7 +896,7 @@ pub fn RigidBody::set_body_type(
       self.body_type,
       self.position.position,
     )
-    if body_type is RigidBodyType::Fixed {
+    if body_type is Fixed {
       self.vels = RigidBodyVelocity::zero()
     }
     if wake_up && self.is_dynamic_or_kinematic() {
@@ -1157,7 +1154,7 @@ pub fn RigidBody::set_kinematic_position_based_vels(
   self : RigidBody,
   vels : RigidBodyVelocity,
 ) -> RigidBody {
-  if self.body_type is RigidBodyType::KinematicPositionBased {
+  if self.body_type is KinematicPositionBased {
     self.vels = vels
   }
   self
@@ -1180,8 +1177,7 @@ pub fn RigidBody::set_linvel(
   wake_up : Bool,
 ) -> RigidBody {
   if !vec2_equal(self.vels.linvel, linvel) {
-    if self.body_type is RigidBodyType::Dynamic ||
-      self.body_type is RigidBodyType::KinematicVelocityBased {
+    if self.body_type is Dynamic || self.body_type is KinematicVelocityBased {
       self.vels.linvel = linvel
       if wake_up {
         self.wake_up(true) |> ignore
@@ -1198,8 +1194,7 @@ pub fn RigidBody::set_angvel(
   wake_up : Bool,
 ) -> RigidBody {
   if self.vels.angvel != angvel {
-    if self.body_type is RigidBodyType::Dynamic ||
-      self.body_type is RigidBodyType::KinematicVelocityBased {
+    if self.body_type is Dynamic || self.body_type is KinematicVelocityBased {
       self.vels.angvel = angvel
       if wake_up {
         self.wake_up(true) |> ignore
@@ -1215,7 +1210,7 @@ pub fn RigidBody::apply_impulse(
   impulse : @core.Vec2,
   wake_up : Bool,
 ) -> RigidBody {
-  if self.body_type is RigidBodyType::Dynamic {
+  if self.body_type is Dynamic {
     let inv_mass = self.mass_props.effective_inv_mass
     self.vels.linvel = self.vels.linvel.add(
       @core.Vec2::new(impulse.x * inv_mass.x, impulse.y * inv_mass.y),
@@ -1233,7 +1228,7 @@ pub fn RigidBody::apply_torque_impulse(
   torque_impulse : @core.Real,
   wake_up : Bool,
 ) -> RigidBody {
-  if self.body_type is RigidBodyType::Dynamic {
+  if self.body_type is Dynamic {
     self.vels.angvel = self.vels.angvel +
       torque_impulse * self.mass_props.effective_world_inv_inertia
     if wake_up {
@@ -1250,7 +1245,7 @@ pub fn RigidBody::apply_impulse_at_point(
   point : @core.Vec2,
   wake_up : Bool,
 ) -> RigidBody {
-  if self.body_type is RigidBodyType::Dynamic {
+  if self.body_type is Dynamic {
     let delta = @core.Vec2::new(
       point.x - self.mass_props.world_com.x,
       point.y - self.mass_props.world_com.y,
@@ -1335,8 +1330,7 @@ pub fn RigidBody::add_force(
   force : @core.Vec2,
   wake_up : Bool,
 ) -> RigidBody {
-  if !vec2_equal(force, @core.Vec2::zero()) &&
-    self.body_type is RigidBodyType::Dynamic {
+  if !vec2_equal(force, @core.Vec2::zero()) && self.body_type is Dynamic {
     self.forces.user_force = self.forces.user_force.add(force)
     if wake_up {
       self.wake_up(true) |> ignore
@@ -1351,7 +1345,7 @@ pub fn RigidBody::add_torque(
   torque : @core.Real,
   wake_up : Bool,
 ) -> RigidBody {
-  if torque != 0.0F && self.body_type is RigidBodyType::Dynamic {
+  if torque != 0.0F && self.body_type is Dynamic {
     self.forces.user_torque = self.forces.user_torque + torque
     if wake_up {
       self.wake_up(true) |> ignore
@@ -1367,8 +1361,7 @@ pub fn RigidBody::add_force_at_point(
   point : @core.Vec2,
   wake_up : Bool,
 ) -> RigidBody {
-  if !vec2_equal(force, @core.Vec2::zero()) &&
-    self.body_type is RigidBodyType::Dynamic {
+  if !vec2_equal(force, @core.Vec2::zero()) && self.body_type is Dynamic {
     self.forces = self.forces.apply_force_at_point(
       self.mass_props,
       force,
@@ -1417,7 +1410,7 @@ pub fn RigidBody::set_ccd_properties(
   ccd_max_dist : @core.Real,
 ) -> RigidBody {
   let ccd = self.ccd
-  self.ccd = RigidBodyCcd::{
+  self.ccd = {
     ccd_thickness,
     ccd_max_dist,
     ccd_active: ccd.ccd_active,
@@ -1440,7 +1433,7 @@ pub fn RigidBody::is_ccd_active(self : RigidBody) -> Bool {
 ///|
 pub fn RigidBody::set_ccd_active(self : RigidBody, active : Bool) -> RigidBody {
   let ccd = self.ccd
-  self.ccd = RigidBodyCcd::{
+  self.ccd = {
     ccd_thickness: ccd.ccd_thickness,
     ccd_max_dist: ccd.ccd_max_dist,
     ccd_active: active,
@@ -1769,22 +1762,22 @@ pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
 
 ///|
 pub fn RigidBodyBuilder::dynamic() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(RigidBodyType::Dynamic)
+  RigidBodyBuilder::new(Dynamic)
 }
 
 ///|
 pub fn RigidBodyBuilder::fixed() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(RigidBodyType::Fixed)
+  RigidBodyBuilder::new(Fixed)
 }
 
 ///|
 pub fn RigidBodyBuilder::kinematic_position_based() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(RigidBodyType::KinematicPositionBased)
+  RigidBodyBuilder::new(KinematicPositionBased)
 }
 
 ///|
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(RigidBodyType::KinematicVelocityBased)
+  RigidBodyBuilder::new(KinematicVelocityBased)
 }
 
 ///|
@@ -2033,13 +2026,13 @@ pub fn RigidBodyBuilder::additional_mass_properties(
   props : RigidBodyAdditionalMassProps,
 ) -> RigidBodyBuilder {
   match props {
-    RigidBodyAdditionalMassProps::Mass(m) => self.additional_mass(m)
-    RigidBodyAdditionalMassProps::MassProps(mprops) => {
+    Mass(m) => self.additional_mass(m)
+    MassProps(mprops) => {
       self.additional_mass = 0.0F
       self.additional_local_mprops = mprops
       self
     }
-    RigidBodyAdditionalMassProps::MassProperties(mprops) => {
+    MassProperties(mprops) => {
       self.additional_mass = 0.0F
       self.additional_local_mprops = mprops
       self
@@ -2067,11 +2060,11 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     dominance: RigidBodyDominance::new(self.dominance_group),
     enabled: self.enabled,
     activation,
-    damping: RigidBodyDamping::{
+    damping: {
       linear_damping: self.linear_damping,
       angular_damping: self.angular_damping,
     },
-    vels: RigidBodyVelocity::{ linvel: self.linvel, angvel: self.angvel },
+    vels: { linvel: self.linvel, angvel: self.angvel },
     forces,
     ccd: RigidBodyCcd::default(),
     mass_props: RigidBodyMassProps::default(),
@@ -2387,23 +2380,23 @@ pub fn RigidBodySet::remove(
 ///|
 fn body_type_to_int(body_type : RigidBodyType) -> Int {
   match body_type {
-    RigidBodyType::Dynamic => 0
-    RigidBodyType::Fixed => 1
-    RigidBodyType::KinematicPositionBased => 2
-    RigidBodyType::KinematicVelocityBased => 3
+    Dynamic => 0
+    Fixed => 1
+    KinematicPositionBased => 2
+    KinematicVelocityBased => 3
   }
 }
 
 ///|
 fn body_type_from_int(value : Int) -> RigidBodyType {
   if value == 1 {
-    RigidBodyType::Fixed
+    Fixed
   } else if value == 2 {
-    RigidBodyType::KinematicPositionBased
+    KinematicPositionBased
   } else if value == 3 {
-    RigidBodyType::KinematicVelocityBased
+    KinematicVelocityBased
   } else {
-    RigidBodyType::Dynamic
+    Dynamic
   }
 }
 
@@ -2835,19 +2828,19 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             dominance: RigidBodyDominance::new(dominance_group),
             enabled,
             activation,
-            damping: RigidBodyDamping::{ linear_damping, angular_damping },
+            damping: { linear_damping, angular_damping },
             vels: RigidBodyVelocity::new(
               @core.Vec2::new(linvel_x, linvel_y),
               angvel,
             ),
-            forces: RigidBodyForces::{
+            forces: {
               force: @core.Vec2::zero(),
               torque: 0.0F,
               gravity_scale,
               user_force: @core.Vec2::new(user_force_x, user_force_y),
               user_torque,
             },
-            ccd: RigidBodyCcd::{
+            ccd: {
               ccd_thickness,
               ccd_max_dist,
               ccd_active: false,
@@ -3003,9 +2996,8 @@ pub fn RigidBody::set_additional_mass_properties(
   wake_up : Bool,
 ) -> RigidBody {
   match props {
-    RigidBodyAdditionalMassProps::Mass(m) =>
-      self.set_additional_mass(m, wake_up)
-    RigidBodyAdditionalMassProps::MassProps(mprops) => {
+    Mass(m) => self.set_additional_mass(m, wake_up)
+    MassProps(mprops) => {
       if self.additional_mass != 0.0F ||
         !mass_properties_equal(self.mass_props.additional_local_mprops, mprops) {
         self.additional_mass = 0.0F
@@ -3017,7 +3009,7 @@ pub fn RigidBody::set_additional_mass_properties(
       }
       self
     }
-    RigidBodyAdditionalMassProps::MassProperties(mprops) => {
+    MassProperties(mprops) => {
       if self.additional_mass != 0.0F ||
         !mass_properties_equal(self.mass_props.additional_local_mprops, mprops) {
         self.additional_mass = 0.0F

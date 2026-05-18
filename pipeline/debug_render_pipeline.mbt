@@ -234,7 +234,7 @@ pub fn DebugRenderBackend::draw_line(
   b : @core.Vec2,
   color : DebugColor,
 ) -> Unit {
-  self.lines.push(DebugRenderLine::{ object, a, b, color })
+  self.lines.push({ object, a, b, color })
 }
 
 ///|
@@ -314,7 +314,7 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
     sb.write_object(line.color.a)
     sb.write_char(' ')
     match line.object {
-      DebugRenderObject::RigidBody(h) => {
+      RigidBody(h) => {
         let (id, gen) = h.into_raw_parts()
         sb.write_string("rb(")
         sb.write_object(id)
@@ -322,7 +322,7 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
         sb.write_object(gen)
         sb.write_char(')')
       }
-      DebugRenderObject::Collider(h) => {
+      Collider(h) => {
         let (id, gen) = h.into_raw_parts()
         sb.write_string("co(")
         sb.write_object(id)
@@ -330,7 +330,7 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
         sb.write_object(gen)
         sb.write_char(')')
       }
-      DebugRenderObject::ColliderAabb(h) => {
+      ColliderAabb(h) => {
         let (id, gen) = h.into_raw_parts()
         sb.write_string("ca(")
         sb.write_object(id)
@@ -338,7 +338,7 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
         sb.write_object(gen)
         sb.write_char(')')
       }
-      DebugRenderObject::ImpulseJoint(h) => {
+      ImpulseJoint(h) => {
         let (id, gen) = h.into_raw_parts()
         sb.write_string("ij(")
         sb.write_object(id)
@@ -346,13 +346,13 @@ pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String 
         sb.write_object(gen)
         sb.write_char(')')
       }
-      DebugRenderObject::MultibodyJoint(h) => {
+      MultibodyJoint(h) => {
         let (id, _) = h.into_raw_parts()
         sb.write_string("mj(")
         sb.write_object(id)
         sb.write_char(')')
       }
-      DebugRenderObject::ContactPair(a, b) => {
+      ContactPair(a, b) => {
         let (a_id, a_gen) = a.into_raw_parts()
         let (b_id, b_gen) = b.into_raw_parts()
         sb.write_string("cp(")
@@ -514,7 +514,7 @@ pub fn DebugRenderPipeline::render_colliders(
           continue
         }
         match collider.shape() {
-          @collision.Shape::Ball(r) => {
+          Ball(r) => {
             // Deterministic approximation: draw two diameters.
             let c = collider.translation()
             let a = @core.Vec2::new(c.x - r, c.y)
@@ -524,7 +524,7 @@ pub fn DebugRenderPipeline::render_colliders(
             backend.draw_line(obj, a, b, self.style.collider_dynamic_color)
             backend.draw_line(obj, d, e, self.style.collider_dynamic_color)
           }
-          @collision.Shape::Cuboid(hw, hh) =>
+          Cuboid(hw, hh) =>
             draw_cuboid_outline(
               backend,
               obj,
@@ -543,7 +543,7 @@ pub fn DebugRenderPipeline::render_colliders(
           continue
         }
         match collider.shape() {
-          @collision.Shape::Ball(r) => {
+          Ball(r) => {
             let c = collider.translation()
             draw_aabb_outline(
               backend,
@@ -553,7 +553,7 @@ pub fn DebugRenderPipeline::render_colliders(
               self.style.collider_aabb_color,
             )
           }
-          @collision.Shape::Cuboid(hw, hh) => {
+          Cuboid(hw, hh) => {
             // Conservative AABB for an arbitrarily rotated cuboid.
             let c = collider.translation()
             let angle = collider.rotation()

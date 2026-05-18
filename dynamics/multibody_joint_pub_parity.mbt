@@ -673,7 +673,7 @@ pub fn unit_joint_limit_constraint(
     rhs_wo_bias,
     cfm_coeff,
     cfm_gain: 0.0F,
-    writeback_id: WritebackId::Limit(dof_id),
+    writeback_id: Limit(dof_id),
   }
   constraint_set_or_push(constraints, insert_at, constraint)
 }
@@ -757,7 +757,7 @@ pub fn unit_joint_motor_constraint(
     rhs_wo_bias,
     cfm_coeff,
     cfm_gain,
-    writeback_id: WritebackId::Limit(dof_id),
+    writeback_id: Limit(dof_id),
   }
   constraint_set_or_push(constraints, insert_at, constraint)
 }

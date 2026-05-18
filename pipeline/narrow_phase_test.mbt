@@ -241,12 +241,12 @@ test "narrow phase collision groups filtering" {
   let groups1 = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let groups2 = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let collider1 = @collision.ColliderBuilder::ball(0.5F)
     .collision_groups(groups1)
@@ -374,7 +374,7 @@ test "narrow phase contact manifolds: basic shapes" {
       let pt = m.points()[0]
       inspect(@core.abs(pt.dist() + 0.5F) < 1.0e-3F, content="true")
       match pt.fid2() {
-        @collision.FeatureId::Edge(id) => inspect(id == 1, content="true")
+        Edge(id) => inspect(id == 1, content="true")
         _ => inspect(false, content="true")
       }
     } else {
@@ -424,10 +424,8 @@ test "narrow phase contact manifolds: basic shapes" {
       for i in 0..<pts.length() {
         let p = pts[i]
         match (p.fid1(), p.fid2()) {
-          (@collision.FeatureId::Vertex(_), _) =>
-            vertex_count = vertex_count + 1
-          (_, @collision.FeatureId::Vertex(_)) =>
-            vertex_count = vertex_count + 1
+          (Vertex(_), _) => vertex_count = vertex_count + 1
+          (_, Vertex(_)) => vertex_count = vertex_count + 1
           _ => ()
         }
       }
@@ -469,7 +467,7 @@ test "narrow phase contact manifolds: basic shapes" {
     let pt = cp.manifolds()[0].points()[0]
     inspect(@core.abs(pt.dist() + 0.2F) < 1.0e-2F, content="true")
     match pt.fid1() {
-      @collision.FeatureId::Vertex(id) => inspect(id == 1, content="true")
+      Vertex(id) => inspect(id == 1, content="true")
       _ => inspect(false, content="true")
     }
   } else {

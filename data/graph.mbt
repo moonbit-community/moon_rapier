@@ -78,8 +78,8 @@ pub(all) enum Direction {
 ///|
 pub fn Direction::opposite(self : Direction) -> Direction {
   match self {
-    Direction::Outgoing => Direction::Incoming
-    Direction::Incoming => Direction::Outgoing
+    Outgoing => Incoming
+    Incoming => Outgoing
   }
 }
 
@@ -462,7 +462,7 @@ pub struct Edges[N, E] {
 
 ///|
 pub fn[N, E] Graph::edges(self : Graph[N, E], a : NodeIndex) -> Edges[N, E] {
-  self.edges_directed(a, Direction::Outgoing)
+  self.edges_directed(a, Outgoing)
 }
 
 ///|
@@ -571,7 +571,7 @@ pub fn[N, E] Graph::find_edge_undirected(
     }
     let ed = self.edges[i]
     if ed.node1.index() == b.index() {
-      return Some((ecur, Direction::Outgoing))
+      return Some((ecur, Outgoing))
     }
     ecur = ed.next_out
   }
@@ -585,7 +585,7 @@ pub fn[N, E] Graph::find_edge_undirected(
     }
     let ed = self.edges[i]
     if ed.node0.index() == b.index() {
-      return Some((ecur, Direction::Incoming))
+      return Some((ecur, Incoming))
     }
     ecur = ed.next_in
   }
@@ -613,8 +613,8 @@ pub fn[N, E] Graph::first_edge(
     return None
   }
   let edix = match dir {
-    Direction::Outgoing => self.nodes[ai].next_out
-    Direction::Incoming => self.nodes[ai].next_in
+    Outgoing => self.nodes[ai].next_out
+    Incoming => self.nodes[ai].next_in
   }
   if edix.index() < 0 {
     None
@@ -634,8 +634,8 @@ pub fn[N, E] Graph::next_edge(
     return None
   }
   let edix = match dir {
-    Direction::Outgoing => self.edges[ei].next_out
-    Direction::Incoming => self.edges[ei].next_in
+    Outgoing => self.edges[ei].next_out
+    Incoming => self.edges[ei].next_in
   }
   if edix.index() < 0 {
     None

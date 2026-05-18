@@ -34,7 +34,7 @@ pub fn SharedShape::as_shape(self : SharedShape) -> Shape {
 
 ///|
 pub fn SharedShape::ball(radius : @core.Real) -> SharedShape {
-  SharedShape::new(Shape::Ball(radius))
+  SharedShape::new(Ball(radius))
 }
 
 ///|
@@ -42,7 +42,7 @@ pub fn SharedShape::cuboid(
   half_width : @core.Real,
   half_height : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(Shape::Cuboid(half_width, half_height))
+  SharedShape::new(Cuboid(half_width, half_height))
 }
 
 ///|
@@ -50,7 +50,7 @@ pub fn SharedShape::capsule_x(
   half_height : @core.Real,
   radius : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(Shape::CapsuleX(half_height, radius))
+  SharedShape::new(CapsuleX(half_height, radius))
 }
 
 ///|
@@ -58,12 +58,12 @@ pub fn SharedShape::capsule_y(
   half_height : @core.Real,
   radius : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(Shape::CapsuleY(half_height, radius))
+  SharedShape::new(CapsuleY(half_height, radius))
 }
 
 ///|
 pub fn SharedShape::segment(a : @core.Vec2, b : @core.Vec2) -> SharedShape {
-  SharedShape::new(Shape::Segment(a, b))
+  SharedShape::new(Segment(a, b))
 }
 
 ///|
@@ -81,7 +81,7 @@ pub fn SharedShape::polyline(
   vertices : Array[@core.Vec2],
   indices : Array[(Int, Int)]?,
 ) -> SharedShape {
-  SharedShape::new(Shape::Polyline(vertices, indices))
+  SharedShape::new(Polyline(vertices, indices))
 }
 
 ///|
@@ -212,27 +212,27 @@ pub(all) enum MeshConverter {
 
 ///|
 pub fn MeshConverter::trimesh() -> MeshConverter {
-  MeshConverter::TriMesh
+  TriMesh
 }
 
 ///|
 pub fn MeshConverter::trimesh_with_flags(flags : TriMeshFlags) -> MeshConverter {
-  MeshConverter::TriMeshWithFlags(flags)
+  TriMeshWithFlags(flags)
 }
 
 ///|
 pub fn MeshConverter::aabb() -> MeshConverter {
-  MeshConverter::Aabb
+  Aabb
 }
 
 ///|
 pub fn MeshConverter::obb() -> MeshConverter {
-  MeshConverter::Obb
+  Obb
 }
 
 ///|
 pub fn MeshConverter::convex_hull() -> MeshConverter {
-  MeshConverter::ConvexHull
+  ConvexHull
 }
 
 ///|
@@ -269,20 +269,20 @@ pub fn MeshConverter::apply(
   indices : Array[(Int, Int, Int)],
 ) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
   match self {
-    MeshConverter::TriMesh =>
+    TriMesh =>
       match SharedShape::trimesh(vertices, indices) {
-        None => Err(MeshConverterError::TriMeshBuilderError)
+        None => Err(TriMeshBuilderError)
         Some(shape) => Ok((shape, @core.Isometry2::identity()))
       }
-    MeshConverter::TriMeshWithFlags(_) =>
+    TriMeshWithFlags(_) =>
       // This port does not implement TriMesh pre-processing flags; treat as regular trimesh.
       match SharedShape::trimesh(vertices, indices) {
-        None => Err(MeshConverterError::TriMeshBuilderError)
+        None => Err(TriMeshBuilderError)
         Some(shape) => Ok((shape, @core.Isometry2::identity()))
       }
-    MeshConverter::Aabb =>
+    Aabb =>
       match compute_aabb(vertices) {
-        None => Err(MeshConverterError::EmptyVertices)
+        None => Err(EmptyVertices)
         Some((min, max)) => {
           let center = @core.Vec2::new(
             0.5F * (min.x + max.x),
@@ -296,20 +296,20 @@ pub fn MeshConverter::apply(
           Ok((shape, @core.Isometry2::from_translation(center)))
         }
       }
-    MeshConverter::Obb =>
+    Obb =>
       // NOTE: This is a 2D port and we currently fall back to the axis-aligned bounding box.
       MeshConverter::Aabb.apply(vertices, indices)
-    MeshConverter::ConvexHull =>
+    ConvexHull =>
       match ColliderBuilder::convex_hull(vertices) {
-        None => Err(MeshConverterError::ConvexHullFailed)
+        None => Err(ConvexHullFailed)
         Some(builder) =>
           Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
       }
-    MeshConverter::ConvexDecomposition =>
+    ConvexDecomposition =>
       MeshConverter::ConvexDecompositionWithParams(VHACDParameters::default()).apply(
         vertices, indices,
       )
-    MeshConverter::ConvexDecompositionWithParams(params) => {
+    ConvexDecompositionWithParams(params) => {
       fn boundary_segments_from_trimesh(
         indices : Array[(Int, Int, Int)],
       ) -> Array[(Int, Int)] {
@@ -329,7 +329,7 @@ pub fn MeshConverter::apply(
           }
         }
 
-        let counts : @hashmap.HashMap[(Int, Int), Int] = @hashmap.HashMap(
+        let counts : @hashmap.HashMap[(Int, Int), Int] = HashMap(
           [],
           capacity=indices.length() * 3,
         )
@@ -438,10 +438,10 @@ pub(all) enum BvhOptimizationStrategy {
 
 ///|
 pub fn BvhOptimizationStrategy::none() -> BvhOptimizationStrategy {
-  BvhOptimizationStrategy::None
+  None
 }
 
 ///|
 pub fn BvhOptimizationStrategy::subtree_optimizer() -> BvhOptimizationStrategy {
-  BvhOptimizationStrategy::SubtreeOptimizer
+  SubtreeOptimizer
 }

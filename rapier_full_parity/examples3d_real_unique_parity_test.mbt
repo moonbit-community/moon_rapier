@@ -315,7 +315,7 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
       .local_anchor2(@core.Vec3::new(0.0F, -0.5F, 0.0F))
       .local_basis1(revolute_basis)
       .local_basis2(revolute_basis)
-      .motor_position(@dynamics.JointAxis3DReal::AngZ, target, 1000.0F, 150.0F)
+      .motor_position(AngZ, target, 1000.0F, 150.0F)
       .build()
     joints.insert_generic(ground, handle, joint, true) |> ignore
     targets.push((handle, target))
@@ -343,9 +343,9 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
       .local_anchor2(@core.Vec3::new(0.0F, -0.5F, 0.0F))
       .local_basis1(revolute_basis)
       .local_basis2(revolute_basis)
-      .motor_velocity(@dynamics.JointAxis3DReal::AngZ, 1.5F, 30.0F)
-      .motor_max_force(@dynamics.JointAxis3DReal::AngZ, 100.0F)
-      .limits(@dynamics.JointAxis3DReal::AngZ, min_angle, max_angle)
+      .motor_velocity(AngZ, 1.5F, 30.0F)
+      .motor_max_force(AngZ, 100.0F)
+      .limits(AngZ, min_angle, max_angle)
       .build()
     joints.insert_generic(ground, handle, joint, true) |> ignore
     limit_targets.push((handle, min_angle, max_angle))

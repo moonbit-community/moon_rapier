@@ -17,7 +17,7 @@ test "round_* builders create rounded geometry (not contact_skin)" {
   let collider = ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build()
   inspect(collider.contact_skin() == 0.0F, content="true")
   match collider.shape() {
-    Shape::Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
+    Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
     _ => inspect(false, content="true")
   }
 }
@@ -31,7 +31,7 @@ test "rounded shapes affect query projections and rays" {
     match colliders.colliders[id] {
       Some(co) =>
         match co.shape() {
-          Shape::Round(_, _) => true
+          Round(_, _) => true
           _ => false
         }
       None => false

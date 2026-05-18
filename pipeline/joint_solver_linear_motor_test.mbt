@@ -46,8 +46,8 @@ test "joint solver linear motor (prismatic lin_x velocity)" {
     @dynamics.PrismaticJointBuilder::new(@core.Vec2::new(1.0F, 0.0F)).build(),
   )
   joint = joint
-    .set_motor_velocity(@dynamics.JointAxis::LinX, 2.0F, 0.0F)
-    .set_motor_max_force(@dynamics.JointAxis::LinX, 1.0e6F)
+    .set_motor_velocity(LinX, 2.0F, 0.0F)
+    .set_motor_max_force(LinX, 1.0e6F)
   impulse_joints.insert(ground, body, joint, true) |> ignore
   for _ in 0..<120 {
     pipeline.step(

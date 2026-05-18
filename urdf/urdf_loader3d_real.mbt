@@ -334,7 +334,7 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
   if name == "" {
     return (None, start + 1)
   }
-  let attrs : @hashmap.HashMap[String, String] = @hashmap.HashMap([])
+  let attrs : @hashmap.HashMap[String, String] = HashMap([])
   j = xml_skip_ws(s, j)
   while j < s.length() {
     let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
@@ -412,21 +412,21 @@ fn basename(path : String) -> String {
 ///|
 fn parse_joint_type(s : String) -> UrdfJointType {
   if s == "revolute" {
-    UrdfJointType::Revolute
+    Revolute
   } else if s == "continuous" {
-    UrdfJointType::Continuous
+    Continuous
   } else if s == "prismatic" {
-    UrdfJointType::Prismatic
+    Prismatic
   } else if s == "fixed" {
-    UrdfJointType::Fixed
+    Fixed
   } else if s == "floating" {
-    UrdfJointType::Floating
+    Floating
   } else if s == "planar" {
-    UrdfJointType::Planar
+    Planar
   } else if s == "spherical" {
-    UrdfJointType::Spherical
+    Spherical
   } else {
-    UrdfJointType::Fixed
+    Fixed
   }
 }
 
@@ -534,7 +534,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
       let jt = if attr_get(tag.attrs, "type") is Some(t) {
         parse_joint_type(t)
       } else {
-        UrdfJointType::Fixed
+        Fixed
       }
       cur_joint = Some({
         name,
@@ -625,19 +625,19 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
         } else {
           @core.Vec3::new(1.0F, 1.0F, 1.0F)
         }
-        cur_geom = Some(UrdfGeometry3DReal::Mesh(basename(f), scale))
+        cur_geom = Some(Mesh(basename(f), scale))
       }
       continue
     }
     if tag.name == "box" {
       if (in_visual || in_collision) && attr_get(tag.attrs, "size") is Some(v) {
-        cur_geom = Some(UrdfGeometry3DReal::Box(urdf_parse_vec3(v)))
+        cur_geom = Some(Box(urdf_parse_vec3(v)))
       }
       continue
     }
     if tag.name == "sphere" {
       if (in_visual || in_collision) && attr_get(tag.attrs, "radius") is Some(v) {
-        cur_geom = Some(UrdfGeometry3DReal::Sphere(urdf_parse_real(v)))
+        cur_geom = Some(Sphere(urdf_parse_real(v)))
       }
       continue
     }
@@ -645,9 +645,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
       if (in_visual || in_collision) &&
         attr_get(tag.attrs, "radius") is Some(r) &&
         attr_get(tag.attrs, "length") is Some(l) {
-        cur_geom = Some(
-          UrdfGeometry3DReal::Cylinder(urdf_parse_real(r), urdf_parse_real(l)),
-        )
+        cur_geom = Some(Cylinder(urdf_parse_real(r), urdf_parse_real(l)))
       }
       continue
     }
@@ -655,9 +653,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
       if (in_visual || in_collision) &&
         attr_get(tag.attrs, "radius") is Some(r) &&
         attr_get(tag.attrs, "length") is Some(l) {
-        cur_geom = Some(
-          UrdfGeometry3DReal::Capsule(urdf_parse_real(r), urdf_parse_real(l)),
-        )
+        cur_geom = Some(Capsule(urdf_parse_real(r), urdf_parse_real(l)))
       }
       continue
     }
@@ -710,23 +706,23 @@ pub fn UrdfRobot3DReal::insert_3d_real(
   joints : @dynamics.JointSet3DReal,
   base_transform : @core.Isometry3,
 ) -> Unit {
-  let link_to_body : @hashmap.HashMap[String, @dynamics.RigidBodyHandle] = @hashmap.HashMap(
+  let link_to_body : @hashmap.HashMap[String, @dynamics.RigidBodyHandle] = HashMap(
     [],
     capacity=self.links.length(),
   )
-  let link_pose_urdf : @hashmap.HashMap[String, @core.Isometry3] = @hashmap.HashMap(
+  let link_pose_urdf : @hashmap.HashMap[String, @core.Isometry3] = HashMap(
     [],
     capacity=self.links.length(),
   )
-  let link_visuals : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.HashMap(
+  let link_visuals : @hashmap.HashMap[String, Array[UrdfVisual]] = HashMap(
     [],
     capacity=self.links.length(),
   )
-  let link_collisions : @hashmap.HashMap[String, Array[UrdfVisual]] = @hashmap.HashMap(
+  let link_collisions : @hashmap.HashMap[String, Array[UrdfVisual]] = HashMap(
     [],
     capacity=self.links.length(),
   )
-  let link_inertials : @hashmap.HashMap[String, UrdfInertial3DReal?] = @hashmap.HashMap(
+  let link_inertials : @hashmap.HashMap[String, UrdfInertial3DReal?] = HashMap(
     [],
     capacity=self.links.length(),
   )
@@ -736,7 +732,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
     link_collisions.set(l.name, l.collisions)
     link_inertials.set(l.name, l.inertial)
   }
-  let children : @hashset.HashSet[String] = @hashset.HashSet(
+  let children : @hashset.HashSet[String] = HashSet(
     [],
     capacity=self.joints.length(),
   )
@@ -804,7 +800,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
     for i in 0..<list.length() {
       let v = list[i]
       match v.geometry {
-        UrdfGeometry3DReal::Box(size) => {
+        Box(size) => {
           let he = size.scale(0.5F)
           colliders.insert_with_parent(
             @collision.ColliderBuilder3D::cuboid(he.x, he.y, he.z)
@@ -815,14 +811,14 @@ pub fn UrdfRobot3DReal::insert_3d_real(
           )
           |> ignore
         }
-        UrdfGeometry3DReal::Sphere(r) =>
+        Sphere(r) =>
           colliders.insert_with_parent(
             @collision.ColliderBuilder3D::ball(r).position(v.origin).build(),
             body,
             bodies,
           )
           |> ignore
-        UrdfGeometry3DReal::Cylinder(r, len) => {
+        Cylinder(r, len) => {
           // URDF cylinders are aligned along +Z. Our cylinder is aligned along +Y.
           let rot = @core.rotation_from_scaled_axis(
             @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
@@ -837,7 +833,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
           )
           |> ignore
         }
-        UrdfGeometry3DReal::Capsule(r, len) => {
+        Capsule(r, len) => {
           // URDF capsules are aligned along +Z. Our capsule is aligned along +Y.
           let rot = @core.rotation_from_scaled_axis(
             @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
@@ -852,7 +848,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
           )
           |> ignore
         }
-        UrdfGeometry3DReal::Mesh(mesh, scale) =>
+        Mesh(mesh, scale) =>
           if mesh_bounds.get(mesh) is Some((mins0, maxs0)) {
             let mins = @core.Vec3::new(
               mins0.x * scale.x,
@@ -942,25 +938,25 @@ pub fn UrdfRobot3DReal::insert_3d_real(
         }
         let axis1 = j.origin.rotation.rotate_vec3(axis)
         let locked = match j.joint_type {
-          UrdfJointType::Fixed => @dynamics.JointAxesMask3DReal::all()
-          UrdfJointType::Revolute =>
+          Fixed => @dynamics.JointAxesMask3DReal::all()
+          Revolute =>
             @dynamics.JointAxesMask3DReal::lin_axes()
             .or(@dynamics.JointAxesMask3DReal::ang_y())
             .or(@dynamics.JointAxesMask3DReal::ang_z())
-          UrdfJointType::Continuous =>
+          Continuous =>
             @dynamics.JointAxesMask3DReal::lin_axes()
             .or(@dynamics.JointAxesMask3DReal::ang_y())
             .or(@dynamics.JointAxesMask3DReal::ang_z())
-          UrdfJointType::Prismatic =>
+          Prismatic =>
             @dynamics.JointAxesMask3DReal::lin_y()
             .or(@dynamics.JointAxesMask3DReal::lin_z())
             .or(@dynamics.JointAxesMask3DReal::ang_axes())
-          UrdfJointType::Spherical => @dynamics.JointAxesMask3DReal::lin_axes()
-          UrdfJointType::Planar =>
+          Spherical => @dynamics.JointAxesMask3DReal::lin_axes()
+          Planar =>
             @dynamics.JointAxesMask3DReal::lin_x()
             .or(@dynamics.JointAxesMask3DReal::ang_y())
             .or(@dynamics.JointAxesMask3DReal::ang_z())
-          UrdfJointType::Floating => @dynamics.JointAxesMask3DReal::empty()
+          Floating => @dynamics.JointAxesMask3DReal::empty()
         }
         let mut builder = @dynamics.GenericJoint3DRealBuilder::new(locked)
           .contacts_enabled(options.enable_joint_collisions)
@@ -971,22 +967,14 @@ pub fn UrdfRobot3DReal::insert_3d_real(
           .local_axis1(axis1)
           .local_axis2(axis)
         match j.joint_type {
-          UrdfJointType::Revolute =>
+          Revolute =>
             if j.has_limits {
-              builder = builder.limits(
-                @dynamics.JointAxis3DReal::AngX,
-                j.limit_lower,
-                j.limit_upper,
-              )
+              builder = builder.limits(AngX, j.limit_lower, j.limit_upper)
             }
-          UrdfJointType::Continuous => ()
-          UrdfJointType::Prismatic =>
+          Continuous => ()
+          Prismatic =>
             if j.has_limits {
-              builder = builder.limits(
-                @dynamics.JointAxis3DReal::LinX,
-                j.limit_lower,
-                j.limit_upper,
-              )
+              builder = builder.limits(LinX, j.limit_lower, j.limit_upper)
             }
           _ => ()
         }

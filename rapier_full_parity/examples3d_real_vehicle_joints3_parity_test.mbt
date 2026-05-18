@@ -143,11 +143,11 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
         locked_axes,
       )
       .local_anchor1(suspension_attachment_in_body_space)
-      .limits(@dynamics.JointAxis3DReal::LinY, 0.0F, suspension_height)
-      .motor_position(@dynamics.JointAxis3DReal::LinY, 0.0F, 1.0e4F, 1.0e3F)
+      .limits(LinY, 0.0F, suspension_height)
+      .motor_position(LinY, 0.0F, 1.0e4F, 1.0e3F)
     if is_front {
       suspension_joint = suspension_joint.limits(
-        @dynamics.JointAxis3DReal::AngY,
+        AngY,
         -max_steering_angle,
         max_steering_angle,
       )
@@ -195,7 +195,7 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
     for h in steering_joints {
       joints.set_motor_position(
         h,
-        @dynamics.JointAxis3DReal::AngY,
+        AngY,
         max_steering_angle * steering,
         1.0e4F,
         1.0e3F,
@@ -208,7 +208,7 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
       msi = msi + 1
       joints.set_motor_velocity(
         h,
-        @dynamics.JointAxis3DReal::AngX,
+        AngX,
         -30.0F * thrust * scale * boost,
         1.0e2F,
         1.0e4F,

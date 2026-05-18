@@ -19,7 +19,7 @@ test "heightfield builder produces Shape::HeightField" {
   let scale = @core.Vec2::new(10.0F, 2.0F)
   let collider = ColliderBuilder::heightfield(heights, scale).build()
   match collider.shape() {
-    Shape::HeightField(hs, sc) => {
+    HeightField(hs, sc) => {
       inspect(hs.length() == heights.length(), content="true")
       inspect(@core.abs(sc.x - 10.0F) < 1.0e-6F, content="true")
       inspect(@core.abs(sc.y - 2.0F) < 1.0e-6F, content="true")

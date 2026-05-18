@@ -36,7 +36,7 @@ test "broad phase 3d emits add/delete pair events" {
   broad_phase.update(0.0F, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
-  if ev1[0] is BroadPhasePairEvent3D::AddPair(pair1) {
+  if ev1[0] is AddPair(pair1) {
     let a = pair1.collider1()
     let b = pair1.collider2()
     inspect(
@@ -54,7 +54,7 @@ test "broad phase 3d emits add/delete pair events" {
   broad_phase.update(0.0F, colliders)
   let ev2 = broad_phase.take_events()
   inspect(ev2.length() == 1, content="true")
-  if ev2[0] is BroadPhasePairEvent3D::DeletePair(pair2) {
+  if ev2[0] is DeletePair(pair2) {
     let a = pair2.collider1()
     let b = pair2.collider2()
     inspect(

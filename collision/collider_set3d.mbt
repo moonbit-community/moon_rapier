@@ -20,7 +20,7 @@ pub struct ColliderHandle3D {
 
 ///|
 fn ColliderHandle3D::new(id : Int, generation : Int) -> ColliderHandle3D {
-  ColliderHandle3D::{ id, generation }
+  { id, generation }
 }
 
 ///|

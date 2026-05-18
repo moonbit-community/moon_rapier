@@ -60,8 +60,8 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   let coupled = @dynamics.GenericJoint3DRealBuilder::new(
       @dynamics.JointAxesMask3DReal::empty(),
     )
-    .limits(@dynamics.JointAxis3DReal::LinX, -3.0F, 3.0F)
-    .limits(@dynamics.JointAxis3DReal::LinY, 0.0F, 3.0F)
+    .limits(LinX, -3.0F, 3.0F)
+    .limits(LinY, 0.0F, 3.0F)
     .coupled_axes(
       @dynamics.JointAxesMask3DReal::lin_y().or(
         @dynamics.JointAxesMask3DReal::lin_z(),
@@ -106,8 +106,8 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     .local_basis1(prism_basis)
     .local_basis2(prism_basis)
     .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -2.0F))
-    .limits(@dynamics.JointAxis3DReal::LinX, -2.0F, 2.0F)
-    .motor_position(@dynamics.JointAxis3DReal::LinX, 1.0F, 500.0F, 5.0F)
+    .limits(LinX, -2.0F, 2.0F)
+    .motor_position(LinX, 1.0F, 500.0F, 5.0F)
     .build()
   joints.insert_generic(prism_ground, prism_child, prism, true) |> ignore
 
@@ -166,8 +166,8 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
       @dynamics.JointAxesMask3DReal::lin_axes(),
     )
     .local_anchor2(@core.Vec3::new(0.0F, -3.0F, 0.0F))
-    .limits(@dynamics.JointAxis3DReal::LinX, -0.2F, 0.2F)
-    .limits(@dynamics.JointAxis3DReal::LinY, -0.2F, 0.2F)
+    .limits(LinX, -0.2F, 0.2F)
+    .limits(LinY, -0.2F, 0.2F)
     .build()
   joints.insert_generic(sph_ground, sph_ball, sph, true) |> ignore
 
@@ -249,23 +249,10 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   for step in 0..<360 {
     if step == 0 {
       if motor0 is Some(h) {
-        joints.set_motor_velocity(
-          h,
-          @dynamics.JointAxis3DReal::AngZ,
-          -10.0F,
-          5.0F,
-          100.0F,
-        )
+        joints.set_motor_velocity(h, AngZ, -10.0F, 5.0F, 100.0F)
       }
       if motor_last is Some(h) {
-        joints.set_motor_position(
-          h,
-          @dynamics.JointAxis3DReal::AngZ,
-          1.5707964F,
-          10.0F,
-          2.0F,
-          100.0F,
-        )
+        joints.set_motor_position(h, AngZ, 1.5707964F, 10.0F, 2.0F, 100.0F)
       }
     }
     pipeline.step_with_joints(

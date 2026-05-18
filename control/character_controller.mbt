@@ -14,12 +14,12 @@
 
 ///|
 pub fn CharacterLength::relative(value : @core.Real) -> CharacterLength {
-  CharacterLength::Relative(value)
+  Relative(value)
 }
 
 ///|
 pub fn CharacterLength::absolute(value : @core.Real) -> CharacterLength {
-  CharacterLength::Absolute(value)
+  Absolute(value)
 }
 
 ///|
@@ -28,7 +28,7 @@ pub fn CharacterLength::map_absolute(
   f : (@core.Real) -> @core.Real,
 ) -> CharacterLength {
   match self {
-    CharacterLength::Absolute(value) => CharacterLength::Absolute(f(value))
+    Absolute(value) => Absolute(f(value))
     _ => self
   }
 }
@@ -39,7 +39,7 @@ pub fn CharacterLength::map_relative(
   f : (@core.Real) -> @core.Real,
 ) -> CharacterLength {
   match self {
-    CharacterLength::Relative(value) => CharacterLength::Relative(f(value))
+    Relative(value) => Relative(f(value))
     _ => self
   }
 }
@@ -50,8 +50,8 @@ fn character_length_eval(
   reference : @core.Real,
 ) -> @core.Real {
   match length {
-    CharacterLength::Relative(value) => value * reference
-    CharacterLength::Absolute(value) => value
+    Relative(value) => value * reference
+    Absolute(value) => value
   }
 }
 
@@ -394,23 +394,21 @@ fn try_normalize_and_get_length(
 ///|
 fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
   match shape {
-    @collision.Shape::Round(inner, radius) => {
+    Round(inner, radius) => {
       let (hw, hh) = compute_extents(inner.val)
       (hw + radius, hh + radius)
     }
-    @collision.Shape::Ball(r) => (r, r)
-    @collision.Shape::Cuboid(hw, hh) => (hw, hh)
-    @collision.Shape::HalfSpace(_) => (0.0F, 0.0F)
-    @collision.Shape::CapsuleX(half_height, radius) =>
-      (half_height + radius, radius)
-    @collision.Shape::CapsuleY(half_height, radius) =>
-      (radius, half_height + radius)
-    @collision.Shape::Segment(a, b) => {
+    Ball(r) => (r, r)
+    Cuboid(hw, hh) => (hw, hh)
+    HalfSpace(_) => (0.0F, 0.0F)
+    CapsuleX(half_height, radius) => (half_height + radius, radius)
+    CapsuleY(half_height, radius) => (radius, half_height + radius)
+    Segment(a, b) => {
       let hw = max_real(@core.abs(a.x), @core.abs(b.x))
       let hh = max_real(@core.abs(a.y), @core.abs(b.y))
       (hw, hh)
     }
-    @collision.Shape::Polyline(vertices, _) => {
+    Polyline(vertices, _) => {
       let mut hw = 0.0F
       let mut hh = 0.0F
       for i in 0..<vertices.length() {
@@ -426,7 +424,7 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
-    @collision.Shape::HeightField(heights, scale) => {
+    HeightField(heights, scale) => {
       let hw = @core.abs(scale.x) * 0.5F
       let mut hh = 0.0F
       for i in 0..<heights.length() {
@@ -437,7 +435,7 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
-    @collision.Shape::ConvexPolygon(vertices) => {
+    ConvexPolygon(vertices) => {
       let mut hw = 0.0F
       let mut hh = 0.0F
       for i in 0..<vertices.length() {
@@ -453,7 +451,7 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
-    @collision.Shape::TriMesh(vertices, _) => {
+    TriMesh(vertices, _) => {
       let mut hw = 0.0F
       let mut hh = 0.0F
       for i in 0..<vertices.length() {
@@ -469,7 +467,7 @@ fn compute_extents(shape : @collision.Shape) -> (@core.Real, @core.Real) {
       }
       (hw, hh)
     }
-    @collision.Shape::Compound(parts) => {
+    Compound(parts) => {
       let mut hw = 0.0F
       let mut hh = 0.0F
       for i in 0..<parts.length() {
@@ -917,7 +915,7 @@ pub fn KinematicCharacterController::move_shape(
         position.translation.add(result_translation),
         position.rotation,
       )
-      handle_collision(CharacterCollision::{
+      handle_collision({
         handle: hit.0,
         hit: hit.1,
         translation_applied: result_translation,

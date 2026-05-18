@@ -29,10 +29,7 @@ test "rigid body handle raw parts round trip" {
 /// Ported from rapier rigid_body_components kinematic velocity type.
 test "rigid body builder kinematic velocity based" {
   let body = RigidBodyBuilder::kinematic_velocity_based().build()
-  inspect(
-    body.body_type is RigidBodyType::KinematicVelocityBased,
-    content="true",
-  )
+  inspect(body.body_type is KinematicVelocityBased, content="true")
   inspect(RigidBodyType::Dynamic.is_dynamic(), content="true")
   inspect(RigidBodyType::Fixed.is_fixed(), content="true")
   inspect(RigidBodyType::KinematicVelocityBased.is_kinematic(), content="true")
@@ -211,10 +208,7 @@ test "rigid body additional mass properties override scalar additional mass" {
   let extra = @core.MassProperties::new(1.0F, 1.0F, @core.Vec2::new(2.0F, 0.0F))
   let body = body.set_local_mass_properties(base)
   let body = body.set_additional_mass(3.0F, false)
-  let body = body.set_additional_mass_properties(
-    RigidBodyAdditionalMassProps::MassProps(extra),
-    false,
-  )
+  let body = body.set_additional_mass_properties(MassProps(extra), false)
   let body = body.recompute_mass_properties_from_colliders()
   inspect(body.additional_mass() == 0.0F, content="true")
   inspect(@core.abs(body.mass() - 3.0F) < 1.0e-6F, content="true")

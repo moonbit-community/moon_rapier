@@ -78,7 +78,7 @@ const HALF_PI_3D : @core.Real = 1.5707964F
 
 ///|
 pub fn Shape3D::ball(radius : @core.Real) -> Shape3D {
-  Shape3D::Ball(radius)
+  Ball(radius)
 }
 
 ///|
@@ -87,7 +87,7 @@ pub fn Shape3D::cuboid(
   hy : @core.Real,
   hz : @core.Real,
 ) -> Shape3D {
-  Shape3D::Cuboid(@core.Vec3::new(hx, hy, hz))
+  Cuboid(@core.Vec3::new(hx, hy, hz))
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn Shape3D::capsule_y(
   radius : @core.Real,
   half_height : @core.Real,
 ) -> Shape3D {
-  Shape3D::CapsuleY(radius, half_height)
+  CapsuleY(radius, half_height)
 }
 
 ///|
@@ -103,7 +103,7 @@ pub fn Shape3D::cylinder(
   radius : @core.Real,
   half_height : @core.Real,
 ) -> Shape3D {
-  Shape3D::Cylinder(radius, half_height)
+  Cylinder(radius, half_height)
 }
 
 ///|
@@ -112,17 +112,17 @@ pub fn Shape3D::round_cylinder(
   half_height : @core.Real,
   border_radius : @core.Real,
 ) -> Shape3D {
-  Shape3D::RoundCylinder(radius, half_height, border_radius)
+  RoundCylinder(radius, half_height, border_radius)
 }
 
 ///|
 pub fn Shape3D::cone(radius : @core.Real, half_height : @core.Real) -> Shape3D {
-  Shape3D::Cone(radius, half_height)
+  Cone(radius, half_height)
 }
 
 ///|
 pub fn Shape3D::halfspace(normal : @core.Vec3) -> Shape3D {
-  Shape3D::HalfSpace(normal)
+  HalfSpace(normal)
 }
 
 ///|
@@ -131,27 +131,27 @@ pub fn Shape3D::triangle(
   b : @core.Vec3,
   c : @core.Vec3,
 ) -> Shape3D {
-  Shape3D::Triangle(a, b, c)
+  Triangle(a, b, c)
 }
 
 ///|
 pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
   match self {
-    Shape3D::Ball(r) =>
+    Ball(r) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -r, -r), @core.Vec3::new(r, r, r))
-    Shape3D::Cuboid(he) =>
+    Cuboid(he) =>
       @core.Aabb3::new(
         @core.Vec3::new(-he.x, -he.y, -he.z),
         @core.Vec3::new(he.x, he.y, he.z),
       )
-    Shape3D::CapsuleY(r, hh) =>
+    CapsuleY(r, hh) =>
       @core.Aabb3::new(
         @core.Vec3::new(-r, -(hh + r), -r),
         @core.Vec3::new(r, hh + r, r),
       )
-    Shape3D::Cylinder(r, hh) =>
+    Cylinder(r, hh) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
-    Shape3D::RoundCylinder(r, hh, br) => {
+    RoundCylinder(r, hh, br) => {
       let rr = r + br
       let yy = hh + br
       @core.Aabb3::new(
@@ -159,15 +159,15 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         @core.Vec3::new(rr, yy, rr),
       )
     }
-    Shape3D::Cone(r, hh) =>
+    Cone(r, hh) =>
       @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
-    Shape3D::HalfSpace(_) => {
+    HalfSpace(_) => {
       // The BVH broad-phase treats half-spaces specially (they are infinite). We still provide
       // a very large AABB as a defensive fallback for any code-path that expects a finite AABB.
       let m = 1.0e6F
       @core.Aabb3::new(@core.Vec3::new(-m, -m, -m), @core.Vec3::new(m, m, m))
     }
-    Shape3D::Triangle(a, b, c) => {
+    Triangle(a, b, c) => {
       let mut min = a
       let mut max = a
       for p in [b, c] {
@@ -192,7 +192,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
       }
       @core.Aabb3::new(min, max)
     }
-    Shape3D::ConvexHull(points, br) =>
+    ConvexHull(points, br) =>
       if points.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
@@ -222,7 +222,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         let pad = @core.Vec3::new(br, br, br)
         @core.Aabb3::new(min.sub(pad), max.add(pad))
       }
-    Shape3D::Compound(parts) =>
+    Compound(parts) =>
       if parts.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
@@ -235,7 +235,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         }
         aabb
       }
-    Shape3D::Voxels(v) => {
+    Voxels(v) => {
       let (ix0, iy0, iz0) = v.min_key
       let (ix1, iy1, iz1) = v.max_key
       let sx = v.voxel_size.x
@@ -253,7 +253,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
       )
       @core.Aabb3::new(min, max)
     }
-    Shape3D::Heightfield(vertices, _, _, _, _) =>
+    Heightfield(vertices, _, _, _, _) =>
       if vertices.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
@@ -282,7 +282,7 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
         }
         @core.Aabb3::new(min, max)
       }
-    Shape3D::TriMesh(vertices, _) =>
+    TriMesh(vertices, _) =>
       if vertices.length() == 0 {
         @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
@@ -753,9 +753,9 @@ fn collider_builder3d_default(
     solver_groups: @dynamics.InteractionGroups::all(),
     contact_skin: 0.0F,
     friction: ColliderBuilder3D::default_friction(),
-    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    friction_combine_rule: Average,
     restitution: 0.0F,
-    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution_combine_rule: Average,
   }
 }
 
@@ -899,7 +899,7 @@ pub fn ColliderBuilder3D::trimesh(
   if valid.length() == 0 {
     return None
   }
-  Some(collider_builder3d_default(Shape3D::TriMesh(vertices, valid), None))
+  Some(collider_builder3d_default(TriMesh(vertices, valid), None))
 }
 
 ///|
@@ -942,7 +942,7 @@ pub fn ColliderBuilder3D::compound(
     let (iso, part) = parts[i]
     shapes.push((iso.mul(part.position), part.shape))
   }
-  Some(collider_builder3d_default(Shape3D::Compound(shapes), None))
+  Some(collider_builder3d_default(Compound(shapes), None))
 }
 
 ///|
@@ -961,9 +961,7 @@ pub fn ColliderBuilder3D::round_convex_hull(
   for i in 0..<points.length() {
     pts.push(points[i])
   }
-  Some(
-    collider_builder3d_default(Shape3D::ConvexHull(pts, border_radius), None),
-  )
+  Some(collider_builder3d_default(ConvexHull(pts, border_radius), None))
 }
 
 ///|
@@ -1083,7 +1081,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       continue
     }
     let end = if start + chunk < tri_count { start + chunk } else { tri_count }
-    let used : @hashset.HashSet[Int] = @hashset.HashSet([], capacity=chunk * 3)
+    let used : @hashset.HashSet[Int] = HashSet([], capacity=chunk * 3)
     for ii in start..<end {
       let tid = tri_ids[ii]
       let (i0, i1, i2) = tris[tid]
@@ -1096,15 +1094,13 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       pts.push(vertices[vid])
     }
     if pts.length() > 0 {
-      parts.push(
-        (@core.Isometry3::identity(), Shape3D::ConvexHull(pts, border_radius)),
-      )
+      parts.push((@core.Isometry3::identity(), ConvexHull(pts, border_radius)))
     }
   }
   if parts.length() <= 1 {
     ColliderBuilder3D::round_convex_hull(vertices, border_radius)
   } else {
-    Some(collider_builder3d_default(Shape3D::Compound(parts), None))
+    Some(collider_builder3d_default(Compound(parts), None))
   }
 }
 
@@ -1132,7 +1128,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  let occupied : @hashset.HashSet[(Int, Int, Int)] = @hashset.HashSet(
+  let occupied : @hashset.HashSet[(Int, Int, Int)] = HashSet(
     [],
     capacity=points.length(),
   )
@@ -1227,14 +1223,14 @@ pub fn ColliderBuilder3D::voxels_from_points(
       max_key = (max_key.0, max_key.1, iz)
     }
   }
-  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = @hashmap.HashMap(
+  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = HashMap(
     [],
     capacity=voxels.length(),
   )
   for i in 0..<voxels.length() {
     key_to_id.set(voxels[i], i)
   }
-  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = @hashmap.HashMap(
+  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = HashMap(
     [],
     capacity=voxels.length(),
   )
@@ -1302,7 +1298,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
   }
   Some(
     collider_builder3d_default(
-      Shape3D::Voxels({
+      Voxels({
         voxel_size,
         columns,
         dense_origin_x,
@@ -1374,10 +1370,10 @@ fn heightfield_impl(
   }
   if ColliderBuilder3D::trimesh(vertices, indices) is Some(builder) {
     match builder.shape {
-      Shape3D::TriMesh(vtx, idx) =>
+      TriMesh(vtx, idx) =>
         Some(
           collider_builder3d_default(
-            Shape3D::Heightfield(vtx, idx, nrows, ncols, flags),
+            Heightfield(vtx, idx, nrows, ncols, flags),
             None,
           ),
         )

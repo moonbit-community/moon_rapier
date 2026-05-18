@@ -95,6 +95,6 @@ pub fn GenericJointConstraint::invalid() -> GenericJointConstraint {
     rhs_wo_bias: 0.0F,
     cfm_coeff: 0.0F,
     cfm_gain: 0.0F,
-    writeback_id: WritebackId::Dof(0),
+    writeback_id: Dof(0),
   }
 }

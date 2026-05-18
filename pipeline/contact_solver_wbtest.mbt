@@ -129,7 +129,7 @@ test "contact solver warmstart uses cached impulses" {
   inspect(points_warm.length() > 0, content="true")
   let p_warm = points_warm[0]
   let cache_warm : Array[ContactImpulseCacheEntry] = []
-  cache_warm.push(ContactImpulseCacheEntry::{
+  cache_warm.push({
     collider1: pair_warm.0,
     collider2: pair_warm.1,
     fid1: p_warm.fid1(),

@@ -38,8 +38,8 @@ fn joint_motor_coefficients(
   let erp_inv_dt = stiffness * joint_inv(dt * stiffness + damping)
   let inv_cfm = joint_inv(dt * dt * stiffness + dt * damping)
   match model {
-    @dynamics.MotorModel::AccelerationBased => (erp_inv_dt, inv_cfm, 0.0F)
-    @dynamics.MotorModel::ForceBased => (erp_inv_dt, 0.0F, inv_cfm)
+    AccelerationBased => (erp_inv_dt, inv_cfm, 0.0F)
+    ForceBased => (erp_inv_dt, 0.0F, inv_cfm)
   }
 }
 
@@ -48,12 +48,12 @@ fn joint_solver_axis_mask(
   axis : @dynamics.JointAxis,
 ) -> @dynamics.JointAxesMask {
   match axis {
-    @dynamics.JointAxis::LinX => @dynamics.JointAxesMask::lin_x()
-    @dynamics.JointAxis::LinY => @dynamics.JointAxesMask::lin_y()
-    @dynamics.JointAxis::LinZ => @dynamics.JointAxesMask::lin_z()
-    @dynamics.JointAxis::AngX => @dynamics.JointAxesMask::ang_x()
-    @dynamics.JointAxis::AngY => @dynamics.JointAxesMask::ang_y()
-    @dynamics.JointAxis::AngZ => @dynamics.JointAxesMask::ang_z()
+    LinX => @dynamics.JointAxesMask::lin_x()
+    LinY => @dynamics.JointAxesMask::lin_y()
+    LinZ => @dynamics.JointAxesMask::lin_z()
+    AngX => @dynamics.JointAxesMask::ang_x()
+    AngY => @dynamics.JointAxesMask::ang_y()
+    AngZ => @dynamics.JointAxesMask::ang_z()
   }
 }
 
@@ -72,36 +72,36 @@ fn joint_solver_angular_axis(
       ),
     )
   if spatial_axes.bits() == 0 {
-    return @dynamics.JointAxis::AngZ
+    return AngZ
   }
   let locked_axes = data.locked_axes()
   if !locked_axes.contains(@dynamics.JointAxesMask::ang_x()) {
-    return @dynamics.JointAxis::AngX
+    return AngX
   }
   if !locked_axes.contains(@dynamics.JointAxesMask::ang_y()) {
-    return @dynamics.JointAxis::AngY
+    return AngY
   }
   if !locked_axes.contains(@dynamics.JointAxesMask::ang_z()) {
-    return @dynamics.JointAxis::AngZ
+    return AngZ
   }
   let motor_axes = data.motor_axes()
   if motor_axes.contains(@dynamics.JointAxesMask::ang_x()) {
-    return @dynamics.JointAxis::AngX
+    return AngX
   }
   if motor_axes.contains(@dynamics.JointAxesMask::ang_y()) {
-    return @dynamics.JointAxis::AngY
+    return AngY
   }
   if motor_axes.contains(@dynamics.JointAxesMask::ang_z()) {
-    return @dynamics.JointAxis::AngZ
+    return AngZ
   }
   let limit_axes = data.limit_axes()
   if limit_axes.contains(@dynamics.JointAxesMask::ang_x()) {
-    return @dynamics.JointAxis::AngX
+    return AngX
   }
   if limit_axes.contains(@dynamics.JointAxesMask::ang_y()) {
-    return @dynamics.JointAxis::AngY
+    return AngY
   }
-  @dynamics.JointAxis::AngZ
+  AngZ
 }
 
 ///|
@@ -622,7 +622,7 @@ fn build_joint_constraints(
     } else {
       0.0F
     }
-    constraints.push(JointConstraint::{
+    constraints.push({
       handle: Some(handle),
       mb_link: None,
       body1: joint.body1,
@@ -888,7 +888,7 @@ fn build_joint_constraints(
     } else {
       0.0F
     }
-    constraints.push(JointConstraint::{
+    constraints.push({
       handle: None,
       mb_link: Some(desc.link),
       body1: desc.parent,
@@ -1221,7 +1221,7 @@ fn append_multibody_joint_constraints(
       0.0F
     }
     let inv_mass_ang = joint_inv(inv_inertia1 + inv_inertia2)
-    constraints.push(JointConstraint::{
+    constraints.push({
       handle: None,
       mb_link: Some(desc.link),
       body1: desc.parent,
@@ -1568,7 +1568,7 @@ fn append_impulse_joint_constraints3(
     } else {
       0.0F
     }
-    constraints.push(JointConstraint::{
+    constraints.push({
       handle: Some(handle),
       mb_link: None,
       body1: joint.body1,

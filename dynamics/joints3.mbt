@@ -45,7 +45,7 @@ pub fn ImpulseJointSet3::new() -> ImpulseJointSet3 {
 
 ///|
 pub fn ImpulseJointSet3::as_2d(self : ImpulseJointSet3) -> ImpulseJointSet {
-  ImpulseJointSet::{
+  {
     rb_graph_ids: self.rb_graph_ids,
     rb_graph_generations: self.rb_graph_generations,
     graph_nodes: self.graph_nodes,
@@ -280,7 +280,7 @@ pub fn ImpulseJointSet3::insert(
     handle,
   }
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push(JointGraphEdge::{ node1, node2, joint: impulse_joint })
+  self.graph_edges.push({ node1, node2, joint: impulse_joint })
   self.adjacency[node1].push(edge_id)
   if node2 != node1 {
     self.adjacency[node2].push(edge_id)
@@ -388,7 +388,7 @@ pub fn ImpulseJointSet3::set_enabled(
     return
   }
   let edge = self.graph_edges[edge_id]
-  self.graph_edges[edge_id] = JointGraphEdge::{
+  self.graph_edges[edge_id] = {
     node1: edge.node1,
     node2: edge.node2,
     joint: edge.joint.set_enabled(enabled),
@@ -411,11 +411,7 @@ pub fn ImpulseJointSet3::set_impulses(
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
   joint.impulses = impulses
-  self.graph_edges[edge_id] = JointGraphEdge::{
-    node1: edge.node1,
-    node2: edge.node2,
-    joint,
-  }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
 }
 
 ///|
@@ -473,11 +469,7 @@ pub fn ImpulseJointSet3::set_solver_impulses(
   joint.data.limits = joint_limits_set_axis(
     updated_limits, angular_axis, updated_limit,
   )
-  self.graph_edges[edge_id] = JointGraphEdge::{
-    node1: edge.node1,
-    node2: edge.node2,
-    joint,
-  }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
 }
 
 ///|
@@ -752,7 +744,7 @@ pub fn MultibodyJointSet3::new() -> MultibodyJointSet3 {
 pub fn MultibodyJointSet3::as_2d(
   self : MultibodyJointSet3,
 ) -> MultibodyJointSet {
-  MultibodyJointSet::{
+  {
     multibodies: self.multibodies,
     rb2mb: self.rb2mb,
     graph_nodes: self.graph_nodes,
@@ -828,7 +820,7 @@ fn MultibodyJointSet3::insert_graph_edge(
   let node1 = self.ensure_graph_node(parent)
   let node2 = self.ensure_graph_node(child)
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push(MultibodyGraphEdge::{ node1, node2, parent, child })
+  self.graph_edges.push({ node1, node2, parent, child })
   self.adjacency[node1].push(edge_id)
   self.adjacency[node2].push(edge_id)
 }
@@ -892,7 +884,7 @@ fn MultibodyJointSet3::remove_graph_node(
         continue
       }
       let edge = self.graph_edges[edge_id]
-      self.graph_edges[edge_id] = MultibodyGraphEdge::{
+      self.graph_edges[edge_id] = {
         node1: if edge.node1 == last_index {
           node_id
         } else {
@@ -1096,7 +1088,7 @@ pub fn MultibodyJointSet3::revolute_joint_descriptors(
       } else {
         -1
       }
-      result.push(MultibodyRevoluteJointDesc::{
+      result.push({
         link: MultibodyLinkId::new(graph_id, mb_index, link_id),
         parent: parent_link.rigid_body,
         child: link.rigid_body,
@@ -1123,7 +1115,7 @@ pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(
     let lnk = mb.links[link.id]
     lnk.joint.solver_lin_impulses = lin_impulses
     let motors = lnk.joint.data.motors
-    lnk.joint.data.motors = JointMotors3::{
+    lnk.joint.data.motors = {
       lin_x: motors.lin_x,
       lin_y: motors.lin_y,
       lin_z: motors.lin_z,
@@ -1132,7 +1124,7 @@ pub fn MultibodyJointSet3::set_revolute_joint_solver_impulses(
       ang_z: motors.ang_z.set_impulse(motor_impulse),
     }
     let limits = lnk.joint.data.limits
-    lnk.joint.data.limits = JointLimits3::{
+    lnk.joint.data.limits = {
       lin_x: limits.lin_x,
       lin_y: limits.lin_y,
       lin_z: limits.lin_z,
@@ -1284,7 +1276,7 @@ pub fn MultibodyJointSet3::get(
 ) -> (Multibody3, LinkId)? {
   if self.rb2mb.get(handle.arena_index()) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {
-      Some((Multibody3::{ inner: multibody }, LinkId::new(link.id)))
+      Some(({ inner: multibody }, LinkId::new(link.id)))
     } else {
       None
     }
@@ -1437,7 +1429,7 @@ pub fn MultibodyJointSet3::get_multibody(
   index : MultibodyIndex,
 ) -> Multibody3? {
   if self.multibodies.get(index.arena_index()) is Some(multibody) {
-    Some(Multibody3::{ inner: multibody })
+    Some({ inner: multibody })
   } else {
     None
   }
@@ -1466,7 +1458,7 @@ pub fn MultibodyJointSet3::multibodies(
   let result : Array[Multibody3] = []
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
-    result.push(Multibody3::{ inner: items[i].1 })
+    result.push({ inner: items[i].1 })
   }
   result
 }
@@ -1481,7 +1473,7 @@ pub fn MultibodyJointSet3::get_unknown_gen(
       if self.rb2mb.get_gen(id) is Some(generation) {
         Some(
           (
-            Multibody3::{ inner: multibody },
+            { inner: multibody },
             LinkId::new(link.id),
             MultibodyJointHandle::from_raw_parts(id, generation),
           ),
@@ -1521,7 +1513,7 @@ pub fn MultibodyJointSet3::joint_between(
         Some(
           (
             MultibodyJointHandle::new(rb_handle_index(body1)),
-            Multibody3::{ inner: multibody },
+            { inner: multibody },
             child1,
           ),
         )
@@ -1529,7 +1521,7 @@ pub fn MultibodyJointSet3::joint_between(
         Some(
           (
             MultibodyJointHandle::new(rb_handle_index(body2)),
-            Multibody3::{ inner: multibody },
+            { inner: multibody },
             child2,
           ),
         )
@@ -1625,7 +1617,7 @@ pub fn MultibodyJointSet3::iter(
           (
             MultibodyJointHandle::new(joint_handle),
             link,
-            Multibody3::{ inner: multibody },
+            { inner: multibody },
             multibody.links[link.id],
           ),
         )
@@ -1810,7 +1802,7 @@ fn mb3_update_ndofs_with_root(
   }
   let root = multibody.links[0]
   let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
-    !(body.body_type is RigidBodyType::Fixed)
+    !(body.body_type is Fixed)
   } else {
     true
   }
@@ -2504,7 +2496,7 @@ fn mb3_update_ndofs_with_root_real(
   }
   let root = multibody.links[0]
   let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
-    !(body.body_type() is RigidBodyType::Fixed)
+    !(body.body_type() is Fixed)
   } else {
     true
   }
@@ -2843,7 +2835,7 @@ pub fn MultibodyJointSet3DReal::get(
   handle : MultibodyJointHandle,
 ) -> (Multibody3DReal, LinkId)? {
   if self.inner.get(handle) is Some((multibody, link)) {
-    Some((Multibody3DReal::{ inner: multibody.inner }, link))
+    Some(({ inner: multibody.inner }, link))
   } else {
     None
   }
@@ -2855,7 +2847,7 @@ pub fn MultibodyJointSet3DReal::get_mut(
   handle : MultibodyJointHandle,
 ) -> (Multibody3DReal, LinkId)? {
   if self.inner.get_mut(handle) is Some((multibody, link)) {
-    Some((Multibody3DReal::{ inner: multibody.inner }, link))
+    Some(({ inner: multibody.inner }, link))
   } else {
     None
   }
@@ -2893,7 +2885,7 @@ pub fn MultibodyJointSet3DReal::get_multibody(
   index : MultibodyIndex,
 ) -> Multibody3DReal? {
   if self.inner.get_multibody(index) is Some(multibody) {
-    Some(Multibody3DReal::{ inner: multibody.inner })
+    Some({ inner: multibody.inner })
   } else {
     None
   }
@@ -2905,7 +2897,7 @@ pub fn MultibodyJointSet3DReal::get_multibody_mut(
   index : MultibodyIndex,
 ) -> Multibody3DReal? {
   if self.inner.get_multibody_mut(index) is Some(multibody) {
-    Some(Multibody3DReal::{ inner: multibody.inner })
+    Some({ inner: multibody.inner })
   } else {
     None
   }
@@ -2918,7 +2910,7 @@ pub fn MultibodyJointSet3DReal::multibodies(
   let result : Array[Multibody3DReal] = []
   let items = self.inner.multibodies()
   for i in 0..<items.length() {
-    result.push(Multibody3DReal::{ inner: items[i].inner })
+    result.push({ inner: items[i].inner })
   }
   result
 }
@@ -2929,7 +2921,7 @@ pub fn MultibodyJointSet3DReal::get_unknown_gen(
   id : Int,
 ) -> (Multibody3DReal, LinkId, MultibodyJointHandle)? {
   if self.inner.get_unknown_gen(id) is Some((multibody, link, handle)) {
-    Some((Multibody3DReal::{ inner: multibody.inner }, link, handle))
+    Some(({ inner: multibody.inner }, link, handle))
   } else {
     None
   }
@@ -2942,7 +2934,7 @@ pub fn MultibodyJointSet3DReal::joint_between(
   body2 : RigidBodyHandle,
 ) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)? {
   if self.inner.joint_between(body1, body2) is Some((handle, multibody, link)) {
-    Some((handle, Multibody3DReal::{ inner: multibody.inner }, link))
+    Some((handle, { inner: multibody.inner }, link))
   } else {
     None
   }
@@ -2984,9 +2976,7 @@ pub fn MultibodyJointSet3DReal::iter(
   let items = self.inner.iter()
   for i in 0..<items.length() {
     let (handle, link_id, multibody, link) = items[i]
-    result.push(
-      (handle, link_id, Multibody3DReal::{ inner: multibody.inner }, link),
-    )
+    result.push((handle, link_id, { inner: multibody.inner }, link))
   }
   result
 }

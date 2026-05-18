@@ -28,7 +28,7 @@ pub fn CCDSolver::clamp_motions(
   impacts : @dynamics.PredictedImpacts,
 ) -> Unit {
   self |> ignore
-  if impacts is @dynamics.PredictedImpacts::Impacts(tois) {
+  if impacts is Impacts(tois) {
     for i in 0..<tois.length() {
       let pair = tois[i]
       let handle = pair.0
@@ -112,14 +112,14 @@ fn predicted_body_position_for_first_impact(
   dt : @core.Real,
 ) -> @core.Isometry2 {
   match body.body_type() {
-    @dynamics.RigidBodyType::Dynamic =>
+    Dynamic =>
       @dynamics.RigidBodyPosition::new(body.position(), body.next_position()).integrate_forces_and_velocities(
         dt,
         body.forces(),
         body.vels(),
         body.mass_props(),
       )
-    @dynamics.RigidBodyType::KinematicVelocityBased =>
+    KinematicVelocityBased =>
       body.vels().integrate(dt, body.position(), body.center_of_mass())
     _ => body.next_position()
   }
@@ -172,7 +172,7 @@ pub fn CCDSolver::predict_impacts_at_next_positions(
   self |> ignore
   narrow_phase |> ignore
   if dt <= 0.0F {
-    return @dynamics.PredictedImpacts::NoImpacts
+    return NoImpacts
   }
   let impacts : Array[(@dynamics.RigidBodyHandle, @core.Real)] = []
   let active = islands.active_bodies()
@@ -216,9 +216,9 @@ pub fn CCDSolver::predict_impacts_at_next_positions(
     }
   }
   if impacts.length() == 0 {
-    @dynamics.PredictedImpacts::NoImpacts
+    NoImpacts
   } else {
-    @dynamics.PredictedImpacts::Impacts(impacts)
+    Impacts(impacts)
   }
 }
 

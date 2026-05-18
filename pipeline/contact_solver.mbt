@@ -85,10 +85,10 @@ fn feature_id_equals(
   b : @collision.FeatureId,
 ) -> Bool {
   match (a, b) {
-    (@collision.FeatureId::Unknown, @collision.FeatureId::Unknown) => true
-    (@collision.FeatureId::Vertex(i), @collision.FeatureId::Vertex(j)) => i == j
-    (@collision.FeatureId::Edge(i), @collision.FeatureId::Edge(j)) => i == j
-    (@collision.FeatureId::Face(i), @collision.FeatureId::Face(j)) => i == j
+    (Unknown, Unknown) => true
+    (Vertex(i), Vertex(j)) => i == j
+    (Edge(i), Edge(j)) => i == j
+    (Face(i), Face(j)) => i == j
     _ => false
   }
 }
@@ -305,10 +305,10 @@ fn build_constraints(
       let contact_manifolds = pair.2.manifolds()
       for mi in 0..<contact_manifolds.length() {
         let manifold = contact_manifolds[mi]
-        let has_segment = c1.shape() is @collision.Shape::Segment(_, _) ||
-          c2.shape() is @collision.Shape::Segment(_, _) ||
-          c1.shape() is @collision.Shape::Polyline(_, _) ||
-          c2.shape() is @collision.Shape::Polyline(_, _)
+        let has_segment = c1.shape() is Segment(_, _) ||
+          c2.shape() is Segment(_, _) ||
+          c1.shape() is Polyline(_, _) ||
+          c2.shape() is Polyline(_, _)
         // Rapier: dir1 = -manifold.normal (normal points from collider1 to collider2).
         // When we have an MTV from `separation_vector`, use it to recover a robust direction.
         let dir1_from_manifold = normalize_or_fallback(
@@ -461,7 +461,7 @@ fn build_constraints(
           // explicit position corrections; a full split-impulse solver would be ideal, but this
           // balance avoids the high-mass-ratio "launch" instability while still resolving overlaps.
           let rhs_bias = rhs_bias0 * 0.2F
-          constraints.push(SolverConstraint::{
+          constraints.push({
             collider1: h1,
             collider2: h2,
             fid1,
@@ -539,7 +539,7 @@ fn build_constraints(
         }
         let len = constraints.length() - start
         if len > 0 {
-          solver_manifolds.push(SolverManifold::{ start, len })
+          solver_manifolds.push({ start, len })
         }
       }
     }
@@ -1342,22 +1342,20 @@ fn position_correction(
     let mut has_segment = false
     if colliders.get(c0.collider1) is Some(co1) {
       has_segment = has_segment ||
-        co1.shape() is @collision.Shape::Segment(_, _) ||
-        co1.shape() is @collision.Shape::Polyline(_, _)
+        co1.shape() is Segment(_, _) ||
+        co1.shape() is Polyline(_, _)
     }
     if colliders.get(c0.collider2) is Some(co2) {
       has_segment = has_segment ||
-        co2.shape() is @collision.Shape::Segment(_, _) ||
-        co2.shape() is @collision.Shape::Polyline(_, _)
+        co2.shape() is Segment(_, _) ||
+        co2.shape() is Polyline(_, _)
     }
     let mut has_convex = false
     if colliders.get(c0.collider1) is Some(co1) {
-      has_convex = has_convex ||
-        co1.shape() is @collision.Shape::ConvexPolygon(_)
+      has_convex = has_convex || co1.shape() is ConvexPolygon(_)
     }
     if colliders.get(c0.collider2) is Some(co2) {
-      has_convex = has_convex ||
-        co2.shape() is @collision.Shape::ConvexPolygon(_)
+      has_convex = has_convex || co2.shape() is ConvexPolygon(_)
     }
     if has_segment {
       for j in 0..<m.len {
@@ -1523,17 +1521,11 @@ fn position_correction_all(
     let c0 = constraints[m.start]
     // Segment penetrations are handled by `position_correction` (stronger depenetration).
     if colliders.get(c0.collider1) is Some(co1) &&
-      (
-        co1.shape() is @collision.Shape::Segment(_, _) ||
-        co1.shape() is @collision.Shape::Polyline(_, _)
-      ) {
+      (co1.shape() is Segment(_, _) || co1.shape() is Polyline(_, _)) {
       continue
     }
     if colliders.get(c0.collider2) is Some(co2) &&
-      (
-        co2.shape() is @collision.Shape::Segment(_, _) ||
-        co2.shape() is @collision.Shape::Polyline(_, _)
-      ) {
+      (co2.shape() is Segment(_, _) || co2.shape() is Polyline(_, _)) {
       continue
     }
     let mut dist_min = c0.dist
@@ -1701,7 +1693,7 @@ fn append_cache_entries(
 ) -> Unit {
   for i in 0..<constraints.length() {
     let c = constraints[i]
-    cache.push(ContactImpulseCacheEntry::{
+    cache.push({
       collider1: c.collider1,
       collider2: c.collider2,
       fid1: c.fid1,

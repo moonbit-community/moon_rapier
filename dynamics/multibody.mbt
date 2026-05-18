@@ -317,7 +317,7 @@ pub struct LinkId {
 
 ///|
 fn LinkId::new(value : Int) -> LinkId {
-  LinkId::{ value, }
+  { value, }
 }
 
 ///|
@@ -688,7 +688,7 @@ fn Multibody::update_ndofs_with_root(
   }
   let root = self.links[0]
   let is_dynamic = if bodies.get(root.rigid_body) is Some(body) {
-    !(body.body_type is RigidBodyType::Fixed)
+    !(body.body_type is Fixed)
   } else {
     true
   }
@@ -1351,7 +1351,7 @@ struct MultibodyJointHandle {
 
 ///|
 fn MultibodyJointHandle::new(index : @data.Index) -> MultibodyJointHandle {
-  MultibodyJointHandle::{ index, }
+  { index, }
 }
 
 ///|
@@ -1388,7 +1388,7 @@ struct MultibodyIndex {
 
 ///|
 fn MultibodyIndex::new(index : @data.Index) -> MultibodyIndex {
-  MultibodyIndex::{ index, }
+  { index, }
 }
 
 ///|
@@ -1702,7 +1702,7 @@ fn MultibodyJointSet::insert_graph_edge(
   let node1 = self.ensure_graph_node(parent)
   let node2 = self.ensure_graph_node(child)
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push(MultibodyGraphEdge::{ node1, node2, parent, child })
+  self.graph_edges.push({ node1, node2, parent, child })
   self.adjacency[node1].push(edge_id)
   self.adjacency[node2].push(edge_id)
 }
@@ -1766,7 +1766,7 @@ fn MultibodyJointSet::remove_graph_node(
         continue
       }
       let edge = self.graph_edges[edge_id]
-      self.graph_edges[edge_id] = MultibodyGraphEdge::{
+      self.graph_edges[edge_id] = {
         node1: if edge.node1 == last_index {
           node_id
         } else {
@@ -1856,9 +1856,9 @@ fn mb_parse_bool_value(text : String) -> Bool {
 ///|
 fn mb_motor_model_from_int(value : Int) -> MotorModel {
   if value == 1 {
-    MotorModel::ForceBased
+    ForceBased
   } else {
-    MotorModel::AccelerationBased
+    AccelerationBased
   }
 }
 
@@ -1909,7 +1909,7 @@ fn parse_link(text : String) -> MultibodyLink? {
       joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
       joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
       let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
-      return Some(MultibodyLink::{
+      return Some({
         internal_id: 0,
         parent_internal_id: parent_id,
         assembly_id: 0,
@@ -1996,7 +1996,7 @@ fn parse_link(text : String) -> MultibodyLink? {
     joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
     joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
     let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
-    Some(MultibodyLink::{
+    Some({
       internal_id: 0,
       parent_internal_id: parent_id,
       assembly_id: 0,
@@ -2211,7 +2211,7 @@ pub fn MultibodyJointSet::revolute_joint_descriptors(
       } else {
         -1
       }
-      result.push(MultibodyRevoluteJointDesc::{
+      result.push({
         link: MultibodyLinkId::new(graph_id, mb_index, link_id),
         parent: parent_link.rigid_body,
         child: link.rigid_body,
@@ -2238,7 +2238,7 @@ pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(
     let lnk = mb.links[link.id]
     lnk.joint.solver_lin_impulses = lin_impulses
     let motors = lnk.joint.data.motors
-    lnk.joint.data.motors = JointMotors3::{
+    lnk.joint.data.motors = {
       lin_x: motors.lin_x,
       lin_y: motors.lin_y,
       lin_z: motors.lin_z,
@@ -2247,7 +2247,7 @@ pub fn MultibodyJointSet::set_revolute_joint_solver_impulses(
       ang_z: motors.ang_z.set_impulse(motor_impulse),
     }
     let limits = lnk.joint.data.limits
-    lnk.joint.data.limits = JointLimits3::{
+    lnk.joint.data.limits = {
       lin_x: limits.lin_x,
       lin_y: limits.lin_y,
       lin_z: limits.lin_z,

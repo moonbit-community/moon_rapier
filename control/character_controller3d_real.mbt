@@ -268,8 +268,8 @@ fn cc3d_real_character_length_eval(
   reference : @core.Real,
 ) -> @core.Real {
   match length {
-    CharacterLength::Relative(value) => value * reference
-    CharacterLength::Absolute(value) => value
+    Relative(value) => value * reference
+    Absolute(value) => value
   }
 }
 
@@ -735,7 +735,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
         position.translation.add(result_translation),
         position.rotation,
       )
-      handle_collision(CharacterCollision3DReal::{
+      handle_collision({
         handle: hit.0,
         hit: hit.1,
         translation_applied: result_translation,

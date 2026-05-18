@@ -21,7 +21,7 @@ pub(all) enum CollisionEvent3D {
 ///|
 pub fn CollisionEvent3D::started(self : CollisionEvent3D) -> Bool {
   match self {
-    CollisionEvent3D::Started(_, _, _) => true
+    Started(_, _, _) => true
     _ => false
   }
 }
@@ -29,7 +29,7 @@ pub fn CollisionEvent3D::started(self : CollisionEvent3D) -> Bool {
 ///|
 pub fn CollisionEvent3D::stopped(self : CollisionEvent3D) -> Bool {
   match self {
-    CollisionEvent3D::Stopped(_, _, _) => true
+    Stopped(_, _, _) => true
     _ => false
   }
 }
@@ -37,36 +37,32 @@ pub fn CollisionEvent3D::stopped(self : CollisionEvent3D) -> Bool {
 ///|
 pub fn CollisionEvent3D::collider1(self : CollisionEvent3D) -> ColliderHandle3D {
   match self {
-    CollisionEvent3D::Started(h, _, _) => h
-    CollisionEvent3D::Stopped(h, _, _) => h
+    Started(h, _, _) => h
+    Stopped(h, _, _) => h
   }
 }
 
 ///|
 pub fn CollisionEvent3D::collider2(self : CollisionEvent3D) -> ColliderHandle3D {
   match self {
-    CollisionEvent3D::Started(_, h, _) => h
-    CollisionEvent3D::Stopped(_, h, _) => h
+    Started(_, h, _) => h
+    Stopped(_, h, _) => h
   }
 }
 
 ///|
 pub fn CollisionEvent3D::sensor(self : CollisionEvent3D) -> Bool {
   match self {
-    CollisionEvent3D::Started(_, _, flags) =>
-      flags.contains(CollisionEventFlags::sensor())
-    CollisionEvent3D::Stopped(_, _, flags) =>
-      flags.contains(CollisionEventFlags::sensor())
+    Started(_, _, flags) => flags.contains(CollisionEventFlags::sensor())
+    Stopped(_, _, flags) => flags.contains(CollisionEventFlags::sensor())
   }
 }
 
 ///|
 pub fn CollisionEvent3D::removed(self : CollisionEvent3D) -> Bool {
   match self {
-    CollisionEvent3D::Started(_, _, flags) =>
-      flags.contains(CollisionEventFlags::removed())
-    CollisionEvent3D::Stopped(_, _, flags) =>
-      flags.contains(CollisionEventFlags::removed())
+    Started(_, _, flags) => flags.contains(CollisionEventFlags::removed())
+    Stopped(_, _, flags) => flags.contains(CollisionEventFlags::removed())
   }
 }
 

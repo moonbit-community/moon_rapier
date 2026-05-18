@@ -35,7 +35,7 @@ pub fn RevoluteJoint3::new(axis : @core.Vec3) -> RevoluteJoint3 {
     @core.Vec3::new(1.0F, 0.0F, 0.0F),
     axis_n,
   )
-  RevoluteJoint3::{
+  {
     axis: axis_n,
     local_frame1_rotation: joint_frame,
     local_frame2_rotation: joint_frame,

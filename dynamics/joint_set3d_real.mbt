@@ -74,12 +74,12 @@ pub struct GenericJoint3DReal {
 ///|
 fn generic_joint_axis_from_index(index : Int) -> JointAxis {
   match index {
-    0 => JointAxis::LinX
-    1 => JointAxis::LinY
-    2 => JointAxis::LinZ
-    3 => JointAxis::AngX
-    4 => JointAxis::AngY
-    _ => JointAxis::AngZ
+    0 => LinX
+    1 => LinY
+    2 => LinZ
+    3 => AngX
+    4 => AngY
+    _ => AngZ
   }
 }
 
@@ -96,12 +96,12 @@ fn axis_state_from_generic_joint(
   let axis = generic_joint_axis_from_index(index)
   let mask = generic_joint_mask_from_index(index)
   if joint.locked_axes().contains(mask) {
-    AxisState3DReal::Locked
+    Locked
   } else if joint.limit_axes().contains(mask) {
     let limits = joint_limits_for_axis(joint.limits(), axis)
-    AxisState3DReal::Limited(limits.min(), limits.max())
+    Limited(limits.min(), limits.max())
   } else {
-    AxisState3DReal::Free
+    Free
   }
 }
 
@@ -113,18 +113,13 @@ fn motor_state_from_generic_joint(
   let axis = generic_joint_axis_from_index(index)
   let mask = generic_joint_mask_from_index(index)
   if !joint.motor_axes().contains(mask) {
-    return MotorState3DReal::Disabled
+    return Disabled
   }
   let motor = joint_motor_for_axis(joint.motors(), axis)
   if motor.stiffness != 0.0F || motor.target_pos != 0.0F {
-    MotorState3DReal::Position(
-      motor.target_pos,
-      motor.stiffness,
-      motor.damping,
-      motor.max_force,
-    )
+    Position(motor.target_pos, motor.stiffness, motor.damping, motor.max_force)
   } else {
-    MotorState3DReal::Velocity(motor.target_vel, motor.damping, motor.max_force)
+    Velocity(motor.target_vel, motor.damping, motor.max_force)
   }
 }
 
@@ -136,7 +131,7 @@ pub fn GenericJoint::to_3d_real(self : GenericJoint) -> GenericJoint3DReal {
     axis_states.push(axis_state_from_generic_joint(self, index))
     motors.push(motor_state_from_generic_joint(self, index))
   }
-  GenericJoint3DReal::{
+  {
     local_frame1: self.local_frame1_3(),
     local_frame2: self.local_frame2_3(),
     axis_states,
@@ -159,13 +154,12 @@ pub fn GenericJoint::from_3d_real(joint : GenericJoint3DReal) -> GenericJoint {
     let state = if index < joint.axis_states.length() {
       joint.axis_states[index]
     } else {
-      AxisState3DReal::Free
+      Free
     }
     match state {
-      AxisState3DReal::Free => ()
-      AxisState3DReal::Locked =>
-        out = out.set_locked_axes(out.locked_axes().or(mask))
-      AxisState3DReal::Limited(min, max) =>
+      Free => ()
+      Locked => out = out.set_locked_axes(out.locked_axes().or(mask))
+      Limited(min, max) =>
         out = out
           .set_limit_axes(out.limit_axes().or(mask))
           .set_limits_axis(axis, min, max)
@@ -173,15 +167,15 @@ pub fn GenericJoint::from_3d_real(joint : GenericJoint3DReal) -> GenericJoint {
     let motor = if index < joint.motors.length() {
       joint.motors[index]
     } else {
-      MotorState3DReal::Disabled
+      Disabled
     }
     match motor {
-      MotorState3DReal::Disabled => ()
-      MotorState3DReal::Velocity(target_vel, damping, max_force) =>
+      Disabled => ()
+      Velocity(target_vel, damping, max_force) =>
         out = out
           .set_motor_velocity(axis, target_vel, damping)
           .set_motor_max_force(axis, max_force)
-      MotorState3DReal::Position(target_pos, stiffness, damping, max_force) =>
+      Position(target_pos, stiffness, damping, max_force) =>
         out = out
           .set_motor_position(axis, target_pos, stiffness, damping)
           .set_motor_max_force(axis, max_force)
@@ -448,9 +442,7 @@ pub fn JointSet3DReal::set_motor_position(
     return
   }
   let j = self.generic[idx]
-  j.data.motors[i] = MotorState3DReal::Position(
-    target_pos, stiffness, damping, max_force,
-  )
+  j.data.motors[i] = Position(target_pos, stiffness, damping, max_force)
   self.generic[idx] = j
 }
 
@@ -469,7 +461,7 @@ pub fn JointSet3DReal::set_motor_velocity(
     return
   }
   let j = self.generic[idx]
-  j.data.motors[i] = MotorState3DReal::Velocity(target_vel, damping, max_force)
+  j.data.motors[i] = Velocity(target_vel, damping, max_force)
   self.generic[idx] = j
 }
 
@@ -1257,7 +1249,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
           let comp = axis_value_from_vec3(diff_local, axis_i)
           let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
           match state {
-            AxisState3DReal::Locked =>
+            Locked =>
               lock_impulses[axis_i] = solve_row_impulse3(
                 rb1,
                 rb2,
@@ -1271,7 +1263,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
                 JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
                 lock_impulses[axis_i],
               )
-            AxisState3DReal::Limited(min, max) =>
+            Limited(min, max) =>
               if comp < min - 1.0e-6F {
                 limit_impulses[axis_i] = solve_row_impulse3(
                   rb1,
@@ -1303,12 +1295,12 @@ pub fn JointSet3DReal::solve_with_island_stamp(
               } else {
                 limit_impulses[axis_i] = 0.0F
               }
-            AxisState3DReal::Free => lock_impulses[axis_i] = 0.0F
+            Free => lock_impulses[axis_i] = 0.0F
           }
 
           match gj.data.motors[axis_i] {
-            MotorState3DReal::Disabled => motor_impulses[axis_i] = 0.0F
-            MotorState3DReal::Position(target, stiffness, damping, max_force) => {
+            Disabled => motor_impulses[axis_i] = 0.0F
+            Position(target, stiffness, damping, max_force) => {
               let err = comp - target
               let stiffness_scale = clamp_real(stiffness * 0.01F, 0.0F, 1.0F)
               let damping_scale = clamp_real(damping * 0.01F, 0.0F, 1.0F)
@@ -1335,7 +1327,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
                 motor_impulses[axis_i],
               )
             }
-            MotorState3DReal::Velocity(target_vel, damping, max_force) => {
+            Velocity(target_vel, damping, max_force) => {
               let max_impulse = if max_force > 0.0F {
                 max_force * dt
               } else {
@@ -1367,7 +1359,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
           let comp = axis_value_from_vec3(ang_local, axis_i)
           let axis_w = rot1.rotate_vec3(axis_unit(axis_i))
           match state {
-            AxisState3DReal::Locked =>
+            Locked =>
               lock_impulses[idx] = solve_row_impulse3(
                 rb1,
                 rb2,
@@ -1381,7 +1373,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
                 JOINT_SOLVER_MAX_IMPULSE_3D_REAL,
                 lock_impulses[idx],
               )
-            AxisState3DReal::Limited(min, max) =>
+            Limited(min, max) =>
               if comp < min - 1.0e-6F {
                 limit_impulses[idx] = solve_row_impulse3(
                   rb1,
@@ -1413,11 +1405,11 @@ pub fn JointSet3DReal::solve_with_island_stamp(
               } else {
                 limit_impulses[idx] = 0.0F
               }
-            AxisState3DReal::Free => lock_impulses[idx] = 0.0F
+            Free => lock_impulses[idx] = 0.0F
           }
           match gj.data.motors[idx] {
-            MotorState3DReal::Disabled => motor_impulses[idx] = 0.0F
-            MotorState3DReal::Position(target, stiffness, damping, max_force) => {
+            Disabled => motor_impulses[idx] = 0.0F
+            Position(target, stiffness, damping, max_force) => {
               let diff = shortest_angle_diff(comp, target)
               let stiffness_scale = clamp_real(stiffness * 0.01F, 0.0F, 1.0F)
               let damping_scale = clamp_real(damping * 0.01F, 0.0F, 1.0F)
@@ -1444,7 +1436,7 @@ pub fn JointSet3DReal::solve_with_island_stamp(
                 motor_impulses[idx],
               )
             }
-            MotorState3DReal::Velocity(target_vel, damping, max_force) => {
+            Velocity(target_vel, damping, max_force) => {
               let max_impulse = if max_force > 0.0F {
                 max_force * dt
               } else {

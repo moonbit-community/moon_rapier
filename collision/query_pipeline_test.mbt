@@ -214,7 +214,7 @@ test "query pipeline cast_shape ball hits ball" {
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(1.0F),
+      Ball(1.0F),
       options,
     )
     is Some(hit) {
@@ -262,7 +262,7 @@ test "query pipeline cast_shape ball hits rotated cuboid" {
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options,
     )
     is Some(hit) {
@@ -323,14 +323,14 @@ test "query pipeline filter collision groups" {
   let groups = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let collider = ColliderBuilder::ball(1.0F).collision_groups(groups).build()
   colliders.insert_with_parent(collider, h1, bodies) |> ignore
   let filter_groups = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let filter = QueryFilter::new().groups(filter_groups)
   let broad_phase = BroadPhaseBvh::new()
@@ -432,7 +432,7 @@ test "query pipeline cast_shape capsule hits ball" {
       colliders,
       shape_pos,
       vel,
-      Shape::CapsuleY(1.0F, 0.5F),
+      CapsuleY(1.0F, 0.5F),
       options,
     )
     is Some(hit) {
@@ -506,7 +506,7 @@ test "query pipeline cast_shape ball hits segment (core)" {
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options,
     )
     is Some(hit) {
@@ -549,7 +549,7 @@ test "query pipeline cast_shape ball hits segment endpoint (rounded caps)" {
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(1.0F),
+      Ball(1.0F),
       options,
     )
     is Some(hit) {
@@ -596,7 +596,7 @@ test "query pipeline cast_shape cuboid hits segment with target_distance" {
       colliders,
       shape_pos,
       vel,
-      Shape::Cuboid(1.0F, 1.0F),
+      Cuboid(1.0F, 1.0F),
       options,
     )
     is Some(hit) {
@@ -640,7 +640,7 @@ test "query pipeline cast_shape capsule_y hits segment with target_distance" {
       colliders,
       shape_pos,
       vel,
-      Shape::CapsuleY(1.0F, 0.5F),
+      CapsuleY(1.0F, 0.5F),
       options,
     )
     is Some(hit) {
@@ -681,7 +681,7 @@ test "query pipeline cast_shape target_distance applies to non-segment shapes (b
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(1.0F),
+      Ball(1.0F),
       options,
     )
     is Some(hit) {
@@ -722,7 +722,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(1.0F),
+      Ball(1.0F),
       options,
     )
     is None,
@@ -736,7 +736,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(1.0F),
+      Ball(1.0F),
       options2,
     )
     is Some(_),
@@ -770,7 +770,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options,
     )
     is None,
@@ -783,7 +783,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options2,
     )
     is Some(_),
@@ -820,7 +820,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options,
     )
     is None,
@@ -833,7 +833,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
       colliders,
       shape_pos,
       vel,
-      Shape::Ball(0.5F),
+      Ball(0.5F),
       options2,
     )
     is Some(_),
@@ -970,7 +970,7 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
     inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
     inspect(@core.abs(hit.1.point().y - 0.25F) < 1.0e-4F, content="true")
     match hit.2 {
-      FeatureId::Edge(id) => inspect(id == 0, content="true")
+      Edge(id) => inspect(id == 0, content="true")
       _ => inspect(false, content="true")
     }
   } else {
@@ -990,7 +990,7 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
     inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
     inspect(@core.abs(hit.1.point().y - 1.0F) < 1.0e-4F, content="true")
     match hit.2 {
-      FeatureId::Vertex(id) => inspect(id == 0, content="true")
+      Vertex(id) => inspect(id == 0, content="true")
       _ => inspect(false, content="true")
     }
   } else {
@@ -1028,7 +1028,7 @@ test "query pipeline project_point_and_get_feature segment endpoint" {
     inspect(@core.abs(hit.1.point().x - 1.0F) < 1.0e-4F, content="true")
     inspect(@core.abs(hit.1.point().y) < 1.0e-4F, content="true")
     match hit.2 {
-      FeatureId::Vertex(id) => inspect(id == 1, content="true")
+      Vertex(id) => inspect(id == 1, content="true")
       _ => inspect(false, content="true")
     }
   } else {
@@ -1287,7 +1287,7 @@ test "query pipeline intersect_shape ball intersects cuboid" {
     bodies,
     colliders,
     shape_pos,
-    Shape::Ball(0.5F),
+    Ball(0.5F),
   )
   if hits.length() == 1 {
     inspect(ColliderHandle::equals(hits[0], handle), content="true")
@@ -1319,7 +1319,7 @@ test "query pipeline intersect_shape uses query rotation" {
     bodies,
     colliders,
     shape_pos,
-    Shape::Cuboid(0.2F, 1.0F),
+    Cuboid(0.2F, 1.0F),
   )
   if hits.length() == 1 {
     inspect(ColliderHandle::equals(hits[0], handle), content="true")
@@ -1355,7 +1355,7 @@ test "query pipeline intersect_shape respects exclude_sensors filter" {
     bodies,
     colliders,
     shape_pos,
-    Shape::Ball(0.5F),
+    Ball(0.5F),
   )
   if hits.length() == 1 {
     inspect(ColliderHandle::equals(hits[0], solid), content="true")
@@ -1392,7 +1392,7 @@ test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
       bodies,
       colliders,
       motion,
-      Shape::Cuboid(2.0F, 0.2F),
+      Cuboid(2.0F, 0.2F),
       0.0F,
       1.0F,
       true,

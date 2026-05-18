@@ -438,29 +438,26 @@ fn separation_vector(
     r2 : @core.Real,
   ) -> @core.Vec2? {
     match (s1, s2) {
-      (@collision.Shape::Ball(br1), @collision.Shape::Ball(br2)) =>
-        separation_ball_ball(p1, br1, p2, br2)
-      (@collision.Shape::Cuboid(hw1, hh1), @collision.Shape::Cuboid(hw2, hh2)) =>
+      (Ball(br1), Ball(br2)) => separation_ball_ball(p1, br1, p2, br2)
+      (Cuboid(hw1, hh1), Cuboid(hw2, hh2)) =>
         separation_cuboid_cuboid(p1, r1, hw1, hh1, p2, r2, hw2, hh2)
-      (@collision.Shape::Ball(r), @collision.Shape::Cuboid(hw, hh)) =>
-        separation_ball_cuboid(p1, r, p2, r2, hw, hh)
-      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Ball(r)) =>
+      (Ball(r), Cuboid(hw, hh)) => separation_ball_cuboid(p1, r, p2, r2, hw, hh)
+      (Cuboid(hw, hh), Ball(r)) =>
         if separation_ball_cuboid(p2, r, p1, r1, hw, hh) is Some(sep) {
           Some(@core.Vec2::new(-sep.x, -sep.y))
         } else {
           None
         }
-      (@collision.Shape::Ball(r), @collision.Shape::Segment(a, b)) =>
-        separation_ball_segment(p1, r, p2, r2, a, b)
-      (@collision.Shape::Segment(a, b), @collision.Shape::Ball(r)) =>
+      (Ball(r), Segment(a, b)) => separation_ball_segment(p1, r, p2, r2, a, b)
+      (Segment(a, b), Ball(r)) =>
         if separation_ball_segment(p2, r, p1, r1, a, b) is Some(sep) {
           Some(@core.Vec2::new(-sep.x, -sep.y))
         } else {
           None
         }
-      (@collision.Shape::Cuboid(hw, hh), @collision.Shape::Segment(a, b)) =>
+      (Cuboid(hw, hh), Segment(a, b)) =>
         separation_cuboid_segment(p1, r1, hw, hh, p2, r2, a, b)
-      (@collision.Shape::Segment(a, b), @collision.Shape::Cuboid(hw, hh)) =>
+      (Segment(a, b), Cuboid(hw, hh)) =>
         if separation_cuboid_segment(p2, r2, hw, hh, p1, r1, a, b) is Some(sep) {
           Some(@core.Vec2::new(-sep.x, -sep.y))
         } else {
@@ -476,26 +473,26 @@ fn separation_vector(
     rotation : @core.Real,
   ) -> Array[(@collision.Shape, @core.Vec2, @core.Real)] {
     match s {
-      @collision.Shape::CapsuleX(half_height, radius) => {
+      CapsuleX(half_height, radius) => {
         let rot = @core.Rot2::from_angle(rotation)
         let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
         let a = center.add(offset)
         let b = center.sub(offset)
         [
-          (@collision.Shape::Ball(radius), a, 0.0F),
-          (@collision.Shape::Ball(radius), b, 0.0F),
-          (@collision.Shape::Cuboid(half_height, radius), center, rotation),
+          (Ball(radius), a, 0.0F),
+          (Ball(radius), b, 0.0F),
+          (Cuboid(half_height, radius), center, rotation),
         ]
       }
-      @collision.Shape::CapsuleY(half_height, radius) => {
+      CapsuleY(half_height, radius) => {
         let rot = @core.Rot2::from_angle(rotation)
         let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
         let a = center.add(offset)
         let b = center.sub(offset)
         [
-          (@collision.Shape::Ball(radius), a, 0.0F),
-          (@collision.Shape::Ball(radius), b, 0.0F),
-          (@collision.Shape::Cuboid(radius, half_height), center, rotation),
+          (Ball(radius), a, 0.0F),
+          (Ball(radius), b, 0.0F),
+          (Cuboid(radius, half_height), center, rotation),
         ]
       }
       _ => []
@@ -561,7 +558,7 @@ fn separation_vector(
       best = best_sep(
         best,
         separation_vector(
-          @collision.Shape::Segment(a, b),
+          Segment(a, b),
           poly_pos,
           poly_rot,
           other,
@@ -593,7 +590,7 @@ fn separation_vector(
           other,
           other_pos,
           other_rot,
-          @collision.Shape::Segment(a, b),
+          Segment(a, b),
           poly_pos,
           poly_rot,
         ),
@@ -603,30 +600,30 @@ fn separation_vector(
   }
 
   match (shape1, shape2) {
-    (@collision.Shape::Polyline(vertices, indices), other) =>
+    (Polyline(vertices, indices), other) =>
       separation_polyline_other(
         vertices, indices, pos1, rot1, other, pos2, rot2,
       )
-    (other, @collision.Shape::Polyline(vertices, indices)) =>
+    (other, Polyline(vertices, indices)) =>
       separation_other_polyline(
         other, pos1, rot1, vertices, indices, pos2, rot2,
       )
-    (@collision.Shape::Ball(_), @collision.Shape::Ball(_))
-    | (@collision.Shape::Ball(_), @collision.Shape::Cuboid(_, _))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Ball(_))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Cuboid(_, _))
-    | (@collision.Shape::Ball(_), @collision.Shape::Segment(_, _))
-    | (@collision.Shape::Segment(_, _), @collision.Shape::Ball(_))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::Segment(_, _))
-    | (@collision.Shape::Segment(_, _), @collision.Shape::Cuboid(_, _))
-    | (@collision.Shape::Segment(_, _), @collision.Shape::Segment(_, _)) =>
+    (Ball(_), Ball(_))
+    | (Ball(_), Cuboid(_, _))
+    | (Cuboid(_, _), Ball(_))
+    | (Cuboid(_, _), Cuboid(_, _))
+    | (Ball(_), Segment(_, _))
+    | (Segment(_, _), Ball(_))
+    | (Cuboid(_, _), Segment(_, _))
+    | (Segment(_, _), Cuboid(_, _))
+    | (Segment(_, _), Segment(_, _)) =>
       separation_basic(shape1, pos1, rot1, shape2, pos2, rot2)
-    (@collision.Shape::Ball(_), @collision.Shape::CapsuleX(_, _))
-    | (@collision.Shape::Ball(_), @collision.Shape::CapsuleY(_, _))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleX(_, _))
-    | (@collision.Shape::Cuboid(_, _), @collision.Shape::CapsuleY(_, _))
-    | (@collision.Shape::Segment(_, _), @collision.Shape::CapsuleX(_, _))
-    | (@collision.Shape::Segment(_, _), @collision.Shape::CapsuleY(_, _)) => {
+    (Ball(_), CapsuleX(_, _))
+    | (Ball(_), CapsuleY(_, _))
+    | (Cuboid(_, _), CapsuleX(_, _))
+    | (Cuboid(_, _), CapsuleY(_, _))
+    | (Segment(_, _), CapsuleX(_, _))
+    | (Segment(_, _), CapsuleY(_, _)) => {
       let comps2 = capsule_components(shape2, pos2, rot2)
       let mut best : @core.Vec2? = None
       for i in 0..<comps2.length() {
@@ -638,14 +635,13 @@ fn separation_vector(
       }
       best
     }
-    (@collision.Shape::CapsuleX(_, _), _)
-    | (@collision.Shape::CapsuleY(_, _), _) => {
+    (CapsuleX(_, _), _) | (CapsuleY(_, _), _) => {
       let comps1 = capsule_components(shape1, pos1, rot1)
       let mut best : @core.Vec2? = None
       for i in 0..<comps1.length() {
         let c1 = comps1[i]
         let cand = match shape2 {
-          @collision.Shape::CapsuleX(_, _) | @collision.Shape::CapsuleY(_, _) => {
+          CapsuleX(_, _) | CapsuleY(_, _) => {
             let comps2 = capsule_components(shape2, pos2, rot2)
             let mut best2 : @core.Vec2? = None
             for j in 0..<comps2.length() {
@@ -813,11 +809,10 @@ fn populate_contact_impulses_from_cache(
     b : @collision.FeatureId,
   ) -> Bool {
     match (a, b) {
-      (@collision.FeatureId::Unknown, @collision.FeatureId::Unknown) => true
-      (@collision.FeatureId::Vertex(i), @collision.FeatureId::Vertex(j)) =>
-        i == j
-      (@collision.FeatureId::Edge(i), @collision.FeatureId::Edge(j)) => i == j
-      (@collision.FeatureId::Face(i), @collision.FeatureId::Face(j)) => i == j
+      (Unknown, Unknown) => true
+      (Vertex(i), Vertex(j)) => i == j
+      (Edge(i), Edge(j)) => i == j
+      (Face(i), Face(j)) => i == j
       _ => false
     }
   }
@@ -1052,7 +1047,7 @@ fn PhysicsPipeline::emit_collision_events(
       event_handler.handle_collision_event(
         bodies,
         colliders,
-        @collision.CollisionEvent::Started(c.0, c.1, c.2),
+        Started(c.0, c.1, c.2),
       )
     }
   }
@@ -1066,7 +1061,7 @@ fn PhysicsPipeline::emit_collision_events(
       event_handler.handle_collision_event(
         bodies,
         colliders,
-        @collision.CollisionEvent::Stopped(p.0, p.1, flags),
+        Stopped(p.0, p.1, flags),
       )
     }
   }
@@ -1199,7 +1194,7 @@ pub fn PhysicsPipeline::step(
           if !body.enabled || body.is_sleeping() {
             continue
           }
-          if body.body_type is @dynamics.RigidBodyType::Dynamic {
+          if body.body_type is Dynamic {
             body.update_effective_force_and_torque(gravity) |> ignore
           }
         }
@@ -1249,9 +1244,8 @@ pub fn PhysicsPipeline::step(
           continue
         }
         match body.body_type {
-          @dynamics.RigidBodyType::Dynamic =>
-            body.update_effective_force_and_torque(gravity) |> ignore
-          @dynamics.RigidBodyType::KinematicPositionBased => {
+          Dynamic => body.update_effective_force_and_torque(gravity) |> ignore
+          KinematicPositionBased => {
             // Rapier parity: derive velocities from position -> next_position using the
             // current substep dt.
             let inv_dt = 1.0F / dt
@@ -1261,7 +1255,7 @@ pub fn PhysicsPipeline::step(
             ).interpolate_velocity(inv_dt, body.center_of_mass())
             body.set_kinematic_position_based_vels(derived_vels) |> ignore
           }
-          @dynamics.RigidBodyType::KinematicVelocityBased =>
+          KinematicVelocityBased =>
             // Velocity-based kinematics will be integrated into `next_position` after the solver.
             ()
           _ => ()

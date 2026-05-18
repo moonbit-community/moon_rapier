@@ -20,12 +20,12 @@ test "voxels_from_points merges adjacent voxels" {
     @core.Vec2::new(1.1F, 0.1F),
   ]
   let co = ColliderBuilder::voxels_from_points(@core.Vec2::new(1.0F, 1.0F), pts).build()
-  if co.shape() is Shape::Compound(parts) {
+  if co.shape() is Compound(parts) {
     inspect(parts.length(), content="1")
     let part = parts[0]
     inspect(part.0.translation.x, content="1")
     inspect(part.0.translation.y, content="0.5")
-    if part.1 is Shape::Cuboid(hx, hy) {
+    if part.1 is Cuboid(hx, hy) {
       inspect(hx, content="1")
       inspect(hy, content="0.5")
     } else {
@@ -46,7 +46,7 @@ test "voxelized_mesh SurfaceOnly produces voxels" {
     1.0F,
     FillMode::surface_only(),
   )
-  if shape is Shape::Compound(parts) {
+  if shape is Compound(parts) {
     inspect(parts.length() > 0, content="true")
   } else {
     inspect(false, content="true")

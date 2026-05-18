@@ -256,7 +256,7 @@ pub fn JointLimits::set_min(
   self : JointLimits,
   min : @core.Real,
 ) -> JointLimits {
-  JointLimits::{ min, max: self.max, impulse: self.impulse }
+  { min, max: self.max, impulse: self.impulse }
 }
 
 ///|
@@ -264,7 +264,7 @@ pub fn JointLimits::set_max(
   self : JointLimits,
   max : @core.Real,
 ) -> JointLimits {
-  JointLimits::{ min: self.min, max, impulse: self.impulse }
+  { min: self.min, max, impulse: self.impulse }
 }
 
 ///|
@@ -329,8 +329,8 @@ pub fn MotorModel::combine_coefficients(
   let erp_inv_dt = stiffness * inv(denom)
   let pgs_denom = dt * dt * stiffness + dt * damping
   match self {
-    MotorModel::AccelerationBased => (erp_inv_dt, inv(pgs_denom), 0.0F)
-    MotorModel::ForceBased => (erp_inv_dt, 0.0F, inv(pgs_denom))
+    AccelerationBased => (erp_inv_dt, inv(pgs_denom), 0.0F)
+    ForceBased => (erp_inv_dt, 0.0F, inv(pgs_denom))
   }
 }
 
@@ -354,7 +354,7 @@ pub fn JointMotor::default() -> JointMotor {
     damping: 0.0F,
     max_force: REAL_MAX,
     impulse: 0.0F,
-    model: MotorModel::AccelerationBased,
+    model: AccelerationBased,
   }
 }
 
@@ -363,7 +363,7 @@ pub fn JointMotor::set_target_pos(
   self : JointMotor,
   target_pos : @core.Real,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel: self.target_vel,
     target_pos,
     stiffness: self.stiffness,
@@ -379,7 +379,7 @@ pub fn JointMotor::set_target_vel(
   self : JointMotor,
   target_vel : @core.Real,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel,
     target_pos: self.target_pos,
     stiffness: self.stiffness,
@@ -395,7 +395,7 @@ pub fn JointMotor::set_stiffness(
   self : JointMotor,
   stiffness : @core.Real,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel: self.target_vel,
     target_pos: self.target_pos,
     stiffness,
@@ -411,7 +411,7 @@ pub fn JointMotor::set_damping(
   self : JointMotor,
   damping : @core.Real,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel: self.target_vel,
     target_pos: self.target_pos,
     stiffness: self.stiffness,
@@ -427,7 +427,7 @@ pub fn JointMotor::set_max_force(
   self : JointMotor,
   max_force : @core.Real,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel: self.target_vel,
     target_pos: self.target_pos,
     stiffness: self.stiffness,
@@ -443,7 +443,7 @@ pub fn JointMotor::set_model(
   self : JointMotor,
   model : MotorModel,
 ) -> JointMotor {
-  JointMotor::{
+  {
     target_vel: self.target_vel,
     target_pos: self.target_pos,
     stiffness: self.stiffness,

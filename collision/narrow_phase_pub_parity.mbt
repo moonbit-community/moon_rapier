@@ -222,8 +222,8 @@ pub fn ContactPair::find_deepest_contact(
     local_p1: @core.Vec2::zero(),
     local_p2: @core.Vec2::zero(),
     dist: 0.0F,
-    fid1: FeatureId::Unknown,
-    fid2: FeatureId::Unknown,
+    fid1: Unknown,
+    fid2: Unknown,
     data: ContactData::default(),
   }
   let mut best_dist = 0.0F

@@ -214,7 +214,7 @@ test "contact solver 3d uses combine rules for friction" {
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F)
     .friction(0.1F)
-    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
+    .friction_combine_rule(Max)
     .build(),
     ground,
     bodies,
@@ -229,7 +229,7 @@ test "contact solver 3d uses combine rules for friction" {
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::ball(0.5F)
     .friction(1.0F)
-    .friction_combine_rule(@dynamics.CoefficientCombineRule::Max)
+    .friction_combine_rule(Max)
     .build(),
     ball,
     bodies,

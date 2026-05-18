@@ -162,16 +162,14 @@ pub fn RigidBodyActivation3D::update(
   let sq_linvel = vels.linvel().length_squared()
   let sq_angvel = vels.angvel().length_squared()
   let can_sleep = match body_type {
-    RigidBodyType::Dynamic => {
+    Dynamic => {
       let linear_threshold = self.normalized_linear_threshold * length_unit
       sq_linvel < linear_threshold * linear_threshold &&
       sq_angvel < self.angular_threshold * self.angular_threshold
     }
-    RigidBodyType::KinematicPositionBased =>
-      sq_linvel == 0.0F && sq_angvel == 0.0F
-    RigidBodyType::KinematicVelocityBased =>
-      sq_linvel == 0.0F && sq_angvel == 0.0F
-    RigidBodyType::Fixed => true
+    KinematicPositionBased => sq_linvel == 0.0F && sq_angvel == 0.0F
+    KinematicVelocityBased => sq_linvel == 0.0F && sq_angvel == 0.0F
+    Fixed => true
   }
   if can_sleep {
     self.time_since_can_sleep = self.time_since_can_sleep + dt
@@ -694,7 +692,7 @@ pub fn RigidBody3D::update_kinematic_velocities(
   self : RigidBody3D,
   dt : @core.Real,
 ) -> Unit {
-  if self.body_type is RigidBodyType::KinematicPositionBased {
+  if self.body_type is KinematicPositionBased {
     if dt <= 0.0F {
       self.set_linvel(@core.Vec3::zero())
       self.set_angvel(@core.Vec3::zero())
@@ -796,7 +794,7 @@ pub fn RigidBody3D::advance_position(
   dt : @core.Real,
 ) -> Unit {
   match self.body_type {
-    RigidBodyType::Dynamic => {
+    Dynamic => {
       if self.activation.is_sleeping() {
         return
       }
@@ -819,7 +817,7 @@ pub fn RigidBody3D::advance_position(
         self.mass_properties.center_of_mass,
       )
     }
-    RigidBodyType::KinematicVelocityBased => {
+    KinematicVelocityBased => {
       let linvel = rigid_body3d_mask_translation(
         self.velocity.linvel(),
         self.trans_x_enabled,
@@ -839,7 +837,7 @@ pub fn RigidBody3D::advance_position(
         self.mass_properties.center_of_mass,
       )
     }
-    RigidBodyType::KinematicPositionBased => {
+    KinematicPositionBased => {
       let mut next = self.next_position
       let curr_t = self.position.translation
       let next_t = next.translation
@@ -868,7 +866,7 @@ pub fn RigidBody3D::advance_position(
       }
       self.position = next
     }
-    RigidBodyType::Fixed => ()
+    Fixed => ()
   }
 }
 
@@ -916,7 +914,7 @@ pub struct RigidBodyBuilder3D {
 ///|
 pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
   {
-    body_type: RigidBodyType::Dynamic,
+    body_type: Dynamic,
     translation: @core.Vec3::zero(),
     rotation: @core.Quat::identity(),
     linvel: @core.Vec3::zero(),
@@ -966,7 +964,7 @@ pub fn RigidBodyBuilder3D::new_kinematic_velocity_based() -> RigidBodyBuilder3D 
 ///|
 pub fn RigidBodyBuilder3D::fixed() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
-  b.body_type = RigidBodyType::Fixed
+  b.body_type = Fixed
   b.mass_properties = @core.MassProperties3::default()
   b.can_sleep = false
   b
@@ -975,7 +973,7 @@ pub fn RigidBodyBuilder3D::fixed() -> RigidBodyBuilder3D {
 ///|
 pub fn RigidBodyBuilder3D::kinematic_position_based() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
-  b.body_type = RigidBodyType::KinematicPositionBased
+  b.body_type = KinematicPositionBased
   b.mass_properties = @core.MassProperties3::default()
   b.can_sleep = true
   b
@@ -984,7 +982,7 @@ pub fn RigidBodyBuilder3D::kinematic_position_based() -> RigidBodyBuilder3D {
 ///|
 pub fn RigidBodyBuilder3D::kinematic_velocity_based() -> RigidBodyBuilder3D {
   let b = RigidBodyBuilder3D::dynamic()
-  b.body_type = RigidBodyType::KinematicVelocityBased
+  b.body_type = KinematicVelocityBased
   b.mass_properties = @core.MassProperties3::default()
   b.can_sleep = true
   b

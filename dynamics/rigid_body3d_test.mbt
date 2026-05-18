@@ -127,7 +127,7 @@ test "rigid_body3d builder pose aliases and sleeping flag" {
   inspect(@core.abs(rb.mass_properties().mass - 2.0F) < 1.0e-6F, content="true")
 
   let fixed = RigidBodyBuilder3D::new_static().build()
-  inspect(fixed.body_type() is RigidBodyType::Fixed, content="true")
+  inspect(fixed.body_type() is Fixed, content="true")
 
   let vel_based = RigidBodyBuilder3D::new_kinematic_velocity_based()
     .position(

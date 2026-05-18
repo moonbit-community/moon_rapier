@@ -25,12 +25,12 @@ pub(all) enum FillMode {
 
 ///|
 pub fn FillMode::default() -> FillMode {
-  FillMode::FloodFill(false, false)
+  FloodFill(false, false)
 }
 
 ///|
 pub fn FillMode::surface_only() -> FillMode {
-  FillMode::SurfaceOnly
+  SurfaceOnly
 }
 
 ///|
@@ -172,9 +172,9 @@ fn collider_builder_with_shape(shape : Shape) -> ColliderBuilder {
     solver_groups: @dynamics.InteractionGroups::all(),
     density: 1.0F,
     friction: 0.5F,
-    friction_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    friction_combine_rule: Average,
     restitution: 0.0F,
-    restitution_combine_rule: @dynamics.CoefficientCombineRule::Average,
+    restitution_combine_rule: Average,
     contact_skin: 0.0F,
     contact_force_event_threshold: 0.0F,
     user_data: @core.UserData128::zero(),
@@ -308,11 +308,11 @@ fn voxels_shape_from_points(
     parts.push(
       (
         @core.Isometry2::from_translation(@core.Vec2::new(cx, cy)),
-        Shape::Cuboid(hx, hy),
+        Cuboid(hx, hy),
       ),
     )
   }
-  Shape::Compound(parts)
+  Compound(parts)
 }
 
 ///|
@@ -331,7 +331,7 @@ pub fn Shape::voxelized_mesh(
   fill_mode : FillMode,
 ) -> Shape {
   if vertices.length() == 0 || indices.length() == 0 || voxel_size <= 0.0F {
-    return Shape::Compound([])
+    return Compound([])
   }
 
   // Compute local AABB of the input polyline.
@@ -348,7 +348,7 @@ pub fn Shape::voxelized_mesh(
   let res_x = max_int(ceil_to_int(ext_x), 2) + 1
   let res_y = max_int(ceil_to_int(ext_y), 2) + 1
   if res_x <= 0 || res_y <= 0 {
-    return Shape::Compound([])
+    return Compound([])
   }
 
   // Dense grid of voxel states:
@@ -400,7 +400,7 @@ pub fn Shape::voxelized_mesh(
     }
   }
   match fill_mode {
-    FillMode::SurfaceOnly => {
+    SurfaceOnly => {
       // Keep only the on-surface voxels.
       let centers : Array[@core.Vec2] = []
       for j in 0..<res_y {
@@ -419,7 +419,7 @@ pub fn Shape::voxelized_mesh(
       }
       voxels_shape_from_points(@core.Vec2::new(voxel_size, voxel_size), centers)
     }
-    FillMode::FloodFill(_, _) => {
+    FloodFill(_, _) => {
       // Flood fill outside voxels starting from the volume boundary.
       let queue : Array[(Int, Int)] = []
       let mut qh = 0

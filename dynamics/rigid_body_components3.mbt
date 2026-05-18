@@ -38,7 +38,7 @@ pub fn RigidBodyPosition3::new(
   position : @core.Isometry3,
   next_position : @core.Isometry3,
 ) -> RigidBodyPosition3 {
-  RigidBodyPosition3::{ position, next_position }
+  { position, next_position }
 }
 
 ///|
@@ -54,10 +54,7 @@ pub fn RigidBodyPosition3::pose_errors(
     .mul(self.next_position)
     .mul(self.position.inverse())
     .mul(shift)
-  PdErrors3::{
-    linear: dpos.translation,
-    angular: dpos.rotation.to_scaled_axis(),
-  }
+  { linear: dpos.translation, angular: dpos.rotation.to_scaled_axis() }
 }
 
 ///|
@@ -68,7 +65,7 @@ pub fn RigidBodyPosition3::interpolate_velocity(
   local_com : @core.Vec3,
 ) -> RigidBodyVelocity3 {
   let pose_err = self.pose_errors(local_com)
-  RigidBodyVelocity3::{
+  {
     linvel: pose_err.linear.scale(inv_dt),
     angvel: pose_err.angular.scale(inv_dt),
   }

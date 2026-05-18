@@ -692,11 +692,11 @@ test "examples2d/ccd2.rs parity" {
     ),
     (
       @core.Isometry2::from_translation(@core.Vec2::new(-radx + rady, 0.0F)),
-      @collision.Shape::Cuboid(rady, radx),
+      Cuboid(rady, radx),
     ),
     (
       @core.Isometry2::from_translation(@core.Vec2::new(radx - rady, 0.0F)),
-      @collision.Shape::Cuboid(rady, radx),
+      Cuboid(rady, radx),
     ),
   ]
   let num = 6
@@ -750,7 +750,7 @@ test "examples2d/ccd2.rs parity" {
   let mut saw_sensor = false
   for i in 0..<evs.length() {
     match evs[i] {
-      @collision.CollisionEvent::Started(h1, h2, _) =>
+      Started(h1, h2, _) =>
         if @collision.ColliderHandle::equals(h1, sensor_handle) ||
           @collision.ColliderHandle::equals(h2, sensor_handle) {
           saw_sensor = true
@@ -1006,8 +1006,7 @@ test "examples2d/character_controller2.rs parity" {
       use_pid = true
       switched_to_pid = true
       if bodies.get_mut(character_handle) is Some(character_body) {
-        character_body.set_body_type(@dynamics.RigidBodyType::Dynamic, true)
-        |> ignore
+        character_body.set_body_type(Dynamic, true) |> ignore
         pid.reset_integrals() |> ignore
       } else {
         inspect(false, content="true")
@@ -1145,12 +1144,12 @@ test "examples2d/collision_groups2.rs parity" {
   let green_group = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   let blue_group = @dynamics.InteractionGroups::new(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
-    @dynamics.InteractionTestMode::And,
+    And,
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(1.0F, 0.1F)
@@ -1649,7 +1648,7 @@ test "examples2d/debug_intersection2.rs parity" {
     bodies,
     colliders,
     @core.Isometry2::from_translation(query_center),
-    @collision.Shape::Ball(rad / 2.0F),
+    Ball(rad / 2.0F),
   )
 
   // The query shape should intersect at least one of the fixed balls.

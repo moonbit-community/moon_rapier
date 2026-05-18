@@ -22,7 +22,7 @@ test "mesh converter aabb returns cuboid + translation pose" {
   ]
   let result = MeshConverter::aabb().apply(vertices, [])
   if result is Ok((shape, pose)) {
-    if shape.as_shape() is Shape::Cuboid(hx, hy) {
+    if shape.as_shape() is Cuboid(hx, hy) {
       inspect(@core.abs(hx - 1.0F) < 1.0e-6F, content="true")
       inspect(@core.abs(hy - 2.0F) < 1.0e-6F, content="true")
     } else {
@@ -46,7 +46,7 @@ test "mesh converter convex hull returns convex polygon shape" {
   ]
   let result = MeshConverter::convex_hull().apply(vertices, [])
   if result is Ok((shape, _)) {
-    if shape.as_shape() is Shape::ConvexPolygon(hull) {
+    if shape.as_shape() is ConvexPolygon(hull) {
       inspect(hull.length() >= 3, content="true")
     } else {
       inspect(false, content="true")
@@ -69,7 +69,7 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
   let indices = [(0, 1, 3), (1, 2, 3), (0, 3, 4)]
   let hull = MeshConverter::convex_hull().apply(vertices, indices)
   if hull is Ok((shape, _)) {
-    if shape.as_shape() is Shape::ConvexPolygon(h) {
+    if shape.as_shape() is ConvexPolygon(h) {
       inspect(h.length() >= 3, content="true")
     } else {
       inspect(false, content="true")
@@ -83,7 +83,7 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
   )
   if decomp_one is Ok((shape, _)) {
     // With a budget of 1 hull, we fall back to a single convex hull.
-    if shape.as_shape() is Shape::ConvexPolygon(_) {
+    if shape.as_shape() is ConvexPolygon(_) {
       inspect(true, content="true")
     } else {
       inspect(false, content="true")
@@ -97,7 +97,7 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
   )
   if decomp_many is Ok((shape, _)) {
     // With a larger budget, we should get a compound of multiple convex pieces (not a single hull).
-    if shape.as_shape() is Shape::Compound(parts) {
+    if shape.as_shape() is Compound(parts) {
       inspect(parts.length() > 1, content="true")
     } else {
       inspect(false, content="true")
@@ -118,7 +118,7 @@ test "vhacd parameters expose upstream-equivalent configuration surface" {
   inspect(defaults.convex_hull_downsampling() == 4, content="true")
   inspect(defaults.convex_hull_approximation(), content="true")
   inspect(defaults.max_convex_hulls() == 1024, content="true")
-  if defaults.fill_mode() is FillMode::FloodFill(false, false) {
+  if defaults.fill_mode() is FloodFill(false, false) {
     inspect(true, content="true")
   } else {
     inspect(false, content="true")
@@ -131,7 +131,7 @@ test "vhacd parameters expose upstream-equivalent configuration surface" {
     .set_resolution(96)
     .set_plane_downsampling(2)
     .set_convex_hull_downsampling(3)
-    .set_fill_mode(FillMode::SurfaceOnly)
+    .set_fill_mode(SurfaceOnly)
     .set_convex_hull_approximation(false)
     .set_max_convex_hulls(24)
   inspect(@core.abs(tuned.concavity() - 0.02F) < 1.0e-6F, content="true")
@@ -142,7 +142,7 @@ test "vhacd parameters expose upstream-equivalent configuration surface" {
   inspect(tuned.convex_hull_downsampling() == 3, content="true")
   inspect(!tuned.convex_hull_approximation(), content="true")
   inspect(tuned.max_convex_hulls() == 24, content="true")
-  if tuned.fill_mode() is FillMode::SurfaceOnly {
+  if tuned.fill_mode() is SurfaceOnly {
     inspect(true, content="true")
   } else {
     inspect(false, content="true")

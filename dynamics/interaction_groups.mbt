@@ -244,12 +244,12 @@ pub fn InteractionGroups::new(
 
 ///|
 pub fn InteractionGroups::all() -> InteractionGroups {
-  InteractionGroups::new(Group::all(), Group::all(), InteractionTestMode::And)
+  InteractionGroups::new(Group::all(), Group::all(), And)
 }
 
 ///|
 pub fn InteractionGroups::none() -> InteractionGroups {
-  InteractionGroups::new(Group::none(), Group::none(), InteractionTestMode::And)
+  InteractionGroups::new(Group::none(), Group::none(), And)
 }
 
 ///|
@@ -294,11 +294,11 @@ pub fn InteractionGroups::test_groups(
   other : InteractionGroups,
 ) -> Bool {
   match self.test_mode {
-    InteractionTestMode::And => self.test_and(other)
-    InteractionTestMode::Or =>
+    And => self.test_and(other)
+    Or =>
       match other.test_mode {
-        InteractionTestMode::And => self.test_and(other)
-        InteractionTestMode::Or => self.test_or(other)
+        And => self.test_and(other)
+        Or => self.test_or(other)
       }
   }
 }
@@ -330,9 +330,5 @@ pub fn InteractionGroups::test_mode(
 
 ///|
 pub fn InteractionGroups::default() -> InteractionGroups {
-  InteractionGroups::new(
-    Group::group_1(),
-    Group::all(),
-    InteractionTestMode::And,
-  )
+  InteractionGroups::new(Group::group_1(), Group::all(), And)
 }

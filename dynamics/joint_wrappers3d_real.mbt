@@ -68,7 +68,7 @@ pub fn RevoluteJoint3DRealBuilder::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.limits(JointAxis3DReal::AngX, min, max) }
+  { inner: self.inner.limits(AngX, min, max) }
 }
 
 ///|
@@ -78,14 +78,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  {
-    inner: self.inner.motor_position(
-      JointAxis3DReal::AngX,
-      target_pos,
-      stiffness,
-      damping,
-    ),
-  }
+  { inner: self.inner.motor_position(AngX, target_pos, stiffness, damping) }
 }
 
 ///|
@@ -94,9 +87,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_velocity(
   target_vel : @core.Real,
   damping : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  {
-    inner: self.inner.motor_velocity(JointAxis3DReal::AngX, target_vel, damping),
-  }
+  { inner: self.inner.motor_velocity(AngX, target_vel, damping) }
 }
 
 ///|
@@ -104,7 +95,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_max_force(
   self : RevoluteJoint3DRealBuilder,
   max_force : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.motor_max_force(JointAxis3DReal::AngX, max_force) }
+  { inner: self.inner.motor_max_force(AngX, max_force) }
 }
 
 ///|
@@ -161,7 +152,7 @@ pub fn PrismaticJoint3DRealBuilder::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.limits(JointAxis3DReal::LinX, min, max) }
+  { inner: self.inner.limits(LinX, min, max) }
 }
 
 ///|
@@ -171,14 +162,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  {
-    inner: self.inner.motor_position(
-      JointAxis3DReal::LinX,
-      target_pos,
-      stiffness,
-      damping,
-    ),
-  }
+  { inner: self.inner.motor_position(LinX, target_pos, stiffness, damping) }
 }
 
 ///|
@@ -187,9 +171,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_velocity(
   target_vel : @core.Real,
   damping : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  {
-    inner: self.inner.motor_velocity(JointAxis3DReal::LinX, target_vel, damping),
-  }
+  { inner: self.inner.motor_velocity(LinX, target_vel, damping) }
 }
 
 ///|
@@ -197,7 +179,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_max_force(
   self : PrismaticJoint3DRealBuilder,
   max_force : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.motor_max_force(JointAxis3DReal::LinX, max_force) }
+  { inner: self.inner.motor_max_force(LinX, max_force) }
 }
 
 ///|

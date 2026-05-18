@@ -827,45 +827,45 @@ fn qp3d_real_hit_shape(
     }
   }
   match shape {
-    Shape3D::Ball(r) =>
+    Ball(r) =>
       if ray_sphere_toi_normal(ray, pos.translation, r, max_toi, solid)
         is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::Cuboid(he) =>
+    Cuboid(he) =>
       if ray_obb_toi_normal(ray, pos, he, max_toi, solid) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::CapsuleY(r, hh) =>
+    CapsuleY(r, hh) =>
       if ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::Cylinder(r, hh) =>
+    Cylinder(r, hh) =>
       if ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::RoundCylinder(r, hh, br) =>
+    RoundCylinder(r, hh, br) =>
       if ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
         is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::Cone(r, hh) =>
+    Cone(r, hh) =>
       if ray_cone_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
       } else {
         None
       }
-    Shape3D::HalfSpace(n_local) => {
+    HalfSpace(n_local) => {
       let n = qp3d_real_normalized_or_default(pos.rotation.rotate_vec3(n_local))
       if ray_plane_toi_normal(ray, pos.translation, n, max_toi) is Some(it) {
         Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
@@ -873,7 +873,7 @@ fn qp3d_real_hit_shape(
         None
       }
     }
-    Shape3D::Triangle(a, b, c) => {
+    Triangle(a, b, c) => {
       let wa = pos.transform_point(a)
       let wb = pos.transform_point(b)
       let wc = pos.transform_point(c)
@@ -883,7 +883,7 @@ fn qp3d_real_hit_shape(
         None
       }
     }
-    Shape3D::ConvexHull(points, br) => {
+    ConvexHull(points, br) => {
       if points.length() == 0 {
         return None
       }
@@ -931,7 +931,7 @@ fn qp3d_real_hit_shape(
       }
       None
     }
-    Shape3D::Voxels(v) => {
+    Voxels(v) => {
       let sx = v.voxel_size.x
       let sy = v.voxel_size.y
       let sz = v.voxel_size.z
@@ -1206,7 +1206,7 @@ fn qp3d_real_hit_shape(
       }
       None
     }
-    Shape3D::Compound(parts) => {
+    Compound(parts) => {
       let mut best : RayIntersection3Feature? = None
       let mut best_t = max_toi + 1.0F
       for i in 0..<parts.length() {
@@ -1220,7 +1220,7 @@ fn qp3d_real_hit_shape(
       }
       best
     }
-    Shape3D::Heightfield(vertices, _, nrows, ncols, _) => {
+    Heightfield(vertices, _, nrows, ncols, _) => {
       if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
         return None
       }
@@ -1431,7 +1431,7 @@ fn qp3d_real_hit_shape(
         None
       }
     }
-    Shape3D::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       let mut best_local : RayIntersection3? = None
       let mut best_local_t = max_toi + 1.0F
       let mut best_tri = -1
@@ -2164,7 +2164,7 @@ fn qp3d_real_project_point_on_shape(
   solid : Bool,
 ) -> (PointProjection3, @core.Real) {
   match shape {
-    Shape3D::Ball(r) => {
+    Ball(r) => {
       let center = pos.translation
       let delta = point.sub(center)
       let dist2 = delta.length_squared()
@@ -2181,7 +2181,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
-    Shape3D::Cuboid(he) => {
+    Cuboid(he) => {
       let inv = pos.inverse()
       let lp = inv.transform_point(point)
       let inside = @core.abs(lp.x) <= he.x &&
@@ -2236,7 +2236,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
-    Shape3D::CapsuleY(r, hh) => {
+    CapsuleY(r, hh) => {
       let inv = pos.inverse()
       let p = inv.transform_point(point)
       let axis_pt = @core.Vec3::new(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
@@ -2256,7 +2256,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
-    Shape3D::Cylinder(r, hh) => {
+    Cylinder(r, hh) => {
       let inv = pos.inverse()
       let p = inv.transform_point(point)
       let radial = @core.Vec3::new(p.x, 0.0F, p.z)
@@ -2289,14 +2289,14 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
-    Shape3D::RoundCylinder(r, hh, br) =>
+    RoundCylinder(r, hh, br) =>
       qp3d_real_project_point_on_shape(
         pos,
-        Shape3D::CapsuleY(r + br, hh + br),
+        CapsuleY(r + br, hh + br),
         point,
         solid,
       )
-    Shape3D::Cone(r, hh) => {
+    Cone(r, hh) => {
       // Conservative: project on the local AABB of the cone.
       let inv = pos.inverse()
       let p = inv.transform_point(point)
@@ -2316,7 +2316,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
-    Shape3D::HalfSpace(n_local) => {
+    HalfSpace(n_local) => {
       let n = qp3d_real_normalized_or_default(pos.rotation.rotate_vec3(n_local))
       let d = n.dot(point.sub(pos.translation))
       let inside = d <= 0.0F
@@ -2327,7 +2327,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: proj, is_inside: inside }, d * d)
       }
     }
-    Shape3D::Triangle(a, b, c) => {
+    Triangle(a, b, c) => {
       let vtx = [a, b, c]
       let idx = [(0, 1, 2)]
       if trimesh_closest_point_query(point, pos, vtx, idx) is Some((q, _, d2)) {
@@ -2336,9 +2336,9 @@ fn qp3d_real_project_point_on_shape(
         ({ point, is_inside: false }, 1.0e30F)
       }
     }
-    Shape3D::ConvexHull(points, br) =>
+    ConvexHull(points, br) =>
       qp3d_real_project_point_on_convex(pos, points, br, point, solid)
-    Shape3D::Voxels(v) => {
+    Voxels(v) => {
       let sx = v.voxel_size.x
       let sy = v.voxel_size.y
       let sz = v.voxel_size.z
@@ -2407,7 +2407,7 @@ fn qp3d_real_project_point_on_shape(
         }
       }
     }
-    Shape3D::Compound(parts) => {
+    Compound(parts) => {
       let mut best_proj : PointProjection3 = {
         point: pos.translation,
         is_inside: false,
@@ -2436,7 +2436,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point: best_proj.point, is_inside: any_inside }, best_d2)
       }
     }
-    Shape3D::Heightfield(vertices, _, rows, cols, flags) =>
+    Heightfield(vertices, _, rows, cols, flags) =>
       if heightfield_closest_point_query_with_flags(
           point, pos, vertices, rows, cols, flags,
         )
@@ -2445,7 +2445,7 @@ fn qp3d_real_project_point_on_shape(
       } else {
         ({ point, is_inside: false }, 1.0e30F)
       }
-    Shape3D::TriMesh(vertices, indices) =>
+    TriMesh(vertices, indices) =>
       if trimesh_closest_point_query(point, pos, vertices, indices)
         is Some((q, _, d2)) {
         ({ point: q, is_inside: false }, d2)
@@ -2495,33 +2495,33 @@ fn qp3d_real_contains_point(
   point : @core.Vec3,
 ) -> Bool {
   match shape {
-    Shape3D::Ball(r) => point.sub(pos.translation).length_squared() <= r * r
-    Shape3D::Cuboid(he) => {
+    Ball(r) => point.sub(pos.translation).length_squared() <= r * r
+    Cuboid(he) => {
       let p = pos.inverse().transform_point(point)
       @core.abs(p.x) <= he.x && @core.abs(p.y) <= he.y && @core.abs(p.z) <= he.z
     }
-    Shape3D::CapsuleY(r, hh) => {
+    CapsuleY(r, hh) => {
       let p = pos.inverse().transform_point(point)
       let axis_pt = @core.Vec3::new(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
       p.sub(axis_pt).length_squared() <= r * r
     }
-    Shape3D::Cylinder(r, hh) => {
+    Cylinder(r, hh) => {
       let p = pos.inverse().transform_point(point)
       let rl2 = p.x * p.x + p.z * p.z
       @core.abs(p.y) <= hh && rl2 <= r * r
     }
-    Shape3D::RoundCylinder(r, hh, br) =>
-      qp3d_real_contains_point(pos, Shape3D::CapsuleY(r + br, hh + br), point)
-    Shape3D::Cone(r, hh) => {
+    RoundCylinder(r, hh, br) =>
+      qp3d_real_contains_point(pos, CapsuleY(r + br, hh + br), point)
+    Cone(r, hh) => {
       let p = pos.inverse().transform_point(point)
       // Conservative: use AABB containment.
       @core.abs(p.x) <= r && @core.abs(p.y) <= hh && @core.abs(p.z) <= r
     }
-    Shape3D::HalfSpace(n_local) => {
+    HalfSpace(n_local) => {
       let n = qp3d_real_normalized_or_default(pos.rotation.rotate_vec3(n_local))
       n.dot(point.sub(pos.translation)) <= 0.0F
     }
-    Shape3D::Compound(parts) => {
+    Compound(parts) => {
       for i in 0..<parts.length() {
         let (iso, sh) = parts[i]
         if qp3d_real_contains_point(pos.mul(iso), sh, point) {
@@ -2600,7 +2600,7 @@ fn qp3d_real_cast_ball_against_shape(
 ) -> ShapeCastHit3? {
   let ray = Ray3::new(center, vel)
   match shape2 {
-    Shape3D::Ball(r2) =>
+    Ball(r2) =>
       if ray_sphere_toi_normal(
           ray,
           pos2.translation,
@@ -2614,7 +2614,7 @@ fn qp3d_real_cast_ball_against_shape(
       } else {
         None
       }
-    Shape3D::Cuboid(he) =>
+    Cuboid(he) =>
       if ray_obb_toi_normal(
           ray,
           pos2,
@@ -2633,7 +2633,7 @@ fn qp3d_real_cast_ball_against_shape(
       } else {
         None
       }
-    Shape3D::CapsuleY(r2, hh2) =>
+    CapsuleY(r2, hh2) =>
       if ray_capsule_y_toi_normal(
           ray,
           pos2,
@@ -2648,7 +2648,7 @@ fn qp3d_real_cast_ball_against_shape(
       } else {
         None
       }
-    Shape3D::Cylinder(r2, hh2) =>
+    Cylinder(r2, hh2) =>
       if ray_cylinder_y_toi_normal(
           ray,
           pos2,
@@ -2663,16 +2663,16 @@ fn qp3d_real_cast_ball_against_shape(
       } else {
         None
       }
-    Shape3D::RoundCylinder(r2, hh2, br2) =>
+    RoundCylinder(r2, hh2, br2) =>
       qp3d_real_cast_ball_against_shape(
         center,
         vel,
         effective_radius,
         pos2,
-        Shape3D::Cylinder(r2 + br2, hh2 + br2),
+        Cylinder(r2 + br2, hh2 + br2),
         max_toi,
       )
-    Shape3D::Cone(r2, hh2) =>
+    Cone(r2, hh2) =>
       if ray_cone_y_toi_normal(
           ray,
           pos2,
@@ -2687,7 +2687,7 @@ fn qp3d_real_cast_ball_against_shape(
       } else {
         None
       }
-    Shape3D::HalfSpace(n_local) => {
+    HalfSpace(n_local) => {
       let n = qp3d_real_normalized_or_default(
         pos2.rotation.rotate_vec3(n_local),
       )
@@ -2711,7 +2711,7 @@ fn qp3d_real_cast_ball_against_shape(
         }
       }
     }
-    Shape3D::Triangle(a, b, c) => {
+    Triangle(a, b, c) => {
       let vtx = [a, b, c]
       let idx = [(0, 1, 2)]
       qp3d_real_cast_ball_against_shape(
@@ -2719,11 +2719,11 @@ fn qp3d_real_cast_ball_against_shape(
         vel,
         effective_radius,
         pos2,
-        Shape3D::TriMesh(vtx, idx),
+        TriMesh(vtx, idx),
         max_toi,
       )
     }
-    Shape3D::Compound(parts) => {
+    Compound(parts) => {
       let mut best : ShapeCastHit3? = None
       let mut best_t = max_toi + 1.0F
       for i in 0..<parts.length() {
@@ -2741,7 +2741,7 @@ fn qp3d_real_cast_ball_against_shape(
       }
       best
     }
-    Shape3D::Heightfield(vertices, _, rows, cols, flags) => {
+    Heightfield(vertices, _, rows, cols, flags) => {
       // Conservative advancement using heightfield distance queries.
       let mut t = 0.0F
       let mut prev_d = 1.0e30F
@@ -2780,7 +2780,7 @@ fn qp3d_real_cast_ball_against_shape(
       }
       None
     }
-    Shape3D::TriMesh(vertices, indices) => {
+    TriMesh(vertices, indices) => {
       // Conservative advancement using mesh distance queries.
       let mut t = 0.0F
       let mut prev_d = 1.0e30F
@@ -2818,7 +2818,7 @@ fn qp3d_real_cast_ball_against_shape(
       }
       None
     }
-    Shape3D::Voxels(v) => {
+    Voxels(v) => {
       let sx = v.voxel_size.x
       let sy = v.voxel_size.y
       let sz = v.voxel_size.z
@@ -2956,29 +2956,27 @@ fn qp3d_real_inflate_shape(shape : Shape3D, margin : @core.Real) -> Shape3D {
     return shape
   }
   match shape {
-    Shape3D::Ball(r) => Shape3D::Ball(r + margin)
-    Shape3D::Cuboid(he) =>
-      Shape3D::Cuboid(he.add(@core.Vec3::new(margin, margin, margin)))
-    Shape3D::CapsuleY(r, hh) => Shape3D::CapsuleY(r + margin, hh)
-    Shape3D::Cylinder(r, hh) => Shape3D::Cylinder(r + margin, hh + margin)
-    Shape3D::RoundCylinder(r, hh, br) =>
-      Shape3D::RoundCylinder(r, hh, br + margin)
-    Shape3D::Cone(r, hh) => Shape3D::Cone(r + margin, hh + margin)
-    Shape3D::HalfSpace(n) => Shape3D::HalfSpace(n)
-    Shape3D::Triangle(a, b, c) => Shape3D::Triangle(a, b, c)
-    Shape3D::ConvexHull(points, br) => Shape3D::ConvexHull(points, br + margin)
-    Shape3D::Compound(parts) => {
+    Ball(r) => Ball(r + margin)
+    Cuboid(he) => Cuboid(he.add(@core.Vec3::new(margin, margin, margin)))
+    CapsuleY(r, hh) => CapsuleY(r + margin, hh)
+    Cylinder(r, hh) => Cylinder(r + margin, hh + margin)
+    RoundCylinder(r, hh, br) => RoundCylinder(r, hh, br + margin)
+    Cone(r, hh) => Cone(r + margin, hh + margin)
+    HalfSpace(n) => HalfSpace(n)
+    Triangle(a, b, c) => Triangle(a, b, c)
+    ConvexHull(points, br) => ConvexHull(points, br + margin)
+    Compound(parts) => {
       let out : Array[(@core.Isometry3, Shape3D)] = []
       for i in 0..<parts.length() {
         let (iso, sh) = parts[i]
         out.push((iso, qp3d_real_inflate_shape(sh, margin)))
       }
-      Shape3D::Compound(out)
+      Compound(out)
     }
-    Shape3D::Voxels(v) => Shape3D::Voxels(v)
-    Shape3D::Heightfield(vertices, indices, rows, cols, flags) =>
-      Shape3D::Heightfield(vertices, indices, rows, cols, flags)
-    Shape3D::TriMesh(vertices, indices) => Shape3D::TriMesh(vertices, indices)
+    Voxels(v) => Voxels(v)
+    Heightfield(vertices, indices, rows, cols, flags) =>
+      Heightfield(vertices, indices, rows, cols, flags)
+    TriMesh(vertices, indices) => TriMesh(vertices, indices)
   }
 }
 
@@ -3016,7 +3014,7 @@ fn qp3d_real_best_contact_for_pair(
   s2 : Shape3D,
 ) -> ContactPoint3D? {
   match (s1, s2) {
-    (Shape3D::Compound(parts), other) => {
+    (Compound(parts), other) => {
       let mut best : ContactPoint3D? = None
       for i in 0..<parts.length() {
         let (iso, sh) = parts[i]
@@ -3027,7 +3025,7 @@ fn qp3d_real_best_contact_for_pair(
       }
       best
     }
-    (other, Shape3D::Compound(parts)) => {
+    (other, Compound(parts)) => {
       let mut best : ContactPoint3D? = None
       for i in 0..<parts.length() {
         let (iso, sh) = parts[i]
@@ -3041,43 +3039,43 @@ fn qp3d_real_best_contact_for_pair(
     _ => {
       let mut best : ContactPoint3D? = None
       match (s1, s2) {
-        (Shape3D::HalfSpace(n), other) =>
+        (HalfSpace(n), other) =>
           if compute_halfspace_contact(p1, n, p2, other) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (other, Shape3D::HalfSpace(n)) =>
+        (other, HalfSpace(n)) =>
           if compute_halfspace_contact(p2, n, p1, other) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Ball(r1), Shape3D::Ball(r2)) =>
+        (Ball(r1), Ball(r2)) =>
           if compute_ball_ball_contact(p1.translation, r1, p2.translation, r2)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Ball(r), Shape3D::Cuboid(he)) =>
+        (Ball(r), Cuboid(he)) =>
           if compute_ball_cuboid_contact(p1.translation, r, p2, he) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::Ball(r)) =>
+        (Cuboid(he), Ball(r)) =>
           if compute_ball_cuboid_contact(p2.translation, r, p1, he) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cuboid(he1), Shape3D::Cuboid(he2)) =>
+        (Cuboid(he1), Cuboid(he2)) =>
           if compute_cuboid_cuboid_contact(p1, he1, p2, he2) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Ball(r), Shape3D::CapsuleY(cr, ch)) =>
+        (Ball(r), CapsuleY(cr, ch)) =>
           if compute_ball_capsule_contact(p1.translation, r, p2, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::CapsuleY(cr, ch), Shape3D::Ball(r)) =>
+        (CapsuleY(cr, ch), Ball(r)) =>
           if compute_ball_capsule_contact(p2.translation, r, p1, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3085,38 +3083,38 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::CapsuleY(r1, h1), Shape3D::CapsuleY(r2, h2)) =>
+        (CapsuleY(r1, h1), CapsuleY(r2, h2)) =>
           if compute_capsule_capsule_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::CapsuleY(r, h), Shape3D::Cuboid(he)) =>
+        (CapsuleY(r, h), Cuboid(he)) =>
           if compute_capsule_cuboid_contact(p1, r, h, p2, he) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::CapsuleY(r, h)) =>
+        (Cuboid(he), CapsuleY(r, h)) =>
           if compute_capsule_cuboid_contact(p2, r, h, p1, he) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cylinder(cr, ch), Shape3D::Cuboid(he)) =>
+        (Cylinder(cr, ch), Cuboid(he)) =>
           if compute_cylinder_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::Cylinder(cr, ch)) =>
+        (Cuboid(he), Cylinder(cr, ch)) =>
           if compute_cylinder_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Cuboid(he)) =>
+        (RoundCylinder(cr, ch, br), Cuboid(he)) =>
           if compute_cylinder_cuboid_contact(p1, cr + br, ch + br, p2, he)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::RoundCylinder(cr, ch, br)) =>
+        (Cuboid(he), RoundCylinder(cr, ch, br)) =>
           if compute_cylinder_cuboid_contact(p2, cr + br, ch + br, p1, he)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3124,12 +3122,12 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cylinder(r1, h1), Shape3D::Cylinder(r2, h2)) =>
+        (Cylinder(r1, h1), Cylinder(r2, h2)) =>
           if compute_cylinder_cylinder_contact(p1, r1, h1, p2, r2, h2)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cylinder(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
+        (Cylinder(r1, h1), RoundCylinder(r2, h2, br2)) =>
           if compute_cylinder_cylinder_contact(
               p1,
               r1,
@@ -3141,7 +3139,7 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cylinder(r2, h2)) =>
+        (RoundCylinder(r1, h1, br1), Cylinder(r2, h2)) =>
           if compute_cylinder_cylinder_contact(
               p1,
               r1 + br1,
@@ -3153,10 +3151,7 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (
-          Shape3D::RoundCylinder(r1, h1, br1),
-          Shape3D::RoundCylinder(r2, h2, br2),
-        ) =>
+        (RoundCylinder(r1, h1, br1), RoundCylinder(r2, h2, br2)) =>
           if compute_cylinder_cylinder_contact(
               p1,
               r1 + br1,
@@ -3168,34 +3163,34 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cone(cr, ch), Shape3D::Cuboid(he)) =>
+        (Cone(cr, ch), Cuboid(he)) =>
           if compute_cone_cuboid_contact(p1, cr, ch, p2, he) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::Cone(cr, ch)) =>
+        (Cuboid(he), Cone(cr, ch)) =>
           if compute_cone_cuboid_contact(p2, cr, ch, p1, he) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cone(r1, h1), Shape3D::Cylinder(r2, h2)) =>
+        (Cone(r1, h1), Cylinder(r2, h2)) =>
           if compute_cone_cylinder_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cone(r1, h1), Shape3D::RoundCylinder(r2, h2, br2)) =>
+        (Cone(r1, h1), RoundCylinder(r2, h2, br2)) =>
           if compute_cone_cylinder_contact(p1, r1, h1, p2, r2 + br2, h2 + br2)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cylinder(r1, h1), Shape3D::Cone(r2, h2)) =>
+        (Cylinder(r1, h1), Cone(r2, h2)) =>
           if compute_cone_cylinder_contact(p2, r2, h2, p1, r1, h1) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::RoundCylinder(r1, h1, br1), Shape3D::Cone(r2, h2)) =>
+        (RoundCylinder(r1, h1, br1), Cone(r2, h2)) =>
           if compute_cone_cylinder_contact(p2, r2, h2, p1, r1 + br1, h1 + br1)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3203,16 +3198,16 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cone(r1, h1), Shape3D::Cone(r2, h2)) =>
+        (Cone(r1, h1), Cone(r2, h2)) =>
           if compute_cone_cone_contact(p1, r1, h1, p2, r2, h2) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Ball(r), Shape3D::Cylinder(cr, ch)) =>
+        (Ball(r), Cylinder(cr, ch)) =>
           if compute_ball_cylinder_contact(p1.translation, r, p2, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cylinder(cr, ch), Shape3D::Ball(r)) =>
+        (Cylinder(cr, ch), Ball(r)) =>
           if compute_ball_cylinder_contact(p2.translation, r, p1, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3220,7 +3215,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Ball(r), Shape3D::RoundCylinder(cr, ch, br)) =>
+        (Ball(r), RoundCylinder(cr, ch, br)) =>
           if compute_ball_cylinder_contact(
               p1.translation,
               r,
@@ -3231,7 +3226,7 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::RoundCylinder(cr, ch, br), Shape3D::Ball(r)) =>
+        (RoundCylinder(cr, ch, br), Ball(r)) =>
           if compute_ball_cylinder_contact(
               p2.translation,
               r,
@@ -3245,12 +3240,12 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Ball(r), Shape3D::Cone(cr, ch)) =>
+        (Ball(r), Cone(cr, ch)) =>
           if compute_ball_cone_contact(p1.translation, r, p2, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cone(cr, ch), Shape3D::Ball(r)) =>
+        (Cone(cr, ch), Ball(r)) =>
           if compute_ball_cone_contact(p2.translation, r, p1, cr, ch)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3258,7 +3253,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Ball(r), Shape3D::TriMesh(vertices, indices)) =>
+        (Ball(r), TriMesh(vertices, indices)) =>
           if compute_ball_trimesh_contact(
               p1.translation,
               r,
@@ -3269,7 +3264,7 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Ball(r), Shape3D::Triangle(a, b, c)) => {
+        (Ball(r), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_ball_trimesh_contact(p1.translation, r, p2, vtx, idx)
@@ -3277,7 +3272,7 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (Shape3D::Ball(r), Shape3D::Heightfield(vertices, _, rows, cols, flags)) =>
+        (Ball(r), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_ball_heightfield_contact_with_flags(
               p1.translation,
               r,
@@ -3290,11 +3285,11 @@ fn qp3d_real_best_contact_for_pair(
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Ball(r), Shape3D::Voxels(v)) =>
+        (Ball(r), Voxels(v)) =>
           if compute_ball_voxels_contact(p1.translation, r, p2, v) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Ball(r)) =>
+        (TriMesh(vertices, indices), Ball(r)) =>
           if compute_ball_trimesh_contact(
               p2.translation,
               r,
@@ -3308,7 +3303,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::Ball(r)) => {
+        (Triangle(a, b, c), Ball(r)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_ball_trimesh_contact(p2.translation, r, p1, vtx, idx)
@@ -3319,7 +3314,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (Shape3D::Heightfield(vertices, _, rows, cols, flags), Shape3D::Ball(r)) =>
+        (Heightfield(vertices, _, rows, cols, flags), Ball(r)) =>
           if compute_ball_heightfield_contact_with_flags(
               p2.translation,
               r,
@@ -3335,40 +3330,37 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::Ball(r)) =>
+        (Voxels(v), Ball(r)) =>
           if compute_ball_voxels_contact(p2.translation, r, p1, v) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cuboid(he), Shape3D::TriMesh(vertices, indices)) =>
+        (Cuboid(he), TriMesh(vertices, indices)) =>
           if compute_cuboid_trimesh_contact(p1, he, p2, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::Triangle(a, b, c)) => {
+        (Cuboid(he), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cuboid_trimesh_contact(p1, he, p2, vtx, idx) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (
-          Shape3D::Cuboid(he),
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-        ) =>
+        (Cuboid(he), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_cuboid_heightfield_contact_with_flags(
               p1, he, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cuboid(he), Shape3D::Voxels(v)) =>
+        (Cuboid(he), Voxels(v)) =>
           if compute_cuboid_voxels_contact(p1, he, p2, v) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cuboid(he)) =>
+        (TriMesh(vertices, indices), Cuboid(he)) =>
           if compute_cuboid_trimesh_contact(p2, he, p1, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3376,7 +3368,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::Cuboid(he)) => {
+        (Triangle(a, b, c), Cuboid(he)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cuboid_trimesh_contact(p2, he, p1, vtx, idx) is Some(cp) {
@@ -3386,10 +3378,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-          Shape3D::Cuboid(he),
-        ) =>
+        (Heightfield(vertices, _, rows, cols, flags), Cuboid(he)) =>
           if compute_cuboid_heightfield_contact_with_flags(
               p2, he, p1, vertices, rows, cols, flags,
             )
@@ -3399,19 +3388,19 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::Cuboid(he)) =>
+        (Voxels(v), Cuboid(he)) =>
           if compute_cuboid_voxels_contact(p2, he, p1, v) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::CapsuleY(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+        (CapsuleY(r, hh), TriMesh(vertices, indices)) =>
           if compute_capsule_trimesh_contact(p1, r, hh, p2, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::CapsuleY(r, hh), Shape3D::Triangle(a, b, c)) => {
+        (CapsuleY(r, hh), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_capsule_trimesh_contact(p1, r, hh, p2, vtx, idx)
@@ -3419,21 +3408,18 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (
-          Shape3D::CapsuleY(r, hh),
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-        ) =>
+        (CapsuleY(r, hh), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_capsule_heightfield_contact_with_flags(
               p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::CapsuleY(r, hh), Shape3D::Voxels(v)) =>
+        (CapsuleY(r, hh), Voxels(v)) =>
           if compute_capsule_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::CapsuleY(r, hh)) =>
+        (TriMesh(vertices, indices), CapsuleY(r, hh)) =>
           if compute_capsule_trimesh_contact(p2, r, hh, p1, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3441,7 +3427,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::CapsuleY(r, hh)) => {
+        (Triangle(a, b, c), CapsuleY(r, hh)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_capsule_trimesh_contact(p2, r, hh, p1, vtx, idx)
@@ -3452,10 +3438,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-          Shape3D::CapsuleY(r, hh),
-        ) =>
+        (Heightfield(vertices, _, rows, cols, flags), CapsuleY(r, hh)) =>
           if compute_capsule_heightfield_contact_with_flags(
               p2, r, hh, p1, vertices, rows, cols, flags,
             )
@@ -3465,19 +3448,19 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::CapsuleY(r, hh)) =>
+        (Voxels(v), CapsuleY(r, hh)) =>
           if compute_capsule_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cylinder(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+        (Cylinder(r, hh), TriMesh(vertices, indices)) =>
           if compute_cylinder_trimesh_contact(p1, r, hh, p2, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cylinder(r, hh), Shape3D::Triangle(a, b, c)) => {
+        (Cylinder(r, hh), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cylinder_trimesh_contact(p1, r, hh, p2, vtx, idx)
@@ -3485,21 +3468,18 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (
-          Shape3D::Cylinder(r, hh),
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-        ) =>
+        (Cylinder(r, hh), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_cylinder_heightfield_contact_with_flags(
               p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cylinder(r, hh), Shape3D::Voxels(v)) =>
+        (Cylinder(r, hh), Voxels(v)) =>
           if compute_cylinder_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cylinder(r, hh)) =>
+        (TriMesh(vertices, indices), Cylinder(r, hh)) =>
           if compute_cylinder_trimesh_contact(p2, r, hh, p1, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3507,7 +3487,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::Cylinder(r, hh)) => {
+        (Triangle(a, b, c), Cylinder(r, hh)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cylinder_trimesh_contact(p2, r, hh, p1, vtx, idx)
@@ -3518,10 +3498,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-          Shape3D::Cylinder(r, hh),
-        ) =>
+        (Heightfield(vertices, _, rows, cols, flags), Cylinder(r, hh)) =>
           if compute_cylinder_heightfield_contact_with_flags(
               p2, r, hh, p1, vertices, rows, cols, flags,
             )
@@ -3531,21 +3508,21 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::Cylinder(r, hh)) =>
+        (Voxels(v), Cylinder(r, hh)) =>
           if compute_cylinder_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::RoundCylinder(r, hh, br), Shape3D::TriMesh(vertices, indices)) =>
+        (RoundCylinder(r, hh, br), TriMesh(vertices, indices)) =>
           if compute_round_cylinder_trimesh_contact(
               p1, r, hh, br, p2, vertices, indices,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::RoundCylinder(r, hh, br), Shape3D::Triangle(a, b, c)) => {
+        (RoundCylinder(r, hh, br), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_round_cylinder_trimesh_contact(p1, r, hh, br, p2, vtx, idx)
@@ -3553,22 +3530,19 @@ fn qp3d_real_best_contact_for_pair(
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (
-          Shape3D::RoundCylinder(r, hh, br),
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-        ) =>
+        (RoundCylinder(r, hh, br), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_round_cylinder_heightfield_contact_with_flags(
               p1, r, hh, br, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::RoundCylinder(r, hh, br), Shape3D::Voxels(v)) =>
+        (RoundCylinder(r, hh, br), Voxels(v)) =>
           if compute_cylinder_voxels_contact(p1, r + br, hh + br, p2, v)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::RoundCylinder(r, hh, br)) =>
+        (TriMesh(vertices, indices), RoundCylinder(r, hh, br)) =>
           if compute_round_cylinder_trimesh_contact(
               p2, r, hh, br, p1, vertices, indices,
             )
@@ -3578,7 +3552,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::RoundCylinder(r, hh, br)) => {
+        (Triangle(a, b, c), RoundCylinder(r, hh, br)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_round_cylinder_trimesh_contact(p2, r, hh, br, p1, vtx, idx)
@@ -3589,10 +3563,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-          Shape3D::RoundCylinder(r, hh, br),
-        ) =>
+        (Heightfield(vertices, _, rows, cols, flags), RoundCylinder(r, hh, br)) =>
           if compute_round_cylinder_heightfield_contact_with_flags(
               p2, r, hh, br, p1, vertices, rows, cols, flags,
             )
@@ -3602,7 +3573,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::RoundCylinder(r, hh, br)) =>
+        (Voxels(v), RoundCylinder(r, hh, br)) =>
           if compute_cylinder_voxels_contact(p2, r + br, hh + br, p1, v)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3610,33 +3581,30 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Cone(r, hh), Shape3D::TriMesh(vertices, indices)) =>
+        (Cone(r, hh), TriMesh(vertices, indices)) =>
           if compute_cone_trimesh_contact(p1, r, hh, p2, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cone(r, hh), Shape3D::Triangle(a, b, c)) => {
+        (Cone(r, hh), Triangle(a, b, c)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cone_trimesh_contact(p1, r, hh, p2, vtx, idx) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
         }
-        (
-          Shape3D::Cone(r, hh),
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-        ) =>
+        (Cone(r, hh), Heightfield(vertices, _, rows, cols, flags)) =>
           if compute_cone_heightfield_contact_with_flags(
               p1, r, hh, p2, vertices, rows, cols, flags,
             )
             is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::Cone(r, hh), Shape3D::Voxels(v)) =>
+        (Cone(r, hh), Voxels(v)) =>
           if compute_cone_voxels_contact(p1, r, hh, p2, v) is Some(cp) {
             best = qp3d_real_best_contact_update(best, cp)
           }
-        (Shape3D::TriMesh(vertices, indices), Shape3D::Cone(r, hh)) =>
+        (TriMesh(vertices, indices), Cone(r, hh)) =>
           if compute_cone_trimesh_contact(p2, r, hh, p1, vertices, indices)
             is Some(cp) {
             best = qp3d_real_best_contact_update(
@@ -3644,7 +3612,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Triangle(a, b, c), Shape3D::Cone(r, hh)) => {
+        (Triangle(a, b, c), Cone(r, hh)) => {
           let vtx = [a, b, c]
           let idx = [(0, 1, 2)]
           if compute_cone_trimesh_contact(p2, r, hh, p1, vtx, idx) is Some(cp) {
@@ -3654,10 +3622,7 @@ fn qp3d_real_best_contact_for_pair(
             )
           }
         }
-        (
-          Shape3D::Heightfield(vertices, _, rows, cols, flags),
-          Shape3D::Cone(r, hh),
-        ) =>
+        (Heightfield(vertices, _, rows, cols, flags), Cone(r, hh)) =>
           if compute_cone_heightfield_contact_with_flags(
               p2, r, hh, p1, vertices, rows, cols, flags,
             )
@@ -3667,7 +3632,7 @@ fn qp3d_real_best_contact_for_pair(
               qp3d_real_flip_contact(cp),
             )
           }
-        (Shape3D::Voxels(v), Shape3D::Cone(r, hh)) =>
+        (Voxels(v), Cone(r, hh)) =>
           if compute_cone_voxels_contact(p2, r, hh, p1, v) is Some(cp) {
             best = qp3d_real_best_contact_update(
               best,
@@ -3724,7 +3689,7 @@ fn qp3d_real_cast_moving_shape(
   let stop_at_penetration = options.stop_at_penetration
   match shape {
     // Keep the efficient/specialized implementation for ball casts.
-    Shape3D::Ball(r) => {
+    Ball(r) => {
       let eff_r = r + target_distance
       qp3d_real_cast_ball_against_shape(
         shape_pos.translation,
