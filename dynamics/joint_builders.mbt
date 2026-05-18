@@ -53,6 +53,11 @@ pub struct FixedJoint {
 }
 
 ///|
+pub fn FixedJoint::FixedJoint() -> FixedJoint {
+  FixedJointBuilder().build()
+}
+
+///|
 pub fn GenericJoint::from_fixed(joint : FixedJoint) -> GenericJoint {
   let frame1 = @core.Isometry2::from_translation(joint.local_anchor1)
   let frame2 = @core.Isometry2::from_translation(joint.local_anchor2)
@@ -195,6 +200,11 @@ pub struct RopeJoint {
   softness : SpringCoefficients
   motor : JointMotor
   motor_enabled : Bool
+}
+
+///|
+pub fn RopeJoint::RopeJoint(max_length : @core.Real) -> RopeJoint {
+  RopeJointBuilder(max_length).build()
 }
 
 ///|
@@ -361,6 +371,11 @@ pub struct PinSlotJoint {
   local_anchor2 : @core.Vec2
   limits : JointLimits
   limits_enabled : Bool
+}
+
+///|
+pub fn PinSlotJoint::PinSlotJoint(axis : @core.Vec2) -> PinSlotJoint {
+  PinSlotJointBuilder(axis).build()
 }
 
 ///|
@@ -589,6 +604,11 @@ pub struct PrismaticJoint {
   motor_enabled : Bool
   limits : JointLimits
   limits_enabled : Bool
+}
+
+///|
+pub fn PrismaticJoint::PrismaticJoint(axis : @core.Vec2) -> PrismaticJoint {
+  PrismaticJointBuilder(axis).build()
 }
 
 ///|

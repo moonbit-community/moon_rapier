@@ -82,6 +82,7 @@ pub struct FixedJoint {
   local_anchor1 : @core.Vec2
   local_anchor2 : @core.Vec2
 }
+pub fn FixedJoint::FixedJoint() -> Self
 
 pub struct FixedJoint3DRealBuilder {
   inner : GenericJoint3DRealBuilder
@@ -786,7 +787,10 @@ pub(all) enum MotorState3DReal {
   Position(Float, Float, Float, Float)
 }
 
-type Multibody
+pub struct Multibody {
+  // private fields
+}
+pub fn Multibody::Multibody() -> Self
 pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
 pub fn Multibody::damping_mut(Self) -> DVector
@@ -957,7 +961,10 @@ pub fn MultibodyJointSet3DReal::sync_rigid_bodies_from_multibodies(Self, RigidBo
 pub fn MultibodyJointSet3DReal::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3DReal::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-type MultibodyLink
+pub struct MultibodyLink {
+  // private fields
+}
+pub fn MultibodyLink::MultibodyLink(RigidBodyHandle, Int, Int, Int, MultibodyJoint, @core.Isometry2, @core.Isometry2) -> Self
 pub fn MultibodyLink::is_root(Self) -> Bool
 pub fn MultibodyLink::link_id(Self) -> LinkId
 pub fn MultibodyLink::local_to_parent(Self) -> @core.Isometry2
@@ -990,6 +997,7 @@ pub struct PinSlotJoint {
   limits : JointLimits
   limits_enabled : Bool
 }
+pub fn PinSlotJoint::PinSlotJoint(@core.Vec2) -> Self
 pub fn PinSlotJoint::set_local_axis1(Self, @core.Vec2) -> Self
 pub fn PinSlotJoint::set_local_axis2(Self, @core.Vec2) -> Self
 
@@ -1028,6 +1036,7 @@ pub struct PrismaticJoint {
   limits : JointLimits
   limits_enabled : Bool
 }
+pub fn PrismaticJoint::PrismaticJoint(@core.Vec2) -> Self
 pub fn PrismaticJoint::motor(Self) -> JointMotor?
 pub fn PrismaticJoint::set_local_axis1(Self, @core.Vec2) -> Self
 pub fn PrismaticJoint::set_local_axis2(Self, @core.Vec2) -> Self
@@ -1088,7 +1097,10 @@ pub fn PrismaticJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
-type RevoluteJoint
+pub struct RevoluteJoint {
+  // private fields
+}
+pub fn RevoluteJoint::RevoluteJoint() -> Self
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
 pub fn RevoluteJoint::limits(Self) -> JointLimits?
 pub fn RevoluteJoint::local_anchor1(Self) -> @core.Vec2
@@ -1763,6 +1775,7 @@ pub struct RopeJoint {
   motor : JointMotor
   motor_enabled : Bool
 }
+pub fn RopeJoint::RopeJoint(Float) -> Self
 pub fn RopeJoint::max_distance(Self) -> Float
 pub fn RopeJoint::max_length(Self) -> Float
 pub fn RopeJoint::motor(Self) -> JointMotor?

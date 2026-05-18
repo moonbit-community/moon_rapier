@@ -187,6 +187,11 @@ struct RevoluteJoint {
 }
 
 ///|
+pub fn RevoluteJoint::RevoluteJoint() -> RevoluteJoint {
+  RevoluteJointBuilder().build()
+}
+
+///|
 pub fn RevoluteJoint::local_anchor1(self : RevoluteJoint) -> @core.Vec2 {
   self.local_anchor1
 }
@@ -324,6 +329,27 @@ struct MultibodyLink {
 }
 
 ///|
+pub fn MultibodyLink::MultibodyLink(
+  rigid_body : RigidBodyHandle,
+  internal_id : Int,
+  assembly_id : Int,
+  parent_internal_id : Int,
+  joint : MultibodyJoint,
+  local_to_world : @core.Isometry2,
+  local_to_parent : @core.Isometry2,
+) -> MultibodyLink {
+  {
+    internal_id,
+    parent_internal_id,
+    assembly_id,
+    rigid_body,
+    joint,
+    local_to_parent,
+    local_to_world,
+  }
+}
+
+///|
 pub fn MultibodyLink::local_to_world(self : MultibodyLink) -> @core.Isometry2 {
   self.local_to_world
 }
@@ -370,6 +396,25 @@ struct Multibody {
   mut inv_augmented_mass : @core.DMatrix
   solver_id : Int
   mut self_contacts_enabled : Bool
+}
+
+///|
+pub fn Multibody::Multibody() -> Multibody {
+  {
+    links: [],
+    ndofs: 0,
+    root_is_dynamic: true,
+    root_translation: @core.Vec2::zero(),
+    root_angle: 0.0F,
+    root_translation3_z: 0.0F,
+    root_rotation3_extra: @core.Quat::identity(),
+    velocities: DVector::from_fn(0, fn(_) { 0.0F }),
+    damping: DVector::from_fn(0, fn(_) { 0.0F }),
+    accelerations: DVector::from_fn(0, fn(_) { 0.0F }),
+    inv_augmented_mass: @core.DMatrix::identity(0),
+    solver_id: 0,
+    self_contacts_enabled: true,
+  }
 }
 
 ///|

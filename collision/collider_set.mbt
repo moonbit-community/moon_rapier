@@ -723,6 +723,19 @@ pub struct ColliderMaterial {
 }
 
 ///|
+pub fn ColliderMaterial::ColliderMaterial(
+  friction : @core.Real,
+  restitution : @core.Real,
+) -> ColliderMaterial {
+  {
+    friction,
+    restitution,
+    friction_combine_rule: Average,
+    restitution_combine_rule: Average,
+  }
+}
+
+///|
 pub struct ColliderFlags {
   collision_groups : @dynamics.InteractionGroups
   solver_groups : @dynamics.InteractionGroups

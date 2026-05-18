@@ -61,6 +61,8 @@ def _normalize_name(s: str) -> str:
         s2 = s2[:-2]
     if s2.endswith("3D"):
         s2 = s2[:-2]
+    if s2.endswith("2") or s2.endswith("3"):
+        s2 = s2[:-1]
     return s2
 
 
@@ -524,6 +526,13 @@ def report_missing_multi(
                     tail = "::".join(sym.split("::")[-2:])
                     if tail == suffix2 or _normalize_name(tail.split('::')[0]) + '::' + tail.split('::')[1] == suffix2n:
                         return True, "method-name"
+                    if parts[-1] == "new":
+                        moon_type, moon_method = tail.split("::")
+                        if (
+                            moon_type == moon_method
+                            and _normalize_name(moon_type) == n1
+                        ):
+                            return True, "constructor-name"
         return False, "missing"
 
     def summarize(rapier: Dict[str, Any]) -> Dict[str, Any]:

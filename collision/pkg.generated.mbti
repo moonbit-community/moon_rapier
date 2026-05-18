@@ -588,6 +588,7 @@ pub struct ColliderMaterial {
   friction_combine_rule : @dynamics.CoefficientCombineRule
   restitution_combine_rule : @dynamics.CoefficientCombineRule
 }
+pub fn ColliderMaterial::ColliderMaterial(Float, Float) -> Self
 
 pub struct ColliderPair {
   collider1 : ColliderHandle
