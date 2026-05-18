@@ -15,14 +15,14 @@
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (kinematic_and_fixed_contact_crash).
 test "kinematic and fixed contact crash" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let islands = @dynamics.IslandManager::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let islands = @dynamics.IslandManager()
   let rb_fixed = @dynamics.RigidBodyBuilder::fixed().build()
   let h1 = bodies.insert(rb_fixed)
   let co = @collision.ColliderBuilder::ball(10.0F).build()
@@ -41,22 +41,22 @@ test "kinematic and fixed contact crash" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
 }
 
 ///|
 test "mass properties recomputed from attached colliders (insert/remove)" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let rb = @dynamics.RigidBodyBuilder::dynamic().build()
   let rb_handle = bodies.insert(rb)
   let co = @collision.ColliderBuilder::ball(1.0F).build()
@@ -71,9 +71,9 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get(rb_handle) is Some(body_after_insert) {
     inspect(body_after_insert.inv_mass() > 0.0F, content="true")
@@ -92,9 +92,9 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get(rb_handle) is Some(body_after_remove) {
     inspect(body_after_remove.inv_mass() == 0.0F, content="true")
@@ -106,19 +106,19 @@ test "mass properties recomputed from attached colliders (insert/remove)" {
 
 ///|
 test "kinematic position-based next_position advances and affects contacts" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let params = IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_position_based()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .translation(Vec2(0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -128,9 +128,7 @@ test "kinematic position-based next_position advances and affects contacts" {
   )
   |> ignore
   let ball = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 1.1F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 1.1F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(1.0F)
@@ -154,9 +152,9 @@ test "kinematic position-based next_position advances and affects contacts" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics_ccd.CCDSolver::new(),
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      CCDSolver(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   let start_x = if bodies.get(ball) is Some(body) {
@@ -170,8 +168,7 @@ test "kinematic position-based next_position advances and affects contacts" {
     if bodies.get(ground) is Some(g) {
       let t = g.translation()
       if bodies.get_mut(ground) is Some(gm) {
-        gm.set_next_kinematic_translation(@core.Vec2::new(t.x + 0.05F, t.y))
-        |> ignore
+        gm.set_next_kinematic_translation(Vec2(t.x + 0.05F, t.y)) |> ignore
       }
     }
     pipeline.step(
@@ -184,9 +181,9 @@ test "kinematic position-based next_position advances and affects contacts" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics_ccd.CCDSolver::new(),
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      CCDSolver(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   if bodies.get(ground) is Some(g) {
@@ -205,14 +202,14 @@ test "kinematic position-based next_position advances and affects contacts" {
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_before_step).
 test "rigid body removal before step" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h3 = bodies.insert(
@@ -234,26 +231,26 @@ test "rigid body removal before step" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
 }
 
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (collider_removal_before_step).
 test "collider removal before step" {
-  let pipeline = PhysicsPipeline::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let integration_parameters = IntegrationParameters::default()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let ccd = @dynamics_ccd.CCDSolver::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let ccd = @dynamics_ccd.CCDSolver()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
   let body = @dynamics.RigidBodyBuilder::dynamic().build()
   let b_handle = bodies.insert(body)
   let collider = @collision.ColliderBuilder::ball(1.0F).build()
@@ -273,8 +270,8 @@ test "collider removal before step" {
       impulse_joints,
       multibody_joints,
       ccd,
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
 }
@@ -282,19 +279,19 @@ test "collider removal before step" {
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_type_changed_dynamic_is_in_active_set).
 test "rigid body type changed dynamic is in active set" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let rb = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
     .build()
   let h = bodies.insert(rb)
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   pipeline.step(
     gravity,
     IntegrationParameters::default(),
@@ -305,9 +302,9 @@ test "rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get_mut(h) is Some(body) {
     body.set_body_type(Dynamic, true) |> ignore
@@ -322,9 +319,9 @@ test "rigid body type changed dynamic is in active set" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get(h) is Some(body_after) {
     let position = body_after.translation()
@@ -336,14 +333,14 @@ test "rigid body type changed dynamic is in active set" {
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (joint_step_delta_time_0).
 test "joint step delta time 0" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let rb_fixed = @dynamics.RigidBodyBuilder::fixed()
     .additional_mass(1.0F)
     .build()
@@ -353,14 +350,14 @@ test "joint step delta time 0" {
     .build()
   let h_dynamic = bodies.insert(rb_dynamic)
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
-    .local_anchor1(@core.Vec2::new(0.0F, 1.0F))
-    .local_anchor2(@core.Vec2::new(0.0F, -3.0F))
+    @dynamics.RevoluteJointBuilder()
+    .local_anchor1(Vec2(0.0F, 1.0F))
+    .local_anchor2(Vec2(0.0F, -3.0F))
     .build(),
   )
   impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
   let parameters = @dynamics.IntegrationParameters::default().set_dt(0.0F)
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   pipeline.step(
     gravity,
     parameters,
@@ -371,9 +368,9 @@ test "joint step delta time 0" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get(h_dynamic) is Some(body) {
     let translation = body.translation()
@@ -387,31 +384,31 @@ test "joint step delta time 0" {
 
 ///|
 test "revolute impulse-joint keeps anchors coincident" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let h_fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let h_dynamic = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .additional_mass(1.0F)
-    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .translation(Vec2(1.0F, 0.0F))
     .build(),
   )
   let local_anchor1 = @core.Vec2::zero()
-  let local_anchor2 = @core.Vec2::new(-1.0F, 0.0F)
+  let local_anchor2 = @core.Vec2(-1.0F, 0.0F)
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
+    @dynamics.RevoluteJointBuilder()
     .local_anchor1(local_anchor1)
     .local_anchor2(local_anchor2)
     .build(),
   )
   impulse_joints.insert(h_fixed, h_dynamic, joint, true) |> ignore
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     8,
   )
@@ -427,9 +424,9 @@ test "revolute impulse-joint keeps anchors coincident" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics_ccd.CCDSolver::new(),
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      CCDSolver(),
+      PhysicsHooks(),
+      EventHandler(),
     )
     if bodies.get(h_fixed) is Some(b1) && bodies.get(h_dynamic) is Some(b2) {
       let world1 = b1.position().transform_point(local_anchor1)
@@ -445,14 +442,14 @@ test "revolute impulse-joint keeps anchors coincident" {
 
 ///|
 test "revolute impulse-joint motor position reaches target angle" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let h_fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let h_dynamic = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
@@ -480,9 +477,9 @@ test "revolute impulse-joint motor position reaches target angle" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if bodies.get(h_dynamic) is Some(after_spin) {
     inspect(@core.abs(after_spin.rotation().angle()) > 0.01F, content="true")
@@ -495,7 +492,7 @@ test "revolute impulse-joint motor position reaches target angle" {
   }
   let target = @core.pi() / 2.0F
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
+    @dynamics.RevoluteJointBuilder()
     .motor_position(target, 20.0F, 1.0F)
     .motor_max_force(1000.0F)
     .build(),
@@ -527,9 +524,9 @@ test "revolute impulse-joint motor position reaches target angle" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics_ccd.CCDSolver::new(),
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      CCDSolver(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   if bodies.get(h_dynamic) is Some(body) {
@@ -596,19 +593,19 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
     true
   }
 
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd = @dynamics_ccd.CCDSolver::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let ccd = @dynamics_ccd.CCDSolver()
   let fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let seg = @collision.ColliderBuilder::segment(
-    @core.Vec2::new(-2.0F, -2.0F),
-    @core.Vec2::new(2.0F, 2.0F),
+    Vec2(-2.0F, -2.0F),
+    Vec2(2.0F, 2.0F),
   ).build()
   let seg_handle = colliders.insert_with_parent(seg, fixed, bodies)
   let dyn_body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -631,8 +628,8 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
       impulse_joints,
       multibody_joints,
       ccd,
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   if colliders.get(seg_handle) is Some(seg_after) &&
@@ -660,16 +657,16 @@ test "segment cuboid deep penetration resolves (no residual intersection)" {
 
 ///|
 test "physics pipeline emits collision started/stopped events" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
   let callback_events : Array[@collision.CollisionEvent] = []
-  let handler = EventHandler::new().on_collision_event(fn(
+  let handler = EventHandler::EventHandler().on_collision_event(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     event : @collision.CollisionEvent,
@@ -678,14 +675,10 @@ test "physics pipeline emits collision started/stopped events" {
   })
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let b2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.5F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.5F, 0.0F)).build(),
   )
   let co = @collision.ColliderBuilder::ball(1.0F)
     .sensor(true)
@@ -707,8 +700,8 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let ev1 = handler.take_collision_events()
@@ -732,14 +725,14 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   inspect(handler.take_collision_events().length() == 0, content="true")
   inspect(callback_events.length() == 1, content="true")
   if bodies.get_mut(b2) is Some(body2) {
-    body2.set_translation(@core.Vec2::new(10.0F, 0.0F), true) |> ignore
+    body2.set_translation(Vec2(10.0F, 0.0F), true) |> ignore
   }
   pipeline.step(
     @core.Vec2::zero(),
@@ -751,8 +744,8 @@ test "physics pipeline emits collision started/stopped events" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let ev2 = handler.take_collision_events()
@@ -766,15 +759,15 @@ test "physics pipeline emits collision started/stopped events" {
 
 ///|
 test "physics pipeline stopped event includes removed flag (sensor pair)" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let handler = EventHandler::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let handler = EventHandler::EventHandler()
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -798,8 +791,8 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   handler.take_collision_events() |> ignore
@@ -814,8 +807,8 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let ev = handler.take_collision_events()
@@ -837,15 +830,15 @@ test "physics pipeline stopped event includes removed flag (sensor pair)" {
 
 ///|
 test "physics pipeline emits stopped event after removal even if other collider has no events" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let handler = EventHandler::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let handler = EventHandler::EventHandler()
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -866,8 +859,8 @@ test "physics pipeline emits stopped event after removal even if other collider 
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let started = handler.take_collision_events()
@@ -883,8 +876,8 @@ test "physics pipeline emits stopped event after removal even if other collider 
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let stopped = handler.take_collision_events()
@@ -901,15 +894,15 @@ test "physics pipeline emits stopped event after removal even if other collider 
 
 ///|
 test "physics pipeline emits contact force events when enabled" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let handler = EventHandler::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let handler = EventHandler::EventHandler()
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -930,8 +923,8 @@ test "physics pipeline emits contact force events when enabled" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let events = handler.take_contact_force_events()
@@ -951,15 +944,15 @@ test "physics pipeline emits contact force events when enabled" {
 
 ///|
 test "physics pipeline contact force events respect thresholds" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let handler = EventHandler::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let handler = EventHandler::EventHandler()
   let params = IntegrationParameters::default()
   let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let b2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -980,8 +973,8 @@ test "physics pipeline contact force events respect thresholds" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   inspect(handler.take_contact_force_events().length() == 0, content="true")
@@ -990,12 +983,12 @@ test "physics pipeline contact force events respect thresholds" {
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (test_multi_sap_disable_body).
 test "multi sap disable body" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
   let ground = @collision.ColliderBuilder::cuboid(100.0F, 0.1F).build()
   collider_set.insert(ground) |> ignore
   let rigid_body = @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 10.0F))
+    .translation(Vec2(0.0F, 10.0F))
     .build()
   let collider = @collision.ColliderBuilder::ball(0.5F)
     .restitution(0.7F)
@@ -1003,15 +996,15 @@ test "multi sap disable body" {
   let ball_body_handle = rigid_body_set.insert(rigid_body)
   collider_set.insert_with_parent(collider, ball_body_handle, rigid_body_set)
   |> ignore
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let integration_parameters = IntegrationParameters::default()
-  let physics_pipeline = PhysicsPipeline::new()
-  let island_manager = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
-  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let island_manager = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joint_set = @dynamics.ImpulseJointSet()
+  let multibody_joint_set = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -1023,11 +1016,11 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
-    ball_body.set_translation(@core.Vec2::new(1.0F, 1.0F), true) |> ignore
+    ball_body.set_translation(Vec2(1.0F, 1.0F), true) |> ignore
     ball_body.set_rotation(@core.Rot2::from_angle(1.0F), true) |> ignore
     ball_body.set_enabled(false) |> ignore
   }
@@ -1042,11 +1035,11 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if rigid_body_set.get_mut(ball_body_handle) is Some(ball_body) {
-    ball_body.set_translation(@core.Vec2::new(0.0F, 0.0F), true) |> ignore
+    ball_body.set_translation(Vec2(0.0F, 0.0F), true) |> ignore
     ball_body.set_rotation(@core.Rot2::from_angle(0.0F), true) |> ignore
     ball_body.set_enabled(true) |> ignore
   }
@@ -1061,22 +1054,22 @@ test "multi sap disable body" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
 }
 
 ///|
 test "multibody joints participate in pipeline solver (revolute constraint)" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let params = IntegrationParameters::default()
   let gravity = @core.Vec2::zero()
   let parent = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
@@ -1096,13 +1089,13 @@ test "multibody joints participate in pipeline solver (revolute constraint)" {
 
   // A simple multibody with one revolute joint (locks the two linear DOFs).
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new().build(),
+    @dynamics.RevoluteJointBuilder().build(),
   )
   multibody_joints.insert(parent, child, joint, true) |> ignore
 
   // Give the child an initial velocity; without a solver-backed joint, it would drift away.
   if bodies.get_mut(child) is Some(rb) {
-    rb.set_linvel(@core.Vec2::new(10.0F, 0.0F), true) |> ignore
+    rb.set_linvel(Vec2(10.0F, 0.0F), true) |> ignore
   }
   for _ in 0..<30 {
     pipeline.step(
@@ -1116,8 +1109,8 @@ test "multibody joints participate in pipeline solver (revolute constraint)" {
       impulse_joints,
       multibody_joints,
       ccd_solver,
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   if bodies.get(parent) is Some(a) && bodies.get(child) is Some(b) {
@@ -1132,11 +1125,11 @@ test "multibody joints participate in pipeline solver (revolute constraint)" {
 ///|
 /// Ported from rapier/src/pipeline/physics_pipeline.rs (rigid_body_removal_snapshot_handle_determinism).
 test "rigid body removal snapshot handle determinism" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
   let rb = @dynamics.RigidBodyBuilder::dynamic().build()
   let h1 = bodies.insert(rb)
   let h2 = bodies.insert(rb)
@@ -1163,14 +1156,14 @@ test "rigid body removal snapshot handle determinism" {
 
 ///|
 test "rotated cuboid does not generate false contacts" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let islands = @dynamics.IslandManager::new()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let islands = @dynamics.IslandManager()
   let cuboid_body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
@@ -1179,9 +1172,7 @@ test "rotated cuboid does not generate false contacts" {
   let cuboid_collider = @collision.ColliderBuilder::cuboid(2.0F, 0.5F).build()
   colliders.insert_with_parent(cuboid_collider, cuboid_body, bodies) |> ignore
   let ball_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.2F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.2F, 0.0F)).build(),
   )
   let ball_collider = @collision.ColliderBuilder::ball(0.4F).build()
   colliders.insert_with_parent(ball_collider, ball_body, bodies) |> ignore
@@ -1195,9 +1186,9 @@ test "rotated cuboid does not generate false contacts" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(narrow_phase.contacts.length() == 0, content="true")
   if bodies.get(ball_body) is Some(body) {
@@ -1212,17 +1203,17 @@ test "rotated cuboid does not generate false contacts" {
 
 ///|
 test "intersection events: sensor overlaps started/stopped (without collision events)" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let params = IntegrationParameters::default()
   let gravity = @core.Vec2::zero()
-  let handler = EventHandler::new()
+  let handler = EventHandler::EventHandler()
   fn has_event(
     events : Array[@collision.IntersectionEvent],
     intersecting : Bool,
@@ -1250,9 +1241,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
   }
 
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let ground_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(0.5F).build(),
@@ -1260,9 +1249,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     bodies,
   )
   let mover = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 2.0F)).build(),
   )
   let sensor_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(0.5F)
@@ -1284,8 +1271,8 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   inspect(handler.take_collision_events().length() == 0, content="true")
@@ -1293,7 +1280,7 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
 
   // Move into intersection: should emit intersecting=true.
   if bodies.get_mut(mover) is Some(rb) {
-    rb.set_translation(@core.Vec2::new(0.0F, 0.0F), true) |> ignore
+    rb.set_translation(Vec2(0.0F, 0.0F), true) |> ignore
   } else {
     inspect(false, content="true")
   }
@@ -1307,8 +1294,8 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   // Ensure the narrow-phase detected the intersection even when collision events are disabled.
@@ -1342,15 +1329,15 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   inspect(handler.take_intersection_events().length() == 0, content="true")
 
   // Move out of intersection: should emit intersecting=false.
   if bodies.get_mut(mover) is Some(rb2) {
-    rb2.set_translation(@core.Vec2::new(0.0F, 2.0F), true) |> ignore
+    rb2.set_translation(Vec2(0.0F, 2.0F), true) |> ignore
   } else {
     inspect(false, content="true")
   }
@@ -1364,8 +1351,8 @@ test "intersection events: sensor overlaps started/stopped (without collision ev
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
+    CCDSolver(),
+    PhysicsHooks(),
     handler,
   )
   let ev2 = handler.take_intersection_events()

@@ -27,7 +27,6 @@ pub fn[T] Arena::is_empty(Self[T]) -> Bool
 pub fn[T] Arena::iter(Self[T]) -> Array[(Index, T)]
 pub fn[T] Arena::iter_mut(Self[T]) -> Array[(Index, T)]
 pub fn[T] Arena::len(Self[T]) -> Int
-pub fn[T] Arena::new() -> Self[T]
 pub fn[T] Arena::remove(Self[T], Index) -> T?
 pub fn[T] Arena::reserve(Self[T], Int) -> Unit
 pub fn[T] Arena::retain(Self[T], (Index, T) -> Bool) -> Unit
@@ -50,7 +49,6 @@ pub fn[T] Coarena::get_unknown_gen(Self[T], Int) -> T?
 pub fn[T : Default] Coarena::insert(Self[T], Index, T) -> Unit
 pub fn[T] Coarena::iter(Self[T]) -> Array[(Index, T)]
 pub fn[T] Coarena::len(Self[T]) -> Int
-pub fn[T] Coarena::new() -> Self[T]
 pub fn[T] Coarena::remove(Self[T], Index, T) -> T?
 pub fn[T] Coarena::reserve(Self[T], Int) -> Unit
 pub fn[T] Coarena::set(Self[T], Index, T, T) -> Unit
@@ -83,7 +81,6 @@ pub struct EdgeIndex {
 pub fn EdgeIndex::EdgeIndex(Int) -> Self
 pub fn EdgeIndex::end() -> Self
 pub fn EdgeIndex::index(Self) -> Int
-pub fn EdgeIndex::new(Int) -> Self
 
 pub struct EdgeReference[E] {
   index : EdgeIndex
@@ -170,7 +167,6 @@ pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> Self[Handle, Object
 pub fn[Handle, Object] ModifiedObjects::as_internal(Self[Handle, Object]) -> Array[Handle]
 pub fn[Handle, Object] ModifiedObjects::as_mut_internal(Self[Handle, Object]) -> Array[Handle]
 pub fn[Handle, Object] ModifiedObjects::clear(Self[Handle, Object]) -> Unit
-pub fn[Handle, Object] ModifiedObjects::new() -> Self[Handle, Object]
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_once(Self[Handle, Object], Handle, Object) -> Unit
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_unchecked(Self[Handle, Object], Handle, Object) -> Unit
 pub fn[Handle, Object] ModifiedObjects::with_capacity(Int) -> Self[Handle, Object]
@@ -187,7 +183,6 @@ pub struct NodeIndex {
 pub fn NodeIndex::NodeIndex(Int) -> Self
 pub fn NodeIndex::end() -> Self
 pub fn NodeIndex::index(Self) -> Int
-pub fn NodeIndex::new(Int) -> Self
 
 pub struct PubSub[T] {
   mut deleted_messages : Int
@@ -198,7 +193,6 @@ pub struct PubSub[T] {
 }
 pub fn[T] PubSub::PubSub() -> Self[T]
 pub fn[T] PubSub::ack(Self[T], Subscription[T]) -> Unit
-pub fn[T] PubSub::new() -> Self[T]
 pub fn[T] PubSub::publish(Self[T], T) -> Unit
 pub fn[T] PubSub::read(Self[T], Subscription[T]) -> Array[T]
 pub fn[T] PubSub::read_ith(Self[T], Subscription[T], Int) -> T?

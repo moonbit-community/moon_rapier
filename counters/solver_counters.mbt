@@ -26,20 +26,15 @@ pub struct SolverCounters {
 
 ///|
 pub fn SolverCounters::SolverCounters() -> SolverCounters {
-  SolverCounters::new()
-}
-
-///|
-pub fn SolverCounters::new() -> SolverCounters {
   {
     nconstraints: 0,
     ncontacts: 0,
-    velocity_assembly_time: Timer::new(),
-    velocity_assembly_time_solver_bodies: Timer::new(),
-    velocity_assembly_time_constraints_init: Timer::new(),
-    velocity_resolution_time: Timer::new(),
-    velocity_update_time: Timer::new(),
-    velocity_writeback_time: Timer::new(),
+    velocity_assembly_time: Timer(),
+    velocity_assembly_time_solver_bodies: Timer(),
+    velocity_assembly_time_constraints_init: Timer(),
+    velocity_resolution_time: Timer(),
+    velocity_update_time: Timer(),
+    velocity_writeback_time: Timer(),
   }
 }
 

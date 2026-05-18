@@ -14,20 +14,16 @@
 
 ///|
 test "debug-render output is deterministic (best-effort)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let narrow_phase = @collision.NarrowPhase()
   let a = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let b = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(2.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(2.0F, 0.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(0.5F, 0.5F).build(),
@@ -41,7 +37,7 @@ test "debug-render output is deterministic (best-effort)" {
     bodies,
   )
   |> ignore
-  let revolute = @dynamics.RevoluteJointBuilder::new()
+  let revolute = @dynamics.RevoluteJointBuilder()
     .local_anchor1(@core.Vec2::zero())
     .local_anchor2(@core.Vec2::zero())
     .build()
@@ -61,7 +57,7 @@ test "debug-render output is deterministic (best-effort)" {
   |> ignore
   fn render_snapshot() -> String {
     let renderer = DebugRenderPipeline::default()
-    let backend = DebugRenderBackend::new()
+    let backend = DebugRenderBackend::DebugRenderBackend()
     renderer.render(
       backend, bodies, colliders, impulse_joints, multibody_joints, narrow_phase,
     )
@@ -76,22 +72,18 @@ test "debug-render output is deterministic (best-effort)" {
 
 ///|
 test "debug-render backend polyline helpers and collider-aabb object are exported" {
-  let backend = DebugRenderBackend::new()
-  let color = DebugColor::new(0.0F, 0.0F, 0.0F, 1.0F)
+  let backend = DebugRenderBackend::DebugRenderBackend()
+  let color = DebugColor::DebugColor(0.0F, 0.0F, 0.0F, 1.0F)
   let obj = DebugRenderObject::ColliderAabb(
     @collision.ColliderHandle::from_raw_parts(7, 0),
   )
-  let vertices = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(1.0F, 0.0F),
-    @core.Vec2::new(1.0F, 1.0F),
-  ]
+  let vertices = [@core.Vec2(0.0F, 0.0F), Vec2(1.0F, 0.0F), Vec2(1.0F, 1.0F)]
   inspect(backend.filter_object(obj), content="true")
 
   backend.draw_line_strip(obj, vertices, color, true)
   inspect(backend.lines().length(), content="3")
 
-  let backend2 = DebugRenderBackend::new()
+  let backend2 = DebugRenderBackend::DebugRenderBackend()
   backend2.draw_polyline(obj, vertices, color, false)
   inspect(backend2.lines().length(), content="2")
 }

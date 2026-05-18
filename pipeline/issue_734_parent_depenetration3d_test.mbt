@@ -15,12 +15,12 @@
 ///|
 /// Ported from `rapier-reference/src/geometry/narrow_phase.rs` issue #734 test.
 test "issue #734: collider_set parent depenetration (3D)" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,

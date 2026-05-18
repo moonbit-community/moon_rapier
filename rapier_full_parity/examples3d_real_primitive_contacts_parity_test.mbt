@@ -18,13 +18,13 @@
 ///|
 fn run_examples3d_debug_cylinder3(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/debug_cylinder3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iters = if heavy { 18 } else { 16 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     solver_iters,
@@ -35,7 +35,7 @@ fn run_examples3d_debug_cylinder3(heavy : Bool) -> Bool {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   let ground_co = colliders.insert_with_parent(
@@ -51,7 +51,7 @@ fn run_examples3d_debug_cylinder3(heavy : Bool) -> Bool {
   let y = (rad * 2.0F + rad) / 2.0F + 3.0F
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, y, 0.0F))
+    .translation(Vec3(0.0F, y, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -105,20 +105,20 @@ test "HEAVY examples3d/debug_cylinder3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/primitives3.rs cone-vs-ground parity (3DReal headless)" {
   // Derived from `rapier-reference/examples3d/primitives3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
   let ground_height = 1.0F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -130,7 +130,7 @@ test "examples3d/primitives3.rs cone-vs-ground parity (3DReal headless)" {
   let rad = 1.0F
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
+    .translation(Vec3(0.0F, 6.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -157,20 +157,20 @@ test "examples3d/primitives3.rs cone-vs-ground parity (3DReal headless)" {
 ///|
 test "examples3d/primitives3.rs round_cylinder-vs-ground parity (3DReal headless)" {
   // Derived from `rapier-reference/examples3d/primitives3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
   let ground_height = 1.0F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -182,7 +182,7 @@ test "examples3d/primitives3.rs round_cylinder-vs-ground parity (3DReal headless
   let rad = 1.0F
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
+    .translation(Vec3(0.0F, 6.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -208,12 +208,12 @@ test "examples3d/primitives3.rs round_cylinder-vs-ground parity (3DReal headless
 
 ///|
 test "contacts: cylinder-vs-cylinder (3DReal headless)" {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -228,7 +228,7 @@ test "contacts: cylinder-vs-cylinder (3DReal headless)" {
   )
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.2F, 1.8F, 0.1F))
+    .translation(Vec3(0.2F, 1.8F, 0.1F))
     .can_sleep(false)
     .build(),
   )
@@ -252,12 +252,12 @@ test "contacts: cylinder-vs-cylinder (3DReal headless)" {
 
 ///|
 test "contacts: cone-vs-cylinder (3DReal headless)" {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -272,7 +272,7 @@ test "contacts: cone-vs-cylinder (3DReal headless)" {
   )
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.15F, 1.8F, -0.1F))
+    .translation(Vec3(0.15F, 1.8F, -0.1F))
     .can_sleep(false)
     .build(),
   )
@@ -296,12 +296,12 @@ test "contacts: cone-vs-cylinder (3DReal headless)" {
 
 ///|
 test "contacts: cone-vs-cone (3DReal headless)" {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
@@ -317,7 +317,7 @@ test "contacts: cone-vs-cone (3DReal headless)" {
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     // Slight overlap should still generate contacts with robust narrow-phase.
-    .translation(@core.Vec3::new(0.1F, 1.6F, 0.05F))
+    .translation(Vec3(0.1F, 1.6F, 0.05F))
     .can_sleep(false)
     .build(),
   )

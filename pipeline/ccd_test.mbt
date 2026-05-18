@@ -15,14 +15,14 @@
 ///|
 test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
   fn run(ccd_enabled : Bool, max_ccd_substeps : Int) -> @core.Real {
-    let pipeline = PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    let pipeline = PhysicsPipeline::PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let islands = @dynamics.IslandManager()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
 
     // Static wall centered at x = 0.
     colliders.insert(
@@ -33,7 +33,7 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
     |> ignore
     let ball = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(-10.0F, 0.0F))
+      .translation(Vec2(-10.0F, 0.0F))
       .ccd_enabled(ccd_enabled)
       .build(),
     )
@@ -44,7 +44,7 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
     )
     |> ignore
     if bodies.get_mut_internal(ball) is Some(rb) {
-      rb.set_linvel(@core.Vec2::new(100.0F, 0.0F), false) |> ignore
+      rb.set_linvel(Vec2(100.0F, 0.0F), false) |> ignore
     }
     pipeline.step(
       @core.Vec2::zero(),
@@ -58,9 +58,9 @@ test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
       colliders,
       impulse_joints,
       multibody_joints,
-      @dynamics_ccd.CCDSolver::new(),
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      CCDSolver(),
+      PhysicsHooks(),
+      EventHandler(),
     )
     if bodies.get(ball) is Some(rb) {
       rb.translation().x

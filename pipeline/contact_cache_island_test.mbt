@@ -32,23 +32,19 @@ test "contact solver cache accumulates across islands" {
     false
   }
 
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let ground1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(-10.0F, -0.5F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(-10.0F, -0.5F)).build(),
   )
   let ground2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(10.0F, -0.5F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(10.0F, -0.5F)).build(),
   )
   let ground_co1 = colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(5.0F, 0.5F).build(),
@@ -62,12 +58,12 @@ test "contact solver cache accumulates across islands" {
   )
   let ball1 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(-10.0F, 0.25F))
+    .translation(Vec2(-10.0F, 0.25F))
     .build(),
   )
   let ball2 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(10.0F, 0.25F))
+    .translation(Vec2(10.0F, 0.25F))
     .build(),
   )
   let ball_co1 = colliders.insert_with_parent(
@@ -94,9 +90,9 @@ test "contact solver cache accumulates across islands" {
     colliders,
     impulse_joints,
     multibody_joints,
-    @dynamics_ccd.CCDSolver::new(),
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    CCDSolver(),
+    PhysicsHooks(),
+    EventHandler(),
   )
 
   // The solver cache should contain entries for both disjoint islands, not just the last one.

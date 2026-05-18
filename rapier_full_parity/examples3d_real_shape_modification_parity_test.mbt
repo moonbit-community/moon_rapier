@@ -18,13 +18,13 @@
 
 ///|
 test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -34,7 +34,7 @@ test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -52,8 +52,8 @@ test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
   let ball_rad = 0.1F
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.2F, 0.0F))
-    .linvel(@core.Vec3::new(10.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.2F, 0.0F))
+    .linvel(Vec3(10.0F, 0.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -67,7 +67,7 @@ test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
   let shape_size = 3.0F
   let static_ball = colliders.insert(
     @collision.ColliderBuilder3D::ball(shape_size)
-    .translation(@core.Vec3::new(-15.0F, shape_size, 18.0F))
+    .translation(Vec3(-15.0F, shape_size, 18.0F))
     .build(),
   )
   static_ball |> ignore
@@ -75,7 +75,7 @@ test "examples3d/debug_shape_modification3.rs parity (3DReal headless)" {
   // Shapeshifting collider without body.
   let shapeshifting = colliders.insert(
     @collision.ColliderBuilder3D::ball(shape_size)
-    .translation(@core.Vec3::new(-15.0F, shape_size, 9.0F))
+    .translation(Vec3(-15.0F, shape_size, 9.0F))
     .build(),
   )
 

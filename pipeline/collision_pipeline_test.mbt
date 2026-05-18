@@ -15,10 +15,10 @@
 ///|
 /// Ported from rapier/src/pipeline/collision_pipeline.rs (dim2 test_no_rigid_bodies).
 test "collision pipeline no rigid bodies" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let collider_a = @collision.ColliderBuilder::cuboid(1.0F, 1.0F)
     .active_collision_types(@collision.ActiveCollisionTypes::all())
     .sensor(true)
@@ -32,10 +32,10 @@ test "collision pipeline no rigid bodies" {
     .build()
   collider_set.insert(collider_b) |> ignore
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -45,8 +45,8 @@ test "collision pipeline no rigid bodies" {
     collider_set,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let mut hit = false
   for pair in narrow_phase.intersection_pairs_with(a_handle) {
@@ -60,10 +60,10 @@ test "collision pipeline no rigid bodies" {
 ///|
 /// Ported from rapier/src/pipeline/collision_pipeline.rs (dim3 test_no_rigid_bodies) for 2D.
 test "collision pipeline no rigid bodies (dim3 port)" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let collider_a = @collision.ColliderBuilder::cuboid(1.0F, 1.0F)
     .active_collision_types(@collision.ActiveCollisionTypes::all())
     .sensor(true)
@@ -77,10 +77,10 @@ test "collision pipeline no rigid bodies (dim3 port)" {
     .build()
   collider_set.insert(collider_b) |> ignore
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -90,8 +90,8 @@ test "collision pipeline no rigid bodies (dim3 port)" {
     collider_set,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let mut hit = false
   for pair in narrow_phase.intersection_pairs_with(a_handle) {
@@ -105,10 +105,10 @@ test "collision pipeline no rigid bodies (dim3 port)" {
 ///|
 /// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) for 2D.
 test "collision pipeline physics hooks filter intersection pair" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let collider_a = @collision.ColliderBuilder::cuboid(1.0F, 1.0F)
     .active_collision_types(@collision.ActiveCollisionTypes::all())
     .sensor(true)
@@ -121,11 +121,11 @@ test "collision pipeline physics hooks filter intersection pair" {
     .build()
   collider_set.insert(collider_b) |> ignore
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
-  let hooks = PhysicsHooks::new().filter_intersection_pair(fn(
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let hooks = PhysicsHooks::PhysicsHooks().filter_intersection_pair(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     _c1 : @collision.ColliderHandle,
@@ -143,7 +143,7 @@ test "collision pipeline physics hooks filter intersection pair" {
     impulse_joints,
     multibody_joints,
     hooks,
-    EventHandler::new(),
+    EventHandler(),
   )
   let mut hit = false
   for pair in narrow_phase.intersection_pairs_with(a_handle) {
@@ -157,10 +157,10 @@ test "collision pipeline physics hooks filter intersection pair" {
 ///|
 /// Ported from rapier/src/pipeline/physics_hooks.rs (pair filtering semantics) for 2D.
 test "collision pipeline physics hooks filter contact pair" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let body1 = rigid_body_set.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
@@ -182,11 +182,11 @@ test "collision pipeline physics hooks filter contact pair" {
     collider_b, body2, rigid_body_set,
   )
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
-  let hooks = PhysicsHooks::new().filter_contact_pair(fn(
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let hooks = PhysicsHooks::PhysicsHooks().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     _c1 : @collision.ColliderHandle,
@@ -204,7 +204,7 @@ test "collision pipeline physics hooks filter contact pair" {
     impulse_joints,
     multibody_joints,
     hooks,
-    EventHandler::new(),
+    EventHandler(),
   )
   inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
 }
@@ -213,10 +213,10 @@ test "collision pipeline physics hooks filter contact pair" {
 /// Ported from rapier/src/pipeline/physics_hooks.rs doc note:
 /// by default, contacts between two non-dynamic bodies are filtered out.
 test "collision pipeline filters out non-dynamic contact pairs by default" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let collider_a = @collision.ColliderBuilder::ball(1.0F)
     .active_collision_types(@collision.ActiveCollisionTypes::all())
     .build()
@@ -226,10 +226,10 @@ test "collision pipeline filters out non-dynamic contact pairs by default" {
   let a_handle = collider_set.insert(collider_a)
   let b_handle = collider_set.insert(collider_b)
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -239,8 +239,8 @@ test "collision pipeline filters out non-dynamic contact pairs by default" {
     collider_set,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
 }
@@ -249,10 +249,10 @@ test "collision pipeline filters out non-dynamic contact pairs by default" {
 /// Ported from rapier/src/pipeline/physics_hooks.rs doc note:
 /// enabling ActiveHooks::FILTER_CONTACT_PAIRS replaces the default non-dynamic filtering.
 test "collision pipeline allows non-dynamic contact pairs with filter_contact_pairs hook" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let collider_a = @collision.ColliderBuilder::ball(1.0F)
     .active_collision_types(@collision.ActiveCollisionTypes::all())
     .active_hooks(@collision.ActiveHooks::filter_contact_pairs())
@@ -263,10 +263,10 @@ test "collision pipeline allows non-dynamic contact pairs with filter_contact_pa
   let a_handle = collider_set.insert(collider_a)
   let b_handle = collider_set.insert(collider_b)
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -276,8 +276,8 @@ test "collision pipeline allows non-dynamic contact pairs with filter_contact_pa
     collider_set,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(
     narrow_phase.contact_pair(a_handle, b_handle) is Some(_),
@@ -287,10 +287,10 @@ test "collision pipeline allows non-dynamic contact pairs with filter_contact_pa
 
 ///|
 test "collision pipeline ignores contacts between bodies attached by joint when contacts_enabled is false" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let body1 = rigid_body_set.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
@@ -310,14 +310,14 @@ test "collision pipeline ignores contacts between bodies attached by joint when 
     collider_b, body2, rigid_body_set,
   )
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new().build(),
+    @dynamics.RevoluteJointBuilder().build(),
   ).set_contacts_enabled(false)
   impulse_joints.insert(body1, body2, joint, true) |> ignore
   let integration_parameters = IntegrationParameters::default()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let collision_pipeline = CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -327,8 +327,8 @@ test "collision pipeline ignores contacts between bodies attached by joint when 
     collider_set,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(narrow_phase.contact_pair(a_handle, b_handle) is None, content="true")
 }

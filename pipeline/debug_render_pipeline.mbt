@@ -27,16 +27,6 @@ pub fn DebugColor::DebugColor(
   l : @core.Real,
   a : @core.Real,
 ) -> DebugColor {
-  DebugColor::new(h, s, l, a)
-}
-
-///|
-pub fn DebugColor::new(
-  h : @core.Real,
-  s : @core.Real,
-  l : @core.Real,
-  a : @core.Real,
-) -> DebugColor {
   { h, s, l, a }
 }
 
@@ -66,21 +56,21 @@ pub fn DebugRenderStyle::default() -> DebugRenderStyle {
   {
     subdivisions: 20,
     border_subdivisions: 5,
-    collider_dynamic_color: DebugColor::new(340.0F, 1.0F, 0.3F, 1.0F),
-    collider_kinematic_color: DebugColor::new(20.0F, 1.0F, 0.3F, 1.0F),
-    collider_fixed_color: DebugColor::new(30.0F, 1.0F, 0.4F, 1.0F),
-    collider_parentless_color: DebugColor::new(30.0F, 1.0F, 0.4F, 1.0F),
-    impulse_joint_anchor_color: DebugColor::new(240.0F, 0.5F, 0.4F, 1.0F),
-    impulse_joint_separation_color: DebugColor::new(0.0F, 0.5F, 0.4F, 1.0F),
-    multibody_joint_anchor_color: DebugColor::new(300.0F, 1.0F, 0.4F, 1.0F),
-    multibody_joint_separation_color: DebugColor::new(0.0F, 1.0F, 0.4F, 1.0F),
-    sleep_color_multiplier: DebugColor::new(1.0F, 1.0F, 0.2F, 1.0F),
-    disabled_color_multiplier: DebugColor::new(0.0F, 0.0F, 1.0F, 1.0F),
+    collider_dynamic_color: DebugColor(340.0F, 1.0F, 0.3F, 1.0F),
+    collider_kinematic_color: DebugColor(20.0F, 1.0F, 0.3F, 1.0F),
+    collider_fixed_color: DebugColor(30.0F, 1.0F, 0.4F, 1.0F),
+    collider_parentless_color: DebugColor(30.0F, 1.0F, 0.4F, 1.0F),
+    impulse_joint_anchor_color: DebugColor(240.0F, 0.5F, 0.4F, 1.0F),
+    impulse_joint_separation_color: DebugColor(0.0F, 0.5F, 0.4F, 1.0F),
+    multibody_joint_anchor_color: DebugColor(300.0F, 1.0F, 0.4F, 1.0F),
+    multibody_joint_separation_color: DebugColor(0.0F, 1.0F, 0.4F, 1.0F),
+    sleep_color_multiplier: DebugColor(1.0F, 1.0F, 0.2F, 1.0F),
+    disabled_color_multiplier: DebugColor(0.0F, 0.0F, 1.0F, 1.0F),
     rigid_body_axes_length: 0.5F,
-    contact_depth_color: DebugColor::new(120.0F, 1.0F, 0.4F, 1.0F),
-    contact_normal_color: DebugColor::new(0.0F, 1.0F, 1.0F, 1.0F),
+    contact_depth_color: DebugColor(120.0F, 1.0F, 0.4F, 1.0F),
+    contact_normal_color: DebugColor(0.0F, 1.0F, 1.0F, 1.0F),
     contact_normal_length: 0.3F,
-    collider_aabb_color: DebugColor::new(124.0F, 1.0F, 0.4F, 1.0F),
+    collider_aabb_color: DebugColor(124.0F, 1.0F, 0.4F, 1.0F),
   }
 }
 
@@ -218,11 +208,6 @@ pub struct DebugRenderBackend {
 
 ///|
 pub fn DebugRenderBackend::DebugRenderBackend() -> DebugRenderBackend {
-  DebugRenderBackend::new()
-}
-
-///|
-pub fn DebugRenderBackend::new() -> DebugRenderBackend {
   { lines: [] }
 }
 
@@ -291,7 +276,7 @@ pub fn DebugRenderBackend::lines(
 ///|
 pub fn DebugRenderBackend::serialize_lines(self : DebugRenderBackend) -> String {
   // Deterministic, lossless enough snapshot for tests and consumers.
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i in 0..<self.lines.length() {
     let line = self.lines[i]
     if i > 0 {
@@ -381,14 +366,6 @@ pub fn DebugRenderPipeline::DebugRenderPipeline(
   style : DebugRenderStyle,
   mode : DebugRenderMode,
 ) -> DebugRenderPipeline {
-  DebugRenderPipeline::new(style, mode)
-}
-
-///|
-pub fn DebugRenderPipeline::new(
-  style : DebugRenderStyle,
-  mode : DebugRenderMode,
-) -> DebugRenderPipeline {
   { style, mode }
 }
 
@@ -396,15 +373,12 @@ pub fn DebugRenderPipeline::new(
 pub fn DebugRenderPipeline::render_all(
   style : DebugRenderStyle,
 ) -> DebugRenderPipeline {
-  DebugRenderPipeline::new(style, DebugRenderMode::all())
+  DebugRenderPipeline(style, DebugRenderMode::all())
 }
 
 ///|
 pub fn DebugRenderPipeline::default() -> DebugRenderPipeline {
-  DebugRenderPipeline::new(
-    DebugRenderStyle::default(),
-    DebugRenderMode::default(),
-  )
+  DebugRenderPipeline(DebugRenderStyle::default(), DebugRenderMode::default())
 }
 
 ///|
@@ -415,8 +389,8 @@ fn rigid_body_axes_lines(
   let origin = position.translation
   let rot = position.rotation
   let len = style.rigid_body_axes_length
-  let x_axis = @core.Vec2::new(rot.cos * len, rot.sin * len)
-  let y_axis = @core.Vec2::new(-rot.sin * len, rot.cos * len)
+  let x_axis = @core.Vec2(rot.cos * len, rot.sin * len)
+  let y_axis = @core.Vec2(-rot.sin * len, rot.cos * len)
   (origin, origin.add(x_axis), origin.add(y_axis))
 }
 
@@ -431,20 +405,12 @@ fn draw_cuboid_outline(
   color : DebugColor,
 ) -> Unit {
   let rot = @core.Rot2::from_angle(angle)
-  let ax = @core.Vec2::new(rot.cos, rot.sin)
-  let ay = @core.Vec2::new(-rot.sin, rot.cos)
-  let v00 = center.add(
-    @core.Vec2::new(ax.x * hw + ay.x * hh, ax.y * hw + ay.y * hh),
-  )
-  let v10 = center.add(
-    @core.Vec2::new(ax.x * hw - ay.x * hh, ax.y * hw - ay.y * hh),
-  )
-  let v11 = center.add(
-    @core.Vec2::new(-ax.x * hw - ay.x * hh, -ax.y * hw - ay.y * hh),
-  )
-  let v01 = center.add(
-    @core.Vec2::new(-ax.x * hw + ay.x * hh, -ax.y * hw + ay.y * hh),
-  )
+  let ax = @core.Vec2(rot.cos, rot.sin)
+  let ay = @core.Vec2(-rot.sin, rot.cos)
+  let v00 = center.add(Vec2(ax.x * hw + ay.x * hh, ax.y * hw + ay.y * hh))
+  let v10 = center.add(Vec2(ax.x * hw - ay.x * hh, ax.y * hw - ay.y * hh))
+  let v11 = center.add(Vec2(-ax.x * hw - ay.x * hh, -ax.y * hw - ay.y * hh))
+  let v01 = center.add(Vec2(-ax.x * hw + ay.x * hh, -ax.y * hw + ay.y * hh))
   backend.draw_line(object, v00, v10, color)
   backend.draw_line(object, v10, v11, color)
   backend.draw_line(object, v11, v01, color)
@@ -459,10 +425,10 @@ fn draw_aabb_outline(
   max : @core.Vec2,
   color : DebugColor,
 ) -> Unit {
-  let a = @core.Vec2::new(min.x, min.y)
-  let b = @core.Vec2::new(max.x, min.y)
-  let c = @core.Vec2::new(max.x, max.y)
-  let d = @core.Vec2::new(min.x, max.y)
+  let a = @core.Vec2(min.x, min.y)
+  let b = @core.Vec2(max.x, min.y)
+  let c = @core.Vec2(max.x, max.y)
+  let d = @core.Vec2(min.x, max.y)
   backend.draw_line(object, a, b, color)
   backend.draw_line(object, b, c, color)
   backend.draw_line(object, c, d, color)
@@ -517,10 +483,10 @@ pub fn DebugRenderPipeline::render_colliders(
           Ball(r) => {
             // Deterministic approximation: draw two diameters.
             let c = collider.translation()
-            let a = @core.Vec2::new(c.x - r, c.y)
-            let b = @core.Vec2::new(c.x + r, c.y)
-            let d = @core.Vec2::new(c.x, c.y - r)
-            let e = @core.Vec2::new(c.x, c.y + r)
+            let a = @core.Vec2(c.x - r, c.y)
+            let b = @core.Vec2(c.x + r, c.y)
+            let d = @core.Vec2(c.x, c.y - r)
+            let e = @core.Vec2(c.x, c.y + r)
             backend.draw_line(obj, a, b, self.style.collider_dynamic_color)
             backend.draw_line(obj, d, e, self.style.collider_dynamic_color)
           }
@@ -548,8 +514,8 @@ pub fn DebugRenderPipeline::render_colliders(
             draw_aabb_outline(
               backend,
               aabb_obj,
-              @core.Vec2::new(c.x - r, c.y - r),
-              @core.Vec2::new(c.x + r, c.y + r),
+              Vec2(c.x - r, c.y - r),
+              Vec2(c.x + r, c.y + r),
               self.style.collider_aabb_color,
             )
           }
@@ -563,8 +529,8 @@ pub fn DebugRenderPipeline::render_colliders(
             draw_aabb_outline(
               backend,
               aabb_obj,
-              @core.Vec2::new(c.x - ax, c.y - ay),
-              @core.Vec2::new(c.x + ax, c.y + ay),
+              Vec2(c.x - ax, c.y - ay),
+              Vec2(c.x + ax, c.y + ay),
               self.style.collider_aabb_color,
             )
           }

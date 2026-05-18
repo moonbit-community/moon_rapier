@@ -24,7 +24,7 @@ pub type ColliderBuilder3Compat = ColliderBuilder3D
 ///|
 pub fn Collider::translation3(self : Collider) -> @core.Vec3 {
   let t = self.translation()
-  @core.Vec3::new(t.x, t.y, 0.0F)
+  Vec3(t.x, t.y, 0.0F)
 }
 
 ///|
@@ -40,7 +40,7 @@ fn recompute_body_mass_properties_from_attached_colliders3(
       let co_handle = attached[j]
       if colliders.get(co_handle) is Some(collider) {
         if collider.is_enabled() {
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             collider.local_translation,
             @core.Rot2::from_angle(collider.local_rotation),
           )
@@ -66,7 +66,7 @@ fn ColliderSet3::sync_with_bodies(
       if collider.parent is Some(parent) {
         if bodies.get(parent) is Some(body) {
           let body_pos = body.position()
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             collider.local_translation,
             @core.Rot2::from_angle(collider.local_rotation),
           )
@@ -90,12 +90,7 @@ pub struct ColliderSet3 {
 
 ///|
 pub fn ColliderSet3::ColliderSet3() -> ColliderSet3 {
-  ColliderSet3::new()
-}
-
-///|
-pub fn ColliderSet3::new() -> ColliderSet3 {
-  { inner: ColliderSet::new() }
+  { inner: ColliderSet() }
 }
 
 ///|
@@ -129,7 +124,7 @@ pub fn ColliderSet3::insert_with_parent(
   updated.parent = Some(parent)
   if bodies.get(parent) is Some(body) {
     let body_pos = body.position()
-    let local_pos = @core.Isometry2::new(
+    let local_pos = @core.Isometry2(
       updated.local_translation,
       @core.Rot2::from_angle(updated.local_rotation),
     )
@@ -233,7 +228,7 @@ pub fn ColliderSet3::set_parent(
       }
       if bodies.get(parent_handle) is Some(body) {
         let body_pos = body.position()
-        let local_pos = @core.Isometry2::new(
+        let local_pos = @core.Isometry2(
           collider.local_translation,
           @core.Rot2::from_angle(collider.local_rotation),
         )

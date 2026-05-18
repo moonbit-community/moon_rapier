@@ -14,17 +14,17 @@
 
 ///|
 test "contact solver 3d resolves approaching velocity (ball-ball)" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   let b2 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(1.8F, 0.0F, 0.0F))
-    .linvel(@core.Vec3::new(-1.0F, 0.0F, 0.0F))
+    .translation(Vec3(1.8F, 0.0F, 0.0F))
+    .linvel(Vec3(-1.0F, 0.0F, 0.0F))
     .build(),
   )
   let c1 = colliders.insert_with_parent(
@@ -38,13 +38,13 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
     bodies,
   )
   colliders.sync_with_bodies(bodies)
-  let bp = @collision.BroadPhase3D::new()
+  let bp = @collision.BroadPhase3D()
   bp.update(0.0F, colliders)
-  let nf = @collision.NarrowPhase3D::new()
+  let nf = @collision.NarrowPhase3D()
   nf.update(bp.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   let params = @dynamics.IntegrationParameters::default().set_dt(1.0F / 60.0F)
-  let cache0 = ContactSolverCache3D::new()
-  let cache1 = ContactSolverCache3D::new()
+  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
   solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
 
   // Ensure the relative normal velocity is no longer strongly negative.
@@ -82,7 +82,7 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
   } else {
     @core.Vec3::zero()
   }
-  let cache2 = ContactSolverCache3D::new()
+  let cache2 = ContactSolverCache3D::ContactSolverCache3D()
   solve_contacts_3d(params, bodies, colliders, nf, cache1, cache2, None, None)
   let v1_after = if bodies.get(b1) is Some(rb1) {
     rb1.linvel()
@@ -100,17 +100,17 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
 
 ///|
 test "contact solver 3d restitution bounces (ball-ball)" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   let b2 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(2.0F, 0.0F, 0.0F))
-    .linvel(@core.Vec3::new(-1.0F, 0.0F, 0.0F))
+    .translation(Vec3(2.0F, 0.0F, 0.0F))
+    .linvel(Vec3(-1.0F, 0.0F, 0.0F))
     .build(),
   )
   let c1 = colliders.insert_with_parent(
@@ -124,15 +124,15 @@ test "contact solver 3d restitution bounces (ball-ball)" {
     bodies,
   )
   colliders.sync_with_bodies(bodies)
-  let bp = @collision.BroadPhase3D::new()
+  let bp = @collision.BroadPhase3D()
   bp.update(0.0F, colliders)
-  let nf = @collision.NarrowPhase3D::new()
+  let nf = @collision.NarrowPhase3D()
   nf.update(bp.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::new()
-  let cache1 = ContactSolverCache3D::new()
+  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
   solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
   if nf.contact_pair(c1, c2) is Some(pair) && pair.manifolds_len() == 1 {
     let cp = pair.manifolds()[0]
@@ -157,11 +157,11 @@ test "contact solver 3d restitution bounces (ball-ball)" {
 
 ///|
 test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -174,8 +174,8 @@ test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
   |> ignore
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
-    .linvel(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
+    .linvel(Vec3(1.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -185,15 +185,15 @@ test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
   )
   |> ignore
   colliders.sync_with_bodies(bodies)
-  let bp = @collision.BroadPhase3D::new()
+  let bp = @collision.BroadPhase3D()
   bp.update(0.0F, colliders)
-  let nf = @collision.NarrowPhase3D::new()
+  let nf = @collision.NarrowPhase3D()
   nf.update(bp.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::new()
-  let cache1 = ContactSolverCache3D::new()
+  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
   solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
   if bodies.get(ball) is Some(rb) {
     inspect(rb.linvel().x < 0.2F, content="true")
@@ -204,11 +204,11 @@ test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
 
 ///|
 test "contact solver 3d uses combine rules for friction" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -222,8 +222,8 @@ test "contact solver 3d uses combine rules for friction" {
   |> ignore
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
-    .linvel(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
+    .linvel(Vec3(1.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -236,15 +236,15 @@ test "contact solver 3d uses combine rules for friction" {
   )
   |> ignore
   colliders.sync_with_bodies(bodies)
-  let bp = @collision.BroadPhase3D::new()
+  let bp = @collision.BroadPhase3D()
   bp.update(0.0F, colliders)
-  let nf = @collision.NarrowPhase3D::new()
+  let nf = @collision.NarrowPhase3D()
   nf.update(bp.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::new()
-  let cache1 = ContactSolverCache3D::new()
+  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
   solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
   if bodies.get(ball) is Some(rb) {
     inspect(rb.linvel().x < 0.2F, content="true")

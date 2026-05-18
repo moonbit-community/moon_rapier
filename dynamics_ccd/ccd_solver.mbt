@@ -16,7 +16,7 @@
 pub struct CCDSolver {}
 
 ///|
-pub fn CCDSolver::new() -> CCDSolver {
+pub fn CCDSolver::CCDSolver() -> CCDSolver {
   CCDSolver::{  }
 }
 
@@ -113,7 +113,7 @@ fn predicted_body_position_for_first_impact(
 ) -> @core.Isometry2 {
   match body.body_type() {
     Dynamic =>
-      @dynamics.RigidBodyPosition::new(body.position(), body.next_position()).integrate_forces_and_velocities(
+      @dynamics.RigidBodyPosition(body.position(), body.next_position()).integrate_forces_and_velocities(
         dt,
         body.forces(),
         body.vels(),
@@ -140,9 +140,9 @@ fn predict_body_collider_toi(
     return None
   }
   let linvel = end_pos.translation.sub(start_pos.translation)
-  let vel = @core.Vec2::new(linvel.x / dt, linvel.y / dt)
+  let vel = @core.Vec2(linvel.x / dt, linvel.y / dt)
   let angvel = (end_pos.rotation.angle() - start_pos.rotation.angle()) / dt
-  let motion = @collision.NonlinearRigidMotion::new(start_pos, vel, angvel)
+  let motion = @collision.NonlinearRigidMotion(start_pos, vel, angvel)
   if query_pipeline.cast_shape_nonlinear(
       bodies,
       colliders,
@@ -187,12 +187,12 @@ pub fn CCDSolver::predict_impacts_at_next_positions(
           co.is_enabled() &&
           !co.is_sensor() {
           let start_pos = co.position()
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             co.local_translation,
             @core.Rot2::from_angle(co.local_rotation),
           )
           let end_pos = body.next_position().mul(local_pos)
-          let filter = @collision.QueryFilter::new()
+          let filter = @collision.QueryFilter()
             .exclude_rigid_body(handle)
             .groups(co.collision_groups())
             .exclude_sensors()
@@ -253,12 +253,12 @@ pub fn CCDSolver::find_first_impact(
           co.is_enabled() &&
           !co.is_sensor() {
           let start_pos = co.position()
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             co.local_translation,
             @core.Rot2::from_angle(co.local_rotation),
           )
           let end_pos = predicted_body_pos.mul(local_pos)
-          let filter = @collision.QueryFilter::new()
+          let filter = @collision.QueryFilter()
             .exclude_rigid_body(handle)
             .groups(co.collision_groups())
             .exclude_sensors()

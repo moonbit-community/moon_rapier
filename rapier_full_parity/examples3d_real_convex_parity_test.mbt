@@ -28,13 +28,13 @@ test "examples3d/convex_polyhedron3.rs parity (3DReal headless)" {
     (value, next)
   }
 
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -42,7 +42,7 @@ test "examples3d/convex_polyhedron3.rs parity (3DReal headless)" {
   // Ground.
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
+    .translation(Vec3(0.0F, -0.1F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -72,11 +72,11 @@ test "examples3d/convex_polyhedron3.rs parity (3DReal headless)" {
           let (ry, s2) = rng_float01(s1)
           let (rz, s3) = rng_float01(s2)
           seed = s3
-          points.push(@core.Vec3::new(rx * scale, ry * scale, rz * scale))
+          points.push(Vec3(rx * scale, ry * scale, rz * scale))
         }
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(h)
@@ -112,13 +112,13 @@ test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
   // The upstream example loads a number of OBJ meshes and applies convex decomposition.
   // This port runs a deterministic headless scenario exercising convex decomposition on a small
   // concave mesh and ensures the simulation stays stable.
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -127,7 +127,7 @@ test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(50.0F, 0.1F, 50.0F)
-    .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
+    .translation(Vec3(0.0F, -0.1F, 0.0F))
     .build(),
     ground,
     bodies,
@@ -136,14 +136,14 @@ test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
 
   // A tiny concave "U" mesh in the XZ plane, extruded slightly in Y.
   let v : Array[@core.Vec3] = [
-    @core.Vec3::new(-1.0F, 0.0F, -1.0F),
-    @core.Vec3::new(1.0F, 0.0F, -1.0F),
-    @core.Vec3::new(1.0F, 0.0F, 1.0F),
-    @core.Vec3::new(0.4F, 0.0F, 1.0F),
-    @core.Vec3::new(0.4F, 0.0F, -0.2F),
-    @core.Vec3::new(-0.4F, 0.0F, -0.2F),
-    @core.Vec3::new(-0.4F, 0.0F, 1.0F),
-    @core.Vec3::new(-1.0F, 0.0F, 1.0F),
+    Vec3(-1.0F, 0.0F, -1.0F),
+    Vec3(1.0F, 0.0F, -1.0F),
+    Vec3(1.0F, 0.0F, 1.0F),
+    Vec3(0.4F, 0.0F, 1.0F),
+    Vec3(0.4F, 0.0F, -0.2F),
+    Vec3(-0.4F, 0.0F, -0.2F),
+    Vec3(-0.4F, 0.0F, 1.0F),
+    Vec3(-1.0F, 0.0F, 1.0F),
   ]
   let idx : Array[(Int, Int, Int)] = [
     (0, 1, 5),
@@ -159,7 +159,7 @@ test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
     let z = Float::from_int(i / 4) * 3.0F - 1.5F
     let h = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, 4.0F, z))
+      .translation(Vec3(x, 4.0F, z))
       .can_sleep(false)
       .build(),
     )

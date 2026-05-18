@@ -36,15 +36,10 @@ pub struct PubSub[T] {
 }
 
 ///|
-pub fn[T] PubSub::PubSub() -> PubSub[T] {
-  PubSub::new()
-}
-
-///|
 const INVALID_OFFSET : Int = -1
 
 ///|
-pub fn[T] PubSub::new() -> PubSub[T] {
+pub fn[T] PubSub::PubSub() -> PubSub[T] {
   {
     deleted_messages: 0,
     deleted_offsets: 0,

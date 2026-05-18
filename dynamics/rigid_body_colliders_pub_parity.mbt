@@ -23,11 +23,6 @@ pub struct RigidBodyColliders {
 
 ///|
 pub fn RigidBodyColliders::RigidBodyColliders() -> RigidBodyColliders {
-  RigidBodyColliders::new()
-}
-
-///|
-pub fn RigidBodyColliders::new() -> RigidBodyColliders {
   { colliders: [] }
 }
 

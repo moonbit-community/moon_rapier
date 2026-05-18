@@ -31,19 +31,14 @@ pub struct JointAxesMask3DReal {
 }
 
 ///|
-pub fn JointAxesMask3DReal::JointAxesMask3DReal(
-  bits : Int,
-) -> JointAxesMask3DReal {
-  JointAxesMask3DReal::new(bits)
-}
-
-///|
 pub fn JointAxesMask3DReal::empty() -> JointAxesMask3DReal {
   { bits: 0 }
 }
 
 ///|
-pub fn JointAxesMask3DReal::new(bits : Int) -> JointAxesMask3DReal {
+pub fn JointAxesMask3DReal::JointAxesMask3DReal(
+  bits : Int,
+) -> JointAxesMask3DReal {
   { bits, }
 }
 
@@ -128,19 +123,19 @@ pub fn JointAxesMask3DReal::intersection(
 ///|
 pub fn JointAxesMask3DReal::locked_revolute_axes() -> JointAxesMask3DReal {
   // Rapier: LIN_X|LIN_Y|LIN_Z|ANG_Y|ANG_Z
-  JointAxesMask3DReal::new((1 << 0) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 5))
+  JointAxesMask3DReal((1 << 0) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 5))
 }
 
 ///|
 pub fn JointAxesMask3DReal::locked_prismatic_axes() -> JointAxesMask3DReal {
   // Rapier: LIN_Y|LIN_Z|ANG_X|ANG_Y|ANG_Z
-  JointAxesMask3DReal::new((1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5))
+  JointAxesMask3DReal((1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5))
 }
 
 ///|
 pub fn JointAxesMask3DReal::locked_fixed_axes() -> JointAxesMask3DReal {
   // Rapier: LIN_X|LIN_Y|LIN_Z|ANG_X|ANG_Y|ANG_Z
-  JointAxesMask3DReal::new(
+  JointAxesMask3DReal(
     (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5),
   )
 }

@@ -158,13 +158,6 @@ pub struct DynamicRayCastVehicleController3DReal {
 pub fn DynamicRayCastVehicleController3DReal::DynamicRayCastVehicleController3DReal(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController3DReal {
-  DynamicRayCastVehicleController3DReal::new(chassis)
-}
-
-///|
-pub fn DynamicRayCastVehicleController3DReal::new(
-  chassis : @dynamics.RigidBodyHandle,
-) -> DynamicRayCastVehicleController3DReal {
   {
     wheels: [],
     forward_ws: [],
@@ -255,11 +248,11 @@ pub fn DynamicRayCastVehicleController3DReal::wheels_mut(
 ///|
 fn veh3d_real_axis_vec3(axis : Int) -> @core.Vec3 {
   if axis == 0 {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    Vec3(1.0F, 0.0F, 0.0F)
   } else if axis == 1 {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+    Vec3(0.0F, 0.0F, 1.0F)
   }
 }
 
@@ -443,7 +436,7 @@ fn veh3d_real_ray_cast(
   let rayvector = out.wheel_direction_ws.scale(raylen)
   let source_ws = out.raycast_info.hard_point_ws
   out.raycast_info.contact_point_ws = source_ws.add(rayvector)
-  let ray = @collision.Ray3::new(source_ws, rayvector)
+  let ray = @collision.Ray3(source_ws, rayvector)
   out.raycast_info.ground_object = None
   if queries.cast_ray_and_get_normal(bodies, colliders, ray, 1.0F, true)
     is Some(hit) {
@@ -737,7 +730,7 @@ pub fn DynamicRayCastVehicleController3DReal::update_vehicle(
     let w = self.wheels[i]
     self.wheels[i] = veh3d_real_ray_cast(
       qp.with_filter(
-        @collision.QueryFilter3DReal::new().exclude_rigid_body(self.chassis),
+        @collision.QueryFilter3DReal().exclude_rigid_body(self.chassis),
       ),
       bodies,
       colliders,

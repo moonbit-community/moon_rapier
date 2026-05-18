@@ -18,31 +18,31 @@
 ///|
 test "examples3d/one_way_platforms3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/one_way_platforms3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let platform1 = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(9.0F, 0.5F, 9.0F)
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .one_way_above(0.1F)
-    .surface_velocity(@core.Vec3::new(-12.0F, 0.0F, 0.0F))
+    .surface_velocity(Vec3(-12.0F, 0.0F, 0.0F))
     .build(),
     ground,
     bodies,
   )
   let platform2 = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(9.0F, 0.5F, 9.0F)
-    .translation(@core.Vec3::new(0.0F, -2.0F, 0.0F))
+    .translation(Vec3(0.0F, -2.0F, 0.0F))
     .one_way_below(0.1F)
-    .surface_velocity(@core.Vec3::new(12.0F, 0.0F, 0.0F))
+    .surface_velocity(Vec3(12.0F, 0.0F, 0.0F))
     .build(),
     ground,
     bodies,
@@ -54,7 +54,7 @@ test "examples3d/one_way_platforms3.rs parity (3DReal headless)" {
     if step % 200 == 0 && bodies.len() <= 7 {
       let body = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(0.0F, 6.0F, 0.0F))
+        .translation(Vec3(0.0F, 6.0F, 0.0F))
         .can_sleep(false)
         .build(),
       )
@@ -96,13 +96,13 @@ test "examples3d/one_way_platforms3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/rope_joints3.rs` (headless; character control omitted).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -114,7 +114,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   let ground_height = 0.1F
   let floor0 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -127,9 +127,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   |> ignore
   let wall_x0 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(-ground_size - ground_height, ground_height, 0.0F),
-    )
+    .translation(Vec3(-ground_size - ground_height, ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -142,9 +140,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   |> ignore
   let wall_x1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(ground_size + ground_height, ground_height, 0.0F),
-    )
+    .translation(Vec3(ground_size + ground_height, ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -157,9 +153,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   |> ignore
   let wall_z0 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(0.0F, ground_height, -ground_size - ground_height),
-    )
+    .translation(Vec3(0.0F, ground_height, -ground_size - ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -172,9 +166,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   |> ignore
   let wall_z1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(0.0F, ground_height, ground_size + ground_height),
-    )
+    .translation(Vec3(0.0F, ground_height, ground_size + ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -189,7 +181,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   // Kinematic character.
   let character_handle = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 0.3F, 0.0F))
+    .translation(Vec3(0.0F, 0.3F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -204,7 +196,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
   let rad = 0.04F
   let child_handle = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(1.0F, 1.0F, 0.0F))
+    .translation(Vec3(1.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -214,7 +206,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
     bodies,
   )
   |> ignore
-  let rope = @dynamics.RopeJointSet3DReal::new()
+  let rope = @dynamics.RopeJointSet3DReal()
   rope.insert(character_handle, child_handle, 2.0F)
 
   // Move the kinematic character deterministically to stretch the rope.
@@ -224,7 +216,7 @@ test "examples3d/rope_joints3.rs parity (3DReal headless)" {
     let x = Float::from_double(@math.sin(time.to_double())) * 1.2F
     let z = Float::from_double(@math.cos(time.to_double())) * 0.4F
     if bodies.get_mut(character_handle) is Some(rb) {
-      rb.set_next_kinematic_translation(@core.Vec3::new(x, 0.3F, z))
+      rb.set_next_kinematic_translation(Vec3(x, 0.3F, z))
     } else {
       inspect(false, content="true")
     }

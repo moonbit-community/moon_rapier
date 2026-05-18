@@ -25,25 +25,20 @@ pub struct Counters {
 
 ///|
 pub fn Counters::Counters(enabled : Bool) -> Counters {
-  Counters::new(enabled)
-}
-
-///|
-pub fn Counters::new(enabled : Bool) -> Counters {
   {
     enabled,
-    step_time: Timer::new(),
-    custom: Timer::new(),
-    stages: StagesCounters::new(),
-    cd: CollisionDetectionCounters::new(),
-    solver: SolverCounters::new(),
-    ccd: CCDCounters::new(),
+    step_time: Timer(),
+    custom: Timer(),
+    stages: StagesCounters(),
+    cd: CollisionDetectionCounters(),
+    solver: SolverCounters(),
+    ccd: CCDCounters(),
   }
 }
 
 ///|
 pub fn Counters::default() -> Counters {
-  Counters::new(false)
+  Counters(false)
 }
 
 ///|

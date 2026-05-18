@@ -19,7 +19,7 @@ pub struct ColliderHandle {
 }
 
 ///|
-fn ColliderHandle::new(id : Int, generation : Int) -> ColliderHandle {
+fn ColliderHandle::ColliderHandle(id : Int, generation : Int) -> ColliderHandle {
   { id, generation }
 }
 
@@ -36,7 +36,7 @@ pub fn ColliderHandle::from_raw_parts(
   id : Int,
   generation : Int,
 ) -> ColliderHandle {
-  ColliderHandle::new(id, generation)
+  ColliderHandle(id, generation)
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int, Int) {
 
 ///|
 pub fn ColliderHandle::invalid() -> ColliderHandle {
-  ColliderHandle::new(-1, -1)
+  ColliderHandle(-1, -1)
 }
 
 ///|
@@ -739,19 +739,6 @@ pub fn ColliderFlags::ColliderFlags(
   active_hooks : ActiveHooks,
   active_events : ActiveEvents,
 ) -> ColliderFlags {
-  ColliderFlags::new(
-    collision_groups, solver_groups, active_collision_types, active_hooks, active_events,
-  )
-}
-
-///|
-pub fn ColliderFlags::new(
-  collision_groups : @dynamics.InteractionGroups,
-  solver_groups : @dynamics.InteractionGroups,
-  active_collision_types : ActiveCollisionTypes,
-  active_hooks : ActiveHooks,
-  active_events : ActiveEvents,
-) -> ColliderFlags {
   {
     collision_groups,
     solver_groups,
@@ -772,14 +759,6 @@ pub fn ColliderParent::ColliderParent(
   handle : @dynamics.RigidBodyHandle,
   pos_wrt_parent : @core.Isometry2,
 ) -> ColliderParent {
-  ColliderParent::new(handle, pos_wrt_parent)
-}
-
-///|
-pub fn ColliderParent::new(
-  handle : @dynamics.RigidBodyHandle,
-  pos_wrt_parent : @core.Isometry2,
-) -> ColliderParent {
   { handle, pos_wrt_parent }
 }
 
@@ -792,11 +771,6 @@ pub struct ColliderPosition {
 pub fn ColliderPosition::ColliderPosition(
   position : @core.Isometry2,
 ) -> ColliderPosition {
-  ColliderPosition::new(position)
-}
-
-///|
-pub fn ColliderPosition::new(position : @core.Isometry2) -> ColliderPosition {
   { position, }
 }
 
@@ -1038,7 +1012,7 @@ pub fn ColliderBuilder::capsule_from_endpoints(
   // `capsule_y(half_height, radius)` has its segment aligned with local +y/-y. Rotate it so its
   // axis matches `b - a`, and place it at the segment midpoint.
   let half_height = len / 2.0F
-  let center = @core.Vec2::new((a.x + b.x) / 2.0F, (a.y + b.y) / 2.0F)
+  let center = @core.Vec2((a.x + b.x) / 2.0F, (a.y + b.y) / 2.0F)
   let angle = @core.atan2(delta.y, delta.x) - @core.pi() / 2.0F
   ColliderBuilder::capsule_y(half_height, radius)
   .translation(center)
@@ -1050,11 +1024,11 @@ pub fn ColliderBuilder::halfspace(
   outward_normal : @core.Vec2,
 ) -> ColliderBuilder {
   let n0 = if outward_normal.length_squared() <= 1.0e-12F {
-    @core.Vec2::new(0.0F, 1.0F)
+    @core.Vec2(0.0F, 1.0F)
   } else {
     outward_normal.normalize()
   }
-  ColliderBuilder::new(HalfSpace(n0))
+  ColliderBuilder(HalfSpace(n0))
 }
 
 ///|
@@ -1204,7 +1178,7 @@ pub fn ColliderBuilder::heightfield(
   for i in 0..<heights.length() {
     hs.push(heights[i])
   }
-  ColliderBuilder::new(HeightField(hs, scale))
+  ColliderBuilder(HeightField(hs, scale))
 }
 
 ///|
@@ -1217,7 +1191,7 @@ fn heightfield_vertices(
     return vertices
   }
   if heights.length() == 1 {
-    vertices.push(@core.Vec2::new(0.0F, heights[0] * scale.y))
+    vertices.push(Vec2(0.0F, heights[0] * scale.y))
     return vertices
   }
   let denom = Float::from_double((heights.length() - 1).to_double())
@@ -1225,7 +1199,7 @@ fn heightfield_vertices(
   for i in 0..<heights.length() {
     let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
     let y = heights[i] * scale.y
-    vertices.push(@core.Vec2::new(x, y))
+    vertices.push(Vec2(x, y))
   }
   vertices
 }
@@ -1306,7 +1280,7 @@ pub fn ColliderBuilder::converted_trimesh(
 ) -> Result[ColliderBuilder, MeshConverterError] {
   match converter.convert(vertices, indices) {
     Err(e) => Err(e)
-    Ok((shape, pose)) => Ok(ColliderBuilder::new(shape.as_shape()).delta(pose))
+    Ok((shape, pose)) => Ok(ColliderBuilder(shape.as_shape()).delta(pose))
   }
 }
 
@@ -1647,7 +1621,7 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
   if extract_simple_loop(vertices, indices) is Some(poly_ids) {
     if convex_decompose_simple_polygon(vertices, poly_ids, params)
       is Some(shape) {
-      return ColliderBuilder::new(shape)
+      return ColliderBuilder(shape)
     }
   }
   // Fallback: approximate with the convex hull, else keep as polyline.
@@ -1710,7 +1684,7 @@ pub fn ColliderBuilder::convex_polyline(
       pts[j] = tmp
     }
   }
-  Some(ColliderBuilder::new(ConvexPolygon(pts)))
+  Some(ColliderBuilder(ConvexPolygon(pts)))
 }
 
 ///|
@@ -1730,12 +1704,12 @@ pub fn ColliderBuilder::voxels(
   voxels : Array[(Int, Int)],
 ) -> ColliderBuilder {
   let shapes : Array[(@core.Isometry2, Shape)] = []
-  let half = @core.Vec2::new(voxel_size.x * 0.5F, voxel_size.y * 0.5F)
+  let half = @core.Vec2(voxel_size.x * 0.5F, voxel_size.y * 0.5F)
   for i in 0..<voxels.length() {
     let (ix, iy) = voxels[i]
     let x = Float::from_double(ix.to_double()) * voxel_size.x
     let y = Float::from_double(iy.to_double()) * voxel_size.y
-    let iso = @core.Isometry2::from_translation(@core.Vec2::new(x, y))
+    let iso = @core.Isometry2::from_translation(Vec2(x, y))
     shapes.push((iso, Cuboid(half.x, half.y)))
   }
   ColliderBuilder::compound(shapes)
@@ -2093,7 +2067,7 @@ pub fn Collider::shape_mut(self : Collider) -> Shape {
 
 ///|
 pub fn Collider::shared_shape(self : Collider) -> SharedShape {
-  SharedShape::new(self.shape)
+  SharedShape(self.shape)
 }
 
 ///|
@@ -2132,10 +2106,7 @@ pub fn Collider::translation(self : Collider) -> @core.Vec2 {
 
 ///|
 pub fn Collider::position(self : Collider) -> @core.Isometry2 {
-  @core.Isometry2::new(
-    self.world_translation,
-    @core.Rot2::from_angle(self.world_rotation),
-  )
+  Isometry2(self.world_translation, @core.Rot2::from_angle(self.world_rotation))
 }
 
 ///|
@@ -2186,7 +2157,7 @@ pub fn Collider::compute_broad_phase_aabb(
 pub fn Collider::position_wrt_parent(self : Collider) -> @core.Isometry2? {
   if self.parent is Some(_) {
     Some(
-      @core.Isometry2::new(
+      Isometry2(
         self.local_translation,
         @core.Rot2::from_angle(self.local_rotation),
       ),
@@ -2348,7 +2319,7 @@ fn shape_mass_properties(
       let area = pi * radius * radius
       let mass = density * area
       let inertia = 0.5F * mass * radius * radius
-      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+      MassProperties(mass, inertia, @core.Vec2::zero())
     }
     Cuboid(hw, hh) => {
       let width = 2.0F * hw
@@ -2356,11 +2327,11 @@ fn shape_mass_properties(
       let area = width * height
       let mass = density * area
       let inertia = mass * (width * width + height * height) / 12.0F
-      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+      MassProperties(mass, inertia, @core.Vec2::zero())
     }
     HalfSpace(_) =>
       // Unbounded primitive: does not contribute to mass properties.
-      @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+      MassProperties(0.0F, 0.0F, @core.Vec2::zero())
     CapsuleX(half_height, radius) => {
       let area_rect = 4.0F * radius * half_height
       let area_semi = 0.5F * pi * radius * radius
@@ -2382,7 +2353,7 @@ fn shape_mass_properties(
       let inertia_semi_origin = inertia_semi_centroid + mass_semi * d * d
       let mass = mass_rect + 2.0F * mass_semi
       let inertia = inertia_rect + 2.0F * inertia_semi_origin
-      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+      MassProperties(mass, inertia, @core.Vec2::zero())
     }
     CapsuleY(half_height, radius) => {
       // Same as CapsuleX: inertia is a scalar about the z-axis.
@@ -2406,20 +2377,19 @@ fn shape_mass_properties(
       let inertia_semi_origin = inertia_semi_centroid + mass_semi * d * d
       let mass = mass_rect + 2.0F * mass_semi
       let inertia = inertia_rect + 2.0F * inertia_semi_origin
-      @core.MassProperties::new(mass, inertia, @core.Vec2::zero())
+      MassProperties(mass, inertia, @core.Vec2::zero())
     }
     Round(inner, _) => shape_mass_properties(inner.val, density)
     Segment(a, b) => {
       // Like Rapier/Parry: segments have no area, so they don't contribute to mass properties.
-      let com = @core.Vec2::new((a.x + b.x) * 0.5F, (a.y + b.y) * 0.5F)
-      @core.MassProperties::new(0.0F, 0.0F, com)
+      let com = @core.Vec2((a.x + b.x) * 0.5F, (a.y + b.y) * 0.5F)
+      MassProperties(0.0F, 0.0F, com)
     }
-    Polyline(_, _) => @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
-    HeightField(_, _) =>
-      @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+    Polyline(_, _) => MassProperties(0.0F, 0.0F, @core.Vec2::zero())
+    HeightField(_, _) => MassProperties(0.0F, 0.0F, @core.Vec2::zero())
     ConvexPolygon(vertices) => {
       if vertices.length() < 3 {
-        return @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+        return MassProperties(0.0F, 0.0F, @core.Vec2::zero())
       }
       let mut area2 = 0.0F
       let mut cx_acc = 0.0F
@@ -2444,24 +2414,16 @@ fn shape_mass_properties(
           cross
       }
       if @core.abs(area2) <= 1.0e-8F {
-        return @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero())
+        return MassProperties(0.0F, 0.0F, @core.Vec2::zero())
       }
       // Centroid uses 1/(3*area2) because area2 = 2 * area.
       let inv3_area2 = 1.0F / (3.0F * area2)
-      let com = @core.Vec2::new(cx_acc * inv3_area2, cy_acc * inv3_area2)
+      let com = @core.Vec2(cx_acc * inv3_area2, cy_acc * inv3_area2)
       let area_abs = @core.abs(area2) * 0.5F
       let mass = density * area_abs
       let inertia_origin = density * @core.abs(inertia_acc) / 12.0F
       let inertia = inertia_origin - mass * (com.x * com.x + com.y * com.y)
-      @core.MassProperties::new(
-        mass,
-        if inertia > 0.0F {
-          inertia
-        } else {
-          0.0F
-        },
-        com,
-      )
+      MassProperties(mass, if inertia > 0.0F { inertia } else { 0.0F }, com)
     }
     TriMesh(vertices, indices) => {
       let mut acc = @core.MassProperties::default()
@@ -2766,15 +2728,10 @@ pub struct ColliderSet {
 }
 
 ///|
-pub fn ColliderSet::ColliderSet() -> ColliderSet {
-  ColliderSet::new()
-}
-
-///|
 pub type ModifiedColliders = Array[ColliderHandle]
 
 ///|
-pub fn ColliderSet::new() -> ColliderSet {
+pub fn ColliderSet::ColliderSet() -> ColliderSet {
   {
     colliders: [],
     generations: [],
@@ -2835,7 +2792,7 @@ fn parse_bool_value(text : String) -> Bool {
 fn split_top_level(text : String, sep : Char) -> Array[String] {
   let parts : Array[String] = []
   let mut depth = 0
-  let mut cur = StringBuilder::new()
+  let mut cur = StringBuilder()
   for c in text {
     if c == '(' {
       depth = depth + 1
@@ -2850,7 +2807,7 @@ fn split_top_level(text : String, sep : Char) -> Array[String] {
       if s.length() > 0 {
         parts.push(s)
       }
-      cur = StringBuilder::new()
+      cur = StringBuilder()
     } else {
       cur.write_char(c)
     }
@@ -3078,7 +3035,7 @@ fn write_shape(sb : StringBuilder, shape : Shape) -> Unit {
 
 ///|
 fn shape_to_string(shape : Shape) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   write_shape(sb, shape)
   sb.to_string()
 }
@@ -3088,7 +3045,7 @@ fn parse_vec2(text : String) -> @core.Vec2 {
   let parts = split_values(text, ",")
   let x = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
   let y = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
-  @core.Vec2::new(x, y)
+  Vec2(x, y)
 }
 
 ///|
@@ -3097,7 +3054,7 @@ fn parse_isometry2(text : String) -> @core.Isometry2 {
   let x = if parts.length() > 0 { parse_real_value(parts[0]) } else { 0.0F }
   let y = if parts.length() > 1 { parse_real_value(parts[1]) } else { 0.0F }
   let angle = if parts.length() > 2 { parse_real_value(parts[2]) } else { 0.0F }
-  @core.Isometry2::new(@core.Vec2::new(x, y), @core.Rot2::from_angle(angle))
+  Isometry2(Vec2(x, y), @core.Rot2::from_angle(angle))
 }
 
 ///|
@@ -3196,12 +3153,12 @@ fn parse_shape(text : String) -> Shape {
     v.strip_suffix(")"[:]) is Some(inner) {
     let parts = split_values(inner.to_owned(), ",")
     let a = if parts.length() > 1 {
-      @core.Vec2::new(parse_real_value(parts[0]), parse_real_value(parts[1]))
+      @core.Vec2(parse_real_value(parts[0]), parse_real_value(parts[1]))
     } else {
       @core.Vec2::zero()
     }
     let b = if parts.length() > 3 {
-      @core.Vec2::new(parse_real_value(parts[2]), parse_real_value(parts[3]))
+      @core.Vec2(parse_real_value(parts[2]), parse_real_value(parts[3]))
     } else {
       @core.Vec2::zero()
     }
@@ -3227,7 +3184,7 @@ fn parse_shape(text : String) -> Shape {
     let scale = if parts.length() > 1 {
       parse_vec2(parts[1])
     } else {
-      @core.Vec2::new(1.0F, 1.0F)
+      Vec2(1.0F, 1.0F)
     }
     HeightField(heights, scale)
   } else if text.strip_prefix("v("[:]) is Some(v) &&
@@ -3263,7 +3220,7 @@ fn parse_shape(text : String) -> Shape {
 
 ///|
 pub fn ColliderSet::serialize(self : ColliderSet) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("len=")
   sb.write_object(self.colliders.length())
   sb.write_char(';')
@@ -3435,12 +3392,12 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             ActiveHooks::empty()
           }
           let collision_memberships = if fields.length() > 9 {
-            @dynamics.Group::new(parse_int_value(fields[9]))
+            @dynamics.Group(parse_int_value(fields[9]))
           } else {
             @dynamics.Group::all()
           }
           let collision_filter = if fields.length() > 10 {
-            @dynamics.Group::new(parse_int_value(fields[10]))
+            @dynamics.Group(parse_int_value(fields[10]))
           } else {
             @dynamics.Group::all()
           }
@@ -3450,12 +3407,12 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             And
           }
           let solver_memberships = if fields.length() > 12 {
-            @dynamics.Group::new(parse_int_value(fields[12]))
+            @dynamics.Group(parse_int_value(fields[12]))
           } else {
             @dynamics.Group::all()
           }
           let solver_filter = if fields.length() > 13 {
-            @dynamics.Group::new(parse_int_value(fields[13]))
+            @dynamics.Group(parse_int_value(fields[13]))
           } else {
             @dynamics.Group::all()
           }
@@ -3543,10 +3500,10 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             sensor,
             active_events,
             active_hooks,
-            collision_groups: @dynamics.InteractionGroups::new(
+            collision_groups: InteractionGroups(
               collision_memberships, collision_filter, collision_test_mode,
             ),
-            solver_groups: @dynamics.InteractionGroups::new(
+            solver_groups: InteractionGroups(
               solver_memberships, solver_filter, solver_test_mode,
             ),
             density,
@@ -3577,7 +3534,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
   }
   for i in 0..<colliders.length() {
     if colliders[i] is Some(_) {
-      modified_colliders.push(ColliderHandle::new(i, generations[i]))
+      modified_colliders.push(ColliderHandle(i, generations[i]))
     }
   }
   {
@@ -3617,7 +3574,7 @@ pub fn ColliderSet::iter_enabled(
   let result : Array[(ColliderHandle, Collider)] = []
   for i in 0..<self.colliders.length() {
     if self.colliders[i] is Some(collider) && collider.is_enabled() {
-      result.push((ColliderHandle::new(i, self.generations[i]), collider))
+      result.push((ColliderHandle(i, self.generations[i]), collider))
     }
   }
   result
@@ -3635,12 +3592,12 @@ pub fn ColliderSet::iter_enabled_mut(
 fn ColliderSet::allocate_handle(self : ColliderSet) -> ColliderHandle {
   if self.free_list.pop() is Some(index) {
     let generation = self.generations[index]
-    ColliderHandle::new(index, generation)
+    ColliderHandle(index, generation)
   } else {
     let index = self.colliders.length()
     self.colliders.push(None)
     self.generations.push(0)
-    ColliderHandle::new(index, 0)
+    ColliderHandle(index, 0)
   }
 }
 
@@ -3693,7 +3650,7 @@ fn ColliderSet::sync_with_bodies(
         if bodies.get(parent) is Some(body) {
           // Rapier semantics: world_position = body_position * local_position_wrt_parent.
           let body_pos = body.position()
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             collider.local_translation,
             @core.Rot2::from_angle(collider.local_rotation),
           )
@@ -3725,7 +3682,7 @@ pub fn ColliderSet::apply_pending_body_position_propagation(
     )
     if self.get_mut_internal_with_modification_tracking(handle)
       is Some(collider) {
-      let local_pos = @core.Isometry2::new(
+      let local_pos = @core.Isometry2(
         collider.local_translation,
         @core.Rot2::from_angle(collider.local_rotation),
       )
@@ -3762,7 +3719,7 @@ pub fn ColliderSet::colliders_with_parent(
     if self.colliders[i] is Some(collider) {
       if collider.parent is Some(current_parent) &&
         @dynamics.RigidBodyHandle::equals(current_parent, parent) {
-        result.push(ColliderHandle::new(i, self.generations[i]))
+        result.push(ColliderHandle(i, self.generations[i]))
       }
     }
   }
@@ -3783,7 +3740,7 @@ fn recompute_body_mass_properties_from_attached_colliders(
       let co_handle = attached[j]
       if colliders.get(co_handle) is Some(collider) {
         if collider.is_enabled() {
-          let local_pos = @core.Isometry2::new(
+          let local_pos = @core.Isometry2(
             collider.local_translation,
             @core.Rot2::from_angle(collider.local_rotation),
           )
@@ -3813,7 +3770,7 @@ pub fn ColliderSet::insert_with_parent(
   if bodies.get(parent) is Some(body) {
     // Rapier semantics: world_position = body_position * local_position_wrt_parent.
     let body_pos = body.position()
-    let local_pos = @core.Isometry2::new(
+    let local_pos = @core.Isometry2(
       updated.local_translation,
       @core.Rot2::from_angle(updated.local_rotation),
     )
@@ -4006,7 +3963,7 @@ pub fn ColliderSet::set_parent(
       if bodies.get(parent) is Some(body) {
         // Rapier semantics: world_position = body_position * local_position_wrt_parent.
         let body_pos = body.position()
-        let local_pos = @core.Isometry2::new(
+        let local_pos = @core.Isometry2(
           collider.local_translation,
           @core.Rot2::from_angle(collider.local_rotation),
         )
@@ -4060,7 +4017,7 @@ pub fn ColliderSet::set_parent_enabled(
             COLLIDER_CHANGES_ENABLED_OR_DISABLED,
           )
         }
-        let handle = ColliderHandle::new(i, self.generations[i])
+        let handle = ColliderHandle(i, self.generations[i])
         self.push_modified(handle, collider)
       }
     }
@@ -4083,7 +4040,7 @@ pub fn handle_user_changes_to_colliders(
           if bodies.get(parent) is Some(body) {
             // Rapier semantics: world_position = body_position * local_position_wrt_parent.
             let body_pos = body.position()
-            let local_pos = @core.Isometry2::new(
+            let local_pos = @core.Isometry2(
               collider.local_translation,
               @core.Rot2::from_angle(collider.local_rotation),
             )
@@ -4130,7 +4087,7 @@ pub fn handle_user_changes_to_colliders3(
         if collider.parent is Some(parent_handle) {
           if bodies.get(parent_handle) is Some(body) {
             let body_pos = body.position()
-            let local_pos = @core.Isometry2::new(
+            let local_pos = @core.Isometry2(
               collider.local_translation,
               @core.Rot2::from_angle(collider.local_rotation),
             )
@@ -4243,14 +4200,6 @@ pub fn ContactManifold::ContactManifold(
   normal : @core.Vec2,
   points : Array[ContactManifoldPoint],
 ) -> ContactManifold {
-  ContactManifold::new(normal, points)
-}
-
-///|
-pub fn ContactManifold::new(
-  normal : @core.Vec2,
-  points : Array[ContactManifoldPoint],
-) -> ContactManifold {
   { normal, points }
 }
 
@@ -4279,12 +4228,7 @@ pub struct NarrowPhase {
 
 ///|
 pub fn NarrowPhase::NarrowPhase() -> NarrowPhase {
-  NarrowPhase::new()
-}
-
-///|
-pub fn NarrowPhase::new() -> NarrowPhase {
-  { intersections: [], contacts: [], query_dispatcher: QueryDispatcher::new() }
+  { intersections: [], contacts: [], query_dispatcher: QueryDispatcher() }
 }
 
 ///|
@@ -4378,7 +4322,7 @@ fn clamp_value(
 fn cuboid_axes(rotation : @core.Real) -> (@core.Vec2, @core.Vec2) {
   let rot = @core.Rot2::from_angle(rotation)
   // rot.rotate_vec2((1, 0)) and rot.rotate_vec2((0, 1)) without allocating.
-  (@core.Vec2::new(rot.cos, rot.sin), @core.Vec2::new(-rot.sin, rot.cos))
+  (Vec2(rot.cos, rot.sin), Vec2(-rot.sin, rot.cos))
 }
 
 ///|
@@ -4432,14 +4376,8 @@ fn shapes_intersect(
     (Round(_, _), _) | (_, Round(_, _)) => {
       // For rounded shapes, reuse the contact-manifold logic for overlap testing.
       // This keeps the overlap semantics consistent with `build_contact_pair`.
-      let c1 = ColliderBuilder::new(shape1)
-        .translation(pos1)
-        .rotation(rot1)
-        .build()
-      let c2 = ColliderBuilder::new(shape2)
-        .translation(pos2)
-        .rotation(rot2)
-        .build()
+      let c1 = ColliderBuilder(shape1).translation(pos1).rotation(rot1).build()
+      let c2 = ColliderBuilder(shape2).translation(pos2).rotation(rot2).build()
       let pair = build_contact_pair(0.0F, c1, c2)
       for mi in 0..<pair.manifolds.length() {
         let manifold = pair.manifolds[mi]
@@ -4488,7 +4426,7 @@ fn shapes_intersect(
       a
     } else {
       let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
-      a.add(@core.Vec2::new(ab.x * t, ab.y * t))
+      a.add(Vec2(ab.x * t, ab.y * t))
     }
   }
 
@@ -4654,10 +4592,10 @@ fn shapes_intersect(
   ) -> Array[@core.Vec2] {
     let rot = @core.Rot2::from_angle(rotation)
     [
-      center.add(rot.rotate_vec2(@core.Vec2::new(half_width, half_height))),
-      center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, half_height))),
-      center.add(rot.rotate_vec2(@core.Vec2::new(-half_width, -half_height))),
-      center.add(rot.rotate_vec2(@core.Vec2::new(half_width, -half_height))),
+      center.add(rot.rotate_vec2(Vec2(half_width, half_height))),
+      center.add(rot.rotate_vec2(Vec2(-half_width, half_height))),
+      center.add(rot.rotate_vec2(Vec2(-half_width, -half_height))),
+      center.add(rot.rotate_vec2(Vec2(half_width, -half_height))),
     ]
   }
 
@@ -4674,7 +4612,7 @@ fn shapes_intersect(
         let a = poly[i]
         let b = poly[(i + 1) % poly.length()]
         let e = b.sub(a)
-        let n = @core.Vec2::new(e.y, -e.x)
+        let n = @core.Vec2(e.y, -e.x)
         if n.dot(n) > 1.0e-12F {
           out.push(n.normalize())
         }
@@ -4843,7 +4781,7 @@ fn shapes_intersect(
   ) -> Array[(Shape, @core.Vec2, @core.Real)] {
     let rot = @core.Rot2::from_angle(rotation)
     let offset = rot.rotate_vec2(
-      @core.Vec2::new(axis.x * half_height, axis.y * half_height),
+      Vec2(axis.x * half_height, axis.y * half_height),
     )
     let a = center.add(offset)
     let b = center.sub(offset)
@@ -4958,14 +4896,14 @@ fn shapes_intersect(
       }
       CapsuleX(half_height, radius) => {
         let r = @core.Rot2::from_angle(other_rot)
-        let offset = r.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+        let offset = r.rotate_vec2(Vec2(half_height, 0.0F))
         let a = other_pos.add(offset)
         let b = other_pos.sub(offset)
         min_value(n.dot(a.sub(origin)), n.dot(b.sub(origin))) <= radius
       }
       CapsuleY(half_height, radius) => {
         let r = @core.Rot2::from_angle(other_rot)
-        let offset = r.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+        let offset = r.rotate_vec2(Vec2(0.0F, half_height))
         let a = other_pos.add(offset)
         let b = other_pos.sub(offset)
         min_value(n.dot(a.sub(origin)), n.dot(b.sub(origin))) <= radius
@@ -5059,10 +4997,7 @@ fn shapes_intersect(
         if parts.length() == 0 {
           return false
         }
-        let iso = @core.Isometry2::new(
-          other_pos,
-          @core.Rot2::from_angle(other_rot),
-        )
+        let iso = @core.Isometry2(other_pos, @core.Rot2::from_angle(other_rot))
         for i in 0..<parts.length() {
           let (pose, s) = parts[i]
           let w = iso.mul(pose)
@@ -5091,8 +5026,8 @@ fn shapes_intersect(
       if parts1.length() == 0 || parts2.length() == 0 {
         return false
       }
-      let iso1 = @core.Isometry2::new(pos1, @core.Rot2::from_angle(rot1))
-      let iso2 = @core.Isometry2::new(pos2, @core.Rot2::from_angle(rot2))
+      let iso1 = @core.Isometry2(pos1, @core.Rot2::from_angle(rot1))
+      let iso2 = @core.Isometry2(pos2, @core.Rot2::from_angle(rot2))
       for i in 0..<parts1.length() {
         let (pose1, s1) = parts1[i]
         let w1 = iso1.mul(pose1)
@@ -5114,7 +5049,7 @@ fn shapes_intersect(
       if parts.length() == 0 {
         return false
       }
-      let iso = @core.Isometry2::new(pos1, @core.Rot2::from_angle(rot1))
+      let iso = @core.Isometry2(pos1, @core.Rot2::from_angle(rot1))
       for i in 0..<parts.length() {
         let (pose, s) = parts[i]
         let w = iso.mul(pose)
@@ -5130,7 +5065,7 @@ fn shapes_intersect(
       if parts.length() == 0 {
         return false
       }
-      let iso = @core.Isometry2::new(pos2, @core.Rot2::from_angle(rot2))
+      let iso = @core.Isometry2(pos2, @core.Rot2::from_angle(rot2))
       for i in 0..<parts.length() {
         let (pose, s) = parts[i]
         let w = iso.mul(pose)
@@ -5290,7 +5225,7 @@ fn shapes_intersect(
           let comps = capsule_components(
             pos2,
             rot2,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             h,
             r,
             h,
@@ -5316,7 +5251,7 @@ fn shapes_intersect(
           let comps = capsule_components(
             pos2,
             rot2,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             h,
             r,
             r,
@@ -5349,7 +5284,7 @@ fn shapes_intersect(
           let comps = capsule_components(
             pos1,
             rot1,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             h,
             r,
             h,
@@ -5375,7 +5310,7 @@ fn shapes_intersect(
           let comps = capsule_components(
             pos1,
             rot1,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             h,
             r,
             r,
@@ -5414,15 +5349,7 @@ fn shapes_intersect(
     | (Segment(_, _), Segment(_, _)) =>
       shapes_intersect_basic(shape1, pos1, rot1, shape2, pos2, rot2)
     (CapsuleX(h, r), other) => {
-      let comps = capsule_components(
-        pos1,
-        rot1,
-        @core.Vec2::new(1.0F, 0.0F),
-        h,
-        r,
-        h,
-        r,
-      )
+      let comps = capsule_components(pos1, rot1, Vec2(1.0F, 0.0F), h, r, h, r)
       for i in 0..<comps.length() {
         let c = comps[i]
         if shapes_intersect_basic(c.0, c.1, c.2, other, pos2, rot2) {
@@ -5432,15 +5359,7 @@ fn shapes_intersect(
       false
     }
     (CapsuleY(h, r), other) => {
-      let comps = capsule_components(
-        pos1,
-        rot1,
-        @core.Vec2::new(0.0F, 1.0F),
-        h,
-        r,
-        r,
-        h,
-      )
+      let comps = capsule_components(pos1, rot1, Vec2(0.0F, 1.0F), h, r, r, h)
       for i in 0..<comps.length() {
         let c = comps[i]
         if shapes_intersect_basic(c.0, c.1, c.2, other, pos2, rot2) {
@@ -5450,15 +5369,7 @@ fn shapes_intersect(
       false
     }
     (other, CapsuleX(h, r)) => {
-      let comps = capsule_components(
-        pos2,
-        rot2,
-        @core.Vec2::new(1.0F, 0.0F),
-        h,
-        r,
-        h,
-        r,
-      )
+      let comps = capsule_components(pos2, rot2, Vec2(1.0F, 0.0F), h, r, h, r)
       for i in 0..<comps.length() {
         let c = comps[i]
         if shapes_intersect_basic(other, pos1, rot1, c.0, c.1, c.2) {
@@ -5468,15 +5379,7 @@ fn shapes_intersect(
       false
     }
     (other, CapsuleY(h, r)) => {
-      let comps = capsule_components(
-        pos2,
-        rot2,
-        @core.Vec2::new(0.0F, 1.0F),
-        h,
-        r,
-        r,
-        h,
-      )
+      let comps = capsule_components(pos2, rot2, Vec2(0.0F, 1.0F), h, r, r, h)
       for i in 0..<comps.length() {
         let c = comps[i]
         if shapes_intersect_basic(other, pos1, rot1, c.0, c.1, c.2) {
@@ -5501,7 +5404,7 @@ fn ball_cuboid_intersect(
   let rot = @core.Rot2::from_angle(cuboid_rot)
   let inv = rot.inverse()
   let local_ball = inv.rotate_vec2(ball_pos.sub(cuboid_pos))
-  let clamped = @core.Vec2::new(
+  let clamped = @core.Vec2(
     clamp_value(local_ball.x, -half_width, half_width),
     clamp_value(local_ball.y, -half_height, half_height),
   )
@@ -5523,13 +5426,13 @@ pub fn NarrowPhase::update(
       if !collider1.is_enabled() {
         continue
       }
-      let handle1 = ColliderHandle::new(i, colliders.generations[i])
+      let handle1 = ColliderHandle(i, colliders.generations[i])
       for j in (i + 1)..<colliders.colliders.length() {
         if colliders.colliders[j] is Some(collider2) {
           if !collider2.is_enabled() {
             continue
           }
-          let handle2 = ColliderHandle::new(j, colliders.generations[j])
+          let handle2 = ColliderHandle(j, colliders.generations[j])
           pairs.push((handle1, handle2))
         }
       }
@@ -5551,7 +5454,7 @@ fn contact_manifold_ball_ball(
   let p2 = collider2.world_translation
   let d = p2.sub(p1)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - (radius1 + radius2)
   let world_p1 = p1.add(vec2_scale(normal, radius1))
   let world_p2 = p2.sub(vec2_scale(normal, radius2))
@@ -5593,7 +5496,7 @@ fn contact_manifold_ball_cuboid(
   let closest = projection.point()
   let d = closest.sub(ball_center)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = ball_center.add(vec2_scale(normal, radius))
   let world_p2 = closest
@@ -5635,7 +5538,7 @@ fn contact_manifold_cuboid_ball(
   let closest = projection.point()
   let d = ball_center.sub(closest)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = closest
   let world_p2 = ball_center.sub(vec2_scale(normal, radius))
@@ -5674,7 +5577,7 @@ fn contact_manifold_ball_convex_polygon(
   let closest = projection.point()
   let d = closest.sub(ball_center)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = ball_center.add(vec2_scale(normal, radius))
   let world_p2 = closest
@@ -5711,7 +5614,7 @@ fn contact_manifold_convex_polygon_ball(
   let closest = projection.point()
   let d = ball_center.sub(closest)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = closest
   let world_p2 = ball_center.sub(vec2_scale(normal, radius))
@@ -5759,7 +5662,7 @@ fn clip_segment_to_line(
   if d1 * d2 < 0.0F {
     let t = d1 / (d1 - d2)
     let dv = v2.v.sub(v1.v)
-    let v = v1.v.add(@core.Vec2::new(dv.x * t, dv.y * t))
+    let v = v1.v.add(Vec2(dv.x * t, dv.y * t))
     let id = if d1 > 0.0F { v1.id } else { v2.id }
     output.push({ v, id })
   }
@@ -5776,16 +5679,10 @@ fn cuboid_world_vertices(
   let rot = @core.Rot2::from_angle(rotation)
   // Match `FeatureId::Vertex` convention used by query_pipeline:
   // 0 = (+,+), 1 = (-,+), 2 = (-,-), 3 = (+,-)
-  let v0 = center.add(rot.rotate_vec2(@core.Vec2::new(half_width, half_height)))
-  let v1 = center.add(
-    rot.rotate_vec2(@core.Vec2::new(-half_width, half_height)),
-  )
-  let v2 = center.add(
-    rot.rotate_vec2(@core.Vec2::new(-half_width, -half_height)),
-  )
-  let v3 = center.add(
-    rot.rotate_vec2(@core.Vec2::new(half_width, -half_height)),
-  )
+  let v0 = center.add(rot.rotate_vec2(Vec2(half_width, half_height)))
+  let v1 = center.add(rot.rotate_vec2(Vec2(-half_width, half_height)))
+  let v2 = center.add(rot.rotate_vec2(Vec2(-half_width, -half_height)))
+  let v3 = center.add(rot.rotate_vec2(Vec2(half_width, -half_height)))
   [v0, v1, v2, v3]
 }
 
@@ -5821,7 +5718,7 @@ fn polygon_edge_normal(poly : Array[@core.Vec2], edge : Int) -> @core.Vec2 {
   let a = poly[edge]
   let b = poly[(edge + 1) % poly.length()]
   let e = b.sub(a)
-  normalize_or_fallback(@core.Vec2::new(e.y, -e.x), @core.Vec2::new(1.0F, 0.0F))
+  normalize_or_fallback(Vec2(e.y, -e.x), Vec2(1.0F, 0.0F))
 }
 
 ///|
@@ -5862,7 +5759,7 @@ fn polygon_contact_manifold(
   let c2 = collider2.position().transform_point(mp2.center_of_mass)
   let delta = c2.sub(c1)
   let mut best_overlap = 1.0e30F
-  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_axis = @core.Vec2(1.0F, 0.0F)
   let mut best_owner = 0 // 0 = poly1, 1 = poly2
   for i in 0..<poly1.length() {
     let axis = polygon_edge_normal(poly1, i)
@@ -5893,7 +5790,7 @@ fn polygon_contact_manifold(
   let ref_normal = if reference_is_1 {
     normal12
   } else {
-    @core.Vec2::new(-normal12.x, -normal12.y)
+    Vec2(-normal12.x, -normal12.y)
   }
   let ref_poly = if reference_is_1 { poly1 } else { poly2 }
   let incident_poly = if reference_is_1 { poly2 } else { poly1 }
@@ -5923,11 +5820,8 @@ fn polygon_contact_manifold(
   }
   let rv1 = ref_poly[ref_edge]
   let rv2 = ref_poly[(ref_edge + 1) % ref_poly.length()]
-  let ref_tangent = normalize_or_fallback(
-    rv2.sub(rv1),
-    @core.Vec2::new(1.0F, 0.0F),
-  )
-  let side_normal1 = @core.Vec2::new(-ref_tangent.x, -ref_tangent.y)
+  let ref_tangent = normalize_or_fallback(rv2.sub(rv1), Vec2(1.0F, 0.0F))
+  let side_normal1 = @core.Vec2(-ref_tangent.x, -ref_tangent.y)
   let side_normal2 = ref_tangent
 
   // Pick the incident edge with the most anti-parallel normal.
@@ -6102,7 +5996,7 @@ fn closest_point_on_segment_with_param(
     (a, 0.0F)
   } else {
     let t = clamp_value(p.sub(a).dot(ab) / denom, 0.0F, 1.0F)
-    (a.add(@core.Vec2::new(ab.x * t, ab.y * t)), t)
+    (a.add(Vec2(ab.x * t, ab.y * t)), t)
   }
 }
 
@@ -6127,7 +6021,7 @@ fn closest_points_segment_segment(
   } else if a <= 1.0e-12F {
     s = 0.0F
     t = clamp_value(f / e, 0.0F, 1.0F)
-    (p1, p2.add(@core.Vec2::new(d2.x * t, d2.y * t)), s, t)
+    (p1, p2.add(Vec2(d2.x * t, d2.y * t)), s, t)
   } else {
     let c = d1.dot(r)
     if e <= 1.0e-12F {
@@ -6152,12 +6046,7 @@ fn closest_points_segment_segment(
         t = tnom / e
       }
     }
-    (
-      p1.add(@core.Vec2::new(d1.x * s, d1.y * s)),
-      p2.add(@core.Vec2::new(d2.x * t, d2.y * t)),
-      s,
-      t,
-    )
+    (p1.add(Vec2(d1.x * s, d1.y * s)), p2.add(Vec2(d2.x * t, d2.y * t)), s, t)
   }
 }
 
@@ -6219,7 +6108,7 @@ fn closest_points_segment_aabb_local(
     is Some((t0, t1)) {
     let d = b.sub(a)
     // Pick a deterministic intersection point on the boundary (entry point).
-    let seg_p = a.add(@core.Vec2::new(d.x * t0, d.y * t0))
+    let seg_p = a.add(Vec2(d.x * t0, d.y * t0))
     let box_p = seg_p
     let seg_feature = if t0 <= 1.0e-6F {
       FeatureId::Vertex(0)
@@ -6239,32 +6128,20 @@ fn closest_points_segment_aabb_local(
   let edges = [
     // x=+hw
     (
-      @core.Vec2::new(half_width, -half_height),
-      @core.Vec2::new(half_width, half_height),
+      @core.Vec2(half_width, -half_height),
+      @core.Vec2(half_width, half_height),
       FeatureId::Edge(0),
     ),
     // x=-hw
-    (
-      @core.Vec2::new(-half_width, half_height),
-      @core.Vec2::new(-half_width, -half_height),
-      Edge(1),
-    ),
+    (Vec2(-half_width, half_height), Vec2(-half_width, -half_height), Edge(1)),
     // y=+hh
-    (
-      @core.Vec2::new(half_width, half_height),
-      @core.Vec2::new(-half_width, half_height),
-      Edge(2),
-    ),
+    (Vec2(half_width, half_height), Vec2(-half_width, half_height), Edge(2)),
     // y=-hh
-    (
-      @core.Vec2::new(-half_width, -half_height),
-      @core.Vec2::new(half_width, -half_height),
-      Edge(3),
-    ),
+    (Vec2(-half_width, -half_height), Vec2(half_width, -half_height), Edge(3)),
   ]
   let mut best_dist2 = 1.0e30F
   let mut best_seg = a
-  let mut best_box = @core.Vec2::new(half_width, half_height)
+  let mut best_box = @core.Vec2(half_width, half_height)
   let mut best_s = 0.0F
   for i in 0..<edges.length() {
     let e = edges[i]
@@ -6328,7 +6205,7 @@ fn contact_manifold_cuboid_cuboid(
   let ref_normal = if reference_is_1 {
     normal12
   } else {
-    @core.Vec2::new(-normal12.x, -normal12.y)
+    Vec2(-normal12.x, -normal12.y)
   }
   let ref_edge_id = if best_axis_id == 0 {
     if ref_normal.dot(if reference_is_1 { ax1 } else { ax2 }) >= 0.0F {
@@ -6359,23 +6236,15 @@ fn contact_manifold_cuboid_cuboid(
   let (rv1i, rv2i) = cuboid_edge_endpoints_ccw(ref_edge_id)
   let rv1 = ref_verts[rv1i]
   let rv2 = ref_verts[rv2i]
-  let ref_tangent = normalize_or_fallback(
-    rv2.sub(rv1),
-    @core.Vec2::new(1.0F, 0.0F),
-  )
-  let side_normal1 = @core.Vec2::new(-ref_tangent.x, -ref_tangent.y)
+  let ref_tangent = normalize_or_fallback(rv2.sub(rv1), Vec2(1.0F, 0.0F))
+  let side_normal1 = @core.Vec2(-ref_tangent.x, -ref_tangent.y)
   let side_normal2 = ref_tangent
   let clip1 = clip_segment_to_line(
     {
       let (iax, iay) = if reference_is_1 { (ax2, ay2) } else { (ax1, ay1) }
       let mut best_dot = 1.0e30F
       let mut incident_edge_id = 0
-      let normals = [
-        iax,
-        @core.Vec2::new(-iax.x, -iax.y),
-        iay,
-        @core.Vec2::new(-iay.x, -iay.y),
-      ]
+      let normals = [iax, Vec2(-iax.x, -iax.y), iay, Vec2(-iay.x, -iay.y)]
       for k in 0..<4 {
         let d = normals[k].dot(ref_normal)
         if d < best_dot {
@@ -6533,7 +6402,7 @@ fn contact_manifold_ball_segment(
   let closest = projection.point()
   let d = closest.sub(ball_center)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = ball_center.add(vec2_scale(normal, radius))
   let world_p2 = closest
@@ -6571,7 +6440,7 @@ fn contact_manifold_segment_ball(
   let closest = projection.point()
   let d = ball_center.sub(closest)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = closest
   let world_p2 = ball_center.sub(vec2_scale(normal, radius))
@@ -6620,7 +6489,7 @@ fn contact_manifold_ball_capsule(
   let (q, t) = closest_point_on_segment_with_param(sa, sb, ball_center)
   let d = q.sub(ball_center)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - (radius_ball + radius_capsule)
   let world_p1 = ball_center.add(vec2_scale(normal, radius_ball))
   let world_p2 = q.sub(vec2_scale(normal, radius_capsule))
@@ -6658,7 +6527,7 @@ fn contact_manifold_capsule_ball(
   let (q, t) = closest_point_on_segment_with_param(sa, sb, ball_center)
   let d = ball_center.sub(q)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - (radius_ball + radius_capsule)
   let world_p1 = q.add(vec2_scale(normal, radius_capsule))
   let world_p2 = ball_center.sub(vec2_scale(normal, radius_ball))
@@ -6703,7 +6572,7 @@ fn contact_manifold_capsule_capsule(
   let (p1, p2, s, t) = closest_points_segment_segment(a1, b1, a2, b2)
   let d = p2.sub(p1)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - (radius1 + radius2)
   let world_p1 = p1.add(vec2_scale(normal, radius1))
   let world_p2 = p2.sub(vec2_scale(normal, radius2))
@@ -6751,23 +6620,23 @@ fn contact_manifold_segment_cuboid(
     let n_local = match box_f {
       Edge(id) =>
         if id == 0 {
-          @core.Vec2::new(1.0F, 0.0F)
+          @core.Vec2(1.0F, 0.0F)
         } else if id == 1 {
-          @core.Vec2::new(-1.0F, 0.0F)
+          Vec2(-1.0F, 0.0F)
         } else if id == 2 {
-          @core.Vec2::new(0.0F, 1.0F)
+          Vec2(0.0F, 1.0F)
         } else {
-          @core.Vec2::new(0.0F, -1.0F)
+          Vec2(0.0F, -1.0F)
         }
-      _ => @core.Vec2::new(1.0F, 0.0F)
+      _ => Vec2(1.0F, 0.0F)
     }
     let mut n = rot.rotate_vec2(n_local)
     if n.dot(cuboid.world_translation.sub(segment.world_translation)) < 0.0F {
-      n = @core.Vec2::new(-n.x, -n.y)
+      n = Vec2(-n.x, -n.y)
     }
     n
   } else {
-    normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+    normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   }
   {
     normal,
@@ -6810,7 +6679,7 @@ fn contact_manifold_cuboid_segment(
       data: p.data(),
     })
   }
-  { normal: @core.Vec2::new(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points }
 }
 
 ///|
@@ -6935,7 +6804,7 @@ fn contact_manifold_ball_polyline(
       data: p.data(),
     })
   }
-  { normal: @core.Vec2::new(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points }
 }
 
 ///|
@@ -7067,7 +6936,7 @@ fn contact_manifold_cuboid_polyline(
       data: p.data(),
     })
   }
-  { normal: @core.Vec2::new(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points }
 }
 
 ///|
@@ -7094,7 +6963,7 @@ fn contact_manifold_segment_segment(
   let (c1, c2, s, t) = closest_points_segment_segment(p1, q1, p2, q2)
   let d = c2.sub(c1)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let fid1 = if s <= 1.0e-6F {
     FeatureId::Vertex(0)
   } else if s >= 1.0F - 1.0e-6F {
@@ -7149,7 +7018,7 @@ fn contact_manifold_segment_capsule(
   let (pseg, pcap, s, t) = closest_points_segment_segment(sa, sb, ca, cb)
   let d = pcap.sub(pseg)
   let dist = d.length()
-  let normal = normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+  let normal = normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   let signed_dist = dist - radius
   let world_p1 = pseg
   let world_p2 = pcap.sub(vec2_scale(normal, radius))
@@ -7201,7 +7070,7 @@ fn contact_manifold_capsule_segment(
       data: p.data(),
     })
   }
-  { normal: @core.Vec2::new(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points }
 }
 
 ///|
@@ -7234,22 +7103,22 @@ fn contact_manifold_capsule_cuboid(
     let n_local = match box_f {
       Edge(id) =>
         if id == 0 {
-          @core.Vec2::new(1.0F, 0.0F)
+          @core.Vec2(1.0F, 0.0F)
         } else if id == 1 {
-          @core.Vec2::new(-1.0F, 0.0F)
+          Vec2(-1.0F, 0.0F)
         } else if id == 2 {
-          @core.Vec2::new(0.0F, 1.0F)
+          Vec2(0.0F, 1.0F)
         } else {
-          @core.Vec2::new(0.0F, -1.0F)
+          Vec2(0.0F, -1.0F)
         }
-      _ => @core.Vec2::new(1.0F, 0.0F)
+      _ => Vec2(1.0F, 0.0F)
     }
     rot.rotate_vec2(n_local)
   } else {
-    normalize_or_fallback(d, @core.Vec2::new(1.0F, 0.0F))
+    normalize_or_fallback(d, Vec2(1.0F, 0.0F))
   }
   if normal.dot(cuboid.world_translation.sub(capsule.world_translation)) < 0.0F {
-    normal = @core.Vec2::new(-normal.x, -normal.y)
+    normal = Vec2(-normal.x, -normal.y)
   }
   let signed_dist = dist_center - radius
   let world_p1 = seg_world.add(vec2_scale(normal, radius))
@@ -7304,7 +7173,7 @@ fn contact_manifold_cuboid_capsule(
       data: p.data(),
     })
   }
-  { normal: @core.Vec2::new(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points }
 }
 
 ///|
@@ -7392,7 +7261,7 @@ fn build_contact_pair(
           data: p.data,
         })
       }
-      { normal: @core.Vec2::new(-m.normal.x, -m.normal.y), points: pts }
+      { normal: Vec2(-m.normal.x, -m.normal.y), points: pts }
     }
 
     fn halfspace_world_normal(
@@ -7682,7 +7551,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           ),
         )
       (HalfSpace(n), CapsuleX(hh, cr)) =>
@@ -7693,7 +7562,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           )
           is Some(m) {
           out.push(m)
@@ -7706,7 +7575,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           )
           is Some(m) {
           out.push(flip_manifold(m))
@@ -7719,7 +7588,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           ),
         )
       (HalfSpace(n), CapsuleY(hh, cr)) =>
@@ -7730,7 +7599,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           )
           is Some(m) {
           out.push(m)
@@ -7743,7 +7612,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           )
           is Some(m) {
           out.push(flip_manifold(m))
@@ -7754,7 +7623,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             c2_base,
             r,
           ),
@@ -7765,7 +7634,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             c2_base,
             r,
           ),
@@ -7776,11 +7645,11 @@ fn build_contact_pair(
             c1_base,
             hh1,
             r1,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             c2_base,
             hh2,
             r2,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           ),
         )
       (CapsuleX(hh1, r1), CapsuleY(hh2, r2)) =>
@@ -7789,11 +7658,11 @@ fn build_contact_pair(
             c1_base,
             hh1,
             r1,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             c2_base,
             hh2,
             r2,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           ),
         )
       (CapsuleY(hh1, r1), CapsuleX(hh2, r2)) =>
@@ -7802,11 +7671,11 @@ fn build_contact_pair(
             c1_base,
             hh1,
             r1,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             c2_base,
             hh2,
             r2,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           ),
         )
       (CapsuleY(hh1, r1), CapsuleY(hh2, r2)) =>
@@ -7815,11 +7684,11 @@ fn build_contact_pair(
             c1_base,
             hh1,
             r1,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             c2_base,
             hh2,
             r2,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           ),
         )
       (Segment(a, b), Cuboid(hw, hh)) =>
@@ -7855,7 +7724,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           ),
         )
       (Segment(a, b), CapsuleY(hh, cr)) =>
@@ -7867,7 +7736,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           ),
         )
       (CapsuleX(hh, cr), Segment(a, b)) =>
@@ -7876,7 +7745,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             c2_base,
             a,
             b,
@@ -7888,7 +7757,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             c2_base,
             a,
             b,
@@ -7900,7 +7769,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
             c2_base,
             hw,
             hh2,
@@ -7912,7 +7781,7 @@ fn build_contact_pair(
             c1_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
             c2_base,
             hw,
             hh2,
@@ -7927,7 +7796,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(1.0F, 0.0F),
           ),
         )
       (Cuboid(hw, hh2), CapsuleY(hh, cr)) =>
@@ -7939,7 +7808,7 @@ fn build_contact_pair(
             c2_base,
             hh,
             cr,
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(0.0F, 1.0F),
           ),
         )
       _ => ()
@@ -7980,11 +7849,11 @@ fn build_contact_pair(
   }
 
   let manifolds : Array[ContactManifold] = []
-  let base1 = @core.Isometry2::new(
+  let base1 = @core.Isometry2(
     collider1.world_translation,
     @core.Rot2::from_angle(collider1.world_rotation),
   )
-  let base2 = @core.Isometry2::new(
+  let base2 = @core.Isometry2(
     collider2.world_translation,
     @core.Rot2::from_angle(collider2.world_rotation),
   )
@@ -8391,7 +8260,7 @@ fn core_aabb_to_internal(aabb : @core.Aabb) -> Aabb {
 
 ///|
 fn internal_aabb_to_core(aabb : Aabb) -> @core.Aabb {
-  @core.Aabb::new(aabb.min, aabb.max)
+  Aabb(aabb.min, aabb.max)
 }
 
 ///|
@@ -8405,11 +8274,11 @@ fn aabb_intersects(left : Aabb, right : Aabb) -> Bool {
 ///|
 fn aabb_union(left : Aabb, right : Aabb) -> Aabb {
   {
-    min: @core.Vec2::new(
+    min: Vec2(
       min_value(left.min.x, right.min.x),
       min_value(left.min.y, right.min.y),
     ),
-    max: @core.Vec2::new(
+    max: Vec2(
       max_value(left.max.x, right.max.x),
       max_value(left.max.y, right.max.y),
     ),
@@ -8418,10 +8287,7 @@ fn aabb_union(left : Aabb, right : Aabb) -> Aabb {
 
 ///|
 fn aabb_center(aabb : Aabb) -> @core.Vec2 {
-  @core.Vec2::new(
-    0.5F * (aabb.min.x + aabb.max.x),
-    0.5F * (aabb.min.y + aabb.max.y),
-  )
+  Vec2(0.5F * (aabb.min.x + aabb.max.x), 0.5F * (aabb.min.y + aabb.max.y))
 }
 
 ///|
@@ -8650,7 +8516,7 @@ fn isometry2_translation(iso : @core.Isometry2) -> @core.Vec2 {
 ///|
 fn isometry2_rotation_angle(iso : @core.Isometry2) -> @core.Real {
   let origin = isometry2_translation(iso)
-  let px = iso.transform_point(@core.Vec2::new(1.0F, 0.0F))
+  let px = iso.transform_point(Vec2(1.0F, 0.0F))
   let axis = px.sub(origin)
   @core.atan2(axis.y, axis.x)
 }
@@ -8674,8 +8540,8 @@ fn compute_shape_aabb(
     Ball(radius) => {
       let r = radius + pd
       {
-        min: @core.Vec2::new(center.x - r, center.y - r),
-        max: @core.Vec2::new(center.x + r, center.y + r),
+        min: Vec2(center.x - r, center.y - r),
+        max: Vec2(center.x + r, center.y + r),
       }
     }
     Cuboid(half_width, half_height) => {
@@ -8686,19 +8552,19 @@ fn compute_shape_aabb(
       let hw = abs_cos * half_width + abs_sin * half_height + pd
       let hh = abs_sin * half_width + abs_cos * half_height + pd
       {
-        min: @core.Vec2::new(center.x - hw, center.y - hh),
-        max: @core.Vec2::new(center.x + hw, center.y + hh),
+        min: Vec2(center.x - hw, center.y - hh),
+        max: Vec2(center.x + hw, center.y + hh),
       }
     }
     HalfSpace(_) =>
       // Unbounded AABB: callers (broad-phase/query) must expand this to ensure it intersects.
       {
-        min: @core.Vec2::new(center.x - pd, center.y - pd),
-        max: @core.Vec2::new(center.x + pd, center.y + pd),
+        min: Vec2(center.x - pd, center.y - pd),
+        max: Vec2(center.x + pd, center.y + pd),
       }
     CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let offset = rot.rotate_vec2(Vec2(half_height, 0.0F))
       let a = center.add(offset)
       let b = center.sub(offset)
       let r = radius + pd
@@ -8706,14 +8572,11 @@ fn compute_shape_aabb(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      {
-        min: @core.Vec2::new(min_x - r, min_y - r),
-        max: @core.Vec2::new(max_x + r, max_y + r),
-      }
+      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r) }
     }
     CapsuleY(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let offset = rot.rotate_vec2(Vec2(0.0F, half_height))
       let a = center.add(offset)
       let b = center.sub(offset)
       let r = radius + pd
@@ -8721,10 +8584,7 @@ fn compute_shape_aabb(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      {
-        min: @core.Vec2::new(min_x - r, min_y - r),
-        max: @core.Vec2::new(max_x + r, max_y + r),
-      }
+      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r) }
     }
     Segment(a, b) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -8734,10 +8594,7 @@ fn compute_shape_aabb(
       let max_x = if wa.x > wb.x { wa.x } else { wb.x }
       let min_y = if wa.y < wb.y { wa.y } else { wb.y }
       let max_y = if wa.y > wb.y { wa.y } else { wb.y }
-      {
-        min: @core.Vec2::new(min_x - pd, min_y - pd),
-        max: @core.Vec2::new(max_x + pd, max_y + pd),
-      }
+      { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
     }
     Polyline(vertices, _) =>
       if vertices.length() == 0 {
@@ -8763,10 +8620,7 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        {
-          min: @core.Vec2::new(min_x - pd, min_y - pd),
-          max: @core.Vec2::new(max_x + pd, max_y + pd),
-        }
+        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
       }
     HeightField(heights, scale) =>
       compute_shape_aabb(
@@ -8799,10 +8653,7 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        {
-          min: @core.Vec2::new(min_x - pd, min_y - pd),
-          max: @core.Vec2::new(max_x + pd, max_y + pd),
-        }
+        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
       }
     TriMesh(vertices, _) =>
       if vertices.length() == 0 {
@@ -8828,16 +8679,13 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        {
-          min: @core.Vec2::new(min_x - pd, min_y - pd),
-          max: @core.Vec2::new(max_x + pd, max_y + pd),
-        }
+        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
       }
     Compound(parts) =>
       if parts.length() == 0 {
         { min: center, max: center }
       } else {
-        let parent_iso = @core.Isometry2::new(
+        let parent_iso = @core.Isometry2(
           center,
           @core.Rot2::from_angle(rotation),
         )
@@ -8875,11 +8723,6 @@ pub struct BroadPhaseBvh {
 
 ///|
 pub fn BroadPhaseBvh::BroadPhaseBvh() -> BroadPhaseBvh {
-  BroadPhaseBvh::new()
-}
-
-///|
-pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
   {
     optimization_strategy: BvhOptimizationStrategy::none(),
     pairs: [],
@@ -8903,7 +8746,7 @@ pub fn BroadPhaseBvh::as_query_pipeline(
   filter : QueryFilter,
 ) -> QueryPipeline {
   self |> ignore
-  QueryPipeline::new(filter, bodies, colliders)
+  QueryPipeline(filter, bodies, colliders)
 }
 
 ///|
@@ -8914,7 +8757,7 @@ pub fn BroadPhaseBvh::as_query_pipeline_mut(
   filter : QueryFilter,
 ) -> QueryPipelineMut {
   self |> ignore
-  QueryPipelineMut::new(filter, bodies, colliders)
+  QueryPipelineMut(filter, bodies, colliders)
 }
 
 ///|
@@ -8946,7 +8789,7 @@ pub fn BroadPhaseBvh::update(
 
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       let override_aabb = find_override(self.override_aabbs, handle)
       if override_aabb is None && collider.shape is HalfSpace(_) {
         // Defer insertion until we know the current global bounds.
@@ -9011,21 +8854,21 @@ pub fn BroadPhaseBvh::update(
       i = i + 1
       j = j + 1
     } else if pair_less(a, b) {
-      self.events.push(DeletePair(ColliderPair::new(a.0, a.1)))
+      self.events.push(DeletePair(ColliderPair(a.0, a.1)))
       i = i + 1
     } else {
-      self.events.push(AddPair(ColliderPair::new(b.0, b.1)))
+      self.events.push(AddPair(ColliderPair(b.0, b.1)))
       j = j + 1
     }
   }
   while i < prev_pairs.length() {
     let a = prev_pairs[i]
-    self.events.push(DeletePair(ColliderPair::new(a.0, a.1)))
+    self.events.push(DeletePair(ColliderPair(a.0, a.1)))
     i = i + 1
   }
   while j < next_pairs.length() {
     let b = next_pairs[j]
-    self.events.push(AddPair(ColliderPair::new(b.0, b.1)))
+    self.events.push(AddPair(ColliderPair(b.0, b.1)))
     j = j + 1
   }
 }
@@ -9057,7 +8900,7 @@ pub fn BroadPhaseBvh::update3(
 
   for i in 0..<colliders.inner.colliders.length() {
     if colliders.inner.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.inner.generations[i])
+      let handle = ColliderHandle(i, colliders.inner.generations[i])
       let override_aabb = find_override(self.override_aabbs, handle)
       if override_aabb is None && collider.shape is HalfSpace(_) {
         halfspaces.push(
@@ -9119,21 +8962,21 @@ pub fn BroadPhaseBvh::update3(
       i = i + 1
       j = j + 1
     } else if pair_less(a, b) {
-      self.events.push(DeletePair(ColliderPair::new(a.0, a.1)))
+      self.events.push(DeletePair(ColliderPair(a.0, a.1)))
       i = i + 1
     } else {
-      self.events.push(AddPair(ColliderPair::new(b.0, b.1)))
+      self.events.push(AddPair(ColliderPair(b.0, b.1)))
       j = j + 1
     }
   }
   while i < prev_pairs.length() {
     let a = prev_pairs[i]
-    self.events.push(DeletePair(ColliderPair::new(a.0, a.1)))
+    self.events.push(DeletePair(ColliderPair(a.0, a.1)))
     i = i + 1
   }
   while j < next_pairs.length() {
     let b = next_pairs[j]
-    self.events.push(AddPair(ColliderPair::new(b.0, b.1)))
+    self.events.push(AddPair(ColliderPair(b.0, b.1)))
     j = j + 1
   }
 }

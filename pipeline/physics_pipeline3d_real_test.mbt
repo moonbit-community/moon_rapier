@@ -14,19 +14,19 @@
 
 ///|
 test "physics_pipeline3d_real: ball rests on ground" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -36,7 +36,7 @@ test "physics_pipeline3d_real: ball rests on ground" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -68,19 +68,19 @@ test "physics_pipeline3d_real: ball rests on ground" {
 
 ///|
 test "physics_pipeline3d_real: stacked cuboids keep a face manifold" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(16)
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -119,19 +119,19 @@ test "physics_pipeline3d_real: stacked cuboids keep a face manifold" {
 
 ///|
 test "physics_pipeline3d_real: sleeping and wake-up" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
   let ball1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -156,8 +156,8 @@ test "physics_pipeline3d_real: sleeping and wake-up" {
   // A moving ball collides with ball1 and should wake it up.
   let ball2 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(-3.0F, 0.0F, 0.0F))
-    .linvel(@core.Vec3::new(10.0F, 0.0F, 0.0F))
+    .translation(Vec3(-3.0F, 0.0F, 0.0F))
+    .linvel(Vec3(10.0F, 0.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -181,17 +181,17 @@ test "physics_pipeline3d_real: sleeping and wake-up" {
 
 ///|
 test "physics_pipeline3d_real: collision events for non-sensor contacts" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.CollisionEvent3D],
     started : Bool,
@@ -221,7 +221,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
 
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -231,7 +231,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -252,7 +252,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
 
   // Move into contact: should emit Started with non-sensor flags.
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -267,7 +267,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
 
   // Move out of contact: should emit Stopped with non-sensor flags.
   if bodies.get(ball) is Some(rb2) {
-    rb2.set_next_kinematic_translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    rb2.set_next_kinematic_translation(Vec3(0.0F, 2.0F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -283,20 +283,20 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
 
 ///|
 test "physics_pipeline3d_real: combined step handles events and joint sets" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
-  let rope_joints = @dynamics.RopeJointSet3DReal::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let hooks = PhysicsHooks3D::new()
+  let handler = EventHandler3D::EventHandler3D()
+  let rope_joints = @dynamics.RopeJointSet3DReal()
+  let joints = @dynamics.JointSet3DReal()
+  let hooks = PhysicsHooks3D::PhysicsHooks3D()
 
   fn has_started(
     events : Array[@collision.CollisionEvent3D],
@@ -318,7 +318,7 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
 
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -328,7 +328,7 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -346,7 +346,7 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
   inspect(handler.take_collision_events().length() == 0, content="true")
 
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -362,14 +362,14 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
 
 ///|
 test "physics_pipeline3d_real: multibody joints are part of step path" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let handler = EventHandler3D::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3DReal::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let handler = EventHandler3D::EventHandler3D()
+  let multibody_joints = @dynamics.MultibodyJointSet3DReal()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
@@ -377,12 +377,12 @@ test "physics_pipeline3d_real: multibody joints are part of step path" {
 
   let parent = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   let child = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -405,7 +405,7 @@ test "physics_pipeline3d_real: multibody joints are part of step path" {
   if multibody_joints.insert(
       parent,
       child,
-      @dynamics.FixedJoint3DRealBuilder::new()
+      @dynamics.FixedJoint3DRealBuilder()
       .local_anchor1(@core.Vec3::zero())
       .local_anchor2(@core.Vec3::zero())
       .build()
@@ -427,17 +427,17 @@ test "physics_pipeline3d_real: multibody joints are part of step path" {
 
 ///|
 test "physics_pipeline3d_real: collision events for sensor intersections" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.CollisionEvent3D],
     started : Bool,
@@ -467,7 +467,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -477,7 +477,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -498,7 +498,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 
   // Move into intersection: should emit Started with sensor flags.
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -513,7 +513,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 
   // Move out of intersection: should emit Stopped with sensor flags.
   if bodies.get(ball) is Some(rb2) {
-    rb2.set_next_kinematic_translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    rb2.set_next_kinematic_translation(Vec3(0.0F, 2.0F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -529,25 +529,25 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 
 ///|
 test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   let b2 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -589,17 +589,17 @@ test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
 
 ///|
 test "physics_pipeline3d_real: contact stopped event includes removed flag" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   let fixed_body = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let fixed_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::ball(1.0F).build(),
@@ -608,7 +608,7 @@ test "physics_pipeline3d_real: contact stopped event includes removed flag" {
   )
   let dynamic_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -643,12 +643,12 @@ test "physics_pipeline3d_real: contact stopped event includes removed flag" {
 ///|
 test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled vs enabled)" {
   fn run(ccd_enabled : Bool) -> @core.Real {
-    let pipeline = PhysicsPipeline3DReal::new()
-    let broad_phase = @collision.BroadPhase3D::new()
-    let narrow_phase = @collision.NarrowPhase3D::new()
-    let islands = @dynamics.IslandManager3D::new()
-    let bodies = @dynamics.RigidBodySet3D::new()
-    let colliders = @collision.ColliderSet3D::new()
+    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+    let broad_phase = @collision.BroadPhase3D()
+    let narrow_phase = @collision.NarrowPhase3D()
+    let islands = @dynamics.IslandManager3D()
+    let bodies = @dynamics.RigidBodySet3D()
+    let colliders = @collision.ColliderSet3D()
     let gravity = @core.Vec3::zero()
     let parameters = @dynamics.IntegrationParameters::default().set_dt(1.0F)
     let wall = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
@@ -660,7 +660,7 @@ test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled v
     |> ignore
     let ball = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(-10.0F, 0.0F, 0.0F))
+      .translation(Vec3(-10.0F, 0.0F, 0.0F))
       .ccd_enabled(ccd_enabled)
       .build(),
     )
@@ -671,7 +671,7 @@ test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled v
     )
     |> ignore
     if bodies.get_mut(ball) is Some(rb) {
-      rb.set_linvel(@core.Vec3::new(1000.0F, 0.0F, 0.0F))
+      rb.set_linvel(Vec3(1000.0F, 0.0F, 0.0F))
       rb.wake_up()
     }
     pipeline.step(
@@ -693,12 +693,12 @@ test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled v
 ///|
 test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
   fn run(max_ccd_substeps : Int) -> @core.Real {
-    let pipeline = PhysicsPipeline3DReal::new()
-    let broad_phase = @collision.BroadPhase3D::new()
-    let narrow_phase = @collision.NarrowPhase3D::new()
-    let islands = @dynamics.IslandManager3D::new()
-    let bodies = @dynamics.RigidBodySet3D::new()
-    let colliders = @collision.ColliderSet3D::new()
+    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+    let broad_phase = @collision.BroadPhase3D()
+    let narrow_phase = @collision.NarrowPhase3D()
+    let islands = @dynamics.IslandManager3D()
+    let bodies = @dynamics.RigidBodySet3D()
+    let colliders = @collision.ColliderSet3D()
     let gravity = @core.Vec3::zero()
     let parameters = @dynamics.IntegrationParameters::default()
       .set_dt(1.0F)
@@ -712,7 +712,7 @@ test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
     |> ignore
     let ball = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(-10.0F, 0.0F, 0.0F))
+      .translation(Vec3(-10.0F, 0.0F, 0.0F))
       .ccd_enabled(true)
       .build(),
     )
@@ -723,7 +723,7 @@ test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
     )
     |> ignore
     if bodies.get_mut(ball) is Some(rb) {
-      rb.set_linvel(@core.Vec3::new(1000.0F, 0.0F, 0.0F))
+      rb.set_linvel(Vec3(1000.0F, 0.0F, 0.0F))
       rb.wake_up()
     }
     pipeline.step(
@@ -744,20 +744,20 @@ test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
 
 ///|
 test "physics_pipeline3d_real: collision events do not repeat while contact persists" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -768,7 +768,7 @@ test "physics_pipeline3d_real: collision events do not repeat while contact pers
   |> ignore
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -782,7 +782,7 @@ test "physics_pipeline3d_real: collision events do not repeat while contact pers
 
   // Step into contact: expect exactly one Started.
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -802,20 +802,20 @@ test "physics_pipeline3d_real: collision events do not repeat while contact pers
 
 ///|
 test "physics_pipeline3d_real: collision events do not repeat while sensor intersection persists" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -826,7 +826,7 @@ test "physics_pipeline3d_real: collision events do not repeat while sensor inter
   |> ignore
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -841,7 +841,7 @@ test "physics_pipeline3d_real: collision events do not repeat while sensor inter
 
   // Step into intersection: expect exactly one Started.
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -861,17 +861,17 @@ test "physics_pipeline3d_real: collision events do not repeat while sensor inter
 
 ///|
 test "physics_pipeline3d_real: intersection events for sensor overlaps (without collision events)" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.IntersectionEvent3D],
     intersecting : Bool,
@@ -893,7 +893,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
 
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -903,7 +903,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   let sensor_ball = colliders.insert_with_parent(
@@ -924,7 +924,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
 
   // Step into intersection: expect intersecting=true, and no collision events.
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -943,7 +943,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
 
   // Step out of intersection: expect intersecting=false.
   if bodies.get(ball) is Some(rb2) {
-    rb2.set_next_kinematic_translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    rb2.set_next_kinematic_translation(Vec3(0.0F, 2.0F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -956,20 +956,20 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
 
 ///|
 test "physics_pipeline3d_real: contact force events and contact impulses are populated" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
+  let handler = EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -980,7 +980,7 @@ test "physics_pipeline3d_real: contact force events and contact impulses are pop
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     // Start slightly penetrating the ground so the solver must apply impulses immediately.
-    .translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    .translation(Vec3(0.0F, 0.4F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -1007,18 +1007,18 @@ test "physics_pipeline3d_real: contact force events and contact impulses are pop
 
 ///|
 test "physics_pipeline3d_real: hooks can filter contact pairs" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::new()
-  let hooks = PhysicsHooks3D::new().filter_contact_pair(fn(
+  let handler = EventHandler3D::EventHandler3D()
+  let hooks = PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet3D,
     _colliders : @collision.ColliderSet3D,
     _c1 : @collision.ColliderHandle3D,
@@ -1028,7 +1028,7 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
   })
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -1038,7 +1038,7 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -1050,7 +1050,7 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
     bodies,
   )
   if bodies.get(ball) is Some(rb) {
-    rb.set_next_kinematic_translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    rb.set_next_kinematic_translation(Vec3(0.0F, 0.4F, 0.0F))
   } else {
     inspect(false, content="true")
   }
@@ -1067,17 +1067,17 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
 
 ///|
 test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let hooks = PhysicsHooks3D::new().filter_contact_pair(fn(
+  let hooks = PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet3D,
     _colliders : @collision.ColliderSet3D,
     _c1 : @collision.ColliderHandle3D,
@@ -1087,7 +1087,7 @@ test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
   })
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -1097,7 +1097,7 @@ test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    .translation(Vec3(0.0F, 0.4F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(
@@ -1116,28 +1116,28 @@ test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
 
 ///|
 test "physics_pipeline3d_real: hooks can override solver normal" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let hooks = PhysicsHooks3D::new().modify_solver_contacts(fn(
+  let hooks = PhysicsHooks3D::PhysicsHooks3D().modify_solver_contacts(fn(
     _bodies : @dynamics.RigidBodySet3D,
     _colliders : @collision.ColliderSet3D,
     _c1 : @collision.ColliderHandle3D,
     _c2 : @collision.ColliderHandle3D,
     _normal : @core.Vec3,
   ) -> (Bool, @core.Vec3?) {
-    (true, Some(@core.Vec3::new(1.0F, 0.0F, 0.0F)))
+    (true, Some(Vec3(1.0F, 0.0F, 0.0F)))
   })
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -1149,7 +1149,7 @@ test "physics_pipeline3d_real: hooks can override solver normal" {
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     // Start penetrating so the solver applies a corrective impulse immediately.
-    .translation(@core.Vec3::new(0.0F, 0.4F, 0.0F))
+    .translation(Vec3(0.0F, 0.4F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(

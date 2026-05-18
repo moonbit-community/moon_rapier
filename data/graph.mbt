@@ -26,11 +26,6 @@ pub struct NodeIndex {
 
 ///|
 pub fn NodeIndex::NodeIndex(x : Int) -> NodeIndex {
-  NodeIndex::new(x)
-}
-
-///|
-pub fn NodeIndex::new(x : Int) -> NodeIndex {
   { index: x }
 }
 
@@ -41,7 +36,7 @@ pub fn NodeIndex::index(self : NodeIndex) -> Int {
 
 ///|
 pub fn NodeIndex::end() -> NodeIndex {
-  NodeIndex::new(-1)
+  NodeIndex(-1)
 }
 
 ///|
@@ -51,11 +46,6 @@ pub struct EdgeIndex {
 
 ///|
 pub fn EdgeIndex::EdgeIndex(x : Int) -> EdgeIndex {
-  EdgeIndex::new(x)
-}
-
-///|
-pub fn EdgeIndex::new(x : Int) -> EdgeIndex {
   { index: x }
 }
 
@@ -66,7 +56,7 @@ pub fn EdgeIndex::index(self : EdgeIndex) -> Int {
 
 ///|
 pub fn EdgeIndex::end() -> EdgeIndex {
-  EdgeIndex::new(-1)
+  EdgeIndex(-1)
 }
 
 ///|
@@ -126,7 +116,7 @@ pub fn[N, E] Graph::with_capacity(nodes : Int, edges : Int) -> Graph[N, E] {
 
 ///|
 pub fn[N, E] Graph::add_node(self : Graph[N, E], weight : N) -> NodeIndex {
-  let idx = NodeIndex::new(self.nodes.length())
+  let idx = NodeIndex(self.nodes.length())
   self.nodes.push({
     weight,
     next_out: EdgeIndex::end(),
@@ -212,7 +202,7 @@ pub fn[N, E] Graph::add_edge(
   if ai < 0 || ai >= self.nodes.length() || bi < 0 || bi >= self.nodes.length() {
     panic()
   }
-  let edge_idx = EdgeIndex::new(self.edges.length())
+  let edge_idx = EdgeIndex(self.edges.length())
   let edge : Edge[E] = {
     weight,
     next_out: EdgeIndex::end(),
@@ -347,7 +337,7 @@ fn[N, E] Graph::remove_edge_adjust_indices(
       match swapped {
         None => Some(edge.weight)
         Some((s0, s1)) => {
-          let swapped_e = EdgeIndex::new(self.edges.length())
+          let swapped_e = EdgeIndex(self.edges.length())
           self.change_edge_links(s0, s1, swapped_e, e, e)
           Some(edge.weight)
         }
@@ -413,7 +403,7 @@ pub fn[N, E] Graph::remove_node(self : Graph[N, E], a : NodeIndex) -> N? {
       }
 
       // The swapped element's old index (last).
-      let old_index = NodeIndex::new(self.nodes.length())
+      let old_index = NodeIndex(self.nodes.length())
       let new_index = a
       let swap_edges_out = self.nodes[ai].next_out
       let swap_edges_in = self.nodes[ai].next_in
@@ -517,7 +507,7 @@ pub fn[N, E] Edges::next(self : Edges[N, E]) -> EdgeReference[E]? {
     if i >= 0 && i < self.graph.edges.length() {
       let ed = self.graph.edges[i]
       self.next_out = ed.next_out
-      return Some({ index: EdgeIndex::new(i), weight: ed.weight })
+      return Some({ index: EdgeIndex(i), weight: ed.weight })
     }
     self.next_out = EdgeIndex::end()
   }

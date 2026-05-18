@@ -45,13 +45,13 @@ fn step_world3_real(
 ///|
 fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/platform3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is WorldsFullscale {
     12
   } else if profile is WorldsHeavy {
@@ -70,7 +70,7 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -104,7 +104,7 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
         let z = Float::from_int(k) * shift - centerz
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         dynamic_handles.push(handle)
@@ -121,7 +121,7 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   // Kinematic platforms.
   let v_platform = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_velocity_based()
-    .translation(@core.Vec3::new(0.0F, 1.5F + 0.8F, 0.0F))
+    .translation(Vec3(0.0F, 1.5F + 0.8F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -132,7 +132,7 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   |> ignore
   let p_platform = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 3.0F + 1.5F + 0.8F, 0.0F))
+    .translation(Vec3(0.0F, 3.0F + 1.5F + 0.8F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -155,21 +155,21 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
   }
   for _ in 0..<platform_steps {
     time = time + dt
-    let vel = @core.Vec3::new(
+    let vel = @core.Vec3(
       0.0F,
       Float::from_double(@math.cos((time * 2.0F).to_double())),
       Float::from_double(@math.sin(time.to_double())) * 2.0F,
     )
     if bodies.get_mut(v_platform) is Some(rb) {
       rb.set_linvel(vel)
-      rb.set_angvel(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+      rb.set_angvel(Vec3(0.0F, 1.0F, 0.0F))
     } else {
       return false
     }
     if bodies.get_mut(p_platform) is Some(rb) {
       let next_tra = rb.translation().add(vel.scale(-dt))
       let delta = @core.rotation_from_scaled_axis(
-        @core.Vec3::new(0.0F, 1.0F, 0.0F).scale(-0.5F * dt),
+        @core.Vec3(0.0F, 1.0F, 0.0F).scale(-0.5F * dt),
       )
       rb.set_next_kinematic_translation(next_tra)
       rb.set_next_kinematic_rotation(delta.mul(rb.rotation()))
@@ -202,13 +202,13 @@ fn run_examples3d_platform3(profile : WorldsProfile) -> Bool {
 ///|
 fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/domino3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is WorldsFullscale {
     12
   } else if profile is WorldsHeavy {
@@ -225,7 +225,7 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -269,16 +269,12 @@ fn run_examples3d_domino3(profile : WorldsProfile) -> Bool {
     let tilt = if nudged || i == num - 1 { 0.2F } else { 0.0F }
     if skip == 0 {
       let rot = @core.rotation_from_scaled_axis(
-        @core.Vec3::new(0.0F, 1.0F, 0.0F).scale(curr_angle),
+        @core.Vec3(0.0F, 1.0F, 0.0F).scale(curr_angle),
       )
-      let tilt_axis = rot.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+      let tilt_axis = rot.rotate_vec3(Vec3(0.0F, 0.0F, 1.0F))
       let tilt_rot = @core.rotation_from_scaled_axis(tilt_axis.scale(tilt))
-      let position = @core.Isometry3::new(
-        @core.Vec3::new(
-          x * curr_rad,
-          width * 2.0F + ground_height,
-          z * curr_rad,
-        ),
+      let position = @core.Isometry3(
+        Vec3(x * curr_rad, width * 2.0F + ground_height, z * curr_rad),
         tilt_rot.mul(rot),
       )
       let handle = bodies.insert(
@@ -354,13 +350,13 @@ fn run_examples3d_fountain3(profile : WorldsProfile) -> Bool {
   //
   // Upstream spawns round cylinders + cones + cuboids and removes bodies when the count exceeds a
   // threshold. We keep the same shape mix here.
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is WorldsFullscale {
     12
   } else if profile is WorldsHeavy {
@@ -378,9 +374,7 @@ fn run_examples3d_fountain3(profile : WorldsProfile) -> Bool {
   for k in 0..<3 {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::fixed()
-      .translation(
-        @core.Vec3::new(0.0F, -ground_height - Float::from_int(k), 0.0F),
-      )
+      .translation(Vec3(0.0F, -ground_height - Float::from_int(k), 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -428,7 +422,7 @@ fn run_examples3d_fountain3(profile : WorldsProfile) -> Bool {
     let spawn_z = Float::from_double(@math.cos(angle.to_double())) * 2.0F
     let h = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(spawn_x, 10.0F, spawn_z))
+      .translation(Vec3(spawn_x, 10.0F, spawn_z))
       .build(),
     )
     spawned.push(h)

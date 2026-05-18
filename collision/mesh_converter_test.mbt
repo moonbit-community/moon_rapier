@@ -15,10 +15,10 @@
 ///|
 test "mesh converter aabb returns cuboid + translation pose" {
   let vertices = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(2.0F, 0.0F),
-    @core.Vec2::new(2.0F, 4.0F),
-    @core.Vec2::new(0.0F, 4.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(2.0F, 0.0F),
+    Vec2(2.0F, 4.0F),
+    Vec2(0.0F, 4.0F),
   ]
   let result = MeshConverter::aabb().apply(vertices, [])
   if result is Ok((shape, pose)) {
@@ -39,10 +39,10 @@ test "mesh converter aabb returns cuboid + translation pose" {
 ///|
 test "mesh converter convex hull returns convex polygon shape" {
   let vertices = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(2.0F, 0.0F),
-    @core.Vec2::new(0.0F, 1.0F),
-    @core.Vec2::new(0.1F, 0.1F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(2.0F, 0.0F),
+    Vec2(0.0F, 1.0F),
+    Vec2(0.1F, 0.1F),
   ]
   let result = MeshConverter::convex_hull().apply(vertices, [])
   if result is Ok((shape, _)) {
@@ -60,11 +60,11 @@ test "mesh converter convex hull returns convex polygon shape" {
 test "mesh converter convex decomposition honors max_convex_hulls" {
   // A simple concave pentagon: (0,0)->(2,0)->(2,2)->(1,1)->(0,2).
   let vertices = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(2.0F, 0.0F),
-    @core.Vec2::new(2.0F, 2.0F),
-    @core.Vec2::new(1.0F, 1.0F),
-    @core.Vec2::new(0.0F, 2.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(2.0F, 0.0F),
+    Vec2(2.0F, 2.0F),
+    Vec2(1.0F, 1.0F),
+    Vec2(0.0F, 2.0F),
   ]
   let indices = [(0, 1, 3), (1, 2, 3), (0, 3, 4)]
   let hull = MeshConverter::convex_hull().apply(vertices, indices)

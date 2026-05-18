@@ -27,7 +27,7 @@ pub struct ActiveEvents {
 }
 
 ///|
-fn ActiveEvents::new(bits : Int) -> ActiveEvents {
+fn ActiveEvents::ActiveEvents(bits : Int) -> ActiveEvents {
   { bits, }
 }
 
@@ -40,22 +40,22 @@ fn active_events_all_bits() -> Int {
 
 ///|
 pub fn ActiveEvents::empty() -> ActiveEvents {
-  ActiveEvents::new(0)
+  ActiveEvents(0)
 }
 
 ///|
 pub fn ActiveEvents::collision_events() -> ActiveEvents {
-  ActiveEvents::new(ACTIVE_EVENTS_COLLISION_EVENTS)
+  ActiveEvents(ACTIVE_EVENTS_COLLISION_EVENTS)
 }
 
 ///|
 pub fn ActiveEvents::contact_force_events() -> ActiveEvents {
-  ActiveEvents::new(ACTIVE_EVENTS_CONTACT_FORCE_EVENTS)
+  ActiveEvents(ACTIVE_EVENTS_CONTACT_FORCE_EVENTS)
 }
 
 ///|
 pub fn ActiveEvents::intersection_events() -> ActiveEvents {
-  ActiveEvents::new(ACTIVE_EVENTS_INTERSECTION_EVENTS)
+  ActiveEvents(ACTIVE_EVENTS_INTERSECTION_EVENTS)
 }
 
 ///|
@@ -176,23 +176,23 @@ pub struct CollisionEventFlags {
 }
 
 ///|
-fn CollisionEventFlags::new(bits : Int) -> CollisionEventFlags {
+fn CollisionEventFlags::CollisionEventFlags(bits : Int) -> CollisionEventFlags {
   { bits, }
 }
 
 ///|
 pub fn CollisionEventFlags::empty() -> CollisionEventFlags {
-  CollisionEventFlags::new(0)
+  CollisionEventFlags(0)
 }
 
 ///|
 pub fn CollisionEventFlags::sensor() -> CollisionEventFlags {
-  CollisionEventFlags::new(COLLISION_EVENT_FLAG_SENSOR)
+  CollisionEventFlags(COLLISION_EVENT_FLAG_SENSOR)
 }
 
 ///|
 pub fn CollisionEventFlags::removed() -> CollisionEventFlags {
-  CollisionEventFlags::new(COLLISION_EVENT_FLAG_REMOVED)
+  CollisionEventFlags(COLLISION_EVENT_FLAG_REMOVED)
 }
 
 ///|
@@ -273,15 +273,6 @@ pub fn IntersectionEvent::IntersectionEvent(
   collider2 : ColliderHandle,
   intersecting : Bool,
 ) -> IntersectionEvent {
-  IntersectionEvent::new(collider1, collider2, intersecting)
-}
-
-///|
-pub fn IntersectionEvent::new(
-  collider1 : ColliderHandle,
-  collider2 : ColliderHandle,
-  intersecting : Bool,
-) -> IntersectionEvent {
   { collider1, collider2, intersecting }
 }
 
@@ -312,21 +303,6 @@ pub struct ContactForceEvent {
 
 ///|
 pub fn ContactForceEvent::ContactForceEvent(
-  collider1 : ColliderHandle,
-  collider2 : ColliderHandle,
-  total_force : @core.Vec2,
-  total_force_magnitude : @core.Real,
-  max_force_direction : @core.Vec2,
-  max_force_magnitude : @core.Real,
-) -> ContactForceEvent {
-  ContactForceEvent::new(
-    collider1, collider2, total_force, total_force_magnitude, max_force_direction,
-    max_force_magnitude,
-  )
-}
-
-///|
-pub fn ContactForceEvent::new(
   collider1 : ColliderHandle,
   collider2 : ColliderHandle,
   total_force : @core.Vec2,

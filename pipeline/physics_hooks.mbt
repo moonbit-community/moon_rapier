@@ -31,20 +31,6 @@ pub fn PairFilterContext::PairFilterContext(
   rigid_body1 : @dynamics.RigidBodyHandle?,
   rigid_body2 : @dynamics.RigidBodyHandle?,
 ) -> PairFilterContext {
-  PairFilterContext::new(
-    bodies, colliders, collider1, collider2, rigid_body1, rigid_body2,
-  )
-}
-
-///|
-pub fn PairFilterContext::new(
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  collider1 : @collision.ColliderHandle,
-  collider2 : @collision.ColliderHandle,
-  rigid_body1 : @dynamics.RigidBodyHandle?,
-  rigid_body2 : @dynamics.RigidBodyHandle?,
-) -> PairFilterContext {
   { bodies, colliders, collider1, collider2, rigid_body1, rigid_body2 }
 }
 
@@ -63,25 +49,6 @@ pub struct ContactModificationContext {
 }
 
 ///|
-pub fn ContactModificationContext::ContactModificationContext(
-  bodies : @dynamics.RigidBodySet,
-  colliders : @collision.ColliderSet,
-  collider1 : @collision.ColliderHandle,
-  collider2 : @collision.ColliderHandle,
-  rigid_body1 : @dynamics.RigidBodyHandle?,
-  rigid_body2 : @dynamics.RigidBodyHandle?,
-  manifold : @collision.ContactManifold,
-  solver_contacts : Array[@collision.SolverContact],
-  normal : @core.Vec2,
-  user_data : Int,
-) -> ContactModificationContext {
-  ContactModificationContext::new(
-    bodies, colliders, collider1, collider2, rigid_body1, rigid_body2, manifold,
-    solver_contacts, normal, user_data,
-  )
-}
-
-///|
 const CONTACT_CONFIGURATION_UNKNOWN : Int = 0
 
 ///|
@@ -91,7 +58,7 @@ const CONTACT_CURRENTLY_ALLOWED : Int = 1
 const CONTACT_CURRENTLY_FORBIDDEN : Int = 2
 
 ///|
-pub fn ContactModificationContext::new(
+pub fn ContactModificationContext::ContactModificationContext(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   collider1 : @collision.ColliderHandle,
@@ -217,11 +184,6 @@ pub struct PhysicsHooks {
 }
 
 ///|
-pub fn PhysicsHooks::PhysicsHooks() -> PhysicsHooks {
-  PhysicsHooks::new()
-}
-
-///|
 fn resolve_hook_user_data(
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
@@ -263,7 +225,7 @@ fn resolve_hook_user_data(
 }
 
 ///|
-pub fn PhysicsHooks::new() -> PhysicsHooks {
+pub fn PhysicsHooks::PhysicsHooks() -> PhysicsHooks {
   {
     filter_contact_pair: None,
     filter_intersection_pair: None,

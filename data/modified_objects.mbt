@@ -23,11 +23,6 @@ pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> ModifiedObjects[
   Handle,
   Object,
 ] {
-  ModifiedObjects::new()
-}
-
-///|
-pub fn[Handle, Object] ModifiedObjects::new() -> ModifiedObjects[Handle, Object] {
   { handles: [], object_marker: None }
 }
 

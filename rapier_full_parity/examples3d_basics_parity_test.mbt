@@ -22,19 +22,19 @@
 ///|
 fn run_examples3d_primitives3() -> Bool {
   // Ported from `rapier-reference/examples3d/primitives3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground_height = 2.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   handles.push(ground)
@@ -56,7 +56,7 @@ fn run_examples3d_primitives3() -> Bool {
         let z = Float::from_int(k) * shift - center
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(handle)
@@ -98,12 +98,12 @@ fn run_examples3d_primitives3() -> Bool {
 ///|
 fn run_examples3d_damping3() -> Bool {
   // Ported from `rapier-reference/examples3d/damping3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
@@ -119,9 +119,9 @@ fn run_examples3d_damping3() -> Bool {
     let y = Float::from_double(@math.cos(angle))
     let z = Float::from_int(i) * 0.1F
     let rb = @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, y, z))
-      .linvel(@core.Vec3::new(x * 10.0F, y * 10.0F, 0.0F))
-      .angvel(@core.Vec3::new(0.0F, 0.0F, 100.0F))
+      .translation(Vec3(x, y, z))
+      .linvel(Vec3(x * 10.0F, y * 10.0F, 0.0F))
+      .angvel(Vec3(0.0F, 0.0F, 100.0F))
       .linear_damping(Float::from_int(i + 1) * subdiv * 10.0F)
       .angular_damping(Float::from_int(num - i) * subdiv * 10.0F)
       .build()
@@ -160,19 +160,19 @@ fn run_examples3d_damping3() -> Bool {
 ///|
 fn run_examples3d_restitution3() -> Bool {
   // Ported from `rapier-reference/examples3d/restitution3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground_height = 1.0F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   handles.push(ground)
@@ -192,7 +192,7 @@ fn run_examples3d_restitution3() -> Bool {
       let y = 10.0F * Float::from_int(j + 1)
       let z = Float::from_int(i) * 0.2F
       let rb = @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x * 2.0F, y, z))
+        .translation(Vec3(x * 2.0F, y, z))
         .build()
       let handle = bodies.insert(rb)
       handles.push(handle)
@@ -230,20 +230,20 @@ fn run_examples3d_restitution3() -> Bool {
 ///|
 fn run_examples3d_sensor3() -> Bool {
   // Ported from `rapier-reference/examples3d/sensor3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let events = @pipeline.EventHandler3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let events = @pipeline.EventHandler3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_size = 10.1F
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -265,7 +265,7 @@ fn run_examples3d_sensor3() -> Bool {
       let y = 3.0F
       let z = Float::from_int(k) * shift - centerz
       let rb = @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x, y, z))
+        .translation(Vec3(x, y, z))
         .build()
       let handle = bodies.insert(rb)
       colliders.insert_with_parent(
@@ -278,7 +278,7 @@ fn run_examples3d_sensor3() -> Bool {
   }
   let sensor = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(

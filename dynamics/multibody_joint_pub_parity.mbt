@@ -36,7 +36,7 @@ pub struct MultibodyJoint {
 }
 
 ///|
-pub fn MultibodyJoint::new(
+pub fn MultibodyJoint::MultibodyJoint(
   data : GenericJoint,
   kinematic : Bool,
 ) -> MultibodyJoint {
@@ -176,7 +176,7 @@ fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int {
 ///|
 pub fn MultibodyJoint::body_to_parent(self : MultibodyJoint) -> @core.Isometry2 {
   let locked = self.data.locked_axes().bits()
-  let mut transform = @core.Isometry2::new(
+  let mut transform = @core.Isometry2(
     @core.Vec2::zero(),
     @core.Rot2::from_angle(self.ang_coords3.z),
   ).mul(self.data.local_frame2().inverse())
@@ -184,12 +184,12 @@ pub fn MultibodyJoint::body_to_parent(self : MultibodyJoint) -> @core.Isometry2 
   // Apply free translations in joint coordinates (LinX/LinY).
   if (locked & (1 << 0)) == 0 {
     transform = @core.Isometry2::from_translation(
-      @core.Vec2::new(self.lin_coords3.x, 0.0F),
+      Vec2(self.lin_coords3.x, 0.0F),
     ).mul(transform)
   }
   if (locked & (1 << 1)) == 0 {
     transform = @core.Isometry2::from_translation(
-      @core.Vec2::new(0.0F, self.lin_coords3.y),
+      Vec2(0.0F, self.lin_coords3.y),
     ).mul(transform)
   }
   self.data.local_frame1().mul(transform)
@@ -203,8 +203,8 @@ pub fn MultibodyJoint::apply_displacement(
   let locked = self.data.locked_axes().bits()
   let mut curr = 0
   if (locked & (1 << 0)) == 0 && curr < disp.length() {
-    self.coords = @core.Vec2::new(self.coords.x + disp[curr], self.coords.y)
-    self.lin_coords3 = @core.Vec3::new(
+    self.coords = Vec2(self.coords.x + disp[curr], self.coords.y)
+    self.lin_coords3 = Vec3(
       self.lin_coords3.x + disp[curr],
       self.lin_coords3.y,
       self.lin_coords3.z,
@@ -212,8 +212,8 @@ pub fn MultibodyJoint::apply_displacement(
     curr = curr + 1
   }
   if (locked & (1 << 1)) == 0 && curr < disp.length() {
-    self.coords = @core.Vec2::new(self.coords.x, self.coords.y + disp[curr])
-    self.lin_coords3 = @core.Vec3::new(
+    self.coords = Vec2(self.coords.x, self.coords.y + disp[curr])
+    self.lin_coords3 = Vec3(
       self.lin_coords3.x,
       self.lin_coords3.y + disp[curr],
       self.lin_coords3.z,
@@ -222,7 +222,7 @@ pub fn MultibodyJoint::apply_displacement(
   }
   if multibody_joint_is_spatial(self) {
     if (locked & (1 << 2)) == 0 && curr < disp.length() {
-      self.lin_coords3 = @core.Vec3::new(
+      self.lin_coords3 = Vec3(
         self.lin_coords3.x,
         self.lin_coords3.y,
         self.lin_coords3.z + disp[curr],
@@ -234,19 +234,19 @@ pub fn MultibodyJoint::apply_displacement(
       if (locked & (1 << bit)) == 0 && curr < disp.length() {
         self.ang_coords3 = match ang_index {
           0 =>
-            @core.Vec3::new(
+            Vec3(
               self.ang_coords3.x + disp[curr],
               self.ang_coords3.y,
               self.ang_coords3.z,
             )
           1 =>
-            @core.Vec3::new(
+            Vec3(
               self.ang_coords3.x,
               self.ang_coords3.y + disp[curr],
               self.ang_coords3.z,
             )
           _ =>
-            @core.Vec3::new(
+            Vec3(
               self.ang_coords3.x,
               self.ang_coords3.y,
               self.ang_coords3.z + disp[curr],
@@ -261,7 +261,7 @@ pub fn MultibodyJoint::apply_displacement(
   } else if (locked & JointAxesMask::ang_z().bits()) == 0 &&
     curr < disp.length() {
     self.angle = self.angle + disp[curr]
-    self.ang_coords3 = @core.Vec3::new(
+    self.ang_coords3 = Vec3(
       self.ang_coords3.x,
       self.ang_coords3.y,
       self.ang_coords3.z + disp[curr],
@@ -325,14 +325,14 @@ pub fn MultibodyJoint::jacobian(
   out.ensure_cols(ndofs)
   let mut curr = 0
   if (locked & (1 << 0)) == 0 {
-    let axis = transform.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
+    let axis = transform.rotate_vec2(Vec2(1.0F, 0.0F))
     out.set_value(0, curr, axis.x)
     out.set_value(1, curr, axis.y)
     out.set_value(2, curr, 0.0F)
     curr = curr + 1
   }
   if (locked & (1 << 1)) == 0 {
-    let axis = transform.rotate_vec2(@core.Vec2::new(0.0F, 1.0F))
+    let axis = transform.rotate_vec2(Vec2(0.0F, 1.0F))
     out.set_value(0, curr, axis.x)
     out.set_value(1, curr, axis.y)
     out.set_value(2, curr, 0.0F)
@@ -355,11 +355,11 @@ pub fn MultibodyJoint::jacobian_mul_coordinates(
   let result = RigidBodyVelocity::zero()
   let mut curr = 0
   if (locked & (1 << 0)) == 0 && curr < coords.length() {
-    result.linvel = result.linvel.add(@core.Vec2::new(coords[curr], 0.0F))
+    result.linvel = result.linvel.add(Vec2(coords[curr], 0.0F))
     curr = curr + 1
   }
   if (locked & (1 << 1)) == 0 && curr < coords.length() {
-    result.linvel = result.linvel.add(@core.Vec2::new(0.0F, coords[curr]))
+    result.linvel = result.linvel.add(Vec2(0.0F, coords[curr]))
     curr = curr + 1
   }
   if !multibody_joint_is_spatial(self) &&

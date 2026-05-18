@@ -62,14 +62,14 @@ fn step_pipeline_2d_n(
 
 ///|
 test "examples2d/joint_motor_position2.rs parity" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
   let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let target_positions : Array[(@dynamics.RigidBodyHandle, @core.Real)] = []
   for num in 0..<9 {
@@ -77,7 +77,7 @@ test "examples2d/joint_motor_position2.rs parity" {
     let x_pos = -6.0F + 1.5F * n
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(x_pos, 2.0F))
+      .translation(Vec2(x_pos, 2.0F))
       .can_sleep(false)
       .build(),
     )
@@ -89,9 +89,9 @@ test "examples2d/joint_motor_position2.rs parity" {
     |> ignore
     let target = -@core.pi() + @core.pi() / 4.0F * n
     let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder::new()
-      .local_anchor1(@core.Vec2::new(x_pos, 1.5F))
-      .local_anchor2(@core.Vec2::new(0.0F, -0.5F))
+      @dynamics.RevoluteJointBuilder()
+      .local_anchor1(Vec2(x_pos, 1.5F))
+      .local_anchor2(Vec2(0.0F, -0.5F))
       .motor_position(target, 1000.0F, 150.0F)
       .build(),
     )
@@ -104,7 +104,7 @@ test "examples2d/joint_motor_position2.rs parity" {
     let x_pos = -6.0F + 1.5F * n
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(x_pos, 4.5F))
+      .translation(Vec2(x_pos, 4.5F))
       .rotation(@core.Rot2::from_angle(@core.pi()))
       .can_sleep(false)
       .build(),
@@ -118,9 +118,9 @@ test "examples2d/joint_motor_position2.rs parity" {
     let min_angle = -@core.pi()
     let max_angle = -@core.pi() + @core.pi() / 4.0F * n
     let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder::new()
-      .local_anchor1(@core.Vec2::new(x_pos, 5.0F))
-      .local_anchor2(@core.Vec2::new(0.0F, -0.5F))
+      @dynamics.RevoluteJointBuilder()
+      .local_anchor1(Vec2(x_pos, 5.0F))
+      .local_anchor2(Vec2(0.0F, -0.5F))
       .motor_velocity(1.5F, 30.0F)
       .motor_max_force(100.0F)
       .limits(min_angle, max_angle)
@@ -131,9 +131,9 @@ test "examples2d/joint_motor_position2.rs parity" {
   }
   let gravity = @core.Vec2::zero()
   let parameters = @dynamics.IntegrationParameters::default()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
   step_pipeline_2d_n(
     pipeline, gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
     impulse_joints, multibody_joints, ccd_solver, hooks, events, 240,
@@ -175,26 +175,23 @@ test "examples2d/add_remove2.rs parity" {
     (value, next)
   }
 
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
   let rad = 0.5F
-  let platform_positions = [
-    @core.Vec2::new(5.0F, -1.0F),
-    @core.Vec2::new(-5.0F, -1.0F),
-  ]
+  let platform_positions = [@core.Vec2(5.0F, -1.0F), Vec2(-5.0F, -1.0F)]
   let platform_handles : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<platform_positions.length() {
     let handle = bodies.insert(
@@ -232,9 +229,7 @@ test "examples2d/add_remove2.rs parity" {
       let x = rx * 10.0F - 5.0F
       let y = ry * 10.0F + 10.0F
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -347,7 +342,7 @@ test "examples2d/all_examples2.rs parity" {
   expected.push((stress, "(Stress test) joint fixed"))
   expected.push((stress, "(Stress test) joint prismatic"))
   fn catalog_string(catalog : Array[(String, String)]) -> String {
-    let sb = StringBuilder::new()
+    let sb = StringBuilder()
     for i in 0..<catalog.length() {
       let (category, title) = catalog[i]
       sb.write_string(category)
@@ -367,18 +362,18 @@ test "examples2d/all_examples2.rs parity" {
     content="Collisions::Add remove\nCollisions::Drum\nCollisions::Inv pyramid\nCollisions::Platform\nCollisions::Pyramid\nCollisions::Sensor\nCollisions::Convex polygons\nCollisions::Heightfield\nCollisions::Polyline\nCollisions::Trimesh\nCollisions::Voxels\nCollisions::Collision groups\nCollisions::One-way platforms\nDynamics::Locked rotations\nDynamics::Restitution\nDynamics::Damping\nDynamics::CCD\nJoints::Joints\nJoints::Rope Joints\nJoints::Pin Slot Joint\nJoints::Joint motor position\nJoints::Inverse kinematics\nControls::Character controller\nDebug::Box ball\nDebug::Compression\nDebug::Intersection\nDebug::Total overlap\nDebug::Vertical column\nInspired by Solver 2D::High mass ratio 1\nInspired by Solver 2D::High mass ratio 2\nInspired by Solver 2D::High mass ratio 3\nInspired by Solver 2D::Confined\nInspired by Solver 2D::Pyramid\nInspired by Solver 2D::Card house\nInspired by Solver 2D::Arch\nInspired by Solver 2D::Bridge\nInspired by Solver 2D::Ball and chain\nInspired by Solver 2D::Joint grid\nInspired by Solver 2D::Far pyramid\nStress Tests::Balls\nStress Tests::Boxes\nStress Tests::Capsules\nStress Tests::Convex polygons\nStress Tests::Heightfield\nStress Tests::Pyramid\nStress Tests::Verticals stacks\nStress Tests::(Stress test) joint ball\nStress Tests::(Stress test) joint fixed\nStress Tests::(Stress test) joint prismatic",
   )
   fn case_convex_hull() -> Bool {
-    let pipeline = @pipeline.PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = @pipeline.PhysicsHooks::new()
-    let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics_ccd.CCDSolver::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = @pipeline.PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = @pipeline.PhysicsHooks()
+    let events = @pipeline.EventHandler()
+    let ccd_solver = @dynamics_ccd.CCDSolver()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
     colliders.insert_with_parent(
@@ -389,15 +384,15 @@ test "examples2d/all_examples2.rs parity" {
     |> ignore
     let h = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.0F, 5.0F))
+      .translation(Vec2(0.0F, 5.0F))
       .build(),
     )
     let pts = [
-      @core.Vec2::new(-0.5F, -0.5F),
-      @core.Vec2::new(0.5F, -0.5F),
-      @core.Vec2::new(0.8F, 0.0F),
-      @core.Vec2::new(0.0F, 0.9F),
-      @core.Vec2::new(-0.8F, 0.0F),
+      @core.Vec2(-0.5F, -0.5F),
+      Vec2(0.5F, -0.5F),
+      Vec2(0.8F, 0.0F),
+      Vec2(0.0F, 0.9F),
+      Vec2(-0.8F, 0.0F),
     ]
     if @collision.ColliderBuilder::convex_hull(pts) is Some(builder) {
       colliders.insert_with_parent(builder.build(), h, bodies) |> ignore
@@ -418,33 +413,30 @@ test "examples2d/all_examples2.rs parity" {
 
   inspect(case_convex_hull(), content="true")
   fn case_heightfield() -> Bool {
-    let pipeline = @pipeline.PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = @pipeline.PhysicsHooks::new()
-    let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics_ccd.CCDSolver::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = @pipeline.PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = @pipeline.PhysicsHooks()
+    let events = @pipeline.EventHandler()
+    let ccd_solver = @dynamics_ccd.CCDSolver()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let heights = [2.0F, 0.0F, 1.0F, 0.0F, 2.0F]
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
     colliders.insert_with_parent(
-      @collision.ColliderBuilder::heightfield(
-        heights,
-        @core.Vec2::new(10.0F, 1.0F),
-      ).build(),
+      @collision.ColliderBuilder::heightfield(heights, Vec2(10.0F, 1.0F)).build(),
       ground,
       bodies,
     )
     |> ignore
     let h = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.0F, 8.0F))
+      .translation(Vec2(0.0F, 8.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -467,18 +459,18 @@ test "examples2d/all_examples2.rs parity" {
 
   inspect(case_heightfield(), content="true")
   fn case_trimesh() -> Bool {
-    let pipeline = @pipeline.PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = @pipeline.PhysicsHooks::new()
-    let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics_ccd.CCDSolver::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = @pipeline.PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = @pipeline.PhysicsHooks()
+    let events = @pipeline.EventHandler()
+    let ccd_solver = @dynamics_ccd.CCDSolver()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
     colliders.insert_with_parent(
@@ -488,16 +480,16 @@ test "examples2d/all_examples2.rs parity" {
     )
     |> ignore
     let vtx = [
-      @core.Vec2::new(-1.0F, -1.0F),
-      @core.Vec2::new(1.0F, -1.0F),
-      @core.Vec2::new(1.0F, 1.0F),
-      @core.Vec2::new(-1.0F, 1.0F),
+      @core.Vec2(-1.0F, -1.0F),
+      Vec2(1.0F, -1.0F),
+      Vec2(1.0F, 1.0F),
+      Vec2(-1.0F, 1.0F),
     ]
     let idx = [(0, 1, 2), (0, 2, 3)]
     if @collision.ColliderBuilder::trimesh(vtx, idx) is Some(mesh_builder) {
       let h = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(0.0F, 6.0F))
+        .translation(Vec2(0.0F, 6.0F))
         .build(),
       )
       colliders.insert_with_parent(mesh_builder.build(), h, bodies) |> ignore
@@ -518,18 +510,18 @@ test "examples2d/all_examples2.rs parity" {
 
   inspect(case_trimesh(), content="true")
   fn case_joints() -> Bool {
-    let pipeline = @pipeline.PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = @pipeline.PhysicsHooks::new()
-    let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics_ccd.CCDSolver::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = @pipeline.PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = @pipeline.PhysicsHooks()
+    let events = @pipeline.EventHandler()
+    let ccd_solver = @dynamics_ccd.CCDSolver()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
     colliders.insert_with_parent(
@@ -540,12 +532,12 @@ test "examples2d/all_examples2.rs parity" {
     |> ignore
     let a = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(-1.0F, 4.0F))
+      .translation(Vec2(-1.0F, 4.0F))
       .build(),
     )
     let b = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(1.0F, 4.0F))
+      .translation(Vec2(1.0F, 4.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -561,7 +553,7 @@ test "examples2d/all_examples2.rs parity" {
     )
     |> ignore
     let joint = @dynamics.GenericJoint::from_fixed(
-      @dynamics.FixedJointBuilder::new()
+      @dynamics.FixedJointBuilder()
       .local_anchor1(@core.Vec2::zero())
       .local_anchor2(@core.Vec2::zero())
       .build(),
@@ -582,23 +574,21 @@ test "examples2d/all_examples2.rs parity" {
 
   inspect(case_joints(), content="true")
   fn case_character_controller_smoke() -> Bool {
-    let pipeline = @pipeline.PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = @pipeline.PhysicsHooks::new()
-    let events = @pipeline.EventHandler::new()
-    let ccd_solver = @dynamics_ccd.CCDSolver::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = @pipeline.PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = @pipeline.PhysicsHooks()
+    let events = @pipeline.EventHandler()
+    let ccd_solver = @dynamics_ccd.CCDSolver()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let parameters = @dynamics.IntegrationParameters::default()
     let ground = bodies.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(0.0F, -1.0F))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -1.0F)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(10.0F, 1.0F).build(),
@@ -608,7 +598,7 @@ test "examples2d/all_examples2.rs parity" {
     |> ignore
     let character = bodies.insert(
       @dynamics.RigidBodyBuilder::kinematic_position_based()
-      .translation(@core.Vec2::new(0.0F, 1.0F))
+      .translation(Vec2(0.0F, 1.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -630,19 +620,19 @@ test "examples2d/all_examples2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/ccd2.rs`.
 test "examples2d/ccd2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Static ground + walls.
   let ground_size = 25.0F
@@ -658,7 +648,7 @@ test "examples2d/ccd2.rs parity" {
   |> ignore
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
-    .translation(@core.Vec2::new(-3.0F, 0.0F))
+    .translation(Vec2(-3.0F, 0.0F))
     .build(),
     ground_handle,
     bodies,
@@ -666,7 +656,7 @@ test "examples2d/ccd2.rs parity" {
   |> ignore
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
-    .translation(@core.Vec2::new(6.0F, 0.0F))
+    .translation(Vec2(6.0F, 0.0F))
     .build(),
     ground_handle,
     bodies,
@@ -674,7 +664,7 @@ test "examples2d/ccd2.rs parity" {
   |> ignore
   let sensor_handle = colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(ground_thickness, ground_size)
-    .translation(@core.Vec2::new(2.5F, 0.0F))
+    .translation(Vec2(2.5F, 0.0F))
     .sensor(true)
     .active_events(@collision.ActiveEvents::collision_events())
     .build(),
@@ -687,15 +677,15 @@ test "examples2d/ccd2.rs parity" {
   let rady = 0.05F
   let compound_parts = [
     (
-      @core.Isometry2::from_translation(@core.Vec2::new(0.0F, radx - rady)),
+      @core.Isometry2::from_translation(Vec2(0.0F, radx - rady)),
       @collision.Shape::Cuboid(radx, rady),
     ),
     (
-      @core.Isometry2::from_translation(@core.Vec2::new(-radx + rady, 0.0F)),
+      @core.Isometry2::from_translation(Vec2(-radx + rady, 0.0F)),
       Cuboid(rady, radx),
     ),
     (
-      @core.Isometry2::from_translation(@core.Vec2::new(radx - rady, 0.0F)),
+      @core.Isometry2::from_translation(Vec2(radx - rady, 0.0F)),
       Cuboid(rady, radx),
     ),
   ]
@@ -710,8 +700,8 @@ test "examples2d/ccd2.rs parity" {
       let y = Float::from_double(j.to_double()) * shift + centery
       let handle = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .linvel(@core.Vec2::new(100.0F, -10.0F))
+        .translation(Vec2(x, y))
+        .linvel(Vec2(100.0F, -10.0F))
         .ccd_enabled(true)
         .build(),
       )
@@ -765,22 +755,22 @@ test "examples2d/ccd2.rs parity" {
 /// Ported from `rapier-reference/examples2d/character_controller2.rs`.
 /// Upstream uses interactive controls; this headless port uses deterministic scripted inputs to exercise the controller.
 test "examples2d/character_controller2.rs parity" {
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let bodies = @dynamics.RigidBodySet()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_size = 5.0F
   let ground_height = 0.1F
   let floor_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -793,7 +783,7 @@ test "examples2d/character_controller2.rs parity" {
   // Character (kinematic position-based).
   let character_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_position_based()
-    .translation(@core.Vec2::new(-3.0F, 5.0F))
+    .translation(Vec2(-3.0F, 5.0F))
     .gravity_scale(10.0F)
     .soft_ccd_prediction(10.0F)
     .build(),
@@ -812,9 +802,7 @@ test "examples2d/character_controller2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift + centery
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -836,7 +824,7 @@ test "examples2d/character_controller2.rs parity" {
         stair_width / 2.0F,
         stair_height / 2.0F,
       )
-      .translation(@core.Vec2::new(x, y))
+      .translation(Vec2(x, y))
       .build(),
     )
     |> ignore
@@ -847,9 +835,7 @@ test "examples2d/character_controller2.rs parity" {
   let slope_size = 2.0F
   colliders.insert(
     @collision.ColliderBuilder::cuboid(slope_size, ground_height)
-    .translation(
-      @core.Vec2::new(ground_size + slope_size, -ground_height + 0.4F),
-    )
+    .translation(Vec2(ground_size + slope_size, -ground_height + 0.4F))
     .rotation(slope_angle)
     .build(),
   )
@@ -859,7 +845,7 @@ test "examples2d/character_controller2.rs parity" {
   colliders.insert(
     @collision.ColliderBuilder::cuboid(slope_size, ground_height)
     .translation(
-      @core.Vec2::new(
+      Vec2(
         ground_size + slope_size * 2.0F + impossible_slope_size - 0.9F,
         -ground_height + 2.3F,
       ),
@@ -870,7 +856,7 @@ test "examples2d/character_controller2.rs parity" {
   |> ignore
   let wall_angle = @core.pi() / 2.0F
   let wall_size = 2.0F
-  let wall_pos = @core.Vec2::new(
+  let wall_pos = @core.Vec2(
     ground_size + slope_size * 2.0F + impossible_slope_size + 0.35F,
     -ground_height + 2.5F * 2.3F,
   )
@@ -891,7 +877,7 @@ test "examples2d/character_controller2.rs parity" {
   // Moving platform (kinematic velocity-based).
   let platform_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_velocity_based()
-    .translation(@core.Vec2::new(-8.0F, 0.0F))
+    .translation(Vec2(-8.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -902,7 +888,7 @@ test "examples2d/character_controller2.rs parity" {
   |> ignore
 
   // Heightfield ground section.
-  let ground_scale = @core.Vec2::new(10.0F, 1.0F)
+  let ground_scale = @core.Vec2(10.0F, 1.0F)
   let nsubdivs = 20
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
@@ -912,21 +898,17 @@ test "examples2d/character_controller2.rs parity" {
   }
   colliders.insert(
     @collision.ColliderBuilder::heightfield(heights, ground_scale)
-    .translation(@core.Vec2::new(-8.0F, 5.0F))
+    .translation(Vec2(-8.0F, 5.0F))
     .build(),
   )
   |> ignore
 
   // A tilting dynamic body with a limited joint.
   let ground2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, 5.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, 5.0F)).build(),
   )
   let tilt = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 5.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 5.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(1.0F, 0.1F).build(),
@@ -935,15 +917,15 @@ test "examples2d/character_controller2.rs parity" {
   )
   |> ignore
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new().limits(-0.3F, 0.3F).build(),
+    @dynamics.RevoluteJointBuilder().limits(-0.3F, 0.3F).build(),
   )
   impulse_joints.insert(ground2, tilt, joint, true) |> ignore
   let parameters = @dynamics.IntegrationParameters::default()
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let speed = 0.1F
-  let controller = @control.KinematicCharacterController::new()
+  let controller = @control.KinematicCharacterController()
     .with_max_slope_climb_angle(impossible_slope_angle - 0.02F)
     .with_min_slope_slide_angle(impossible_slope_angle - 0.02F)
   let pid = @control.PidController::default()
@@ -962,24 +944,21 @@ test "examples2d/character_controller2.rs parity" {
   ) -> @core.Vec2 {
     let mut desired = @core.Vec2::zero()
     if right {
-      desired = desired.add(@core.Vec2::new(1.0F, 0.0F))
+      desired = desired.add(Vec2(1.0F, 0.0F))
     }
     if left {
-      desired = desired.sub(@core.Vec2::new(1.0F, 0.0F))
+      desired = desired.sub(Vec2(1.0F, 0.0F))
     }
     if space {
-      desired = desired.add(@core.Vec2::new(0.0F, 2.0F))
+      desired = desired.add(Vec2(0.0F, 2.0F))
     }
     if rcontrol {
-      desired = desired.sub(@core.Vec2::new(0.0F, 1.0F))
+      desired = desired.sub(Vec2(0.0F, 1.0F))
     }
     let adjusted_speed = if rshift { speed / 10.0F } else { speed }
-    desired = @core.Vec2::new(
-      desired.x * adjusted_speed,
-      desired.y * adjusted_speed,
-    )
+    desired = Vec2(desired.x * adjusted_speed, desired.y * adjusted_speed)
     if artificial_gravity {
-      desired = desired.sub(@core.Vec2::new(0.0F, adjusted_speed))
+      desired = desired.sub(Vec2(0.0F, adjusted_speed))
     }
     desired
   }
@@ -989,7 +968,7 @@ test "examples2d/character_controller2.rs parity" {
     time = time + dt
     // Move the velocity-based kinematic platform.
     if bodies.get_mut(platform_handle) is Some(platform) {
-      let linvel = @core.Vec2::new(
+      let linvel = @core.Vec2(
         local_sin(time * 2.0F) * 2.0F,
         local_sin(time * 5.0F) * 1.5F,
       )
@@ -1043,7 +1022,7 @@ test "examples2d/character_controller2.rs parity" {
           @dynamics.RigidBodyVelocity::zero(),
         )
         let curr_vels = character_body.vels()
-        let new_vels = @dynamics.RigidBodyVelocity::new(
+        let new_vels = @dynamics.RigidBodyVelocity(
           curr_vels.linvel().add(corrective.linvel()),
           curr_vels.angvel() + corrective.angvel(),
         )
@@ -1059,7 +1038,7 @@ test "examples2d/character_controller2.rs parity" {
           step >= 520 && step < 540,
           true,
         )
-        let filter = @collision.QueryFilter::new().exclude_rigid_body(
+        let filter = @collision.QueryFilter().exclude_rigid_body(
           character_handle,
         )
         let query_pipeline = broad_phase.as_query_pipeline(
@@ -1115,24 +1094,24 @@ test "examples2d/character_controller2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/collision_groups2.rs`.
 test "examples2d/collision_groups2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_size = 5.0F
   let ground_height = 0.1F
   let floor_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -1141,19 +1120,19 @@ test "examples2d/collision_groups2.rs parity" {
     bodies,
   )
   |> ignore
-  let green_group = @dynamics.InteractionGroups::new(
+  let green_group = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
     And,
   )
-  let blue_group = @dynamics.InteractionGroups::new(
+  let blue_group = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
     And,
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(1.0F, 0.1F)
-    .translation(@core.Vec2::new(0.0F, 1.0F))
+    .translation(Vec2(0.0F, 1.0F))
     .collision_groups(green_group)
     .build(),
     floor_handle,
@@ -1162,7 +1141,7 @@ test "examples2d/collision_groups2.rs parity" {
   |> ignore
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(1.0F, 0.1F)
-    .translation(@core.Vec2::new(0.0F, 2.0F))
+    .translation(Vec2(0.0F, 2.0F))
     .collision_groups(blue_group)
     .build(),
     floor_handle,
@@ -1183,9 +1162,7 @@ test "examples2d/collision_groups2.rs parity" {
       let is_green = i % 2 == 0
       let group = if is_green { green_group } else { blue_group }
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad)
@@ -1249,19 +1226,19 @@ test "examples2d/convex_polygons2.rs parity" {
     (value, next)
   }
 
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Ground + walls (match rapier-reference).
   let ground_size = 30.0F
@@ -1275,7 +1252,7 @@ test "examples2d/convex_polygons2.rs parity" {
   let right_wall = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
     .rotation(@core.Rot2::from_angle(wall_r))
-    .translation(@core.Vec2::new(ground_size, ground_size * 2.0F))
+    .translation(Vec2(ground_size, ground_size * 2.0F))
     .build(),
   )
   let right_wall_collider = colliders.insert_with_parent(
@@ -1286,7 +1263,7 @@ test "examples2d/convex_polygons2.rs parity" {
   let left_wall = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
     .rotation(@core.Rot2::from_angle(wall_r))
-    .translation(@core.Vec2::new(-ground_size, ground_size * 2.0F))
+    .translation(Vec2(-ground_size, ground_size * 2.0F))
     .build(),
   )
   let left_wall_collider = colliders.insert_with_parent(
@@ -1309,9 +1286,7 @@ test "examples2d/convex_polygons2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift * 2.0F + centery + 2.0F
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       handles.push(handle)
       let points : Array[@core.Vec2] = []
@@ -1319,7 +1294,7 @@ test "examples2d/convex_polygons2.rs parity" {
         let (rx, s1) = rng_float01(seed)
         let (ry, s2) = rng_float01(s1)
         seed = s2
-        points.push(@core.Vec2::new(rx * scale, ry * scale))
+        points.push(Vec2(rx * scale, ry * scale))
       }
       if @collision.ColliderBuilder::convex_hull(points) is Some(builder) {
         colliders.insert_with_parent(builder.build(), handle, bodies) |> ignore
@@ -1366,17 +1341,17 @@ test "examples2d/convex_polygons2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/damping2.rs`.
 test "examples2d/damping2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
   let num = 10
   let rad = 0.2F
@@ -1388,12 +1363,12 @@ test "examples2d/damping2.rs parity" {
     let a = Float::from_double(i.to_double()) * subdiv * @core.pi() * 2.0F
     let x = local_sin(a)
     let y = local_cos(a)
-    let linvel = @core.Vec2::new(x * 10.0F, y * 10.0F)
+    let linvel = @core.Vec2(x * 10.0F, y * 10.0F)
     let angvel = 100.0F
     let lin_damping = Float::from_double((i + 1).to_double()) * subdiv * 10.0F
     let ang_damping = Float::from_double((num - i).to_double()) * subdiv * 10.0F
     let rb = @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(x, y))
+      .translation(Vec2(x, y))
       .linvel(linvel)
       .angvel(angvel)
       .linear_damping(lin_damping)
@@ -1431,7 +1406,7 @@ test "examples2d/damping2.rs parity" {
     if bodies.get(handle) is Some(body) {
       let expected_lin_scale = 1.0F / (1.0F + dt * lin_damp)
       let expected_ang_scale = 1.0F / (1.0F + dt * ang_damp)
-      let expected_lin = @core.Vec2::new(
+      let expected_lin = @core.Vec2(
         linvel0.x * expected_lin_scale,
         linvel0.y * expected_lin_scale,
       )
@@ -1450,23 +1425,23 @@ test "examples2d/damping2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/debug_box_ball2.rs`.
 test "examples2d/debug_box_ball2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let rad = 1.0F
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -rad))
+    .translation(Vec2(0.0F, -rad))
     .rotation(@core.Rot2::from_angle(@core.pi() / 4.0F))
     .build(),
   )
@@ -1478,7 +1453,7 @@ test "examples2d/debug_box_ball2.rs parity" {
   |> ignore
   let ball_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 3.0F * rad))
+    .translation(Vec2(0.0F, 3.0F * rad))
     .can_sleep(false)
     .build(),
   )
@@ -1506,17 +1481,17 @@ test "examples2d/debug_box_ball2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/debug_compression2.rs`.
 test "examples2d/debug_compression2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
   let gravity = @core.Vec2::zero()
   let width = 75.0F
@@ -1524,9 +1499,7 @@ test "examples2d/debug_compression2.rs parity" {
   let ys = [-30.0F - thickness, 30.0F + thickness]
   for i in 0..<ys.length() {
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(0.0F, ys[i]))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, ys[i])).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(width, thickness).build(),
@@ -1541,7 +1514,7 @@ test "examples2d/debug_compression2.rs parity" {
   for i in 0..<xs.length() {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(xs[i], 0.0F))
+      .translation(Vec2(xs[i], 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -1562,9 +1535,7 @@ test "examples2d/debug_compression2.rs parity" {
         Float::from_double(num.to_double()) * rad +
         rad
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::ball(rad).build(),
@@ -1588,11 +1559,11 @@ test "examples2d/debug_compression2.rs parity" {
   for _ in 0..<30 {
     if bodies.get_mut(plank_handles[0]) is Some(left) {
       left.reset_forces(true) |> ignore
-      left.add_force(@core.Vec2::new(force_x, 0.0F), true) |> ignore
+      left.add_force(Vec2(force_x, 0.0F), true) |> ignore
     }
     if bodies.get_mut(plank_handles[1]) is Some(right) {
       right.reset_forces(true) |> ignore
-      right.add_force(@core.Vec2::new(-force_x, 0.0F), true) |> ignore
+      right.add_force(Vec2(-force_x, 0.0F), true) |> ignore
     }
     force_x = force_x + 10000.0F
     pipeline.step(
@@ -1617,8 +1588,8 @@ test "examples2d/debug_compression2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/debug_intersection2.rs`.
 test "examples2d/debug_intersection2.rs parity" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
   let rad = 1.0F
   let count = 20
   for x in 0..<count {
@@ -1627,9 +1598,7 @@ test "examples2d/debug_intersection2.rs parity" {
       let fy = Float::from_double(y.to_double())
       let half = Float::from_double(count.to_double()) / 2.0F
       let rigid_body = @dynamics.RigidBodyBuilder::fixed()
-        .translation(
-          @core.Vec2::new((fx - half) * rad * 3.0F, (fy - half) * rad * 3.0F),
-        )
+        .translation(Vec2((fx - half) * rad * 3.0F, (fy - half) * rad * 3.0F))
         .build()
       let handle = bodies.insert(rigid_body)
       colliders.insert_with_parent(
@@ -1640,8 +1609,8 @@ test "examples2d/debug_intersection2.rs parity" {
       |> ignore
     }
   }
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let filter = @collision.QueryFilter::new()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let filter = @collision.QueryFilter()
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
   let query_center = @core.Vec2::zero()
   let hits = query_pipeline.intersect_shape(
@@ -1671,17 +1640,17 @@ test "examples2d/debug_intersection2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/debug_total_overlap2.rs`.
 test "examples2d/debug_total_overlap2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.5F
   let handles : Array[@dynamics.RigidBodyHandle] = []
@@ -1731,19 +1700,19 @@ test "examples2d/debug_total_overlap2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/debug_vertical_column2.rs`.
 test "examples2d/debug_vertical_column2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let num = 80
   let rad = 0.5F
   let ground_size = 1.0F
@@ -1763,9 +1732,7 @@ test "examples2d/debug_vertical_column2.rs parity" {
       ground_thickness +
       rad
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.0F, y))
-      .build(),
+      @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, y)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(rad, rad).friction(0.3F).build(),
@@ -1801,19 +1768,19 @@ test "examples2d/debug_vertical_column2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/drum2.rs`.
 test "examples2d/drum2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Dynamic boxes.
   let num = 30
@@ -1827,9 +1794,7 @@ test "examples2d/drum2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift - centery
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -1846,16 +1811,16 @@ test "examples2d/drum2.rs parity" {
     @dynamics.RigidBodyBuilder::kinematic_velocity_based().build(),
   )
   let sides = [
-    (10.0F, 0.25F, @core.Vec2::new(0.0F, 10.0F)),
-    (10.0F, 0.25F, @core.Vec2::new(0.0F, -10.0F)),
-    (0.25F, 10.0F, @core.Vec2::new(10.0F, 0.0F)),
-    (0.25F, 10.0F, @core.Vec2::new(-10.0F, 0.0F)),
+    (10.0F, 0.25F, @core.Vec2(0.0F, 10.0F)),
+    (10.0F, 0.25F, Vec2(0.0F, -10.0F)),
+    (0.25F, 10.0F, Vec2(10.0F, 0.0F)),
+    (0.25F, 10.0F, Vec2(-10.0F, 0.0F)),
   ]
   let balls = [
-    (1.25F, @core.Vec2::new(6.0F, 6.0F)),
-    (1.25F, @core.Vec2::new(-6.0F, 6.0F)),
-    (1.25F, @core.Vec2::new(6.0F, -6.0F)),
-    (1.25F, @core.Vec2::new(-6.0F, -6.0F)),
+    (1.25F, @core.Vec2(6.0F, 6.0F)),
+    (1.25F, Vec2(-6.0F, 6.0F)),
+    (1.25F, Vec2(6.0F, -6.0F)),
+    (1.25F, Vec2(-6.0F, -6.0F)),
   ]
   for i in 0..<sides.length() {
     let (hx, hy, pos) = sides[i]
@@ -1917,20 +1882,20 @@ test "examples2d/drum2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/heightfield2.rs`.
 test "examples2d/heightfield2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
-  let ground_size = @core.Vec2::new(50.0F, 1.0F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
+  let ground_size = @core.Vec2(50.0F, 1.0F)
   let nsubdivs = 2000
   let heights : Array[@core.Real] = []
   let nx = Float::from_double(nsubdivs.to_double())
@@ -1962,9 +1927,7 @@ test "examples2d/heightfield2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift + centery + 3.0F
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       if j % 2 == 0 {
         colliders.insert_with_parent(
@@ -2013,19 +1976,19 @@ test "examples2d/heightfield2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/inv_pyramid2.rs`.
 test "examples2d/inv_pyramid2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_size = 10.0F
   let ground_thickness = 1.0F
   let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -2042,7 +2005,7 @@ test "examples2d/inv_pyramid2.rs parity" {
   for _ in 0..<num {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.0F, y + ground_thickness))
+      .translation(Vec2(0.0F, y + ground_thickness))
       .build(),
     )
     colliders.insert_with_parent(
@@ -2074,15 +2037,15 @@ test "examples2d/inv_pyramid2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/inverse_kinematics2.rs`.
 test "examples2d/inverse_kinematics2.rs parity" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
 
   // Ground (kept for parity with upstream, though IK doesn't depend on it).
   let ground_height = 0.01F
   let floor_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2112,11 +2075,11 @@ test "examples2d/inverse_kinematics2.rs parity" {
     )
     |> ignore
     let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder::new()
+      @dynamics.RevoluteJointBuilder()
       .local_anchor1(
-        @core.Vec2::new(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F })),
+        Vec2(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F })),
       )
-      .local_anchor2(@core.Vec2::new(0.0F, -size / 2.0F))
+      .local_anchor2(Vec2(0.0F, -size / 2.0F))
       .build(),
     )
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
@@ -2134,7 +2097,7 @@ test "examples2d/inverse_kinematics2.rs parity" {
     ) -> @core.Real {
       0.0F
     })
-    let target_point = @core.Vec2::new(0.25F, 0.4F)
+    let target_point = @core.Vec2(0.25F, 0.4F)
     let options = @dynamics.InverseKinematicsOption::default()
       .set_constrained_axes(@dynamics.JointAxesMask::lin_axes())
       .set_max_iters(200)
@@ -2164,18 +2127,18 @@ test "examples2d/inverse_kinematics2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/joints2.rs`.
 test "examples2d/joints2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.4F
   let numi = 10
@@ -2193,7 +2156,7 @@ test "examples2d/joints2.rs parity" {
         @dynamics.RigidBodyBuilder::dynamic()
       }
       let child_handle = bodies.insert(
-        rb.translation(@core.Vec2::new(fk * shift, -fi * shift)).build(),
+        rb.translation(Vec2(fk * shift, -fi * shift)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::ball(rad).build(),
@@ -2206,8 +2169,8 @@ test "examples2d/joints2.rs parity" {
       if i > 0 {
         let parent_handle = body_handles[body_handles.length() - 1]
         let joint = @dynamics.GenericJoint::from_revolute(
-          @dynamics.RevoluteJointBuilder::new()
-          .local_anchor2(@core.Vec2::new(0.0F, shift))
+          @dynamics.RevoluteJointBuilder()
+          .local_anchor2(Vec2(0.0F, shift))
           .softness(softness)
           .build(),
         )
@@ -2220,8 +2183,8 @@ test "examples2d/joints2.rs parity" {
         let parent_index = body_handles.length() - numi
         let parent_handle = body_handles[parent_index]
         let joint = @dynamics.GenericJoint::from_revolute(
-          @dynamics.RevoluteJointBuilder::new()
-          .local_anchor2(@core.Vec2::new(-shift, 0.0F))
+          @dynamics.RevoluteJointBuilder()
+          .local_anchor2(Vec2(-shift, 0.0F))
           .softness(softness)
           .build(),
         )
@@ -2258,25 +2221,25 @@ test "examples2d/joints2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/locked_rotations2.rs`.
 test "examples2d/locked_rotations2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Ground.
   let ground_height = 0.1F
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2289,7 +2252,7 @@ test "examples2d/locked_rotations2.rs parity" {
   // A rectangle that only rotates.
   let rect_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 3.0F))
+    .translation(Vec2(0.0F, 3.0F))
     .lock_translations()
     .build(),
   )
@@ -2303,7 +2266,7 @@ test "examples2d/locked_rotations2.rs parity" {
   // A tilted capsule that cannot rotate.
   let capsule_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 5.0F))
+    .translation(Vec2(0.0F, 5.0F))
     .rotation(@core.Rot2::from_angle(1.0F))
     .lock_rotations()
     .build(),
@@ -2340,24 +2303,24 @@ test "examples2d/locked_rotations2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/one_way_platforms2.rs`.
 test "examples2d/one_way_platforms2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let handler = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let handler = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Fixed ground body with two platforms.
   let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let platform1 = colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(25.0F, 0.5F)
-    .translation(@core.Vec2::new(30.0F, 2.0F))
+    .translation(Vec2(30.0F, 2.0F))
     .active_hooks(@collision.ActiveHooks::modify_solver_contacts())
     .build(),
     ground,
@@ -2365,13 +2328,13 @@ test "examples2d/one_way_platforms2.rs parity" {
   )
   let platform2 = colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(25.0F, 0.5F)
-    .translation(@core.Vec2::new(-30.0F, -2.0F))
+    .translation(Vec2(-30.0F, -2.0F))
     .active_hooks(@collision.ActiveHooks::modify_solver_contacts())
     .build(),
     ground,
     bodies,
   )
-  let hooks = @pipeline.PhysicsHooks::new().modify_solver_contacts(fn(
+  let hooks = @pipeline.PhysicsHooks().modify_solver_contacts(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     collider1 : @collision.ColliderHandle,
@@ -2383,24 +2346,18 @@ test "examples2d/one_way_platforms2.rs parity" {
     if @collision.ColliderHandle::equals(collider1, platform1) ||
       @collision.ColliderHandle::equals(collider2, platform1) {
       // Platform1: local +y.
-      allowed_world_n = @core.Vec2::new(0.0F, 1.0F)
+      allowed_world_n = Vec2(0.0F, 1.0F)
       oneway = true
       if @collision.ColliderHandle::equals(collider2, platform1) {
-        allowed_world_n = @core.Vec2::new(
-          -allowed_world_n.x,
-          -allowed_world_n.y,
-        )
+        allowed_world_n = Vec2(-allowed_world_n.x, -allowed_world_n.y)
       }
     } else if @collision.ColliderHandle::equals(collider1, platform2) ||
       @collision.ColliderHandle::equals(collider2, platform2) {
       // Platform2: local -y.
-      allowed_world_n = @core.Vec2::new(0.0F, -1.0F)
+      allowed_world_n = Vec2(0.0F, -1.0F)
       oneway = true
       if @collision.ColliderHandle::equals(collider2, platform2) {
-        allowed_world_n = @core.Vec2::new(
-          -allowed_world_n.x,
-          -allowed_world_n.y,
-        )
+        allowed_world_n = Vec2(-allowed_world_n.x, -allowed_world_n.y)
       }
     }
     if !oneway {
@@ -2436,7 +2393,7 @@ test "examples2d/one_way_platforms2.rs parity" {
       12.0F
     }
     // The hook API provides a world tangent velocity vector (projected by the solver).
-    (true, @core.Vec2::new(tangent_velocity, 0.0F))
+    (true, Vec2(tangent_velocity, 0.0F))
   })
 
   // Spawn cubes and apply position-dependent gravity scale (match the reference callback).
@@ -2445,7 +2402,7 @@ test "examples2d/one_way_platforms2.rs parity" {
     if step_id % 200 == 0 && bodies.len() <= 7 {
       let handle = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(20.0F, 10.0F))
+        .translation(Vec2(20.0F, 10.0F))
         .build(),
       )
       colliders.insert_with_parent(
@@ -2496,19 +2453,19 @@ test "examples2d/one_way_platforms2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/pin_slot_joint2.rs`.
 test "examples2d/pin_slot_joint2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
 
@@ -2517,7 +2474,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   let ground_height = 0.1F
   let floor = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2530,7 +2487,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   // Kinematic character.
   let character_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_position_based()
-    .translation(@core.Vec2::new(0.0F, 0.3F))
+    .translation(Vec2(0.0F, 0.3F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2543,9 +2500,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   // Tethered cube + axis indicator ball.
   let rad = 0.4F
   let cube_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -2554,9 +2509,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   )
   |> ignore
   let ball_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(0.1F).build(),
@@ -2567,19 +2520,19 @@ test "examples2d/pin_slot_joint2.rs parity" {
 
   // Fixed joint between the indicator and cube.
   let fixed_joint = @dynamics.GenericJoint::from_fixed(
-    @dynamics.FixedJointBuilder::new()
-    .local_anchor1(@core.Vec2::new(0.0F, 0.0F))
-    .local_anchor2(@core.Vec2::new(0.0F, -0.4F))
+    @dynamics.FixedJointBuilder()
+    .local_anchor1(Vec2(0.0F, 0.0F))
+    .local_anchor2(Vec2(0.0F, -0.4F))
     .build(),
   )
   impulse_joints.insert(cube_handle, ball_handle, fixed_joint, true) |> ignore
 
   // Pin-slot joint between the character and cube.
-  let axis = @core.Vec2::new(1.0F, 1.0F).normalize()
+  let axis = @core.Vec2(1.0F, 1.0F).normalize()
   let pin_slot = @dynamics.GenericJoint::from_pin_slot(
-    @dynamics.PinSlotJointBuilder::new(axis)
-    .local_anchor1(@core.Vec2::new(2.0F, 2.0F))
-    .local_anchor2(@core.Vec2::new(0.0F, 0.4F))
+    @dynamics.PinSlotJointBuilder(axis)
+    .local_anchor1(Vec2(2.0F, 2.0F))
+    .local_anchor2(Vec2(0.0F, 0.4F))
     .limits(-1.0F, 1.0e30F)
     .build(),
   )
@@ -2590,7 +2543,7 @@ test "examples2d/pin_slot_joint2.rs parity" {
   for _ in 0..<600 {
     time = time + dt
     if bodies.get_mut(character_handle) is Some(ch) {
-      let target = @core.Vec2::new(local_sin(time * 0.7F) * 1.5F, 0.3F)
+      let target = @core.Vec2(local_sin(time * 0.7F) * 1.5F, 0.3F)
       ch.set_next_kinematic_translation(target) |> ignore
     } else {
       inspect(false, content="true")
@@ -2615,10 +2568,10 @@ test "examples2d/pin_slot_joint2.rs parity" {
   // and respect the limit on the axis projection (<= 1.0).
   if bodies.get(character_handle) is Some(ch) &&
     bodies.get(cube_handle) is Some(cube) {
-    let anchor1 = ch.position().transform_point(@core.Vec2::new(2.0F, 2.0F))
-    let anchor2 = cube.position().transform_point(@core.Vec2::new(0.0F, 0.4F))
+    let anchor1 = ch.position().transform_point(Vec2(2.0F, 2.0F))
+    let anchor2 = cube.position().transform_point(Vec2(0.0F, 0.4F))
     let delta = anchor1.sub(anchor2)
-    let perp = @core.Vec2::new(-axis.y, axis.x)
+    let perp = @core.Vec2(-axis.y, axis.x)
     let perp_dist = @core.abs(delta.dot(perp))
     inspect(perp_dist < 0.2F, content="true")
     let proj = delta.dot(axis)
@@ -2631,25 +2584,25 @@ test "examples2d/pin_slot_joint2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/platform2.rs`.
 test "examples2d/platform2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
   let ground_height = 0.1F
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2668,9 +2621,7 @@ test "examples2d/platform2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift + centery
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -2682,7 +2633,7 @@ test "examples2d/platform2.rs parity" {
   }
   let vel_based_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_velocity_based()
-    .translation(@core.Vec2::new(-10.0F * rad, 1.5F + 0.8F))
+    .translation(Vec2(-10.0F * rad, 1.5F + 0.8F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2693,7 +2644,7 @@ test "examples2d/platform2.rs parity" {
   |> ignore
   let pos_based_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_position_based()
-    .translation(@core.Vec2::new(-10.0F * rad, 2.0F + 1.5F + 0.8F))
+    .translation(Vec2(-10.0F * rad, 2.0F + 1.5F + 0.8F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2715,10 +2666,7 @@ test "examples2d/platform2.rs parity" {
   let mut time = 0.0F
   let mut last_velocity = @core.Vec2::zero()
   for _ in 0..<120 {
-    let velocity = @core.Vec2::new(
-      local_sin(time) * 5.0F,
-      local_sin(time * 5.0F),
-    )
+    let velocity = @core.Vec2(local_sin(time) * 5.0F, local_sin(time * 5.0F))
     last_velocity = velocity
     if bodies.get_mut(vel_based_handle) is Some(platform) {
       platform.set_linvel(velocity, true) |> ignore
@@ -2728,7 +2676,7 @@ test "examples2d/platform2.rs parity" {
     if bodies.get_mut(pos_based_handle) is Some(platform) {
       let next = platform
         .translation()
-        .add(@core.Vec2::new(velocity.x * dt, velocity.y * dt))
+        .add(Vec2(velocity.x * dt, velocity.y * dt))
       platform.set_next_kinematic_translation(next) |> ignore
     } else {
       inspect(false, content="true")
@@ -2764,32 +2712,32 @@ test "examples2d/platform2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/polyline2.rs`.
 test "examples2d/polyline2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Ground polyline.
   let ground_size = 50.0F
   let nsubdivs = 2000
   let step_size = ground_size / Float::from_double(nsubdivs.to_double())
   let points : Array[@core.Vec2] = []
-  points.push(@core.Vec2::new(-ground_size / 2.0F, 40.0F))
+  points.push(Vec2(-ground_size / 2.0F, 40.0F))
   for i in 1..<(nsubdivs - 1) {
     let x = -ground_size / 2.0F + Float::from_double(i.to_double()) * step_size
     let y = local_cos(Float::from_double(i.to_double()) * step_size) * 2.0F
-    points.push(@core.Vec2::new(x, y))
+    points.push(Vec2(x, y))
   }
-  points.push(@core.Vec2::new(ground_size / 2.0F, 40.0F))
+  points.push(Vec2(ground_size / 2.0F, 40.0F))
   let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder::polyline(points, None).build(),
@@ -2810,9 +2758,7 @@ test "examples2d/polyline2.rs parity" {
       let x = Float::from_double(i.to_double()) * shift - centerx
       let y = Float::from_double(j.to_double()) * shift + centery + 3.0F
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       if j % 2 == 0 {
         colliders.insert_with_parent(
@@ -2863,19 +2809,19 @@ test "examples2d/polyline2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/pyramid2.rs`.
 test "examples2d/pyramid2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_size = 10.0F
   let ground_thickness = 1.0F
   let ground_handle = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
@@ -2898,9 +2844,7 @@ test "examples2d/pyramid2.rs parity" {
       let x = fi * shift / 2.0F + (fj - fi) * shift - centerx
       let y = fi * shift + centery
       let handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -2935,23 +2879,23 @@ test "examples2d/pyramid2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/restitution2.rs`.
 test "examples2d/restitution2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_height = 1.0F
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2965,7 +2909,7 @@ test "examples2d/restitution2.rs parity" {
   let rad = 0.5F
   let low_body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(-2.0F, 10.0F))
+    .translation(Vec2(-2.0F, 10.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -2975,9 +2919,7 @@ test "examples2d/restitution2.rs parity" {
   )
   |> ignore
   let high_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(2.0F, 10.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(2.0F, 10.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(rad).restitution(1.0F).build(),
@@ -3019,19 +2961,19 @@ test "examples2d/restitution2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/rope_joints2.rs`.
 test "examples2d/rope_joints2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
 
@@ -3040,7 +2982,7 @@ test "examples2d/rope_joints2.rs parity" {
   let ground_height = 0.1F
   let floor0 = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3051,7 +2993,7 @@ test "examples2d/rope_joints2.rs parity" {
   |> ignore
   let floor1 = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(-ground_size - ground_height, ground_size))
+    .translation(Vec2(-ground_size - ground_height, ground_size))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3062,7 +3004,7 @@ test "examples2d/rope_joints2.rs parity" {
   |> ignore
   let floor2 = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(ground_size + ground_height, ground_size))
+    .translation(Vec2(ground_size + ground_height, ground_size))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3075,7 +3017,7 @@ test "examples2d/rope_joints2.rs parity" {
   // Controlled kinematic character.
   let character_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::kinematic_position_based()
-    .translation(@core.Vec2::new(0.0F, 0.3F))
+    .translation(Vec2(0.0F, 0.3F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3087,9 +3029,7 @@ test "examples2d/rope_joints2.rs parity" {
 
   // Tethered ball with a rope joint of length 2.0.
   let child_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(0.04F).build(),
@@ -3098,9 +3038,7 @@ test "examples2d/rope_joints2.rs parity" {
   )
   |> ignore
   let rope = @dynamics.GenericJoint::from_rope(
-    @dynamics.RopeJointBuilder::new(2.0F)
-    .local_anchor2(@core.Vec2::zero())
-    .build(),
+    @dynamics.RopeJointBuilder(2.0F).local_anchor2(@core.Vec2::zero()).build(),
   )
   impulse_joints.insert(character_handle, child_handle, rope, true) |> ignore
 
@@ -3109,7 +3047,7 @@ test "examples2d/rope_joints2.rs parity" {
   for _ in 0..<600 {
     time = time + dt
     if bodies.get_mut(character_handle) is Some(ch) {
-      let target = @core.Vec2::new(local_sin(time) * 2.0F, 0.3F)
+      let target = @core.Vec2(local_sin(time) * 2.0F, 0.3F)
       ch.set_next_kinematic_translation(target) |> ignore
     } else {
       inspect(false, content="true")
@@ -3132,55 +3070,52 @@ test "examples2d/rope_joints2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_arch.rs`.
 test "examples2d/s2d_arch.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   fn scaled(p : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-    @core.Vec2::new(p.x * s, p.y * s)
+    Vec2(p.x * s, p.y * s)
   }
 
   // Arch vertices (from rapier-reference, scaled by 0.25).
   let scale = 0.25F
   let friction = 0.6F
   let ps1 = [
-    scaled(@core.Vec2::new(16.0F, 0.0F), scale),
-    scaled(@core.Vec2::new(14.93803712795643F, 5.133601056842984F), scale),
-    scaled(@core.Vec2::new(13.79871746027416F, 10.24928069555078F), scale),
-    scaled(@core.Vec2::new(12.56252963284711F, 15.34107019122473F), scale),
-    scaled(@core.Vec2::new(11.20040987372525F, 20.39856541571217F), scale),
-    scaled(@core.Vec2::new(9.66521217819836F, 25.40369899225096F), scale),
-    scaled(@core.Vec2::new(7.87179930638133F, 30.3179337000085F), scale),
-    scaled(@core.Vec2::new(5.635199558196225F, 35.03820717801641F), scale),
-    scaled(@core.Vec2::new(2.405937953536585F, 39.09554102558315F), scale),
+    scaled(Vec2(16.0F, 0.0F), scale),
+    scaled(Vec2(14.93803712795643F, 5.133601056842984F), scale),
+    scaled(Vec2(13.79871746027416F, 10.24928069555078F), scale),
+    scaled(Vec2(12.56252963284711F, 15.34107019122473F), scale),
+    scaled(Vec2(11.20040987372525F, 20.39856541571217F), scale),
+    scaled(Vec2(9.66521217819836F, 25.40369899225096F), scale),
+    scaled(Vec2(7.87179930638133F, 30.3179337000085F), scale),
+    scaled(Vec2(5.635199558196225F, 35.03820717801641F), scale),
+    scaled(Vec2(2.405937953536585F, 39.09554102558315F), scale),
   ]
   let ps2 = [
-    scaled(@core.Vec2::new(24.0F, 0.0F), scale),
-    scaled(@core.Vec2::new(22.33619528222415F, 6.02299846205841F), scale),
-    scaled(@core.Vec2::new(20.54936888969905F, 12.00964361211476F), scale),
-    scaled(@core.Vec2::new(18.60854610798073F, 17.9470321677465F), scale),
-    scaled(@core.Vec2::new(16.46769273811807F, 23.81367936585418F), scale),
-    scaled(@core.Vec2::new(14.05325025774858F, 29.57079353071012F), scale),
-    scaled(@core.Vec2::new(11.23551045834022F, 35.13775818285372F), scale),
-    scaled(@core.Vec2::new(7.752568160730571F, 40.30450679009583F), scale),
-    scaled(@core.Vec2::new(3.016931552701656F, 44.28891593799322F), scale),
+    scaled(Vec2(24.0F, 0.0F), scale),
+    scaled(Vec2(22.33619528222415F, 6.02299846205841F), scale),
+    scaled(Vec2(20.54936888969905F, 12.00964361211476F), scale),
+    scaled(Vec2(18.60854610798073F, 17.9470321677465F), scale),
+    scaled(Vec2(16.46769273811807F, 23.81367936585418F), scale),
+    scaled(Vec2(14.05325025774858F, 29.57079353071012F), scale),
+    scaled(Vec2(11.23551045834022F, 35.13775818285372F), scale),
+    scaled(Vec2(7.752568160730571F, 40.30450679009583F), scale),
+    scaled(Vec2(3.016931552701656F, 44.28891593799322F), scale),
   ]
 
   // Ground segment.
   colliders.insert(
-    @collision.ColliderBuilder::segment(
-      @core.Vec2::new(-100.0F, 0.0F),
-      @core.Vec2::new(100.0F, 0.0F),
-    )
+    @collision.ColliderBuilder::segment(Vec2(-100.0F, 0.0F), Vec2(100.0F, 0.0F))
     .friction(friction)
     .build(),
   )
@@ -3203,10 +3138,10 @@ test "examples2d/s2d_arch.rs parity" {
   }
   for i in 0..<8 {
     let pts = [
-      @core.Vec2::new(-ps2[i].x, ps2[i].y),
-      @core.Vec2::new(-ps1[i].x, ps1[i].y),
-      @core.Vec2::new(-ps1[i + 1].x, ps1[i + 1].y),
-      @core.Vec2::new(-ps2[i + 1].x, ps2[i + 1].y),
+      @core.Vec2(-ps2[i].x, ps2[i].y),
+      Vec2(-ps1[i].x, ps1[i].y),
+      Vec2(-ps1[i + 1].x, ps1[i + 1].y),
+      Vec2(-ps2[i + 1].x, ps2[i + 1].y),
     ]
     let h = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
     if @collision.ColliderBuilder::convex_hull(pts) is Some(builder) {
@@ -3224,8 +3159,8 @@ test "examples2d/s2d_arch.rs parity" {
   let keystone_pts = [
     ps1[8],
     ps2[8],
-    @core.Vec2::new(-ps1[8].x, ps1[8].y),
-    @core.Vec2::new(-ps2[8].x, ps2[8].y),
+    Vec2(-ps1[8].x, ps1[8].y),
+    Vec2(-ps2[8].x, ps2[8].y),
   ]
   let keystone = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   if @collision.ColliderBuilder::convex_hull(keystone_pts) is Some(builder) {
@@ -3242,9 +3177,7 @@ test "examples2d/s2d_arch.rs parity" {
   for i in 0..<4 {
     let y = 0.5F + ps2[8].y + Float::from_double(i.to_double())
     let h = bodies.insert(
-      @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.0F, y))
-      .build(),
+      @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, y)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(2.0F, 0.5F).friction(friction).build(),
@@ -3273,18 +3206,18 @@ test "examples2d/s2d_arch.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_ball_and_chain.rs`.
 test "examples2d/s2d_ball_and_chain.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   // Ground.
@@ -3302,7 +3235,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
       .linear_damping(0.1F)
       .angular_damping(0.1F)
       .translation(
-        @core.Vec2::new(
+        Vec2(
           (1.0F + 2.0F * fi) * hx,
           Float::from_double(count.to_double()) * hx,
         ),
@@ -3318,7 +3251,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
       bodies,
     )
     |> ignore
-    let pivot = @core.Vec2::new(
+    let pivot = @core.Vec2(
       2.0F * fi * hx,
       Float::from_double(count.to_double()) * hx,
     )
@@ -3326,7 +3259,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
       let local1 = prev_rb.position().inverse().transform_point(pivot)
       let local2 = rb.position().inverse().transform_point(pivot)
       let joint = @dynamics.GenericJoint::from_revolute(
-        @dynamics.RevoluteJointBuilder::new()
+        @dynamics.RevoluteJointBuilder()
         .local_anchor1(local1)
         .local_anchor2(local2)
         .build(),
@@ -3343,7 +3276,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
     .linear_damping(0.1F)
     .angular_damping(0.1F)
     .translation(
-      @core.Vec2::new(
+      Vec2(
         (1.0F + 2.0F * Float::from_double(count.to_double())) * hx + radius - hx,
         Float::from_double(count.to_double()) * hx,
       ),
@@ -3359,7 +3292,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
     bodies,
   )
   |> ignore
-  let pivot = @core.Vec2::new(
+  let pivot = @core.Vec2(
     2.0F * Float::from_double(count.to_double()) * hx,
     Float::from_double(count.to_double()) * hx,
   )
@@ -3368,7 +3301,7 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
     let local1 = prev_rb.position().inverse().transform_point(pivot)
     let local2 = ball_rb.position().inverse().transform_point(pivot)
     let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder::new()
+      @dynamics.RevoluteJointBuilder()
       .local_anchor1(local1)
       .local_anchor2(local2)
       .build(),
@@ -3396,18 +3329,18 @@ test "examples2d/s2d_ball_and_chain.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_bridge.rs`.
 test "examples2d/s2d_bridge.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   // Ground.
@@ -3424,7 +3357,7 @@ test "examples2d/s2d_bridge.rs parity" {
       @dynamics.RigidBodyBuilder::dynamic()
       .linear_damping(0.1F)
       .angular_damping(0.1F)
-      .translation(@core.Vec2::new(x_base + 0.5F + 1.0F * fi, 20.0F))
+      .translation(Vec2(x_base + 0.5F + 1.0F * fi, 20.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -3433,12 +3366,12 @@ test "examples2d/s2d_bridge.rs parity" {
       bodies,
     )
     |> ignore
-    let pivot = @core.Vec2::new(x_base + 1.0F * fi, 20.0F)
+    let pivot = @core.Vec2(x_base + 1.0F * fi, 20.0F)
     if bodies.get(prev) is Some(prev_rb) && bodies.get(handle) is Some(rb) {
       let local1 = prev_rb.position().inverse().transform_point(pivot)
       let local2 = rb.position().inverse().transform_point(pivot)
       let joint = @dynamics.GenericJoint::from_revolute(
-        @dynamics.RevoluteJointBuilder::new()
+        @dynamics.RevoluteJointBuilder()
         .local_anchor1(local1)
         .local_anchor2(local2)
         .build(),
@@ -3451,7 +3384,7 @@ test "examples2d/s2d_bridge.rs parity" {
   }
 
   // Attach last link to ground.
-  let pivot = @core.Vec2::new(
+  let pivot = @core.Vec2(
     x_base + 1.0F * Float::from_double(count.to_double()),
     20.0F,
   )
@@ -3459,7 +3392,7 @@ test "examples2d/s2d_bridge.rs parity" {
     let local1 = prev_rb.position().inverse().transform_point(pivot)
     let local2 = ground_rb.position().inverse().transform_point(pivot)
     let joint = @dynamics.GenericJoint::from_revolute(
-      @dynamics.RevoluteJointBuilder::new()
+      @dynamics.RevoluteJointBuilder()
       .local_anchor1(local1)
       .local_anchor2(local2)
       .build(),
@@ -3487,26 +3420,24 @@ test "examples2d/s2d_bridge.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_card_house.rs`.
 test "examples2d/s2d_card_house.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let friction = 0.7F
 
   // Ground.
   let ground_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -2.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(40.0F, 2.0F).friction(friction).build(),
@@ -3530,7 +3461,7 @@ test "examples2d/s2d_card_house.rs parity" {
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder::dynamic()
           .translation(
-            @core.Vec2::new(z + 0.25F * scale, y + card_height - 0.015F * scale),
+            Vec2(z + 0.25F * scale, y + card_height - 0.015F * scale),
           )
           .rotation(@core.Rot2::from_angle(angle2))
           .build(),
@@ -3546,7 +3477,7 @@ test "examples2d/s2d_card_house.rs parity" {
       }
       let h1 = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(z, y))
+        .translation(Vec2(z, y))
         .rotation(@core.Rot2::from_angle(angle1))
         .build(),
       )
@@ -3561,7 +3492,7 @@ test "examples2d/s2d_card_house.rs parity" {
       z = z + 0.175F * scale
       let h2 = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(z, y))
+        .translation(Vec2(z, y))
         .rotation(@core.Rot2::from_angle(angle0))
         .build(),
       )
@@ -3603,18 +3534,18 @@ test "examples2d/s2d_card_house.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_confined.rs`.
 test "examples2d/s2d_confined.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let radius = 0.5F
   let friction = 0.6F
@@ -3624,8 +3555,8 @@ test "examples2d/s2d_confined.rs parity" {
   // Confined capsule walls (use capsule_from_endpoints).
   colliders.insert(
     @collision.ColliderBuilder::capsule_from_endpoints(
-      @core.Vec2::new(-10.5F, 0.0F),
-      @core.Vec2::new(10.5F, 0.0F),
+      Vec2(-10.5F, 0.0F),
+      Vec2(10.5F, 0.0F),
       radius,
     )
     .friction(friction)
@@ -3634,8 +3565,8 @@ test "examples2d/s2d_confined.rs parity" {
   |> ignore
   colliders.insert(
     @collision.ColliderBuilder::capsule_from_endpoints(
-      @core.Vec2::new(-10.5F, 0.0F),
-      @core.Vec2::new(-10.5F, 20.5F),
+      Vec2(-10.5F, 0.0F),
+      Vec2(-10.5F, 20.5F),
       radius,
     )
     .friction(friction)
@@ -3644,8 +3575,8 @@ test "examples2d/s2d_confined.rs parity" {
   |> ignore
   colliders.insert(
     @collision.ColliderBuilder::capsule_from_endpoints(
-      @core.Vec2::new(10.5F, 0.0F),
-      @core.Vec2::new(10.5F, 20.5F),
+      Vec2(10.5F, 0.0F),
+      Vec2(10.5F, 20.5F),
       radius,
     )
     .friction(friction)
@@ -3654,8 +3585,8 @@ test "examples2d/s2d_confined.rs parity" {
   |> ignore
   colliders.insert(
     @collision.ColliderBuilder::capsule_from_endpoints(
-      @core.Vec2::new(-10.5F, 20.5F),
-      @core.Vec2::new(10.5F, 20.5F),
+      Vec2(-10.5F, 20.5F),
+      Vec2(10.5F, 20.5F),
       radius,
     )
     .friction(friction)
@@ -3679,7 +3610,7 @@ test "examples2d/s2d_confined.rs parity" {
         Float::from_double(grid_count.to_double())
       let h = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
+        .translation(Vec2(x, y))
         .gravity_scale(0.0F)
         .build(),
       )
@@ -3715,26 +3646,26 @@ test "examples2d/s2d_confined.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_far_pyramid.rs`.
 test "examples2d/s2d_far_pyramid.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
-  let origin = @core.Vec2::new(100000.0F, -80000.0F)
+  let origin = @core.Vec2(100000.0F, -80000.0F)
   let friction = 0.6F
 
   // Ground at a large coordinate.
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -1.0F).add(origin))
+    .translation(@core.Vec2(0.0F, -1.0F).add(origin))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3758,7 +3689,7 @@ test "examples2d/s2d_far_pyramid.rs parity" {
         h * Float::from_double(base_count.to_double())
       let rb = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y).add(origin))
+        .translation(@core.Vec2(x, y).add(origin))
         .build(),
       )
       colliders.insert_with_parent(
@@ -3791,18 +3722,18 @@ test "examples2d/s2d_far_pyramid.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_1.rs`.
 test "examples2d/s2d_high_mass_ratio_1.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
   let friction = 0.5F
@@ -3810,8 +3741,8 @@ test "examples2d/s2d_high_mass_ratio_1.rs parity" {
   let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder::segment(
-      @core.Vec2::new(-ground_width, 0.0F),
-      @core.Vec2::new(ground_width, 0.0F),
+      Vec2(-ground_width, 0.0F),
+      Vec2(ground_width, 0.0F),
     )
     .friction(friction)
     .build(),
@@ -3832,7 +3763,7 @@ test "examples2d/s2d_high_mass_ratio_1.rs parity" {
         let coeff = Float::from_double(i.to_double()) -
           0.5F * Float::from_double(count.to_double())
         let yy = if count == 1 { y + 2.0F } else { y }
-        let pos = @core.Vec2::new(2.0F * coeff * extent + offset, yy)
+        let pos = @core.Vec2(2.0F * coeff * extent + offset, yy)
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder::dynamic().translation(pos).build(),
         )
@@ -3874,18 +3805,18 @@ test "examples2d/s2d_high_mass_ratio_1.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_2.rs`.
 test "examples2d/s2d_high_mass_ratio_2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
   let friction = 0.6F
@@ -3893,8 +3824,8 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder::segment(
-      @core.Vec2::new(-ground_width, 0.0F),
-      @core.Vec2::new(ground_width, 0.0F),
+      Vec2(-ground_width, 0.0F),
+      Vec2(ground_width, 0.0F),
     )
     .friction(friction)
     .build(),
@@ -3904,7 +3835,7 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   |> ignore
   let left = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(-9.0F * extent, 0.5F * extent))
+    .translation(Vec2(-9.0F * extent, 0.5F * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3917,7 +3848,7 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   |> ignore
   let right = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(9.0F * extent, 0.5F * extent))
+    .translation(Vec2(9.0F * extent, 0.5F * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3930,7 +3861,7 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
   |> ignore
   let big = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, (10.0F + 16.0F) * extent))
+    .translation(Vec2(0.0F, (10.0F + 16.0F) * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3956,25 +3887,23 @@ test "examples2d/s2d_high_mass_ratio_2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_high_mass_ratio_3.rs`.
 test "examples2d/s2d_high_mass_ratio_3.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let extent = 1.0F
   let friction = 0.6F
   let ground = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -2.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(40.0F, 2.0F).friction(friction).build(),
@@ -3984,7 +3913,7 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
   |> ignore
   let left = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(-9.0F * extent, 0.5F * extent))
+    .translation(Vec2(-9.0F * extent, 0.5F * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -3997,7 +3926,7 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
   |> ignore
   let right = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(9.0F * extent, 0.5F * extent))
+    .translation(Vec2(9.0F * extent, 0.5F * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -4010,7 +3939,7 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
   |> ignore
   let big = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, (10.0F + 16.0F) * extent))
+    .translation(Vec2(0.0F, (10.0F + 16.0F) * extent))
     .build(),
   )
   colliders.insert_with_parent(
@@ -4055,18 +3984,18 @@ test "examples2d/s2d_high_mass_ratio_3.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/s2d_joint_grid.rs`.
 test "examples2d/s2d_joint_grid.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
   let rad = 0.4F
   let numi = 100
@@ -4087,7 +4016,7 @@ test "examples2d/s2d_joint_grid.rs parity" {
       let handle = bodies.insert(
         rb
         .translation(
-          @core.Vec2::new(
+          Vec2(
             Float::from_double(k.to_double()) * shift,
             -Float::from_double(i.to_double()) * shift,
           ),
@@ -4104,9 +4033,9 @@ test "examples2d/s2d_joint_grid.rs parity" {
       if i > 0 {
         let parent = handles[idx - 1]
         let joint = @dynamics.GenericJoint::from_revolute(
-          @dynamics.RevoluteJointBuilder::new()
-          .local_anchor1(@core.Vec2::new(0.0F, -0.5F * shift))
-          .local_anchor2(@core.Vec2::new(0.0F, 0.5F * shift))
+          @dynamics.RevoluteJointBuilder()
+          .local_anchor1(Vec2(0.0F, -0.5F * shift))
+          .local_anchor2(Vec2(0.0F, 0.5F * shift))
           .build(),
         ).set_contacts_enabled(false)
         impulse_joints.insert(parent, handle, joint, true) |> ignore
@@ -4114,9 +4043,9 @@ test "examples2d/s2d_joint_grid.rs parity" {
       if k > 0 {
         let parent = handles[idx - numi]
         let joint = @dynamics.GenericJoint::from_revolute(
-          @dynamics.RevoluteJointBuilder::new()
-          .local_anchor1(@core.Vec2::new(0.5F * shift, 0.0F))
-          .local_anchor2(@core.Vec2::new(-0.5F * shift, 0.0F))
+          @dynamics.RevoluteJointBuilder()
+          .local_anchor1(Vec2(0.5F * shift, 0.0F))
+          .local_anchor2(Vec2(-0.5F * shift, 0.0F))
           .build(),
         ).set_contacts_enabled(false)
         impulse_joints.insert(parent, handle, joint, true) |> ignore
@@ -4144,24 +4073,24 @@ test "examples2d/s2d_joint_grid.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/sensor2.rs`.
 test "examples2d/sensor2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let handler = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let handler = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let ground_size = 200.1F
   let ground_height = 0.1F
   let ground_handle = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -ground_height))
+    .translation(Vec2(0.0F, -ground_height))
     .build(),
   )
   colliders.insert_with_parent(
@@ -4177,9 +4106,7 @@ test "examples2d/sensor2.rs parity" {
   for i in 0..<num {
     let x = Float::from_double(i.to_double()) * shift - centerx
     let handle = bodies.insert(
-      @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(x, 3.0F))
-      .build(),
+      @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, 3.0F)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -4189,9 +4116,7 @@ test "examples2d/sensor2.rs parity" {
     |> ignore
   }
   let sensor_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 10.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 10.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(rad, rad).build(),
@@ -4229,19 +4154,19 @@ test "examples2d/sensor2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/trimesh2.rs`.
 test "examples2d/trimesh2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Ground + walls.
   let ground_size = 25.0F
@@ -4254,7 +4179,7 @@ test "examples2d/trimesh2.rs parity" {
   |> ignore
   let wall_r = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(ground_size, ground_size))
+    .translation(Vec2(ground_size, ground_size))
     .rotation(@core.Rot2::from_angle(@core.pi() / 2.0F))
     .build(),
   )
@@ -4266,7 +4191,7 @@ test "examples2d/trimesh2.rs parity" {
   |> ignore
   let wall_l = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(-ground_size, ground_size))
+    .translation(Vec2(-ground_size, ground_size))
     .rotation(@core.Rot2::from_angle(@core.pi() / 2.0F))
     .build(),
   )
@@ -4288,10 +4213,7 @@ test "examples2d/trimesh2.rs parity" {
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder::dynamic()
           .translation(
-            @core.Vec2::new(
-              x,
-              20.0F + Float::from_double(k.to_double()) * 11.0F,
-            ),
+            Vec2(x, 20.0F + Float::from_double(k.to_double()) * 11.0F),
           )
           .build(),
         )

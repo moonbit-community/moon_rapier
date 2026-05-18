@@ -19,7 +19,10 @@ pub struct RigidBodyHandle {
 }
 
 ///|
-fn RigidBodyHandle::new(id : Int, generation : Int) -> RigidBodyHandle {
+fn RigidBodyHandle::RigidBodyHandle(
+  id : Int,
+  generation : Int,
+) -> RigidBodyHandle {
   { id, generation }
 }
 
@@ -36,7 +39,7 @@ pub fn RigidBodyHandle::from_raw_parts(
   id : Int,
   generation : Int,
 ) -> RigidBodyHandle {
-  RigidBodyHandle::new(id, generation)
+  RigidBodyHandle(id, generation)
 }
 
 ///|
@@ -46,7 +49,7 @@ pub fn RigidBodyHandle::into_raw_parts(self : RigidBodyHandle) -> (Int, Int) {
 
 ///|
 pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
-  RigidBodyHandle::new(-1, -1)
+  RigidBodyHandle(-1, -1)
 }
 
 ///|
@@ -171,17 +174,12 @@ pub struct RigidBodyDominance {
 pub fn RigidBodyDominance::RigidBodyDominance(
   group : Int,
 ) -> RigidBodyDominance {
-  RigidBodyDominance::new(group)
-}
-
-///|
-pub fn RigidBodyDominance::new(group : Int) -> RigidBodyDominance {
   { group, }
 }
 
 ///|
 pub fn RigidBodyDominance::default() -> RigidBodyDominance {
-  RigidBodyDominance::new(0)
+  RigidBodyDominance(0)
 }
 
 ///|
@@ -231,14 +229,6 @@ pub fn RigidBodyPosition::RigidBodyPosition(
   position : @core.Isometry2,
   next_position : @core.Isometry2,
 ) -> RigidBodyPosition {
-  RigidBodyPosition::new(position, next_position)
-}
-
-///|
-pub fn RigidBodyPosition::new(
-  position : @core.Isometry2,
-  next_position : @core.Isometry2,
-) -> RigidBodyPosition {
   { position, next_position }
 }
 
@@ -258,7 +248,7 @@ pub fn RigidBodyPosition::interpolate_velocity(
   let angular = dpos.rotation.angle()
   let linear = dpos.translation
   {
-    linvel: @core.Vec2::new(linear.x * inv_dt, linear.y * inv_dt),
+    linvel: Vec2(linear.x * inv_dt, linear.y * inv_dt),
     angvel: angular * inv_dt,
   }
 }
@@ -287,14 +277,6 @@ pub fn RigidBodyVelocity::RigidBodyVelocity(
   linvel : @core.Vec2,
   angvel : @core.Real,
 ) -> RigidBodyVelocity {
-  RigidBodyVelocity::new(linvel, angvel)
-}
-
-///|
-pub fn RigidBodyVelocity::new(
-  linvel : @core.Vec2,
-  angvel : @core.Real,
-) -> RigidBodyVelocity {
   { linvel, angvel }
 }
 
@@ -316,12 +298,12 @@ pub fn RigidBodyVelocity::integrate(
   local_com : @core.Vec2,
 ) -> @core.Isometry2 {
   let com = curr_pos.transform_point(local_com)
-  let shift = @core.Isometry2::from_translation(@core.Vec2::new(-com.x, -com.y))
-  let rot = @core.Isometry2::new(
+  let shift = @core.Isometry2::from_translation(Vec2(-com.x, -com.y))
+  let rot = @core.Isometry2(
     @core.Vec2::zero(),
     @core.Rot2::from_angle(self.angvel * dt),
   )
-  let translation = @core.Vec2::new(self.linvel.x * dt, self.linvel.y * dt)
+  let translation = @core.Vec2(self.linvel.x * dt, self.linvel.y * dt)
   let unshift = @core.Isometry2::from_translation(com.add(translation))
   unshift.mul(rot).mul(shift).mul(curr_pos)
 }
@@ -340,10 +322,7 @@ pub fn RigidBodyVelocity::apply_damping(
   let lin_scale = 1.0F / (1.0F + dt * damping.linear_damping)
   let ang_scale = 1.0F / (1.0F + dt * damping.angular_damping)
   {
-    linvel: @core.Vec2::new(
-      self.linvel.x * lin_scale,
-      self.linvel.y * lin_scale,
-    ),
+    linvel: Vec2(self.linvel.x * lin_scale, self.linvel.y * lin_scale),
     angvel: self.angvel * ang_scale,
   }
 }
@@ -370,12 +349,12 @@ pub fn RigidBodyVelocity::from_slice(
   let x = if slice.length() > 0 { slice[0] } else { 0.0F }
   let y = if slice.length() > 1 { slice[1] } else { 0.0F }
   let w = if slice.length() > 2 { slice[2] } else { 0.0F }
-  RigidBodyVelocity::new(@core.Vec2::new(x, y), w)
+  RigidBodyVelocity(Vec2(x, y), w)
 }
 
 ///|
 pub fn RigidBodyVelocity::as_vector(self : RigidBodyVelocity) -> @core.Vec3 {
-  @core.Vec3::new(self.linvel.x, self.linvel.y, self.angvel)
+  Vec3(self.linvel.x, self.linvel.y, self.angvel)
 }
 
 ///|
@@ -404,7 +383,7 @@ pub fn RigidBodyVelocity::velocity_at_point(
 ) -> @core.Vec2 {
   let dpt = point.sub(world_com)
   // Equivalent to `angvel.gcross(dpt)` in Rapier's 2D.
-  let w_cross = @core.Vec2::new(-self.angvel * dpt.y, self.angvel * dpt.x)
+  let w_cross = @core.Vec2(-self.angvel * dpt.y, self.angvel * dpt.x)
   self.linvel.add(w_cross)
 }
 
@@ -416,7 +395,7 @@ pub fn RigidBodyVelocity::transformed(
   let c = rotation.cos
   let s = rotation.sin
   let v = self.linvel
-  let lin = @core.Vec2::new(c * v.x - s * v.y, s * v.x + c * v.y)
+  let lin = @core.Vec2(c * v.x - s * v.y, s * v.x + c * v.y)
   { linvel: lin, angvel: self.angvel }
 }
 
@@ -620,13 +599,13 @@ pub fn RigidBodyForces::integrate(
   init_vels : RigidBodyVelocity,
   mprops : RigidBodyMassProps,
 ) -> RigidBodyVelocity {
-  let linear_acc = @core.Vec2::new(
+  let linear_acc = @core.Vec2(
     self.force.x * mprops.effective_inv_mass.x,
     self.force.y * mprops.effective_inv_mass.y,
   )
   let angular_acc = mprops.effective_world_inv_inertia * self.torque
   {
-    linvel: @core.Vec2::new(
+    linvel: Vec2(
       init_vels.linvel.x + linear_acc.x * dt,
       init_vels.linvel.y + linear_acc.y * dt,
     ),
@@ -640,7 +619,7 @@ pub fn RigidBodyForces::compute_effective_force_and_torque(
   gravity : @core.Vec2,
   mass : @core.Vec2,
 ) -> RigidBodyForces {
-  self.force = @core.Vec2::new(
+  self.force = Vec2(
     self.user_force.x + gravity.x * mass.x * self.gravity_scale,
     self.user_force.y + gravity.y * mass.y * self.gravity_scale,
   )
@@ -656,7 +635,7 @@ pub fn RigidBodyForces::apply_force_at_point(
   point : @core.Vec2,
 ) -> RigidBodyForces {
   self.user_force = self.user_force.add(force)
-  let delta = @core.Vec2::new(
+  let delta = @core.Vec2(
     point.x - rb_mprops.world_com.x,
     point.y - rb_mprops.world_com.y,
   )
@@ -704,11 +683,11 @@ pub fn RigidBodyCcd::is_moving_fast(
 ) -> Bool {
   let threshold = self.ccd_thickness / 10.0F
   if forces is Some(active_forces) {
-    let force_term = @core.Vec2::new(
+    let force_term = @core.Vec2(
       active_forces.force.x * dt,
       active_forces.force.y * dt,
     )
-    let linvel = @core.Vec2::new(
+    let linvel = @core.Vec2(
       vels.linvel.x + force_term.x,
       vels.linvel.y + force_term.y,
     )
@@ -738,17 +717,9 @@ pub fn RigidBodyMassProps::default() -> RigidBodyMassProps {
     world_com: @core.Vec2::zero(),
     effective_inv_mass: @core.Vec2::zero(),
     effective_world_inv_inertia: 0.0F,
-    collider_local_mprops: @core.MassProperties::new(
-      0.0F,
-      0.0F,
-      @core.Vec2::zero(),
-    ),
-    local_mprops: @core.MassProperties::new(0.0F, 0.0F, @core.Vec2::zero()),
-    additional_local_mprops: @core.MassProperties::new(
-      0.0F,
-      0.0F,
-      @core.Vec2::zero(),
-    ),
+    collider_local_mprops: MassProperties(0.0F, 0.0F, @core.Vec2::zero()),
+    local_mprops: MassProperties(0.0F, 0.0F, @core.Vec2::zero()),
+    additional_local_mprops: MassProperties(0.0F, 0.0F, @core.Vec2::zero()),
   }
 }
 
@@ -779,7 +750,7 @@ pub fn RigidBodyMassProps::update_world_mass_properties(
   self.world_com = position.transform_point(self.local_mprops.center_of_mass)
   if body_type.is_dynamic() {
     let inv_mass = self.local_mprops.inv_mass
-    self.effective_inv_mass = @core.Vec2::new(inv_mass, inv_mass)
+    self.effective_inv_mass = Vec2(inv_mass, inv_mass)
     self.effective_world_inv_inertia = self.local_mprops.inv_inertia
   } else {
     self.effective_inv_mass = @core.Vec2::zero()
@@ -800,10 +771,7 @@ pub fn RigidBodyMassProps::effective_mass(
     }
   }
 
-  @core.Vec2::new(
-    inv(self.effective_inv_mass.x),
-    inv(self.effective_inv_mass.y),
-  )
+  Vec2(inv(self.effective_inv_mass.x), inv(self.effective_inv_mass.y))
 }
 
 ///|
@@ -1213,7 +1181,7 @@ pub fn RigidBody::apply_impulse(
   if self.body_type is Dynamic {
     let inv_mass = self.mass_props.effective_inv_mass
     self.vels.linvel = self.vels.linvel.add(
-      @core.Vec2::new(impulse.x * inv_mass.x, impulse.y * inv_mass.y),
+      Vec2(impulse.x * inv_mass.x, impulse.y * inv_mass.y),
     )
     if wake_up {
       self.wake_up(true) |> ignore
@@ -1246,7 +1214,7 @@ pub fn RigidBody::apply_impulse_at_point(
   wake_up : Bool,
 ) -> RigidBody {
   if self.body_type is Dynamic {
-    let delta = @core.Vec2::new(
+    let delta = @core.Vec2(
       point.x - self.mass_props.world_com.x,
       point.y - self.mass_props.world_com.y,
     )
@@ -1270,7 +1238,7 @@ pub fn RigidBody::update_effective_force_and_torque(
   gravity : @core.Vec2,
 ) -> RigidBody {
   let mass = self.mass_props.local_mprops.mass
-  let mass_v = @core.Vec2::new(mass, mass)
+  let mass_v = @core.Vec2(mass, mass)
   self.forces = self.forces.compute_effective_force_and_torque(gravity, mass_v)
   if self.locked_translations {
     self.forces.force = @core.Vec2::zero()
@@ -1540,8 +1508,8 @@ pub fn RigidBody::set_translation(
   )
   if !same_curr || !same_next {
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
-    self.position.position = @core.Isometry2::new(translation, curr_rot)
-    self.position.next_position = @core.Isometry2::new(translation, next_rot)
+    self.position.position = Isometry2(translation, curr_rot)
+    self.position.next_position = Isometry2(translation, next_rot)
     self.mass_props = self.mass_props.update_world_mass_properties(
       self.body_type,
       self.position.position,
@@ -1565,10 +1533,8 @@ pub fn RigidBody::set_rotation(
   let same_next = rot2_equal(self.position.next_position.rotation, rotation)
   if !same_curr || !same_next {
     self.changes = self.changes.insert(RIGID_BODY_CHANGES_POSITION)
-    self.position.position = @core.Isometry2::new(curr_translation, rotation)
-    self.position.next_position = @core.Isometry2::new(
-      next_translation, rotation,
-    )
+    self.position.position = Isometry2(curr_translation, rotation)
+    self.position.next_position = Isometry2(next_translation, rotation)
     self.mass_props = self.mass_props.update_world_mass_properties(
       self.body_type,
       self.position.position,
@@ -1665,7 +1631,7 @@ pub fn RigidBody::set_next_kinematic_translation(
 ) -> RigidBody {
   if self.is_kinematic() {
     let next_rot = self.position.next_position.rotation
-    self.position.next_position = @core.Isometry2::new(translation, next_rot)
+    self.position.next_position = Isometry2(translation, next_rot)
     if !vec2_equal(self.position.position.translation, translation) {
       self.wake_up(true) |> ignore
     }
@@ -1680,9 +1646,7 @@ pub fn RigidBody::set_next_kinematic_rotation(
 ) -> RigidBody {
   if self.is_kinematic() {
     let next_translation = self.position.next_position.translation
-    self.position.next_position = @core.Isometry2::new(
-      next_translation, rotation,
-    )
+    self.position.next_position = Isometry2(next_translation, rotation)
     if !rot2_equal(self.position.position.rotation, rotation) {
       self.wake_up(true) |> ignore
     }
@@ -1732,11 +1696,6 @@ pub struct RigidBodyBuilder {
 pub fn RigidBodyBuilder::RigidBodyBuilder(
   body_type : RigidBodyType,
 ) -> RigidBodyBuilder {
-  RigidBodyBuilder::new(body_type)
-}
-
-///|
-pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
   {
     position: @core.Isometry2::identity(),
     linvel: @core.Vec2::zero(),
@@ -1762,22 +1721,22 @@ pub fn RigidBodyBuilder::new(body_type : RigidBodyType) -> RigidBodyBuilder {
 
 ///|
 pub fn RigidBodyBuilder::dynamic() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(Dynamic)
+  RigidBodyBuilder(Dynamic)
 }
 
 ///|
 pub fn RigidBodyBuilder::fixed() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(Fixed)
+  RigidBodyBuilder(Fixed)
 }
 
 ///|
 pub fn RigidBodyBuilder::kinematic_position_based() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(KinematicPositionBased)
+  RigidBodyBuilder(KinematicPositionBased)
 }
 
 ///|
 pub fn RigidBodyBuilder::kinematic_velocity_based() -> RigidBodyBuilder {
-  RigidBodyBuilder::new(KinematicVelocityBased)
+  RigidBodyBuilder(KinematicVelocityBased)
 }
 
 ///|
@@ -1786,7 +1745,7 @@ pub fn RigidBodyBuilder::translation(
   translation : @core.Vec2,
 ) -> RigidBodyBuilder {
   let rot = self.position.rotation
-  self.position = @core.Isometry2::new(translation, rot)
+  self.position = Isometry2(translation, rot)
   self
 }
 
@@ -1805,7 +1764,7 @@ pub fn RigidBodyBuilder::rotation(
   rotation : @core.Rot2,
 ) -> RigidBodyBuilder {
   let translation = self.position.translation
-  self.position = @core.Isometry2::new(translation, rotation)
+  self.position = Isometry2(translation, rotation)
   self
 }
 
@@ -2042,7 +2001,7 @@ pub fn RigidBodyBuilder::additional_mass_properties(
 
 ///|
 pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
-  let pos = RigidBodyPosition::new(self.position, self.position)
+  let pos = RigidBodyPosition(self.position, self.position)
   let activation = if self.can_sleep {
     RigidBodyActivation::active()
   } else {
@@ -2057,7 +2016,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     body_type: self.body_type,
     locked_translations: self.lock_translations,
     locked_rotations: self.lock_rotations,
-    dominance: RigidBodyDominance::new(self.dominance_group),
+    dominance: RigidBodyDominance(self.dominance_group),
     enabled: self.enabled,
     activation,
     damping: {
@@ -2068,7 +2027,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
     forces,
     ccd: RigidBodyCcd::default(),
     mass_props: RigidBodyMassProps::default(),
-    colliders: RigidBodyColliders::new(),
+    colliders: RigidBodyColliders(),
     additional_mass: self.additional_mass,
     additional_solver_iterations: self.additional_solver_iterations,
     changes: RigidBodyChanges::all(),
@@ -2094,11 +2053,6 @@ pub struct RigidBodySet {
 
 ///|
 pub fn RigidBodySet::RigidBodySet() -> RigidBodySet {
-  RigidBodySet::new()
-}
-
-///|
-pub fn RigidBodySet::new() -> RigidBodySet {
   {
     bodies: [],
     generations: [],
@@ -2111,7 +2065,7 @@ pub fn RigidBodySet::new() -> RigidBodySet {
 ///|
 pub fn RigidBodySet::with_capacity(capacity : Int) -> RigidBodySet {
   capacity |> ignore
-  RigidBodySet::new()
+  RigidBodySet()
 }
 
 ///|
@@ -2189,7 +2143,7 @@ pub fn RigidBodySet::insert(
   if self.free_list.pop() is Some(index) {
     self.bodies[index] = Some(body)
     let generation = self.generations[index]
-    let handle = RigidBodyHandle::new(index, generation)
+    let handle = RigidBodyHandle(index, generation)
     if self.bodies[index] is Some(body_ref) {
       self.push_modified_unchecked(handle, body_ref)
     }
@@ -2198,7 +2152,7 @@ pub fn RigidBodySet::insert(
     let index = self.bodies.length()
     self.bodies.push(Some(body))
     self.generations.push(0)
-    let handle = RigidBodyHandle::new(index, 0)
+    let handle = RigidBodyHandle(index, 0)
     if self.bodies[index] is Some(body_ref) {
       self.push_modified_unchecked(handle, body_ref)
     }
@@ -2264,7 +2218,7 @@ pub fn RigidBodySet::get_unknown_gen(
     return None
   }
   if self.bodies[id] is Some(body) {
-    let handle = RigidBodyHandle::new(id, self.generations[id])
+    let handle = RigidBodyHandle(id, self.generations[id])
     Some((body, handle))
   } else {
     None
@@ -2280,7 +2234,7 @@ pub fn RigidBodySet::get_unknown_gen_mut(
     return None
   }
   if self.bodies[id] is Some(body) {
-    let handle = RigidBodyHandle::new(id, self.generations[id])
+    let handle = RigidBodyHandle(id, self.generations[id])
     self.push_modified(handle, body)
     Some((body, handle))
   } else {
@@ -2308,7 +2262,7 @@ pub fn RigidBodySet::iter(
   let result : Array[(RigidBodyHandle, RigidBody)] = []
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(body) {
-      result.push((RigidBodyHandle::new(i, self.generations[i]), body))
+      result.push((RigidBodyHandle(i, self.generations[i]), body))
     }
   }
   result
@@ -2322,7 +2276,7 @@ pub fn RigidBodySet::iter_mut(
   let result : Array[(RigidBodyHandle, RigidBody)] = []
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(body) {
-      let handle = RigidBodyHandle::new(i, self.generations[i])
+      let handle = RigidBodyHandle(i, self.generations[i])
       self.push_modified_unchecked(handle, body)
       result.push((handle, body))
     }
@@ -2472,7 +2426,7 @@ fn mass_properties_equal(
 
 ///|
 pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("len=")
   sb.write_object(self.bodies.length())
   sb.write_char(';')
@@ -2809,15 +2763,15 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
           } else {
             @core.UserData128::from_int_truncate(user_data_int)
           }
-          let position = @core.Isometry2::new(
-            @core.Vec2::new(tx, ty),
+          let position = @core.Isometry2(
+            Vec2(tx, ty),
             @core.Rot2::from_angle(rot),
           )
-          let next_position = @core.Isometry2::new(
-            @core.Vec2::new(ntx, nty),
+          let next_position = @core.Isometry2(
+            Vec2(ntx, nty),
             @core.Rot2::from_angle(nrot),
           )
-          let rb_pos = RigidBodyPosition::new(position, next_position)
+          let rb_pos = RigidBodyPosition(position, next_position)
           let body : RigidBody = {
             ids: RigidBodyIds::default(),
             user_data,
@@ -2825,19 +2779,16 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             body_type,
             locked_translations,
             locked_rotations,
-            dominance: RigidBodyDominance::new(dominance_group),
+            dominance: RigidBodyDominance(dominance_group),
             enabled,
             activation,
             damping: { linear_damping, angular_damping },
-            vels: RigidBodyVelocity::new(
-              @core.Vec2::new(linvel_x, linvel_y),
-              angvel,
-            ),
+            vels: RigidBodyVelocity(Vec2(linvel_x, linvel_y), angvel),
             forces: {
               force: @core.Vec2::zero(),
               torque: 0.0F,
               gravity_scale,
-              user_force: @core.Vec2::new(user_force_x, user_force_y),
+              user_force: Vec2(user_force_x, user_force_y),
               user_torque,
             },
             ccd: {
@@ -2848,7 +2799,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
               soft_ccd_prediction,
             },
             mass_props: RigidBodyMassProps::default(),
-            colliders: RigidBodyColliders::new(),
+            colliders: RigidBodyColliders(),
             additional_mass,
             additional_solver_iterations,
             changes: RigidBodyChanges::all(),
@@ -2870,7 +2821,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   let modified_bodies : Array[RigidBodyHandle] = []
   for i in 0..<bodies.length() {
     if bodies[i] is Some(_) {
-      modified_bodies.push(RigidBodyHandle::new(i, generations[i]))
+      modified_bodies.push(RigidBodyHandle(i, generations[i]))
     }
   }
   {
@@ -2959,7 +2910,7 @@ pub fn RigidBody::gravitational_potential_energy(
 ) -> @core.Real {
   // Leap-frog style estimate, matching Rapier's intent.
   let half_dt = dt / 2.0F
-  let lin_half = @core.Vec2::new(
+  let lin_half = @core.Vec2(
     self.vels.linvel.x * half_dt,
     self.vels.linvel.y * half_dt,
   )

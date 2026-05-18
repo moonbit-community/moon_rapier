@@ -22,7 +22,7 @@ pub type Timer
 
 ///|
 #declaration_only
-pub fn Timer::new() -> Timer {
+pub fn Timer::Timer() -> Timer {
   ...
 }
 
@@ -68,7 +68,7 @@ pub type StagesCounters
 
 ///|
 #declaration_only
-pub fn StagesCounters::new() -> StagesCounters {
+pub fn StagesCounters::StagesCounters() -> StagesCounters {
   ...
 }
 
@@ -90,7 +90,7 @@ pub type CollisionDetectionCounters
 
 ///|
 #declaration_only
-pub fn CollisionDetectionCounters::new() -> CollisionDetectionCounters {
+pub fn CollisionDetectionCounters::CollisionDetectionCounters() -> CollisionDetectionCounters {
   ...
 }
 
@@ -133,7 +133,7 @@ pub type SolverCounters
 
 ///|
 #declaration_only
-pub fn SolverCounters::new() -> SolverCounters {
+pub fn SolverCounters::SolverCounters() -> SolverCounters {
   ...
 }
 
@@ -179,7 +179,7 @@ pub type CCDCounters
 
 ///|
 #declaration_only
-pub fn CCDCounters::new() -> CCDCounters {
+pub fn CCDCounters::CCDCounters() -> CCDCounters {
   ...
 }
 
@@ -213,7 +213,7 @@ pub type Counters
 
 ///|
 #declaration_only
-pub fn Counters::new(enabled : Bool) -> Counters {
+pub fn Counters::Counters(enabled : Bool) -> Counters {
   ...
 }
 

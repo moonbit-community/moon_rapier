@@ -24,11 +24,6 @@ pub struct DMatrix {
 }
 
 ///|
-pub fn DMatrix::DMatrix(rows : Int, cols : Int, init : Real) -> DMatrix {
-  DMatrix::new(rows, cols, init)
-}
-
-///|
 fn index(rows : Int, cols : Int, r : Int, c : Int) -> Int? {
   if r < 0 || c < 0 || r >= rows || c >= cols {
     None
@@ -38,7 +33,7 @@ fn index(rows : Int, cols : Int, r : Int, c : Int) -> Int? {
 }
 
 ///|
-pub fn DMatrix::new(rows : Int, cols : Int, init : Real) -> DMatrix {
+pub fn DMatrix::DMatrix(rows : Int, cols : Int, init : Real) -> DMatrix {
   let data : Array[Real] = []
   let n = if rows < 0 || cols < 0 { 0 } else { rows * cols }
   for _ in 0..<n {
@@ -49,7 +44,7 @@ pub fn DMatrix::new(rows : Int, cols : Int, init : Real) -> DMatrix {
 
 ///|
 pub fn DMatrix::zeros(rows : Int, cols : Int) -> DMatrix {
-  DMatrix::new(rows, cols, 0.0F)
+  DMatrix(rows, cols, 0.0F)
 }
 
 ///|

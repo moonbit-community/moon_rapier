@@ -21,11 +21,6 @@ pub struct Timer {
 
 ///|
 pub fn Timer::Timer() -> Timer {
-  Timer::new()
-}
-
-///|
-pub fn Timer::new() -> Timer {
   { time_ms: 0.0 }
 }
 

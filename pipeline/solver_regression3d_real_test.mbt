@@ -15,19 +15,19 @@
 ///|
 test "solver regression 3dreal: stack stability + deterministic stepping" {
   fn simulate() -> Array[@core.Vec3] {
-    let pipeline = PhysicsPipeline3DReal::new()
-    let broad_phase = @collision.BroadPhase3D::new()
-    let narrow_phase = @collision.NarrowPhase3D::new()
-    let islands = @dynamics.IslandManager3D::new()
-    let bodies = @dynamics.RigidBodySet3D::new()
-    let colliders = @collision.ColliderSet3D::new()
-    let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+    let broad_phase = @collision.BroadPhase3D()
+    let narrow_phase = @collision.NarrowPhase3D()
+    let islands = @dynamics.IslandManager3D()
+    let bodies = @dynamics.RigidBodySet3D()
+    let colliders = @collision.ColliderSet3D()
+    let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
     let params = @dynamics.IntegrationParameters::default().set_dt(1.0F / 60.0F)
 
     // Ground.
     let ground = bodies.insert(
       @dynamics.RigidBodyBuilder3D::fixed()
-      .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
+      .translation(Vec3(0.0F, -0.1F, 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -48,7 +48,7 @@ test "solver regression 3dreal: stack stability + deterministic stepping" {
       let y = 0.2F + Float::from_int(i) * (rad * 2.0F + gap)
       let h = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(0.0F, y, 0.0F))
+        .translation(Vec3(0.0F, y, 0.0F))
         .can_sleep(false)
         .build(),
       )

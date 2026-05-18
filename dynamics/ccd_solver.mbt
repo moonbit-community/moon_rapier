@@ -16,7 +16,7 @@
 pub struct CCDSolver {}
 
 ///|
-pub fn CCDSolver::new() -> CCDSolver {
+pub fn CCDSolver::CCDSolver() -> CCDSolver {
   CCDSolver::{  }
 }
 

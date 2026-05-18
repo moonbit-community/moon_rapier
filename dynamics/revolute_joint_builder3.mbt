@@ -25,13 +25,8 @@ pub struct RevoluteJointBuilder3 {
 pub fn RevoluteJointBuilder3::RevoluteJointBuilder3(
   axis : @core.Vec3,
 ) -> RevoluteJointBuilder3 {
-  RevoluteJointBuilder3::new(axis)
-}
-
-///|
-pub fn RevoluteJointBuilder3::new(axis : @core.Vec3) -> RevoluteJointBuilder3 {
   {
-    inner: RevoluteJointBuilder::new(),
+    inner: RevoluteJointBuilder(),
     axis: revolute_joint_axis3_or_default(axis),
     local_anchor1_3: @core.Vec3::zero(),
     local_anchor2_3: @core.Vec3::zero(),
@@ -44,7 +39,7 @@ pub fn RevoluteJointBuilder3::local_anchor1(
   anchor1 : @core.Vec3,
 ) -> RevoluteJointBuilder3 {
   {
-    inner: self.inner.local_anchor1(@core.Vec2::new(anchor1.x, anchor1.y)),
+    inner: self.inner.local_anchor1(Vec2(anchor1.x, anchor1.y)),
     axis: self.axis,
     local_anchor1_3: anchor1,
     local_anchor2_3: self.local_anchor2_3,
@@ -57,7 +52,7 @@ pub fn RevoluteJointBuilder3::local_anchor2(
   anchor2 : @core.Vec3,
 ) -> RevoluteJointBuilder3 {
   {
-    inner: self.inner.local_anchor2(@core.Vec2::new(anchor2.x, anchor2.y)),
+    inner: self.inner.local_anchor2(Vec2(anchor2.x, anchor2.y)),
     axis: self.axis,
     local_anchor1_3: self.local_anchor1_3,
     local_anchor2_3: anchor2,

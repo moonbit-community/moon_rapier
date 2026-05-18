@@ -59,8 +59,8 @@ fn jacobian_max_abs_diff(left : Jacobian, right : Jacobian) -> @core.Real {
 
 ///|
 test "one link fwd kinematics" {
-  let bodies = RigidBodySet::new()
-  let multibodies = MultibodyJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let multibodies = MultibodyJointSet::MultibodyJointSet()
   let num_segments = 10
   let num_segments_real = Float::from_double(num_segments.to_double())
   let body = RigidBodyBuilder::fixed().build()
@@ -70,9 +70,9 @@ test "one link fwd kinematics" {
     let body_dyn = RigidBodyBuilder::dynamic().can_sleep(false).build()
     let new_body = bodies.insert(body_dyn)
     let anchor_delta = 0.5F / num_segments_real
-    let builder = RevoluteJointBuilder::new()
-      .local_anchor1(@core.Vec2::new(0.0F, anchor_delta))
-      .local_anchor2(@core.Vec2::new(0.0F, -anchor_delta))
+    let builder = RevoluteJointBuilder::RevoluteJointBuilder()
+      .local_anchor1(Vec2(0.0F, anchor_delta))
+      .local_anchor2(Vec2(0.0F, -anchor_delta))
     let link = multibodies.insert(
       last_body,
       new_body,

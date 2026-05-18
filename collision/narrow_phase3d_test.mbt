@@ -17,7 +17,7 @@ test "ball-ball contact: no overlap" {
   let c = compute_ball_ball_contact(
     @core.Vec3::zero(),
     1.0F,
-    @core.Vec3::new(3.0F, 0.0F, 0.0F),
+    Vec3(3.0F, 0.0F, 0.0F),
     1.0F,
   )
   inspect(c is None, content="true")
@@ -28,7 +28,7 @@ test "ball-ball contact: overlap penetration and normal" {
   let c = compute_ball_ball_contact(
     @core.Vec3::zero(),
     1.0F,
-    @core.Vec3::new(1.5F, 0.0F, 0.0F),
+    Vec3(1.5F, 0.0F, 0.0F),
     1.0F,
   )
   if c is Some(cp) {
@@ -49,11 +49,11 @@ test "ball-ball contact: symmetry when swapping arguments" {
   let c12 = compute_ball_ball_contact(
     @core.Vec3::zero(),
     1.0F,
-    @core.Vec3::new(1.5F, 0.0F, 0.0F),
+    Vec3(1.5F, 0.0F, 0.0F),
     1.0F,
   )
   let c21 = compute_ball_ball_contact(
-    @core.Vec3::new(1.5F, 0.0F, 0.0F),
+    Vec3(1.5F, 0.0F, 0.0F),
     1.0F,
     @core.Vec3::zero(),
     1.0F,
@@ -95,9 +95,9 @@ test "ball-ball contact: coincident centers has deterministic normal" {
 ///|
 test "ball-cuboid contact: face overlap" {
   let cuboid_pos = @core.Isometry3::identity()
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let c = compute_ball_cuboid_contact(
-    @core.Vec3::new(1.4F, 0.0F, 0.0F),
+    Vec3(1.4F, 0.0F, 0.0F),
     0.5F,
     cuboid_pos,
     he,
@@ -115,7 +115,7 @@ test "ball-cuboid contact: face overlap" {
 ///|
 test "ball-cuboid contact: ball center inside selects deterministic face normal" {
   let cuboid_pos = @core.Isometry3::identity()
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let c = compute_ball_cuboid_contact(@core.Vec3::zero(), 0.5F, cuboid_pos, he)
   if c is Some(cp) {
     inspect(cp.normal.x == 1.0F, content="true")
@@ -133,13 +133,13 @@ test "ball-cuboid contact: ball center inside selects deterministic face normal"
 test "ball-trimesh contact: triangle floor overlap" {
   let mesh_pos = @core.Isometry3::identity()
   let vertices = [
-    @core.Vec3::new(0.0F, 0.0F, 0.0F),
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3(0.0F, 0.0F, 0.0F),
+    Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
   ]
   let indices = [(0, 1, 2)]
   let c = compute_ball_trimesh_contact(
-    @core.Vec3::new(0.2F, 0.4F, 0.2F),
+    Vec3(0.2F, 0.4F, 0.2F),
     0.5F,
     mesh_pos,
     vertices,
@@ -160,14 +160,12 @@ test "ball-trimesh contact: triangle floor overlap" {
 test "cylinder-trimesh contact: triangle floor shallow overlap" {
   let mesh_pos = @core.Isometry3::identity()
   let vertices = [
-    @core.Vec3::new(0.0F, 0.0F, 0.0F),
-    @core.Vec3::new(2.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 2.0F),
+    @core.Vec3(0.0F, 0.0F, 0.0F),
+    Vec3(2.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 2.0F),
   ]
   let indices = [(0, 1, 2)]
-  let cyl_pos = @core.Isometry3::from_translation(
-    @core.Vec3::new(0.5F, 0.45F, 0.5F),
-  )
+  let cyl_pos = @core.Isometry3::from_translation(Vec3(0.5F, 0.45F, 0.5F))
   let c = compute_cylinder_trimesh_contact(
     cyl_pos, 0.5F, 0.5F, mesh_pos, vertices, indices,
   )
@@ -181,9 +179,7 @@ test "cylinder-trimesh contact: triangle floor shallow overlap" {
 ///|
 test "cone-cone contact: shallow overlap produces contact" {
   let cone1_pos = @core.Isometry3::identity()
-  let cone2_pos = @core.Isometry3::from_translation(
-    @core.Vec3::new(1.9F, 0.0F, 0.0F),
-  )
+  let cone2_pos = @core.Isometry3::from_translation(Vec3(1.9F, 0.0F, 0.0F))
   let c = compute_cone_cone_contact(
     cone1_pos, 1.0F, 1.0F, cone2_pos, 1.0F, 1.0F,
   )
@@ -197,11 +193,9 @@ test "cone-cone contact: shallow overlap produces contact" {
 ///|
 test "cone-cuboid contact: shallow overlap produces contact" {
   // Slightly penetrate in the Y axis (GJK+EPA reports contacts only for intersecting shapes).
-  let cone_pos = @core.Isometry3::from_translation(
-    @core.Vec3::new(1.4F, 0.05F, 0.0F),
-  )
+  let cone_pos = @core.Isometry3::from_translation(Vec3(1.4F, 0.05F, 0.0F))
   let cuboid_pos = @core.Isometry3::identity()
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let c = compute_cone_cuboid_contact(cone_pos, 1.0F, 1.0F, cuboid_pos, he)
   if c is Some(cp) {
     inspect(cp.penetration > 0.0F, content="true")
@@ -212,9 +206,9 @@ test "cone-cuboid contact: shallow overlap produces contact" {
 
 ///|
 test "cuboid-cuboid contact: axis-aligned overlap along x" {
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let a = @core.Isometry3::identity()
-  let b = @core.Isometry3::from_translation(@core.Vec3::new(1.9F, 0.0F, 0.0F))
+  let b = @core.Isometry3::from_translation(Vec3(1.9F, 0.0F, 0.0F))
   let c = compute_cuboid_cuboid_contact(a, he, b, he)
   if c is Some(cp) {
     inspect(@core.abs(cp.normal.x - 1.0F) < 1.0e-5F, content="true")
@@ -228,9 +222,9 @@ test "cuboid-cuboid contact: axis-aligned overlap along x" {
 
 ///|
 test "cuboid-cuboid contact: axis-aligned overlap along y" {
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let a = @core.Isometry3::identity()
-  let b = @core.Isometry3::from_translation(@core.Vec3::new(0.0F, 1.9F, 0.0F))
+  let b = @core.Isometry3::from_translation(Vec3(0.0F, 1.9F, 0.0F))
   let c = compute_cuboid_cuboid_contact(a, he, b, he)
   if c is Some(cp) {
     inspect(@core.abs(cp.normal.x) < 1.0e-5F, content="true")
@@ -244,9 +238,9 @@ test "cuboid-cuboid contact: axis-aligned overlap along y" {
 
 ///|
 test "cuboid-cuboid contact: separated" {
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let a = @core.Isometry3::identity()
-  let b = @core.Isometry3::from_translation(@core.Vec3::new(2.1F, 0.0F, 0.0F))
+  let b = @core.Isometry3::from_translation(Vec3(2.1F, 0.0F, 0.0F))
   let c = compute_cuboid_cuboid_contact(a, he, b, he)
   inspect(c is None, content="true")
 }
@@ -255,7 +249,7 @@ test "cuboid-cuboid contact: separated" {
 test "ball-capsule contact: overlap on side" {
   let capsule = @core.Isometry3::identity()
   let c = compute_ball_capsule_contact(
-    @core.Vec3::new(0.9F, 0.0F, 0.0F),
+    Vec3(0.9F, 0.0F, 0.0F),
     0.5F,
     capsule,
     0.5F,
@@ -274,14 +268,12 @@ test "ball-capsule contact: overlap on side" {
 ///|
 test "convex contact: cylinder-cuboid overlap produces contact" {
   let cyl_pos = @core.Isometry3::identity()
-  let cub_pos = @core.Isometry3::from_translation(
-    @core.Vec3::new(0.0F, -0.5F, 0.0F),
-  )
+  let cub_pos = @core.Isometry3::from_translation(Vec3(0.0F, -0.5F, 0.0F))
   let c = compute_convex_contact(
     cyl_pos,
     Cylinder(1.0F, 1.0F),
     cub_pos,
-    Cuboid(@core.Vec3::new(5.0F, 0.25F, 5.0F)),
+    Cuboid(Vec3(5.0F, 0.25F, 5.0F)),
   )
   if c is Some(cp) {
     inspect(cp.normal.y < 0.0F, content="true")
@@ -293,11 +285,9 @@ test "convex contact: cylinder-cuboid overlap produces contact" {
 
 ///|
 test "capsule-cuboid contact: face overlap" {
-  let capsule = @core.Isometry3::from_translation(
-    @core.Vec3::new(1.4F, 0.0F, 0.0F),
-  )
+  let capsule = @core.Isometry3::from_translation(Vec3(1.4F, 0.0F, 0.0F))
   let cuboid = @core.Isometry3::identity()
-  let he = @core.Vec3::new(1.0F, 1.0F, 1.0F)
+  let he = @core.Vec3(1.0F, 1.0F, 1.0F)
   let c = compute_capsule_cuboid_contact(capsule, 0.5F, 1.0F, cuboid, he)
   if c is Some(cp) {
     inspect(@core.abs(cp.normal.x - -1.0F) < 1.0e-6F, content="true")
@@ -312,7 +302,7 @@ test "capsule-cuboid contact: face overlap" {
 ///|
 test "capsule-capsule contact: overlap" {
   let a = @core.Isometry3::identity()
-  let b = @core.Isometry3::from_translation(@core.Vec3::new(0.8F, 0.0F, 0.0F))
+  let b = @core.Isometry3::from_translation(Vec3(0.8F, 0.0F, 0.0F))
   let c = compute_capsule_capsule_contact(a, 0.5F, 1.0F, b, 0.5F, 1.0F)
   if c is Some(cp) {
     inspect(@core.abs(cp.normal.x - 1.0F) < 1.0e-5F, content="true")
@@ -325,10 +315,8 @@ test "capsule-capsule contact: overlap" {
 ///|
 test "halfspace-ball contact: normal and penetration" {
   let halfspace_pos = @core.Isometry3::identity()
-  let halfspace_normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
-  let ball_pos = @core.Isometry3::from_translation(
-    @core.Vec3::new(0.0F, -0.25F, 0.0F),
-  )
+  let halfspace_normal = @core.Vec3(0.0F, 1.0F, 0.0F)
+  let ball_pos = @core.Isometry3::from_translation(Vec3(0.0F, -0.25F, 0.0F))
   let c = compute_halfspace_contact(
     halfspace_pos,
     halfspace_normal,
@@ -350,13 +338,13 @@ test "halfspace-ball contact: normal and penetration" {
 test "ball-heightfield contact: flat patch overlap" {
   let heightfield_pos = @core.Isometry3::identity()
   let vertices = [
-    @core.Vec3::new(0.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(1.0F, 0.0F, 1.0F),
+    @core.Vec3(0.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
+    Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(1.0F, 0.0F, 1.0F),
   ]
   let c = compute_ball_heightfield_contact(
-    @core.Vec3::new(0.5F, -0.2F, 0.5F),
+    Vec3(0.5F, -0.2F, 0.5F),
     0.3F,
     heightfield_pos,
     vertices,
@@ -376,14 +364,14 @@ test "ball-heightfield contact: flat patch overlap" {
 
 ///|
 test "ball-voxels contact: overlap above voxel slab" {
-  let voxel_size = @core.Vec3::new(1.0F, 1.0F, 1.0F)
-  let points = [@core.Vec3::new(0.2F, 0.2F, 0.2F)]
+  let voxel_size = @core.Vec3(1.0F, 1.0F, 1.0F)
+  let points = [@core.Vec3(0.2F, 0.2F, 0.2F)]
   if ColliderBuilder3D::voxels_from_points(voxel_size, points) is Some(builder) {
     let collider = builder.build()
     match collider.shape() {
       Voxels(voxels) => {
         let c = compute_ball_voxels_contact(
-          @core.Vec3::new(0.5F, -0.2F, 0.5F),
+          Vec3(0.5F, -0.2F, 0.5F),
           0.4F,
           @core.Isometry3::identity(),
           voxels,

@@ -34,12 +34,12 @@ pub struct ContactImpulseCacheEntry {
 
 ///|
 fn solver_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
 fn cross_z_scalar(w : @core.Real, v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-w * v.y, w * v.x)
+  Vec2(-w * v.y, w * v.x)
 }
 
 ///|
@@ -312,11 +312,11 @@ fn build_constraints(
         // Rapier: dir1 = -manifold.normal (normal points from collider1 to collider2).
         // When we have an MTV from `separation_vector`, use it to recover a robust direction.
         let dir1_from_manifold = normalize_or_fallback(
-          @core.Vec2::new(-manifold.normal().x, -manifold.normal().y),
-          @core.Vec2::new(1.0F, 0.0F),
+          Vec2(-manifold.normal().x, -manifold.normal().y),
+          Vec2(1.0F, 0.0F),
         )
         let dir1 = if sep_depth > 0.0F { sep_dir1 } else { dir1_from_manifold }
-        let tangent1 = @core.Vec2::new(-dir1.y, dir1.x)
+        let tangent1 = @core.Vec2(-dir1.y, dir1.x)
         let has_modify_hook = c1
           .active_hooks()
           .contains(@collision.ActiveHooks::modify_solver_contacts()) ||
@@ -506,7 +506,7 @@ fn build_constraints(
           world_p1s.push(world_p1)
           world_p2s.push(world_p2)
           fids.push((p.fid1(), p.fid2()))
-          let sc = @collision.SolverContact::new(world_p1, p.dist())
+          let sc = @collision.SolverContact(world_p1, p.dist())
           sc.set_friction(friction)
           sc.set_restitution(restitution)
           sc.set_tangent_velocity(legacy_tangent_velocity)
@@ -569,7 +569,7 @@ fn warmstart(
       bodies,
       solver_bodies,
       c.body2,
-      @core.Vec2::new(-impulse.x, -impulse.y),
+      Vec2(-impulse.x, -impulse.y),
       c.world_p2,
     )
   }
@@ -892,7 +892,7 @@ fn solve_velocity_constraints(
             bodies,
             solver_bodies,
             c1.body2,
-            @core.Vec2::new(-impulse1.x, -impulse1.y),
+            Vec2(-impulse1.x, -impulse1.y),
             c1.world_p2,
           )
           apply_impulse_delta_dynamic(
@@ -906,7 +906,7 @@ fn solve_velocity_constraints(
             bodies,
             solver_bodies,
             c2.body2,
-            @core.Vec2::new(-impulse2.x, -impulse2.y),
+            Vec2(-impulse2.x, -impulse2.y),
             c2.world_p2,
           )
         } else {
@@ -951,7 +951,7 @@ fn solve_velocity_constraints(
               bodies,
               solver_bodies,
               c.body2,
-              @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+              Vec2(-impulse_n_vec.x, -impulse_n_vec.y),
               c.world_p2,
             )
           }
@@ -997,7 +997,7 @@ fn solve_velocity_constraints(
             bodies,
             solver_bodies,
             c.body2,
-            @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+            Vec2(-impulse_n_vec.x, -impulse_n_vec.y),
             c.world_p2,
           )
         }
@@ -1047,7 +1047,7 @@ fn solve_velocity_constraints(
           bodies,
           solver_bodies,
           c.body2,
-          @core.Vec2::new(-impulse_t_vec.x, -impulse_t_vec.y),
+          Vec2(-impulse_t_vec.x, -impulse_t_vec.y),
           c.world_p2,
         )
       }
@@ -1102,7 +1102,7 @@ fn solve_restitution_constraints(
       bodies,
       solver_bodies,
       c.body2,
-      @core.Vec2::new(-impulse_n_vec.x, -impulse_n_vec.y),
+      Vec2(-impulse_n_vec.x, -impulse_n_vec.y),
       c.world_p2,
     )
   }
@@ -1122,7 +1122,7 @@ priv struct ContactConstraintsSet {
 }
 
 ///|
-fn ContactConstraintsSet::new() -> ContactConstraintsSet {
+fn ContactConstraintsSet::ContactConstraintsSet() -> ContactConstraintsSet {
   { constraints: [], manifolds: [], builders: [], cache_entries: [] }
 }
 
@@ -1616,7 +1616,7 @@ fn emit_contact_force_events(
   ] = []
   for i in 0..<constraints.length() {
     let c = constraints[i]
-    let normal = @core.Vec2::new(-c.dir1.x, -c.dir1.y)
+    let normal = @core.Vec2(-c.dir1.x, -c.dir1.y)
     let impulse = c.impulse_n
     let impulse_vec = solver_vec2_scale(normal, impulse)
     let mut found = false
@@ -1671,7 +1671,7 @@ fn emit_contact_force_events(
             dt,
             bodies,
             colliders,
-            @collision.ContactForceEvent::new(
+            ContactForceEvent(
               h1,
               h2,
               total_force,

@@ -26,13 +26,8 @@ pub struct RopeJointBuilder3 {
 pub fn RopeJointBuilder3::RopeJointBuilder3(
   max_length : @core.Real,
 ) -> RopeJointBuilder3 {
-  RopeJointBuilder3::new(max_length)
-}
-
-///|
-pub fn RopeJointBuilder3::new(max_length : @core.Real) -> RopeJointBuilder3 {
   {
-    inner: RopeJointBuilder::new(max_length),
+    inner: RopeJointBuilder(max_length),
     local_anchor1_3: @core.Vec3::zero(),
     local_anchor2_3: @core.Vec3::zero(),
   }
@@ -44,7 +39,7 @@ pub fn RopeJointBuilder3::local_anchor1(
   anchor : @core.Vec3,
 ) -> RopeJointBuilder3 {
   {
-    inner: self.inner.local_anchor1(@core.Vec2::new(anchor.x, anchor.y)),
+    inner: self.inner.local_anchor1(Vec2(anchor.x, anchor.y)),
     local_anchor1_3: anchor,
     local_anchor2_3: self.local_anchor2_3,
   }
@@ -56,7 +51,7 @@ pub fn RopeJointBuilder3::local_anchor2(
   anchor : @core.Vec3,
 ) -> RopeJointBuilder3 {
   {
-    inner: self.inner.local_anchor2(@core.Vec2::new(anchor.x, anchor.y)),
+    inner: self.inner.local_anchor2(Vec2(anchor.x, anchor.y)),
     local_anchor1_3: self.local_anchor1_3,
     local_anchor2_3: anchor,
   }

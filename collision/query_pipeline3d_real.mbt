@@ -24,11 +24,6 @@ pub struct Ray3 {
 
 ///|
 pub fn Ray3::Ray3(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
-  Ray3::new(origin, dir)
-}
-
-///|
-pub fn Ray3::new(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
   { origin, dir }
 }
 
@@ -126,14 +121,6 @@ pub fn ShapeCastOptions3::ShapeCastOptions3(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastOptions3 {
-  ShapeCastOptions3::new(max_toi, stop_at_penetration)
-}
-
-///|
-pub fn ShapeCastOptions3::new(
-  max_toi : @core.Real,
-  stop_at_penetration : Bool,
-) -> ShapeCastOptions3 {
   { max_toi, target_distance: 0.0F, stop_at_penetration }
 }
 
@@ -205,11 +192,6 @@ pub struct QueryFilter3DReal {
 
 ///|
 pub fn QueryFilter3DReal::QueryFilter3DReal() -> QueryFilter3DReal {
-  QueryFilter3DReal::new()
-}
-
-///|
-pub fn QueryFilter3DReal::new() -> QueryFilter3DReal {
   {
     excluded_body: None,
     excluded_collider: None,
@@ -309,22 +291,22 @@ pub fn QueryFilter3DReal::exclude_solids(
 
 ///|
 pub fn QueryFilter3DReal::only_dynamic() -> QueryFilter3DReal {
-  let filter = QueryFilter3DReal::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_3D_ONLY_DYNAMIC)
+  let filter = QueryFilter3DReal()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_3D_ONLY_DYNAMIC)
   filter
 }
 
 ///|
 pub fn QueryFilter3DReal::only_kinematic() -> QueryFilter3DReal {
-  let filter = QueryFilter3DReal::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_3D_ONLY_KINEMATIC)
+  let filter = QueryFilter3DReal()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_3D_ONLY_KINEMATIC)
   filter
 }
 
 ///|
 pub fn QueryFilter3DReal::only_fixed() -> QueryFilter3DReal {
-  let filter = QueryFilter3DReal::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_3D_ONLY_FIXED)
+  let filter = QueryFilter3DReal()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_3D_ONLY_FIXED)
   filter
 }
 
@@ -397,30 +379,12 @@ pub struct QueryPipeline3DReal {
 }
 
 ///|
-pub fn QueryPipeline3DReal::QueryPipeline3DReal(
-  filter : QueryFilter3DReal,
-  bodies : @dynamics.RigidBodySet3D,
-  colliders : ColliderSet3D,
-) -> QueryPipeline3DReal {
-  QueryPipeline3DReal::new(filter, bodies, colliders)
-}
-
-///|
 pub struct QueryPipelineMut3DReal {
   pipeline : QueryPipeline3DReal
 }
 
 ///|
-pub fn QueryPipelineMut3DReal::QueryPipelineMut3DReal(
-  filter : QueryFilter3DReal,
-  bodies : @dynamics.RigidBodySet3D,
-  colliders : ColliderSet3D,
-) -> QueryPipelineMut3DReal {
-  QueryPipelineMut3DReal::new(filter, bodies, colliders)
-}
-
-///|
-pub fn QueryPipeline3DReal::new(
+pub fn QueryPipeline3DReal::QueryPipeline3DReal(
   filter : QueryFilter3DReal,
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
@@ -465,12 +429,12 @@ pub fn QueryPipeline3DReal::with_filter(
 }
 
 ///|
-pub fn QueryPipelineMut3DReal::new(
+pub fn QueryPipelineMut3DReal::QueryPipelineMut3DReal(
   filter : QueryFilter3DReal,
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
 ) -> QueryPipelineMut3DReal {
-  { pipeline: QueryPipeline3DReal::new(filter, bodies, colliders) }
+  { pipeline: QueryPipeline3DReal(filter, bodies, colliders) }
 }
 
 ///|
@@ -532,7 +496,7 @@ fn qp3d_real_sqrt(x : @core.Real) -> @core.Real {
 fn qp3d_real_normalized_or_default(v : @core.Vec3) -> @core.Vec3 {
   let n2 = v.length_squared()
   if n2 <= 1.0e-12F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    Vec3(1.0F, 0.0F, 0.0F)
   } else {
     v.scale(1.0F / Float::sqrt(n2))
   }
@@ -646,7 +610,7 @@ fn ray_obb_toi_normal(
       o.x,
       d.x,
       he.x,
-      @core.Vec3::new(1.0F, 0.0F, 0.0F),
+      Vec3(1.0F, 0.0F, 0.0F),
       tmin,
       tmax,
       enter_normal,
@@ -664,7 +628,7 @@ fn ray_obb_toi_normal(
       o.y,
       d.y,
       he.y,
-      @core.Vec3::new(0.0F, 1.0F, 0.0F),
+      Vec3(0.0F, 1.0F, 0.0F),
       tmin,
       tmax,
       enter_normal,
@@ -682,7 +646,7 @@ fn ray_obb_toi_normal(
       o.z,
       d.z,
       he.z,
-      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+      Vec3(0.0F, 0.0F, 1.0F),
       tmin,
       tmax,
       enter_normal,
@@ -939,18 +903,18 @@ fn qp3d_real_hit_shape(
         return None
       }
       let inv = pos.inverse()
-      let local_ray = Ray3::new(
+      let local_ray = Ray3(
         inv.transform_point(ray.origin),
         pos.rotation.inverse().rotate_vec3(ray.dir),
       )
       let (ix0, iy0, iz0) = v.min_key
       let (ix1, iy1, iz1) = v.max_key
-      let min = @core.Vec3::new(
+      let min = @core.Vec3(
         Float::from_int(ix0) * sx,
         Float::from_int(iy0) * sy,
         Float::from_int(iz0) * sz,
       )
-      let max = @core.Vec3::new(
+      let max = @core.Vec3(
         Float::from_int(ix1 + 1) * sx,
         Float::from_int(iy1 + 1) * sy,
         Float::from_int(iz1 + 1) * sz,
@@ -1067,9 +1031,9 @@ fn qp3d_real_hit_shape(
           }
           if best_key is Some(key) {
             let local_n = if local_ray.dir.y < 0.0F {
-              @core.Vec3::new(0.0F, 1.0F, 0.0F)
+              @core.Vec3(0.0F, 1.0F, 0.0F)
             } else {
-              @core.Vec3::new(0.0F, -1.0F, 0.0F)
+              Vec3(0.0F, -1.0F, 0.0F)
             }
             let n_world = qp3d_real_normalized_or_default(
               pos.rotation.rotate_vec3(local_n),
@@ -1166,11 +1130,11 @@ fn qp3d_real_hit_shape(
         if hit {
           let key = (ix, iy, iz)
           let local_n = if last_axis == 0 {
-            @core.Vec3::new(Float::from_int(-last_step), 0.0F, 0.0F)
+            @core.Vec3(Float::from_int(-last_step), 0.0F, 0.0F)
           } else if last_axis == 1 {
-            @core.Vec3::new(0.0F, Float::from_int(-last_step), 0.0F)
+            Vec3(0.0F, Float::from_int(-last_step), 0.0F)
           } else if last_axis == 2 {
-            @core.Vec3::new(0.0F, 0.0F, Float::from_int(-last_step))
+            Vec3(0.0F, 0.0F, Float::from_int(-last_step))
           } else {
             qp3d_real_normalized_or_default(local_ray.dir).scale(-1.0F)
           }
@@ -1225,7 +1189,7 @@ fn qp3d_real_hit_shape(
         return None
       }
       let inv = pos.inverse()
-      let local_ray = Ray3::new(
+      let local_ray = Ray3(
         inv.transform_point(ray.origin),
         pos.rotation.inverse().rotate_vec3(ray.dir),
       )
@@ -1489,9 +1453,9 @@ fn ray_capsule_y_toi_normal(
       if t >= 0.0F && t <= max_toi {
         let y = o.y + d.y * t
         if y >= -hh && y <= hh {
-          let hit = @core.Vec3::new(o.x + d.x * t, y, o.z + d.z * t)
+          let hit = @core.Vec3(o.x + d.x * t, y, o.z + d.z * t)
           let n_local = qp3d_real_normalized_or_default(
-            @core.Vec3::new(hit.x, 0.0F, hit.z),
+            Vec3(hit.x, 0.0F, hit.z),
           )
           let n_world = pos.rotation.rotate_vec3(n_local)
           best_t = t
@@ -1513,7 +1477,7 @@ fn ray_capsule_y_toi_normal(
     best_t : @core.Real,
     best : RayIntersection3?,
   ) -> (@core.Real, RayIntersection3?) {
-    let ray_local = Ray3::new(o, d)
+    let ray_local = Ray3(o, d)
     if ray_sphere_toi_normal(ray_local, center_local, r, max_toi, false)
       is Some(it) {
       if it.toi < best_t {
@@ -1537,7 +1501,7 @@ fn ray_capsule_y_toi_normal(
     pos,
     o,
     d,
-    @core.Vec3::new(0.0F, hh, 0.0F),
+    Vec3(0.0F, hh, 0.0F),
     r,
     max_toi,
     best_t,
@@ -1550,7 +1514,7 @@ fn ray_capsule_y_toi_normal(
     pos,
     o,
     d,
-    @core.Vec3::new(0.0F, -hh, 0.0F),
+    Vec3(0.0F, -hh, 0.0F),
     r,
     max_toi,
     best_t,
@@ -1593,9 +1557,9 @@ fn ray_cylinder_y_toi_normal(
       if t >= 0.0F && t <= max_toi {
         let y = o.y + d.y * t
         if y >= -hh && y <= hh {
-          let hit = @core.Vec3::new(o.x + d.x * t, y, o.z + d.z * t)
+          let hit = @core.Vec3(o.x + d.x * t, y, o.z + d.z * t)
           let n_local = qp3d_real_normalized_or_default(
-            @core.Vec3::new(hit.x, 0.0F, hit.z),
+            Vec3(hit.x, 0.0F, hit.z),
           )
           let n_world = pos.rotation.rotate_vec3(n_local)
           best_t = t
@@ -1613,7 +1577,7 @@ fn ray_cylinder_y_toi_normal(
         let x = o.x + d.x * t
         let z = o.z + d.z * t
         if x * x + z * z <= r * r + 1.0e-6F {
-          let n_local = @core.Vec3::new(
+          let n_local = @core.Vec3(
             0.0F,
             if cap_y > 0.0F {
               1.0F
@@ -1683,9 +1647,7 @@ fn ray_cone_y_toi_normal(
           let z = oz + dz * t
           let fy = hh - y
           if fy >= 0.0F {
-            let n_local = qp3d_real_normalized_or_default(
-              @core.Vec3::new(x, k2 * fy, z),
-            )
+            let n_local = qp3d_real_normalized_or_default(Vec3(x, k2 * fy, z))
             let n_world = pos.rotation.rotate_vec3(n_local)
             best_t = t
             best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
@@ -1702,7 +1664,7 @@ fn ray_cone_y_toi_normal(
       let x = ox + dx * t
       let z = oz + dz * t
       if x * x + z * z <= r * r + 1.0e-6F {
-        let n_local = @core.Vec3::new(0.0F, -1.0F, 0.0F)
+        let n_local = @core.Vec3(0.0F, -1.0F, 0.0F)
         let n_world = pos.rotation.rotate_vec3(n_local)
         best_t = t
         best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
@@ -1854,7 +1816,7 @@ pub fn QueryPipeline3DReal::intersect_aabb_conservative(
 
 ///|
 fn qp3d_real_abs_mat3(m : @core.Mat3) -> @core.Mat3 {
-  @core.Mat3::new(
+  Mat3(
     @core.abs(m.m00),
     @core.abs(m.m01),
     @core.abs(m.m02),
@@ -1877,7 +1839,7 @@ fn qp3d_real_aabb_transform(
   let rot = qp3d_real_abs_mat3(iso.rotation.to_mat3())
   let ext = rot.mul_vec3(half)
   let world_center = iso.transform_point(center)
-  @core.Aabb3::new(world_center.sub(ext), world_center.add(ext))
+  Aabb3(world_center.sub(ext), world_center.add(ext))
 }
 
 ///|
@@ -1911,7 +1873,7 @@ fn qp3d_real_support_world_for_convex(
   if border_radius > 0.0F {
     let d2 = dir.length_squared()
     let offset = if d2 <= 1.0e-12F {
-      @core.Vec3::new(border_radius, 0.0F, 0.0F)
+      @core.Vec3(border_radius, 0.0F, 0.0F)
     } else {
       dir.scale(border_radius / Float::sqrt(d2))
     }
@@ -2107,7 +2069,7 @@ fn qp3d_real_project_point_on_convex(
   let eps2 = 1.0e-10F
   let mut dir = pos.translation.sub(point)
   if dir.length_squared() <= 1.0e-12F {
-    dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    dir = Vec3(1.0F, 0.0F, 0.0F)
   }
   let simplex : Array[Qp3dRealGjkSupportPoint] = []
   let sup_a0 = qp3d_real_support_world_for_convex(
@@ -2173,7 +2135,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point, is_inside: true }, 0.0F)
       } else {
         let dir = if dist2 <= 1.0e-12F {
-          @core.Vec3::new(1.0F, 0.0F, 0.0F)
+          @core.Vec3(1.0F, 0.0F, 0.0F)
         } else {
           delta.scale(1.0F / Float::sqrt(dist2))
         }
@@ -2190,7 +2152,7 @@ fn qp3d_real_project_point_on_shape(
       if inside && solid {
         ({ point, is_inside: true }, 0.0F)
       } else {
-        let mut p = @core.Vec3::new(
+        let mut p = @core.Vec3(
           @core.clamp(lp.x, -he.x, he.x),
           @core.clamp(lp.y, -he.y, he.y),
           @core.clamp(lp.z, -he.z, he.z),
@@ -2201,35 +2163,11 @@ fn qp3d_real_project_point_on_shape(
           let dy = he.y - @core.abs(lp.y)
           let dz = he.z - @core.abs(lp.z)
           if dx <= dy && dx <= dz {
-            p = @core.Vec3::new(
-              if lp.x >= 0.0F {
-                he.x
-              } else {
-                -he.x
-              },
-              p.y,
-              p.z,
-            )
+            p = Vec3(if lp.x >= 0.0F { he.x } else { -he.x }, p.y, p.z)
           } else if dy <= dz {
-            p = @core.Vec3::new(
-              p.x,
-              if lp.y >= 0.0F {
-                he.y
-              } else {
-                -he.y
-              },
-              p.z,
-            )
+            p = Vec3(p.x, if lp.y >= 0.0F { he.y } else { -he.y }, p.z)
           } else {
-            p = @core.Vec3::new(
-              p.x,
-              p.y,
-              if lp.z >= 0.0F {
-                he.z
-              } else {
-                -he.z
-              },
-            )
+            p = Vec3(p.x, p.y, if lp.z >= 0.0F { he.z } else { -he.z })
           }
         }
         let proj = pos.transform_point(p)
@@ -2239,7 +2177,7 @@ fn qp3d_real_project_point_on_shape(
     CapsuleY(r, hh) => {
       let inv = pos.inverse()
       let p = inv.transform_point(point)
-      let axis_pt = @core.Vec3::new(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
+      let axis_pt = @core.Vec3(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
       let delta = p.sub(axis_pt)
       let dist2 = delta.length_squared()
       let inside = dist2 <= r * r
@@ -2247,7 +2185,7 @@ fn qp3d_real_project_point_on_shape(
         ({ point, is_inside: true }, 0.0F)
       } else {
         let dir = if dist2 <= 1.0e-12F {
-          @core.Vec3::new(1.0F, 0.0F, 0.0F)
+          @core.Vec3(1.0F, 0.0F, 0.0F)
         } else {
           delta.scale(1.0F / Float::sqrt(dist2))
         }
@@ -2259,7 +2197,7 @@ fn qp3d_real_project_point_on_shape(
     Cylinder(r, hh) => {
       let inv = pos.inverse()
       let p = inv.transform_point(point)
-      let radial = @core.Vec3::new(p.x, 0.0F, p.z)
+      let radial = @core.Vec3(p.x, 0.0F, p.z)
       let rl2 = radial.length_squared()
       let rl = if rl2 <= 1.0e-12F { 0.0F } else { Float::sqrt(rl2) }
       let inside = @core.abs(p.y) <= hh && rl <= r
@@ -2285,7 +2223,7 @@ fn qp3d_real_project_point_on_shape(
             z = 0.0F
           }
         }
-        let proj = pos.transform_point(@core.Vec3::new(x, y, z))
+        let proj = pos.transform_point(Vec3(x, y, z))
         ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
       }
     }
@@ -2300,14 +2238,14 @@ fn qp3d_real_project_point_on_shape(
       // Conservative: project on the local AABB of the cone.
       let inv = pos.inverse()
       let p = inv.transform_point(point)
-      let he = @core.Vec3::new(r, hh, r)
+      let he = @core.Vec3(r, hh, r)
       let inside = @core.abs(p.x) <= he.x &&
         @core.abs(p.y) <= he.y &&
         @core.abs(p.z) <= he.z
       if inside && solid {
         ({ point, is_inside: true }, 0.0F)
       } else {
-        let q = @core.Vec3::new(
+        let q = @core.Vec3(
           @core.clamp(p.x, -he.x, he.x),
           @core.clamp(p.y, -he.y, he.y),
           @core.clamp(p.z, -he.z, he.z),
@@ -2382,7 +2320,7 @@ fn qp3d_real_project_point_on_shape(
                 let x1 = x0 + sx
                 let y1 = y0 + sy
                 let z1 = z0 + sz
-                let q = @core.Vec3::new(
+                let q = @core.Vec3(
                   @core.clamp(lp.x, x0, x1),
                   @core.clamp(lp.y, y0, y1),
                   @core.clamp(lp.z, z0, z1),
@@ -2502,7 +2440,7 @@ fn qp3d_real_contains_point(
     }
     CapsuleY(r, hh) => {
       let p = pos.inverse().transform_point(point)
-      let axis_pt = @core.Vec3::new(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
+      let axis_pt = @core.Vec3(0.0F, @core.clamp(p.y, -hh, hh), 0.0F)
       p.sub(axis_pt).length_squared() <= r * r
     }
     Cylinder(r, hh) => {
@@ -2598,7 +2536,7 @@ fn qp3d_real_cast_ball_against_shape(
   shape2 : Shape3D,
   max_toi : @core.Real,
 ) -> ShapeCastHit3? {
-  let ray = Ray3::new(center, vel)
+  let ray = Ray3(center, vel)
   match shape2 {
     Ball(r2) =>
       if ray_sphere_toi_normal(
@@ -2618,11 +2556,7 @@ fn qp3d_real_cast_ball_against_shape(
       if ray_obb_toi_normal(
           ray,
           pos2,
-          he.add(
-            @core.Vec3::new(
-              effective_radius, effective_radius, effective_radius,
-            ),
-          ),
+          he.add(Vec3(effective_radius, effective_radius, effective_radius)),
           max_toi,
           false,
         )
@@ -2865,7 +2799,7 @@ fn qp3d_real_cast_ball_against_shape(
                 let x1 = x0 + v.voxel_size.x
                 let y1 = y0 + v.voxel_size.y
                 let z1 = z0 + v.voxel_size.z
-                let q_local = @core.Vec3::new(
+                let q_local = @core.Vec3(
                   @core.clamp(lp.x, x0, x1),
                   @core.clamp(lp.y, y0, y1),
                   @core.clamp(lp.z, z0, z1),
@@ -2876,7 +2810,7 @@ fn qp3d_real_cast_ball_against_shape(
                   let q_world = pos2.transform_point(q_local)
                   let dist = Float::sqrt(d2)
                   let n_local = if d2 <= 1.0e-12F {
-                    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+                    @core.Vec3(0.0F, 1.0F, 0.0F)
                   } else {
                     lp.sub(q_local).scale(1.0F / dist)
                   }
@@ -2957,7 +2891,7 @@ fn qp3d_real_inflate_shape(shape : Shape3D, margin : @core.Real) -> Shape3D {
   }
   match shape {
     Ball(r) => Ball(r + margin)
-    Cuboid(he) => Cuboid(he.add(@core.Vec3::new(margin, margin, margin)))
+    Cuboid(he) => Cuboid(he.add(Vec3(margin, margin, margin)))
     CapsuleY(r, hh) => CapsuleY(r + margin, hh)
     Cylinder(r, hh) => Cylinder(r + margin, hh + margin)
     RoundCylinder(r, hh, br) => RoundCylinder(r, hh, br + margin)
@@ -3712,7 +3646,7 @@ fn qp3d_real_cast_moving_shape(
         v : @core.Vec3,
         t : @core.Real,
       ) -> @core.Isometry3 {
-        @core.Isometry3::new(p.translation.add(v.scale(t)), p.rotation)
+        Isometry3(p.translation.add(v.scale(t)), p.rotation)
       }
 
       fn contact_at_time(
@@ -3866,7 +3800,7 @@ pub fn QueryPipeline3DReal::cast_shape(
   let td = options.target_distance()
   // Broad-phase culling: compute a conservative swept AABB for the moving shape.
   fn abs_mat3(m : @core.Mat3) -> @core.Mat3 {
-    @core.Mat3::new(
+    Mat3(
       @core.abs(m.m00),
       @core.abs(m.m01),
       @core.abs(m.m02),
@@ -3885,12 +3819,12 @@ pub fn QueryPipeline3DReal::cast_shape(
     let rot = abs_mat3(iso.rotation.to_mat3())
     let ext = rot.mul_vec3(half)
     let world_center = iso.transform_point(center)
-    @core.Aabb3::new(world_center.sub(ext), world_center.add(ext))
+    Aabb3(world_center.sub(ext), world_center.add(ext))
   }
 
   let local_aabb = shape.local_aabb()
   let start_aabb = aabb3_transform(shape_pos, local_aabb)
-  let end_pos = @core.Isometry3::new(
+  let end_pos = @core.Isometry3(
     shape_pos.translation.add(shape_vel.scale(max_toi)),
     shape_pos.rotation,
   )

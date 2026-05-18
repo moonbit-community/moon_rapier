@@ -26,14 +26,6 @@ pub fn BodyPair::BodyPair(
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
 ) -> BodyPair {
-  BodyPair::new(body1, body2)
-}
-
-///|
-pub fn BodyPair::new(
-  body1 : RigidBodyHandle,
-  body2 : RigidBodyHandle,
-) -> BodyPair {
   { body1, body2 }
 }
 

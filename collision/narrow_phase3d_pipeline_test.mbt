@@ -17,8 +17,8 @@
 /// narrow-phase behavior:
 /// colliders attached to the same body keep a contact pair but have no manifolds.
 test "narrow phase 3d: same-parent colliders have empty manifolds; reparent generates contact" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = ColliderSet3D::ColliderSet3D()
   let body1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::zero())
@@ -31,9 +31,9 @@ test "narrow phase 3d: same-parent colliders have empty manifolds; reparent gene
     body1,
     bodies,
   )
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
-  let nf = NarrowPhase3D::new()
+  let nf = NarrowPhase3D::NarrowPhase3D()
   nf.update(broad_phase.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   if nf.contact_pair(c1, c2) is Some(pair) {
     inspect(pair.manifolds_len() == 0, content="true")
@@ -56,8 +56,8 @@ test "narrow phase 3d: same-parent colliders have empty manifolds; reparent gene
 
 ///|
 test "narrow phase 3d: collision groups filter disables contact manifolds" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = ColliderSet3D::ColliderSet3D()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(@core.Vec3::zero())
@@ -68,12 +68,12 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
     .translation(@core.Vec3::zero())
     .build(),
   )
-  let g1 = @dynamics.InteractionGroups::new(
+  let g1 = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
     And,
   )
-  let g2 = @dynamics.InteractionGroups::new(
+  let g2 = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
     And,
@@ -88,9 +88,9 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
     b2,
     bodies,
   )
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
-  let nf = NarrowPhase3D::new()
+  let nf = NarrowPhase3D::NarrowPhase3D()
   nf.update(broad_phase.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   if nf.contact_pair(c1, c2) is Some(pair) {
     inspect(pair.manifolds_len() == 0, content="true")
@@ -101,11 +101,11 @@ test "narrow phase 3d: collision groups filter disables contact manifolds" {
 
 ///|
 test "narrow phase 3d: cuboid-cuboid normal points from collider1 to collider2" {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = ColliderSet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = ColliderSet3D::ColliderSet3D()
   let top = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .translation(Vec3(0.0F, 1.0F, 0.0F))
     .build(),
   )
   let bottom = bodies.insert(
@@ -123,9 +123,9 @@ test "narrow phase 3d: cuboid-cuboid normal points from collider1 to collider2" 
     bottom,
     bodies,
   )
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
-  let nf = NarrowPhase3D::new()
+  let nf = NarrowPhase3D::NarrowPhase3D()
   nf.update(broad_phase.pairs(), bodies, colliders, 0.01F, 1.0F / 60.0F)
   if nf.contact_pair(c_top, c_bottom) is Some(pair) && pair.manifolds_len() > 0 {
     let cp0 = pair.manifolds()[0]

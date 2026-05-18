@@ -42,7 +42,7 @@ pub fn try_normalize_and_get_length2(
 ) -> (@core.Vec2, Float)? {
   let len = v.length()
   if len > threshold {
-    Some((@core.Vec2::new(v.x / len, v.y / len), len))
+    Some((Vec2(v.x / len, v.y / len), len))
   } else {
     None
   }
@@ -55,7 +55,7 @@ pub fn try_normalize_and_get_length3(
 ) -> (@core.Vec3, Float)? {
   let len = v.length()
   if len > threshold {
-    Some((@core.Vec3::new(v.x / len, v.y / len, v.z / len), len))
+    Some((Vec3(v.x / len, v.y / len, v.z / len), len))
   } else {
     None
   }
@@ -109,33 +109,43 @@ pub fn copy_sign_to(from : Float, to : Float) -> Float {
 
 ///|
 pub fn component_mul2(a : @core.Vec2, b : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(a.x * b.x, a.y * b.y)
+  Vec2(a.x * b.x, a.y * b.y)
 }
 
 ///|
 pub fn component_mul3(a : @core.Vec3, b : @core.Vec3) -> @core.Vec3 {
-  @core.Vec3::new(a.x * b.x, a.y * b.y, a.z * b.z)
+  Vec3(a.x * b.x, a.y * b.y, a.z * b.z)
 }
 
 ///|
 pub fn gcross_matrix2(v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-v.y, v.x)
+  Vec2(-v.y, v.x)
 }
 
 ///|
 pub fn gcross_matrix_tr2(v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-v.y, v.x)
+  Vec2(-v.y, v.x)
 }
 
 ///|
 pub fn gcross_matrix3(v : @core.Vec3) -> @core.Mat3 {
-  // Row-major.
-  @core.Mat3::new(0.0F, -v.z, v.y, v.z, 0.0F, -v.x, -v.y, v.x, 0.0F)
+  Mat3(
+    // Row-major.
+    0.0F,
+    -v.z,
+    v.y,
+    v.z,
+    0.0F,
+    -v.x,
+    -v.y,
+    v.x,
+    0.0F,
+  )
 }
 
 ///|
 pub fn gcross_matrix_tr3(v : @core.Vec3) -> @core.Mat3 {
-  @core.Mat3::new(0.0F, v.z, -v.y, -v.z, 0.0F, v.x, v.y, -v.x, 0.0F)
+  Mat3(0.0F, v.z, -v.y, -v.z, 0.0F, v.x, v.y, -v.x, 0.0F)
 }
 
 ///|
@@ -164,8 +174,8 @@ pub fn angular_inertia_into_matrix3(inertia : @core.SdpMat3) -> @core.Mat3 {
 ///|
 pub fn mat2_column(m : @core.Mat2, i : Int) -> @core.Vec2? {
   match i {
-    0 => Some(@core.Vec2::new(m.m00, m.m10))
-    1 => Some(@core.Vec2::new(m.m01, m.m11))
+    0 => Some(Vec2(m.m00, m.m10))
+    1 => Some(Vec2(m.m01, m.m11))
     _ => None
   }
 }
@@ -173,21 +183,21 @@ pub fn mat2_column(m : @core.Mat2, i : Int) -> @core.Vec2? {
 ///|
 pub fn mat3_column(m : @core.Mat3, i : Int) -> @core.Vec3? {
   match i {
-    0 => Some(@core.Vec3::new(m.m00, m.m10, m.m20))
-    1 => Some(@core.Vec3::new(m.m01, m.m11, m.m21))
-    2 => Some(@core.Vec3::new(m.m02, m.m12, m.m22))
+    0 => Some(Vec3(m.m00, m.m10, m.m20))
+    1 => Some(Vec3(m.m01, m.m11, m.m21))
+    2 => Some(Vec3(m.m02, m.m12, m.m22))
     _ => None
   }
 }
 
 ///|
 pub fn orthonormal_basis2(v : @core.Vec2) -> Array[@core.Vec2] {
-  [@core.Vec2::new(-v.y, v.x)]
+  [Vec2(-v.y, v.x)]
 }
 
 ///|
 pub fn orthonormal_vector2(v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-v.y, v.x)
+  Vec2(-v.y, v.x)
 }
 
 ///|
@@ -196,8 +206,8 @@ pub fn orthonormal_basis3(v : @core.Vec3) -> Array[@core.Vec3] {
   let a = -1.0F / (sign + v.z)
   let b = v.x * v.y * a
   [
-    @core.Vec3::new(1.0F + sign * v.x * v.x * a, sign * b, -sign * v.x),
-    @core.Vec3::new(b, sign + v.y * v.y * a, -v.y),
+    Vec3(1.0F + sign * v.x * v.x * a, sign * b, -sign * v.x),
+    Vec3(b, sign + v.y * v.y * a, -v.y),
   ]
 }
 
@@ -206,7 +216,7 @@ pub fn orthonormal_vector3(v : @core.Vec3) -> @core.Vec3 {
   let sign = copy_sign_to(v.z, 1.0F)
   let a = -1.0F / (sign + v.z)
   let b = v.x * v.y * a
-  @core.Vec3::new(b, sign + v.y * v.y * a, -v.y)
+  Vec3(b, sign + v.y * v.y * a, -v.y)
 }
 
 ///|
@@ -231,7 +241,7 @@ pub fn pose_append_rotation2(
   angle : Float,
 ) -> @core.Isometry2 {
   let rot = @core.Rot2::from_angle(angle)
-  let rpos = @core.Isometry2::new(@core.Vec2::zero(), rot)
+  let rpos = @core.Isometry2(@core.Vec2::zero(), rot)
   rpos.mul(p)
 }
 
@@ -241,7 +251,7 @@ pub fn pose_prepend_rotation2(
   angle : Float,
 ) -> @core.Isometry2 {
   let rot = @core.Rot2::from_angle(angle)
-  let rpos = @core.Isometry2::new(@core.Vec2::zero(), rot)
+  let rpos = @core.Isometry2(@core.Vec2::zero(), rot)
   p.mul(rpos)
 }
 
@@ -267,7 +277,7 @@ pub fn pose_append_rotation3(
   axisangle : @core.Vec3,
 ) -> @core.Isometry3 {
   let rot = @core.rotation_from_scaled_axis(axisangle)
-  let rpos = @core.Isometry3::new(@core.Vec3::zero(), rot)
+  let rpos = @core.Isometry3(@core.Vec3::zero(), rot)
   rpos.mul(p)
 }
 
@@ -277,19 +287,24 @@ pub fn pose_prepend_rotation3(
   axisangle : @core.Vec3,
 ) -> @core.Isometry3 {
   let rot = @core.rotation_from_scaled_axis(axisangle)
-  let rpos = @core.Isometry3::new(@core.Vec3::zero(), rot)
+  let rpos = @core.Isometry3(@core.Vec3::zero(), rot)
   p.mul(rpos)
 }
 
 ///|
 pub fn rot2_to_mat(r : @core.Rot2) -> @core.Mat2 {
-  // [cos -sin; sin cos]
-  @core.Mat2::new(r.cos, -r.sin, r.sin, r.cos)
+  Mat2(
+    // [cos -sin; sin cos]
+    r.cos,
+    -r.sin,
+    r.sin,
+    r.cos,
+  )
 }
 
 ///|
 fn vec3_outer(a : @core.Vec3, b : @core.Vec3) -> @core.Mat3 {
-  @core.Mat3::new(
+  Mat3(
     a.x * b.x,
     a.x * b.y,
     a.x * b.z,
@@ -310,9 +325,7 @@ pub fn quat_diff_conj1_2(q1 : @core.Quat, q2 : @core.Quat) -> @core.Mat3 {
   let w2 = q2.w
   let half = 0.5F
   let outer = vec3_outer(v1, v2)
-  let diag = @core.Mat3::from_diagonal(
-    @core.Vec3::new(w1 * w2, w1 * w2, w1 * w2),
-  )
+  let diag = @core.Mat3::from_diagonal(Vec3(w1 * w2, w1 * w2, w1 * w2))
   let cross = gcross_matrix3(v1.scale(w2).add(v2.scale(w1)))
   let v1x = gcross_matrix3(v1)
   let v2x = gcross_matrix3(v2)
@@ -326,7 +339,7 @@ pub fn quat_diff_conj1_2_tr(q1 : @core.Quat, q2 : @core.Quat) -> @core.Mat3 {
 
 ///|
 pub fn quat_mul_assign_unchecked(q : @core.Quat, rhs : Float) -> @core.Quat {
-  @core.Quat::new(q.x * rhs, q.y * rhs, q.z * rhs, q.w * rhs)
+  Quat(q.x * rhs, q.y * rhs, q.z * rhs, q.w * rhs)
 }
 
 ///|

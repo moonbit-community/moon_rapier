@@ -15,11 +15,13 @@
 ///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs examples.
 test "impulse joint set insert remove" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle = joints.insert(body1, body2, joint, true)
   inspect(joints.len() == 1, content="true")
   inspect(!joints.is_empty(), content="true")
@@ -35,12 +37,14 @@ test "impulse joint set insert remove" {
 ///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs examples.
 test "impulse joint set attached and between" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body3 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   joints.insert(body1, body2, joint, true) |> ignore
   joints.insert(body1, body3, joint, true) |> ignore
   joints.insert(body2, body3, joint, true) |> ignore
@@ -54,12 +58,14 @@ test "impulse joint set attached and between" {
 ///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs behavior.
 test "impulse joint set enabled filtering" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body3 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle1 = joints.insert(body1, body2, joint, true)
   let handle2 = joints.insert(body1, body3, joint, true)
   handle1 |> ignore
@@ -72,12 +78,14 @@ test "impulse joint set enabled filtering" {
 ///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs examples.
 test "impulse joint set remove attached" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body3 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle1 = joints.insert(body1, body2, joint, true)
   let handle2 = joints.insert(body1, body3, joint, true)
   let handle3 = joints.insert(body2, body3, joint, true)
@@ -92,11 +100,13 @@ test "impulse joint set remove attached" {
 ///|
 /// Ported from rapier/src/dynamics/joint/impulse_joint/impulse_joint_set.rs behavior.
 test "impulse joint wake and join queues" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   joints.insert(body1, body2, joint, true) |> ignore
   joints.insert(body1, body2, joint, true) |> ignore
   let join_pairs = joints.take_to_join()
@@ -113,11 +123,13 @@ test "impulse joint wake and join queues" {
 
 ///|
 test "impulse joint get_mut persists modifications" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle = joints.insert(body1, body2, joint, true)
   if joints.get_mut(handle, true) is Some(j) {
     j.set_enabled(false) |> ignore
@@ -133,11 +145,13 @@ test "impulse joint get_mut persists modifications" {
 
 ///|
 test "impulse joint get_mut persists joint data edits" {
-  let bodies = RigidBodySet::new()
-  let joints = ImpulseJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = ImpulseJointSet::ImpulseJointSet()
   let body1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle = joints.insert(body1, body2, joint, true)
   if joints.get_mut(handle, true) is Some(j) {
     j.data

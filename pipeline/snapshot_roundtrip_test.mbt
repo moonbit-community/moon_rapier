@@ -14,29 +14,25 @@
 
 ///|
 test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let handler = EventHandler::new()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let handler = EventHandler::EventHandler()
   let params = IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // A small chain driven by a multibody revolute joint.
   let mb_parent = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 2.0F)).build(),
   )
   let mb_child = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(0.25F).build(),
@@ -51,7 +47,7 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
   )
   |> ignore
   let mb_joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
+    @dynamics.RevoluteJointBuilder()
     .local_anchor1(@core.Vec2::zero())
     .local_anchor2(@core.Vec2::zero())
     .build(),
@@ -60,14 +56,10 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
 
   // An impulse-joint between two bodies.
   let ij_a = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 2.0F)).build(),
   )
   let ij_b = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(0.2F, 0.2F).build(),
@@ -81,7 +73,7 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
     bodies,
   )
   |> ignore
-  let ij_revolute = @dynamics.RevoluteJointBuilder::new()
+  let ij_revolute = @dynamics.RevoluteJointBuilder()
     .local_anchor1(@core.Vec2::zero())
     .local_anchor2(@core.Vec2::zero())
     .limits(-0.25F, 0.25F)
@@ -102,7 +94,7 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
       impulse_joints,
       multibody_joints,
       ccd_solver,
-      PhysicsHooks::new(),
+      PhysicsHooks(),
       handler,
     )
   }
@@ -128,9 +120,9 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
   inspect(multibody2.serialize() == multibody_ser, content="true")
 
   // Basic restore sanity: the restored world can step deterministically without panics.
-  let broad_phase2 = @collision.BroadPhaseBvh::new()
-  let narrow_phase2 = @collision.NarrowPhase::new()
-  let islands2 = @dynamics.IslandManager::new()
+  let broad_phase2 = @collision.BroadPhaseBvh()
+  let narrow_phase2 = @collision.NarrowPhase()
+  let islands2 = @dynamics.IslandManager()
   for _ in 0..<5 {
     pipeline.step(
       gravity,
@@ -143,7 +135,7 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
       impulse2,
       multibody2,
       ccd_solver,
-      PhysicsHooks::new(),
+      PhysicsHooks(),
       handler,
     )
   }

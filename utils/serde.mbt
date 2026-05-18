@@ -62,7 +62,7 @@ fn write_json_string(sb : StringBuilder, value : String) -> Unit {
 
 ///|
 pub fn serialize_to_vec_tuple(target : HashMap) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("{\"map\":[")
   for i in 0..<target.entries.length() {
     if i > 0 {
@@ -110,7 +110,7 @@ fn parse_int_value(text : String) -> Int {
 
 ///|
 fn unescape_json_string(text : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut escaped = false
   for c in text {
     if escaped {

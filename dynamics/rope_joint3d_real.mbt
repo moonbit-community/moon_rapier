@@ -31,11 +31,6 @@ pub struct RopeJointSet3DReal {
 
 ///|
 pub fn RopeJointSet3DReal::RopeJointSet3DReal() -> RopeJointSet3DReal {
-  RopeJointSet3DReal::new()
-}
-
-///|
-pub fn RopeJointSet3DReal::new() -> RopeJointSet3DReal {
   { joints: [] }
 }
 

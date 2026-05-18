@@ -72,7 +72,7 @@ test "QueryFilterFlags bitflags parity helpers" {
     @collision.QueryFilterFlags::from_name("EXCLUDE_SOLIDS") is Some(_),
     content="true",
   )
-  let bodies = @dynamics.RigidBodySet::new()
+  let bodies = @dynamics.RigidBodySet()
   let sensor = @collision.ColliderBuilder::ball(0.2F).sensor(true).build()
   let solid = @collision.ColliderBuilder::ball(0.2F).sensor(false).build()
   inspect(

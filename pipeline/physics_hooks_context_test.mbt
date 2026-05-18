@@ -14,15 +14,15 @@
 
 ///|
 test "ContactModificationContext::update_as_oneway_platform state machine" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
   let collider1 = @collision.ColliderHandle::from_raw_parts(0, 0)
   let collider2 = @collision.ColliderHandle::from_raw_parts(1, 0)
-  let manifold = @collision.ContactManifold::new(@core.Vec2::new(1.0F, 0.0F), [])
+  let manifold = @collision.ContactManifold(Vec2(1.0F, 0.0F), [])
   let solver_contacts : Array[@collision.SolverContact] = [
-    @collision.SolverContact::new(@core.Vec2::zero(), -0.1F),
+    SolverContact(@core.Vec2::zero(), -0.1F),
   ]
-  let ctx = ContactModificationContext::new(
+  let ctx = ContactModificationContext::ContactModificationContext(
     bodies,
     colliders,
     collider1,
@@ -31,20 +31,18 @@ test "ContactModificationContext::update_as_oneway_platform state machine" {
     None,
     manifold,
     solver_contacts,
-    @core.Vec2::new(1.0F, 0.0F),
+    Vec2(1.0F, 0.0F),
     0,
   )
 
   // First update with aligned normal -> allowed.
-  ctx.update_as_oneway_platform(@core.Vec2::new(1.0F, 0.0F), 0.0F)
+  ctx.update_as_oneway_platform(Vec2(1.0F, 0.0F), 0.0F)
   inspect(ctx.user_data == 1, content="true")
 
   // Now forbid by flipping the allowed direction.
   ctx.set_user_data(0)
-  ctx.solver_contacts.push(
-    @collision.SolverContact::new(@core.Vec2::zero(), -0.2F),
-  )
-  ctx.update_as_oneway_platform(@core.Vec2::new(-1.0F, 0.0F), 0.0F)
+  ctx.solver_contacts.push(SolverContact(@core.Vec2::zero(), -0.2F))
+  ctx.update_as_oneway_platform(Vec2(-1.0F, 0.0F), 0.0F)
   // Either forbidden (2) or still unknown (0) if we couldn't conclude because of a degenerate normal.
   inspect(ctx.user_data == 2 || ctx.user_data == 0, content="true")
   inspect(ctx.solver_contacts.length() == 0, content="true")

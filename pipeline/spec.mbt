@@ -21,7 +21,7 @@ pub type EventHandler
 
 ///|
 #declaration_only
-pub fn EventHandler::new() -> EventHandler {
+pub fn EventHandler::EventHandler() -> EventHandler {
   ...
 }
 
@@ -156,7 +156,7 @@ pub type PhysicsHooks
 
 ///|
 #declaration_only
-pub fn PhysicsHooks::new() -> PhysicsHooks {
+pub fn PhysicsHooks::PhysicsHooks() -> PhysicsHooks {
   ...
 }
 
@@ -226,7 +226,7 @@ pub type CollisionPipeline
 
 ///|
 #declaration_only
-pub fn CollisionPipeline::new() -> CollisionPipeline {
+pub fn CollisionPipeline::CollisionPipeline() -> CollisionPipeline {
   ...
 }
 
@@ -254,7 +254,7 @@ pub type PhysicsPipeline
 
 ///|
 #declaration_only
-pub fn PhysicsPipeline::new() -> PhysicsPipeline {
+pub fn PhysicsPipeline::PhysicsPipeline() -> PhysicsPipeline {
   ...
 }
 
@@ -299,7 +299,7 @@ pub type DebugColor
 
 ///|
 #declaration_only
-pub fn DebugColor::new(
+pub fn DebugColor::DebugColor(
   h : @core.Real,
   s : @core.Real,
   l : @core.Real,
@@ -435,7 +435,7 @@ pub type DebugRenderBackend
 
 ///|
 #declaration_only
-pub fn DebugRenderBackend::new() -> DebugRenderBackend {
+pub fn DebugRenderBackend::DebugRenderBackend() -> DebugRenderBackend {
   ...
 }
 
@@ -504,7 +504,7 @@ pub type DebugRenderPipeline
 
 ///|
 #declaration_only
-pub fn DebugRenderPipeline::new(
+pub fn DebugRenderPipeline::DebugRenderPipeline(
   style : DebugRenderStyle,
   mode : DebugRenderMode,
 ) -> DebugRenderPipeline {

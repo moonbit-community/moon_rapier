@@ -23,17 +23,12 @@ pub struct CCDCounters {
 
 ///|
 pub fn CCDCounters::CCDCounters() -> CCDCounters {
-  CCDCounters::new()
-}
-
-///|
-pub fn CCDCounters::new() -> CCDCounters {
   {
     num_substeps: 0,
-    toi_computation_time: Timer::new(),
-    solver_time: Timer::new(),
-    broad_phase_time: Timer::new(),
-    narrow_phase_time: Timer::new(),
+    toi_computation_time: Timer(),
+    solver_time: Timer(),
+    broad_phase_time: Timer(),
+    narrow_phase_time: Timer(),
   }
 }
 

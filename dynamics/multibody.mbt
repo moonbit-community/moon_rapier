@@ -20,14 +20,14 @@ fn revolute_joint_axis3_or_default(axis : @core.Vec3) -> @core.Vec3 {
   if axis.length_squared() > 1.0e-12F {
     axis.normalize()
   } else {
-    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+    Vec3(0.0F, 0.0F, 1.0F)
   }
 }
 
 ///|
 fn revolute_joint_frame_from_axis3(axis : @core.Vec3) -> @core.Quat {
   @core.rotation_between(
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3(1.0F, 0.0F, 0.0F),
     revolute_joint_axis3_or_default(axis),
   )
 }
@@ -44,7 +44,7 @@ struct RevoluteJointBuilder {
 }
 
 ///|
-pub fn RevoluteJointBuilder::new() -> RevoluteJointBuilder {
+pub fn RevoluteJointBuilder::RevoluteJointBuilder() -> RevoluteJointBuilder {
   {
     local_anchor1: @core.Vec2::zero(),
     local_anchor2: @core.Vec2::zero(),
@@ -138,7 +138,7 @@ pub fn RevoluteJointBuilder::limits(
   max : @core.Real,
 ) -> RevoluteJointBuilder {
   self.limits_enabled = true
-  self.limits = JointLimits::new(min, max)
+  self.limits = JointLimits(min, max)
   self
 }
 
@@ -146,22 +146,14 @@ pub fn RevoluteJointBuilder::limits(
 pub fn RevoluteJointBuilder::build(
   self : RevoluteJointBuilder,
 ) -> RevoluteJoint {
-  let axis3 = revolute_joint_axis3_or_default(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+  let axis3 = revolute_joint_axis3_or_default(Vec3(0.0F, 0.0F, 1.0F))
   let frame3 = revolute_joint_frame_from_axis3(axis3)
   {
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
     axis3,
-    local_anchor1_3: @core.Vec3::new(
-      self.local_anchor1.x,
-      self.local_anchor1.y,
-      0.0F,
-    ),
-    local_anchor2_3: @core.Vec3::new(
-      self.local_anchor2.x,
-      self.local_anchor2.y,
-      0.0F,
-    ),
+    local_anchor1_3: Vec3(self.local_anchor1.x, self.local_anchor1.y, 0.0F),
+    local_anchor2_3: Vec3(self.local_anchor2.x, self.local_anchor2.y, 0.0F),
     local_frame1_rotation: frame3,
     local_frame2_rotation: frame3,
     is_spatial: false,
@@ -316,7 +308,7 @@ pub struct LinkId {
 }
 
 ///|
-fn LinkId::new(value : Int) -> LinkId {
+fn LinkId::LinkId(value : Int) -> LinkId {
   { value, }
 }
 
@@ -382,7 +374,7 @@ struct Multibody {
 
 ///|
 fn Multibody::new_with_root(handle : RigidBodyHandle) -> Multibody {
-  let joint = MultibodyJoint::new(GenericJoint::default(), false)
+  let joint = MultibodyJoint(GenericJoint::default(), false)
   let link = MultibodyLink::{
     internal_id: 0,
     parent_internal_id: 0,
@@ -431,7 +423,7 @@ fn Multibody::root_pose(
       angle = angle + disp[2]
     }
   }
-  @core.Isometry2::new(@core.Vec2::new(tx, ty), @core.Rot2::from_angle(angle))
+  Isometry2(Vec2(tx, ty), @core.Rot2::from_angle(angle))
 }
 
 ///|
@@ -1064,11 +1056,11 @@ pub fn Multibody::apply_displacements(
   if self.root_is_dynamic {
     if displacements.length() > 0 {
       let tx = self.root_translation.x + displacements[0]
-      self.root_translation = @core.Vec2::new(tx, self.root_translation.y)
+      self.root_translation = Vec2(tx, self.root_translation.y)
     }
     if displacements.length() > 1 {
       let ty = self.root_translation.y + displacements[1]
-      self.root_translation = @core.Vec2::new(self.root_translation.x, ty)
+      self.root_translation = Vec2(self.root_translation.x, ty)
     }
     if displacements.length() > 2 {
       self.root_angle = self.root_angle + displacements[2]
@@ -1350,7 +1342,9 @@ struct MultibodyJointHandle {
 }
 
 ///|
-fn MultibodyJointHandle::new(index : @data.Index) -> MultibodyJointHandle {
+fn MultibodyJointHandle::MultibodyJointHandle(
+  index : @data.Index,
+) -> MultibodyJointHandle {
   { index, }
 }
 
@@ -1366,7 +1360,7 @@ pub fn MultibodyJointHandle::from_raw_parts(
   id : Int,
   generation : Int,
 ) -> MultibodyJointHandle {
-  MultibodyJointHandle::new(@data.Index::from_raw_parts(id, generation))
+  MultibodyJointHandle(@data.Index::from_raw_parts(id, generation))
 }
 
 ///|
@@ -1387,7 +1381,7 @@ struct MultibodyIndex {
 }
 
 ///|
-fn MultibodyIndex::new(index : @data.Index) -> MultibodyIndex {
+fn MultibodyIndex::MultibodyIndex(index : @data.Index) -> MultibodyIndex {
   { index, }
 }
 
@@ -1406,7 +1400,7 @@ fn MultibodyIndex::arena_index(self : MultibodyIndex) -> @data.Index {
 
 ///|
 pub fn MultibodyIndex::invalid() -> MultibodyIndex {
-  MultibodyIndex::new(@data.Index::from_raw_parts(-1, -1))
+  MultibodyIndex(@data.Index::from_raw_parts(-1, -1))
 }
 
 ///|
@@ -1417,7 +1411,7 @@ struct MultibodyLinkId {
 }
 
 ///|
-fn MultibodyLinkId::new(
+fn MultibodyLinkId::MultibodyLinkId(
   graph_id : Int,
   multibody : MultibodyIndex,
   id : Int,
@@ -1427,7 +1421,7 @@ fn MultibodyLinkId::new(
 
 ///|
 pub fn MultibodyLinkId::default() -> MultibodyLinkId {
-  MultibodyLinkId::new(-1, MultibodyIndex::invalid(), 0)
+  MultibodyLinkId(-1, MultibodyIndex::invalid(), 0)
 }
 
 ///|
@@ -1625,10 +1619,10 @@ fn build_multibody_from_indices(
 }
 
 ///|
-pub fn MultibodyJointSet::new() -> MultibodyJointSet {
+pub fn MultibodyJointSet::MultibodyJointSet() -> MultibodyJointSet {
   {
-    multibodies: @data.Arena::new(),
-    rb2mb: @data.Coarena::new(),
+    multibodies: Arena(),
+    rb2mb: Coarena(),
     graph_nodes: [],
     graph_edges: [],
     adjacency: [],
@@ -1902,11 +1896,11 @@ fn parse_link(text : String) -> MultibodyLink? {
       let solver_lin_x = mb_parse_real_value(fields[joint_end])
       let solver_lin_y = mb_parse_real_value(fields[joint_end + 1])
       let joint_angle = mb_parse_real_value(fields[joint_end + 2])
-      let joint = MultibodyJoint::new(data, kinematic)
-      joint.solver_lin_impulses = @core.Vec2::new(solver_lin_x, solver_lin_y)
+      let joint = MultibodyJoint(data, kinematic)
+      joint.solver_lin_impulses = Vec2(solver_lin_x, solver_lin_y)
       joint.angle = joint_angle
       joint.joint_rot = @core.Rot2::from_angle(joint_angle)
-      joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
+      joint.ang_coords3 = Vec3(0.0F, 0.0F, joint_angle)
       joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
       let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
       return Some({
@@ -1952,17 +1946,17 @@ fn parse_link(text : String) -> MultibodyLink? {
     }
     let axis3 = if fields.length() >= 29 {
       revolute_joint_axis3_or_default(
-        @core.Vec3::new(
+        Vec3(
           mb_parse_real_value(fields[26]),
           mb_parse_real_value(fields[27]),
           mb_parse_real_value(fields[28]),
         ),
       )
     } else {
-      revolute_joint_axis3_or_default(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+      revolute_joint_axis3_or_default(Vec3(0.0F, 0.0F, 1.0F))
     }
     let frame3 = revolute_joint_frame_from_axis3(axis3)
-    let softness = SpringCoefficients::new(snat, sdamp)
+    let softness = SpringCoefficients(snat, sdamp)
     let motor = JointMotor::{
       target_vel: motor_target_vel,
       target_pos: motor_target_pos,
@@ -1972,14 +1966,14 @@ fn parse_link(text : String) -> MultibodyLink? {
       impulse: motor_impulse,
       model: motor_model,
     }
-    let limits = JointLimits::new(limit_min, limit_max)
+    let limits = JointLimits(limit_min, limit_max)
     limits.impulse = limit_impulse
     let revolute = RevoluteJoint::{
-      local_anchor1: @core.Vec2::new(a1x, a1y),
-      local_anchor2: @core.Vec2::new(a2x, a2y),
+      local_anchor1: Vec2(a1x, a1y),
+      local_anchor2: Vec2(a2x, a2y),
       axis3,
-      local_anchor1_3: @core.Vec3::new(a1x, a1y, a1z),
-      local_anchor2_3: @core.Vec3::new(a2x, a2y, a2z),
+      local_anchor1_3: Vec3(a1x, a1y, a1z),
+      local_anchor2_3: Vec3(a2x, a2y, a2z),
       local_frame1_rotation: frame3,
       local_frame2_rotation: frame3,
       is_spatial: fields.length() >= 29,
@@ -1988,12 +1982,12 @@ fn parse_link(text : String) -> MultibodyLink? {
       motor_enabled,
       limits,
       limits_enabled,
-      solver_lin_impulses: @core.Vec2::new(solver_lin_x, solver_lin_y),
+      solver_lin_impulses: Vec2(solver_lin_x, solver_lin_y),
     }
     let joint = MultibodyJoint::from_revolute(revolute, false)
     joint.angle = joint_angle
     joint.joint_rot = @core.Rot2::from_angle(joint_angle)
-    joint.ang_coords3 = @core.Vec3::new(0.0F, 0.0F, joint_angle)
+    joint.ang_coords3 = Vec3(0.0F, 0.0F, joint_angle)
     joint.joint_rot3 = @core.rotation_from_scaled_axis(joint.ang_coords3)
     let handle = RigidBodyHandle::from_raw_parts(rbid, rbgen)
     Some({
@@ -2026,7 +2020,7 @@ fn MultibodyJointSet::update_body_links_for_multibody(
     }
     self.set_link(
       link.rigid_body,
-      MultibodyLinkId::new(graph_id, mb_index, link.internal_id),
+      MultibodyLinkId(graph_id, mb_index, link.internal_id),
     )
   }
 }
@@ -2048,7 +2042,7 @@ fn MultibodyJointSet::insert_graph_edges_for_multibody(
 
 ///|
 pub fn MultibodyJointSet::serialize(self : MultibodyJointSet) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("mbs=")
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
@@ -2072,7 +2066,7 @@ pub fn MultibodyJointSet::serialize(self : MultibodyJointSet) -> String {
 
 ///|
 pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
-  let set = MultibodyJointSet::new()
+  let set = MultibodyJointSet()
   if data.strip_prefix("mbs="[:]) is Some(view) {
     let raw = view.to_owned()
     if raw.length() > 0 {
@@ -2126,7 +2120,7 @@ pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
           links,
           ndofs: 0,
           root_is_dynamic: true,
-          root_translation: @core.Vec2::new(root_tx, root_ty),
+          root_translation: Vec2(root_tx, root_ty),
           root_angle,
           root_translation3_z: 0.0F,
           root_rotation3_extra: @core.Quat::identity(),
@@ -2139,7 +2133,7 @@ pub fn MultibodyJointSet::deserialize(data : String) -> MultibodyJointSet {
         }
         mb.recompute_ndofs()
         let mb_handle = set.multibodies.insert(mb)
-        let mb_index = MultibodyIndex::new(mb_handle)
+        let mb_index = MultibodyIndex(mb_handle)
         set.update_body_links_for_multibody(mb_index, mb)
         set.insert_graph_edges_for_multibody(mb)
       }
@@ -2194,7 +2188,7 @@ pub fn MultibodyJointSet::revolute_joint_descriptors(
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
     let (mb_handle, mb) = items[i]
-    let mb_index = MultibodyIndex::new(mb_handle)
+    let mb_index = MultibodyIndex(mb_handle)
     for link_id in 1..<mb.links.length() {
       let link = mb.links[link_id]
       let parent_id = link.parent_internal_id
@@ -2212,7 +2206,7 @@ pub fn MultibodyJointSet::revolute_joint_descriptors(
         -1
       }
       result.push({
-        link: MultibodyLinkId::new(graph_id, mb_index, link_id),
+        link: MultibodyLinkId(graph_id, mb_index, link_id),
         parent: parent_link.rigid_body,
         child: link.rigid_body,
         joint: link.joint.as_revolute_joint(),
@@ -2277,7 +2271,7 @@ pub fn MultibodyJointSet::iter(
       if link.id >= 0 && link.id < multibody.links.length() {
         result.push(
           (
-            MultibodyJointHandle::new(joint_handle),
+            MultibodyJointHandle(joint_handle),
             link,
             multibody,
             multibody.links[link.id],
@@ -2296,7 +2290,7 @@ fn MultibodyJointSet::register_body(
 ) -> MultibodyLinkId {
   let mb_handle = self.multibodies.insert(Multibody::new_with_root(handle))
   let graph_id = self.ensure_graph_node(handle)
-  let link = MultibodyLinkId::new(graph_id, MultibodyIndex::new(mb_handle), 0)
+  let link = MultibodyLinkId(graph_id, MultibodyIndex(mb_handle), 0)
   self.set_link(handle, link)
   link
 }
@@ -2321,7 +2315,7 @@ pub fn MultibodyJointSet::insert(
   joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  let multibody_joint = MultibodyJoint::new(joint, false)
+  let multibody_joint = MultibodyJoint(joint, false)
   let parent_link = self.lookup_body(parent)
   let child_link = self.lookup_body(child)
   if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
@@ -2357,7 +2351,7 @@ pub fn MultibodyJointSet::insert(
         }
         self.set_link(
           link.rigid_body,
-          MultibodyLinkId::new(graph_id, parent_link.multibody, offset + i),
+          MultibodyLinkId(graph_id, parent_link.multibody, offset + i),
         )
       }
       if wake_up {
@@ -2365,7 +2359,7 @@ pub fn MultibodyJointSet::insert(
         push_unique_handle(self.to_wake_up, child)
       }
       push_unique_pair(self.to_join, (parent, child))
-      Some(MultibodyJointHandle::new(rb_handle_index(child)))
+      Some(MultibodyJointHandle(rb_handle_index(child)))
     } else {
       None
     }
@@ -2382,7 +2376,7 @@ pub fn MultibodyJointSet::insert_kinematic(
   joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  let multibody_joint = MultibodyJoint::new(joint, true)
+  let multibody_joint = MultibodyJoint(joint, true)
   let parent_link = self.lookup_body(parent)
   let child_link = self.lookup_body(child)
   if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
@@ -2418,7 +2412,7 @@ pub fn MultibodyJointSet::insert_kinematic(
         }
         self.set_link(
           link.rigid_body,
-          MultibodyLinkId::new(graph_id, parent_link.multibody, offset + i),
+          MultibodyLinkId(graph_id, parent_link.multibody, offset + i),
         )
       }
       if wake_up {
@@ -2426,7 +2420,7 @@ pub fn MultibodyJointSet::insert_kinematic(
         push_unique_handle(self.to_wake_up, child)
       }
       push_unique_pair(self.to_join, (parent, child))
-      Some(MultibodyJointHandle::new(rb_handle_index(child)))
+      Some(MultibodyJointHandle(rb_handle_index(child)))
     } else {
       None
     }
@@ -2494,7 +2488,7 @@ pub fn MultibodyJointSet::remove(
       } else {
         let remaining_handle = self.multibodies.insert(remaining_mb)
         self.update_body_links_for_multibody(
-          MultibodyIndex::new(remaining_handle),
+          MultibodyIndex(remaining_handle),
           remaining_mb,
         )
       }
@@ -2509,7 +2503,7 @@ pub fn MultibodyJointSet::remove(
       } else {
         let subtree_handle = self.multibodies.insert(subtree_mb)
         self.update_body_links_for_multibody(
-          MultibodyIndex::new(subtree_handle),
+          MultibodyIndex(subtree_handle),
           subtree_mb,
         )
       }
@@ -2600,7 +2594,7 @@ pub fn MultibodyJointSet::get(
 ) -> (Multibody, LinkId)? {
   if self.rb2mb.get(handle.arena_index()) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {
-      Some((multibody, LinkId::new(link.id)))
+      Some((multibody, LinkId(link.id)))
     } else {
       None
     }
@@ -2636,7 +2630,7 @@ pub fn MultibodyJointSet::get_unknown_gen(
         Some(
           (
             multibody,
-            LinkId::new(link.id),
+            LinkId(link.id),
             MultibodyJointHandle::from_raw_parts(id, generation),
           ),
         )
@@ -2672,13 +2666,9 @@ pub fn MultibodyJointSet::joint_between(
       let child1 = multibody.links[link1.id]
       let child2 = multibody.links[link2.id]
       if child1.parent_internal_id == link2.id {
-        Some(
-          (MultibodyJointHandle::new(rb_handle_index(body1)), multibody, child1),
-        )
+        Some((MultibodyJointHandle(rb_handle_index(body1)), multibody, child1))
       } else if child2.parent_internal_id == link1.id {
-        Some(
-          (MultibodyJointHandle::new(rb_handle_index(body2)), multibody, child2),
-        )
+        Some((MultibodyJointHandle(rb_handle_index(body2)), multibody, child2))
       } else {
         None
       }
@@ -2708,7 +2698,7 @@ pub fn MultibodyJointSet::attached_joints(
         (
           edge.parent,
           edge.child,
-          MultibodyJointHandle::new(rb_handle_index(edge.child)),
+          MultibodyJointHandle(rb_handle_index(edge.child)),
         ),
       )
     }

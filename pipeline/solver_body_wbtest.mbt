@@ -14,11 +14,11 @@
 
 ///|
 test "solver bodies copy_from captures pose + velocity (whitebox)" {
-  let bodies_set = @dynamics.RigidBodySet::new()
+  let bodies_set = @dynamics.RigidBodySet()
   let handle = bodies_set.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 2.0F))
-    .linvel(@core.Vec2::new(3.0F, -4.0F))
+    .translation(Vec2(1.0F, 2.0F))
+    .linvel(Vec2(3.0F, -4.0F))
     .angvel(5.0F)
     .build(),
   )

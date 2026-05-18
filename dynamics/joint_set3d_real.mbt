@@ -85,7 +85,7 @@ fn generic_joint_axis_from_index(index : Int) -> JointAxis {
 
 ///|
 fn generic_joint_mask_from_index(index : Int) -> JointAxesMask {
-  JointAxesMask::new(1 << index)
+  JointAxesMask(1 << index)
 }
 
 ///|
@@ -136,7 +136,7 @@ pub fn GenericJoint::to_3d_real(self : GenericJoint) -> GenericJoint3DReal {
     local_frame2: self.local_frame2_3(),
     axis_states,
     motors,
-    coupled_axes: JointAxesMask3DReal::new(self.coupled_axes().bits()),
+    coupled_axes: JointAxesMask3DReal(self.coupled_axes().bits()),
     contacts_enabled: self.contacts_enabled(),
   }
 }
@@ -146,7 +146,7 @@ pub fn GenericJoint::from_3d_real(joint : GenericJoint3DReal) -> GenericJoint {
   let mut out = GenericJoint::default()
     .set_local_frame1_3(joint.local_frame1)
     .set_local_frame2_3(joint.local_frame2)
-    .set_coupled_axes(JointAxesMask::new(joint.coupled_axes.bits()))
+    .set_coupled_axes(JointAxesMask(joint.coupled_axes.bits()))
     .set_contacts_enabled(joint.contacts_enabled)
   for index in 0..<6 {
     let axis = generic_joint_axis_from_index(index)
@@ -230,11 +230,6 @@ pub struct JointSet3DReal {
 }
 
 ///|
-pub fn JointSet3DReal::JointSet3DReal() -> JointSet3DReal {
-  JointSet3DReal::new()
-}
-
-///|
 pub fn JointSet3DReal::disabled_contact_pairs(
   self : JointSet3DReal,
 ) -> Array[(RigidBodyHandle, RigidBodyHandle)] {
@@ -271,7 +266,7 @@ pub fn JointSet3DReal::interaction_pairs(
 }
 
 ///|
-pub fn JointSet3DReal::new() -> JointSet3DReal {
+pub fn JointSet3DReal::JointSet3DReal() -> JointSet3DReal {
   {
     spherical: [],
     prismatic: [],
@@ -388,11 +383,11 @@ pub fn JointSet3DReal::insert_revolute(
 ) -> JointHandle3DReal {
   let a = normalized_or_default(axis)
   // Use the joint Z axis as the revolute axis.
-  let basis = @core.rotation_between(@core.Vec3::new(0.0F, 0.0F, 1.0F), a)
+  let basis = @core.rotation_between(Vec3(0.0F, 0.0F, 1.0F), a)
   let locked = JointAxesMask3DReal::lin_axes()
     .or(JointAxesMask3DReal::ang_x())
     .or(JointAxesMask3DReal::ang_y())
-  let joint = GenericJoint3DRealBuilder::new(locked)
+  let joint = GenericJoint3DRealBuilder(locked)
     .local_anchor1(local_anchor1)
     .local_anchor2(local_anchor2)
     .local_basis1(basis)
@@ -524,7 +519,7 @@ fn apply_body_impulse_delta3(
 fn normalized_or_default(v : @core.Vec3) -> @core.Vec3 {
   let n2 = v.length_squared()
   if n2 <= 1.0e-12F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    Vec3(1.0F, 0.0F, 0.0F)
   } else {
     v.scale(1.0F / Float::sqrt(n2))
   }
@@ -565,11 +560,11 @@ fn set_axis_value_vec3(
   component : @core.Real,
 ) -> @core.Vec3 {
   if axis_i == 0 {
-    @core.Vec3::new(component, value.y, value.z)
+    Vec3(component, value.y, value.z)
   } else if axis_i == 1 {
-    @core.Vec3::new(value.x, component, value.z)
+    Vec3(value.x, component, value.z)
   } else {
-    @core.Vec3::new(value.x, value.y, component)
+    Vec3(value.x, value.y, component)
   }
 }
 
@@ -589,29 +584,29 @@ fn set_axis_value_vec2(
   component : @core.Real,
 ) -> @core.Vec2 {
   if axis_i == 0 {
-    @core.Vec2::new(component, value.y)
+    Vec2(component, value.y)
   } else {
-    @core.Vec2::new(value.x, component)
+    Vec2(value.x, component)
   }
 }
 
 ///|
 fn axis_unit(axis_i : Int) -> @core.Vec3 {
   if axis_i == 0 {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    Vec3(1.0F, 0.0F, 0.0F)
   } else if axis_i == 1 {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+    Vec3(0.0F, 0.0F, 1.0F)
   }
 }
 
 ///|
 fn orthonormal_basis3(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
   let tangent = if @core.abs(n.x) < 0.57735026F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   let t1 = normalized_or_default(n.cross(tangent))
   let t2 = normalized_or_default(n.cross(t1))
@@ -981,8 +976,8 @@ pub fn JointSet3DReal::solve_with_island_stamp(
       }
       if gj.data.coupled_axes.contains(JointAxesMask3DReal::lin_y()) &&
         gj.data.coupled_axes.contains(JointAxesMask3DReal::lin_z()) {
-        let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-        let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+        let ay = rot1.rotate_vec3(Vec3(0.0F, 1.0F, 0.0F))
+        let az = rot1.rotate_vec3(Vec3(0.0F, 0.0F, 1.0F))
         let n = ay.sub(az)
         apply_row_impulse3(
           rb1,
@@ -1223,8 +1218,8 @@ pub fn JointSet3DReal::solve_with_island_stamp(
         if coupled.contains(JointAxesMask3DReal::lin_y()) &&
           coupled.contains(JointAxesMask3DReal::lin_z()) {
           let err = diff_local.y - diff_local.z
-          let ay = rot1.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-          let az = rot1.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+          let ay = rot1.rotate_vec3(Vec3(0.0F, 1.0F, 0.0F))
+          let az = rot1.rotate_vec3(Vec3(0.0F, 0.0F, 1.0F))
           let n = ay.sub(az)
           let bias = baumgarte_bias3(dt, err, 1.0F)
           self.generic_coupled_impulses[i] = solve_row_impulse3(

@@ -115,31 +115,26 @@ pub struct Vec2 {
 }
 
 ///|
-pub fn Vec2::Vec2(x : Real, y : Real) -> Vec2 {
-  Vec2::new(x, y)
-}
-
-///|
 pub type TangentImpulse3 = Vec2
 
 ///|
-pub fn Vec2::new(x : Real, y : Real) -> Vec2 {
+pub fn Vec2::Vec2(x : Real, y : Real) -> Vec2 {
   { x, y }
 }
 
 ///|
 pub fn Vec2::zero() -> Vec2 {
-  Vec2::new(0.0F, 0.0F)
+  Vec2(0.0F, 0.0F)
 }
 
 ///|
 pub fn Vec2::add(self : Vec2, other : Vec2) -> Vec2 {
-  Vec2::new(self.x + other.x, self.y + other.y)
+  Vec2(self.x + other.x, self.y + other.y)
 }
 
 ///|
 pub fn Vec2::sub(self : Vec2, other : Vec2) -> Vec2 {
-  Vec2::new(self.x - other.x, self.y - other.y)
+  Vec2(self.x - other.x, self.y - other.y)
 }
 
 ///|
@@ -168,7 +163,7 @@ pub fn Vec2::normalize(self : Vec2) -> Vec2 {
   if len <= EPSILON {
     Vec2::zero()
   } else {
-    Vec2::new(self.x / len, self.y / len)
+    Vec2(self.x / len, self.y / len)
   }
 }
 
@@ -235,7 +230,7 @@ pub fn Rot2::angle(self : Rot2) -> Real {
 
 ///|
 pub fn Rot2::rotate_vec2(self : Rot2, v : Vec2) -> Vec2 {
-  Vec2::new(self.cos * v.x - self.sin * v.y, self.sin * v.x + self.cos * v.y)
+  Vec2(self.cos * v.x - self.sin * v.y, self.sin * v.x + self.cos * v.y)
 }
 
 ///|
@@ -263,40 +258,32 @@ pub struct Isometry2 {
 }
 
 ///|
-pub fn Isometry2::Isometry2(translation : Vec2, rotation : Rot2) -> Isometry2 {
-  Isometry2::new(translation, rotation)
-}
-
-///|
 pub fn Isometry2::identity() -> Isometry2 {
   { translation: Vec2::zero(), rotation: Rot2::identity() }
 }
 
 ///|
-pub fn Isometry2::new(translation : Vec2, rotation : Rot2) -> Isometry2 {
+pub fn Isometry2::Isometry2(translation : Vec2, rotation : Rot2) -> Isometry2 {
   { translation, rotation }
 }
 
 ///|
 pub fn Isometry2::from_translation(translation : Vec2) -> Isometry2 {
-  Isometry2::new(translation, Rot2::identity())
+  Isometry2(translation, Rot2::identity())
 }
 
 ///|
 pub fn Isometry2::mul(self : Isometry2, other : Isometry2) -> Isometry2 {
   let rotated = self.rotation.rotate_vec2(other.translation)
-  Isometry2::new(
-    self.translation.add(rotated),
-    self.rotation.mul(other.rotation),
-  )
+  Isometry2(self.translation.add(rotated), self.rotation.mul(other.rotation))
 }
 
 ///|
 pub fn Isometry2::inverse(self : Isometry2) -> Isometry2 {
   let inv_rot = self.rotation.inverse()
-  let neg_translation = Vec2::new(-self.translation.x, -self.translation.y)
+  let neg_translation = Vec2(-self.translation.x, -self.translation.y)
   let inv_translation = inv_rot.rotate_vec2(neg_translation)
-  Isometry2::new(inv_translation, inv_rot)
+  Isometry2(inv_translation, inv_rot)
 }
 
 ///|
@@ -312,27 +299,19 @@ pub struct Aabb {
 
 ///|
 pub fn Aabb::Aabb(mins : Vec2, maxs : Vec2) -> Aabb {
-  Aabb::new(mins, maxs)
-}
-
-///|
-pub fn Aabb::new(mins : Vec2, maxs : Vec2) -> Aabb {
   { mins, maxs }
 }
 
 ///|
 pub fn Aabb::from_points(a : Vec2, b : Vec2) -> Aabb {
-  Aabb::new(
-    Vec2::new(min(a.x, b.x), min(a.y, b.y)),
-    Vec2::new(max(a.x, b.x), max(a.y, b.y)),
-  )
+  Aabb(Vec2(min(a.x, b.x), min(a.y, b.y)), Vec2(max(a.x, b.x), max(a.y, b.y)))
 }
 
 ///|
 pub fn Aabb::combine(self : Aabb, other : Aabb) -> Aabb {
-  Aabb::new(
-    Vec2::new(min(self.mins.x, other.mins.x), min(self.mins.y, other.mins.y)),
-    Vec2::new(max(self.maxs.x, other.maxs.x), max(self.maxs.y, other.maxs.y)),
+  Aabb(
+    Vec2(min(self.mins.x, other.mins.x), min(self.mins.y, other.mins.y)),
+    Vec2(max(self.maxs.x, other.maxs.x), max(self.maxs.y, other.maxs.y)),
   )
 }
 
@@ -346,32 +325,27 @@ pub struct Vec3 {
 
 ///|
 pub fn Vec3::Vec3(x : Real, y : Real, z : Real) -> Vec3 {
-  Vec3::new(x, y, z)
-}
-
-///|
-pub fn Vec3::new(x : Real, y : Real, z : Real) -> Vec3 {
   { x, y, z }
 }
 
 ///|
 pub fn Vec3::zero() -> Vec3 {
-  Vec3::new(0.0F, 0.0F, 0.0F)
+  Vec3(0.0F, 0.0F, 0.0F)
 }
 
 ///|
 pub fn Vec3::add(self : Vec3, other : Vec3) -> Vec3 {
-  Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
+  Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
 }
 
 ///|
 pub fn Vec3::sub(self : Vec3, other : Vec3) -> Vec3 {
-  Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
+  Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
 }
 
 ///|
 pub fn Vec3::scale(self : Vec3, s : Real) -> Vec3 {
-  Vec3::new(self.x * s, self.y * s, self.z * s)
+  Vec3(self.x * s, self.y * s, self.z * s)
 }
 
 ///|
@@ -381,7 +355,7 @@ pub fn Vec3::dot(self : Vec3, other : Vec3) -> Real {
 
 ///|
 pub fn Vec3::cross(self : Vec3, other : Vec3) -> Vec3 {
-  Vec3::new(
+  Vec3(
     self.y * other.z - self.z * other.y,
     self.z * other.x - self.x * other.z,
     self.x * other.y - self.y * other.x,
@@ -418,13 +392,8 @@ pub struct Quat {
 }
 
 ///|
-pub fn Quat::Quat(x : Real, y : Real, z : Real, w : Real) -> Quat {
-  Quat::new(x, y, z, w)
-}
-
-///|
 pub fn Quat::imag(self : Quat) -> Vec3 {
-  Vec3::new(self.x, self.y, self.z)
+  Vec3(self.x, self.y, self.z)
 }
 
 ///|
@@ -434,22 +403,22 @@ pub fn Quat::real(self : Quat) -> Real {
 
 ///|
 pub fn Quat::negated(self : Quat) -> Quat {
-  Quat::new(-self.x, -self.y, -self.z, -self.w)
+  Quat(-self.x, -self.y, -self.z, -self.w)
 }
 
 ///|
-pub fn Quat::new(x : Real, y : Real, z : Real, w : Real) -> Quat {
+pub fn Quat::Quat(x : Real, y : Real, z : Real, w : Real) -> Quat {
   { x, y, z, w }
 }
 
 ///|
 pub fn Quat::identity() -> Quat {
-  Quat::new(0.0F, 0.0F, 0.0F, 1.0F)
+  Quat(0.0F, 0.0F, 0.0F, 1.0F)
 }
 
 ///|
 pub fn Quat::conjugate(self : Quat) -> Quat {
-  Quat::new(-self.x, -self.y, -self.z, self.w)
+  Quat(-self.x, -self.y, -self.z, self.w)
 }
 
 ///|
@@ -469,14 +438,14 @@ pub fn Quat::normalize(self : Quat) -> Quat {
     Quat::identity()
   } else {
     let inv_n = 1.0F / sqrt(n2)
-    Quat::new(self.x * inv_n, self.y * inv_n, self.z * inv_n, self.w * inv_n)
+    Quat(self.x * inv_n, self.y * inv_n, self.z * inv_n, self.w * inv_n)
   }
 }
 
 ///|
 /// Hamilton product (applies `other` then `self` when used as rotation composition).
 pub fn Quat::mul(self : Quat, other : Quat) -> Quat {
-  Quat::new(
+  Quat(
     self.w * other.x + self.x * other.w + self.y * other.z - self.z * other.y,
     self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
     self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
@@ -499,7 +468,7 @@ pub fn rotation_from_scaled_axis(axis_angle : Vec3) -> Quat {
     let half = 0.5F * angle
     let axis = axis_angle.scale(1.0F / angle)
     let s = sin(half)
-    Quat::new(axis.x * s, axis.y * s, axis.z * s, cos(half)).normalize()
+    Quat(axis.x * s, axis.y * s, axis.z * s, cos(half)).normalize()
   }
 }
 
@@ -508,7 +477,7 @@ pub fn rotation_from_scaled_axis(axis_angle : Vec3) -> Quat {
 pub fn Quat::rotate_vec3(self : Quat, v : Vec3) -> Vec3 {
   // For unit quaternion q = (u, s), v' = 2*dot(u,v)*u + (s^2 - dot(u,u))*v + 2*s*cross(u,v).
   let q = self.normalize()
-  let u = Vec3::new(q.x, q.y, q.z)
+  let u = Vec3(q.x, q.y, q.z)
   let s = q.w
   let uv = u.dot(v)
   let uu = u.dot(u)
@@ -521,16 +490,16 @@ pub fn Quat::rotate_vec3(self : Quat, v : Vec3) -> Vec3 {
 pub fn Quat::to_scaled_axis(self : Quat) -> Vec3 {
   let mut q = self.normalize()
   if q.w < 0.0F {
-    q = Quat::new(-q.x, -q.y, -q.z, -q.w)
+    q = Quat(-q.x, -q.y, -q.z, -q.w)
   }
   let w = clamp(q.w, -1.0F, 1.0F)
   let angle = 2.0F * acos(w)
   let s = sqrt(1.0F - w * w) // sin(angle/2)
   if s <= 1.0e-6F {
     // Small-angle approximation: scaled axis ~= 2 * (x,y,z).
-    Vec3::new(q.x * 2.0F, q.y * 2.0F, q.z * 2.0F)
+    Vec3(q.x * 2.0F, q.y * 2.0F, q.z * 2.0F)
   } else {
-    Vec3::new(q.x / s, q.y / s, q.z / s).scale(angle)
+    Vec3(q.x / s, q.y / s, q.z / s).scale(angle)
   }
 }
 
@@ -549,15 +518,15 @@ pub fn rotation_between(from : Vec3, to : Vec3) -> Quat {
   // Opposite directions: pick a deterministic orthogonal axis.
   if d < -1.0F + 1.0e-6F {
     let fallback = if abs(f.x) < 0.9F {
-      Vec3::new(1.0F, 0.0F, 0.0F)
+      Vec3(1.0F, 0.0F, 0.0F)
     } else {
-      Vec3::new(0.0F, 1.0F, 0.0F)
+      Vec3(0.0F, 1.0F, 0.0F)
     }
     let axis = f.cross(fallback).normalize()
     return rotation_from_scaled_axis(axis.scale(pi()))
   }
   let c = f.cross(t)
-  Quat::new(c.x, c.y, c.z, 1.0F + d).normalize()
+  Quat(c.x, c.y, c.z, 1.0F + d).normalize()
 }
 
 ///|
@@ -567,44 +536,36 @@ pub struct Isometry3 {
 }
 
 ///|
-pub fn Isometry3::Isometry3(translation : Vec3, rotation : Quat) -> Isometry3 {
-  Isometry3::new(translation, rotation)
-}
-
-///|
 pub fn Isometry3::identity() -> Isometry3 {
   { translation: Vec3::zero(), rotation: Quat::identity() }
 }
 
 ///|
-pub fn Isometry3::new(translation : Vec3, rotation : Quat) -> Isometry3 {
+pub fn Isometry3::Isometry3(translation : Vec3, rotation : Quat) -> Isometry3 {
   { translation, rotation }
 }
 
 ///|
 pub fn Isometry3::from_translation(translation : Vec3) -> Isometry3 {
-  Isometry3::new(translation, Quat::identity())
+  Isometry3(translation, Quat::identity())
 }
 
 ///|
 pub fn Isometry3::mul(self : Isometry3, other : Isometry3) -> Isometry3 {
   let rotated = self.rotation.rotate_vec3(other.translation)
-  Isometry3::new(
-    self.translation.add(rotated),
-    self.rotation.mul(other.rotation),
-  )
+  Isometry3(self.translation.add(rotated), self.rotation.mul(other.rotation))
 }
 
 ///|
 pub fn Isometry3::inverse(self : Isometry3) -> Isometry3 {
   let inv_rot = self.rotation.conjugate().normalize()
-  let neg_translation = Vec3::new(
+  let neg_translation = Vec3(
     -self.translation.x,
     -self.translation.y,
     -self.translation.z,
   )
   let inv_translation = inv_rot.rotate_vec3(neg_translation)
-  Isometry3::new(inv_translation, inv_rot)
+  Isometry3(inv_translation, inv_rot)
 }
 
 ///|
@@ -620,31 +581,26 @@ pub struct Aabb3 {
 
 ///|
 pub fn Aabb3::Aabb3(mins : Vec3, maxs : Vec3) -> Aabb3 {
-  Aabb3::new(mins, maxs)
-}
-
-///|
-pub fn Aabb3::new(mins : Vec3, maxs : Vec3) -> Aabb3 {
   { mins, maxs }
 }
 
 ///|
 pub fn Aabb3::from_points(a : Vec3, b : Vec3) -> Aabb3 {
-  Aabb3::new(
-    Vec3::new(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)),
-    Vec3::new(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)),
+  Aabb3(
+    Vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)),
+    Vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)),
   )
 }
 
 ///|
 pub fn Aabb3::combine(self : Aabb3, other : Aabb3) -> Aabb3 {
-  Aabb3::new(
-    Vec3::new(
+  Aabb3(
+    Vec3(
       min(self.mins.x, other.mins.x),
       min(self.mins.y, other.mins.y),
       min(self.mins.z, other.mins.z),
     ),
-    Vec3::new(
+    Vec3(
       max(self.maxs.x, other.maxs.x),
       max(self.maxs.y, other.maxs.y),
       max(self.maxs.z, other.maxs.z),
@@ -667,17 +623,9 @@ pub fn Aabb3::dilated(self : Aabb3, amount : Real) -> Aabb3 {
   if amount <= 0.0F {
     self
   } else {
-    Aabb3::new(
-      Vec3::new(
-        self.mins.x - amount,
-        self.mins.y - amount,
-        self.mins.z - amount,
-      ),
-      Vec3::new(
-        self.maxs.x + amount,
-        self.maxs.y + amount,
-        self.maxs.z + amount,
-      ),
+    Aabb3(
+      Vec3(self.mins.x - amount, self.mins.y - amount, self.mins.z - amount),
+      Vec3(self.maxs.x + amount, self.maxs.y + amount, self.maxs.z + amount),
     )
   }
 }
@@ -713,15 +661,6 @@ pub fn MassProperties::MassProperties(
   inertia : Real,
   center_of_mass : Vec2,
 ) -> MassProperties {
-  MassProperties::new(mass, inertia, center_of_mass)
-}
-
-///|
-pub fn MassProperties::new(
-  mass : Real,
-  inertia : Real,
-  center_of_mass : Vec2,
-) -> MassProperties {
   let inv_mass = if mass <= EPSILON { 0.0F } else { 1.0F / mass }
   let inv_inertia = if inertia <= EPSILON { 0.0F } else { 1.0F / inertia }
   { mass, inv_mass, inertia, inv_inertia, center_of_mass }
@@ -729,7 +668,7 @@ pub fn MassProperties::new(
 
 ///|
 pub fn MassProperties::default() -> MassProperties {
-  MassProperties::new(0.0F, 0.0F, Vec2::zero())
+  MassProperties(0.0F, 0.0F, Vec2::zero())
 }
 
 ///|
@@ -738,7 +677,7 @@ pub fn MassProperties::transform_by(
   transform : Isometry2,
 ) -> MassProperties {
   // `inertia` is expressed about the center-of-mass, so translation does not affect it.
-  MassProperties::new(
+  MassProperties(
     self.mass,
     self.inertia,
     transform.transform_point(self.center_of_mass),
@@ -758,7 +697,7 @@ pub fn MassProperties::add(
   }
   let total_mass = self.mass + other.mass
   let inv_total = 1.0F / total_mass
-  let com = Vec2::new(
+  let com = Vec2(
     (self.center_of_mass.x * self.mass + other.center_of_mass.x * other.mass) *
     inv_total,
     (self.center_of_mass.y * self.mass + other.center_of_mass.y * other.mass) *
@@ -772,7 +711,7 @@ pub fn MassProperties::add(
     self.mass * (dx1 * dx1 + dy1 * dy1) +
     other.inertia +
     other.mass * (dx2 * dx2 + dy2 * dy2)
-  MassProperties::new(total_mass, inertia, com)
+  MassProperties(total_mass, inertia, com)
 }
 
 ///|
@@ -783,14 +722,14 @@ pub fn MassProperties::set_mass(
 ) -> MassProperties {
   if self.mass <= EPSILON {
     let inertia = if update_inertia { 0.0F } else { self.inertia }
-    return MassProperties::new(new_mass, inertia, self.center_of_mass)
+    return MassProperties(new_mass, inertia, self.center_of_mass)
   }
   let inertia = if update_inertia {
     self.inertia * (new_mass / self.mass)
   } else {
     self.inertia
   }
-  MassProperties::new(new_mass, inertia, self.center_of_mass)
+  MassProperties(new_mass, inertia, self.center_of_mass)
 }
 
 // ---- Pub-style parity aliases for rapier2d/rapier3d math facade ----

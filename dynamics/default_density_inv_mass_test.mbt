@@ -14,8 +14,8 @@
 
 ///|
 test "2d: attaching collider recomputes mass properties immediately (default density)" {
-  let bodies = RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let colliders = @collision.ColliderSet()
   let rb = bodies.insert(RigidBodyBuilder::dynamic().build())
 
   // Simulate a world that already processed the initial insertion.
@@ -32,7 +32,7 @@ test "2d: attaching collider recomputes mass properties immediately (default den
   // Mass properties should be immediately available for impulses.
   if bodies.get(rb) is Some(body) {
     inspect(body.inv_mass() > 0.0F, content="true")
-    body.apply_impulse(@core.Vec2::new(1.0F, 0.0F), true) |> ignore
+    body.apply_impulse(Vec2(1.0F, 0.0F), true) |> ignore
     inspect(body.linvel().x != 0.0F, content="true")
   } else {
     inspect(false, content="true")

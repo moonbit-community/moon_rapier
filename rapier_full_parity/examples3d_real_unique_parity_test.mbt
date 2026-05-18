@@ -79,20 +79,20 @@ fn step_world3d_with_rope_joints_n(
 
 ///|
 fn run_examples3d_real_compound3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   let ground_size = 50.0F
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -121,7 +121,7 @@ fn run_examples3d_real_compound3() -> Bool {
         let z = Float::from_int(k) * shift * 2.0F - centerz + offset
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(handle)
@@ -135,14 +135,14 @@ fn run_examples3d_real_compound3() -> Bool {
             rad * 10.0F,
             rad,
           )
-          .translation(@core.Vec3::new(rad * 10.0F, rad * 10.0F, 0.0F))
+          .translation(Vec3(rad * 10.0F, rad * 10.0F, 0.0F))
           .build()
         let collider3 = @collision.ColliderBuilder3D::cuboid(
             rad,
             rad * 10.0F,
             rad,
           )
-          .translation(@core.Vec3::new(-rad * 10.0F, rad * 10.0F, 0.0F))
+          .translation(Vec3(-rad * 10.0F, rad * 10.0F, 0.0F))
           .build()
         colliders.insert_with_parent(collider1, handle, bodies) |> ignore
         colliders.insert_with_parent(collider2, handle, bodies) |> ignore
@@ -190,7 +190,7 @@ fn build_dynamic_trimesh_floor() -> @collision.Collider3D {
     heights,
     nrows,
     ncols,
-    @core.Vec3::new(scale_x, scale_y, scale_z),
+    Vec3(scale_x, scale_y, scale_z),
   )
   .unwrap()
   .build()
@@ -198,22 +198,22 @@ fn build_dynamic_trimesh_floor() -> @collision.Collider3D {
 
 ///|
 fn run_examples3d_real_dynamic_trimesh3(use_decomposition : Bool) -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   colliders.insert(build_dynamic_trimesh_floor()) |> ignore
 
   let vtx = [
-    @core.Vec3::new(-1.0F, -1.0F, 0.0F),
-    @core.Vec3::new(1.0F, -1.0F, 0.0F),
-    @core.Vec3::new(1.0F, 1.0F, 0.0F),
-    @core.Vec3::new(-1.0F, 1.0F, 0.0F),
+    @core.Vec3(-1.0F, -1.0F, 0.0F),
+    Vec3(1.0F, -1.0F, 0.0F),
+    Vec3(1.0F, 1.0F, 0.0F),
+    Vec3(-1.0F, 1.0F, 0.0F),
   ]
   let idx = [(0, 1, 2), (0, 2, 3)]
   let handles : Array[@dynamics.RigidBodyHandle] = []
@@ -221,7 +221,7 @@ fn run_examples3d_real_dynamic_trimesh3(use_decomposition : Bool) -> Bool {
     let x = Float::from_int(k) * 2.5F - 10.0F
     let rb = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, 8.0F, 0.0F))
+      .translation(Vec3(x, 8.0F, 0.0F))
       .build(),
     )
     if use_decomposition {
@@ -233,7 +233,7 @@ fn run_examples3d_real_dynamic_trimesh3(use_decomposition : Bool) -> Bool {
       |> ignore
       colliders.insert_with_parent(
         @collision.ColliderBuilder3D::cuboid(0.2F, 0.5F, 0.2F)
-        .translation(@core.Vec3::new(0.6F, 0.0F, 0.0F))
+        .translation(Vec3(0.6F, 0.0F, 0.0F))
         .build(),
         rb,
         bodies,
@@ -273,24 +273,21 @@ fn run_examples3d_real_dynamic_trimesh3(use_decomposition : Bool) -> Bool {
 
 ///|
 fn run_examples3d_real_joint_motor_position3() -> Bool {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let joints = @dynamics.JointSet3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
 
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
-  let revolute_basis = @core.rotation_between(
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    axis_z,
-  )
+  let axis_z = @core.Vec3(0.0F, 0.0F, 1.0F)
+  let revolute_basis = @core.rotation_between(Vec3(0.0F, 0.0F, 1.0F), axis_z)
   let revolute_locked = @dynamics.JointAxesMask3DReal::lin_axes()
     .or(@dynamics.JointAxesMask3DReal::ang_x())
     .or(@dynamics.JointAxesMask3DReal::ang_y())
@@ -299,7 +296,7 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
     let x_pos = -6.0F + 1.5F * Float::from_int(num)
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x_pos, 2.0F, 0.0F))
+      .translation(Vec3(x_pos, 2.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
@@ -310,9 +307,9 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
     )
     |> ignore
     let target = -@core.pi() + @core.pi() / 4.0F * Float::from_int(num)
-    let joint = @dynamics.GenericJoint3DRealBuilder::new(revolute_locked)
-      .local_anchor1(@core.Vec3::new(x_pos, 1.5F, 0.0F))
-      .local_anchor2(@core.Vec3::new(0.0F, -0.5F, 0.0F))
+    let joint = @dynamics.GenericJoint3DRealBuilder(revolute_locked)
+      .local_anchor1(Vec3(x_pos, 1.5F, 0.0F))
+      .local_anchor2(Vec3(0.0F, -0.5F, 0.0F))
       .local_basis1(revolute_basis)
       .local_basis2(revolute_basis)
       .motor_position(AngZ, target, 1000.0F, 150.0F)
@@ -325,8 +322,8 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
     let x_pos = -6.0F + 1.5F * Float::from_int(num)
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x_pos, 4.5F, 0.0F))
-      .rotation_scaled_axis(@core.Vec3::new(0.0F, 0.0F, @core.pi()))
+      .translation(Vec3(x_pos, 4.5F, 0.0F))
+      .rotation_scaled_axis(Vec3(0.0F, 0.0F, @core.pi()))
       .can_sleep(false)
       .build(),
     )
@@ -338,9 +335,9 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
     |> ignore
     let min_angle = -@core.pi()
     let max_angle = -@core.pi() + @core.pi() / 4.0F * Float::from_int(num)
-    let joint = @dynamics.GenericJoint3DRealBuilder::new(revolute_locked)
-      .local_anchor1(@core.Vec3::new(x_pos, 5.0F, 0.0F))
-      .local_anchor2(@core.Vec3::new(0.0F, -0.5F, 0.0F))
+    let joint = @dynamics.GenericJoint3DRealBuilder(revolute_locked)
+      .local_anchor1(Vec3(x_pos, 5.0F, 0.0F))
+      .local_anchor2(Vec3(0.0F, -0.5F, 0.0F))
       .local_basis1(revolute_basis)
       .local_basis2(revolute_basis)
       .motor_velocity(AngZ, 1.5F, 30.0F)
@@ -392,14 +389,14 @@ fn run_examples3d_real_joint_motor_position3() -> Bool {
 
 ///|
 fn run_examples3d_real_inverse_kinematics3() -> Bool {
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let multibody_joints = @dynamics.MultibodyJointSet3DReal::new()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let multibody_joints = @dynamics.MultibodyJointSet3DReal()
 
   let ground_height = 0.01F
   let floor_handle = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -411,7 +408,7 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
 
   let num_segments = 10
   let size = 1.0F / Float::from_int(num_segments)
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let axis_z = @core.Vec3(0.0F, 0.0F, 1.0F)
   let mut last_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed().build(),
   )
@@ -433,15 +430,11 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
+    let joint = @dynamics.RevoluteJoint3DRealBuilder(axis_z)
       .local_anchor1(
-        @core.Vec3::new(
-          0.0F,
-          size / 2.0F * (if i != 0 { 1.0F } else { 0.0F }),
-          0.0F,
-        ),
+        Vec3(0.0F, size / 2.0F * (if i != 0 { 1.0F } else { 0.0F }), 0.0F),
       )
-      .local_anchor2(@core.Vec3::new(0.0F, -size / 2.0F, 0.0F))
+      .local_anchor2(Vec3(0.0F, -size / 2.0F, 0.0F))
       .build()
     if multibody_joints.insert(last_body, new_body, joint, true) is Some(handle) {
       last_link = handle
@@ -457,7 +450,7 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
     ) -> @core.Real {
       0.0F
     })
-    let target_point = @core.Vec3::new(0.25F, 0.4F, 0.0F)
+    let target_point = @core.Vec3(0.25F, 0.4F, 0.0F)
     let options = @dynamics.InverseKinematicsOption::default()
       .set_constrained_axes(@dynamics.JointAxesMask::lin_axes())
       .set_max_iters(200)
@@ -485,13 +478,13 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
 
 ///|
 fn run_examples3d_real_keva3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -499,7 +492,7 @@ fn run_examples3d_real_keva3() -> Bool {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -518,12 +511,12 @@ fn run_examples3d_real_keva3() -> Bool {
     for i in 0..<3 {
       let offset = (Float::from_int(i) - 1.0F) * 0.9F
       let translation = if along_z {
-        @core.Vec3::new(0.0F, y, offset)
+        @core.Vec3(0.0F, y, offset)
       } else {
-        @core.Vec3::new(offset, y, 0.0F)
+        Vec3(offset, y, 0.0F)
       }
       let rotation = if along_z {
-        @core.Vec3::new(0.0F, @core.pi() / 2.0F, 0.0F)
+        @core.Vec3(0.0F, @core.pi() / 2.0F, 0.0F)
       } else {
         @core.Vec3::zero()
       }
@@ -572,21 +565,21 @@ fn run_examples3d_real_keva3() -> Bool {
 
 ///|
 fn run_examples3d_real_joints3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   let rad = 0.4F
   let num_i = 4
   let num_k = 4
   let shift = 1.0F
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let axis_z = @core.Vec3(0.0F, 0.0F, 1.0F)
   let handles : Array[@dynamics.RigidBodyHandle] = []
   for k in 0..<num_k {
     for i in 0..<num_i {
@@ -597,11 +590,7 @@ fn run_examples3d_real_joints3() -> Bool {
           @dynamics.RigidBodyBuilder3D::dynamic().can_sleep(false)
         })
         .translation(
-          @core.Vec3::new(
-            Float::from_int(k) * shift,
-            -Float::from_int(i) * shift,
-            0.0F,
-          ),
+          Vec3(Float::from_int(k) * shift, -Float::from_int(i) * shift, 0.0F),
         )
         .build(),
       )
@@ -614,15 +603,15 @@ fn run_examples3d_real_joints3() -> Bool {
 
       if i > 0 {
         let parent = handles[handles.length() - 1]
-        let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
-          .local_anchor2(@core.Vec3::new(0.0F, shift, 0.0F))
+        let joint = @dynamics.RevoluteJoint3DRealBuilder(axis_z)
+          .local_anchor2(Vec3(0.0F, shift, 0.0F))
           .build()
         joints.insert_generic(parent, child, joint, true) |> ignore
       }
       if k > 0 {
         let parent = handles[handles.length() - num_i]
-        let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
-          .local_anchor2(@core.Vec3::new(-shift, 0.0F, 0.0F))
+        let joint = @dynamics.RevoluteJoint3DRealBuilder(axis_z)
+          .local_anchor2(Vec3(-shift, 0.0F, 0.0F))
           .build()
         joints.insert_generic(parent, child, joint, true) |> ignore
       }
@@ -649,27 +638,27 @@ fn run_examples3d_real_joints3() -> Bool {
 
 ///|
 fn run_examples3d_real_newton_cradle3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   let radius = 0.5F
   let length = 10.0F * radius
   let n = 5
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let axis_z = @core.Vec3(0.0F, 0.0F, 1.0F)
   let balls : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<n {
     let x = Float::from_int(i) * 2.2F * radius
-    let ball_pos = @core.Vec3::new(x, 0.0F, 0.0F)
-    let attach = @core.Vec3::new(0.0F, length, 0.0F)
+    let ball_pos = @core.Vec3(x, 0.0F, 0.0F)
+    let attach = @core.Vec3(0.0F, length, 0.0F)
     let vel = if i >= n - 1 {
-      @core.Vec3::new(7.0F, 0.0F, 0.0F)
+      @core.Vec3(7.0F, 0.0F, 0.0F)
     } else {
       @core.Vec3::zero()
     }
@@ -691,7 +680,7 @@ fn run_examples3d_real_newton_cradle3() -> Bool {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
+    let joint = @dynamics.RevoluteJoint3DRealBuilder(axis_z)
       .local_anchor1(@core.Vec3::zero())
       .local_anchor2(attach)
       .build()
@@ -722,14 +711,14 @@ fn run_examples3d_real_newton_cradle3() -> Bool {
 
 ///|
 fn run_examples3d_real_spring_joints3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
@@ -738,7 +727,7 @@ fn run_examples3d_real_spring_joints3() -> Bool {
   let balls : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<=num {
     let x = -6.0F + Float::from_int(i)
-    let ball_pos = @core.Vec3::new(x, 4.5F, 0.0F)
+    let ball_pos = @core.Vec3(x, 4.5F, 0.0F)
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
       .translation(ball_pos)
@@ -754,7 +743,7 @@ fn run_examples3d_real_spring_joints3() -> Bool {
     joints.insert_spring(
       ground,
       handle,
-      ball_pos.sub(@core.Vec3::new(0.0F, 3.0F, 0.0F)),
+      ball_pos.sub(Vec3(0.0F, 3.0F, 0.0F)),
       @core.Vec3::zero(),
       3.0F,
       40.0F,
@@ -764,7 +753,7 @@ fn run_examples3d_real_spring_joints3() -> Bool {
     balls.push(handle)
     let box = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(ball_pos.add(@core.Vec3::new(0.0F, 5.0F, 0.0F)))
+      .translation(ball_pos.add(Vec3(0.0F, 5.0F, 0.0F)))
       .build(),
     )
     colliders.insert_with_parent(
@@ -796,15 +785,15 @@ fn run_examples3d_real_spring_joints3() -> Bool {
 
 ///|
 fn run_examples3d_real_rope_joints3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let rope_joints = @dynamics.RopeJointSet3DReal::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let rope_joints = @dynamics.RopeJointSet3DReal()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let inv_dt = parameters.inv_dt()
   let dt = if inv_dt == 0.0F { 0.0F } else { 1.0F / inv_dt }
 
@@ -812,7 +801,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
   let ground_height = 0.1F
   let floor0 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -825,9 +814,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
   |> ignore
   let floor1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(-ground_size - ground_height, ground_size, 0.0F),
-    )
+    .translation(Vec3(-ground_size - ground_height, ground_size, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -840,9 +827,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
   |> ignore
   let floor2 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(
-      @core.Vec3::new(ground_size + ground_height, ground_size, 0.0F),
-    )
+    .translation(Vec3(ground_size + ground_height, ground_size, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -856,7 +841,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
 
   let character = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 0.3F, 0.0F))
+    .translation(Vec3(0.0F, 0.3F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -869,7 +854,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
   let rad = 0.04F
   let child = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(1.0F, 1.0F, 0.0F))
+    .translation(Vec3(1.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -886,11 +871,7 @@ fn run_examples3d_real_rope_joints3() -> Bool {
     time = time + dt
     if bodies.get_mut(character) is Some(ch) {
       ch.set_next_kinematic_translation(
-        @core.Vec3::new(
-          Float::from_double(@math.sin(time.to_double())) * 2.0F,
-          0.3F,
-          0.0F,
-        ),
+        Vec3(Float::from_double(@math.sin(time.to_double())) * 2.0F, 0.3F, 0.0F),
       )
     } else {
       return false
@@ -910,14 +891,14 @@ fn run_examples3d_real_rope_joints3() -> Bool {
 
 ///|
 fn run_examples3d_real_trimesh3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
 
   let ground_size = 25.0F
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
@@ -928,11 +909,11 @@ fn run_examples3d_real_trimesh3() -> Bool {
   )
   |> ignore
   let wall_rot = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, 0.0F, @core.pi() / 2.0F),
+    Vec3(0.0F, 0.0F, @core.pi() / 2.0F),
   )
   let wall_r = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(ground_size, ground_size, 0.0F))
+    .translation(Vec3(ground_size, ground_size, 0.0F))
     .rotation(wall_rot)
     .build(),
   )
@@ -944,7 +925,7 @@ fn run_examples3d_real_trimesh3() -> Bool {
   |> ignore
   let wall_l = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(-ground_size, ground_size, 0.0F))
+    .translation(Vec3(-ground_size, ground_size, 0.0F))
     .rotation(wall_rot)
     .build(),
   )
@@ -956,10 +937,10 @@ fn run_examples3d_real_trimesh3() -> Bool {
   |> ignore
 
   let vtx = [
-    @core.Vec3::new(-1.0F, -1.0F, 0.0F),
-    @core.Vec3::new(1.0F, -1.0F, 0.0F),
-    @core.Vec3::new(1.0F, 1.0F, 0.0F),
-    @core.Vec3::new(-1.0F, 1.0F, 0.0F),
+    @core.Vec3(-1.0F, -1.0F, 0.0F),
+    Vec3(1.0F, -1.0F, 0.0F),
+    Vec3(1.0F, 1.0F, 0.0F),
+    Vec3(-1.0F, 1.0F, 0.0F),
   ]
   let idx = [(0, 1, 2), (0, 2, 3)]
   let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
@@ -967,9 +948,7 @@ fn run_examples3d_real_trimesh3() -> Bool {
   for k in 0..<5 {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(
-        @core.Vec3::new(0.0F, 20.0F + Float::from_int(k) * 5.0F, 0.0F),
-      )
+      .translation(Vec3(0.0F, 20.0F + Float::from_int(k) * 5.0F, 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -1003,39 +982,37 @@ fn run_examples3d_real_trimesh3() -> Bool {
 
 ///|
 fn run_examples3d_real_urdf3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
 
   colliders.insert(
     @collision.ColliderBuilder3D::cuboid(50.0F, 0.05F, 0.05F)
-    .translation(@core.Vec3::new(0.0F, -0.05F, 0.0F))
+    .translation(Vec3(0.0F, -0.05F, 0.0F))
     .build(),
   )
   |> ignore
 
   let base = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .build(),
   )
-  let axis_z = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let axis_z = @core.Vec3(0.0F, 0.0F, 1.0F)
   let mut parent = base
   let links : Array[@dynamics.RigidBodyHandle] = []
   for i in 0..<3 {
     let link = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(
-        @core.Vec3::new(Float::from_int(i) * 2.0F + 1.0F, 2.0F, 0.0F),
-      )
+      .translation(Vec3(Float::from_int(i) * 2.0F + 1.0F, 2.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
@@ -1045,9 +1022,9 @@ fn run_examples3d_real_urdf3() -> Bool {
       bodies,
     )
     |> ignore
-    let joint = @dynamics.RevoluteJoint3DRealBuilder::new(axis_z)
-      .local_anchor1(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-      .local_anchor2(@core.Vec3::new(-1.0F, 0.0F, 0.0F))
+    let joint = @dynamics.RevoluteJoint3DRealBuilder(axis_z)
+      .local_anchor1(Vec3(1.0F, 0.0F, 0.0F))
+      .local_anchor2(Vec3(-1.0F, 0.0F, 0.0F))
       .limits(-0.5F, 0.5F)
       .build()
     joints.insert_generic(parent, link, joint, true) |> ignore
@@ -1074,20 +1051,20 @@ fn run_examples3d_real_urdf3() -> Bool {
 
 ///|
 fn run_examples3d_real_harness_capsules3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -1108,7 +1085,7 @@ fn run_examples3d_real_harness_capsules3() -> Bool {
       let y = Float::from_int(j) * (rad * 4.0F) + 3.0F
       let body = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x, y, 0.0F))
+        .translation(Vec3(x, y, 0.0F))
         .build(),
       )
       colliders.insert_with_parent(
@@ -1143,18 +1120,18 @@ fn run_examples3d_real_harness_capsules3() -> Bool {
 
 ///|
 fn run_examples3d_real_debug_deserialize3() -> Bool {
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -1165,7 +1142,7 @@ fn run_examples3d_real_debug_deserialize3() -> Bool {
   |> ignore
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 4.0F, 0.0F))
+    .translation(Vec3(0.0F, 4.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(

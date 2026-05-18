@@ -19,11 +19,6 @@ pub struct Group {
 
 ///|
 pub fn Group::Group(bits : Int) -> Group {
-  Group::new(bits)
-}
-
-///|
-pub fn Group::new(bits : Int) -> Group {
   { value: bits }
 }
 
@@ -39,182 +34,182 @@ pub fn Group::equals(self : Group, other : Group) -> Bool {
 
 ///|
 pub fn Group::none() -> Group {
-  Group::new(0)
+  Group(0)
 }
 
 ///|
 pub fn Group::all() -> Group {
-  Group::new(-1)
+  Group(-1)
 }
 
 ///|
 pub fn Group::group_1() -> Group {
-  Group::new(1 << 0)
+  Group(1 << 0)
 }
 
 ///|
 pub fn Group::group_2() -> Group {
-  Group::new(1 << 1)
+  Group(1 << 1)
 }
 
 ///|
 pub fn Group::group_3() -> Group {
-  Group::new(1 << 2)
+  Group(1 << 2)
 }
 
 ///|
 pub fn Group::group_4() -> Group {
-  Group::new(1 << 3)
+  Group(1 << 3)
 }
 
 ///|
 pub fn Group::group_5() -> Group {
-  Group::new(1 << 4)
+  Group(1 << 4)
 }
 
 ///|
 pub fn Group::group_6() -> Group {
-  Group::new(1 << 5)
+  Group(1 << 5)
 }
 
 ///|
 pub fn Group::group_7() -> Group {
-  Group::new(1 << 6)
+  Group(1 << 6)
 }
 
 ///|
 pub fn Group::group_8() -> Group {
-  Group::new(1 << 7)
+  Group(1 << 7)
 }
 
 ///|
 pub fn Group::group_9() -> Group {
-  Group::new(1 << 8)
+  Group(1 << 8)
 }
 
 ///|
 pub fn Group::group_10() -> Group {
-  Group::new(1 << 9)
+  Group(1 << 9)
 }
 
 ///|
 pub fn Group::group_11() -> Group {
-  Group::new(1 << 10)
+  Group(1 << 10)
 }
 
 ///|
 pub fn Group::group_12() -> Group {
-  Group::new(1 << 11)
+  Group(1 << 11)
 }
 
 ///|
 pub fn Group::group_13() -> Group {
-  Group::new(1 << 12)
+  Group(1 << 12)
 }
 
 ///|
 pub fn Group::group_14() -> Group {
-  Group::new(1 << 13)
+  Group(1 << 13)
 }
 
 ///|
 pub fn Group::group_15() -> Group {
-  Group::new(1 << 14)
+  Group(1 << 14)
 }
 
 ///|
 pub fn Group::group_16() -> Group {
-  Group::new(1 << 15)
+  Group(1 << 15)
 }
 
 ///|
 pub fn Group::group_17() -> Group {
-  Group::new(1 << 16)
+  Group(1 << 16)
 }
 
 ///|
 pub fn Group::group_18() -> Group {
-  Group::new(1 << 17)
+  Group(1 << 17)
 }
 
 ///|
 pub fn Group::group_19() -> Group {
-  Group::new(1 << 18)
+  Group(1 << 18)
 }
 
 ///|
 pub fn Group::group_20() -> Group {
-  Group::new(1 << 19)
+  Group(1 << 19)
 }
 
 ///|
 pub fn Group::group_21() -> Group {
-  Group::new(1 << 20)
+  Group(1 << 20)
 }
 
 ///|
 pub fn Group::group_22() -> Group {
-  Group::new(1 << 21)
+  Group(1 << 21)
 }
 
 ///|
 pub fn Group::group_23() -> Group {
-  Group::new(1 << 22)
+  Group(1 << 22)
 }
 
 ///|
 pub fn Group::group_24() -> Group {
-  Group::new(1 << 23)
+  Group(1 << 23)
 }
 
 ///|
 pub fn Group::group_25() -> Group {
-  Group::new(1 << 24)
+  Group(1 << 24)
 }
 
 ///|
 pub fn Group::group_26() -> Group {
-  Group::new(1 << 25)
+  Group(1 << 25)
 }
 
 ///|
 pub fn Group::group_27() -> Group {
-  Group::new(1 << 26)
+  Group(1 << 26)
 }
 
 ///|
 pub fn Group::group_28() -> Group {
-  Group::new(1 << 27)
+  Group(1 << 27)
 }
 
 ///|
 pub fn Group::group_29() -> Group {
-  Group::new(1 << 28)
+  Group(1 << 28)
 }
 
 ///|
 pub fn Group::group_30() -> Group {
-  Group::new(1 << 29)
+  Group(1 << 29)
 }
 
 ///|
 pub fn Group::group_31() -> Group {
-  Group::new(1 << 30)
+  Group(1 << 30)
 }
 
 ///|
 pub fn Group::group_32() -> Group {
-  Group::new(1 << 31)
+  Group(1 << 31)
 }
 
 ///|
 pub fn Group::or(self : Group, other : Group) -> Group {
-  Group::new(self.value | other.value)
+  Group(self.value | other.value)
 }
 
 ///|
 pub fn Group::intersection(self : Group, other : Group) -> Group {
-  Group::new(self.value & other.value)
+  Group(self.value & other.value)
 }
 
 ///|
@@ -230,26 +225,17 @@ pub fn InteractionGroups::InteractionGroups(
   filter : Group,
   test_mode : InteractionTestMode,
 ) -> InteractionGroups {
-  InteractionGroups::new(memberships, filter, test_mode)
-}
-
-///|
-pub fn InteractionGroups::new(
-  memberships : Group,
-  filter : Group,
-  test_mode : InteractionTestMode,
-) -> InteractionGroups {
   { memberships, filter, test_mode }
 }
 
 ///|
 pub fn InteractionGroups::all() -> InteractionGroups {
-  InteractionGroups::new(Group::all(), Group::all(), And)
+  InteractionGroups(Group::all(), Group::all(), And)
 }
 
 ///|
 pub fn InteractionGroups::none() -> InteractionGroups {
-  InteractionGroups::new(Group::none(), Group::none(), And)
+  InteractionGroups(Group::none(), Group::none(), And)
 }
 
 ///|
@@ -330,5 +316,5 @@ pub fn InteractionGroups::test_mode(
 
 ///|
 pub fn InteractionGroups::default() -> InteractionGroups {
-  InteractionGroups::new(Group::group_1(), Group::all(), And)
+  InteractionGroups(Group::group_1(), Group::all(), And)
 }

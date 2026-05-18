@@ -14,8 +14,8 @@
 
 ///|
 test "vec2 basics" {
-  let v = Vec2::new(1.0F, 2.0F)
-  let w = Vec2::new(3.0F, 4.0F)
+  let v = Vec2::Vec2(1.0F, 2.0F)
+  let w = Vec2::Vec2(3.0F, 4.0F)
   let sum = v.add(w)
   inspect(sum.x.to_int(), content="4")
   inspect(sum.y.to_int(), content="6")
@@ -24,7 +24,7 @@ test "vec2 basics" {
 
 ///|
 test "vec2 normalize" {
-  let v = Vec2::new(3.0F, 4.0F).normalize()
+  let v = Vec2::Vec2(3.0F, 4.0F).normalize()
   inspect(v.length().to_int(), content="1")
   let zero = Vec2::zero().normalize()
   inspect(zero.length().to_int(), content="0")
@@ -32,15 +32,15 @@ test "vec2 normalize" {
 
 ///|
 test "aabb contains" {
-  let aabb = Aabb::from_points(Vec2::new(-1.0F, -1.0F), Vec2::new(1.0F, 1.0F))
-  inspect(aabb.contains_point(Vec2::new(0.5F, 0.5F)), content="true")
-  inspect(aabb.contains_point(Vec2::new(2.0F, 0.0F)), content="false")
+  let aabb = Aabb::from_points(Vec2(-1.0F, -1.0F), Vec2(1.0F, 1.0F))
+  inspect(aabb.contains_point(Vec2(0.5F, 0.5F)), content="true")
+  inspect(aabb.contains_point(Vec2(2.0F, 0.0F)), content="false")
 }
 
 ///|
 test "isometry identity" {
   let iso = Isometry2::identity()
-  let point = Vec2::new(2.0F, -3.0F)
+  let point = Vec2::Vec2(2.0F, -3.0F)
   let transformed = iso.transform_point(point)
   inspect(transformed.x.to_int(), content="2")
   inspect(transformed.y.to_int(), content="-3")
@@ -48,8 +48,8 @@ test "isometry identity" {
 
 ///|
 test "vec3 basics" {
-  let v = Vec3::new(1.0F, 2.0F, 3.0F)
-  let w = Vec3::new(4.0F, 5.0F, 6.0F)
+  let v = Vec3::Vec3(1.0F, 2.0F, 3.0F)
+  let w = Vec3::Vec3(4.0F, 5.0F, 6.0F)
   let sum = v.add(w)
   inspect(sum.x.to_int(), content="5")
   inspect(sum.y.to_int(), content="7")
@@ -63,8 +63,8 @@ test "vec3 basics" {
 
 ///|
 test "quat rotation from scaled axis (y, +pi/2)" {
-  let q = rotation_from_scaled_axis(Vec3::new(0.0F, pi() * 0.5F, 0.0F))
-  let v = Vec3::new(1.0F, 0.0F, 0.0F)
+  let q = rotation_from_scaled_axis(Vec3(0.0F, pi() * 0.5F, 0.0F))
+  let v = Vec3::Vec3(1.0F, 0.0F, 0.0F)
   let r = q.rotate_vec3(v)
   inspect(abs(r.x - 0.0F) < 1.0e-5F, content="true")
   inspect(abs(r.y - 0.0F) < 1.0e-5F, content="true")
@@ -73,9 +73,9 @@ test "quat rotation from scaled axis (y, +pi/2)" {
 
 ///|
 test "isometry3 inverse roundtrip" {
-  let rot = rotation_from_scaled_axis(Vec3::new(0.0F, pi() * 0.3F, 0.0F))
-  let iso = Isometry3::new(Vec3::new(1.0F, 2.0F, 3.0F), rot)
-  let p = Vec3::new(-4.0F, 5.0F, -6.0F)
+  let rot = rotation_from_scaled_axis(Vec3(0.0F, pi() * 0.3F, 0.0F))
+  let iso = Isometry3::Isometry3(Vec3(1.0F, 2.0F, 3.0F), rot)
+  let p = Vec3::Vec3(-4.0F, 5.0F, -6.0F)
   let moved = iso.transform_point(p)
   let back = iso.inverse().transform_point(moved)
   inspect(abs(back.x - p.x) < 1.0e-5F, content="true")
@@ -85,14 +85,8 @@ test "isometry3 inverse roundtrip" {
 
 ///|
 test "aabb3 intersects + dilated" {
-  let a = Aabb3::from_points(
-    Vec3::new(-1.0F, -1.0F, -1.0F),
-    Vec3::new(1.0F, 1.0F, 1.0F),
-  )
-  let b = Aabb3::from_points(
-    Vec3::new(2.0F, 0.0F, 0.0F),
-    Vec3::new(3.0F, 1.0F, 1.0F),
-  )
+  let a = Aabb3::from_points(Vec3(-1.0F, -1.0F, -1.0F), Vec3(1.0F, 1.0F, 1.0F))
+  let b = Aabb3::from_points(Vec3(2.0F, 0.0F, 0.0F), Vec3(3.0F, 1.0F, 1.0F))
   inspect(a.intersects(b), content="false")
   inspect(a.dilated(1.1F).intersects(b), content="true")
 }

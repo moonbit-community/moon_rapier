@@ -42,8 +42,12 @@ test "rounded shapes affect query projections and rays" {
     bodies : @dynamics.RigidBodySet,
     colliders : ColliderSet,
   ) -> @core.Real {
-    let pipeline = QueryPipeline::new(QueryFilter::new(), bodies, colliders)
-    let point = @core.Vec2::new(-3.0F, 0.0F)
+    let pipeline = QueryPipeline::QueryPipeline(
+      QueryFilter(),
+      bodies,
+      colliders,
+    )
+    let point = @core.Vec2(-3.0F, 0.0F)
     match pipeline.project_point(bodies, colliders, point, 0.0F, false) {
       Some(hit) => hit.1.point().x
       None => 1.0e30F
@@ -55,19 +59,20 @@ test "rounded shapes affect query projections and rays" {
     colliders : ColliderSet,
     max_toi : @core.Real,
   ) -> @core.Real {
-    let pipeline = QueryPipeline::new(QueryFilter::new(), bodies, colliders)
-    let ray = Ray::new(
-      @core.Vec2::new(-3.0F, 0.0F),
-      @core.Vec2::new(1.0F, 0.0F),
+    let pipeline = QueryPipeline::QueryPipeline(
+      QueryFilter(),
+      bodies,
+      colliders,
     )
+    let ray = Ray::Ray(Vec2(-3.0F, 0.0F), Vec2(1.0F, 0.0F))
     match pipeline.cast_ray(bodies, colliders, ray, max_toi, true) {
       Some(hit) => hit.1
       None => -1.0F
     }
   }
 
-  let bodies0 = @dynamics.RigidBodySet::new()
-  let colliders_round0 = ColliderSet::new()
+  let bodies0 = @dynamics.RigidBodySet()
+  let colliders_round0 = ColliderSet::ColliderSet()
   colliders_round0.insert(
     ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build(),
   )
@@ -79,8 +84,8 @@ test "rounded shapes affect query projections and rays" {
   inspect(@core.abs(proj_round - -1.2F) < 1.0e-3F, content="true")
   let toi_round_short = cast_left_hit_toi(bodies0, colliders_round0, 1.9F)
   inspect(toi_round_short >= 0.0F, content="true")
-  let bodies1 = @dynamics.RigidBodySet::new()
-  let colliders_skin1 = ColliderSet::new()
+  let bodies1 = @dynamics.RigidBodySet()
+  let colliders_skin1 = ColliderSet::ColliderSet()
   colliders_skin1.insert(
     ColliderBuilder::cuboid(1.0F, 1.0F).contact_skin(0.2F).build(),
   )

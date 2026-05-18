@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-pub fn Ray::new(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
+pub fn Ray::Ray(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
   { origin, dir }
 }
 
@@ -50,11 +50,6 @@ pub struct QueryFilterFlags {
 }
 
 ///|
-pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
-  QueryFilterFlags::new(bits)
-}
-
-///|
 fn query_filter_flags_all_bits() -> Int {
   QUERY_FILTER_EXCLUDE_FIXED |
   QUERY_FILTER_EXCLUDE_KINEMATIC |
@@ -64,53 +59,53 @@ fn query_filter_flags_all_bits() -> Int {
 }
 
 ///|
-pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
+pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
   { bits, }
 }
 
 ///|
 pub fn QueryFilterFlags::empty() -> QueryFilterFlags {
-  QueryFilterFlags::new(0)
+  QueryFilterFlags(0)
 }
 
 ///|
 pub fn QueryFilterFlags::exclude_fixed() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_FIXED)
+  QueryFilterFlags(QUERY_FILTER_EXCLUDE_FIXED)
 }
 
 ///|
 pub fn QueryFilterFlags::exclude_kinematic() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_KINEMATIC)
+  QueryFilterFlags(QUERY_FILTER_EXCLUDE_KINEMATIC)
 }
 
 ///|
 pub fn QueryFilterFlags::exclude_dynamic() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_DYNAMIC)
+  QueryFilterFlags(QUERY_FILTER_EXCLUDE_DYNAMIC)
 }
 
 ///|
 pub fn QueryFilterFlags::exclude_sensors() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_SENSORS)
+  QueryFilterFlags(QUERY_FILTER_EXCLUDE_SENSORS)
 }
 
 ///|
 pub fn QueryFilterFlags::exclude_solids() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_EXCLUDE_SOLIDS)
+  QueryFilterFlags(QUERY_FILTER_EXCLUDE_SOLIDS)
 }
 
 ///|
 pub fn QueryFilterFlags::only_dynamic() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_ONLY_DYNAMIC)
+  QueryFilterFlags(QUERY_FILTER_ONLY_DYNAMIC)
 }
 
 ///|
 pub fn QueryFilterFlags::only_kinematic() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_ONLY_KINEMATIC)
+  QueryFilterFlags(QUERY_FILTER_ONLY_KINEMATIC)
 }
 
 ///|
 pub fn QueryFilterFlags::only_fixed() -> QueryFilterFlags {
-  QueryFilterFlags::new(QUERY_FILTER_ONLY_FIXED)
+  QueryFilterFlags(QUERY_FILTER_ONLY_FIXED)
 }
 
 ///|
@@ -277,11 +272,6 @@ pub struct QueryFilter {
 
 ///|
 pub fn QueryFilter::QueryFilter() -> QueryFilter {
-  QueryFilter::new()
-}
-
-///|
-pub fn QueryFilter::new() -> QueryFilter {
   {
     excluded_body: None,
     excluded_collider: None,
@@ -359,22 +349,22 @@ pub fn QueryFilter::exclude_dynamic(self : QueryFilter) -> QueryFilter {
 
 ///|
 pub fn QueryFilter::only_dynamic() -> QueryFilter {
-  let filter = QueryFilter::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_DYNAMIC)
+  let filter = QueryFilter()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_ONLY_DYNAMIC)
   filter
 }
 
 ///|
 pub fn QueryFilter::only_kinematic() -> QueryFilter {
-  let filter = QueryFilter::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_KINEMATIC)
+  let filter = QueryFilter()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_ONLY_KINEMATIC)
   filter
 }
 
 ///|
 pub fn QueryFilter::only_fixed() -> QueryFilter {
-  let filter = QueryFilter::new()
-  filter.flags = QueryFilterFlags::new(QUERY_FILTER_ONLY_FIXED)
+  let filter = QueryFilter()
+  filter.flags = QueryFilterFlags(QUERY_FILTER_ONLY_FIXED)
   filter
 }
 
@@ -440,11 +430,6 @@ pub struct Bvh {
 
 ///|
 pub fn Bvh::Bvh(aabbs : Array[@core.Aabb?]) -> Bvh {
-  Bvh::new(aabbs)
-}
-
-///|
-pub fn Bvh::new(aabbs : Array[@core.Aabb?]) -> Bvh {
   { aabbs, }
 }
 
@@ -466,34 +451,16 @@ pub struct QueryPipeline {
 }
 
 ///|
-pub fn QueryPipeline::QueryPipeline(
-  filter : QueryFilter,
-  bodies : @dynamics.RigidBodySet,
-  colliders : ColliderSet,
-) -> QueryPipeline {
-  QueryPipeline::new(filter, bodies, colliders)
-}
-
-///|
 pub struct QueryPipelineMut {
   pipeline : QueryPipeline
   dispatcher : QueryDispatcher
 }
 
 ///|
-pub fn QueryPipelineMut::QueryPipelineMut(
-  filter : QueryFilter,
-  bodies : @dynamics.RigidBodySet,
-  colliders : ColliderSet,
-) -> QueryPipelineMut {
-  QueryPipelineMut::new(filter, bodies, colliders)
-}
-
-///|
 pub struct QueryDispatcher {}
 
 ///|
-pub fn QueryDispatcher::new() -> QueryDispatcher {
+pub fn QueryDispatcher::QueryDispatcher() -> QueryDispatcher {
   QueryDispatcher::{  }
 }
 
@@ -549,14 +516,6 @@ pub fn ShapeCastOptions::ShapeCastOptions(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastOptions {
-  ShapeCastOptions::new(max_toi, stop_at_penetration)
-}
-
-///|
-pub fn ShapeCastOptions::new(
-  max_toi : @core.Real,
-  stop_at_penetration : Bool,
-) -> ShapeCastOptions {
   { max_toi, target_distance: 0.0F, stop_at_penetration }
 }
 
@@ -596,15 +555,6 @@ pub struct NonlinearRigidMotion {
 }
 
 ///|
-pub fn NonlinearRigidMotion::NonlinearRigidMotion(
-  start_pos : @core.Isometry2,
-  linvel : @core.Vec2,
-  angvel : @core.Real,
-) -> NonlinearRigidMotion {
-  NonlinearRigidMotion::new(start_pos, linvel, angvel)
-}
-
-///|
 pub fn NonlinearRigidMotion::identity() -> NonlinearRigidMotion {
   {
     start_pos: @core.Isometry2::identity(),
@@ -614,7 +564,7 @@ pub fn NonlinearRigidMotion::identity() -> NonlinearRigidMotion {
 }
 
 ///|
-pub fn NonlinearRigidMotion::new(
+pub fn NonlinearRigidMotion::NonlinearRigidMotion(
   start_pos : @core.Isometry2,
   linvel : @core.Vec2,
   angvel : @core.Real,
@@ -633,7 +583,7 @@ fn NonlinearRigidMotion::pose_at_time(
   let rot = self.start_pos.rotation.mul(
     @core.Rot2::from_angle(self.angvel * time),
   )
-  @core.Isometry2::new(translation, rot)
+  Isometry2(translation, rot)
 }
 
 ///|
@@ -644,7 +594,7 @@ fn NonlinearRigidMotion::point_velocity_at_time(
 ) -> @core.Vec2 {
   let pose = self.pose_at_time(time)
   let r = point.sub(pose.translation)
-  let rot_vel = @core.Vec2::new(-self.angvel * r.y, self.angvel * r.x)
+  let rot_vel = @core.Vec2(-self.angvel * r.y, self.angvel * r.x)
   self.linvel.add(rot_vel)
 }
 
@@ -671,7 +621,7 @@ pub fn ShapeCastHit::normal(self : ShapeCastHit) -> @core.Vec2 {
 }
 
 ///|
-pub fn QueryPipeline::new(
+pub fn QueryPipeline::QueryPipeline(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
@@ -686,7 +636,7 @@ pub fn QueryPipeline::new(
         // Temporary AABB; expanded below once we know global bounds.
         let p = collider.world_translation
         halfspaces.push((i, p))
-        aabbs.push(Some(@core.Aabb::new(p, p)))
+        aabbs.push(Some(Aabb(p, p)))
       } else {
         let aabb = compute_collider_aabb(collider)
         if global_aabb is Some(existing) {
@@ -703,11 +653,11 @@ pub fn QueryPipeline::new(
   if global_aabb is Some(global) {
     for j in 0..<halfspaces.length() {
       let (idx, p) = halfspaces[j]
-      let expanded = global.combine(@core.Aabb::new(p, p))
+      let expanded = global.combine(Aabb(p, p))
       aabbs[idx] = Some(expanded)
     }
   }
-  { bvh: Bvh::new(aabbs), filter, dispatcher: QueryDispatcher::new() }
+  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher() }
 }
 
 ///|
@@ -725,7 +675,7 @@ pub fn QueryPipeline::new3(
       if collider.shape is HalfSpace(_) {
         let p = collider.world_translation
         halfspaces.push((i, p))
-        aabbs.push(Some(@core.Aabb::new(p, p)))
+        aabbs.push(Some(Aabb(p, p)))
       } else {
         let aabb = compute_collider_aabb(collider)
         if global_aabb is Some(existing) {
@@ -742,11 +692,11 @@ pub fn QueryPipeline::new3(
   if global_aabb is Some(global) {
     for j in 0..<halfspaces.length() {
       let (idx, p) = halfspaces[j]
-      let expanded = global.combine(@core.Aabb::new(p, p))
+      let expanded = global.combine(Aabb(p, p))
       aabbs[idx] = Some(expanded)
     }
   }
-  { bvh: Bvh::new(aabbs), filter, dispatcher: QueryDispatcher::new() }
+  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher() }
 }
 
 ///|
@@ -764,7 +714,7 @@ pub fn QueryPipeline::update(
       if collider.shape is HalfSpace(_) {
         let p = collider.world_translation
         halfspaces.push((i, p))
-        self.bvh.aabbs.push(Some(@core.Aabb::new(p, p)))
+        self.bvh.aabbs.push(Some(Aabb(p, p)))
       } else {
         let aabb = compute_collider_aabb(collider)
         if global_aabb is Some(existing) {
@@ -781,7 +731,7 @@ pub fn QueryPipeline::update(
   if global_aabb is Some(global) {
     for j in 0..<halfspaces.length() {
       let (idx, p) = halfspaces[j]
-      let expanded = global.combine(@core.Aabb::new(p, p))
+      let expanded = global.combine(Aabb(p, p))
       self.bvh.aabbs[idx] = Some(expanded)
     }
   }
@@ -796,12 +746,12 @@ pub fn QueryPipeline::with_filter(
 }
 
 ///|
-pub fn QueryPipelineMut::new(
+pub fn QueryPipelineMut::QueryPipelineMut(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
-  let pipeline = QueryPipeline::new(filter, bodies, colliders)
+  let pipeline = QueryPipeline(filter, bodies, colliders)
   { pipeline, dispatcher: pipeline.dispatcher }
 }
 
@@ -844,7 +794,7 @@ fn sqrt_real(value : @core.Real) -> @core.Real {
 
 ///|
 fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
@@ -962,13 +912,10 @@ fn ray_intersect_ball_and_get_normal(
   let inside = c <= 0.0F
   if ray_intersect_ball(ray, center, radius, max_toi, solid) is Some(hit) {
     let normal = if hit <= 1.0e-12F && inside && solid {
-      normalize_or_fallback(
-        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-        @core.Vec2::new(1.0F, 0.0F),
-      )
+      normalize_or_fallback(Vec2(-ray.dir.x, -ray.dir.y), Vec2(1.0F, 0.0F))
     } else {
       let p = ray_point(ray, hit)
-      normalize_or_fallback(p.sub(center), @core.Vec2::new(1.0F, 0.0F))
+      normalize_or_fallback(p.sub(center), Vec2(1.0F, 0.0F))
     }
     Some({ toi: hit, normal })
   } else {
@@ -990,8 +937,8 @@ fn ray_intersect_cuboid_local_and_get_normal(
   let max_y = half_height
   let mut tmin = 0.0F
   let mut tmax = max_toi
-  let mut enter_normal = @core.Vec2::new(0.0F, 0.0F)
-  let mut exit_normal = @core.Vec2::new(0.0F, 0.0F)
+  let mut enter_normal = @core.Vec2(0.0F, 0.0F)
+  let mut exit_normal = @core.Vec2(0.0F, 0.0F)
   if @core.abs(ray.dir.x) <= 1.0e-12F {
     if ray.origin.x < min_x || ray.origin.x > max_x {
       return None
@@ -1000,8 +947,8 @@ fn ray_intersect_cuboid_local_and_get_normal(
     let inv = 1.0F / ray.dir.x
     let mut t1 = (min_x - ray.origin.x) * inv
     let mut t2 = (max_x - ray.origin.x) * inv
-    let mut axis_enter = @core.Vec2::new(-1.0F, 0.0F)
-    let mut axis_exit = @core.Vec2::new(1.0F, 0.0F)
+    let mut axis_enter = @core.Vec2(-1.0F, 0.0F)
+    let mut axis_exit = @core.Vec2(1.0F, 0.0F)
     if t1 > t2 {
       let tmp = t1
       t1 = t2
@@ -1030,8 +977,8 @@ fn ray_intersect_cuboid_local_and_get_normal(
     let inv = 1.0F / ray.dir.y
     let mut t1 = (min_y - ray.origin.y) * inv
     let mut t2 = (max_y - ray.origin.y) * inv
-    let mut axis_enter = @core.Vec2::new(0.0F, -1.0F)
-    let mut axis_exit = @core.Vec2::new(0.0F, 1.0F)
+    let mut axis_enter = @core.Vec2(0.0F, -1.0F)
+    let mut axis_exit = @core.Vec2(0.0F, 1.0F)
     if t1 > t2 {
       let tmp = t1
       t1 = t2
@@ -1055,8 +1002,8 @@ fn ray_intersect_cuboid_local_and_get_normal(
   if tmin <= 0.0F && tmax >= 0.0F {
     if solid {
       let normal = normalize_or_fallback(
-        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-        @core.Vec2::new(1.0F, 0.0F),
+        Vec2(-ray.dir.x, -ray.dir.y),
+        Vec2(1.0F, 0.0F),
       )
       Some({ toi: 0.0F, normal })
     } else if tmax <= max_toi {
@@ -1083,7 +1030,7 @@ fn ray_intersect_cuboid_oriented_and_get_normal(
 ) -> RayIntersection? {
   let rot = @core.Rot2::from_angle(rotation)
   let inv = rot.inverse()
-  let local_ray = Ray::new(
+  let local_ray = Ray(
     inv.rotate_vec2(ray.origin.sub(center)),
     inv.rotate_vec2(ray.dir),
   )
@@ -1115,8 +1062,8 @@ fn ray_intersect_segment_and_get_normal(
   let q0 = closest_point_on_segment(sa, sb, ray.origin)
   if solid && ray.origin.sub(q0).dot(ray.origin.sub(q0)) <= 1.0e-12F {
     let normal = normalize_or_fallback(
-      @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-      @core.Vec2::new(1.0F, 0.0F),
+      Vec2(-ray.dir.x, -ray.dir.y),
+      Vec2(1.0F, 0.0F),
     )
     return Some({ toi: 0.0F, normal })
   }
@@ -1129,12 +1076,9 @@ fn ray_intersect_segment_and_get_normal(
   if t < 0.0F || t > max_toi || u < 0.0F || u > 1.0F {
     return None
   }
-  let mut normal = normalize_or_fallback(
-    @core.Vec2::new(-s.y, s.x),
-    @core.Vec2::new(0.0F, 1.0F),
-  )
+  let mut normal = normalize_or_fallback(Vec2(-s.y, s.x), Vec2(0.0F, 1.0F))
   if normal.dot(ray.dir) > 0.0F {
-    normal = @core.Vec2::new(-normal.x, -normal.y)
+    normal = Vec2(-normal.x, -normal.y)
   }
   Some({ toi: t, normal })
 }
@@ -1152,17 +1096,14 @@ fn ray_intersect_convex_polygon_local_and_get_normal(
   // Half-space intersection (Liang–Barsky style) against a CCW convex polygon.
   let mut tmin = 0.0F
   let mut tmax = max_toi
-  let mut enter_normal = @core.Vec2::new(1.0F, 0.0F)
-  let mut exit_normal = @core.Vec2::new(1.0F, 0.0F)
+  let mut enter_normal = @core.Vec2(1.0F, 0.0F)
+  let mut exit_normal = @core.Vec2(1.0F, 0.0F)
   for i in 0..<vertices.length() {
     let a = vertices[i]
     let b = vertices[(i + 1) % vertices.length()]
     let e = b.sub(a)
     // Outward normal for CCW polygon.
-    let n = normalize_or_fallback(
-      @core.Vec2::new(e.y, -e.x),
-      @core.Vec2::new(1.0F, 0.0F),
-    )
+    let n = normalize_or_fallback(Vec2(e.y, -e.x), Vec2(1.0F, 0.0F))
     let num = n.dot(ray.origin.sub(a))
     let den = n.dot(ray.dir)
     if @core.abs(den) <= 1.0e-12F {
@@ -1190,8 +1131,8 @@ fn ray_intersect_convex_polygon_local_and_get_normal(
   if tmin <= 0.0F && tmax >= 0.0F {
     if solid {
       let normal = normalize_or_fallback(
-        @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-        @core.Vec2::new(1.0F, 0.0F),
+        Vec2(-ray.dir.x, -ray.dir.y),
+        Vec2(1.0F, 0.0F),
       )
       Some({ toi: 0.0F, normal })
     } else if tmax <= max_toi {
@@ -1217,7 +1158,7 @@ fn ray_intersect_convex_polygon_oriented_and_get_normal(
 ) -> RayIntersection? {
   let rot = @core.Rot2::from_angle(rotation)
   let inv = rot.inverse()
-  let local_ray = Ray::new(
+  let local_ray = Ray(
     inv.rotate_vec2(ray.origin.sub(center)),
     inv.rotate_vec2(ray.dir),
   )
@@ -1245,9 +1186,7 @@ fn ray_intersect_capsule_oriented_and_get_normal(
   solid : Bool,
 ) -> RayIntersection? {
   let rot = @core.Rot2::from_angle(rotation)
-  let offset = rot.rotate_vec2(
-    @core.Vec2::new(axis.x * half_height, axis.y * half_height),
-  )
+  let offset = rot.rotate_vec2(Vec2(axis.x * half_height, axis.y * half_height))
   let a = center.add(offset)
   let b = center.sub(offset)
   let mut best : RayIntersection? = None
@@ -1310,7 +1249,7 @@ pub fn QueryPipeline::cast_ray_and_get_normal(
   let mut best : (ColliderHandle, RayIntersection)? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -1351,7 +1290,7 @@ pub fn QueryPipeline::intersect_ray(
   let results : Array[(ColliderHandle, RayIntersection)] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -1384,7 +1323,7 @@ fn shape_cast_ball_ball(
   stop_at_penetration : Bool,
 ) -> ShapeCastHit? {
   let radius = radius1 + radius2
-  let ray = Ray::new(start, vel)
+  let ray = Ray(start, vel)
   if ray_intersect_ball(ray, center2, radius, max_toi, true) is Some(toi) {
     if toi > max_toi {
       return None
@@ -1392,10 +1331,7 @@ fn shape_cast_ball_ball(
     let center1 = start.add(vec2_scale(vel, toi))
     let normal = normalize_or_fallback(
       center1.sub(center2),
-      normalize_or_fallback(
-        @core.Vec2::new(-vel.x, -vel.y),
-        @core.Vec2::new(1.0F, 0.0F),
-      ),
+      normalize_or_fallback(Vec2(-vel.x, -vel.y), Vec2(1.0F, 0.0F)),
     )
     // Match parry/rapier: discard initial penetration when we are separating.
     if !stop_at_penetration && toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
@@ -1420,7 +1356,7 @@ fn shape_cast_ball_cuboid(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastHit? {
-  let ray = Ray::new(start, vel)
+  let ray = Ray(start, vel)
   let expanded_hw = half_width + radius
   let expanded_hh = half_height + radius
   let rot = @core.Rot2::from_angle(cuboid_rotation)
@@ -1443,13 +1379,13 @@ fn shape_cast_ball_cuboid(
         if @core.abs(local_p.x) <= 1.0e-12F {
           sx = if -vel_local.x >= 0.0F { 1.0F } else { -1.0F }
         }
-        normal = rot.rotate_vec2(@core.Vec2::new(sx, 0.0F))
+        normal = rot.rotate_vec2(Vec2(sx, 0.0F))
       } else {
         let mut sy = if local_p.y >= 0.0F { 1.0F } else { -1.0F }
         if @core.abs(local_p.y) <= 1.0e-12F {
           sy = if -vel_local.y >= 0.0F { 1.0F } else { -1.0F }
         }
-        normal = rot.rotate_vec2(@core.Vec2::new(0.0F, sy))
+        normal = rot.rotate_vec2(Vec2(0.0F, sy))
       }
     }
     if !stop_at_penetration && hit.toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
@@ -1483,11 +1419,8 @@ fn shape_cast_ball_segment(
     )
   }
   let angle = atan2_real(dir.y, dir.x)
-  let mid = @core.Vec2::new(
-    0.5F * (seg_a.x + seg_b.x),
-    0.5F * (seg_a.y + seg_b.y),
-  )
-  let ray = Ray::new(start, vel)
+  let mid = @core.Vec2(0.5F * (seg_a.x + seg_b.x), 0.5F * (seg_a.y + seg_b.y))
+  let ray = Ray(start, vel)
   let mut best : ShapeCastHit? = None
 
   // Endpoint caps: circle hits against endpoints expanded by seg_radius.
@@ -1538,11 +1471,11 @@ fn shape_cast_ball_segment(
           normal = delta.normalize()
         } else {
           let mut seg_n = normalize_or_fallback(
-            @core.Vec2::new(-dir.y, dir.x),
-            @core.Vec2::new(0.0F, 1.0F),
+            Vec2(-dir.y, dir.x),
+            Vec2(0.0F, 1.0F),
           )
           if seg_n.dot(vel) > 0.0F {
-            seg_n = @core.Vec2::new(-seg_n.x, -seg_n.y)
+            seg_n = Vec2(-seg_n.x, -seg_n.y)
           }
           normal = seg_n
         }
@@ -1595,13 +1528,13 @@ fn shape_cast_cuboid_ball(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastHit? {
-  let inv_vel = @core.Vec2::new(-vel.x, -vel.y)
+  let inv_vel = @core.Vec2(-vel.x, -vel.y)
   if shape_cast_ball_cuboid(
       ball_center, inv_vel, ball_radius, cuboid_center, cuboid_rotation, half_width,
       half_height, max_toi, stop_at_penetration,
     )
     is Some(hit) {
-    let normal = @core.Vec2::new(-hit.normal.x, -hit.normal.y)
+    let normal = @core.Vec2(-hit.normal.x, -hit.normal.y)
     let point = ball_center.add(vec2_scale(normal, ball_radius))
     Some({ toi: hit.toi, point, normal })
   } else {
@@ -1643,7 +1576,7 @@ fn shape_cast_cuboid_cuboid(
   let axes = [a_x, a_y, b_x, b_y]
   let mut best_entry = -1.0e30F
   let mut best_exit = 1.0e30F
-  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_axis = @core.Vec2(1.0F, 0.0F)
   let mut best_vel_axis = 0.0F
   for axis in axes {
     let (min1, max1) = shape_cast_project_interval(
@@ -1686,7 +1619,7 @@ fn shape_cast_cuboid_cuboid(
   let normal = if penetration {
     // Choose a stable penetration normal using the smallest overlap axis (SAT-style).
     let mut best_overlap = 1.0e30F
-    let mut axis_best = @core.Vec2::new(1.0F, 0.0F)
+    let mut axis_best = @core.Vec2(1.0F, 0.0F)
     for axis in axes {
       let (min1, max1) = shape_cast_project_interval(
         center1, rotation1, half_width1, half_height1, axis,
@@ -1705,16 +1638,13 @@ fn shape_cast_cuboid_cuboid(
     } else {
       -1.0F
     }
-    @core.Vec2::new(axis_best.x * sign, axis_best.y * sign)
+    @core.Vec2(axis_best.x * sign, axis_best.y * sign)
   } else if best_vel_axis > 1.0e-12F {
-    @core.Vec2::new(-best_axis.x, -best_axis.y)
+    Vec2(-best_axis.x, -best_axis.y)
   } else if best_vel_axis < -1.0e-12F {
     best_axis
   } else {
-    normalize_or_fallback(
-      @core.Vec2::new(-vel.x, -vel.y),
-      @core.Vec2::new(1.0F, 0.0F),
-    )
+    normalize_or_fallback(Vec2(-vel.x, -vel.y), Vec2(1.0F, 0.0F))
   }
   if !stop_at_penetration && toi < 1.0e-5F && normal.dot(vel) >= 0.0F {
     return None
@@ -1736,9 +1666,7 @@ fn capsule_components_static(
   core_half_height : @core.Real,
 ) -> Array[(Shape, @core.Vec2, @core.Real)] {
   let rot = @core.Rot2::from_angle(rotation)
-  let offset = rot.rotate_vec2(
-    @core.Vec2::new(axis.x * half_height, axis.y * half_height),
-  )
+  let offset = rot.rotate_vec2(Vec2(axis.x * half_height, axis.y * half_height))
   let a = center.add(offset)
   let b = center.sub(offset)
   [
@@ -1758,9 +1686,7 @@ fn capsule_components_moving(
   core_half_height : @core.Real,
 ) -> Array[(Shape, @core.Isometry2)] {
   let rot = shape_pos.rotation
-  let offset = rot.rotate_vec2(
-    @core.Vec2::new(axis.x * half_height, axis.y * half_height),
-  )
+  let offset = rot.rotate_vec2(Vec2(axis.x * half_height, axis.y * half_height))
   let a = shape_pos.translation.add(offset)
   let b = shape_pos.translation.sub(offset)
   [
@@ -1914,7 +1840,7 @@ pub fn QueryPipeline::cast_shape(
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -1947,7 +1873,7 @@ pub fn QueryPipeline::cast_shape(
             if parts.length() == 0 {
               return None
             }
-            let parent_iso = @core.Isometry2::new(
+            let parent_iso = @core.Isometry2(
               target_center,
               @core.Rot2::from_angle(target_rotation),
             )
@@ -2012,10 +1938,7 @@ pub fn QueryPipeline::cast_shape(
               segment_components = [(Ball(seg_radius), sa, 0.0F)]
             } else {
               let angle = atan2_real(seg_dir.y, seg_dir.x)
-              let mid = @core.Vec2::new(
-                0.5F * (sa.x + sb.x),
-                0.5F * (sa.y + sb.y),
-              )
+              let mid = @core.Vec2(0.5F * (sa.x + sb.x), 0.5F * (sa.y + sb.y))
               segment_components = [
                 (Ball(seg_radius), sa, 0.0F),
                 (Ball(seg_radius), sb, 0.0F),
@@ -2031,7 +1954,7 @@ pub fn QueryPipeline::cast_shape(
               CapsuleX(h, r) =>
                 moving_components = capsule_components_moving(
                   shape_pos,
-                  @core.Vec2::new(1.0F, 0.0F),
+                  Vec2(1.0F, 0.0F),
                   h,
                   r,
                   h,
@@ -2040,7 +1963,7 @@ pub fn QueryPipeline::cast_shape(
               CapsuleY(h, r) =>
                 moving_components = capsule_components_moving(
                   shape_pos,
-                  @core.Vec2::new(0.0F, 1.0F),
+                  Vec2(0.0F, 1.0F),
                   h,
                   r,
                   r,
@@ -2110,7 +2033,7 @@ pub fn QueryPipeline::cast_shape(
                   moving_shape,
                   target_center,
                   target_rotation,
-                  @core.Vec2::new(1.0F, 0.0F),
+                  Vec2(1.0F, 0.0F),
                   h,
                   r,
                   h,
@@ -2125,7 +2048,7 @@ pub fn QueryPipeline::cast_shape(
                   moving_shape,
                   target_center,
                   target_rotation,
-                  @core.Vec2::new(0.0F, 1.0F),
+                  Vec2(0.0F, 1.0F),
                   h,
                   r,
                   r,
@@ -2140,7 +2063,7 @@ pub fn QueryPipeline::cast_shape(
                   moving_shape,
                   target_center,
                   target_rotation,
-                  @core.Vec2::new(1.0F, 0.0F),
+                  Vec2(1.0F, 0.0F),
                   h,
                   r,
                   h,
@@ -2155,7 +2078,7 @@ pub fn QueryPipeline::cast_shape(
                   moving_shape,
                   target_center,
                   target_rotation,
-                  @core.Vec2::new(0.0F, 1.0F),
+                  Vec2(0.0F, 1.0F),
                   h,
                   r,
                   r,
@@ -2166,7 +2089,7 @@ pub fn QueryPipeline::cast_shape(
               (CapsuleX(h, r), target) => {
                 let moving_components = capsule_components_moving(
                   shape_pos,
-                  @core.Vec2::new(1.0F, 0.0F),
+                  Vec2(1.0F, 0.0F),
                   h,
                   r,
                   h,
@@ -2185,7 +2108,7 @@ pub fn QueryPipeline::cast_shape(
                         comp_shape,
                         target_center,
                         target_rotation,
-                        @core.Vec2::new(1.0F, 0.0F),
+                        Vec2(1.0F, 0.0F),
                         th,
                         tr,
                         th,
@@ -2200,7 +2123,7 @@ pub fn QueryPipeline::cast_shape(
                         comp_shape,
                         target_center,
                         target_rotation,
-                        @core.Vec2::new(0.0F, 1.0F),
+                        Vec2(0.0F, 1.0F),
                         th,
                         tr,
                         tr,
@@ -2227,7 +2150,7 @@ pub fn QueryPipeline::cast_shape(
               (CapsuleY(h, r), target) => {
                 let moving_components = capsule_components_moving(
                   shape_pos,
-                  @core.Vec2::new(0.0F, 1.0F),
+                  Vec2(0.0F, 1.0F),
                   h,
                   r,
                   r,
@@ -2246,7 +2169,7 @@ pub fn QueryPipeline::cast_shape(
                         comp_shape,
                         target_center,
                         target_rotation,
-                        @core.Vec2::new(1.0F, 0.0F),
+                        Vec2(1.0F, 0.0F),
                         th,
                         tr,
                         th,
@@ -2261,7 +2184,7 @@ pub fn QueryPipeline::cast_shape(
                         comp_shape,
                         target_center,
                         target_rotation,
-                        @core.Vec2::new(0.0F, 1.0F),
+                        Vec2(0.0F, 1.0F),
                         th,
                         tr,
                         tr,
@@ -2395,15 +2318,9 @@ pub fn QueryPipeline::cast_shape_nonlinear(
     c1 : @core.Vec2,
     radius : @core.Real,
   ) -> @core.Aabb {
-    @core.Aabb::new(
-      @core.Vec2::new(
-        min_value(c0.x, c1.x) - radius,
-        min_value(c0.y, c1.y) - radius,
-      ),
-      @core.Vec2::new(
-        max_value(c0.x, c1.x) + radius,
-        max_value(c0.y, c1.y) + radius,
-      ),
+    Aabb(
+      Vec2(min_value(c0.x, c1.x) - radius, min_value(c0.y, c1.y) - radius),
+      Vec2(max_value(c0.x, c1.x) + radius, max_value(c0.y, c1.y) + radius),
     )
   }
 
@@ -2433,7 +2350,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         project_point_on_capsule_oriented(
           center,
           rotation,
-          @core.Vec2::new(1.0F, 0.0F),
+          Vec2(1.0F, 0.0F),
           h,
           r,
           point,
@@ -2443,7 +2360,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         project_point_on_capsule_oriented(
           center,
           rotation,
-          @core.Vec2::new(0.0F, 1.0F),
+          Vec2(0.0F, 1.0F),
           h,
           r,
           point,
@@ -2486,10 +2403,10 @@ pub fn QueryPipeline::cast_shape_nonlinear(
       shape, moving_center, moving_rot, point_on_target,
     )
     let vel = shape_motion.point_velocity_at_time(time, point_on_moving)
-    let fallback = @core.Vec2::new(-vel.x, -vel.y)
+    let fallback = @core.Vec2(-vel.x, -vel.y)
     let normal = normalize_or_fallback(
       point_on_moving.sub(point_on_target),
-      normalize_or_fallback(fallback, @core.Vec2::new(1.0F, 0.0F)),
+      normalize_or_fallback(fallback, Vec2(1.0F, 0.0F)),
     )
     (point_on_target, point_on_moving, normal)
   }
@@ -2639,7 +2556,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
   let mut best : (ColliderHandle, ShapeCastHit)? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -2773,7 +2690,7 @@ fn point_in_shape(
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
       let cx = clamp_value(local_point.x, -half_height, half_height)
-      let delta = @core.Vec2::new(local_point.x - cx, local_point.y)
+      let delta = @core.Vec2(local_point.x - cx, local_point.y)
       delta.dot(delta) <= radius * radius
     }
     CapsuleY(half_height, radius) => {
@@ -2781,7 +2698,7 @@ fn point_in_shape(
       let inv = rot.inverse()
       let local_point = inv.rotate_vec2(point.sub(center))
       let cy = clamp_value(local_point.y, -half_height, half_height)
-      let delta = @core.Vec2::new(local_point.x, local_point.y - cy)
+      let delta = @core.Vec2(local_point.x, local_point.y - cy)
       delta.dot(delta) <= radius * radius
     }
     Segment(a, b) => {
@@ -2841,10 +2758,7 @@ fn point_in_shape(
       if parts.length() == 0 {
         return false
       }
-      let parent_iso = @core.Isometry2::new(
-        center,
-        @core.Rot2::from_angle(rotation),
-      )
+      let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       for i in 0..<parts.length() {
         let (pose, part_shape) = parts[i]
         let w = parent_iso.mul(pose)
@@ -2885,53 +2799,53 @@ fn compute_query_shape_aabb(
     Round(inner, radius) => {
       let r = if radius < 0.0F { 0.0F } else { radius }
       let aabb = compute_query_shape_aabb(shape_pos, inner.val)
-      @core.Aabb::new(
-        @core.Vec2::new(aabb.mins.x - r, aabb.mins.y - r),
-        @core.Vec2::new(aabb.maxs.x + r, aabb.maxs.y + r),
+      Aabb(
+        Vec2(aabb.mins.x - r, aabb.mins.y - r),
+        Vec2(aabb.maxs.x + r, aabb.maxs.y + r),
       )
     }
     Ball(radius) =>
-      @core.Aabb::new(
-        @core.Vec2::new(center.x - radius, center.y - radius),
-        @core.Vec2::new(center.x + radius, center.y + radius),
+      Aabb(
+        Vec2(center.x - radius, center.y - radius),
+        Vec2(center.x + radius, center.y + radius),
       )
     Cuboid(half_width, half_height) => {
       let abs_cos = @core.abs(rot.cos)
       let abs_sin = @core.abs(rot.sin)
       let hw = abs_cos * half_width + abs_sin * half_height
       let hh = abs_sin * half_width + abs_cos * half_height
-      @core.Aabb::new(
-        @core.Vec2::new(center.x - hw, center.y - hh),
-        @core.Vec2::new(center.x + hw, center.y + hh),
+      Aabb(
+        Vec2(center.x - hw, center.y - hh),
+        Vec2(center.x + hw, center.y + hh),
       )
     }
     HalfSpace(_) =>
       // Unbounded AABB: QueryPipeline will expand this dynamically based on world extents.
-      @core.Aabb::new(center, center)
+      Aabb(center, center)
     CapsuleX(half_height, radius) => {
-      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let offset = rot.rotate_vec2(Vec2(half_height, 0.0F))
       let a = center.add(offset)
       let b = center.sub(offset)
       let min_x = if a.x < b.x { a.x } else { b.x }
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x - radius, min_y - radius),
-        @core.Vec2::new(max_x + radius, max_y + radius),
+      Aabb(
+        Vec2(min_x - radius, min_y - radius),
+        Vec2(max_x + radius, max_y + radius),
       )
     }
     CapsuleY(half_height, radius) => {
-      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let offset = rot.rotate_vec2(Vec2(0.0F, half_height))
       let a = center.add(offset)
       let b = center.sub(offset)
       let min_x = if a.x < b.x { a.x } else { b.x }
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x - radius, min_y - radius),
-        @core.Vec2::new(max_x + radius, max_y + radius),
+      Aabb(
+        Vec2(min_x - radius, min_y - radius),
+        Vec2(max_x + radius, max_y + radius),
       )
     }
     Segment(a, b) => {
@@ -2940,14 +2854,11 @@ fn compute_query_shape_aabb(
       let max_x = if wa.x > wb.x { wa.x } else { wb.x }
       let min_y = if wa.y < wb.y { wa.y } else { wb.y }
       let max_y = if wa.y > wb.y { wa.y } else { wb.y }
-      @core.Aabb::new(
-        @core.Vec2::new(min_x, min_y),
-        @core.Vec2::new(max_x, max_y),
-      )
+      Aabb(Vec2(min_x, min_y), Vec2(max_x, max_y))
     }
     Polyline(vertices, _) =>
       if vertices.length() == 0 {
-        @core.Aabb::new(center, center)
+        Aabb(center, center)
       } else {
         let mut min_x = 1.0e30F
         let mut max_x = -1.0e30F
@@ -2968,10 +2879,7 @@ fn compute_query_shape_aabb(
             max_y = wp.y
           }
         }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
+        Aabb(Vec2(min_x, min_y), Vec2(max_x, max_y))
       }
     HeightField(heights, scale) =>
       compute_query_shape_aabb(
@@ -2980,7 +2888,7 @@ fn compute_query_shape_aabb(
       )
     ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
-        @core.Aabb::new(center, center)
+        Aabb(center, center)
       } else {
         let mut min_x = 1.0e30F
         let mut max_x = -1.0e30F
@@ -3001,14 +2909,11 @@ fn compute_query_shape_aabb(
             max_y = wp.y
           }
         }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
+        Aabb(Vec2(min_x, min_y), Vec2(max_x, max_y))
       }
     TriMesh(vertices, _) =>
       if vertices.length() == 0 {
-        @core.Aabb::new(center, center)
+        Aabb(center, center)
       } else {
         let mut min_x = 1.0e30F
         let mut max_x = -1.0e30F
@@ -3029,14 +2934,11 @@ fn compute_query_shape_aabb(
             max_y = wp.y
           }
         }
-        @core.Aabb::new(
-          @core.Vec2::new(min_x, min_y),
-          @core.Vec2::new(max_x, max_y),
-        )
+        Aabb(Vec2(min_x, min_y), Vec2(max_x, max_y))
       }
     Compound(parts) =>
       if parts.length() == 0 {
-        @core.Aabb::new(center, center)
+        Aabb(center, center)
       } else {
         let mut acc : @core.Aabb? = None
         for i in 0..<parts.length() {
@@ -3052,7 +2954,7 @@ fn compute_query_shape_aabb(
         if acc is Some(aabb) {
           aabb
         } else {
-          @core.Aabb::new(center, center)
+          Aabb(center, center)
         }
       }
   }
@@ -3070,7 +2972,7 @@ pub fn QueryPipeline::intersect_shape(
   let results : Array[ColliderHandle] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -3104,7 +3006,7 @@ pub fn QueryPipeline::intersect_aabb_conservative(
   let result : Array[ColliderHandle] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -3132,7 +3034,7 @@ fn project_point_on_ball(
   if inside && solid {
     { point, is_inside: true }
   } else if dist2 <= 1.0e-12F {
-    { point: center.add(@core.Vec2::new(radius, 0.0F)), is_inside: inside }
+    { point: center.add(Vec2(radius, 0.0F)), is_inside: inside }
   } else {
     let dir = v.normalize()
     { point: center.add(vec2_scale(dir, radius)), is_inside: inside }
@@ -3177,13 +3079,13 @@ fn project_point_on_cuboid_oriented(
     let dy = half_height - @core.abs(local_point.y)
     if dx < dy {
       let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
-      @core.Vec2::new(sign * half_width, local_point.y)
+      @core.Vec2(sign * half_width, local_point.y)
     } else {
       let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
-      @core.Vec2::new(local_point.x, sign * half_height)
+      Vec2(local_point.x, sign * half_height)
     }
   } else {
-    @core.Vec2::new(
+    Vec2(
       clamp_value(local_point.x, -half_width, half_width),
       clamp_value(local_point.y, -half_height, half_height),
     )
@@ -3214,13 +3116,13 @@ fn project_point_on_cuboid_oriented_and_get_feature(
     let dy = half_height - @core.abs(local_point.y)
     if dx < dy {
       let sign = if local_point.x < 0.0F { -1.0F } else { 1.0F }
-      @core.Vec2::new(sign * half_width, local_point.y)
+      @core.Vec2(sign * half_width, local_point.y)
     } else {
       let sign = if local_point.y < 0.0F { -1.0F } else { 1.0F }
-      @core.Vec2::new(local_point.x, sign * half_height)
+      Vec2(local_point.x, sign * half_height)
     }
   } else {
-    @core.Vec2::new(
+    Vec2(
       clamp_value(local_point.x, -half_width, half_width),
       clamp_value(local_point.y, -half_height, half_height),
     )
@@ -3375,10 +3277,10 @@ fn project_point_on_capsule_oriented(
   let local_point = inv.rotate_vec2(point.sub(center))
   let closest_line_point = if @core.abs(axis.x) > @core.abs(axis.y) {
     let cx = clamp_value(local_point.x, -half_height, half_height)
-    @core.Vec2::new(cx, 0.0F)
+    @core.Vec2(cx, 0.0F)
   } else {
     let cy = clamp_value(local_point.y, -half_height, half_height)
-    @core.Vec2::new(0.0F, cy)
+    Vec2(0.0F, cy)
   }
   let delta = local_point.sub(closest_line_point)
   let dist2 = delta.dot(delta)
@@ -3388,7 +3290,7 @@ fn project_point_on_capsule_oriented(
   }
   let projected_local = if dist2 <= 1.0e-12F {
     // Arbitrary direction (consistent with project_point_on_ball fallback).
-    closest_line_point.add(@core.Vec2::new(radius, 0.0F))
+    closest_line_point.add(Vec2(radius, 0.0F))
   } else {
     closest_line_point.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
   }
@@ -3419,7 +3321,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
     } else {
       -1
     }
-    (@core.Vec2::new(cx, 0.0F), id)
+    (@core.Vec2(cx, 0.0F), id)
   } else {
     let cy = clamp_value(local_point.y, -half_height, half_height)
     let id = if cy >= half_height - 1.0e-6F {
@@ -3429,7 +3331,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
     } else {
       -1
     }
-    (@core.Vec2::new(0.0F, cy), id)
+    (Vec2(0.0F, cy), id)
   }
   let delta = local_point.sub(clamped)
   let dist2 = delta.dot(delta)
@@ -3438,7 +3340,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
     return ({ point, is_inside: true }, Unknown)
   }
   let projected_local = if dist2 <= 1.0e-12F {
-    clamped.add(@core.Vec2::new(radius, 0.0F))
+    clamped.add(Vec2(radius, 0.0F))
   } else {
     clamped.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
   }
@@ -3476,7 +3378,7 @@ fn project_point_on_segment_and_get_feature(
   if denom > 1.0e-12F {
     t = clamp_value(point.sub(wa).dot(ab) / denom, 0.0F, 1.0F)
   }
-  let q = wa.add(@core.Vec2::new(ab.x * t, ab.y * t))
+  let q = wa.add(Vec2(ab.x * t, ab.y * t))
   let feature = if t <= 1.0e-6F {
     FeatureId::Vertex(0)
   } else if t >= 1.0F - 1.0e-6F {
@@ -3620,8 +3522,8 @@ fn ray_intersect_halfspace_and_get_normal(
   let dist0 = n.dot(ray.origin.sub(center))
   if solid && dist0 <= 0.0F {
     let normal = normalize_or_fallback(
-      @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-      @core.Vec2::new(1.0F, 0.0F),
+      Vec2(-ray.dir.x, -ray.dir.y),
+      Vec2(1.0F, 0.0F),
     )
     return Some({ toi: 0.0F, normal })
   }
@@ -3633,7 +3535,7 @@ fn ray_intersect_halfspace_and_get_normal(
   if toi < 0.0F || toi > max_dist {
     return None
   }
-  let normal = if denom < 0.0F { n } else { @core.Vec2::new(-n.x, -n.y) }
+  let normal = if denom < 0.0F { n } else { Vec2(-n.x, -n.y) }
   Some({ toi, normal })
 }
 
@@ -3673,8 +3575,8 @@ fn ray_intersect_shape_and_get_normal(
       if start_dist <= r {
         if solid {
           let normal = normalize_or_fallback(
-            @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-            @core.Vec2::new(1.0F, 0.0F),
+            Vec2(-ray.dir.x, -ray.dir.y),
+            Vec2(1.0F, 0.0F),
           )
           return Some({ toi: 0.0F, normal })
         }
@@ -3740,10 +3642,7 @@ fn ray_intersect_shape_and_get_normal(
       let normal = if delta.length_squared() > 1.0e-12F {
         delta.normalize()
       } else {
-        normalize_or_fallback(
-          @core.Vec2::new(-ray.dir.x, -ray.dir.y),
-          @core.Vec2::new(1.0F, 0.0F),
-        )
+        normalize_or_fallback(Vec2(-ray.dir.x, -ray.dir.y), Vec2(1.0F, 0.0F))
       }
       Some({ toi, normal })
     }
@@ -3762,7 +3661,7 @@ fn ray_intersect_shape_and_get_normal(
         ray,
         center,
         rotation,
-        @core.Vec2::new(1.0F, 0.0F),
+        Vec2(1.0F, 0.0F),
         half_height,
         radius,
         half_height,
@@ -3775,7 +3674,7 @@ fn ray_intersect_shape_and_get_normal(
         ray,
         center,
         rotation,
-        @core.Vec2::new(0.0F, 1.0F),
+        Vec2(0.0F, 1.0F),
         half_height,
         radius,
         radius,
@@ -3849,10 +3748,7 @@ fn ray_intersect_shape_and_get_normal(
       if parts.length() == 0 {
         return None
       }
-      let parent_iso = @core.Isometry2::new(
-        center,
-        @core.Rot2::from_angle(rotation),
-      )
+      let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       let mut best : RayIntersection? = None
       for i in 0..<parts.length() {
         let (pose, part_shape) = parts[i]
@@ -3906,12 +3802,12 @@ fn project_point_on_shape(
           { point, is_inside: true }
         } else {
           let mut dir = if inside_inner {
-            @core.Vec2::new(-delta.x, -delta.y)
+            @core.Vec2(-delta.x, -delta.y)
           } else {
             delta
           }
           if dir.length_squared() <= 1.0e-12F {
-            dir = @core.Vec2::new(1.0F, 0.0F)
+            dir = Vec2(1.0F, 0.0F)
           }
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
@@ -3938,7 +3834,7 @@ fn project_point_on_shape(
       project_point_on_capsule_oriented(
         center,
         rotation,
-        @core.Vec2::new(1.0F, 0.0F),
+        Vec2(1.0F, 0.0F),
         half_height,
         radius,
         point,
@@ -3948,7 +3844,7 @@ fn project_point_on_shape(
       project_point_on_capsule_oriented(
         center,
         rotation,
-        @core.Vec2::new(0.0F, 1.0F),
+        Vec2(0.0F, 1.0F),
         half_height,
         radius,
         point,
@@ -4014,10 +3910,7 @@ fn project_point_on_shape(
       if parts.length() == 0 {
         return { point, is_inside: false }
       }
-      let parent_iso = @core.Isometry2::new(
-        center,
-        @core.Rot2::from_angle(rotation),
-      )
+      let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       let mut best : PointProjection? = None
       let mut best_dist2 = 1.0e30F
       for i in 0..<parts.length() {
@@ -4086,12 +3979,12 @@ fn project_point_on_shape_and_get_feature(
           ({ point, is_inside: true }, fid_solid)
         } else {
           let mut dir = if inside_inner {
-            @core.Vec2::new(-delta.x, -delta.y)
+            @core.Vec2(-delta.x, -delta.y)
           } else {
             delta
           }
           if dir.length_squared() <= 1.0e-12F {
-            dir = @core.Vec2::new(1.0F, 0.0F)
+            dir = Vec2(1.0F, 0.0F)
           }
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
@@ -4121,7 +4014,7 @@ fn project_point_on_shape_and_get_feature(
       project_point_on_capsule_oriented_and_get_feature(
         center,
         rotation,
-        @core.Vec2::new(1.0F, 0.0F),
+        Vec2(1.0F, 0.0F),
         half_height,
         radius,
         point,
@@ -4131,7 +4024,7 @@ fn project_point_on_shape_and_get_feature(
       project_point_on_capsule_oriented_and_get_feature(
         center,
         rotation,
-        @core.Vec2::new(0.0F, 1.0F),
+        Vec2(0.0F, 1.0F),
         half_height,
         radius,
         point,
@@ -4200,10 +4093,7 @@ fn project_point_on_shape_and_get_feature(
       if parts.length() == 0 {
         return ({ point, is_inside: false }, Unknown)
       }
-      let parent_iso = @core.Isometry2::new(
-        center,
-        @core.Rot2::from_angle(rotation),
-      )
+      let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       let mut best : (PointProjection, FeatureId)? = None
       let mut best_dist2 = 1.0e30F
       for i in 0..<parts.length() {
@@ -4244,7 +4134,7 @@ pub fn QueryPipeline::project_point(
   let mut best : (ColliderHandle, PointProjection, @core.Real)? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -4287,7 +4177,7 @@ pub fn QueryPipeline::project_point_and_get_feature(
   let mut best : (ColliderHandle, PointProjection, FeatureId, @core.Real)? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }
@@ -4326,7 +4216,7 @@ pub fn QueryPipeline::intersect_point(
   let result : Array[ColliderHandle] = []
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
-      let handle = ColliderHandle::new(i, colliders.generations[i])
+      let handle = ColliderHandle(i, colliders.generations[i])
       if !self.filter.passes(bodies, handle, collider) {
         continue
       }

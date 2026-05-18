@@ -19,11 +19,6 @@ pub struct SharedShape {
 
 ///|
 pub fn SharedShape::SharedShape(shape : Shape) -> SharedShape {
-  SharedShape::new(shape)
-}
-
-///|
-pub fn SharedShape::new(shape : Shape) -> SharedShape {
   { shape, }
 }
 
@@ -34,7 +29,7 @@ pub fn SharedShape::as_shape(self : SharedShape) -> Shape {
 
 ///|
 pub fn SharedShape::ball(radius : @core.Real) -> SharedShape {
-  SharedShape::new(Ball(radius))
+  SharedShape(Ball(radius))
 }
 
 ///|
@@ -42,7 +37,7 @@ pub fn SharedShape::cuboid(
   half_width : @core.Real,
   half_height : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(Cuboid(half_width, half_height))
+  SharedShape(Cuboid(half_width, half_height))
 }
 
 ///|
@@ -50,7 +45,7 @@ pub fn SharedShape::capsule_x(
   half_height : @core.Real,
   radius : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(CapsuleX(half_height, radius))
+  SharedShape(CapsuleX(half_height, radius))
 }
 
 ///|
@@ -58,12 +53,12 @@ pub fn SharedShape::capsule_y(
   half_height : @core.Real,
   radius : @core.Real,
 ) -> SharedShape {
-  SharedShape::new(CapsuleY(half_height, radius))
+  SharedShape(CapsuleY(half_height, radius))
 }
 
 ///|
 pub fn SharedShape::segment(a : @core.Vec2, b : @core.Vec2) -> SharedShape {
-  SharedShape::new(Segment(a, b))
+  SharedShape(Segment(a, b))
 }
 
 ///|
@@ -73,7 +68,7 @@ pub fn SharedShape::triangle(
   c : @core.Vec2,
 ) -> SharedShape {
   let builder = ColliderBuilder::triangle(a, b, c)
-  SharedShape::new(builder.shape)
+  SharedShape(builder.shape)
 }
 
 ///|
@@ -81,7 +76,7 @@ pub fn SharedShape::polyline(
   vertices : Array[@core.Vec2],
   indices : Array[(Int, Int)]?,
 ) -> SharedShape {
-  SharedShape::new(Polyline(vertices, indices))
+  SharedShape(Polyline(vertices, indices))
 }
 
 ///|
@@ -91,7 +86,7 @@ pub fn SharedShape::trimesh(
 ) -> SharedShape? {
   match ColliderBuilder::trimesh(vertices, indices) {
     None => None
-    Some(builder) => Some(SharedShape::new(builder.shape))
+    Some(builder) => Some(SharedShape(builder.shape))
   }
 }
 
@@ -101,7 +96,7 @@ pub fn SharedShape::heightfield(
   scale : @core.Vec2,
 ) -> SharedShape {
   let builder = ColliderBuilder::heightfield(heights, scale)
-  SharedShape::new(builder.shape)
+  SharedShape(builder.shape)
 }
 
 ///|
@@ -113,15 +108,6 @@ pub struct Triangle {
 
 ///|
 pub fn Triangle::Triangle(
-  a : @core.Vec2,
-  b : @core.Vec2,
-  c : @core.Vec2,
-) -> Triangle {
-  Triangle::new(a, b, c)
-}
-
-///|
-pub fn Triangle::new(
   a : @core.Vec2,
   b : @core.Vec2,
   c : @core.Vec2,
@@ -143,14 +129,6 @@ pub struct HeightField {
 
 ///|
 pub fn HeightField::HeightField(
-  heights : Array[@core.Real],
-  scale : @core.Vec2,
-) -> HeightField {
-  HeightField::new(heights, scale)
-}
-
-///|
-pub fn HeightField::new(
   heights : Array[@core.Real],
   scale : @core.Vec2,
 ) -> HeightField {
@@ -259,7 +237,7 @@ fn compute_aabb(vertices : Array[@core.Vec2]) -> (@core.Vec2, @core.Vec2)? {
       max_y = p.y
     }
   }
-  Some((@core.Vec2::new(min_x, min_y), @core.Vec2::new(max_x, max_y)))
+  Some((Vec2(min_x, min_y), Vec2(max_x, max_y)))
 }
 
 ///|
@@ -284,14 +262,11 @@ pub fn MeshConverter::apply(
       match compute_aabb(vertices) {
         None => Err(EmptyVertices)
         Some((min, max)) => {
-          let center = @core.Vec2::new(
+          let center = @core.Vec2(
             0.5F * (min.x + max.x),
             0.5F * (min.y + max.y),
           )
-          let half = @core.Vec2::new(
-            0.5F * (max.x - min.x),
-            0.5F * (max.y - min.y),
-          )
+          let half = @core.Vec2(0.5F * (max.x - min.x), 0.5F * (max.y - min.y))
           let shape = SharedShape::cuboid(half.x, half.y)
           Ok((shape, @core.Isometry2::from_translation(center)))
         }
@@ -303,7 +278,7 @@ pub fn MeshConverter::apply(
       match ColliderBuilder::convex_hull(vertices) {
         None => Err(ConvexHullFailed)
         Some(builder) =>
-          Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
+          Ok((SharedShape(builder.shape), @core.Isometry2::identity()))
       }
     ConvexDecomposition =>
       MeshConverter::ConvexDecompositionWithParams(VHACDParameters::default()).apply(
@@ -373,7 +348,7 @@ pub fn MeshConverter::apply(
       let builder = ColliderBuilder::convex_decomposition_with_params(
         vertices, segments, params,
       )
-      Ok((SharedShape::new(builder.shape), @core.Isometry2::identity()))
+      Ok((SharedShape(builder.shape), @core.Isometry2::identity()))
     }
   }
 }
@@ -398,14 +373,6 @@ pub fn ColliderPair::ColliderPair(
   a : ColliderHandle,
   b : ColliderHandle,
 ) -> ColliderPair {
-  ColliderPair::new(a, b)
-}
-
-///|
-pub fn ColliderPair::new(
-  a : ColliderHandle,
-  b : ColliderHandle,
-) -> ColliderPair {
   { collider1: a, collider2: b }
 }
 
@@ -421,7 +388,7 @@ pub fn ColliderPair::collider2(self : ColliderPair) -> ColliderHandle {
 
 ///|
 pub fn ColliderPair::swap(self : ColliderPair) -> ColliderPair {
-  ColliderPair::new(self.collider2, self.collider1)
+  ColliderPair(self.collider2, self.collider1)
 }
 
 ///|

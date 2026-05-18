@@ -31,19 +31,19 @@ import {
 ## Quick start (2D)
 
 ```moonbit
-let gravity = @core.Vec2::new(0.0F, -9.81F)
+let gravity = @core.Vec2(0.0F, -9.81F)
 let params = @dynamics.IntegrationParameters::default()
-let pipeline = @pipeline.PhysicsPipeline::new()
-let islands = @dynamics.IslandManager::new()
-let broad_phase = @collision.BroadPhaseBvh::new()
-let narrow_phase = @collision.NarrowPhase::new()
-let bodies = @dynamics.RigidBodySet::new()
-let colliders = @collision.ColliderSet::new()
-let impulse_joints = @dynamics.ImpulseJointSet::new()
-let multibody_joints = @dynamics.MultibodyJointSet::new()
-let ccd_solver = @dynamics.CCDSolver::new()
-let hooks = @pipeline.PhysicsHooks::new()
-let events = @pipeline.EventHandler::new()
+let pipeline = @pipeline.PhysicsPipeline()
+let islands = @dynamics.IslandManager()
+let broad_phase = @collision.BroadPhaseBvh()
+let narrow_phase = @collision.NarrowPhase()
+let bodies = @dynamics.RigidBodySet()
+let colliders = @collision.ColliderSet()
+let impulse_joints = @dynamics.ImpulseJointSet()
+let multibody_joints = @dynamics.MultibodyJointSet()
+let ccd_solver = @dynamics.CCDSolver()
+let hooks = @pipeline.PhysicsHooks()
+let events = @pipeline.EventHandler()
 
 let ground = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
 colliders.insert_with_parent(
@@ -54,7 +54,7 @@ colliders.insert_with_parent(
 
 let ball = bodies.insert(
   @dynamics.RigidBodyBuilder::dynamic()
-  .translation(@core.Vec2::new(0.0F, 3.0F))
+  .translation(@core.Vec2(0.0F, 3.0F))
   .build(),
 )
 colliders.insert_with_parent(
@@ -72,14 +72,14 @@ pipeline.step(
 ## Quick start (3D)
 
 ```moonbit
-let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
 let params = @dynamics.IntegrationParameters::default()
-let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-let islands = @dynamics.IslandManager3D::new()
-let broad_phase = @collision.BroadPhase3D::new()
-let narrow_phase = @collision.NarrowPhase3D::new()
-let bodies = @dynamics.RigidBodySet3D::new()
-let colliders = @collision.ColliderSet3D::new()
+let pipeline = @pipeline.PhysicsPipeline3DReal()
+let islands = @dynamics.IslandManager3D()
+let broad_phase = @collision.BroadPhase3D()
+let narrow_phase = @collision.NarrowPhase3D()
+let bodies = @dynamics.RigidBodySet3D()
+let colliders = @collision.ColliderSet3D()
 
 let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
 colliders.insert_with_parent(
@@ -90,7 +90,7 @@ colliders.insert_with_parent(
 
 let cube = bodies.insert(
   @dynamics.RigidBodyBuilder3D::dynamic()
-  .translation(@core.Vec3::new(0.0F, 3.0F, 0.0F))
+  .translation(@core.Vec3(0.0F, 3.0F, 0.0F))
   .build(),
 )
 colliders.insert_with_parent(

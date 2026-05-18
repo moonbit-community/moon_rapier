@@ -18,14 +18,14 @@
 ///|
 test "examples3d/character_controller3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/character_controller3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -38,7 +38,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   let ground_height = 0.1F * scale
   let floor = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -52,7 +52,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   // Vertical wall.
   let wall = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, -ground_size))
+    .translation(Vec3(0.0F, -ground_height, -ground_size))
     .build(),
   )
   colliders.insert_with_parent(
@@ -67,7 +67,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   // Character (kinematic position-based capsule).
   let character = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_position_based()
-    .translation(@core.Vec3::new(0.0F, 0.5F, 0.0F))
+    .translation(Vec3(0.0F, 0.5F, 0.0F))
     .gravity_scale(10.0F)
     .soft_ccd_prediction(10.0F)
     .can_sleep(false)
@@ -94,7 +94,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
         let z = Float::from_int(k) * shift + centerx
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         colliders.insert_with_parent(
@@ -119,7 +119,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
         stair_height / 2.0F,
         stair_width,
       )
-      .translation(@core.Vec3::new(x, y, 0.0F))
+      .translation(Vec3(x, y, 0.0F))
       .build(),
     )
     |> ignore
@@ -130,12 +130,8 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   let slope_size = 2.0F
   colliders.insert(
     @collision.ColliderBuilder3D::cuboid(slope_size, ground_height, slope_size)
-    .translation(
-      @core.Vec3::new(0.1F + slope_size, -ground_height + 0.4F, 0.0F),
-    )
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, slope_angle)),
-    )
+    .translation(Vec3(0.1F + slope_size, -ground_height + 0.4F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, slope_angle)))
     .build(),
   )
   |> ignore
@@ -150,16 +146,14 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
       ground_size,
     )
     .translation(
-      @core.Vec3::new(
+      Vec3(
         0.1F + slope_size * 2.0F + impossible_slope_size - 0.9F,
         -ground_height + 1.7F,
         0.0F,
       ),
     )
     .rotation(
-      @core.rotation_from_scaled_axis(
-        @core.Vec3::new(0.0F, 0.0F, impossible_slope_angle),
-      ),
+      @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, impossible_slope_angle)),
     )
     .build(),
   )
@@ -168,7 +162,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   // Moving platform.
   let platform = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_velocity_based()
-    .translation(@core.Vec3::new(-8.0F, 0.0F, 0.0F))
+    .translation(Vec3(-8.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -183,7 +177,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   |> ignore
 
   // More complex ground.
-  let ground_size2 = @core.Vec3::new(10.0F, 1.0F, 10.0F)
+  let ground_size2 = @core.Vec3(10.0F, 1.0F, 10.0F)
   let nsubdivs = 20
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
@@ -209,19 +203,19 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
       ground_size2,
     )
     .unwrap()
-    .translation(@core.Vec3::new(-8.0F, 5.0F, 0.0F))
+    .translation(Vec3(-8.0F, 5.0F, 0.0F))
     .build()
   colliders.insert(hf) |> ignore
 
   // A tilting dynamic body with a limited joint.
   let joint_ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
     .build(),
   )
   let tilting = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -237,12 +231,12 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   let locked = @dynamics.JointAxesMask3DReal::lin_axes()
     .or(@dynamics.JointAxesMask3DReal::ang_x())
     .or(@dynamics.JointAxesMask3DReal::ang_y())
-  let joint = @dynamics.GenericJoint3DRealBuilder::new(locked)
+  let joint = @dynamics.GenericJoint3DRealBuilder(locked)
     .limits(AngZ, -0.3F, 0.3F)
     .build()
   joints.insert_generic(joint_ground, tilting, joint, true) |> ignore
-  let queries = @collision.QueryPipelineMut3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+  let queries = @collision.QueryPipelineMut3DReal(
+    QueryFilter3DReal(),
     bodies,
     colliders,
   )
@@ -252,7 +246,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
   let speed = 5.0F
   let mut time = 0.0F
   for _ in 0..<240 {
-    let linvel = @core.Vec3::new(
+    let linvel = @core.Vec3(
       Float::from_double(@math.sin((time * 2.0F).to_double())) * 2.0F,
       Float::from_double(@math.sin((time * 5.0F).to_double())) * 1.5F,
       0.0F,
@@ -264,9 +258,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
     queries.update(bodies, colliders)
     let qp = queries
       .as_ref()
-      .with_filter(
-        @collision.QueryFilter3DReal::new().exclude_rigid_body(character),
-      )
+      .with_filter(@collision.QueryFilter3DReal().exclude_rigid_body(character))
     let collisions : Array[@control.CharacterCollision3DReal] = []
     if colliders.get(character_collider) is Some(cc) {
       let movement = controller.move_shape(
@@ -276,7 +268,7 @@ test "examples3d/character_controller3.rs parity (3DReal headless)" {
         colliders,
         cc.shape(),
         cc.position(),
-        @core.Vec3::new(speed * dt, 0.0F, 0.0F),
+        Vec3(speed * dt, 0.0F, 0.0F),
         c => collisions.push(c),
       )
       controller.solve_character_collision_impulses(

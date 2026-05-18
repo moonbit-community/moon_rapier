@@ -51,18 +51,18 @@ fn bodies_have_finite_positions3(
 
 ///|
 test "examples3d primitives3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -2.1F, 0.0F))
+    .translation(Vec3(0.0F, -2.1F, 0.0F))
     .build(),
   )
   handles.push(ground)
@@ -84,7 +84,7 @@ test "examples3d primitives3: real backend smoke" {
         let z = Float::from_int(k) * shift - center
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(handle)
@@ -122,12 +122,12 @@ test "examples3d primitives3: real backend smoke" {
 
 ///|
 test "examples3d damping3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
@@ -143,9 +143,9 @@ test "examples3d damping3: real backend smoke" {
     let y = Float::from_double(@math.cos(angle))
     let z = Float::from_int(i) * 0.1F
     let rb = @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(x, y, z))
-      .linvel(@core.Vec3::new(x * 10.0F, y * 10.0F, 0.0F))
-      .angvel(@core.Vec3::new(0.0F, 0.0F, 100.0F))
+      .translation(Vec3(x, y, z))
+      .linvel(Vec3(x * 10.0F, y * 10.0F, 0.0F))
+      .angvel(Vec3(0.0F, 0.0F, 100.0F))
       .linear_damping(Float::from_int(i + 1) * subdiv * 10.0F)
       .angular_damping(Float::from_int(num - i) * subdiv * 10.0F)
       .build()
@@ -174,13 +174,13 @@ test "examples3d damping3: real backend smoke" {
 
 ///|
 test "examples3d heightfield3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let nrows = 21
@@ -202,7 +202,7 @@ test "examples3d heightfield3: real backend smoke" {
       heights,
       nrows,
       ncols,
-      @core.Vec3::new(60.0F, 2.0F, 60.0F),
+      Vec3(60.0F, 2.0F, 60.0F),
     )
     is Some(ground_builder) {
     colliders.insert_with_parent(ground_builder.build(), ground, bodies)
@@ -219,7 +219,7 @@ test "examples3d heightfield3: real backend smoke" {
         let handle = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
           .translation(
-            @core.Vec3::new(
+            Vec3(
               Float::from_int(i) * shift - 5.0F,
               6.0F + Float::from_int(j) * shift,
               Float::from_int(k) * shift - 5.0F,
@@ -255,13 +255,13 @@ test "examples3d heightfield3: real backend smoke" {
 
 ///|
 test "examples3d dynamic_trimesh3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let nrows = 11
@@ -282,7 +282,7 @@ test "examples3d dynamic_trimesh3: real backend smoke" {
       heights,
       nrows,
       ncols,
-      @core.Vec3::new(40.0F, 2.0F, 40.0F),
+      Vec3(40.0F, 2.0F, 40.0F),
     )
     is Some(builder) {
     colliders.insert_with_parent(builder.build(), ground, bodies) |> ignore
@@ -291,18 +291,18 @@ test "examples3d dynamic_trimesh3: real backend smoke" {
     return
   }
   let vtx = [
-    @core.Vec3::new(-1.0F, -0.2F, -1.0F),
-    @core.Vec3::new(1.0F, -0.2F, -1.0F),
-    @core.Vec3::new(1.0F, -0.2F, 1.0F),
-    @core.Vec3::new(-1.0F, -0.2F, 1.0F),
-    @core.Vec3::new(0.0F, 0.8F, 0.0F),
+    @core.Vec3(-1.0F, -0.2F, -1.0F),
+    Vec3(1.0F, -0.2F, -1.0F),
+    Vec3(1.0F, -0.2F, 1.0F),
+    Vec3(-1.0F, -0.2F, 1.0F),
+    Vec3(0.0F, 0.8F, 0.0F),
   ]
   let idx = [(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4), (0, 2, 1), (0, 3, 2)]
   for k in 0..<8 {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
       .translation(
-        @core.Vec3::new(
+        Vec3(
           Float::from_int(k) * 2.5F - 9.0F,
           8.0F + Float::from_int(k % 3),
           Float::from_int(k % 4) * 1.75F - 2.5F,
@@ -327,13 +327,13 @@ test "examples3d dynamic_trimesh3: real backend smoke" {
 
 ///|
 test "examples3d voxels3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let voxel_points : Array[@core.Vec3] = []
@@ -347,10 +347,10 @@ test "examples3d voxels3: real backend smoke" {
         @math.cos((Float::from_int(i) / 5.0F).to_double()),
       ) *
       2.0F
-    voxel_points.push(@core.Vec3::new(x, y, z))
+    voxel_points.push(Vec3(x, y, z))
   }
   if @collision.ColliderBuilder3D::voxels_from_points(
-      @core.Vec3::new(0.6F, 0.6F, 0.6F),
+      Vec3(0.6F, 0.6F, 0.6F),
       voxel_points,
     )
     is Some(builder) {
@@ -363,7 +363,7 @@ test "examples3d voxels3: real backend smoke" {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
       .translation(
-        @core.Vec3::new(
+        Vec3(
           Float::from_int(i % 4) * 1.5F - 2.0F,
           8.0F + Float::from_int(i / 4) * 2.0F,
           Float::from_int(i % 3) * 1.3F - 1.3F,
@@ -388,18 +388,18 @@ test "examples3d voxels3: real backend smoke" {
 
 ///|
 test "examples3d trimesh3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.2F, 0.0F))
+    .translation(Vec3(0.0F, -1.2F, 0.0F))
     .build(),
   )
   handles.push(ground)
@@ -410,11 +410,11 @@ test "examples3d trimesh3: real backend smoke" {
   )
   |> ignore
   let wall_rot = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, 0.0F, @core.pi() / 2.0F),
+    Vec3(0.0F, 0.0F, @core.pi() / 2.0F),
   )
   let wall_r = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(25.0F, 25.0F, 0.0F))
+    .translation(Vec3(25.0F, 25.0F, 0.0F))
     .rotation(wall_rot)
     .build(),
   )
@@ -427,7 +427,7 @@ test "examples3d trimesh3: real backend smoke" {
   |> ignore
   let wall_l = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(-25.0F, 25.0F, 0.0F))
+    .translation(Vec3(-25.0F, 25.0F, 0.0F))
     .rotation(wall_rot)
     .build(),
   )
@@ -439,10 +439,10 @@ test "examples3d trimesh3: real backend smoke" {
   )
   |> ignore
   let vtx = [
-    @core.Vec3::new(-1.0F, -1.0F, -0.5F),
-    @core.Vec3::new(1.0F, -1.0F, -0.5F),
-    @core.Vec3::new(1.0F, 1.0F, 0.5F),
-    @core.Vec3::new(-1.0F, 1.0F, 0.5F),
+    @core.Vec3(-1.0F, -1.0F, -0.5F),
+    Vec3(1.0F, -1.0F, -0.5F),
+    Vec3(1.0F, 1.0F, 0.5F),
+    Vec3(-1.0F, 1.0F, 0.5F),
   ]
   let idx = [(0, 1, 2), (0, 2, 3)]
   for k in 0..<5 {
@@ -450,7 +450,7 @@ test "examples3d trimesh3: real backend smoke" {
       let handle = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
         .translation(
-          @core.Vec3::new(
+          Vec3(
             0.0F,
             18.0F + Float::from_int(k) * 4.0F,
             Float::from_int(k % 3) * 1.2F - 1.2F,
@@ -479,18 +479,18 @@ test "examples3d trimesh3: real backend smoke" {
 
 ///|
 test "examples3d restitution3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let handles : Array[@dynamics.RigidBodyHandle] = []
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   handles.push(ground)
@@ -508,7 +508,7 @@ test "examples3d restitution3: real backend smoke" {
       let y = 10.0F * Float::from_int(j + 1)
       let z = Float::from_int(i) * 0.2F
       let rb = @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x * 2.0F, y, z))
+        .translation(Vec3(x * 2.0F, y, z))
         .build()
       let handle = bodies.insert(rb)
       handles.push(handle)

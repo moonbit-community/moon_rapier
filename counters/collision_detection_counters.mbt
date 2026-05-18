@@ -22,16 +22,11 @@ pub struct CollisionDetectionCounters {
 
 ///|
 pub fn CollisionDetectionCounters::CollisionDetectionCounters() -> CollisionDetectionCounters {
-  CollisionDetectionCounters::new()
-}
-
-///|
-pub fn CollisionDetectionCounters::new() -> CollisionDetectionCounters {
   {
     ncontact_pairs: 0,
-    broad_phase_time: Timer::new(),
-    final_broad_phase_time: Timer::new(),
-    narrow_phase_time: Timer::new(),
+    broad_phase_time: Timer(),
+    final_broad_phase_time: Timer(),
+    narrow_phase_time: Timer(),
   }
 }
 

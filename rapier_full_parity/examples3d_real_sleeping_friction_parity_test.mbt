@@ -18,13 +18,13 @@
 ///|
 test "examples3d/debug_friction3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_friction3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -43,10 +43,8 @@ test "examples3d/debug_friction3.rs parity (3DReal headless)" {
   |> ignore
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 1.1F, 0.0F))
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.3F, 0.0F)),
-    )
+    .translation(Vec3(0.0F, 1.1F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.0F, 0.3F, 0.0F)))
     .can_sleep(false)
     .build(),
   )
@@ -60,7 +58,7 @@ test "examples3d/debug_friction3.rs parity (3DReal headless)" {
   |> ignore
   if bodies.get_mut(body) is Some(rb) {
     // force = rotation * Z * 50
-    let force = rb.rotation().rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 50.0F))
+    let force = rb.rotation().rotate_vec3(Vec3(0.0F, 0.0F, 50.0F))
     rb.set_linvel(force)
   }
   for _ in 0..<240 {
@@ -86,13 +84,13 @@ test "examples3d/debug_friction3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_sleeping_kinematic3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_sleeping_kinematic3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -102,7 +100,7 @@ test "examples3d/debug_sleeping_kinematic3.rs parity (3DReal headless)" {
   // Velocity-based kinematic platform.
   let platform = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_velocity_based()
-    .translation(@core.Vec3::new(0.0F, 1.5F + 0.8F, 0.0F))
+    .translation(Vec3(0.0F, 1.5F + 0.8F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -115,7 +113,7 @@ test "examples3d/debug_sleeping_kinematic3.rs parity (3DReal headless)" {
   // Slow platform.
   let slow_platform = bodies.insert(
     @dynamics.RigidBodyBuilder3D::kinematic_velocity_based()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -171,13 +169,13 @@ test "examples3d/debug_sleeping_kinematic3.rs parity (3DReal headless)" {
         } else {
           inspect(false, content="true")
         }
-        let slow_velocity = @core.Vec3::new(0.0F, 0.01F, 0.0F)
+        let slow_velocity = @core.Vec3(0.0F, 0.01F, 0.0F)
         if bodies.get_mut(slow_platform) is Some(p) {
           p.set_linvel(slow_velocity)
           p.wake_up()
         }
       }
-      let velocity = @core.Vec3::new(
+      let velocity = @core.Vec3(
         0.0F,
         Float::from_double(@math.cos((time * 2.0F).to_double())),
         Float::from_double(@math.sin(time.to_double())) * 2.0F,

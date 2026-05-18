@@ -23,12 +23,7 @@ pub struct PhysicsPipeline3 {
 
 ///|
 pub fn PhysicsPipeline3::PhysicsPipeline3() -> PhysicsPipeline3 {
-  PhysicsPipeline3::new()
-}
-
-///|
-pub fn PhysicsPipeline3::new() -> PhysicsPipeline3 {
-  { inner: PhysicsPipeline::new() }
+  { inner: PhysicsPipeline() }
 }
 
 ///|
@@ -83,7 +78,7 @@ fn update_body_mass_properties_from_colliders3(
         let co_handle = attached[j]
         if colliders.get(co_handle) is Some(collider) {
           if collider.is_enabled() {
-            let local_pos = @core.Isometry2::new(
+            let local_pos = @core.Isometry2(
               collider.local_translation,
               @core.Rot2::from_angle(collider.local_rotation),
             )
@@ -146,7 +141,7 @@ pub fn PhysicsPipeline3::step(
   hooks : PhysicsHooks,
   events : EventHandler,
 ) -> Unit {
-  let gravity2 = @core.Vec2::new(gravity.x, gravity.y)
+  let gravity2 = @core.Vec2(gravity.x, gravity.y)
   self.inner.counters.reset()
   self.inner.counters.step_started()
 
@@ -203,7 +198,7 @@ pub fn PhysicsPipeline3::step(
     remaining_substeps = 1
   }
   let min_ccd_dt = parameters.min_ccd_dt
-  let collision_pipeline = CollisionPipeline3::new()
+  let collision_pipeline = CollisionPipeline3()
   while remaining_substeps > 0 && remaining_time > 0.0F {
     let mut dt = remaining_time
     if ccd_is_enabled && remaining_substeps > 1 {
@@ -285,7 +280,7 @@ pub fn PhysicsPipeline3::step(
         }
         KinematicPositionBased => {
           let inv_dt = 1.0F / dt
-          let derived_vels = @dynamics.RigidBodyPosition::new(
+          let derived_vels = @dynamics.RigidBodyPosition(
             body.position(),
             body.next_position(),
           ).interpolate_velocity(inv_dt, body.center_of_mass())
@@ -295,7 +290,7 @@ pub fn PhysicsPipeline3::step(
         _ => ()
       }
     }
-    let island_solver = IslandSolver::new()
+    let island_solver = IslandSolver()
     let contact_cache_prev : Array[ContactImpulseCacheEntry] = []
     for i in 0..<self.inner.contact_solver_cache.length() {
       contact_cache_prev.push(self.inner.contact_solver_cache[i])
@@ -424,7 +419,7 @@ pub fn PhysicsPipeline3::step(
     narrow_phase,
     events,
   )
-  let contacts = @dynamics.ContactGraph::new()
+  let contacts = @dynamics.ContactGraph()
   for i in 0..<narrow_phase.contacts.length() {
     let contact = narrow_phase.contacts[i]
     if colliders.get(contact.0) is Some(collider1) &&

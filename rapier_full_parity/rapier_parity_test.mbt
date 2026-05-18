@@ -31,7 +31,7 @@ test "utils smallest_abs_diff_between_angles chooses shortest path" {
 
 ///|
 test "utils try_normalize_and_get_length2/3" {
-  let v2 = @core.Vec2::new(3.0F, 4.0F)
+  let v2 = @core.Vec2(3.0F, 4.0F)
   match @utils.try_normalize_and_get_length2(v2, 0.1F) {
     None => inspect(false, content="true")
     Some((n, len)) => {
@@ -39,7 +39,7 @@ test "utils try_normalize_and_get_length2/3" {
       inspect(@core.abs(n.length() - 1.0F) < 1.0e-6F, content="true")
     }
   }
-  let v3 = @core.Vec3::new(0.0F, 3.0F, 4.0F)
+  let v3 = @core.Vec3(0.0F, 3.0F, 4.0F)
   match @utils.try_normalize_and_get_length3(v3, 0.1F) {
     None => inspect(false, content="true")
     Some((n, len)) => {
@@ -51,7 +51,7 @@ test "utils try_normalize_and_get_length2/3" {
 
 ///|
 test "utils orthonormal_basis3 stable case" {
-  let v = @core.Vec3::new(0.0F, 0.0F, 1.0F)
+  let v = @core.Vec3(0.0F, 0.0F, 1.0F)
   let b = @utils.orthonormal_basis3(v)
   inspect(b.length() == 2, content="true")
   inspect(b[0].x == 1.0F && b[0].y == 0.0F && b[0].z == 0.0F, content="true")
@@ -60,7 +60,7 @@ test "utils orthonormal_basis3 stable case" {
 
 ///|
 test "utils gcross_matrix3 layout" {
-  let v = @core.Vec3::new(1.0F, 2.0F, 3.0F)
+  let v = @core.Vec3(1.0F, 2.0F, 3.0F)
   let m = @utils.gcross_matrix3(v)
   inspect(m.m00 == 0.0F && m.m01 == -3.0F && m.m02 == 2.0F, content="true")
   inspect(m.m10 == 3.0F && m.m11 == 0.0F && m.m12 == -1.0F, content="true")
@@ -70,7 +70,7 @@ test "utils gcross_matrix3 layout" {
 ///|
 test "utils quat diff_conj1_2 transpose matches" {
   let q1 = @core.Quat::identity()
-  let q2 = @core.rotation_from_scaled_axis(@core.Vec3::new(0.1F, 0.2F, 0.3F))
+  let q2 = @core.rotation_from_scaled_axis(Vec3(0.1F, 0.2F, 0.3F))
   let a = @utils.quat_diff_conj1_2(q1, q2)
   let b = @utils.quat_diff_conj1_2_tr(q1, q2)
   inspect(

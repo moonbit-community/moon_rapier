@@ -215,7 +215,7 @@ pub type IntersectionEvent
 
 ///|
 #declaration_only
-pub fn IntersectionEvent::new(
+pub fn IntersectionEvent::IntersectionEvent(
   collider1 : ColliderHandle,
   collider2 : ColliderHandle,
   intersecting : Bool,
@@ -247,7 +247,7 @@ pub type ContactForceEvent
 
 ///|
 #declaration_only
-pub fn ContactForceEvent::new(
+pub fn ContactForceEvent::ContactForceEvent(
   collider1 : ColliderHandle,
   collider2 : ColliderHandle,
   total_force : @core.Vec2,
@@ -370,7 +370,7 @@ pub type SharedShape
 
 ///|
 #declaration_only
-pub fn SharedShape::new(shape : Shape) -> SharedShape {
+pub fn SharedShape::SharedShape(shape : Shape) -> SharedShape {
   ...
 }
 
@@ -462,7 +462,7 @@ pub type Triangle
 
 ///|
 #declaration_only
-pub fn Triangle::new(
+pub fn Triangle::Triangle(
   a : @core.Vec2,
   b : @core.Vec2,
   c : @core.Vec2,
@@ -482,7 +482,7 @@ pub type HeightField
 
 ///|
 #declaration_only
-pub fn HeightField::new(
+pub fn HeightField::HeightField(
   heights : Array[@core.Real],
   scale : @core.Vec2,
 ) -> HeightField {
@@ -549,7 +549,7 @@ pub type ColliderPair
 
 ///|
 #declaration_only
-pub fn ColliderPair::new(
+pub fn ColliderPair::ColliderPair(
   a : ColliderHandle,
   b : ColliderHandle,
 ) -> ColliderPair {
@@ -1210,7 +1210,7 @@ pub type ColliderSet
 
 ///|
 #declaration_only
-pub fn ColliderSet::new() -> ColliderSet {
+pub fn ColliderSet::ColliderSet() -> ColliderSet {
   ...
 }
 
@@ -1436,7 +1436,7 @@ pub type SolverContact
 
 ///|
 #declaration_only
-pub fn SolverContact::new(
+pub fn SolverContact::SolverContact(
   point : @core.Vec2,
   dist : @core.Real,
 ) -> SolverContact {
@@ -1559,7 +1559,7 @@ pub type NarrowPhase
 
 ///|
 #declaration_only
-pub fn NarrowPhase::new() -> NarrowPhase {
+pub fn NarrowPhase::NarrowPhase() -> NarrowPhase {
   ...
 }
 
@@ -1649,7 +1649,7 @@ pub type BroadPhaseBvh
 
 ///|
 #declaration_only
-pub fn BroadPhaseBvh::new() -> BroadPhaseBvh {
+pub fn BroadPhaseBvh::BroadPhaseBvh() -> BroadPhaseBvh {
   ...
 }
 
@@ -1757,7 +1757,7 @@ pub type ShapeCastOptions
 
 ///|
 #declaration_only
-pub fn ShapeCastOptions::new(
+pub fn ShapeCastOptions::ShapeCastOptions(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastOptions {
@@ -1803,7 +1803,7 @@ pub fn NonlinearRigidMotion::identity() -> NonlinearRigidMotion {
 
 ///|
 #declaration_only
-pub fn NonlinearRigidMotion::new(
+pub fn NonlinearRigidMotion::NonlinearRigidMotion(
   start_pos : @core.Isometry2,
   linvel : @core.Vec2,
   angvel : @core.Real,
@@ -1843,7 +1843,7 @@ pub type QueryFilterFlags
 
 ///|
 #declaration_only
-pub fn QueryFilterFlags::new(bits : Int) -> QueryFilterFlags {
+pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
   ...
 }
 
@@ -1875,29 +1875,24 @@ pub struct Ray {
 }
 
 ///|
-pub fn Ray::Ray(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
-  Ray::new(origin, dir)
-}
-
-///|
 #declaration_only
 pub type Ray3
 
 ///|
 #declaration_only
-pub fn Ray::new(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
+pub fn Ray::Ray(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Ray3::new(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
+pub fn Ray3::Ray3(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn QueryFilter::new() -> QueryFilter {
+pub fn QueryFilter::QueryFilter() -> QueryFilter {
   ...
 }
 
@@ -1907,7 +1902,7 @@ pub type QueryFilter3DReal
 
 ///|
 #declaration_only
-pub fn QueryFilter3DReal::new() -> QueryFilter3DReal {
+pub fn QueryFilter3DReal::QueryFilter3DReal() -> QueryFilter3DReal {
   ...
 }
 
@@ -2048,7 +2043,7 @@ pub fn QueryFilter::groups_filter(
 
 ///|
 #declaration_only
-pub fn QueryPipeline::new(
+pub fn QueryPipeline::QueryPipeline(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
@@ -2092,7 +2087,7 @@ pub type QueryPipelineMut
 
 ///|
 #declaration_only
-pub fn QueryPipelineMut::new(
+pub fn QueryPipelineMut::QueryPipelineMut(
   filter : QueryFilter,
   bodies : @dynamics.RigidBodySet,
   colliders : ColliderSet,
@@ -2163,7 +2158,7 @@ pub type QueryPipelineMut3DReal
 
 ///|
 #declaration_only
-pub fn QueryPipeline3DReal::new(
+pub fn QueryPipeline3DReal::QueryPipeline3DReal(
   filter : QueryFilter3DReal,
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
@@ -2235,7 +2230,7 @@ pub fn QueryPipeline3DReal::collider(
 
 ///|
 #declaration_only
-pub fn QueryPipelineMut3DReal::new(
+pub fn QueryPipelineMut3DReal::QueryPipelineMut3DReal(
   filter : QueryFilter3DReal,
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,

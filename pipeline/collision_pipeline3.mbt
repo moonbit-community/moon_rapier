@@ -23,12 +23,7 @@ pub struct CollisionPipeline3 {
 
 ///|
 pub fn CollisionPipeline3::CollisionPipeline3() -> CollisionPipeline3 {
-  CollisionPipeline3::new()
-}
-
-///|
-pub fn CollisionPipeline3::new() -> CollisionPipeline3 {
-  { inner: CollisionPipeline::new() }
+  { inner: CollisionPipeline() }
 }
 
 ///|
@@ -102,7 +97,7 @@ pub fn CollisionPipeline3::step(
     colliders,
     prediction_distance,
     filtered_pairs,
-    @dynamics.ImpulseJointSet3::new(),
-    @dynamics.MultibodyJointSet3::new(),
+    ImpulseJointSet3(),
+    MultibodyJointSet3(),
   )
 }

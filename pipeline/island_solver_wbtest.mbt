@@ -24,17 +24,15 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     @dynamics.MultibodyJointSet,
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ) {
-    let islands = @dynamics.IslandManager::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    let islands = @dynamics.IslandManager()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
     let ground = bodies.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(0.0F, -0.5F))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -0.5F)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(50.0F, 0.5F).build(),
@@ -44,7 +42,7 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     |> ignore
     let b1 = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(-10.0F, 0.3F))
+      .translation(Vec2(-10.0F, 0.3F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -55,7 +53,7 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     |> ignore
     let b2 = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(10.0F, 0.3F))
+      .translation(Vec2(10.0F, 0.3F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -101,9 +99,9 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
     multibody_b,
     (b1, b2),
   ) = setup_world()
-  let hooks = PhysicsHooks::new()
-  let events = EventHandler::new()
-  let collision_pipeline = CollisionPipeline::new()
+  let hooks = PhysicsHooks()
+  let events = EventHandler()
+  let collision_pipeline = CollisionPipeline()
   let params = IntegrationParameters::default().set_num_solver_iterations(4)
   let dt = 1.0F / 60.0F
   let cache_a_in : Array[ContactImpulseCacheEntry] = []
@@ -120,13 +118,13 @@ test "island solver filtering matches unfiltered solve (wbtest)" {
   )
 
   // Full island solve entrypoint.
-  let island_solver_a = IslandSolver::new()
+  let island_solver_a = IslandSolver()
   island_solver_a.solve(
     params, islands_b, bodies_b, colliders_b, hooks, narrow_b, impulse_b, multibody_b,
     dt, events, cache_b_in, cache_b_out,
   )
   // Direct per-island staged entrypoint.
-  let island_solver_b = IslandSolver::new()
+  let island_solver_b = IslandSolver()
   let staged_params = params.set_dt(dt)
   let active = islands_a.active_islands()
   for i in 0..<active.length() {

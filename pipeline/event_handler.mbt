@@ -37,11 +37,6 @@ pub struct EventHandler {
 
 ///|
 pub fn EventHandler::EventHandler() -> EventHandler {
-  EventHandler::new()
-}
-
-///|
-pub fn EventHandler::new() -> EventHandler {
   {
     collision_events: [],
     collision_callback: None,
@@ -199,12 +194,7 @@ pub struct ChannelEventCollector {
 
 ///|
 pub fn ChannelEventCollector::ChannelEventCollector() -> ChannelEventCollector {
-  ChannelEventCollector::new()
-}
-
-///|
-pub fn ChannelEventCollector::new() -> ChannelEventCollector {
-  { handler: EventHandler::new() }
+  { handler: EventHandler() }
 }
 
 ///|

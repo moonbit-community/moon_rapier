@@ -15,15 +15,15 @@
 ///|
 /// Regression test for Issue #14: half-space must not rely on any fixed extent.
 test "halfspace broad-phase pairs at large tangential offsets" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
-  let broad_phase = BroadPhaseBvh::new()
-  let narrow_phase = NarrowPhase::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let narrow_phase = NarrowPhase::NarrowPhase()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
-    ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 1.0F)).build(),
+    ColliderBuilder::halfspace(Vec2(0.0F, 1.0F)).build(),
     ground_body,
     bodies,
   )
@@ -31,7 +31,7 @@ test "halfspace broad-phase pairs at large tangential offsets" {
   // Tangential translation far beyond the old HALFSPACE_EXTENT approximation.
   let ball_body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0e6F, 0.5F))
+    .translation(Vec2(1.0e6F, 0.5F))
     .build(),
   )
   let ball = colliders.insert_with_parent(

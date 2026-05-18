@@ -13,11 +13,11 @@ import {
 // Types and methods
 pub struct CCDSolver {
 }
+pub fn CCDSolver::CCDSolver() -> Self
 pub fn CCDSolver::clamp_motions(Self, Float, @dynamics.RigidBodySet, @dynamics.PredictedImpacts) -> Unit
 pub fn CCDSolver::clamp_motions3(Self, Float, @dynamics.RigidBodySet3, @dynamics.PredictedImpacts) -> Unit
 pub fn CCDSolver::find_first_impact(Self, Float, @dynamics.IslandManager, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.BroadPhaseBvh, @collision.NarrowPhase) -> Float?
 pub fn CCDSolver::find_first_impact3(Self, Float, @dynamics.IslandManager3, @dynamics.RigidBodySet3, @collision.ColliderSet3, @collision.BroadPhaseBvh, @collision.NarrowPhase) -> Float?
-pub fn CCDSolver::new() -> Self
 pub fn CCDSolver::predict_impacts_at_next_positions(Self, Float, @dynamics.IslandManager, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.BroadPhaseBvh, @collision.NarrowPhase) -> @dynamics.PredictedImpacts
 pub fn CCDSolver::predict_impacts_at_next_positions3(Self, Float, @dynamics.IslandManager3, @dynamics.RigidBodySet3, @collision.ColliderSet3, @collision.BroadPhaseBvh, @collision.NarrowPhase) -> @dynamics.PredictedImpacts
 pub fn CCDSolver::update_ccd_active_flags(Self, @dynamics.IslandManager, @dynamics.RigidBodySet, Float, Bool) -> Bool

@@ -57,13 +57,13 @@ fn step_world3_flags_real_with_events(
 ///|
 fn run_examples3d_collision_groups3() -> Bool {
   // Ported from `rapier-reference/examples3d/collision_groups3.rs`.
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -71,7 +71,7 @@ fn run_examples3d_collision_groups3() -> Bool {
   let ground_height = 0.1F
   let floor = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -82,19 +82,19 @@ fn run_examples3d_collision_groups3() -> Bool {
     bodies,
   )
   |> ignore
-  let green_group = @dynamics.InteractionGroups::new(
+  let green_group = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
     And,
   )
-  let blue_group = @dynamics.InteractionGroups::new(
+  let blue_group = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
     And,
   )
   let green_platform = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(1.0F, 0.1F, 1.0F)
-    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .translation(Vec3(0.0F, 1.0F, 0.0F))
     .collision_groups(green_group)
     .build(),
     floor,
@@ -102,7 +102,7 @@ fn run_examples3d_collision_groups3() -> Bool {
   )
   let blue_platform = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(1.0F, 0.1F, 1.0F)
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .collision_groups(blue_group)
     .build(),
     floor,
@@ -113,7 +113,7 @@ fn run_examples3d_collision_groups3() -> Bool {
   let rad = 0.2F
   let green_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, -0.5F))
+    .translation(Vec3(0.0F, 5.0F, -0.5F))
     .build(),
   )
   let green_collider = colliders.insert_with_parent(
@@ -126,7 +126,7 @@ fn run_examples3d_collision_groups3() -> Bool {
   green_handles.push(green_body)
   let blue_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.5F))
+    .translation(Vec3(0.0F, 5.0F, 0.5F))
     .build(),
   )
   let blue_collider = colliders.insert_with_parent(
@@ -177,20 +177,20 @@ fn run_examples3d_collision_groups3() -> Bool {
 ///|
 fn run_examples3d_ccd3() -> Bool {
   // Ported from `rapier-reference/examples3d/ccd3.rs` (headless; asserts CCD causes collisions).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let events = @pipeline.EventHandler3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let events = @pipeline.EventHandler3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   // Simplified deterministic scene: a single fixed wall to hit at high speed.
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -201,7 +201,7 @@ fn run_examples3d_ccd3() -> Bool {
   |> ignore
   let wall = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .translation(Vec3(0.0F, 1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -216,16 +216,16 @@ fn run_examples3d_ccd3() -> Bool {
     .active_events(@collision.ActiveEvents::collision_events())
     .build()
   let sensor_body = @dynamics.RigidBodyBuilder3D::dynamic()
-    .linvel(@core.Vec3::new(1000.0F, 0.0F, 0.0F))
-    .translation(@core.Vec3::new(-20.0F, 1.0F, 0.0F))
+    .linvel(Vec3(1000.0F, 0.0F, 0.0F))
+    .translation(Vec3(-20.0F, 1.0F, 0.0F))
     .ccd_enabled(true)
     .build()
   let sensor_handle = bodies.insert(sensor_body)
   colliders.insert_with_parent(sensor_collider, sensor_handle, bodies) |> ignore
   let collider = @collision.ColliderBuilder3D::ball(1.0F).density(10.0F).build()
   let body = @dynamics.RigidBodyBuilder3D::dynamic()
-    .linvel(@core.Vec3::new(1000.0F, 0.0F, 0.0F))
-    .translation(@core.Vec3::new(-20.0F, 1.0F, 3.0F))
+    .linvel(Vec3(1000.0F, 0.0F, 0.0F))
+    .translation(Vec3(-20.0F, 1.0F, 3.0F))
     .ccd_enabled(true)
     .build()
   let handle = bodies.insert(body)
@@ -246,19 +246,19 @@ fn run_examples3d_ccd3() -> Bool {
 ///|
 fn run_examples3d_locked_rotations3() -> Bool {
   // Ported from `rapier-reference/examples3d/locked_rotations3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default()
   let ground_size = 5.0F
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -270,7 +270,7 @@ fn run_examples3d_locked_rotations3() -> Bool {
   )
   |> ignore
   let rb1 = @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 3.0F, 0.0F))
+    .translation(Vec3(0.0F, 3.0F, 0.0F))
     .lock_translations()
     .enabled_rotations(true, false, false)
     .build()
@@ -282,8 +282,8 @@ fn run_examples3d_locked_rotations3() -> Bool {
   )
   |> ignore
   let rb2 = @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
-    .rotation_scaled_axis(@core.Vec3::new(1.0F, 0.0F, 0.0F).scale(1.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
+    .rotation_scaled_axis(@core.Vec3(1.0F, 0.0F, 0.0F).scale(1.0F))
     .lock_rotations()
     .build()
   let h2 = bodies.insert(rb2)
@@ -314,21 +314,21 @@ fn run_examples3d_locked_rotations3() -> Bool {
 ///|
 fn run_examples3d_gyroscopic3() -> Bool {
   // Ported from `rapier-reference/examples3d/gyroscopic3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default()
   // Use an anisotropic inertia tensor so the gyroscopic term changes angular velocity over time.
-  let props = @core.MassProperties3::new(
+  let props = @core.MassProperties3(
     1.0F,
-    @core.SdpMat3::from_diagonal(@core.Vec3::new(1.0F, 0.5F, 0.25F)),
+    @core.SdpMat3::from_diagonal(Vec3(1.0F, 0.5F, 0.25F)),
     @core.Vec3::zero(),
   )
-  let w0 = @core.Vec3::new(0.0F, 20.0F, 0.1F)
+  let w0 = @core.Vec3(0.0F, 20.0F, 0.1F)
   let rb = @dynamics.RigidBodyBuilder3D::dynamic()
     .gravity_scale(0.0F)
     .mass_properties(props)
@@ -345,7 +345,7 @@ fn run_examples3d_gyroscopic3() -> Bool {
   |> ignore
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(0.2F, 0.4F, 0.2F)
-    .translation(@core.Vec3::new(0.0F, 0.8F, 0.0F))
+    .translation(Vec3(0.0F, 0.8F, 0.0F))
     .build(),
     h,
     bodies,

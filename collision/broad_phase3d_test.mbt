@@ -14,10 +14,10 @@
 
 ///|
 test "broad phase 3d pairs basic" {
-  let colliders = ColliderSet3D::new()
+  let colliders = ColliderSet3D::ColliderSet3D()
   let ch1 = colliders.insert(ColliderBuilder3D::ball(0.5F).build())
   let ch2 = colliders.insert(ColliderBuilder3D::ball(0.5F).build())
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
   let pairs = broad_phase.pairs()
   inspect(pairs.length() == 1, content="true")
@@ -29,10 +29,10 @@ test "broad phase 3d pairs basic" {
 
 ///|
 test "broad phase 3d emits add/delete pair events" {
-  let colliders = ColliderSet3D::new()
+  let colliders = ColliderSet3D::ColliderSet3D()
   let ch1 = colliders.insert(ColliderBuilder3D::ball(0.5F).build())
   let ch2 = colliders.insert(ColliderBuilder3D::ball(0.5F).build())
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
@@ -68,29 +68,27 @@ test "broad phase 3d emits add/delete pair events" {
 
 ///|
 test "broad phase 3d skips disabled colliders" {
-  let colliders = ColliderSet3D::new()
+  let colliders = ColliderSet3D::ColliderSet3D()
   colliders.insert(ColliderBuilder3D::ball(0.5F).build()) |> ignore
   colliders.insert(ColliderBuilder3D::ball(0.5F).enabled(false).build())
   |> ignore
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
 }
 
 ///|
 test "broad phase 3d prediction distance expands aabbs" {
-  let colliders = ColliderSet3D::new()
+  let colliders = ColliderSet3D::ColliderSet3D()
   colliders.insert(
     ColliderBuilder3D::ball(0.5F).translation(@core.Vec3::zero()).build(),
   )
   |> ignore
   colliders.insert(
-    ColliderBuilder3D::ball(0.5F)
-    .translation(@core.Vec3::new(1.01F, 0.0F, 0.0F))
-    .build(),
+    ColliderBuilder3D::ball(0.5F).translation(Vec3(1.01F, 0.0F, 0.0F)).build(),
   )
   |> ignore
-  let broad_phase = BroadPhase3D::new()
+  let broad_phase = BroadPhase3D::BroadPhase3D()
   broad_phase.update(0.0F, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
   broad_phase.update(0.01F, colliders)

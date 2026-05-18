@@ -18,13 +18,13 @@
 ///|
 fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/keva3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     solver_iters,
@@ -33,7 +33,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
   // Ground.
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -0.1F, 0.0F))
+    .translation(Vec3(0.0F, -0.1F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -53,7 +53,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
   ) -> Unit {
     let dimensions = [
       half_extents,
-      @core.Vec3::new(half_extents.z, half_extents.y, half_extents.x),
+      Vec3(half_extents.z, half_extents.y, half_extents.x),
     ]
     let block_width = 2.0F * half_extents.z * Float::from_int(numx)
     let block_height = 2.0F * half_extents.y * Float::from_int(numy)
@@ -83,7 +83,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
           let rb = bodies.insert(
             @dynamics.RigidBodyBuilder3D::dynamic()
             .translation(
-              @core.Vec3::new(
+              Vec3(
                 x + dim.x + shift.x,
                 y + dim.y + shift.y,
                 z + dim.z + shift.z,
@@ -102,7 +102,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
     }
 
     // Close the top.
-    let dim = @core.Vec3::new(half_extents.z, half_extents.x, half_extents.y)
+    let dim = @core.Vec3(half_extents.z, half_extents.x, half_extents.y)
     let nx_top = @math.floor((block_width / (dim.x * 2.0F)).to_double()).to_int()
     let nz_top = @math.floor((block_width / (dim.z * 2.0F)).to_double()).to_int()
     for i in 0..<nx_top {
@@ -110,7 +110,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
         let rb = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
           .translation(
-            @core.Vec3::new(
+            Vec3(
               Float::from_int(i) * dim.x * 2.0F + dim.x + shift.x,
               dim.y + shift.y + block_height,
               Float::from_int(j) * dim.z * 2.0F + dim.z + shift.z,
@@ -129,7 +129,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
   }
 
   // Reduced keva scene in default mode; heavy mode moves toward denser upstream behavior.
-  let half_extents = @core.Vec3::new(0.1F, 0.5F, 2.0F)
+  let half_extents = @core.Vec3(0.1F, 0.5F, 2.0F)
   let numx = if heavy { 3 } else { 2 }
   let ny = if heavy { 10 } else { 8 }
   let numz = numx * 3 + 1
@@ -138,7 +138,7 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
     bodies,
     colliders,
     half_extents,
-    @core.Vec3::new(-block_width / 2.0F, 0.0F, -block_width / 2.0F),
+    Vec3(-block_width / 2.0F, 0.0F, -block_width / 2.0F),
     numx,
     ny,
     numz,
@@ -176,14 +176,14 @@ test "HEAVY examples3d/keva3.rs parity (3DReal headless)" {
 ///|
 fn run_examples3d_urdf3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/urdf3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     solver_iters,
@@ -196,11 +196,9 @@ fn run_examples3d_urdf3_profile(heavy : Bool) -> Bool {
     .make_roots_fixed(true)
     // Z-up to Y-up (rotate around +X by +pi/2).
     .shift(
-      @core.Isometry3::new(
+      Isometry3(
         @core.Vec3::zero(),
-        @core.rotation_from_scaled_axis(
-          @core.Vec3::new(@core.pi() * 0.5F, 0.0F, 0.0F),
-        ),
+        @core.rotation_from_scaled_axis(Vec3(@core.pi() * 0.5F, 0.0F, 0.0F)),
       ),
     )
   let xml = t12_urdf_xml()
@@ -221,7 +219,7 @@ fn run_examples3d_urdf3_profile(heavy : Bool) -> Bool {
         bodies,
         colliders,
         joints,
-        @core.Isometry3::from_translation(@core.Vec3::new(10.0F, 0.0F, 0.0F)),
+        @core.Isometry3::from_translation(Vec3(10.0F, 0.0F, 0.0F)),
       )
     }
   } else {
@@ -262,13 +260,13 @@ test "HEAVY examples3d/urdf3.rs parity (3DReal headless)" {
 ///|
 fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/voxels3.rs` (headless; settings fixed to defaults).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     solver_iters,
@@ -280,7 +278,7 @@ fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
   // - Test CCD: false
   let falling_objects = 5
   let voxel_size_y = 1.0F
-  let voxel_size = @core.Vec3::new(1.0F, voxel_size_y, 1.0F)
+  let voxel_size = @core.Vec3(1.0F, voxel_size_y, 1.0F)
   fn clamp(v : Float, lo : Float, hi : Float) -> Float {
     if v < lo {
       lo
@@ -303,13 +301,11 @@ fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
       let sx = clamp(Float::from_double(@math.sin(tx.to_double())), -0.8F, 0.8F)
       let cz = clamp(Float::from_double(@math.cos(tz.to_double())), -0.8F, 0.8F)
       let y = sx * cz * 16.0F
-      points.push(@core.Vec3::new(x, y * voxel_size_y, z))
+      points.push(Vec3(x, y * voxel_size_y, z))
       // Boundary "walls".
       if i == 0 || i == n - 1 || j == 0 || j == n - 1 {
         for k in 0..<(if heavy { 3 } else { 2 }) {
-          points.push(
-            @core.Vec3::new(x, (y + Float::from_int(k)) * voxel_size_y, z),
-          )
+          points.push(Vec3(x, (y + Float::from_int(k)) * voxel_size_y, z))
         }
       }
     }
@@ -325,25 +321,25 @@ fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
   let floor_aabb = if colliders.get(floor_handle) is Some(floor) {
     floor.compute_aabb()
   } else {
-    @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+    Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
   }
 
   // Basic raycast sanity on the voxel collider (before adding dynamic bodies, to avoid accidental
   // hits on corner-touching boxes).
-  let qp0 = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new().predicate((_, co) => {
+  let qp0 = @collision.QueryPipeline3DReal(
+    @collision.QueryFilter3DReal().predicate((_, co) => {
       co.voxel_key_for_triangle(0) is Some(_)
     }),
     bodies,
     colliders,
   )
-  let ray0 = @collision.Ray3::new(
-    @core.Vec3::new(
+  let ray0 = @collision.Ray3(
+    Vec3(
       (floor_aabb.mins.x + floor_aabb.maxs.x) * 0.5F,
       floor_aabb.maxs.y + 50.0F,
       (floor_aabb.mins.z + floor_aabb.maxs.z) * 0.5F,
     ),
-    @core.Vec3::new(0.0F, -1.0F, 0.0F),
+    Vec3(0.0F, -1.0F, 0.0F),
   )
   if qp0.cast_ray_and_get_voxel_key(bodies, colliders, ray0, 200.0F, true)
     is Some((_, _, _)) {
@@ -366,7 +362,7 @@ fn run_examples3d_voxels3_profile(heavy : Bool) -> Bool {
         let rb = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
           .translation(
-            @core.Vec3::new(
+            Vec3(
               floor_aabb.mins.x +
               margin.x +
               Float::from_int(i) * extents.x / Float::from_int(nik),

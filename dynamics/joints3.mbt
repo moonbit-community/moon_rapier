@@ -28,7 +28,7 @@ struct ImpulseJointSet3 {
 }
 
 ///|
-pub fn ImpulseJointSet3::new() -> ImpulseJointSet3 {
+pub fn ImpulseJointSet3::ImpulseJointSet3() -> ImpulseJointSet3 {
   {
     rb_graph_ids: [],
     rb_graph_generations: [],
@@ -144,12 +144,12 @@ fn ImpulseJointSet3::allocate_joint_handle(
 ) -> ImpulseJointHandle {
   if self.free_handles.pop() is Some(index) {
     let generation = self.joint_generations[index]
-    ImpulseJointHandle::new(index, generation)
+    ImpulseJointHandle(index, generation)
   } else {
     let index = self.joint_generations.length()
     self.joint_generations.push(0)
     self.joint_edge_ids.push(-1)
-    ImpulseJointHandle::new(index, 0)
+    ImpulseJointHandle(index, 0)
   }
 }
 
@@ -484,7 +484,7 @@ pub fn ImpulseJointSet3::get_unknown_gen(
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
   }
-  let handle = ImpulseJointHandle::new(id, self.joint_generations[id])
+  let handle = ImpulseJointHandle(id, self.joint_generations[id])
   Some((self.graph_edges[edge_id].joint, handle))
 }
 
@@ -728,10 +728,10 @@ struct MultibodyJointSet3 {
 }
 
 ///|
-pub fn MultibodyJointSet3::new() -> MultibodyJointSet3 {
+pub fn MultibodyJointSet3::MultibodyJointSet3() -> MultibodyJointSet3 {
   {
-    multibodies: @data.Arena::new(),
-    rb2mb: @data.Coarena::new(),
+    multibodies: Arena(),
+    rb2mb: Coarena(),
     graph_nodes: [],
     graph_edges: [],
     adjacency: [],
@@ -941,7 +941,7 @@ fn MultibodyJointSet3::register_body(
 ) -> MultibodyLinkId {
   let mb_handle = self.multibodies.insert(Multibody::new_with_root(handle))
   let graph_id = self.ensure_graph_node(handle)
-  let link = MultibodyLinkId::new(graph_id, MultibodyIndex::new(mb_handle), 0)
+  let link = MultibodyLinkId(graph_id, MultibodyIndex(mb_handle), 0)
   self.set_link(handle, link)
   link
 }
@@ -974,7 +974,7 @@ fn MultibodyJointSet3::update_body_links_for_multibody(
     }
     self.set_link(
       link.rigid_body,
-      MultibodyLinkId::new(graph_id, mb_index, link.internal_id),
+      MultibodyLinkId(graph_id, mb_index, link.internal_id),
     )
   }
 }
@@ -1071,7 +1071,7 @@ pub fn MultibodyJointSet3::revolute_joint_descriptors(
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
     let (mb_handle, mb) = items[i]
-    let mb_index = MultibodyIndex::new(mb_handle)
+    let mb_index = MultibodyIndex(mb_handle)
     for link_id in 1..<mb.links.length() {
       let link = mb.links[link_id]
       let parent_id = link.parent_internal_id
@@ -1089,7 +1089,7 @@ pub fn MultibodyJointSet3::revolute_joint_descriptors(
         -1
       }
       result.push({
-        link: MultibodyLinkId::new(graph_id, mb_index, link_id),
+        link: MultibodyLinkId(graph_id, mb_index, link_id),
         parent: parent_link.rigid_body,
         child: link.rigid_body,
         joint: link.joint.as_revolute_joint(),
@@ -1145,7 +1145,7 @@ pub fn MultibodyJointSet3::insert(
   joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  let multibody_joint = MultibodyJoint::new(joint, false)
+  let multibody_joint = MultibodyJoint(joint, false)
   let parent_link = self.lookup_body(parent)
   let child_link = self.lookup_body(child)
   if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
@@ -1181,7 +1181,7 @@ pub fn MultibodyJointSet3::insert(
         }
         self.set_link(
           link.rigid_body,
-          MultibodyLinkId::new(graph_id, parent_link.multibody, offset + i),
+          MultibodyLinkId(graph_id, parent_link.multibody, offset + i),
         )
       }
       if wake_up {
@@ -1189,7 +1189,7 @@ pub fn MultibodyJointSet3::insert(
         push_unique_handle(self.to_wake_up, child)
       }
       push_unique_pair(self.to_join, (parent, child))
-      Some(MultibodyJointHandle::new(rb_handle_index(child)))
+      Some(MultibodyJointHandle(rb_handle_index(child)))
     } else {
       None
     }
@@ -1206,7 +1206,7 @@ pub fn MultibodyJointSet3::insert_kinematic(
   joint : GenericJoint,
   wake_up : Bool,
 ) -> MultibodyJointHandle? {
-  let multibody_joint = MultibodyJoint::new(joint, true)
+  let multibody_joint = MultibodyJoint(joint, true)
   let parent_link = self.lookup_body(parent)
   let child_link = self.lookup_body(child)
   if parent_link.multibody.equals(child_link.multibody) || child_link.id != 0 {
@@ -1242,7 +1242,7 @@ pub fn MultibodyJointSet3::insert_kinematic(
         }
         self.set_link(
           link.rigid_body,
-          MultibodyLinkId::new(graph_id, parent_link.multibody, offset + i),
+          MultibodyLinkId(graph_id, parent_link.multibody, offset + i),
         )
       }
       if wake_up {
@@ -1250,7 +1250,7 @@ pub fn MultibodyJointSet3::insert_kinematic(
         push_unique_handle(self.to_wake_up, child)
       }
       push_unique_pair(self.to_join, (parent, child))
-      Some(MultibodyJointHandle::new(rb_handle_index(child)))
+      Some(MultibodyJointHandle(rb_handle_index(child)))
     } else {
       None
     }
@@ -1276,7 +1276,7 @@ pub fn MultibodyJointSet3::get(
 ) -> (Multibody3, LinkId)? {
   if self.rb2mb.get(handle.arena_index()) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {
-      Some(({ inner: multibody }, LinkId::new(link.id)))
+      Some(({ inner: multibody }, LinkId(link.id)))
     } else {
       None
     }
@@ -1360,7 +1360,7 @@ pub fn MultibodyJointSet3::remove(
       } else {
         let remaining_handle = self.multibodies.insert(remaining_mb)
         self.update_body_links_for_multibody(
-          MultibodyIndex::new(remaining_handle),
+          MultibodyIndex(remaining_handle),
           remaining_mb,
         )
       }
@@ -1375,7 +1375,7 @@ pub fn MultibodyJointSet3::remove(
       } else {
         let subtree_handle = self.multibodies.insert(subtree_mb)
         self.update_body_links_for_multibody(
-          MultibodyIndex::new(subtree_handle),
+          MultibodyIndex(subtree_handle),
           subtree_mb,
         )
       }
@@ -1474,7 +1474,7 @@ pub fn MultibodyJointSet3::get_unknown_gen(
         Some(
           (
             { inner: multibody },
-            LinkId::new(link.id),
+            LinkId(link.id),
             MultibodyJointHandle::from_raw_parts(id, generation),
           ),
         )
@@ -1512,7 +1512,7 @@ pub fn MultibodyJointSet3::joint_between(
       if child1.parent_internal_id == link2.id {
         Some(
           (
-            MultibodyJointHandle::new(rb_handle_index(body1)),
+            MultibodyJointHandle(rb_handle_index(body1)),
             { inner: multibody },
             child1,
           ),
@@ -1520,7 +1520,7 @@ pub fn MultibodyJointSet3::joint_between(
       } else if child2.parent_internal_id == link1.id {
         Some(
           (
-            MultibodyJointHandle::new(rb_handle_index(body2)),
+            MultibodyJointHandle(rb_handle_index(body2)),
             { inner: multibody },
             child2,
           ),
@@ -1554,7 +1554,7 @@ pub fn MultibodyJointSet3::attached_joints(
         (
           edge.parent,
           edge.child,
-          MultibodyJointHandle::new(rb_handle_index(edge.child)),
+          MultibodyJointHandle(rb_handle_index(edge.child)),
         ),
       )
     }
@@ -1615,7 +1615,7 @@ pub fn MultibodyJointSet3::iter(
       if link.id >= 0 && link.id < multibody.links.length() {
         result.push(
           (
-            MultibodyJointHandle::new(joint_handle),
+            MultibodyJointHandle(joint_handle),
             link,
             { inner: multibody },
             multibody.links[link.id],
@@ -1752,8 +1752,8 @@ fn mb3_set_spatial_column(
 ///|
 fn mb3_project_pose_to_2d(pose : @core.Isometry3) -> @core.Isometry2 {
   let axis = pose.rotation.to_scaled_axis()
-  @core.Isometry2::new(
-    @core.Vec2::new(pose.translation.x, pose.translation.y),
+  Isometry2(
+    Vec2(pose.translation.x, pose.translation.y),
     @core.Rot2::from_angle(axis.z),
   )
 }
@@ -1761,16 +1761,14 @@ fn mb3_project_pose_to_2d(pose : @core.Isometry3) -> @core.Isometry2 {
 ///|
 fn mb3_cached_root_pose(multibody : Multibody) -> @core.Isometry3 {
   if multibody.links.length() > 0 {
-    @core.Isometry3::new(
-      @core.Vec3::new(
+    Isometry3(
+      Vec3(
         multibody.root_translation.x,
         multibody.root_translation.y,
         multibody.root_translation3_z,
       ),
       multibody.root_rotation3_extra.mul(
-        @core.rotation_from_scaled_axis(
-          @core.Vec3::new(0.0F, 0.0F, multibody.root_angle),
-        ),
+        @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, multibody.root_angle)),
       ),
     )
   } else {
@@ -1786,7 +1784,7 @@ fn mb3_update_root_from_bodies(
   if multibody.links.length() > 0 {
     let root = multibody.links[0].rigid_body
     let translation = bodies.translation(root)
-    multibody.root_translation = @core.Vec2::new(translation.x, translation.y)
+    multibody.root_translation = Vec2(translation.x, translation.y)
     multibody.root_angle = bodies.rotation(root).to_scaled_axis().z
   }
 }
@@ -1826,8 +1824,8 @@ fn mb3_root_pose_from_bodies(
   let mut pose = if multibody.links.length() > 0 {
     let root = multibody.links[0].rigid_body
     let body_translation = bodies.translation(root)
-    @core.Isometry3::new(
-      @core.Vec3::new(
+    @core.Isometry3(
+      Vec3(
         body_translation.x,
         body_translation.y,
         multibody.root_translation3_z,
@@ -1843,7 +1841,7 @@ fn mb3_root_pose_from_bodies(
     let dy = if disp.length() > 1 { disp[1] } else { 0.0F }
     let dz = if disp.length() > 2 { disp[2] } else { 0.0F }
     let rot_delta = @core.rotation_from_scaled_axis(
-      @core.Vec3::new(
+      Vec3(
         if disp.length() > 3 {
           disp[3]
         } else {
@@ -1861,8 +1859,8 @@ fn mb3_root_pose_from_bodies(
         },
       ),
     )
-    pose = @core.Isometry3::new(
-      pose.translation.add(@core.Vec3::new(dx, dy, dz)),
+    pose = Isometry3(
+      pose.translation.add(Vec3(dx, dy, dz)),
       rot_delta.mul(pose.rotation),
     )
   }
@@ -1942,11 +1940,11 @@ fn mb3_multibody_body_to_parent(
   displacements : Array[@core.Real],
 ) -> @core.Isometry3 {
   let locked = joint.data.locked_axes().bits()
-  let frame1 = @core.Isometry3::new(
+  let frame1 = @core.Isometry3(
     joint.local_anchor1_3,
     joint.local_frame1_rotation,
   )
-  let frame2 = @core.Isometry3::new(
+  let frame2 = @core.Isometry3(
     joint.local_anchor2_3,
     joint.local_frame2_rotation,
   )
@@ -1954,51 +1952,48 @@ fn mb3_multibody_body_to_parent(
   let mut angular = joint.ang_coords3
   let mut curr = 0
   if (locked & (1 << 0)) == 0 && curr < displacements.length() {
-    linear = @core.Vec3::new(linear.x + displacements[curr], linear.y, linear.z)
+    linear = Vec3(linear.x + displacements[curr], linear.y, linear.z)
     curr = curr + 1
   }
   if (locked & (1 << 1)) == 0 && curr < displacements.length() {
-    linear = @core.Vec3::new(linear.x, linear.y + displacements[curr], linear.z)
+    linear = Vec3(linear.x, linear.y + displacements[curr], linear.z)
     curr = curr + 1
   }
   if (locked & (1 << 2)) == 0 && curr < displacements.length() {
-    linear = @core.Vec3::new(linear.x, linear.y, linear.z + displacements[curr])
+    linear = Vec3(linear.x, linear.y, linear.z + displacements[curr])
     curr = curr + 1
   }
   for ang_index in 0..<3 {
     let bit = 3 + ang_index
     if (locked & (1 << bit)) == 0 && curr < displacements.length() {
       angular = match ang_index {
-        0 =>
-          @core.Vec3::new(angular.x + displacements[curr], angular.y, angular.z)
-        1 =>
-          @core.Vec3::new(angular.x, angular.y + displacements[curr], angular.z)
-        _ =>
-          @core.Vec3::new(angular.x, angular.y, angular.z + displacements[curr])
+        0 => Vec3(angular.x + displacements[curr], angular.y, angular.z)
+        1 => Vec3(angular.x, angular.y + displacements[curr], angular.z)
+        _ => Vec3(angular.x, angular.y, angular.z + displacements[curr])
       }
       curr = curr + 1
     }
   }
 
-  let mut transform = @core.Isometry3::new(
+  let mut transform = @core.Isometry3(
     @core.Vec3::zero(),
     @core.rotation_from_scaled_axis(angular),
   ).mul(frame2.inverse())
 
   if (locked & (1 << 0)) == 0 {
-    transform = @core.Isometry3::from_translation(
-      @core.Vec3::new(linear.x, 0.0F, 0.0F),
-    ).mul(transform)
+    transform = @core.Isometry3::from_translation(Vec3(linear.x, 0.0F, 0.0F)).mul(
+      transform,
+    )
   }
   if (locked & (1 << 1)) == 0 {
-    transform = @core.Isometry3::from_translation(
-      @core.Vec3::new(0.0F, linear.y, 0.0F),
-    ).mul(transform)
+    transform = @core.Isometry3::from_translation(Vec3(0.0F, linear.y, 0.0F)).mul(
+      transform,
+    )
   }
   if (locked & (1 << 2)) == 0 {
-    transform = @core.Isometry3::from_translation(
-      @core.Vec3::new(0.0F, 0.0F, linear.z),
-    ).mul(transform)
+    transform = @core.Isometry3::from_translation(Vec3(0.0F, 0.0F, linear.z)).mul(
+      transform,
+    )
   }
 
   frame1.mul(transform)
@@ -2037,9 +2032,9 @@ fn mb3_compute_link_pose(
     let joint_disp : Array[@core.Real] = []
     let mut local_col = 0
     let linear_axes : Array[@core.Vec3] = [
-      @core.Vec3::new(1.0F, 0.0F, 0.0F),
-      @core.Vec3::new(0.0F, 1.0F, 0.0F),
-      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+      Vec3(1.0F, 0.0F, 0.0F),
+      Vec3(0.0F, 1.0F, 0.0F),
+      Vec3(0.0F, 0.0F, 1.0F),
     ]
     for axis_index in 0..<3 {
       if (locked & (1 << axis_index)) == 0 {
@@ -2086,26 +2081,26 @@ fn mb3_compute_link_pose(
       mb3_set_spatial_column(
         jacobian,
         0,
-        @core.Vec3::new(1.0F, 0.0F, 0.0F),
+        Vec3(1.0F, 0.0F, 0.0F),
         @core.Vec3::zero(),
       )
       mb3_set_spatial_column(
         jacobian,
         1,
-        @core.Vec3::new(0.0F, 1.0F, 0.0F),
+        Vec3(0.0F, 1.0F, 0.0F),
         @core.Vec3::zero(),
       )
       mb3_set_spatial_column(
         jacobian,
         2,
-        @core.Vec3::new(0.0F, 0.0F, 1.0F),
+        Vec3(0.0F, 0.0F, 1.0F),
         @core.Vec3::zero(),
       )
 
       let root_axes : Array[@core.Vec3] = [
-        root_pose.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F)),
-        root_pose.rotation.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F)),
-        root_pose.rotation.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F)),
+        root_pose.rotation.rotate_vec3(Vec3(1.0F, 0.0F, 0.0F)),
+        root_pose.rotation.rotate_vec3(Vec3(0.0F, 1.0F, 0.0F)),
+        root_pose.rotation.rotate_vec3(Vec3(0.0F, 0.0F, 1.0F)),
       ]
       let rel = link_position.sub(root_position)
       for axis_index in 0..<3 {
@@ -2271,7 +2266,7 @@ pub fn Multibody3::apply_displacements(
         displacements[2]
     }
     let rot_delta = @core.rotation_from_scaled_axis(
-      @core.Vec3::new(
+      Vec3(
         if displacements.length() > 3 {
           displacements[3]
         } else {
@@ -2461,7 +2456,7 @@ fn mb3_split_root_rotation_real(
 ) -> (@core.Real, @core.Quat) {
   let yaw = rotation.to_scaled_axis().z
   let extra = rotation.mul(
-    @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, -yaw)),
+    @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, -yaw)),
   )
   (yaw, extra)
 }
@@ -2477,7 +2472,7 @@ fn mb3_update_root_from_bodies_real(
       let translation = body.translation()
       let rotation = body.rotation()
       let (yaw, extra) = mb3_split_root_rotation_real(rotation)
-      multibody.root_translation = @core.Vec2::new(translation.x, translation.y)
+      multibody.root_translation = Vec2(translation.x, translation.y)
       multibody.root_translation3_z = translation.z
       multibody.root_angle = yaw
       multibody.root_rotation3_extra = extra
@@ -2533,7 +2528,7 @@ fn mb3_root_pose_from_bodies_real(
     let dy = if disp.length() > 1 { disp[1] } else { 0.0F }
     let dz = if disp.length() > 2 { disp[2] } else { 0.0F }
     let rot_delta = @core.rotation_from_scaled_axis(
-      @core.Vec3::new(
+      Vec3(
         if disp.length() > 3 {
           disp[3]
         } else {
@@ -2551,8 +2546,8 @@ fn mb3_root_pose_from_bodies_real(
         },
       ),
     )
-    pose = @core.Isometry3::new(
-      pose.translation.add(@core.Vec3::new(dx, dy, dz)),
+    pose = Isometry3(
+      pose.translation.add(Vec3(dx, dy, dz)),
       rot_delta.mul(pose.rotation),
     )
   }
@@ -2588,7 +2583,7 @@ fn mb3_update_rigid_bodies_real(
     if bodies.get_mut(link.rigid_body) is Some(body) {
       let pose = mb3_compute_link_pose(
         multibody,
-        LinkId::new(i),
+        LinkId(i),
         root_pose,
         None,
         None,
@@ -2766,12 +2761,7 @@ pub struct MultibodyJointSet3DReal {
 
 ///|
 pub fn MultibodyJointSet3DReal::MultibodyJointSet3DReal() -> MultibodyJointSet3DReal {
-  MultibodyJointSet3DReal::new()
-}
-
-///|
-pub fn MultibodyJointSet3DReal::new() -> MultibodyJointSet3DReal {
-  { inner: MultibodyJointSet3::new() }
+  { inner: MultibodyJointSet3() }
 }
 
 ///|

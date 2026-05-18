@@ -23,12 +23,7 @@ pub struct PhysicsPipeline3D {
 
 ///|
 pub fn PhysicsPipeline3D::PhysicsPipeline3D() -> PhysicsPipeline3D {
-  PhysicsPipeline3D::new()
-}
-
-///|
-pub fn PhysicsPipeline3D::new() -> PhysicsPipeline3D {
-  { inner: PhysicsPipeline3DReal::new() }
+  { inner: PhysicsPipeline3DReal() }
 }
 
 ///|

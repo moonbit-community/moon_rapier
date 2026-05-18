@@ -14,13 +14,13 @@
 
 ///|
 test "joint solver 3dreal: prismatic motor position moves body along axis" {
-  let pipeline = PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
+  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let joints = @dynamics.JointSet3DReal()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
@@ -42,7 +42,7 @@ test "joint solver 3dreal: prismatic motor position moves body along axis" {
   joints.insert_prismatic_motor_position(
     ground,
     body,
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    Vec3(1.0F, 0.0F, 0.0F),
     @core.Vec3::zero(),
     @core.Vec3::zero(),
     2.0F,

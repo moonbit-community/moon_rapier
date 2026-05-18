@@ -15,8 +15,8 @@
 ///|
 /// Ported from rapier island_manager merge behavior.
 test "island manager merge islands" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
   islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
@@ -60,11 +60,11 @@ fn merge_handles(
 ///|
 /// Ported from rapier island_manager sleep extraction behavior.
 test "island manager extract sleeping island" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
-  let contacts = ContactGraph::new()
-  let impulse_joints = ImpulseJointSet::new()
-  let multibody_joints = MultibodyJointSet::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
+  let contacts = ContactGraph()
+  let impulse_joints = ImpulseJointSet()
+  let multibody_joints = MultibodyJointSet()
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   islands.rigid_body_updated(handle1, bodies)
@@ -103,8 +103,8 @@ test "island manager extract sleeping island" {
 ///|
 /// Ported from rapier island optimizer merge behavior.
 test "island manager incremental merge small islands" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
   islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
@@ -131,8 +131,8 @@ test "island manager incremental merge small islands" {
 ///|
 /// Ported from rapier island optimizer merge compatibility checks.
 test "island manager incremental merge incompatible solver iterations" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
   islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(
     RigidBodyBuilder::dynamic().additional_solver_iterations(0).build(),
@@ -167,11 +167,11 @@ test "island manager incremental merge incompatible solver iterations" {
 ///|
 /// Ported from rapier island optimizer split behavior.
 test "island manager incremental split over max" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
-  let contacts = ContactGraph::new()
-  let impulse_joints = ImpulseJointSet::new()
-  let multibody_joints = MultibodyJointSet::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
+  let contacts = ContactGraph()
+  let impulse_joints = ImpulseJointSet()
+  let multibody_joints = MultibodyJointSet()
   islands.set_island_size_limits(1, 5)
   let handles : Array[RigidBodyHandle] = []
   for _ in 0..<6 {
@@ -200,8 +200,8 @@ test "island manager incremental split over max" {
 ///|
 /// Ported from rapier island_manager interaction merge behavior.
 test "island manager cross island contact merge" {
-  let bodies = RigidBodySet::new()
-  let islands = IslandManager::new()
+  let bodies = RigidBodySet()
+  let islands = IslandManager()
   islands.set_island_size_limits(1, 8)
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())

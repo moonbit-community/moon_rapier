@@ -16,7 +16,7 @@
 pub struct CollisionPipeline {}
 
 ///|
-pub fn CollisionPipeline::new() -> CollisionPipeline {
+pub fn CollisionPipeline::CollisionPipeline() -> CollisionPipeline {
   CollisionPipeline::{  }
 }
 

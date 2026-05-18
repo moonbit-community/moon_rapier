@@ -70,14 +70,6 @@ pub fn SolverContact::SolverContact(
   point : @core.Vec2,
   dist : @core.Real,
 ) -> SolverContact {
-  SolverContact::new(point, dist)
-}
-
-///|
-pub fn SolverContact::new(
-  point : @core.Vec2,
-  dist : @core.Real,
-) -> SolverContact {
   {
     point,
     dist,

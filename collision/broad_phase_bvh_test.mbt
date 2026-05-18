@@ -14,8 +14,8 @@
 
 ///|
 test "broad phase bvh pairs basic" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
@@ -28,7 +28,7 @@ test "broad phase bvh pairs basic" {
   let c2 = ColliderBuilder::ball(0.5F).build()
   let ch1 = colliders.insert_with_parent(c1, h1, bodies)
   let ch2 = colliders.insert_with_parent(c2, h2, bodies)
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   let pairs = broad_phase.pairs()
   inspect(pairs.length() == 1, content="true")
@@ -42,8 +42,8 @@ test "broad phase bvh pairs basic" {
 
 ///|
 test "broad phase bvh emits add/delete pair events" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let ch1 = colliders.insert_with_parent(
@@ -56,7 +56,7 @@ test "broad phase bvh emits add/delete pair events" {
     h2,
     bodies,
   )
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
@@ -94,38 +94,36 @@ test "broad phase bvh emits add/delete pair events" {
 
 ///|
 test "broad phase bvh skips disabled colliders" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let c1 = ColliderBuilder::ball(0.5F).build()
   let c2 = ColliderBuilder::ball(0.5F).enabled(false).build()
   colliders.insert_with_parent(c1, h1, bodies) |> ignore
   colliders.insert_with_parent(c2, h2, bodies) |> ignore
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
 }
 
 ///|
 test "broad phase bvh prediction distance expands aabb pairs" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build(),
   )
   let h2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.01F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.01F, 0.0F)).build(),
   )
   colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h1, bodies)
   |> ignore
   colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h2, bodies)
   |> ignore
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
   broad_phase.update(0.01F, bodies, colliders)
@@ -158,10 +156,7 @@ fn compute_aabb_for_test(
       compute_aabb_for_test(inner.val, center, rotation, pd + radius)
     Ball(radius) => {
       let r = radius + pd
-      (
-        @core.Vec2::new(center.x - r, center.y - r),
-        @core.Vec2::new(center.x + r, center.y + r),
-      )
+      (Vec2(center.x - r, center.y - r), Vec2(center.x + r, center.y + r))
     }
     Cuboid(half_width, half_height) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -169,19 +164,13 @@ fn compute_aabb_for_test(
       let abs_sin = @core.abs(rot.sin)
       let hw = abs_cos * half_width + abs_sin * half_height + pd
       let hh = abs_sin * half_width + abs_cos * half_height + pd
-      (
-        @core.Vec2::new(center.x - hw, center.y - hh),
-        @core.Vec2::new(center.x + hw, center.y + hh),
-      )
+      (Vec2(center.x - hw, center.y - hh), Vec2(center.x + hw, center.y + hh))
     }
     HalfSpace(_) =>
-      (
-        @core.Vec2::new(center.x - pd, center.y - pd),
-        @core.Vec2::new(center.x + pd, center.y + pd),
-      )
+      (Vec2(center.x - pd, center.y - pd), Vec2(center.x + pd, center.y + pd))
     CapsuleX(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+      let offset = rot.rotate_vec2(Vec2(half_height, 0.0F))
       let a = center.add(offset)
       let b = center.sub(offset)
       let r = radius + pd
@@ -189,14 +178,11 @@ fn compute_aabb_for_test(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      (
-        @core.Vec2::new(min_x - r, min_y - r),
-        @core.Vec2::new(max_x + r, max_y + r),
-      )
+      (Vec2(min_x - r, min_y - r), Vec2(max_x + r, max_y + r))
     }
     CapsuleY(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
-      let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+      let offset = rot.rotate_vec2(Vec2(0.0F, half_height))
       let a = center.add(offset)
       let b = center.sub(offset)
       let r = radius + pd
@@ -204,10 +190,7 @@ fn compute_aabb_for_test(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      (
-        @core.Vec2::new(min_x - r, min_y - r),
-        @core.Vec2::new(max_x + r, max_y + r),
-      )
+      (Vec2(min_x - r, min_y - r), Vec2(max_x + r, max_y + r))
     }
     Segment(a, b) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -217,10 +200,7 @@ fn compute_aabb_for_test(
       let max_x = if wa.x > wb.x { wa.x } else { wb.x }
       let min_y = if wa.y < wb.y { wa.y } else { wb.y }
       let max_y = if wa.y > wb.y { wa.y } else { wb.y }
-      (
-        @core.Vec2::new(min_x - pd, min_y - pd),
-        @core.Vec2::new(max_x + pd, max_y + pd),
-      )
+      (Vec2(min_x - pd, min_y - pd), Vec2(max_x + pd, max_y + pd))
     }
     Polyline(vertices, _) =>
       if vertices.length() == 0 {
@@ -246,10 +226,7 @@ fn compute_aabb_for_test(
             max_y = wp.y
           }
         }
-        (
-          @core.Vec2::new(min_x - pd, min_y - pd),
-          @core.Vec2::new(max_x + pd, max_y + pd),
-        )
+        (Vec2(min_x - pd, min_y - pd), Vec2(max_x + pd, max_y + pd))
       }
     HeightField(heights, scale) => {
       let vertices : Array[@core.Vec2] = []
@@ -257,14 +234,14 @@ fn compute_aabb_for_test(
         return (center, center)
       }
       if heights.length() == 1 {
-        vertices.push(@core.Vec2::new(0.0F, heights[0] * scale.y))
+        vertices.push(Vec2(0.0F, heights[0] * scale.y))
       } else {
         let denom = Float::from_double((heights.length() - 1).to_double())
         let step = scale.x / denom
         for i in 0..<heights.length() {
           let x = -scale.x / 2.0F + Float::from_double(i.to_double()) * step
           let y = heights[i] * scale.y
-          vertices.push(@core.Vec2::new(x, y))
+          vertices.push(Vec2(x, y))
         }
       }
       let rot = @core.Rot2::from_angle(rotation)
@@ -287,10 +264,7 @@ fn compute_aabb_for_test(
           max_y = wp.y
         }
       }
-      (
-        @core.Vec2::new(min_x - pd, min_y - pd),
-        @core.Vec2::new(max_x + pd, max_y + pd),
-      )
+      (Vec2(min_x - pd, min_y - pd), Vec2(max_x + pd, max_y + pd))
     }
     ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
@@ -316,10 +290,7 @@ fn compute_aabb_for_test(
             max_y = wp.y
           }
         }
-        (
-          @core.Vec2::new(min_x - pd, min_y - pd),
-          @core.Vec2::new(max_x + pd, max_y + pd),
-        )
+        (Vec2(min_x - pd, min_y - pd), Vec2(max_x + pd, max_y + pd))
       }
     TriMesh(vertices, _) =>
       if vertices.length() == 0 {
@@ -345,16 +316,13 @@ fn compute_aabb_for_test(
             max_y = wp.y
           }
         }
-        (
-          @core.Vec2::new(min_x - pd, min_y - pd),
-          @core.Vec2::new(max_x + pd, max_y + pd),
-        )
+        (Vec2(min_x - pd, min_y - pd), Vec2(max_x + pd, max_y + pd))
       }
     Compound(parts) =>
       if parts.length() == 0 {
         (center, center)
       } else {
-        let parent_iso = @core.Isometry2::new(
+        let parent_iso = @core.Isometry2(
           center,
           @core.Rot2::from_angle(rotation),
         )
@@ -366,7 +334,7 @@ fn compute_aabb_for_test(
           let (pose, part_shape) = parts[i]
           let w = parent_iso.mul(pose)
           let origin = w.transform_point(@core.Vec2::zero())
-          let px = w.transform_point(@core.Vec2::new(1.0F, 0.0F))
+          let px = w.transform_point(Vec2(1.0F, 0.0F))
           let axis = px.sub(origin)
           let r = @core.atan2(axis.y, axis.x)
           let p = origin
@@ -384,10 +352,7 @@ fn compute_aabb_for_test(
             acc_max_y = mx.y
           }
         }
-        (
-          @core.Vec2::new(acc_min_x, acc_min_y),
-          @core.Vec2::new(acc_max_x, acc_max_y),
-        )
+        (Vec2(acc_min_x, acc_min_y), Vec2(acc_max_x, acc_max_y))
       }
   }
 }
@@ -442,8 +407,8 @@ fn sort_pairs_for_test(pairs : Array[(ColliderHandle, ColliderHandle)]) -> Unit 
 
 ///|
 test "broad phase bvh matches naive aabb pairing" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let handles : Array[ColliderHandle] = []
   let mut seed = 1234567
   for _ in 0..<50 {
@@ -453,7 +418,7 @@ test "broad phase bvh matches naive aabb pairing" {
     let (rot_roll, seed4) = rng_float01(seed3)
     let (enabled_roll, seed5) = rng_float01(seed4)
     seed = seed5
-    let translation = @core.Vec2::new(px * 20.0F - 10.0F, py * 20.0F - 10.0F)
+    let translation = @core.Vec2(px * 20.0F - 10.0F, py * 20.0F - 10.0F)
     let rotation = rot_roll * @core.two_pi()
     let enabled = enabled_roll > 0.1F
     let collider = if shape_roll < 0.4F {
@@ -476,7 +441,7 @@ test "broad phase bvh matches naive aabb pairing" {
         let (rx, s1) = rng_float01(s)
         let (ry, s2) = rng_float01(s1)
         s = s2
-        points.push(@core.Vec2::new((rx - 0.5F) * 2.0F, (ry - 0.5F) * 2.0F))
+        points.push(Vec2((rx - 0.5F) * 2.0F, (ry - 0.5F) * 2.0F))
       }
       seed = s
       let base = ColliderBuilder::convex_hull(points)
@@ -498,7 +463,7 @@ test "broad phase bvh matches naive aabb pairing" {
     handles.push(colliders.insert(collider))
   }
   let prediction_distance = 0.05F
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(prediction_distance, bodies, colliders)
   let bvh_pairs = broad_phase.pairs()
   let naive_pairs : Array[(ColliderHandle, ColliderHandle)] = []
@@ -551,8 +516,8 @@ test "broad phase bvh matches naive aabb pairing" {
 
 ///|
 test "broad phase bvh matches naive aabb pairing (large)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let handles : Array[ColliderHandle] = []
   let mut seed = 202501
   // Stress BVH construction/traversal with a larger leaf count.
@@ -563,7 +528,7 @@ test "broad phase bvh matches naive aabb pairing (large)" {
     let (rot_roll, seed4) = rng_float01(seed3)
     let (enabled_roll, seed5) = rng_float01(seed4)
     seed = seed5
-    let translation = @core.Vec2::new(px * 40.0F - 20.0F, py * 40.0F - 20.0F)
+    let translation = @core.Vec2(px * 40.0F - 20.0F, py * 40.0F - 20.0F)
     let rotation = rot_roll * @core.two_pi()
     let enabled = enabled_roll > 0.02F
     let collider = if shape_roll < 0.4F {
@@ -585,7 +550,7 @@ test "broad phase bvh matches naive aabb pairing (large)" {
         let (rx, s1) = rng_float01(s)
         let (ry, s2) = rng_float01(s1)
         s = s2
-        points.push(@core.Vec2::new((rx - 0.5F) * 3.0F, (ry - 0.5F) * 3.0F))
+        points.push(Vec2((rx - 0.5F) * 3.0F, (ry - 0.5F) * 3.0F))
       }
       seed = s
       let base = ColliderBuilder::convex_hull(points)
@@ -606,7 +571,7 @@ test "broad phase bvh matches naive aabb pairing (large)" {
     handles.push(colliders.insert(collider))
   }
   let prediction_distance = 0.0F
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(prediction_distance, bodies, colliders)
   let bvh_pairs = broad_phase.pairs()
   let naive_pairs : Array[(ColliderHandle, ColliderHandle)] = []

@@ -30,17 +30,10 @@ pub struct RevoluteJoint3DRealBuilder {
 pub fn RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
   axis : @core.Vec3,
 ) -> RevoluteJoint3DRealBuilder {
-  RevoluteJoint3DRealBuilder::new(axis)
-}
-
-///|
-pub fn RevoluteJoint3DRealBuilder::new(
-  axis : @core.Vec3,
-) -> RevoluteJoint3DRealBuilder {
   let locked = JointAxesMask3DReal::lin_axes()
     .or(JointAxesMask3DReal::ang_y())
     .or(JointAxesMask3DReal::ang_z())
-  let inner = GenericJoint3DRealBuilder::new(locked)
+  let inner = GenericJoint3DRealBuilder(locked)
     .local_axis1(axis)
     .local_axis2(axis)
   { inner, }
@@ -114,17 +107,10 @@ pub struct PrismaticJoint3DRealBuilder {
 pub fn PrismaticJoint3DRealBuilder::PrismaticJoint3DRealBuilder(
   axis : @core.Vec3,
 ) -> PrismaticJoint3DRealBuilder {
-  PrismaticJoint3DRealBuilder::new(axis)
-}
-
-///|
-pub fn PrismaticJoint3DRealBuilder::new(
-  axis : @core.Vec3,
-) -> PrismaticJoint3DRealBuilder {
   let locked = JointAxesMask3DReal::lin_y()
     .or(JointAxesMask3DReal::lin_z())
     .or(JointAxesMask3DReal::ang_axes())
-  let inner = GenericJoint3DRealBuilder::new(locked)
+  let inner = GenericJoint3DRealBuilder(locked)
     .local_axis1(axis)
     .local_axis2(axis)
   { inner, }
@@ -196,12 +182,7 @@ pub struct FixedJoint3DRealBuilder {
 
 ///|
 pub fn FixedJoint3DRealBuilder::FixedJoint3DRealBuilder() -> FixedJoint3DRealBuilder {
-  FixedJoint3DRealBuilder::new()
-}
-
-///|
-pub fn FixedJoint3DRealBuilder::new() -> FixedJoint3DRealBuilder {
-  { inner: GenericJoint3DRealBuilder::new(JointAxesMask3DReal::all()) }
+  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::all()) }
 }
 
 ///|
@@ -250,12 +231,7 @@ pub struct SphericalJoint3DRealBuilder {
 
 ///|
 pub fn SphericalJoint3DRealBuilder::SphericalJoint3DRealBuilder() -> SphericalJoint3DRealBuilder {
-  SphericalJoint3DRealBuilder::new()
-}
-
-///|
-pub fn SphericalJoint3DRealBuilder::new() -> SphericalJoint3DRealBuilder {
-  { inner: GenericJoint3DRealBuilder::new(JointAxesMask3DReal::lin_axes()) }
+  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::lin_axes()) }
 }
 
 ///|

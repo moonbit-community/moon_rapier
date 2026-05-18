@@ -22,7 +22,6 @@ pub fn CharacterAutostep::default() -> Self
 pub fn CharacterAutostep::include_dynamic_bodies(Self) -> Bool
 pub fn CharacterAutostep::max_height(Self) -> CharacterLength
 pub fn CharacterAutostep::min_width(Self) -> CharacterLength
-pub fn CharacterAutostep::new(CharacterLength, CharacterLength) -> Self
 pub fn CharacterAutostep::with_include_dynamic_bodies(Self, Bool) -> Self
 
 pub struct CharacterCollision {
@@ -68,7 +67,6 @@ pub struct DynamicRayCastVehicleController {
 }
 pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController::add_wheel(Self, @core.Vec2, @core.Vec2, Float, Float, WheelTuning) -> Unit
-pub fn DynamicRayCastVehicleController::new(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut, @dynamics.RigidBodySet, @collision.ColliderSet) -> Unit
@@ -84,7 +82,6 @@ pub struct DynamicRayCastVehicleController3 {
 }
 pub fn DynamicRayCastVehicleController3::DynamicRayCastVehicleController3(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController3::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
-pub fn DynamicRayCastVehicleController3::new(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController3::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int, Float) -> Unit
@@ -102,7 +99,6 @@ pub struct DynamicRayCastVehicleController3DReal {
 }
 pub fn DynamicRayCastVehicleController3DReal::DynamicRayCastVehicleController3DReal(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController3DReal::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
-pub fn DynamicRayCastVehicleController3DReal::new(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController3DReal::set_brake(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int, Float) -> Unit
@@ -142,7 +138,6 @@ pub struct KinematicCharacterController {
 pub fn KinematicCharacterController::KinematicCharacterController() -> Self
 pub fn KinematicCharacterController::default() -> Self
 pub fn KinematicCharacterController::move_shape(Self, Float, @collision.QueryPipeline, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.Shape, @core.Isometry2, @core.Vec2, (CharacterCollision) -> Unit) -> EffectiveMovement
-pub fn KinematicCharacterController::new() -> Self
 pub fn KinematicCharacterController::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline, @dynamics.RigidBodySet, @collision.ColliderSet, @collision.Shape, Float, Array[CharacterCollision]) -> Unit
 pub fn KinematicCharacterController::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController::with_max_slope_climb_angle(Self, Float) -> Self
@@ -166,7 +161,6 @@ pub struct KinematicCharacterController3DReal {
 pub fn KinematicCharacterController3DReal::KinematicCharacterController3DReal() -> Self
 pub fn KinematicCharacterController3DReal::default() -> Self
 pub fn KinematicCharacterController3DReal::move_shape(Self, Float, @collision.QueryPipeline3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.Shape3D, @core.Isometry3, @core.Vec3, (CharacterCollision3DReal) -> Unit) -> EffectiveMovement3DReal
-pub fn KinematicCharacterController3DReal::new() -> Self
 pub fn KinematicCharacterController3DReal::solve_character_collision_impulses(Self, Float, @collision.QueryPipeline3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D, @collision.Shape3D, Float, Array[CharacterCollision3DReal]) -> Unit
 pub fn KinematicCharacterController3DReal::with_autostep(Self, CharacterAutostep?) -> Self
 pub fn KinematicCharacterController3DReal::with_max_slope_climb_angle(Self, Float) -> Self
@@ -189,7 +183,6 @@ pub fn PdController::angular_rigid_body_correction(Self, @dynamics.RigidBody, @c
 pub fn PdController::correction(Self, PdErrors, PdErrors) -> @dynamics.RigidBodyVelocity
 pub fn PdController::default() -> Self
 pub fn PdController::linear_rigid_body_correction(Self, @dynamics.RigidBody, @core.Vec2, @core.Vec2) -> @core.Vec2
-pub fn PdController::new(Float, Float, @dynamics.AxesMask) -> Self
 pub fn PdController::rigid_body_correction(Self, @dynamics.RigidBody, @core.Isometry2, @dynamics.RigidBodyVelocity) -> @dynamics.RigidBodyVelocity
 
 pub(all) struct PdErrors {
@@ -211,7 +204,6 @@ pub fn PidController::axes(Self) -> @dynamics.AxesMask
 pub fn PidController::correction(Self, Float, PdErrors, PdErrors) -> @dynamics.RigidBodyVelocity
 pub fn PidController::default() -> Self
 pub fn PidController::linear_rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Vec2, @core.Vec2) -> @core.Vec2
-pub fn PidController::new(Float, Float, Float, @dynamics.AxesMask) -> Self
 pub fn PidController::reset_integrals(Self) -> Self
 pub fn PidController::rigid_body_correction(Self, Float, @dynamics.RigidBody, @core.Isometry2, @dynamics.RigidBodyVelocity) -> @dynamics.RigidBodyVelocity
 pub fn PidController::set_axes(Self, @dynamics.AxesMask) -> Self

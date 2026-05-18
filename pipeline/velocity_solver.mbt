@@ -34,7 +34,7 @@ priv struct VelocitySolver {
 }
 
 ///|
-fn VelocitySolver::new() -> VelocitySolver {
+fn VelocitySolver::VelocitySolver() -> VelocitySolver {
   {
     solver_bodies: SolverBodies::default(),
     solver_vels_increment: [],
@@ -48,7 +48,7 @@ fn VelocitySolver::new() -> VelocitySolver {
 
 ///|
 fn velocity_solver_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
@@ -241,10 +241,7 @@ fn VelocitySolver::solve_constraints(
           let body_translation = pose.translation.sub(
             pose.rotation.rotate_vec2(rb.local_center_of_mass()),
           )
-          rb.set_position(
-            @core.Isometry2::new(body_translation, pose.rotation),
-            false,
-          )
+          rb.set_position(Isometry2(body_translation, pose.rotation), false)
           |> ignore
         }
       }
@@ -343,7 +340,7 @@ fn VelocitySolver::writeback_bodies(
       }
       let solver_vel = self.solver_bodies.vels[id]
       let solver_pose = self.solver_bodies.poses[id]
-      let mut body_vel = @dynamics.RigidBodyVelocity::new(
+      let mut body_vel = @dynamics.RigidBodyVelocity(
         solver_vel.linear,
         solver_vel.angular,
       )
@@ -365,7 +362,7 @@ fn VelocitySolver::writeback_bodies(
         solver_pose.rotation.rotate_vec2(rb.local_center_of_mass()),
       )
       rb.set_next_position_internal(
-        @core.Isometry2::new(body_translation, solver_pose.rotation),
+        Isometry2(body_translation, solver_pose.rotation),
       )
       |> ignore
     }

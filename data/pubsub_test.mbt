@@ -14,7 +14,7 @@
 
 ///|
 test "pubsub subscribe/publish/read/ack" {
-  let ps : PubSub[Int] = PubSub::new()
+  let ps : PubSub[Int] = PubSub()
 
   // Dropped because there are no subscribers.
   ps.publish(1)

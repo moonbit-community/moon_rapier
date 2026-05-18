@@ -43,14 +43,14 @@ test "rigid body builder kinematic velocity based" {
 /// Ported from rapier rigid_body velocity setters.
 test "rigid body velocity setters" {
   let body = RigidBodyBuilder::dynamic().build().sleep()
-  let body = body.set_linvel(@core.Vec2::new(1.0F, -2.0F), true)
+  let body = body.set_linvel(Vec2(1.0F, -2.0F), true)
   inspect(!body.is_sleeping(), content="true")
   let body = body.set_angvel(3.5F, true)
   inspect(body.linvel().x == 1.0F, content="true")
   inspect(body.linvel().y == -2.0F, content="true")
   inspect(body.angvel() == 3.5F, content="true")
   let kinematic = RigidBodyBuilder::kinematic_position_based().build()
-  let kinematic = kinematic.set_linvel(@core.Vec2::new(5.0F, 0.0F), true)
+  let kinematic = kinematic.set_linvel(Vec2(5.0F, 0.0F), true)
   inspect(kinematic.linvel().x == 0.0F, content="true")
   inspect(kinematic.linvel().y == 0.0F, content="true")
 }
@@ -59,7 +59,7 @@ test "rigid body velocity setters" {
 /// Ported from rapier rigid_body force accumulation.
 test "rigid body forces and torques" {
   let body = RigidBodyBuilder::dynamic().build()
-  let body = body.add_force(@core.Vec2::new(2.0F, -1.0F), true)
+  let body = body.add_force(Vec2(2.0F, -1.0F), true)
   let body = body.add_torque(0.5F, true)
   let forces = body.forces()
   inspect(forces.user_force.x == 2.0F, content="true")
@@ -77,8 +77,8 @@ test "rigid body forces and torques" {
 /// Ported from rapier rigid_body force-at-point behavior.
 test "rigid body force at point" {
   let body = RigidBodyBuilder::dynamic().build()
-  let force = @core.Vec2::new(1.0F, 0.0F)
-  let point = @core.Vec2::new(0.0F, 1.0F)
+  let force = @core.Vec2(1.0F, 0.0F)
+  let point = @core.Vec2(0.0F, 1.0F)
   let body = body.add_force_at_point(force, point, true)
   let forces = body.forces()
   inspect(forces.user_force.x == 1.0F, content="true")
@@ -116,9 +116,9 @@ test "rigid body builder ccd options" {
 /// Ported from rapier rigid_body builder initialization fields.
 test "rigid body builder initial state" {
   let body = RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 2.0F))
+    .translation(Vec2(1.0F, 2.0F))
     .rotation(@core.Rot2::from_angle(0.5F))
-    .linvel(@core.Vec2::new(3.0F, -1.0F))
+    .linvel(Vec2(3.0F, -1.0F))
     .angvel(2.5F)
     .gravity_scale(0.5F)
     .linear_damping(0.1F)
@@ -165,8 +165,8 @@ test "rigid body builder sleeping state" {
 ///|
 /// Ported from rapier rigid_body builder position setter.
 test "rigid body builder position" {
-  let position = @core.Isometry2::new(
-    @core.Vec2::new(-1.0F, 3.0F),
+  let position = @core.Isometry2(
+    Vec2(-1.0F, 3.0F),
     @core.Rot2::from_angle(-0.25F),
   )
   let body = RigidBodyBuilder::dynamic().position(position).build()
@@ -187,11 +187,7 @@ test "rigid body additional mass" {
 ///|
 test "rigid body recompute mass properties applies additional scalar mass" {
   let body = RigidBodyBuilder::dynamic().build()
-  let collider_mprops = @core.MassProperties::new(
-    2.0F,
-    4.0F,
-    @core.Vec2::new(1.0F, 0.0F),
-  )
+  let collider_mprops = @core.MassProperties(2.0F, 4.0F, Vec2(1.0F, 0.0F))
   let body = body.set_local_mass_properties(collider_mprops)
   let body = body.set_additional_mass(3.0F, false)
   let body = body.recompute_mass_properties_from_colliders()
@@ -204,8 +200,8 @@ test "rigid body recompute mass properties applies additional scalar mass" {
 ///|
 test "rigid body additional mass properties override scalar additional mass" {
   let body = RigidBodyBuilder::dynamic().build()
-  let base = @core.MassProperties::new(2.0F, 4.0F, @core.Vec2::zero())
-  let extra = @core.MassProperties::new(1.0F, 1.0F, @core.Vec2::new(2.0F, 0.0F))
+  let base = @core.MassProperties(2.0F, 4.0F, @core.Vec2::zero())
+  let extra = @core.MassProperties(1.0F, 1.0F, Vec2(2.0F, 0.0F))
   let body = body.set_local_mass_properties(base)
   let body = body.set_additional_mass(3.0F, false)
   let body = body.set_additional_mass_properties(MassProps(extra), false)
@@ -223,17 +219,17 @@ test "rigid body additional mass properties override scalar additional mass" {
 test "rigid body impulse application" {
   let body = RigidBodyBuilder::dynamic().build()
   let mprops = body.mass_props
-    .set_effective_inv_mass(@core.Vec2::new(0.5F, 0.5F))
+    .set_effective_inv_mass(Vec2(0.5F, 0.5F))
     .set_effective_world_inv_inertia(2.0F)
   body.mass_props = mprops
-  let body = body.apply_impulse(@core.Vec2::new(2.0F, -1.0F), true)
+  let body = body.apply_impulse(Vec2(2.0F, -1.0F), true)
   inspect(body.linvel().x == 1.0F, content="true")
   inspect(body.linvel().y == -0.5F, content="true")
   let body = body.apply_torque_impulse(0.5F, true)
   inspect(body.angvel() == 1.0F, content="true")
   let body = body.apply_impulse_at_point(
-    @core.Vec2::new(1.0F, 0.0F),
-    @core.Vec2::new(0.0F, 1.0F),
+    Vec2(1.0F, 0.0F),
+    Vec2(0.0F, 1.0F),
     true,
   )
   inspect(body.angvel() == -1.0F, content="true")
@@ -257,17 +253,14 @@ test "rigid body mass properties" {
 
 ///|
 test "rigid body set queues collider position propagation for moved bodies" {
-  let bodies = RigidBodySet::new()
+  let bodies = RigidBodySet()
   let body = RigidBodyBuilder::dynamic()
     .build()
     .attach_collider_raw(7, 3)
     .attach_collider_raw(11, 4)
   let handle = bodies.insert(body)
   if bodies.get_mut_internal_with_modification_tracking(handle) is Some(rb) {
-    rb.set_position(
-      @core.Isometry2::new(@core.Vec2::new(2.0F, -1.0F), @core.Rot2::identity()),
-      false,
-    )
+    rb.set_position(Isometry2(Vec2(2.0F, -1.0F), @core.Rot2::identity()), false)
     |> ignore
   }
   bodies.propagate_modified_body_positions_to_colliders()

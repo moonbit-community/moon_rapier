@@ -16,7 +16,7 @@
 /// Ported from rapier collider position setters.
 test "collider position setters" {
   let collider = ColliderBuilder::ball(1.0F).build()
-  collider.set_translation(@core.Vec2::new(1.0F, -2.0F)) |> ignore
+  collider.set_translation(Vec2(1.0F, -2.0F)) |> ignore
   collider.set_rotation(1.5F) |> ignore
   inspect(collider.translation().x == 1.0F, content="true")
   inspect(collider.translation().y == -2.0F, content="true")
@@ -43,23 +43,23 @@ test "collider shape setters" {
 ///|
 /// Ported from rapier interaction groups.
 test "interaction groups behavior" {
-  let group_a = @dynamics.InteractionGroups::new(
+  let group_a = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
     And,
   )
-  let group_b = @dynamics.InteractionGroups::new(
+  let group_b = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_1(),
     And,
   )
   inspect(group_a.test_groups(group_b), content="true")
-  let group_c = @dynamics.InteractionGroups::new(
+  let group_c = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
     Or,
   )
-  let group_d = @dynamics.InteractionGroups::new(
+  let group_d = @dynamics.InteractionGroups(
     @dynamics.Group::group_3(),
     @dynamics.Group::group_1(),
     Or,
@@ -81,7 +81,7 @@ test "interaction groups behavior" {
 ///|
 /// Ported from rapier collider group setters.
 test "collider groups accessors" {
-  let collision_groups = @dynamics.InteractionGroups::new(
+  let collision_groups = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
     And,
@@ -116,9 +116,9 @@ test "collider groups accessors" {
 
 ///|
 test "collider builder: triangle + round_triangle" {
-  let a = @core.Vec2::new(0.0F, 0.0F)
-  let b = @core.Vec2::new(2.0F, 0.0F)
-  let c = @core.Vec2::new(0.0F, 1.0F)
+  let a = @core.Vec2(0.0F, 0.0F)
+  let b = @core.Vec2(2.0F, 0.0F)
+  let c = @core.Vec2(0.0F, 1.0F)
   let tri = ColliderBuilder::triangle(a, b, c).build()
   match tri.shape() {
     ConvexPolygon(vertices) => inspect(vertices.length() >= 3, content="true")
@@ -136,7 +136,7 @@ test "collider builder: triangle + round_triangle" {
 
 ///|
 test "collider builder: halfspace" {
-  let ground = ColliderBuilder::halfspace(@core.Vec2::new(0.0F, 2.0F)).build()
+  let ground = ColliderBuilder::halfspace(Vec2(0.0F, 2.0F)).build()
   if ground.shape() is HalfSpace(n) {
     inspect(@core.abs(n.x) < 1.0e-6F, content="true")
     inspect(@core.abs(n.y - 1.0F) < 1.0e-6F, content="true")
@@ -151,10 +151,7 @@ test "collider builder: halfspace" {
 test "collider builder: compound + round_convex_hull" {
   let parts = [
     (@core.Isometry2::identity(), Shape::Cuboid(1.0F, 0.2F)),
-    (
-      @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.0F)),
-      Cuboid(0.5F, 0.5F),
-    ),
+    (@core.Isometry2::from_translation(Vec2(2.0F, 0.0F)), Cuboid(0.5F, 0.5F)),
   ]
   let co = ColliderBuilder::compound(parts).build()
   if co.shape() is Compound(compound_parts) {
@@ -170,10 +167,10 @@ test "collider builder: compound + round_convex_hull" {
     inspect(false, content="true")
   }
   let pts = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(2.0F, 0.0F),
-    @core.Vec2::new(2.0F, 1.0F),
-    @core.Vec2::new(0.0F, 1.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(2.0F, 0.0F),
+    Vec2(2.0F, 1.0F),
+    Vec2(0.0F, 1.0F),
   ]
   if ColliderBuilder::round_convex_hull(pts, 0.3F) is Some(builder) {
     let collider = builder.build()
@@ -263,7 +260,7 @@ test "collider material and event accessors" {
 
 ///|
 test "collider user_data128 roundtrip through ColliderSet serialize/deserialize" {
-  let colliders = ColliderSet::new()
+  let colliders = ColliderSet::ColliderSet()
   let data = @core.UserData128::from_parts(1UL, 2UL)
   let h = colliders.insert(
     ColliderBuilder::ball(0.5F).user_data128(data).build(),
@@ -279,11 +276,11 @@ test "collider user_data128 roundtrip through ColliderSet serialize/deserialize"
 
 ///|
 test "convex polygon contacts cuboid" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let narrow_phase = NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let narrow_phase = NarrowPhase::NarrowPhase()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
     ColliderBuilder::cuboid(10.0F, 1.2F).build(),
@@ -291,15 +288,13 @@ test "convex polygon contacts cuboid" {
     bodies,
   )
   let poly_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 1.0F)).build(),
   )
   let points = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(4.0F, 0.0F),
-    @core.Vec2::new(4.0F, 4.0F),
-    @core.Vec2::new(0.0F, 4.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(4.0F, 0.0F),
+    Vec2(4.0F, 4.0F),
+    Vec2(0.0F, 4.0F),
   ]
   if ColliderBuilder::convex_hull(points) is Some(builder) {
     let poly = colliders.insert_with_parent(builder.build(), poly_body, bodies)
@@ -339,11 +334,11 @@ test "convex polygon cuboid manifold keeps contacts for random hulls" {
     (value, next)
   }
 
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let narrow_phase = NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let narrow_phase = NarrowPhase::NarrowPhase()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
     ColliderBuilder::cuboid(50.0F, 1.2F).build(),
@@ -358,10 +353,7 @@ test "convex polygon cuboid manifold keeps contacts for random hulls" {
       // Ensure all random hulls intersect the ground AABB:
       // local y ∈ [0, 4) => world y ∈ [-2.8, 1.2) overlaps the ground cuboid.
       .translation(
-        @core.Vec2::new(
-          0.0F,
-          -2.8F + Float::from_double(i.to_double()) * 0.0001F,
-        ),
+        Vec2(0.0F, -2.8F + Float::from_double(i.to_double()) * 0.0001F),
       )
       .build(),
     )
@@ -370,7 +362,7 @@ test "convex polygon cuboid manifold keeps contacts for random hulls" {
       let (rx, s1) = rng_float01(seed)
       let (ry, s2) = rng_float01(s1)
       seed = s2
-      points.push(@core.Vec2::new(rx * 4.0F, ry * 4.0F))
+      points.push(Vec2(rx * 4.0F, ry * 4.0F))
     }
     if ColliderBuilder::convex_hull(points) is Some(builder) {
       let poly = colliders.insert_with_parent(builder.build(), handle, bodies)
@@ -419,14 +411,14 @@ test "active collision types test" {
 ///|
 /// Ported from rapier collider parent offset setters.
 test "collider parent offset setters" {
-  let bodies = @dynamics.RigidBodySet::new()
+  let bodies = @dynamics.RigidBodySet()
   let body = @dynamics.RigidBodyBuilder::dynamic().build()
   let body_handle = bodies.insert(body)
-  let colliders = ColliderSet::new()
+  let colliders = ColliderSet::ColliderSet()
   let collider = ColliderBuilder::ball(0.5F).enabled(false).build()
   let handle = colliders.insert_with_parent(collider, body_handle, bodies)
   if colliders.get_mut(handle) is Some(owned) {
-    owned.set_translation_wrt_parent(@core.Vec2::new(0.5F, 1.0F)) |> ignore
+    owned.set_translation_wrt_parent(Vec2(0.5F, 1.0F)) |> ignore
     owned.set_rotation_wrt_parent(0.25F) |> ignore
   }
   if colliders.get(handle) is Some(stored) {
@@ -454,15 +446,15 @@ test "collider parent offset setters" {
 ///|
 /// Ported from rapier: collider world pose = body pose * local pose.
 test "collider world pose respects parent rotation" {
-  let bodies = @dynamics.RigidBodySet::new()
+  let bodies = @dynamics.RigidBodySet()
   let body = @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 2.0F))
+    .translation(Vec2(1.0F, 2.0F))
     .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
     .build()
   let body_handle = bodies.insert(body)
-  let colliders = ColliderSet::new()
+  let colliders = ColliderSet::ColliderSet()
   let collider = ColliderBuilder::ball(0.5F)
-    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .translation(Vec2(1.0F, 0.0F))
     .rotation(0.25F)
     .build()
   let handle = colliders.insert_with_parent(collider, body_handle, bodies)
@@ -481,14 +473,12 @@ test "collider world pose respects parent rotation" {
 
 ///|
 test "apply pending body position propagation updates attached colliders" {
-  let bodies = @dynamics.RigidBodySet::new()
+  let bodies = @dynamics.RigidBodySet()
   let body = @dynamics.RigidBodyBuilder::dynamic().build()
   let body_handle = bodies.insert(body)
-  let colliders = ColliderSet::new()
+  let colliders = ColliderSet::ColliderSet()
   let handle = colliders.insert_with_parent(
-    ColliderBuilder::ball(0.25F)
-    .translation(@core.Vec2::new(0.5F, 0.0F))
-    .build(),
+    ColliderBuilder::ball(0.25F).translation(Vec2(0.5F, 0.0F)).build(),
     body_handle,
     bodies,
   )
@@ -503,10 +493,7 @@ test "apply pending body position propagation updates attached colliders" {
   }
   if bodies.get_mut_internal_with_modification_tracking(body_handle) is Some(rb) {
     rb.set_position(
-      @core.Isometry2::new(
-        @core.Vec2::new(3.0F, 4.0F),
-        @core.Rot2::from_angle(@core.pi() * 0.5F),
-      ),
+      Isometry2(Vec2(3.0F, 4.0F), @core.Rot2::from_angle(@core.pi() * 0.5F)),
       false,
     )
     |> ignore
@@ -525,8 +512,8 @@ test "apply pending body position propagation updates attached colliders" {
 
 ///|
 test "narrow phase query dispatcher roundtrip" {
-  let narrow_phase = NarrowPhase::new()
-  let dispatcher = QueryDispatcher::new()
+  let narrow_phase = NarrowPhase::NarrowPhase()
+  let dispatcher = QueryDispatcher::QueryDispatcher()
   let narrow_phase = narrow_phase.with_query_dispatcher(dispatcher)
   let _dispatcher = narrow_phase.query_dispatcher()
   inspect(true, content="true")

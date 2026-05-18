@@ -18,14 +18,14 @@
 ///|
 test "examples3d/joints3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/joints3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -33,7 +33,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // Simple ground.
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -46,8 +46,8 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // Coupled translations (LIN_Y + LIN_Z) with limits.
   let body1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 10.0F, 0.0F))
-    .linvel(@core.Vec3::new(5.0F, 5.0F, 5.0F))
+    .translation(Vec3(0.0F, 10.0F, 0.0F))
+    .linvel(Vec3(5.0F, 5.0F, 5.0F))
     .can_sleep(false)
     .build(),
   )
@@ -57,7 +57,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     bodies,
   )
   |> ignore
-  let coupled = @dynamics.GenericJoint3DRealBuilder::new(
+  let coupled = @dynamics.GenericJoint3DRealBuilder(
       @dynamics.JointAxesMask3DReal::empty(),
     )
     .limits(LinX, -3.0F, 3.0F)
@@ -73,7 +73,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // A prismatic joint along a diagonal axis with limits + position motor.
   let prism_ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(20.0F, 5.0F, 0.0F))
+    .translation(Vec3(20.0F, 5.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -84,7 +84,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   |> ignore
   let prism_child = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(20.0F, 5.0F, 2.0F))
+    .translation(Vec3(20.0F, 5.0F, 2.0F))
     .can_sleep(false)
     .build(),
   )
@@ -94,18 +94,15 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     bodies,
   )
   |> ignore
-  let axis = @core.Vec3::new(1.0F, 1.0F, 0.0F).normalize()
-  let prism_basis = @core.rotation_between(
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    axis,
-  )
+  let axis = @core.Vec3(1.0F, 1.0F, 0.0F).normalize()
+  let prism_basis = @core.rotation_between(Vec3(1.0F, 0.0F, 0.0F), axis)
   let prism_locked = @dynamics.JointAxesMask3DReal::lin_y()
     .or(@dynamics.JointAxesMask3DReal::lin_z())
     .or(@dynamics.JointAxesMask3DReal::ang_axes())
-  let prism = @dynamics.GenericJoint3DRealBuilder::new(prism_locked)
+  let prism = @dynamics.GenericJoint3DRealBuilder(prism_locked)
     .local_basis1(prism_basis)
     .local_basis2(prism_basis)
-    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -2.0F))
+    .local_anchor2(Vec3(0.0F, 0.0F, -2.0F))
     .limits(LinX, -2.0F, 2.0F)
     .motor_position(LinX, 1.0F, 500.0F, 5.0F)
     .build()
@@ -114,7 +111,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // A fixed joint between two small balls.
   let fixed_a = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(-5.0F, 8.0F, 0.0F))
+    .translation(Vec3(-5.0F, 8.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -126,7 +123,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   |> ignore
   let fixed_b = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(-5.0F, 8.0F, 1.0F))
+    .translation(Vec3(-5.0F, 8.0F, 1.0F))
     .can_sleep(false)
     .build(),
   )
@@ -136,23 +133,23 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     bodies,
   )
   |> ignore
-  let fixed_joint = @dynamics.GenericJoint3DRealBuilder::new(
+  let fixed_joint = @dynamics.GenericJoint3DRealBuilder(
       @dynamics.JointAxesMask3DReal::all(),
     )
-    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
+    .local_anchor2(Vec3(0.0F, 0.0F, -1.0F))
     .build()
   joints.insert_generic(fixed_a, fixed_b, fixed_joint, true) |> ignore
 
   // A spherical joint with limited translations (rapier's spherical + linear limits).
   let sph_ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(-5.0F, 0.0F, 0.0F))
+    .translation(Vec3(-5.0F, 0.0F, 0.0F))
     .build(),
   )
   let sph_ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(-5.0F, 3.0F, 0.0F))
-    .linvel(@core.Vec3::new(10.0F, 10.0F, 0.0F))
+    .translation(Vec3(-5.0F, 3.0F, 0.0F))
+    .linvel(Vec3(10.0F, 10.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -162,10 +159,10 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     bodies,
   )
   |> ignore
-  let sph = @dynamics.GenericJoint3DRealBuilder::new(
+  let sph = @dynamics.GenericJoint3DRealBuilder(
       @dynamics.JointAxesMask3DReal::lin_axes(),
     )
-    .local_anchor2(@core.Vec3::new(0.0F, -3.0F, 0.0F))
+    .local_anchor2(Vec3(0.0F, -3.0F, 0.0F))
     .limits(LinX, -0.2F, 0.2F)
     .limits(LinY, -0.2F, 0.2F)
     .build()
@@ -174,7 +171,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // A small actuated revolute chain (motor velocity + motor position).
   let mut parent = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(10.0F, 5.0F, 0.0F))
+    .translation(Vec3(10.0F, 5.0F, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -188,7 +185,7 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   for i in 0..<3 {
     let child = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(10.0F, 5.0F, Float::from_int(i + 1) * 2.0F))
+      .translation(Vec3(10.0F, 5.0F, Float::from_int(i + 1) * 2.0F))
       .can_sleep(false)
       .build(),
     )
@@ -201,9 +198,9 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
     let h = joints.insert_revolute(
       parent,
       child,
-      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+      Vec3(0.0F, 0.0F, 1.0F),
       @core.Vec3::zero(),
-      @core.Vec3::new(0.0F, 0.0F, -2.0F),
+      Vec3(0.0F, 0.0F, -2.0F),
       true,
     )
     if i == 0 {
@@ -218,12 +215,12 @@ test "examples3d/joints3.rs parity (3DReal headless)" {
   // A small spring strip to ensure the spring constraint path stays stable.
   let anchor = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(-10.0F, 5.0F, 0.0F))
+    .translation(Vec3(-10.0F, 5.0F, 0.0F))
     .build(),
   )
   let spring_ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(-10.0F, 7.0F, 0.0F))
+    .translation(Vec3(-10.0F, 7.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )

@@ -14,17 +14,17 @@
 
 ///|
 test "rapier3d reexports use real 3d physics surface" {
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = BroadPhase::new()
-  let narrow_phase = NarrowPhase::new()
-  let bodies = RigidBodySet::new()
-  let colliders = ColliderSet::new()
-  let islands = IslandManager::new()
-  let gravity = Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D::BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D::NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
+  let islands = @dynamics.IslandManager3D::IslandManager3D()
+  let gravity = Vec3::Vec3(0.0F, -9.81F, 0.0F)
   let params = IntegrationParameters::default()
 
   let ground = bodies.insert(
-    RigidBodyBuilder::fixed().translation(Vec3::new(0.0F, -0.5F, 0.0F)).build(),
+    RigidBodyBuilder::fixed().translation(Vec3(0.0F, -0.5F, 0.0F)).build(),
   )
   colliders.insert_with_parent(
     ColliderBuilder::cuboid(5.0F, 0.5F, 5.0F).build(),
@@ -34,7 +34,7 @@ test "rapier3d reexports use real 3d physics surface" {
   |> ignore
 
   let body = bodies.insert(
-    RigidBodyBuilder::dynamic().translation(Vec3::new(0.0F, 3.0F, 1.0F)).build(),
+    RigidBodyBuilder::dynamic().translation(Vec3(0.0F, 3.0F, 1.0F)).build(),
   )
   let collider = colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
@@ -64,18 +64,20 @@ test "rapier3d reexports use real 3d physics surface" {
 
 ///|
 test "rapier3d multibody reexports expose real 3d API" {
-  let bodies = RigidBodySet::new()
-  let joints = MultibodyJointSet::new()
+  let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
+  let joints = @dynamics.MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let root = bodies.insert(
     RigidBodyBuilder::dynamic()
-    .translation(Vec3::new(0.0F, 0.0F, 0.5F))
-    .rotation_scaled_axis(Vec3::new(0.1F, 0.2F, 0.3F))
+    .translation(Vec3(0.0F, 0.0F, 0.5F))
+    .rotation_scaled_axis(Vec3(0.1F, 0.2F, 0.3F))
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder::dynamic().build())
   let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::new(Vec3::new(0.0F, 1.0F, 0.0F))
-    .local_anchor2(Vec3::new(0.0F, 0.0F, -1.0F))
+    @dynamics.RevoluteJointBuilder3::RevoluteJointBuilder3(
+      Vec3(0.0F, 1.0F, 0.0F),
+    )
+    .local_anchor2(Vec3(0.0F, 0.0F, -1.0F))
     .build(),
   ).to_3d_real()
   let inserted = joints.insert(root, child, joint, true)

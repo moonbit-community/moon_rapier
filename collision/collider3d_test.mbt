@@ -15,7 +15,7 @@
 ///|
 test "collider3d ball aabb" {
   let co = ColliderBuilder3D::ball(0.5F)
-    .translation(@core.Vec3::new(1.0F, 2.0F, 3.0F))
+    .translation(Vec3(1.0F, 2.0F, 3.0F))
     .build()
   let aabb = co.compute_aabb()
   inspect(@core.abs(aabb.mins.x - 0.5F) < 1.0e-6F, content="true")
@@ -40,9 +40,7 @@ test "collider3d cuboid aabb identity rotation" {
 
 ///|
 test "collider3d cuboid aabb rotated around y swaps x/z extents" {
-  let rot = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, @core.pi() * 0.5F, 0.0F),
-  )
+  let rot = @core.rotation_from_scaled_axis(Vec3(0.0F, @core.pi() * 0.5F, 0.0F))
   let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).rotation(rot).build()
   let aabb = co.compute_aabb()
   // With 90deg around Y, the local X half-extent maps to world Z, local Z maps to world X.
@@ -57,7 +55,7 @@ test "collider3d cuboid aabb rotated around y swaps x/z extents" {
 ///|
 test "collider3d capsule_y aabb" {
   let co = ColliderBuilder3D::capsule_y(0.5F, 1.0F)
-    .translation(@core.Vec3::new(1.0F, 2.0F, 3.0F))
+    .translation(Vec3(1.0F, 2.0F, 3.0F))
     .build()
   let aabb = co.compute_aabb()
   inspect(@core.abs(aabb.mins.x - 0.5F) < 1.0e-6F, content="true")
@@ -131,7 +129,7 @@ test "collider3d active flags setters update values" {
 
 ///|
 test "collider3d group and material setters update values" {
-  let collision_groups = @dynamics.InteractionGroups::new(
+  let collision_groups = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_2(),
     And,
@@ -201,11 +199,9 @@ test "collider3d builder default helpers and delta update pose" {
     @core.abs(ColliderBuilder3D::default_friction() - 0.5F) < 1.0e-6F,
     content="true",
   )
-  let delta = @core.Isometry3::new(
-    @core.Vec3::new(4.0F, 5.0F, 6.0F),
-    @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, @core.pi() / 4.0F, 0.0F),
-    ),
+  let delta = @core.Isometry3(
+    Vec3(4.0F, 5.0F, 6.0F),
+    @core.rotation_from_scaled_axis(Vec3(0.0F, @core.pi() / 4.0F, 0.0F)),
   )
   let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).delta(delta).build()
   inspect(
@@ -221,23 +217,22 @@ test "collider3d builder default helpers and delta update pose" {
 ///|
 test "collider_builder3 aliases the real dim3 builder" {
   let rotation = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, @core.pi() / 3.0F, 0.25F),
+    Vec3(0.0F, @core.pi() / 3.0F, 0.25F),
   )
   let co = ColliderBuilder3::cuboid(1.0F, 2.0F, 3.0F)
-    .translation(@core.Vec3::new(4.0F, 5.0F, 6.0F))
+    .translation(Vec3(4.0F, 5.0F, 6.0F))
     .rotation(rotation)
     .contact_skin(0.15F)
     .build()
   inspect(
-    co.position().translation.sub(@core.Vec3::new(4.0F, 5.0F, 6.0F)).length() <
-    1.0e-6F,
+    co.position().translation.sub(Vec3(4.0F, 5.0F, 6.0F)).length() < 1.0e-6F,
     content="true",
   )
   inspect(@core.abs(co.contact_skin() - 0.15F) < 1.0e-6F, content="true")
   inspect(
     co.position().rotation
-    .rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-    .sub(rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F)))
+    .rotate_vec3(Vec3(1.0F, 0.0F, 0.0F))
+    .sub(rotation.rotate_vec3(Vec3(1.0F, 0.0F, 0.0F)))
     .length() <
     1.0e-6F,
     content="true",

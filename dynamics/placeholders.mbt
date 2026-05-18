@@ -29,7 +29,7 @@ struct Island {
 }
 
 ///|
-fn Island::new(
+fn Island::Island(
   handle : RigidBodyHandle,
   additional_solver_iterations : Int,
 ) -> Island {
@@ -48,11 +48,6 @@ pub struct ContactGraph {
 
 ///|
 pub fn ContactGraph::ContactGraph() -> ContactGraph {
-  ContactGraph::new()
-}
-
-///|
-pub fn ContactGraph::new() -> ContactGraph {
   { pairs: [] }
 }
 
@@ -92,7 +87,7 @@ struct IslandsOptimizer {
 }
 
 ///|
-fn IslandsOptimizer::new() -> IslandsOptimizer {
+fn IslandsOptimizer::IslandsOptimizer() -> IslandsOptimizer {
   {
     min_island_size: MIN_ISLAND_SIZE,
     max_island_size: MAX_ISLAND_SIZE,
@@ -119,18 +114,13 @@ pub struct IslandManager {
 
 ///|
 pub fn IslandManager::IslandManager() -> IslandManager {
-  IslandManager::new()
-}
-
-///|
-pub fn IslandManager::new() -> IslandManager {
   let manager = {
     islands: [],
     awake_islands: [],
     free_islands: [],
     traversal_candidates: [],
     traversal_timestamp: 0,
-    optimizer: IslandsOptimizer::new(),
+    optimizer: IslandsOptimizer(),
     stack: [],
     body_island_ids: [],
     body_island_generations: [],
@@ -266,7 +256,7 @@ fn IslandManager::insert_body(
   if bodies.get(handle) is Some(body) {
     additional_solver_iterations = body.additional_solver_iterations
   }
-  let island = Island::new(handle, additional_solver_iterations)
+  let island = Island(handle, additional_solver_iterations)
   if !sleeping {
     let index = self.awake_islands.length()
     island.id_in_awake_list = Some(index)
@@ -1196,7 +1186,10 @@ pub struct ImpulseJointHandle {
 }
 
 ///|
-fn ImpulseJointHandle::new(id : Int, generation : Int) -> ImpulseJointHandle {
+fn ImpulseJointHandle::ImpulseJointHandle(
+  id : Int,
+  generation : Int,
+) -> ImpulseJointHandle {
   { id, generation }
 }
 
@@ -1205,7 +1198,7 @@ pub fn ImpulseJointHandle::from_raw_parts(
   id : Int,
   generation : Int,
 ) -> ImpulseJointHandle {
-  ImpulseJointHandle::new(id, generation)
+  ImpulseJointHandle(id, generation)
 }
 
 ///|
@@ -1217,7 +1210,7 @@ pub fn ImpulseJointHandle::into_raw_parts(
 
 ///|
 pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
-  ImpulseJointHandle::new(-1, -1)
+  ImpulseJointHandle(-1, -1)
 }
 
 ///|
@@ -1242,16 +1235,11 @@ pub struct GenericJoint {
 }
 
 ///|
-pub fn GenericJoint::GenericJoint(locked_axes : JointAxesMask) -> GenericJoint {
-  GenericJoint::new(locked_axes)
-}
-
-///|
 pub fn GenericJoint::default() -> GenericJoint {
   {
     local_frame1: @core.Isometry2::identity(),
     local_frame2: @core.Isometry2::identity(),
-    axis3: @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    axis3: Vec3(0.0F, 0.0F, 1.0F),
     local_anchor1_3: @core.Vec3::zero(),
     local_anchor2_3: @core.Vec3::zero(),
     local_frame1_rotation: @core.Quat::identity(),
@@ -1270,7 +1258,7 @@ pub fn GenericJoint::default() -> GenericJoint {
 }
 
 ///|
-pub fn GenericJoint::new(locked_axes : JointAxesMask) -> GenericJoint {
+pub fn GenericJoint::GenericJoint(locked_axes : JointAxesMask) -> GenericJoint {
   let j = GenericJoint::default()
   j.locked_axes = locked_axes
   j
@@ -1419,12 +1407,12 @@ pub fn GenericJoint::local_frame2(self : GenericJoint) -> @core.Isometry2 {
 
 ///|
 pub fn GenericJoint::local_frame1_3(self : GenericJoint) -> @core.Isometry3 {
-  @core.Isometry3::new(self.local_anchor1_3, self.local_frame1_rotation)
+  Isometry3(self.local_anchor1_3, self.local_frame1_rotation)
 }
 
 ///|
 pub fn GenericJoint::local_frame2_3(self : GenericJoint) -> @core.Isometry3 {
-  @core.Isometry3::new(self.local_anchor2_3, self.local_frame2_rotation)
+  Isometry3(self.local_anchor2_3, self.local_frame2_rotation)
 }
 
 ///|
@@ -1433,13 +1421,13 @@ pub fn GenericJoint::set_local_frame1(
   frame : @core.Isometry2,
 ) -> GenericJoint {
   self.local_frame1 = frame
-  self.local_anchor1_3 = @core.Vec3::new(
+  self.local_anchor1_3 = Vec3(
     frame.translation.x,
     frame.translation.y,
     self.local_anchor1_3.z,
   )
   self.local_frame1_rotation = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, 0.0F, frame.rotation.angle()),
+    Vec3(0.0F, 0.0F, frame.rotation.angle()),
   )
   self
 }
@@ -1451,9 +1439,9 @@ pub fn GenericJoint::set_local_frame1_3(
 ) -> GenericJoint {
   self.local_anchor1_3 = frame.translation
   self.local_frame1_rotation = frame.rotation
-  self.axis3 = frame.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-  self.local_frame1 = @core.Isometry2::new(
-    @core.Vec2::new(frame.translation.x, frame.translation.y),
+  self.axis3 = frame.rotation.rotate_vec3(Vec3(1.0F, 0.0F, 0.0F))
+  self.local_frame1 = Isometry2(
+    Vec2(frame.translation.x, frame.translation.y),
     @core.Rot2::from_angle(frame.rotation.to_scaled_axis().z),
   )
   self
@@ -1465,13 +1453,13 @@ pub fn GenericJoint::set_local_frame2(
   frame : @core.Isometry2,
 ) -> GenericJoint {
   self.local_frame2 = frame
-  self.local_anchor2_3 = @core.Vec3::new(
+  self.local_anchor2_3 = Vec3(
     frame.translation.x,
     frame.translation.y,
     self.local_anchor2_3.z,
   )
   self.local_frame2_rotation = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(0.0F, 0.0F, frame.rotation.angle()),
+    Vec3(0.0F, 0.0F, frame.rotation.angle()),
   )
   self
 }
@@ -1483,8 +1471,8 @@ pub fn GenericJoint::set_local_frame2_3(
 ) -> GenericJoint {
   self.local_anchor2_3 = frame.translation
   self.local_frame2_rotation = frame.rotation
-  self.local_frame2 = @core.Isometry2::new(
-    @core.Vec2::new(frame.translation.x, frame.translation.y),
+  self.local_frame2 = Isometry2(
+    Vec2(frame.translation.x, frame.translation.y),
     @core.Rot2::from_angle(frame.rotation.to_scaled_axis().z),
   )
   self
@@ -1515,12 +1503,8 @@ pub fn GenericJoint::set_local_anchor1(
   self : GenericJoint,
   anchor : @core.Vec2,
 ) -> GenericJoint {
-  self.local_frame1 = @core.Isometry2::new(anchor, self.local_frame1.rotation)
-  self.local_anchor1_3 = @core.Vec3::new(
-    anchor.x,
-    anchor.y,
-    self.local_anchor1_3.z,
-  )
+  self.local_frame1 = Isometry2(anchor, self.local_frame1.rotation)
+  self.local_anchor1_3 = Vec3(anchor.x, anchor.y, self.local_anchor1_3.z)
   self
 }
 
@@ -1530,8 +1514,8 @@ pub fn GenericJoint::set_local_anchor1_3(
   anchor : @core.Vec3,
 ) -> GenericJoint {
   self.local_anchor1_3 = anchor
-  self.local_frame1 = @core.Isometry2::new(
-    @core.Vec2::new(anchor.x, anchor.y),
+  self.local_frame1 = Isometry2(
+    Vec2(anchor.x, anchor.y),
     self.local_frame1.rotation,
   )
   self
@@ -1542,12 +1526,8 @@ pub fn GenericJoint::set_local_anchor2(
   self : GenericJoint,
   anchor : @core.Vec2,
 ) -> GenericJoint {
-  self.local_frame2 = @core.Isometry2::new(anchor, self.local_frame2.rotation)
-  self.local_anchor2_3 = @core.Vec3::new(
-    anchor.x,
-    anchor.y,
-    self.local_anchor2_3.z,
-  )
+  self.local_frame2 = Isometry2(anchor, self.local_frame2.rotation)
+  self.local_anchor2_3 = Vec3(anchor.x, anchor.y, self.local_anchor2_3.z)
   self
 }
 
@@ -1557,8 +1537,8 @@ pub fn GenericJoint::set_local_anchor2_3(
   anchor : @core.Vec3,
 ) -> GenericJoint {
   self.local_anchor2_3 = anchor
-  self.local_frame2 = @core.Isometry2::new(
-    @core.Vec2::new(anchor.x, anchor.y),
+  self.local_frame2 = Isometry2(
+    Vec2(anchor.x, anchor.y),
     self.local_frame2.rotation,
   )
   self
@@ -1580,9 +1560,9 @@ pub fn GenericJoint::set_local_frame1_rotation(
   rotation : @core.Quat,
 ) -> GenericJoint {
   self.local_frame1_rotation = rotation
-  self.axis3 = rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-  self.local_frame1 = @core.Isometry2::new(
-    @core.Vec2::new(self.local_anchor1_3.x, self.local_anchor1_3.y),
+  self.axis3 = rotation.rotate_vec3(Vec3(1.0F, 0.0F, 0.0F))
+  self.local_frame1 = Isometry2(
+    Vec2(self.local_anchor1_3.x, self.local_anchor1_3.y),
     @core.Rot2::from_angle(rotation.to_scaled_axis().z),
   )
   self
@@ -1594,8 +1574,8 @@ pub fn GenericJoint::set_local_frame2_rotation(
   rotation : @core.Quat,
 ) -> GenericJoint {
   self.local_frame2_rotation = rotation
-  self.local_frame2 = @core.Isometry2::new(
-    @core.Vec2::new(self.local_anchor2_3.x, self.local_anchor2_3.y),
+  self.local_frame2 = Isometry2(
+    Vec2(self.local_anchor2_3.x, self.local_anchor2_3.y),
     @core.Rot2::from_angle(rotation.to_scaled_axis().z),
   )
   self
@@ -1837,7 +1817,7 @@ pub fn GenericJoint::flip(self : GenericJoint) -> GenericJoint {
       self.limits = joint_limits_set_axis(
         self.limits,
         axis,
-        JointLimits::new(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
+        JointLimits(-lim.max(), -lim.min()).set_impulse(lim.impulse()),
       )
     }
   }
@@ -2162,7 +2142,7 @@ struct ImpulseJointSet {
 }
 
 ///|
-pub fn ImpulseJointSet::new() -> ImpulseJointSet {
+pub fn ImpulseJointSet::ImpulseJointSet() -> ImpulseJointSet {
   {
     rb_graph_ids: [],
     rb_graph_generations: [],
@@ -2268,7 +2248,7 @@ fn parse_isometry2(fields : Array[String], start : Int) -> @core.Isometry2 {
   } else {
     0.0F
   }
-  @core.Isometry2::new(@core.Vec2::new(tx, ty), @core.Rot2::from_angle(rot))
+  Isometry2(Vec2(tx, ty), @core.Rot2::from_angle(rot))
 }
 
 ///|
@@ -2442,7 +2422,7 @@ fn parse_limits(fields : Array[String], start : Int) -> JointLimits {
   } else {
     0.0F
   }
-  let limits = JointLimits::new(min, max)
+  let limits = JointLimits(min, max)
   limits.impulse = impulse
   limits
 }
@@ -2452,22 +2432,22 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
   let frame1 = parse_isometry2(fields, start)
   let frame2 = parse_isometry2(fields, start + 3)
   let locked_axes = if fields.length() > start + 6 {
-    JointAxesMask::new(ij_parse_int_value(fields[start + 6]))
+    JointAxesMask(ij_parse_int_value(fields[start + 6]))
   } else {
     JointAxesMask::empty()
   }
   let limit_axes = if fields.length() > start + 7 {
-    JointAxesMask::new(ij_parse_int_value(fields[start + 7]))
+    JointAxesMask(ij_parse_int_value(fields[start + 7]))
   } else {
     JointAxesMask::empty()
   }
   let motor_axes = if fields.length() > start + 8 {
-    JointAxesMask::new(ij_parse_int_value(fields[start + 8]))
+    JointAxesMask(ij_parse_int_value(fields[start + 8]))
   } else {
     JointAxesMask::empty()
   }
   let coupled_axes = if fields.length() > start + 9 {
-    JointAxesMask::new(ij_parse_int_value(fields[start + 9]))
+    JointAxesMask(ij_parse_int_value(fields[start + 9]))
   } else {
     JointAxesMask::empty()
   }
@@ -2519,52 +2499,40 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
     0.0F
   }
   let axis3 = if fields.length() > start + 79 {
-    @core.Vec3::new(
+    @core.Vec3(
       ij_parse_real_value(fields[start + 77]),
       ij_parse_real_value(fields[start + 78]),
       ij_parse_real_value(fields[start + 79]),
     )
   } else {
-    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+    Vec3(0.0F, 0.0F, 1.0F)
   }
   let frame1_rotation = if fields.length() > start + 83 {
-    @core.Quat::new(
+    @core.Quat(
       ij_parse_real_value(fields[start + 80]),
       ij_parse_real_value(fields[start + 81]),
       ij_parse_real_value(fields[start + 82]),
       ij_parse_real_value(fields[start + 83]),
     )
   } else {
-    @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, frame1.rotation.angle()),
-    )
+    @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, frame1.rotation.angle()))
   }
   let frame2_rotation = if fields.length() > start + 87 {
-    @core.Quat::new(
+    @core.Quat(
       ij_parse_real_value(fields[start + 84]),
       ij_parse_real_value(fields[start + 85]),
       ij_parse_real_value(fields[start + 86]),
       ij_parse_real_value(fields[start + 87]),
     )
   } else {
-    @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, frame2.rotation.angle()),
-    )
+    @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, frame2.rotation.angle()))
   }
   {
     local_frame1: frame1,
     local_frame2: frame2,
     axis3,
-    local_anchor1_3: @core.Vec3::new(
-      frame1.translation.x,
-      frame1.translation.y,
-      anchor1_z,
-    ),
-    local_anchor2_3: @core.Vec3::new(
-      frame2.translation.x,
-      frame2.translation.y,
-      anchor2_z,
-    ),
+    local_anchor1_3: Vec3(frame1.translation.x, frame1.translation.y, anchor1_z),
+    local_anchor2_3: Vec3(frame2.translation.x, frame2.translation.y, anchor2_z),
     local_frame1_rotation: frame1_rotation,
     local_frame2_rotation: frame2_rotation,
     locked_axes,
@@ -2580,7 +2548,7 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
       ang_y: may_ang,
       ang_z: maz_ang,
     },
-    softness: SpringCoefficients::new(natural_frequency, damping_ratio),
+    softness: SpringCoefficients(natural_frequency, damping_ratio),
     contacts_enabled,
     enabled,
     user_data,
@@ -2589,7 +2557,7 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
 
 ///|
 pub fn ImpulseJointSet::serialize(self : ImpulseJointSet) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("len=")
   sb.write_object(self.joint_generations.length())
   sb.write_char(';')
@@ -2675,7 +2643,7 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       }
     }
   }
-  let set = ImpulseJointSet::new()
+  let set = ImpulseJointSet()
   let target_len = if len > 0 { len } else { gens.length() }
   while gens.length() < target_len {
     gens.push(0)
@@ -2726,8 +2694,8 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       } else {
         -1
       }
-      let body1 = RigidBodyHandle::new(b1id, b1gen)
-      let body2 = RigidBodyHandle::new(b2id, b2gen)
+      let body1 = RigidBodyHandle(b1id, b1gen)
+      let body2 = RigidBodyHandle(b2id, b2gen)
       let joint_data = parse_generic_joint(fields, 6)
       let impulse_x_index = 6 + SERIALIZED_GENERIC_JOINT_FIELD_COUNT
       let impulses_x = if fields.length() > impulse_x_index {
@@ -2745,12 +2713,12 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       } else {
         0.0F
       }
-      let handle = ImpulseJointHandle::new(id, gen)
+      let handle = ImpulseJointHandle(id, gen)
       let joint = ImpulseJoint::{
         body1,
         body2,
         data: joint_data,
-        impulses: @core.Vec2::new(impulses_x, impulses_y),
+        impulses: Vec2(impulses_x, impulses_y),
         ang_impulse,
         handle,
       }
@@ -2851,12 +2819,12 @@ fn ImpulseJointSet::allocate_joint_handle(
 ) -> ImpulseJointHandle {
   if self.free_handles.pop() is Some(index) {
     let generation = self.joint_generations[index]
-    ImpulseJointHandle::new(index, generation)
+    ImpulseJointHandle(index, generation)
   } else {
     let index = self.joint_generations.length()
     self.joint_generations.push(0)
     self.joint_edge_ids.push(-1)
-    ImpulseJointHandle::new(index, 0)
+    ImpulseJointHandle(index, 0)
   }
 }
 
@@ -3235,7 +3203,7 @@ pub fn ImpulseJointSet::get_unknown_gen(
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
   }
-  let handle = ImpulseJointHandle::new(id, self.joint_generations[id])
+  let handle = ImpulseJointHandle(id, self.joint_generations[id])
   Some((self.graph_edges[edge_id].joint, handle))
 }
 

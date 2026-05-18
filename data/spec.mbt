@@ -43,7 +43,7 @@ pub type Arena[T]
 
 ///|
 #declaration_only
-pub fn[T] Arena::new() -> Arena[T] {
+pub fn[T] Arena::Arena() -> Arena[T] {
   ...
 }
 
@@ -171,7 +171,7 @@ pub type Coarena[T]
 
 ///|
 #declaration_only
-pub fn[T] Coarena::new() -> Coarena[T] {
+pub fn[T] Coarena::Coarena() -> Coarena[T] {
   ...
 }
 
@@ -264,7 +264,10 @@ pub type ModifiedObjects[Handle, Object]
 
 ///|
 #declaration_only
-pub fn[Handle, Object] ModifiedObjects::new() -> ModifiedObjects[Handle, Object] {
+pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> ModifiedObjects[
+  Handle,
+  Object,
+] {
   ...
 }
 
@@ -336,7 +339,7 @@ pub type PubSub[T]
 
 ///|
 #declaration_only
-pub fn[T] PubSub::new() -> PubSub[T] {
+pub fn[T] PubSub::PubSub() -> PubSub[T] {
   ...
 }
 

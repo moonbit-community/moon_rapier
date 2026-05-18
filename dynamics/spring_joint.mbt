@@ -27,15 +27,6 @@ pub fn SpringJoint::SpringJoint(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> SpringJoint {
-  SpringJoint::new(rest_length, stiffness, damping)
-}
-
-///|
-pub fn SpringJoint::new(
-  rest_length : @core.Real,
-  stiffness : @core.Real,
-  damping : @core.Real,
-) -> SpringJoint {
   let joint = GenericJoint::default()
     .set_coupled_axes(JointAxesMask::lin_axes())
     .set_motor_position(LinX, rest_length, stiffness, damping)
@@ -115,16 +106,7 @@ pub fn SpringJointBuilder::SpringJointBuilder(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> SpringJointBuilder {
-  SpringJointBuilder::new(rest_length, stiffness, damping)
-}
-
-///|
-pub fn SpringJointBuilder::new(
-  rest_length : @core.Real,
-  stiffness : @core.Real,
-  damping : @core.Real,
-) -> SpringJointBuilder {
-  { inner: SpringJoint::new(rest_length, stiffness, damping) }
+  { inner: SpringJoint(rest_length, stiffness, damping) }
 }
 
 ///|

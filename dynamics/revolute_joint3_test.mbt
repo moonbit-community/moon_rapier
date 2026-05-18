@@ -15,8 +15,10 @@
 ///|
 /// Ported from rapier/src/dynamics/joint/revolute_joint.rs (test_revolute_joint_angle) for dim3.
 test "revolute joint3 angle" {
-  let revolute = RevoluteJoint3Builder::new(@core.Vec3::new(0.0F, 1.0F, 0.0F)).build()
-  let rot1 = @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+  let revolute = RevoluteJoint3Builder::RevoluteJoint3Builder(
+    RevoluteJoint3(Vec3(0.0F, 1.0F, 0.0F)),
+  ).build()
+  let rot1 = @core.rotation_from_scaled_axis(Vec3(0.0F, 1.0F, 0.0F))
   let steps = 100
   let steps_real = Float::from_double(steps.to_double())
 
@@ -24,18 +26,14 @@ test "revolute joint3 angle" {
   for step_index in 1..<steps {
     let step_real = Float::from_double(step_index.to_double())
     let delta = -@core.pi() + step_real * @core.two_pi() / steps_real
-    let rot2 = @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 1.0F + delta, 0.0F),
-    )
+    let rot2 = @core.rotation_from_scaled_axis(Vec3(0.0F, 1.0F + delta, 0.0F))
     let angle = revolute.angle(rot1, rot2)
     inspect(@core.abs(angle - delta) < 1.0e-5F, content="true")
   }
 
   // Check the special case for -pi and pi that may return an angle with a flipped sign.
   for delta in [-@core.pi(), @core.pi()] {
-    let rot2 = @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 1.0F + delta, 0.0F),
-    )
+    let rot2 = @core.rotation_from_scaled_axis(Vec3(0.0F, 1.0F + delta, 0.0F))
     let angle = revolute.angle(rot1, rot2)
     inspect(
       @core.abs(@core.abs(angle) - @core.abs(delta)) < 1.0e-2F,

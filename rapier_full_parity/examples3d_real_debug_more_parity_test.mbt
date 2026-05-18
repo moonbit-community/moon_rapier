@@ -19,13 +19,13 @@
 ///|
 test "examples3d/debug_two_cubes3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_two_cubes3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -33,7 +33,7 @@ test "examples3d/debug_two_cubes3.rs parity (3DReal headless)" {
   // Dynamic cube.
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 2.0F, 0.0F))
+    .translation(Vec3(0.0F, 2.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -73,13 +73,13 @@ test "examples3d/debug_two_cubes3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_boxes3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_boxes3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -90,7 +90,7 @@ test "examples3d/debug_boxes3.rs parity (3DReal headless)" {
   for _ in 0..<2 {
     let ground = bodies.insert(
       @dynamics.RigidBodyBuilder3D::fixed()
-      .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+      .translation(Vec3(0.0F, -ground_height, 0.0F))
       .build(),
     )
     colliders.insert_with_parent(
@@ -105,7 +105,7 @@ test "examples3d/debug_boxes3.rs parity (3DReal headless)" {
   for _ in 0..<2 {
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(1.1F, 0.0F, 0.0F))
+      .translation(Vec3(1.1F, 0.0F, 0.0F))
       .can_sleep(false)
       .build(),
     )
@@ -133,22 +133,22 @@ test "examples3d/debug_boxes3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_triangle3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_triangle3.rs`.
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
 
   // Triangle ground.
   let vtx = [
-    @core.Vec3::new(-10.0F, 0.0F, -10.0F),
-    @core.Vec3::new(10.0F, 0.0F, -10.0F),
-    @core.Vec3::new(0.0F, 0.0F, 10.0F),
+    @core.Vec3(-10.0F, 0.0F, -10.0F),
+    Vec3(10.0F, 0.0F, -10.0F),
+    Vec3(0.0F, 0.0F, 10.0F),
   ]
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let tri = @collision.ColliderBuilder3D::triangle(vtx[0], vtx[1], vtx[2]).build()
@@ -157,7 +157,7 @@ test "examples3d/debug_triangle3.rs parity (3DReal headless)" {
   // Dynamic "box" (thin cuboid).
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(1.1F, 0.01F, 0.0F))
+    .translation(Vec3(1.1F, 0.01F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -184,19 +184,19 @@ test "examples3d/debug_triangle3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_big_colliders3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_big_colliders3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
-    @collision.ColliderBuilder3D::halfspace(@core.Vec3::new(0.0F, 1.0F, 0.0F)).build(),
+    @collision.ColliderBuilder3D::halfspace(Vec3(0.0F, 1.0F, 0.0F)).build(),
     ground,
     bodies,
   )
@@ -208,7 +208,7 @@ test "examples3d/debug_big_colliders3.rs parity (3DReal headless)" {
     curr_y = curr_y + curr_height * 4.0F
     let handle = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(0.0F, curr_y, 0.0F))
+      .translation(Vec3(0.0F, curr_y, 0.0F))
       .can_sleep(false)
       .build(),
     )
@@ -237,13 +237,13 @@ test "examples3d/debug_big_colliders3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_balls3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_balls3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -275,7 +275,7 @@ test "examples3d/debug_balls3.rs parity (3DReal headless)" {
           } else {
             @dynamics.RigidBodyBuilder3D::dynamic().can_sleep(false)
           })
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         colliders.insert_with_parent(
@@ -303,13 +303,13 @@ test "examples3d/debug_balls3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_cube_high_mass_ratio3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -320,7 +320,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
   // Floor.
   let floor_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -stick_len - stick_rad, 0.0F))
+    .translation(Vec3(0.0F, -stick_len - stick_rad, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -338,7 +338,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
     for z in [-(stick_len / 2.0F - stick_rad), stick_len / 2.0F - stick_rad] {
       let b = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(0.0F, y0, z))
+        .translation(Vec3(0.0F, y0, z))
         .can_sleep(false)
         .build(),
       )
@@ -356,7 +356,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
     for x in [-(stick_len / 2.0F - stick_rad), stick_len / 2.0F - stick_rad] {
       let b = bodies.insert(
         @dynamics.RigidBodyBuilder3D::dynamic()
-        .translation(@core.Vec3::new(x, y1, 0.0F))
+        .translation(Vec3(x, y1, 0.0F))
         .can_sleep(false)
         .build(),
       )
@@ -378,7 +378,7 @@ test "examples3d/debug_cube_high_mass_ratio3.rs parity (3DReal headless)" {
   let cube = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(
-      @core.Vec3::new(
+      Vec3(
         0.0F,
         cube_len / 2.0F +
         (Float::from_int(num_levels) - 0.25F) * stick_rad * 4.0F,
@@ -418,13 +418,13 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
   //
   // The upstream uses a convex mesh with vertices far from the origin; we approximate with a
   // trimesh cuboid whose vertices are shifted by a large offset.
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -434,7 +434,7 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -449,16 +449,16 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
   // Trimesh cuboid with vertices far from the local origin.
   let he = 1.0F
   let vtx = [
-    @core.Vec3::new(-he, -he, -he),
-    @core.Vec3::new(he, -he, -he),
-    @core.Vec3::new(he, -he, he),
-    @core.Vec3::new(-he, -he, he),
-    @core.Vec3::new(-he, he, -he),
-    @core.Vec3::new(he, he, -he),
-    @core.Vec3::new(he, he, he),
-    @core.Vec3::new(-he, he, he),
+    @core.Vec3(-he, -he, -he),
+    Vec3(he, -he, -he),
+    Vec3(he, -he, he),
+    Vec3(-he, -he, he),
+    Vec3(-he, he, -he),
+    Vec3(he, he, -he),
+    Vec3(he, he, he),
+    Vec3(-he, he, he),
   ]
-  let off = @core.Vec3::new(100.0F, 100.0F, 100.0F)
+  let off = @core.Vec3(100.0F, 100.0F, 100.0F)
   for i in 0..<vtx.length() {
     vtx[i] = vtx[i].add(off)
   }
@@ -479,7 +479,7 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
   for _ in 0..<2 {
     let rb = bodies.insert(
       @dynamics.RigidBodyBuilder3D::dynamic()
-      .translation(@core.Vec3::new(-100.0F, -90.0F, -100.0F))
+      .translation(Vec3(-100.0F, -90.0F, -100.0F))
       .can_sleep(false)
       .build(),
     )
@@ -502,13 +502,13 @@ test "examples3d/debug_eccentric_boxes3.rs parity (3DReal headless; trimesh offs
 ///|
 test "examples3d/debug_thin_cube_on_mesh3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_thin_cube_on_mesh3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -519,18 +519,16 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity (3DReal headless)" {
       heights,
       2,
       2,
-      @core.Vec3::new(50.0F, 1.0F, 50.0F),
+      Vec3(50.0F, 1.0F, 50.0F),
     )
     .unwrap()
     .build()
   colliders.insert(hf) |> ignore
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.5F, 0.0F, 0.5F)),
-    )
-    .linvel(@core.Vec3::new(0.0F, -100.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.5F, 0.0F, 0.5F)))
+    .linvel(Vec3(0.0F, -100.0F, 0.0F))
     .soft_ccd_prediction(10.0F)
     .can_sleep(false)
     .build(),
@@ -558,26 +556,26 @@ test "examples3d/debug_thin_cube_on_mesh3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_trimesh3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_trimesh3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
   let width = 0.5F
   let vtx = [
-    @core.Vec3::new(-width, 0.0F, -width),
-    @core.Vec3::new(width, 0.0F, -width),
-    @core.Vec3::new(width, 0.0F, width),
-    @core.Vec3::new(-width, 0.0F, width),
-    @core.Vec3::new(-width, -width, -width),
-    @core.Vec3::new(width, -width, -width),
-    @core.Vec3::new(width, -width, width),
-    @core.Vec3::new(-width, -width, width),
+    @core.Vec3(-width, 0.0F, -width),
+    Vec3(width, 0.0F, -width),
+    Vec3(width, 0.0F, width),
+    Vec3(-width, 0.0F, width),
+    Vec3(-width, -width, -width),
+    Vec3(width, -width, -width),
+    Vec3(width, -width, width),
+    Vec3(-width, -width, width),
   ]
   let idx = [
     (0, 2, 1),
@@ -595,7 +593,7 @@ test "examples3d/debug_trimesh3.rs parity (3DReal headless)" {
   ]
   let dyn_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 35.0F, 0.0F))
+    .translation(Vec3(0.0F, 35.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )

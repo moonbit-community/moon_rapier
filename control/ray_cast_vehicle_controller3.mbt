@@ -162,13 +162,6 @@ pub struct DynamicRayCastVehicleController3 {
 pub fn DynamicRayCastVehicleController3::DynamicRayCastVehicleController3(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController3 {
-  DynamicRayCastVehicleController3::new(chassis)
-}
-
-///|
-pub fn DynamicRayCastVehicleController3::new(
-  chassis : @dynamics.RigidBodyHandle,
-) -> DynamicRayCastVehicleController3 {
   {
     wheels: [],
     forward_ws: [],
@@ -251,22 +244,22 @@ pub fn DynamicRayCastVehicleController3::wheels(
 
 ///|
 fn v3_to_v2(v : @core.Vec3) -> @core.Vec2 {
-  @core.Vec2::new(v.x, v.y)
+  Vec2(v.x, v.y)
 }
 
 ///|
 fn v2_to_v3(v : @core.Vec2) -> @core.Vec3 {
-  @core.Vec3::new(v.x, v.y, 0.0F)
+  Vec3(v.x, v.y, 0.0F)
 }
 
 ///|
 fn axis_vec3(axis : Int) -> @core.Vec3 {
   if axis == 0 {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    Vec3(1.0F, 0.0F, 0.0F)
   } else if axis == 1 {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 0.0F, 1.0F)
+    Vec3(0.0F, 0.0F, 1.0F)
   }
 }
 
@@ -282,14 +275,14 @@ fn vec3_normalize_or_zero(v : @core.Vec3) -> @core.Vec3 {
 
 ///|
 fn rotate_vec3_yaw(rot : @core.Rot2, v : @core.Vec3) -> @core.Vec3 {
-  let r = rot.rotate_vec2(@core.Vec2::new(v.x, v.y))
-  @core.Vec3::new(r.x, r.y, v.z)
+  let r = rot.rotate_vec2(Vec2(v.x, v.y))
+  Vec3(r.x, r.y, v.z)
 }
 
 ///|
 fn transform_point3(pos : @core.Isometry2, p : @core.Vec3) -> @core.Vec3 {
-  let v2 = pos.transform_point(@core.Vec2::new(p.x, p.y))
-  @core.Vec3::new(v2.x, v2.y, p.z)
+  let v2 = pos.transform_point(Vec2(p.x, p.y))
+  Vec3(v2.x, v2.y, p.z)
 }
 
 ///|
@@ -342,7 +335,7 @@ fn ray_cast3(
   let source_ws = out.raycast_info.hard_point_ws
   let source = v3_to_v2(source_ws)
   let ray_dir = v3_to_v2(ray_dir_ws)
-  let ray = @collision.Ray::new(source, ray_dir)
+  let ray = @collision.Ray(source, ray_dir)
   out.raycast_info.contact_point_ws = source_ws.add(ray_dir_ws.scale(raylen))
   if queries.cast_ray_and_get_normal(bodies, colliders, ray, raylen, true)
     is Some(hit) {

@@ -14,9 +14,9 @@
 
 ///|
 test "revolute joint builder3 exposes motor model and softness" {
-  let softness = SpringCoefficients::new(5.0F, 0.25F)
+  let softness = SpringCoefficients::SpringCoefficients(5.0F, 0.25F)
   let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder3::new(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+    RevoluteJointBuilder3::RevoluteJointBuilder3(Vec3(0.0F, 0.0F, 1.0F))
     .softness(softness)
     .motor_model(ForceBased)
     .motor_position(1.0F, 2.0F, 3.0F)
@@ -44,9 +44,9 @@ test "revolute joint builder3 exposes motor model and softness" {
 
 ///|
 test "prismatic joint builder3 exposes motor model and softness" {
-  let softness = SpringCoefficients::new(7.0F, 0.1F)
+  let softness = SpringCoefficients::SpringCoefficients(7.0F, 0.1F)
   let joint = GenericJoint::from_prismatic(
-    PrismaticJointBuilder3::new(@core.Vec3::new(1.0F, 0.0F, 0.0F))
+    PrismaticJointBuilder3::PrismaticJointBuilder3(Vec3(1.0F, 0.0F, 0.0F))
     .softness(softness)
     .motor_model(ForceBased)
     .motor_velocity(3.0F, 0.5F)
@@ -82,9 +82,9 @@ test "prismatic joint builder3 exposes motor model and softness" {
 
 ///|
 test "rope joint builder3 exposes motor model and softness" {
-  let softness = SpringCoefficients::new(9.0F, 0.2F)
+  let softness = SpringCoefficients::SpringCoefficients(9.0F, 0.2F)
   let joint = GenericJoint::from_rope(
-    RopeJointBuilder3::new(10.0F)
+    RopeJointBuilder3::RopeJointBuilder3(10.0F)
     .softness(softness)
     .motor_model(ForceBased)
     .motor_position(2.0F, 4.0F, 5.0F)
@@ -120,13 +120,13 @@ test "rope joint builder3 exposes motor model and softness" {
 
 ///|
 test "generic joint 3d setters expose public anchor and basis state" {
-  let frame1 = @core.Isometry3::new(
-    @core.Vec3::new(1.5F, -2.0F, 3.25F),
-    @core.rotation_from_scaled_axis(@core.Vec3::new(0.3F, -0.2F, 0.4F)),
+  let frame1 = @core.Isometry3(
+    Vec3(1.5F, -2.0F, 3.25F),
+    @core.rotation_from_scaled_axis(Vec3(0.3F, -0.2F, 0.4F)),
   )
-  let frame2 = @core.Isometry3::new(
-    @core.Vec3::new(-0.75F, 0.5F, 1.25F),
-    @core.rotation_from_scaled_axis(@core.Vec3::new(-0.1F, 0.6F, 0.2F)),
+  let frame2 = @core.Isometry3(
+    Vec3(-0.75F, 0.5F, 1.25F),
+    @core.rotation_from_scaled_axis(Vec3(-0.1F, 0.6F, 0.2F)),
   )
   let joint = GenericJoint::default()
     .set_local_frame1_3(frame1)
@@ -160,9 +160,9 @@ test "generic joint 3d setters expose public anchor and basis state" {
 
 ///|
 test "generic joint converts losslessly with generic joint 3d real" {
-  let joint3 = SphericalJoint3DRealBuilder::new()
-    .local_anchor1(@core.Vec3::new(0.0F, 0.5F, -1.0F))
-    .local_anchor2(@core.Vec3::new(0.0F, -0.5F, 2.0F))
+  let joint3 = SphericalJoint3DRealBuilder::SphericalJoint3DRealBuilder()
+    .local_anchor1(Vec3(0.0F, 0.5F, -1.0F))
+    .local_anchor2(Vec3(0.0F, -0.5F, 2.0F))
     .limits(AngY, -0.3F, 0.7F)
     .motor_position(AngX, 1.2F, 2.5F, 0.4F)
     .motor_max_force(AngX, 9.0F)
@@ -203,9 +203,9 @@ test "generic joint converts losslessly with generic joint 3d real" {
 
 ///|
 test "generic joint from spring exposes spring semantics" {
-  let spring = SpringJoint::new(2.0F, 5.0F, 0.25F)
-    .set_local_anchor1(@core.Vec2::new(1.0F, -2.0F))
-    .set_local_anchor2(@core.Vec2::new(-3.0F, 4.0F))
+  let spring = SpringJoint::SpringJoint(2.0F, 5.0F, 0.25F)
+    .set_local_anchor1(Vec2(1.0F, -2.0F))
+    .set_local_anchor2(Vec2(-3.0F, 4.0F))
   let joint = GenericJoint::from_spring(spring)
   inspect(
     joint.coupled_axes().bits() == JointAxesMask::lin_axes().bits(),

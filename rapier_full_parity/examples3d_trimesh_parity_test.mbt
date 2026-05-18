@@ -26,13 +26,13 @@ enum TrimeshProfile {
 ///|
 fn run_examples3d_debug_trimesh3(profile : TrimeshProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/debug_trimesh3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is TrimeshFullscale {
     12
   } else if profile is TrimeshHeavy {
@@ -47,14 +47,14 @@ fn run_examples3d_debug_trimesh3(profile : TrimeshProfile) -> Bool {
   // Trimesh "cube shell" (12 triangles).
   let w = 0.5F
   let vtx = [
-    @core.Vec3::new(-w, 0.0F, -w),
-    @core.Vec3::new(w, 0.0F, -w),
-    @core.Vec3::new(w, 0.0F, w),
-    @core.Vec3::new(-w, 0.0F, w),
-    @core.Vec3::new(-w, -w, -w),
-    @core.Vec3::new(w, -w, -w),
-    @core.Vec3::new(w, -w, w),
-    @core.Vec3::new(-w, -w, w),
+    @core.Vec3(-w, 0.0F, -w),
+    Vec3(w, 0.0F, -w),
+    Vec3(w, 0.0F, w),
+    Vec3(-w, 0.0F, w),
+    Vec3(-w, -w, -w),
+    Vec3(w, -w, -w),
+    Vec3(w, -w, w),
+    Vec3(-w, -w, w),
   ]
   let idx = [
     (0, 2, 1),
@@ -96,7 +96,7 @@ fn run_examples3d_debug_trimesh3(profile : TrimeshProfile) -> Bool {
   let min_allowed_y = if profile is TrimeshDefault { -20.0F } else { -10.0F }
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, drop_height, 0.0F))
+    .translation(Vec3(0.0F, drop_height, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -127,13 +127,13 @@ test "examples3d/debug_trimesh3.rs parity (headless)" {
 ///|
 fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
   // Ported from `rapier-reference/examples3d/trimesh3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is TrimeshFullscale {
     12
   } else if profile is TrimeshHeavy {
@@ -172,7 +172,7 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
         Float::from_double(@math.sin(x.to_double())) +
         Float::from_double(@math.cos(z.to_double()))
       }
-      vertices.push(@core.Vec3::new(x, y, z))
+      vertices.push(Vec3(x, y, z))
     }
   }
   fn vid(i : Int, j : Int, nsubdivs : Int) -> Int {
@@ -211,7 +211,7 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
         let z = Float::from_int(k) * shift - center
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(h)
@@ -267,7 +267,7 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
                   rad / 2.0F,
                   rad,
                   rad / 2.0F,
-                ).translation(@core.Vec3::new(rad, 0.0F, 0.0F)),
+                ).translation(Vec3(rad, 0.0F, 0.0F)),
               ),
               (
                 @core.Isometry3::identity(),
@@ -275,7 +275,7 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
                   rad / 2.0F,
                   rad,
                   rad / 2.0F,
-                ).translation(@core.Vec3::new(-rad, 0.0F, 0.0F)),
+                ).translation(Vec3(-rad, 0.0F, 0.0F)),
               ),
             ])
             .unwrap()
@@ -327,13 +327,13 @@ fn run_examples3d_debug_thin_cube_on_mesh3(profile : TrimeshProfile) -> Bool {
   // The upstream example uses a 2x2 heightfield with internal edge fixing enabled. For the 3DReal
   // backend we use the same 2x2 heightfield (internal-edge smoothing is handled by the narrow-phase
   // trimesh/heightfield contact normal selection).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let solver_iterations = if profile is TrimeshFullscale {
     12
   } else if profile is TrimeshHeavy {
@@ -352,7 +352,7 @@ fn run_examples3d_debug_thin_cube_on_mesh3(profile : TrimeshProfile) -> Bool {
       heights,
       2,
       2,
-      @core.Vec3::new(50.0F, 1.0F, 50.0F),
+      Vec3(50.0F, 1.0F, 50.0F),
     )
     .unwrap()
     .build()
@@ -388,11 +388,9 @@ fn run_examples3d_debug_thin_cube_on_mesh3(profile : TrimeshProfile) -> Bool {
   }
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.5F, 0.0F, 0.5F)),
-    )
-    .linvel(@core.Vec3::new(0.0F, drop_speed, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.5F, 0.0F, 0.5F)))
+    .linvel(Vec3(0.0F, drop_speed, 0.0F))
     .soft_ccd_prediction(ccd_prediction)
     .can_sleep(false)
     .build(),

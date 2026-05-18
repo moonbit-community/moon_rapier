@@ -22,20 +22,16 @@ fn setup_overlapping_balls() -> (
   @dynamics.RigidBodyHandle,
   @dynamics.RigidBodyHandle,
 ) {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
   let b1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let b2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 1.5F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 1.5F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::ball(1.0F).build(),
@@ -52,9 +48,9 @@ fn setup_overlapping_balls() -> (
 
   // The solver relies on non-zero mass properties.
   update_body_mass_properties_from_colliders(bodies, colliders, [b1, b2])
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  CollisionPipeline::new().step(
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  CollisionPipeline().step(
     0.0F,
     islands,
     broad_phase,
@@ -63,8 +59,8 @@ fn setup_overlapping_balls() -> (
     colliders,
     impulse_joints,
     multibody_joints,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   (bodies, colliders, islands, broad_phase, narrow_phase, b1, b2)
 }
@@ -93,10 +89,10 @@ test "contact solver warmstart uses cached impulses" {
     @dynamics.IntegrationParameters::default(),
     bodies_cold,
     colliders_cold,
-    PhysicsHooks::new(),
+    PhysicsHooks(),
     narrow_phase_cold,
     0.0F,
-    EventHandler::new(),
+    EventHandler(),
     cache_cold,
   )
   if bodies_cold.get(b1_cold) is Some(body1) {
@@ -141,10 +137,10 @@ test "contact solver warmstart uses cached impulses" {
     @dynamics.IntegrationParameters::default(),
     bodies_warm,
     colliders_warm,
-    PhysicsHooks::new(),
+    PhysicsHooks(),
     narrow_phase_warm,
     0.0F,
-    EventHandler::new(),
+    EventHandler(),
     cache_warm,
   )
   if bodies_warm.get(b1_warm) is Some(body1) {

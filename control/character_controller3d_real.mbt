@@ -104,13 +104,8 @@ pub struct KinematicCharacterController3DReal {
 
 ///|
 pub fn KinematicCharacterController3DReal::KinematicCharacterController3DReal() -> KinematicCharacterController3DReal {
-  KinematicCharacterController3DReal::new()
-}
-
-///|
-pub fn KinematicCharacterController3DReal::new() -> KinematicCharacterController3DReal {
   {
-    up: @core.Vec3::new(0.0F, 1.0F, 0.0F),
+    up: Vec3(0.0F, 1.0F, 0.0F),
     offset: CharacterLength::relative(0.01F),
     slide: true,
     autostep: None,
@@ -123,7 +118,7 @@ pub fn KinematicCharacterController3DReal::new() -> KinematicCharacterController
 
 ///|
 pub fn KinematicCharacterController3DReal::default() -> KinematicCharacterController3DReal {
-  KinematicCharacterController3DReal::new()
+  KinematicCharacterController3DReal()
 }
 
 ///|
@@ -342,11 +337,7 @@ fn cc3d_real_compute_dims_with_up(
 ) -> (@core.Real, @core.Real) {
   let aabb = shape.local_aabb()
   let extents = aabb.maxs.sub(aabb.mins).scale(0.5F)
-  let up_abs = @core.Vec3::new(
-    @core.abs(up.x),
-    @core.abs(up.y),
-    @core.abs(up.z),
-  )
+  let up_abs = @core.Vec3(@core.abs(up.x), @core.abs(up.y), @core.abs(up.z))
   let up_extent = extents.dot(up_abs)
   let side_vec = extents.sub(up_abs.scale(up_extent))
   let side_extent = side_vec.length()
@@ -467,7 +458,7 @@ fn cc3d_real_detect_ground_contact(
   offset : @core.Real,
 ) -> (@collision.ColliderHandle3D, @core.Vec3, @core.Vec3)? {
   let down = up.scale(-1.0F)
-  let options = @collision.ShapeCastOptions3::new(prediction, true).with_target_distance(
+  let options = @collision.ShapeCastOptions3(prediction, true).with_target_distance(
     offset,
   )
   if query.cast_shape(bodies, colliders, position, down, shape, options)
@@ -570,7 +561,7 @@ fn cc3d_real_attempt_autostep(
       return None
     }
   }
-  let shifted_pos = @core.Isometry3::new(
+  let shifted_pos = @core.Isometry3(
     start_pos.translation.add(up.scale(max_height)),
     start_pos.rotation,
   )
@@ -589,7 +580,7 @@ fn cc3d_real_attempt_autostep(
       start_pos,
       up,
       shape,
-      @collision.ShapeCastOptions3::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions3(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -604,7 +595,7 @@ fn cc3d_real_attempt_autostep(
       shifted_pos,
       horizontal_dir,
       shape,
-      @collision.ShapeCastOptions3::new(min_width, false).with_target_distance(
+      @collision.ShapeCastOptions3(min_width, false).with_target_distance(
         offset,
       ),
     )
@@ -613,7 +604,7 @@ fn cc3d_real_attempt_autostep(
   }
 
   // Check the ramp we would land on isn't too steep.
-  let pos_on_stair = @core.Isometry3::new(
+  let pos_on_stair = @core.Isometry3(
     shifted_pos.translation.add(horizontal_dir.scale(min_width)),
     shifted_pos.rotation,
   )
@@ -623,7 +614,7 @@ fn cc3d_real_attempt_autostep(
       pos_on_stair,
       down,
       shape,
-      @collision.ShapeCastOptions3::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions3(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -648,7 +639,7 @@ fn cc3d_real_attempt_autostep(
       pos_on_stair,
       down,
       shape,
-      @collision.ShapeCastOptions3::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions3(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -683,7 +674,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
     is Some(step) {
     step.0
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   let controller = self.with_up(up)
   let (side_extent, up_extent) = cc3d_real_compute_dims_with_up(shape, up)
@@ -699,10 +690,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
       bodies,
       colliders,
       shape,
-      @core.Isometry3::new(
-        position.translation.add(result_translation),
-        position.rotation,
-      ),
+      Isometry3(position.translation.add(result_translation), position.rotation),
       up,
       prediction,
       offset,
@@ -717,11 +705,11 @@ pub fn KinematicCharacterController3DReal::move_shape(
     iters = iters + 1
     let dir = step.0
     let dist = step.1
-    let current_pos = @core.Isometry3::new(
+    let current_pos = @core.Isometry3(
       position.translation.add(result_translation),
       position.rotation,
     )
-    let options = @collision.ShapeCastOptions3::new(dist, false).with_target_distance(
+    let options = @collision.ShapeCastOptions3(dist, false).with_target_distance(
       offset,
     )
     if query.cast_shape(bodies, colliders, current_pos, dir, shape, options)
@@ -731,7 +719,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
       let applied = dir.scale(allowed_dist)
       result_translation = result_translation.add(applied)
       remaining = remaining.sub(applied)
-      let event_pos = @core.Isometry3::new(
+      let event_pos = @core.Isometry3(
         position.translation.add(result_translation),
         position.rotation,
       )
@@ -778,7 +766,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
         bodies,
         colliders,
         shape,
-        @core.Isometry3::new(
+        Isometry3(
           position.translation.add(result_translation),
           position.rotation,
         ),
@@ -800,12 +788,12 @@ pub fn KinematicCharacterController3DReal::move_shape(
     controller.snap_to_ground is Some(snap_length) {
     let snap_dist = cc3d_real_character_length_eval(snap_length, up_extent)
     if result_translation.dot(up) < -1.0e-5F && snap_dist > 0.0F {
-      let current_pos = @core.Isometry3::new(
+      let current_pos = @core.Isometry3(
         position.translation.add(result_translation),
         position.rotation,
       )
       let down = up.scale(-1.0F)
-      let options = @collision.ShapeCastOptions3::new(snap_dist, false).with_target_distance(
+      let options = @collision.ShapeCastOptions3(snap_dist, false).with_target_distance(
         offset,
       )
       if query.cast_shape(bodies, colliders, current_pos, down, shape, options)
@@ -815,7 +803,7 @@ pub fn KinematicCharacterController3DReal::move_shape(
       }
     }
   }
-  let final_pos = @core.Isometry3::new(
+  let final_pos = @core.Isometry3(
     position.translation.add(result_translation),
     position.rotation,
   )

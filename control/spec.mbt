@@ -122,7 +122,7 @@ pub type CharacterAutostep
 
 ///|
 #declaration_only
-pub fn CharacterAutostep::new(
+pub fn CharacterAutostep::CharacterAutostep(
   max_height : CharacterLength,
   min_width : CharacterLength,
 ) -> CharacterAutostep {
@@ -174,7 +174,7 @@ pub type KinematicCharacterController
 
 ///|
 #declaration_only
-pub fn KinematicCharacterController::new() -> KinematicCharacterController {
+pub fn KinematicCharacterController::KinematicCharacterController() -> KinematicCharacterController {
   ...
 }
 
@@ -309,7 +309,7 @@ pub fn PdController::default() -> PdController {
 
 ///|
 #declaration_only
-pub fn PdController::new(
+pub fn PdController::PdController(
   kp : @core.Real,
   kd : @core.Real,
   axes : @dynamics.AxesMask,
@@ -372,7 +372,7 @@ pub fn PidController::default() -> PidController {
 
 ///|
 #declaration_only
-pub fn PidController::new(
+pub fn PidController::PidController(
   kp : @core.Real,
   ki : @core.Real,
   kd : @core.Real,
@@ -560,7 +560,7 @@ pub type DynamicRayCastVehicleController
 
 ///|
 #declaration_only
-pub fn DynamicRayCastVehicleController::new(
+pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController {
   ...
@@ -656,7 +656,7 @@ pub type DynamicRayCastVehicleController3
 
 ///|
 #declaration_only
-pub fn DynamicRayCastVehicleController3::new(
+pub fn DynamicRayCastVehicleController3::DynamicRayCastVehicleController3(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController3 {
   ...
@@ -736,7 +736,7 @@ pub type DynamicRayCastVehicleController3DReal
 
 ///|
 #declaration_only
-pub fn DynamicRayCastVehicleController3DReal::new(
+pub fn DynamicRayCastVehicleController3DReal::DynamicRayCastVehicleController3DReal(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController3DReal {
   ...
@@ -884,7 +884,7 @@ pub type KinematicCharacterController3DReal
 
 ///|
 #declaration_only
-pub fn KinematicCharacterController3DReal::new() -> KinematicCharacterController3DReal {
+pub fn KinematicCharacterController3DReal::KinematicCharacterController3DReal() -> KinematicCharacterController3DReal {
   ...
 }
 

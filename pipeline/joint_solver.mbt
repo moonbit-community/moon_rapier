@@ -106,12 +106,12 @@ fn joint_solver_angular_axis(
 
 ///|
 fn joint_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
 fn joint_cross_z_scalar(w : @core.Real, v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-w * v.y, w * v.x)
+  Vec2(-w * v.y, w * v.x)
 }
 
 ///|
@@ -384,13 +384,13 @@ fn build_joint_constraints(
     // Using world axes improves stability for large joint grids (Rapier parity tests).
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
-      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+      (@core.Vec2(1.0F, 0.0F), @core.Vec2(0.0F, 1.0F))
     } else {
-      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
-      (x, @core.Vec2::new(-x.y, x.x))
+      let x = joint_rot1.rotate_vec2(Vec2(1.0F, 0.0F))
+      (x, Vec2(-x.y, x.x))
     }
     let bias = if dt > 0.0F {
-      @core.Vec2::new(
+      @core.Vec2(
         if lock_x {
           error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
         } else {
@@ -495,7 +495,7 @@ fn build_joint_constraints(
       coupled_dir = if dist > 1.0e-12F {
         joint_vec2_scale(delta, 1.0F / dist)
       } else {
-        @core.Vec2::new(1.0F, 0.0F)
+        Vec2(1.0F, 0.0F)
       }
       let rn1 = r1.cross(coupled_dir)
       let rn2 = r2.cross(coupled_dir)
@@ -597,10 +597,10 @@ fn build_joint_constraints(
     }
     let mut impulses = joint_vec2_scale(joint.impulses, warmstart)
     if !lock_x {
-      impulses = @core.Vec2::new(0.0F, impulses.y)
+      impulses = Vec2(0.0F, impulses.y)
     }
     if !lock_y {
-      impulses = @core.Vec2::new(impulses.x, 0.0F)
+      impulses = Vec2(impulses.x, 0.0F)
     }
     let ang_impulse = if lock_ang {
       joint.ang_impulse * warmstart
@@ -717,13 +717,13 @@ fn build_joint_constraints(
     let lock_ang = lock_axes.contains(angular_axis_mask)
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
-      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+      (@core.Vec2(1.0F, 0.0F), @core.Vec2(0.0F, 1.0F))
     } else {
-      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
-      (x, @core.Vec2::new(-x.y, x.x))
+      let x = joint_rot1.rotate_vec2(Vec2(1.0F, 0.0F))
+      (x, Vec2(-x.y, x.x))
     }
     let bias = if dt > 0.0F {
-      @core.Vec2::new(
+      @core.Vec2(
         if lock_x {
           error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
         } else {
@@ -867,10 +867,10 @@ fn build_joint_constraints(
     }
     let mut impulses = joint_vec2_scale(desc.solver_lin_impulses, warmstart)
     if !lock_x {
-      impulses = @core.Vec2::new(0.0F, impulses.y)
+      impulses = Vec2(0.0F, impulses.y)
     }
     if !lock_y {
-      impulses = @core.Vec2::new(impulses.x, 0.0F)
+      impulses = Vec2(impulses.x, 0.0F)
     }
     let ang_impulse = 0.0F
     let motor_impulse = if motor_enabled {
@@ -993,13 +993,13 @@ fn append_multibody_joint_constraints(
     let lock_ang = lock_axes.contains(angular_axis_mask)
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
-      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+      (@core.Vec2(1.0F, 0.0F), @core.Vec2(0.0F, 1.0F))
     } else {
-      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
-      (x, @core.Vec2::new(-x.y, x.x))
+      let x = joint_rot1.rotate_vec2(Vec2(1.0F, 0.0F))
+      (x, Vec2(-x.y, x.x))
     }
     let bias = if dt > 0.0F {
-      @core.Vec2::new(
+      @core.Vec2(
         if lock_x {
           error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
         } else {
@@ -1099,7 +1099,7 @@ fn append_multibody_joint_constraints(
       coupled_dir = if dist > 1.0e-12F {
         joint_vec2_scale(delta, 1.0F / dist)
       } else {
-        @core.Vec2::new(1.0F, 0.0F)
+        Vec2(1.0F, 0.0F)
       }
       let rn1 = r1.cross(coupled_dir)
       let rn2 = r2.cross(coupled_dir)
@@ -1195,10 +1195,10 @@ fn append_multibody_joint_constraints(
     }
     let mut impulses = joint_vec2_scale(desc.solver_lin_impulses, warmstart)
     if !lock_x {
-      impulses = @core.Vec2::new(0.0F, impulses.y)
+      impulses = Vec2(0.0F, impulses.y)
     }
     if !lock_y {
-      impulses = @core.Vec2::new(impulses.x, 0.0F)
+      impulses = Vec2(impulses.x, 0.0F)
     }
     let ang_impulse = 0.0F
     let motor_enabled = motor_axes.contains(angular_axis_mask)
@@ -1337,13 +1337,13 @@ fn append_impulse_joint_constraints3(
 
     let joint_rot1 = rb1.rotation().mul(local_rot1)
     let (basis_x, basis_y) = if lock_x && lock_y {
-      (@core.Vec2::new(1.0F, 0.0F), @core.Vec2::new(0.0F, 1.0F))
+      (@core.Vec2(1.0F, 0.0F), @core.Vec2(0.0F, 1.0F))
     } else {
-      let x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
-      (x, @core.Vec2::new(-x.y, x.x))
+      let x = joint_rot1.rotate_vec2(Vec2(1.0F, 0.0F))
+      (x, Vec2(-x.y, x.x))
     }
     let bias = if dt > 0.0F {
-      @core.Vec2::new(
+      @core.Vec2(
         if lock_x {
           error.dot(basis_x) * JOINT_SOLVER_BAUMGARTE / dt
         } else {
@@ -1444,7 +1444,7 @@ fn append_impulse_joint_constraints3(
       coupled_dir = if dist > 1.0e-12F {
         joint_vec2_scale(delta, 1.0F / dist)
       } else {
-        @core.Vec2::new(1.0F, 0.0F)
+        Vec2(1.0F, 0.0F)
       }
       let rn1 = r1.cross(coupled_dir)
       let rn2 = r2.cross(coupled_dir)
@@ -1543,10 +1543,10 @@ fn append_impulse_joint_constraints3(
     }
     let mut impulses = joint_vec2_scale(joint.impulses, warmstart)
     if !lock_x {
-      impulses = @core.Vec2::new(0.0F, impulses.y)
+      impulses = Vec2(0.0F, impulses.y)
     }
     if !lock_y {
-      impulses = @core.Vec2::new(impulses.x, 0.0F)
+      impulses = Vec2(impulses.x, 0.0F)
     }
     let ang_impulse = if lock_ang {
       joint.ang_impulse * warmstart
@@ -1705,7 +1705,7 @@ fn warmstart_joints(
       bodies,
       solver_bodies,
       Some(c.body2),
-      @core.Vec2::new(-impulse.x, -impulse.y),
+      Vec2(-impulse.x, -impulse.y),
       c.anchor2,
     )
     if c.inv_mass_ang > 0.0F {
@@ -1792,7 +1792,7 @@ fn solve_joint_velocity_constraints(
           let rhs_y = rv.dot(c.basis_y) + c.bias.y
           let lambda_x = -(c.inv_mass00 * rhs_x + c.inv_mass01 * rhs_y)
           let lambda_y = -(c.inv_mass01 * rhs_x + c.inv_mass11 * rhs_y)
-          constraints[i].impulses = @core.Vec2::new(
+          constraints[i].impulses = Vec2(
             constraints[i].impulses.x + lambda_x,
             constraints[i].impulses.y + lambda_y,
           )
@@ -1810,13 +1810,13 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         } else if c.lock_x {
           let rhs = rv.dot(c.basis_x) + c.bias.x
           let lambda = -rhs * c.inv_mass_x
-          constraints[i].impulses = @core.Vec2::new(
+          constraints[i].impulses = Vec2(
             constraints[i].impulses.x + lambda,
             constraints[i].impulses.y,
           )
@@ -1832,13 +1832,13 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         } else if c.lock_y {
           let rhs = rv.dot(c.basis_y) + c.bias.y
           let lambda = -rhs * c.inv_mass_y
-          constraints[i].impulses = @core.Vec2::new(
+          constraints[i].impulses = Vec2(
             constraints[i].impulses.x,
             constraints[i].impulses.y + lambda,
           )
@@ -1854,7 +1854,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -1890,7 +1890,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -1924,7 +1924,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -1956,7 +1956,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -2020,7 +2020,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -2085,7 +2085,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -2147,7 +2147,7 @@ fn solve_joint_velocity_constraints(
             bodies,
             solver_bodies,
             Some(c.body2),
-            @core.Vec2::new(-impulse.x, -impulse.y),
+            Vec2(-impulse.x, -impulse.y),
             c.anchor2,
           )
         }
@@ -2340,8 +2340,8 @@ fn position_correction_joints(
       inv_i2 = if rb2.locked_rotations { 0.0F } else { rb2.inv_inertia() }
     }
     let joint_rot1 = rb1.rotation().mul(c.local_rot1)
-    let basis_x = joint_rot1.rotate_vec2(@core.Vec2::new(1.0F, 0.0F))
-    let basis_y = @core.Vec2::new(-basis_x.y, basis_x.x)
+    let basis_x = joint_rot1.rotate_vec2(Vec2(1.0F, 0.0F))
+    let basis_y = @core.Vec2(-basis_x.y, basis_x.x)
     fn apply_linear_correction(
       bodies : @dynamics.RigidBodySet,
       b1h : @dynamics.RigidBodyHandle,
@@ -2413,7 +2413,7 @@ fn position_correction_joints(
         let scaled_error = joint_vec2_scale(error, JOINT_SOLVER_BAUMGARTE)
         let lambda_x = -(inv00 * scaled_error.x + inv01 * scaled_error.y)
         let lambda_y = -(inv01 * scaled_error.x + inv11 * scaled_error.y)
-        let impulse = @core.Vec2::new(lambda_x, lambda_y)
+        let impulse = @core.Vec2(lambda_x, lambda_y)
         if bodies.get_mut(c.body1) is Some(b1) {
           if b1.is_dynamic() && b1.is_enabled() {
             if !b1.locked_translations {
@@ -2539,7 +2539,7 @@ fn position_correction_joints(
         let dir = if dist > 1.0e-12F {
           joint_vec2_scale(delta, 1.0F / dist)
         } else {
-          @core.Vec2::new(1.0F, 0.0F)
+          Vec2(1.0F, 0.0F)
         }
         apply_linear_correction(
           bodies,
@@ -2699,7 +2699,7 @@ priv struct JointConstraintsSet {
 }
 
 ///|
-fn JointConstraintsSet::new() -> JointConstraintsSet {
+fn JointConstraintsSet::JointConstraintsSet() -> JointConstraintsSet {
   { constraints: [] }
 }
 

@@ -18,13 +18,13 @@
 ///|
 test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/vehicle_controller3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -36,7 +36,7 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -53,7 +53,7 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   let hh = 0.15F
   let vehicle_body = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .translation(Vec3(0.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -68,20 +68,18 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   let tuning = @control.WheelTuning::default()
     .with_suspension_stiffness(100.0F)
     .with_suspension_damping(10.0F)
-  let vehicle = @control.DynamicRayCastVehicleController3DReal::new(
-    vehicle_body,
-  )
+  let vehicle = @control.DynamicRayCastVehicleController3DReal(vehicle_body)
   let wheel_positions = [
-    @core.Vec3::new(hw * 1.5F, -hh, hw),
-    @core.Vec3::new(hw * 1.5F, -hh, -hw),
-    @core.Vec3::new(-hw * 1.5F, -hh, hw),
-    @core.Vec3::new(-hw * 1.5F, -hh, -hw),
+    @core.Vec3(hw * 1.5F, -hh, hw),
+    Vec3(hw * 1.5F, -hh, -hw),
+    Vec3(-hw * 1.5F, -hh, hw),
+    Vec3(-hw * 1.5F, -hh, -hw),
   ]
   for pos in wheel_positions {
     vehicle.add_wheel(
       pos,
-      @core.Vec3::new(0.0F, -1.0F, 0.0F),
-      @core.Vec3::new(0.0F, 0.0F, 1.0F),
+      Vec3(0.0F, -1.0F, 0.0F),
+      Vec3(0.0F, 0.0F, 1.0F),
       hh,
       hh / 4.0F,
       tuning,
@@ -106,7 +104,7 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
         let z = Float::from_int(k) * shift + centerx
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         colliders.insert_with_parent(
@@ -124,12 +122,8 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   let slope_size = 2.0F
   colliders.insert(
     @collision.ColliderBuilder3D::cuboid(slope_size, ground_height, ground_size)
-    .translation(
-      @core.Vec3::new(ground_size + slope_size, -ground_height + 0.4F, 0.0F),
-    )
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, slope_angle)),
-    )
+    .translation(Vec3(ground_size + slope_size, -ground_height + 0.4F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, slope_angle)))
     .build(),
   )
   |> ignore
@@ -140,16 +134,14 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
   colliders.insert(
     @collision.ColliderBuilder3D::cuboid(slope_size, ground_height, ground_size)
     .translation(
-      @core.Vec3::new(
+      Vec3(
         ground_size + slope_size * 2.0F + impossible_slope_size - 0.9F,
         -ground_height + 2.3F,
         0.0F,
       ),
     )
     .rotation(
-      @core.rotation_from_scaled_axis(
-        @core.Vec3::new(0.0F, 0.0F, impossible_slope_angle),
-      ),
+      @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, impossible_slope_angle)),
     )
     .build(),
   )
@@ -157,7 +149,7 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
 
   // Heightfield ground.
   let nsubdivs = 20
-  let ground_scale = @core.Vec3::new(10.0F, 0.4F, 10.0F)
+  let ground_scale = @core.Vec3(10.0F, 0.4F, 10.0F)
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
     for j in 0..<(nsubdivs + 1) {
@@ -182,13 +174,13 @@ test "examples3d/vehicle_controller3.rs parity (3DReal headless)" {
       ground_scale,
     )
     .unwrap()
-    .translation(@core.Vec3::new(-7.0F, 0.0F, 0.0F))
+    .translation(Vec3(-7.0F, 0.0F, 0.0F))
     .build()
   colliders.insert(hf) |> ignore
 
   // Query pipeline used by the controller.
-  let queries = @collision.QueryPipelineMut3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+  let queries = @collision.QueryPipelineMut3DReal(
+    QueryFilter3DReal(),
     bodies,
     colliders,
   )

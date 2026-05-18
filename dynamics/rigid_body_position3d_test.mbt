@@ -33,23 +33,23 @@ test "rigid_body_position3d interpolate_velocity roundtrip" {
   }
 
   fn rand_vec3() -> @core.Vec3 {
-    @core.Vec3::new(next_f(), next_f(), next_f())
+    Vec3(next_f(), next_f(), next_f())
   }
 
   for i in -10..<=10 {
     let mult = Float::from_int(i)
     let local_com = rand_vec3()
-    let curr_pos = @core.Isometry3::new(
+    let curr_pos = @core.Isometry3(
       rand_vec3().scale(mult),
       @core.rotation_from_scaled_axis(rand_vec3()),
     )
-    let next_pos = @core.Isometry3::new(
+    let next_pos = @core.Isometry3(
       rand_vec3().scale(mult),
       @core.rotation_from_scaled_axis(rand_vec3()),
     )
     let dt = 0.016F
     let inv_dt = 1.0F / dt
-    let rb_pos = RigidBodyPosition3D::new(curr_pos, next_pos)
+    let rb_pos = RigidBodyPosition3D::RigidBodyPosition3D(curr_pos, next_pos)
     let vel = rb_pos.interpolate_velocity(inv_dt, local_com)
     let interp_pos = vel.integrate(dt, curr_pos, local_com)
     inspect(

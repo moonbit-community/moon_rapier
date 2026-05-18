@@ -54,10 +54,8 @@ pub fn RigidBodyVelocity3D::integrate(
   local_com : @core.Vec3,
 ) -> @core.Isometry3 {
   let com = curr_pos.transform_point(local_com)
-  let shift = @core.Isometry3::from_translation(
-    @core.Vec3::new(-com.x, -com.y, -com.z),
-  )
-  let rot = @core.Isometry3::new(
+  let shift = @core.Isometry3::from_translation(Vec3(-com.x, -com.y, -com.z))
+  let rot = @core.Isometry3(
     @core.Vec3::zero(),
     @core.rotation_from_scaled_axis(self.angvel.scale(dt)),
   )
@@ -75,14 +73,6 @@ pub struct RigidBodyPosition3D {
 
 ///|
 pub fn RigidBodyPosition3D::RigidBodyPosition3D(
-  position : @core.Isometry3,
-  next_position : @core.Isometry3,
-) -> RigidBodyPosition3D {
-  RigidBodyPosition3D::new(position, next_position)
-}
-
-///|
-pub fn RigidBodyPosition3D::new(
   position : @core.Isometry3,
   next_position : @core.Isometry3,
 ) -> RigidBodyPosition3D {
@@ -221,7 +211,7 @@ fn rigid_body3d_mask_translation(
   y : Bool,
   z : Bool,
 ) -> @core.Vec3 {
-  @core.Vec3::new(
+  Vec3(
     if x {
       v.x
     } else {
@@ -247,7 +237,7 @@ fn rigid_body3d_mask_rotation(
   y : Bool,
   z : Bool,
 ) -> @core.Vec3 {
-  @core.Vec3::new(
+  Vec3(
     if x {
       v.x
     } else {
@@ -513,7 +503,7 @@ pub fn RigidBody3D::dominance_group(self : RigidBody3D) -> Int {
 
 ///|
 pub fn RigidBody3D::effective_dominance_group(self : RigidBody3D) -> Int {
-  RigidBodyDominance::new(self.dominance_group).effective_group(self.body_type)
+  RigidBodyDominance(self.dominance_group).effective_group(self.body_type)
 }
 
 ///|
@@ -663,12 +653,12 @@ pub fn RigidBody3D::update_sleep(
 
 ///|
 pub fn RigidBody3D::set_translation(self : RigidBody3D, t : @core.Vec3) -> Unit {
-  self.position = @core.Isometry3::new(t, self.position.rotation)
+  self.position = Isometry3(t, self.position.rotation)
 }
 
 ///|
 pub fn RigidBody3D::set_rotation(self : RigidBody3D, r : @core.Quat) -> Unit {
-  self.position = @core.Isometry3::new(self.position.translation, r)
+  self.position = Isometry3(self.position.translation, r)
 }
 
 ///|
@@ -676,7 +666,7 @@ pub fn RigidBody3D::set_next_kinematic_translation(
   self : RigidBody3D,
   t : @core.Vec3,
 ) -> Unit {
-  self.next_position = @core.Isometry3::new(t, self.next_position.rotation)
+  self.next_position = Isometry3(t, self.next_position.rotation)
 }
 
 ///|
@@ -684,7 +674,7 @@ pub fn RigidBody3D::set_next_kinematic_rotation(
   self : RigidBody3D,
   r : @core.Quat,
 ) -> Unit {
-  self.next_position = @core.Isometry3::new(self.next_position.translation, r)
+  self.next_position = Isometry3(self.next_position.translation, r)
 }
 
 ///|
@@ -841,8 +831,8 @@ pub fn RigidBody3D::advance_position(
       let mut next = self.next_position
       let curr_t = self.position.translation
       let next_t = next.translation
-      next = @core.Isometry3::new(
-        @core.Vec3::new(
+      next = Isometry3(
+        Vec3(
           if self.trans_x_enabled {
             next_t.x
           } else {
@@ -862,7 +852,7 @@ pub fn RigidBody3D::advance_position(
         next.rotation,
       )
       if self.locked_rotations {
-        next = @core.Isometry3::new(next.translation, self.position.rotation)
+        next = Isometry3(next.translation, self.position.rotation)
       }
       self.position = next
     }
@@ -933,9 +923,9 @@ pub fn RigidBodyBuilder3D::dynamic() -> RigidBodyBuilder3D {
     linear_damping: 0.0F,
     angular_damping: 0.0F,
     gravity_scale: 1.0F,
-    mass_properties: @core.MassProperties3::new(
+    mass_properties: MassProperties3(
       1.0F,
-      @core.SdpMat3::from_diagonal(@core.Vec3::new(1.0F, 1.0F, 1.0F)),
+      @core.SdpMat3::from_diagonal(Vec3(1.0F, 1.0F, 1.0F)),
       @core.Vec3::zero(),
     ),
     additional_solver_iterations: 0,
@@ -1284,7 +1274,7 @@ pub fn RigidBodyBuilder3D::mass_properties(
 
 ///|
 pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
-  let pos = @core.Isometry3::new(self.translation, self.rotation)
+  let pos = @core.Isometry3(self.translation, self.rotation)
   let activation = RigidBodyActivation3D::active()
   if self.sleeping {
     activation.sleeping = true
@@ -1341,11 +1331,6 @@ pub struct RigidBodySet3D {
 
 ///|
 pub fn RigidBodySet3D::RigidBodySet3D() -> RigidBodySet3D {
-  RigidBodySet3D::new()
-}
-
-///|
-pub fn RigidBodySet3D::new() -> RigidBodySet3D {
   { bodies: [], generations: [], free_list: [] }
 }
 

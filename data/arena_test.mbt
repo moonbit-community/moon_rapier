@@ -41,7 +41,7 @@ test "arena try_insert respects fixed capacity" {
 
 ///|
 test "arena drain removes all occupied elements" {
-  let arena : Arena[String] = Arena::new()
+  let arena : Arena[String] = Arena()
   let idx1 = arena.insert("hello")
   let idx2 = arena.insert("world")
   inspect(arena.get(idx1) is Some(_), content="true")

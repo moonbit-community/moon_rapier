@@ -39,34 +39,32 @@ fn step_pipeline_2d_n_smoke(
 
 ///|
 test "voxels2 smoke (voxelized_mesh + voxels_from_points)" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Voxelized polyline mesh.
   let polyline = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(0.0F, 2.0F),
-    @core.Vec2::new(2.0F, 2.0F),
-    @core.Vec2::new(2.0F, 0.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(0.0F, 2.0F),
+    Vec2(2.0F, 2.0F),
+    Vec2(2.0F, 0.0F),
   ]
   let poly_idx = [(0, 1), (1, 2), (2, 3), (3, 0)]
   let mesh_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(-5.0F, -2.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(-5.0F, -2.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::voxelized_mesh(
@@ -81,7 +79,7 @@ test "voxels2 smoke (voxelized_mesh + voxels_from_points)" {
   |> ignore
 
   // Voxel floor from points.
-  let voxel_size = @core.Vec2::new(1.0F, 1.0F)
+  let voxel_size = @core.Vec2(1.0F, 1.0F)
   let voxels : Array[@core.Vec2] = []
   for i in 0..<60 {
     let t = Float::from_double(i.to_double()) / 10.0F
@@ -93,7 +91,7 @@ test "voxels2 smoke (voxelized_mesh + voxels_from_points)" {
     }
     y = y * 4.0F
     let x = (Float::from_double(i.to_double()) - 25.0F) * voxel_size.x / 2.0F
-    voxels.push(@core.Vec2::new(x, y * voxel_size.y))
+    voxels.push(Vec2(x, y * voxel_size.y))
   }
   colliders.insert(
     @collision.ColliderBuilder::voxels_from_points(voxel_size, voxels).build(),
@@ -105,9 +103,7 @@ test "voxels2 smoke (voxelized_mesh + voxels_from_points)" {
   for i in 0..<12 {
     let x = Float::from_double(i.to_double()) * 1.0F - 6.0F
     let rb = bodies.insert(
-      @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(x, 10.0F))
-      .build(),
+      @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, 10.0F)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::ball(0.5F).build(),

@@ -16,8 +16,8 @@
 test "heightfield flags: FIX_INTERNAL_EDGES smoothes closest-point normal" {
   let heights0 = [0.0F, 0.0F, 1.0F, 0.0F]
   let heights1 = [0.0F, 0.0F, 1.0F, 0.0F]
-  let scale = @core.Vec3::new(1.0F, 1.0F, 1.0F)
-  let point = @core.Vec3::new(0.5F, 0.0F, 0.5F)
+  let scale = @core.Vec3(1.0F, 1.0F, 1.0F)
+  let point = @core.Vec3(0.5F, 0.0F, 0.5F)
   let pos = @core.Isometry3::identity()
   let mut q0 = @core.Vec3::zero()
   let mut n0 = @core.Vec3::zero()

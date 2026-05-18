@@ -41,25 +41,23 @@ fn step_pipeline_2d_n_s2d_pyramid(
 fn run_examples2d_s2d_pyramid(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples2d/s2d_pyramid.rs`.
   // Keep default mode tractable; heavy mode moves toward upstream scene scale.
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let gravity = @core.Vec2(0.0F, -9.81F)
   let parameters = @dynamics.IntegrationParameters::default()
 
   // Ground.
   let ground_handle = bodies.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -1.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -1.0F)).build(),
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder::cuboid(100.0F, 1.0F).friction(0.6F).build(),
@@ -81,9 +79,7 @@ fn run_examples2d_s2d_pyramid(heavy : Bool) -> Bool {
         2.0F * (fj - fi) * shift -
         h * Float::from_double(base_count.to_double())
       let rb = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       colliders.insert_with_parent(
         @collision.ColliderBuilder::cuboid(h, h).friction(0.6F).build(),

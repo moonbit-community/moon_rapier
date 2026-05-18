@@ -31,11 +31,6 @@ pub struct PhysicsPipeline {
 
 ///|
 pub fn PhysicsPipeline::PhysicsPipeline() -> PhysicsPipeline {
-  PhysicsPipeline::new()
-}
-
-///|
-pub fn PhysicsPipeline::new() -> PhysicsPipeline {
   {
     prev_collisions: [],
     prev_intersections: [],
@@ -85,24 +80,24 @@ fn separation_ball_ball(
     None
   } else {
     let dir = if dist <= 1.0e-6F {
-      @core.Vec2::new(1.0F, 0.0F)
+      @core.Vec2(1.0F, 0.0F)
     } else {
       delta.normalize()
     }
     let depth = radius - dist
-    Some(@core.Vec2::new(dir.x * depth, dir.y * depth))
+    Some(Vec2(dir.x * depth, dir.y * depth))
   }
 }
 
 ///|
 fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
 fn cuboid_axes(rotation : @core.Real) -> (@core.Vec2, @core.Vec2) {
   let rot = @core.Rot2::from_angle(rotation)
-  (@core.Vec2::new(rot.cos, rot.sin), @core.Vec2::new(-rot.sin, rot.cos))
+  (Vec2(rot.cos, rot.sin), Vec2(-rot.sin, rot.cos))
 }
 
 ///|
@@ -132,7 +127,7 @@ fn separation_cuboid_cuboid(
   let (ax2, ay2) = cuboid_axes(rot2)
   let delta = pos1.sub(pos2)
   let mut best_overlap = 0.0F
-  let mut best_axis = @core.Vec2::new(1.0F, 0.0F)
+  let mut best_axis = @core.Vec2(1.0F, 0.0F)
   let mut best_sign = 1.0F
   let axes = [ax1, ay1, ax2, ay2]
   for i in 0..<axes.length() {
@@ -166,7 +161,7 @@ fn separation_ball_cuboid(
   let rot = @core.Rot2::from_angle(cuboid_rot)
   let inv = rot.inverse()
   let local_ball = inv.rotate_vec2(ball_pos.sub(cuboid_pos))
-  let clamped = @core.Vec2::new(
+  let clamped = @core.Vec2(
     clamp_value(local_ball.x, -half_width, half_width),
     clamp_value(local_ball.y, -half_height, half_height),
   )
@@ -185,11 +180,11 @@ fn separation_ball_cuboid(
     let dy = half_height - @core.abs(local_ball.y)
     if dx < dy {
       let sign = if local_ball.x < 0.0F { -1.0F } else { 1.0F }
-      let dir_world = rot.rotate_vec2(@core.Vec2::new(sign, 0.0F))
+      let dir_world = rot.rotate_vec2(Vec2(sign, 0.0F))
       Some(vec2_scale(dir_world, radius + dx))
     } else {
       let sign = if local_ball.y < 0.0F { -1.0F } else { 1.0F }
-      let dir_world = rot.rotate_vec2(@core.Vec2::new(0.0F, sign))
+      let dir_world = rot.rotate_vec2(Vec2(0.0F, sign))
       Some(vec2_scale(dir_world, radius + dy))
     }
   }
@@ -287,9 +282,9 @@ fn separation_vector(
       let dir = if dist <= 1.0e-6F {
         // Fallback: use segment normal.
         let d = sb.sub(sa)
-        let n = @core.Vec2::new(-d.y, d.x)
+        let n = @core.Vec2(-d.y, d.x)
         if n.length_squared() <= 1.0e-12F {
-          @core.Vec2::new(0.0F, 1.0F)
+          @core.Vec2(0.0F, 1.0F)
         } else {
           n.normalize()
         }
@@ -400,20 +395,20 @@ fn separation_vector(
       }
     }
     let seg_dir = sb.sub(sa)
-    let seg_n_raw = @core.Vec2::new(-seg_dir.y, seg_dir.x)
+    let seg_n_raw = @core.Vec2(-seg_dir.y, seg_dir.x)
     if seg_n_raw.length_squared() > 1.0e-12F {
       let seg_n = seg_n_raw.normalize()
       let axis = if cuboid_center.sub(sa).dot(seg_n) >= 0.0F {
         seg_n
       } else {
-        @core.Vec2::new(-seg_n.x, -seg_n.y)
+        Vec2(-seg_n.x, -seg_n.y)
       }
       let support = support_point_cuboid_toward(
         cuboid_center,
         cuboid_rot,
         half_width,
         half_height,
-        @core.Vec2::new(-axis.x, -axis.y),
+        Vec2(-axis.x, -axis.y),
       )
       let separation = support.sub(sa).dot(axis)
       if separation > 0.0F {
@@ -444,14 +439,14 @@ fn separation_vector(
       (Ball(r), Cuboid(hw, hh)) => separation_ball_cuboid(p1, r, p2, r2, hw, hh)
       (Cuboid(hw, hh), Ball(r)) =>
         if separation_ball_cuboid(p2, r, p1, r1, hw, hh) is Some(sep) {
-          Some(@core.Vec2::new(-sep.x, -sep.y))
+          Some(Vec2(-sep.x, -sep.y))
         } else {
           None
         }
       (Ball(r), Segment(a, b)) => separation_ball_segment(p1, r, p2, r2, a, b)
       (Segment(a, b), Ball(r)) =>
         if separation_ball_segment(p2, r, p1, r1, a, b) is Some(sep) {
-          Some(@core.Vec2::new(-sep.x, -sep.y))
+          Some(Vec2(-sep.x, -sep.y))
         } else {
           None
         }
@@ -459,7 +454,7 @@ fn separation_vector(
         separation_cuboid_segment(p1, r1, hw, hh, p2, r2, a, b)
       (Segment(a, b), Cuboid(hw, hh)) =>
         if separation_cuboid_segment(p2, r2, hw, hh, p1, r1, a, b) is Some(sep) {
-          Some(@core.Vec2::new(-sep.x, -sep.y))
+          Some(Vec2(-sep.x, -sep.y))
         } else {
           None
         }
@@ -475,7 +470,7 @@ fn separation_vector(
     match s {
       CapsuleX(half_height, radius) => {
         let rot = @core.Rot2::from_angle(rotation)
-        let offset = rot.rotate_vec2(@core.Vec2::new(half_height, 0.0F))
+        let offset = rot.rotate_vec2(Vec2(half_height, 0.0F))
         let a = center.add(offset)
         let b = center.sub(offset)
         [
@@ -486,7 +481,7 @@ fn separation_vector(
       }
       CapsuleY(half_height, radius) => {
         let rot = @core.Rot2::from_angle(rotation)
-        let offset = rot.rotate_vec2(@core.Vec2::new(0.0F, half_height))
+        let offset = rot.rotate_vec2(Vec2(0.0F, half_height))
         let a = center.add(offset)
         let b = center.sub(offset)
         [
@@ -718,7 +713,7 @@ fn update_body_mass_properties_from_colliders(
         let co_handle = attached[j]
         if colliders.get(co_handle) is Some(collider) {
           if collider.is_enabled() {
-            let local_pos = @core.Isometry2::new(
+            let local_pos = @core.Isometry2(
               collider.local_translation,
               @core.Rot2::from_angle(collider.local_rotation),
             )
@@ -848,8 +843,8 @@ fn populate_contact_impulses_from_cache(
       for mi in 0..<pair.manifolds.length() {
         let manifold = pair.manifolds[mi]
         let n = manifold.normal
-        let tangent = @core.Vec2::new(-n.y, n.x)
-        let tangent_imp = @core.Vec2::new(
+        let tangent = @core.Vec2(-n.y, n.x)
+        let tangent_imp = @core.Vec2(
           tangent.x * e.impulse_t,
           tangent.y * e.impulse_t,
         )
@@ -857,7 +852,7 @@ fn populate_contact_impulses_from_cache(
           let p = manifold.points[pi]
           if feature_id_equals(p.fid1, fid1) && feature_id_equals(p.fid2, fid2) {
             p.set_data(
-              @collision.ContactData::new(
+              ContactData(
                 e.impulse_n,
                 tangent_imp,
                 e.impulse_n,
@@ -1096,7 +1091,7 @@ fn PhysicsPipeline::emit_intersection_events(
       event_handler.handle_intersection_event(
         bodies,
         colliders,
-        @collision.IntersectionEvent::new(c.0, c.1, true),
+        IntersectionEvent(c.0, c.1, true),
       )
     }
   }
@@ -1106,7 +1101,7 @@ fn PhysicsPipeline::emit_intersection_events(
       event_handler.handle_intersection_event(
         bodies,
         colliders,
-        @collision.IntersectionEvent::new(p.0, p.1, false),
+        IntersectionEvent(p.0, p.1, false),
       )
     }
   }
@@ -1183,7 +1178,7 @@ pub fn PhysicsPipeline::step(
     remaining_substeps = 1
   }
   let min_ccd_dt = parameters.min_ccd_dt
-  let collision_pipeline = CollisionPipeline::new()
+  let collision_pipeline = CollisionPipeline()
   while remaining_substeps > 0 && remaining_time > 0.0F {
     let mut dt = remaining_time
     if ccd_is_enabled && remaining_substeps > 1 {
@@ -1249,7 +1244,7 @@ pub fn PhysicsPipeline::step(
             // Rapier parity: derive velocities from position -> next_position using the
             // current substep dt.
             let inv_dt = 1.0F / dt
-            let derived_vels = @dynamics.RigidBodyPosition::new(
+            let derived_vels = @dynamics.RigidBodyPosition(
               body.position(),
               body.next_position(),
             ).interpolate_velocity(inv_dt, body.center_of_mass())
@@ -1262,7 +1257,7 @@ pub fn PhysicsPipeline::step(
         }
       }
     }
-    let island_solver = IslandSolver::new()
+    let island_solver = IslandSolver()
     // The per-pipeline impulse cache is used for warmstarting across frames. When solving
     // per-island we need to rebuild it incrementally; keep a snapshot of the previous cache.
     let contact_cache_prev : Array[ContactImpulseCacheEntry] = []
@@ -1329,7 +1324,7 @@ pub fn PhysicsPipeline::step(
   PhysicsPipeline::emit_intersection_events(
     self, bodies, colliders, narrow_phase, event_handler,
   )
-  let contacts = @dynamics.ContactGraph::new()
+  let contacts = @dynamics.ContactGraph()
   for i in 0..<narrow_phase.contacts.length() {
     let contact = narrow_phase.contacts[i]
     if colliders.get(contact.0) is Some(collider1) &&

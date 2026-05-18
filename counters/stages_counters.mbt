@@ -25,19 +25,14 @@ pub struct StagesCounters {
 
 ///|
 pub fn StagesCounters::StagesCounters() -> StagesCounters {
-  StagesCounters::new()
-}
-
-///|
-pub fn StagesCounters::new() -> StagesCounters {
   {
-    update_time: Timer::new(),
-    collision_detection_time: Timer::new(),
-    island_construction_time: Timer::new(),
-    island_constraints_collection_time: Timer::new(),
-    solver_time: Timer::new(),
-    ccd_time: Timer::new(),
-    user_changes: Timer::new(),
+    update_time: Timer(),
+    collision_detection_time: Timer(),
+    island_construction_time: Timer(),
+    island_constraints_collection_time: Timer(),
+    solver_time: Timer(),
+    ccd_time: Timer(),
+    user_changes: Timer(),
   }
 }
 

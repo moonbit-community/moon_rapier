@@ -26,11 +26,11 @@ priv struct IslandSolver {
 }
 
 ///|
-fn IslandSolver::new() -> IslandSolver {
+fn IslandSolver::IslandSolver() -> IslandSolver {
   {
-    contact_constraints: ContactConstraintsSet::new(),
-    joint_constraints: JointConstraintsSet::new(),
-    velocity_solver: VelocitySolver::new(),
+    contact_constraints: ContactConstraintsSet(),
+    joint_constraints: JointConstraintsSet(),
+    velocity_solver: VelocitySolver(),
   }
 }
 
@@ -158,11 +158,11 @@ fn solve_joints_and_contacts_interleaved3(
   contact_cache_in : Array[ContactImpulseCacheEntry],
   contact_cache_out : Array[ContactImpulseCacheEntry],
 ) -> Unit {
-  let joint_constraints = JointConstraintsSet::new()
+  let joint_constraints = JointConstraintsSet()
   joint_constraints.init3(
     parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
   )
-  let contact_constraints = ContactConstraintsSet::new()
+  let contact_constraints = ContactConstraintsSet()
   contact_constraints.init(
     parameters,
     bodies.inner,

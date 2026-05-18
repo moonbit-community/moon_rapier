@@ -18,15 +18,10 @@ pub struct Coarena[T] {
 }
 
 ///|
-pub fn[T] Coarena::Coarena() -> Coarena[T] {
-  Coarena::new()
-}
-
-///|
 const INVALID_GENERATION : Int = -1
 
 ///|
-pub fn[T] Coarena::new() -> Coarena[T] {
+pub fn[T] Coarena::Coarena() -> Coarena[T] {
   { data: [] }
 }
 

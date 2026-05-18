@@ -46,16 +46,16 @@ test "interpolate velocity" {
     let (seed7, next_y) = rb_rand_real(seed6)
     let (seed8, next_angle) = rb_rand_real(seed7)
     seed = seed8
-    let local_com = @core.Vec2::new(local_x, local_y)
-    let curr_pos = @core.Isometry2::new(
-      @core.Vec2::new(curr_x * multiplier, curr_y * multiplier),
+    let local_com = @core.Vec2(local_x, local_y)
+    let curr_pos = @core.Isometry2(
+      Vec2(curr_x * multiplier, curr_y * multiplier),
       @core.Rot2::from_angle(curr_angle),
     )
-    let next_pos = @core.Isometry2::new(
-      @core.Vec2::new(next_x * multiplier, next_y * multiplier),
+    let next_pos = @core.Isometry2(
+      Vec2(next_x * multiplier, next_y * multiplier),
       @core.Rot2::from_angle(next_angle),
     )
-    let rb_pos = RigidBodyPosition::new(curr_pos, next_pos)
+    let rb_pos = RigidBodyPosition::RigidBodyPosition(curr_pos, next_pos)
     let vel = rb_pos.interpolate_velocity(1.0F / dt, local_com)
     let interp_pos = vel.integrate(dt, curr_pos, local_com)
     let dx = @core.abs(interp_pos.translation.x - next_pos.translation.x)

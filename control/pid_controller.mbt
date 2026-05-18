@@ -33,32 +33,17 @@ pub(all) struct PdController {
 }
 
 ///|
+pub fn PdController::default() -> PdController {
+  PdController(60.0F, 0.8F, @dynamics.AxesMask::all())
+}
+
+///|
 pub fn PdController::PdController(
   kp : @core.Real,
   kd : @core.Real,
   axes : @dynamics.AxesMask,
 ) -> PdController {
-  PdController::new(kp, kd, axes)
-}
-
-///|
-pub fn PdController::default() -> PdController {
-  PdController::new(60.0F, 0.8F, @dynamics.AxesMask::all())
-}
-
-///|
-pub fn PdController::new(
-  kp : @core.Real,
-  kd : @core.Real,
-  axes : @dynamics.AxesMask,
-) -> PdController {
-  {
-    lin_kp: @core.Vec2::new(kp, kp),
-    lin_kd: @core.Vec2::new(kd, kd),
-    ang_kp: kp,
-    ang_kd: kd,
-    axes,
-  }
+  { lin_kp: Vec2(kp, kp), lin_kd: Vec2(kd, kd), ang_kp: kp, ang_kd: kd, axes }
 }
 
 ///|
@@ -73,7 +58,7 @@ fn PdController::lin_mask(self : PdController) -> @core.Vec2 {
   } else {
     0.0F
   }
-  @core.Vec2::new(x, y)
+  Vec2(x, y)
 }
 
 ///|
@@ -135,7 +120,7 @@ pub fn PdController::linear_rigid_body_correction(
   target_linvel : @core.Vec2,
 ) -> @core.Vec2 {
   let angvel = rb.angvel()
-  let vels = @dynamics.RigidBodyVelocity::new(target_linvel, angvel)
+  let vels = @dynamics.RigidBodyVelocity(target_linvel, angvel)
   self
   .rigid_body_correction(
     rb,
@@ -152,13 +137,9 @@ pub fn PdController::angular_rigid_body_correction(
   target_rot : @core.Rot2,
   target_angvel : @core.Real,
 ) -> @core.Real {
-  let vels = @dynamics.RigidBodyVelocity::new(rb.linvel(), target_angvel)
+  let vels = @dynamics.RigidBodyVelocity(rb.linvel(), target_angvel)
   self
-  .rigid_body_correction(
-    rb,
-    @core.Isometry2::new(@core.Vec2::zero(), target_rot),
-    vels,
-  )
+  .rigid_body_correction(rb, Isometry2(@core.Vec2::zero(), target_rot), vels)
   .angvel()
 }
 
@@ -190,7 +171,7 @@ pub fn PdController::correction(
 ) -> @dynamics.RigidBodyVelocity {
   let lin_mask = self.lin_mask()
   let ang_mask = self.ang_mask()
-  let linvel = @core.Vec2::new(
+  let linvel = @core.Vec2(
     (pose_errors.linear.x * self.lin_kp.x + vel_errors.linear.x * self.lin_kd.x) *
     lin_mask.x,
     (pose_errors.linear.y * self.lin_kp.y + vel_errors.linear.y * self.lin_kd.y) *
@@ -200,7 +181,7 @@ pub fn PdController::correction(
       pose_errors.angular * self.ang_kp + vel_errors.angular * self.ang_kd
     ) *
     ang_mask
-  @dynamics.RigidBodyVelocity::new(linvel, angvel)
+  RigidBodyVelocity(linvel, angvel)
 }
 
 ///|
@@ -213,32 +194,22 @@ pub(all) struct PidController {
 }
 
 ///|
+pub fn PidController::default() -> PidController {
+  PidController(60.0F, 1.0F, 0.8F, @dynamics.AxesMask::all())
+}
+
+///|
 pub fn PidController::PidController(
   kp : @core.Real,
   ki : @core.Real,
   kd : @core.Real,
   axes : @dynamics.AxesMask,
 ) -> PidController {
-  PidController::new(kp, ki, kd, axes)
-}
-
-///|
-pub fn PidController::default() -> PidController {
-  PidController::new(60.0F, 1.0F, 0.8F, @dynamics.AxesMask::all())
-}
-
-///|
-pub fn PidController::new(
-  kp : @core.Real,
-  ki : @core.Real,
-  kd : @core.Real,
-  axes : @dynamics.AxesMask,
-) -> PidController {
   {
-    pd: PdController::new(kp, kd, axes),
+    pd: PdController(kp, kd, axes),
     lin_integral: @core.Vec2::zero(),
     ang_integral: 0.0F,
-    lin_ki: @core.Vec2::new(ki, ki),
+    lin_ki: Vec2(ki, ki),
     ang_ki: ki,
   }
 }
@@ -272,7 +243,7 @@ pub fn PidController::linear_rigid_body_correction(
   target_pos : @core.Vec2,
   target_linvel : @core.Vec2,
 ) -> @core.Vec2 {
-  let vels = @dynamics.RigidBodyVelocity::new(target_linvel, rb.angvel())
+  let vels = @dynamics.RigidBodyVelocity(target_linvel, rb.angvel())
   self
   .rigid_body_correction(
     dt,
@@ -291,12 +262,12 @@ pub fn PidController::angular_rigid_body_correction(
   target_rot : @core.Rot2,
   target_angvel : @core.Real,
 ) -> @core.Real {
-  let vels = @dynamics.RigidBodyVelocity::new(rb.linvel(), target_angvel)
+  let vels = @dynamics.RigidBodyVelocity(rb.linvel(), target_angvel)
   self
   .rigid_body_correction(
     dt,
     rb,
-    @core.Isometry2::new(@core.Vec2::zero(), target_rot),
+    Isometry2(@core.Vec2::zero(), target_rot),
     vels,
   )
   .angvel()
@@ -331,12 +302,12 @@ pub fn PidController::correction(
   vel_errors : PdErrors,
 ) -> @dynamics.RigidBodyVelocity {
   self.lin_integral = self.lin_integral.add(
-    @core.Vec2::new(pose_errors.linear.x * dt, pose_errors.linear.y * dt),
+    Vec2(pose_errors.linear.x * dt, pose_errors.linear.y * dt),
   )
   self.ang_integral = self.ang_integral + pose_errors.angular * dt
   let lin_mask = self.pd.lin_mask()
   let ang_mask = self.pd.ang_mask()
-  let linvel = @core.Vec2::new(
+  let linvel = @core.Vec2(
     (
       pose_errors.linear.x * self.pd.lin_kp.x +
       vel_errors.linear.x * self.pd.lin_kd.x +
@@ -356,5 +327,5 @@ pub fn PidController::correction(
       self.ang_integral * self.ang_ki
     ) *
     ang_mask
-  @dynamics.RigidBodyVelocity::new(linvel, angvel)
+  RigidBodyVelocity(linvel, angvel)
 }

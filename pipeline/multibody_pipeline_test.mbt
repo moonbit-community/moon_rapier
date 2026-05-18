@@ -14,27 +14,27 @@
 
 ///|
 test "physics_pipeline syncs multibody rigid bodies" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let pipeline = PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let islands = @dynamics.IslandManager::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
-  let hooks = PhysicsHooks::new()
-  let events = EventHandler::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let islands = @dynamics.IslandManager()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
+  let hooks = PhysicsHooks::PhysicsHooks()
+  let events = EventHandler::EventHandler()
   let parent = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let child = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(10.0F, 10.0F))
+    .translation(Vec2(10.0F, 10.0F))
     .build(),
   )
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
+    @dynamics.RevoluteJointBuilder()
     .local_anchor1(@core.Vec2::zero())
-    .local_anchor2(@core.Vec2::new(1.0F, 0.0F))
+    .local_anchor2(Vec2(1.0F, 0.0F))
     .build(),
   )
   multibody_joints.insert(parent, child, joint, true) |> ignore

@@ -36,11 +36,6 @@ pub struct PhysicsHooks3D {
 }
 
 ///|
-pub fn PhysicsHooks3D::PhysicsHooks3D() -> PhysicsHooks3D {
-  PhysicsHooks3D::new()
-}
-
-///|
 fn resolve_hook_user_data_3d(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
@@ -82,7 +77,7 @@ fn resolve_hook_user_data_3d(
 }
 
 ///|
-pub fn PhysicsHooks3D::new() -> PhysicsHooks3D {
+pub fn PhysicsHooks3D::PhysicsHooks3D() -> PhysicsHooks3D {
   {
     filter_contact_pair: None,
     filter_intersection_pair: None,

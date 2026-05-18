@@ -21,19 +21,19 @@ test "ContactPair impulse/force pub parity (2D)" {
     .set_num_solver_iterations(4)
     .set_dt(1.0F / 60.0F)
   let gravity = @core.Vec2::zero()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let ccd = @dynamics_ccd.CCDSolver::new()
-  let hooks = PhysicsHooks::new()
-  let events = EventHandler::new()
-  let pipeline = PhysicsPipeline::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let islands = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let ccd = @dynamics_ccd.CCDSolver()
+  let hooks = PhysicsHooks::PhysicsHooks()
+  let events = EventHandler::EventHandler()
+  let pipeline = PhysicsPipeline::PhysicsPipeline()
   let ground = @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(0.0F, -0.5F))
+    .translation(Vec2(0.0F, -0.5F))
     .build()
   let ground_handle = bodies.insert(ground)
   let ground_collider = @collision.ColliderBuilder::cuboid(5.0F, 0.5F).build()
@@ -43,7 +43,7 @@ test "ContactPair impulse/force pub parity (2D)" {
 
   // Overlap slightly so we get a non-zero bias impulse even with zero gravity/velocities.
   let dynamic = @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.4F))
+    .translation(Vec2(0.0F, 0.4F))
     .build()
   let dynamic_handle = bodies.insert(dynamic)
   let dynamic_collider = @collision.ColliderBuilder::cuboid(0.5F, 0.5F).build()
@@ -72,7 +72,7 @@ test "ContactPair impulse/force pub parity (2D)" {
       @core.abs(event.total_force_magnitude() - force_mag) < 1.0e-4F,
       content="true",
     )
-    let expected_force = @core.Vec2::new(
+    let expected_force = @core.Vec2(
       total_impulse.x / parameters.dt,
       total_impulse.y / parameters.dt,
     )

@@ -30,14 +30,6 @@ pub fn RigidBodyPosition3::RigidBodyPosition3(
   position : @core.Isometry3,
   next_position : @core.Isometry3,
 ) -> RigidBodyPosition3 {
-  RigidBodyPosition3::new(position, next_position)
-}
-
-///|
-pub fn RigidBodyPosition3::new(
-  position : @core.Isometry3,
-  next_position : @core.Isometry3,
-) -> RigidBodyPosition3 {
   { position, next_position }
 }
 
@@ -85,10 +77,8 @@ pub fn RigidBodyVelocity3::integrate(
   local_com : @core.Vec3,
 ) -> @core.Isometry3 {
   let com = curr_pos.transform_point(local_com)
-  let shift = @core.Isometry3::from_translation(
-    @core.Vec3::new(-com.x, -com.y, -com.z),
-  )
-  let rot = @core.Isometry3::new(
+  let shift = @core.Isometry3::from_translation(Vec3(-com.x, -com.y, -com.z))
+  let rot = @core.Isometry3(
     @core.Vec3::zero(),
     @core.rotation_from_scaled_axis(self.angvel.scale(dt)),
   )

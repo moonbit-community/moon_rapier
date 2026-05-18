@@ -247,7 +247,7 @@ struct IndexSequence {
 }
 
 ///|
-pub fn IndexSequence::new() -> IndexSequence {
+pub fn IndexSequence::IndexSequence() -> IndexSequence {
   { first_to_remove: -1, index_map: [] }
 }
 

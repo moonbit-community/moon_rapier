@@ -183,7 +183,7 @@ fn collider_builder_with_shape(shape : Shape) -> ColliderBuilder {
 }
 
 ///|
-pub fn ColliderBuilder::new(shape : Shape) -> ColliderBuilder {
+pub fn ColliderBuilder::ColliderBuilder(shape : Shape) -> ColliderBuilder {
   collider_builder_with_shape(shape)
 }
 
@@ -306,10 +306,7 @@ fn voxels_shape_from_points(
     let hx = Float::from_double(w.to_double()) * voxel_size.x / 2.0F
     let hy = Float::from_double(h.to_double()) * voxel_size.y / 2.0F
     parts.push(
-      (
-        @core.Isometry2::from_translation(@core.Vec2::new(cx, cy)),
-        Cuboid(hx, hy),
-      ),
+      (@core.Isometry2::from_translation(Vec2(cx, cy)), Cuboid(hx, hy)),
     )
   }
   Compound(parts)
@@ -320,7 +317,7 @@ pub fn ColliderBuilder::voxels_from_points(
   voxel_size : @core.Vec2,
   points : Array[@core.Vec2],
 ) -> ColliderBuilder {
-  ColliderBuilder::new(voxels_shape_from_points(voxel_size, points))
+  ColliderBuilder(voxels_shape_from_points(voxel_size, points))
 }
 
 ///|
@@ -339,8 +336,8 @@ pub fn Shape::voxelized_mesh(
   let mut max_pt = vertices[0]
   for i in 1..<vertices.length() {
     let p = vertices[i]
-    min_pt = @core.Vec2::new(min_real(min_pt.x, p.x), min_real(min_pt.y, p.y))
-    max_pt = @core.Vec2::new(max_real(max_pt.x, p.x), max_real(max_pt.y, p.y))
+    min_pt = Vec2(min_real(min_pt.x, p.x), min_real(min_pt.y, p.y))
+    max_pt = Vec2(max_real(max_pt.x, p.x), max_real(max_pt.y, p.y))
   }
   let origin = min_pt
   let ext_x = (max_pt.x - min_pt.x) / voxel_size
@@ -369,8 +366,8 @@ pub fn Shape::voxelized_mesh(
     let b0 = vertices[ib]
     let da = a0.sub(origin)
     let db = b0.sub(origin)
-    let a = @core.Vec2::new(da.x * inv_scale, da.y * inv_scale)
-    let b = @core.Vec2::new(db.x * inv_scale, db.y * inv_scale)
+    let a = @core.Vec2(da.x * inv_scale, da.y * inv_scale)
+    let b = @core.Vec2(db.x * inv_scale, db.y * inv_scale)
     let iax = (a.x + 0.5F).to_int()
     let iay = (a.y + 0.5F).to_int()
     let ibx = (b.x + 0.5F).to_int()
@@ -385,11 +382,11 @@ pub fn Shape::voxelized_mesh(
     j1 = min_int(j1 + 1, res_y)
     for i in i0..<i1 {
       for j in j0..<j1 {
-        let mins = @core.Vec2::new(
+        let mins = @core.Vec2(
           Float::from_double(i.to_double()) - 0.5F,
           Float::from_double(j.to_double()) - 0.5F,
         )
-        let maxs = @core.Vec2::new(
+        let maxs = @core.Vec2(
           Float::from_double(i.to_double()) + 0.5F,
           Float::from_double(j.to_double()) + 0.5F,
         )
@@ -408,7 +405,7 @@ pub fn Shape::voxelized_mesh(
           if states[i + j * res_x] == 1 {
             centers.push(
               origin.add(
-                @core.Vec2::new(
+                Vec2(
                   Float::from_double(i.to_double()) * voxel_size,
                   Float::from_double(j.to_double()) * voxel_size,
                 ),
@@ -417,7 +414,7 @@ pub fn Shape::voxelized_mesh(
           }
         }
       }
-      voxels_shape_from_points(@core.Vec2::new(voxel_size, voxel_size), centers)
+      voxels_shape_from_points(Vec2(voxel_size, voxel_size), centers)
     }
     FloodFill(_, _) => {
       // Flood fill outside voxels starting from the volume boundary.
@@ -465,7 +462,7 @@ pub fn Shape::voxelized_mesh(
           if v == 1 || v == 0 {
             centers.push(
               origin.add(
-                @core.Vec2::new(
+                Vec2(
                   Float::from_double(i.to_double()) * voxel_size,
                   Float::from_double(j.to_double()) * voxel_size,
                 ),
@@ -474,7 +471,7 @@ pub fn Shape::voxelized_mesh(
           }
         }
       }
-      voxels_shape_from_points(@core.Vec2::new(voxel_size, voxel_size), centers)
+      voxels_shape_from_points(Vec2(voxel_size, voxel_size), centers)
     }
   }
 }
@@ -486,7 +483,7 @@ pub fn ColliderBuilder::voxelized_mesh(
   voxel_size : @core.Real,
   fill_mode : FillMode,
 ) -> ColliderBuilder {
-  ColliderBuilder::new(
+  ColliderBuilder(
     Shape::voxelized_mesh(vertices, indices, voxel_size, fill_mode),
   )
 }

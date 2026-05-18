@@ -38,7 +38,7 @@ fn quat_max_abs_diff_sign_invariant(
 ) -> @core.Real {
   let mut r = right
   if left.dot(right) < 0.0F {
-    r = @core.Quat::new(-right.x, -right.y, -right.z, -right.w)
+    r = Quat(-right.x, -right.y, -right.z, -right.w)
   }
   let dx = @core.abs(left.x - r.x)
   let dy = @core.abs(left.y - r.y)
@@ -79,28 +79,16 @@ test "interpolate velocity (dim3)" {
     let (seed14, next_ry) = rb3_rand_real(seed13)
     let (seed15, next_rz) = rb3_rand_real(seed14)
     seed = seed15
-    let local_com = @core.Vec3::new(local_x, local_y, local_z)
-    let curr_pos = @core.Isometry3::new(
-      @core.Vec3::new(
-        curr_x * multiplier,
-        curr_y * multiplier,
-        curr_z * multiplier,
-      ),
-      @core.rotation_from_scaled_axis(
-        @core.Vec3::new(curr_rx, curr_ry, curr_rz),
-      ),
+    let local_com = @core.Vec3(local_x, local_y, local_z)
+    let curr_pos = @core.Isometry3(
+      Vec3(curr_x * multiplier, curr_y * multiplier, curr_z * multiplier),
+      @core.rotation_from_scaled_axis(Vec3(curr_rx, curr_ry, curr_rz)),
     )
-    let next_pos = @core.Isometry3::new(
-      @core.Vec3::new(
-        next_x * multiplier,
-        next_y * multiplier,
-        next_z * multiplier,
-      ),
-      @core.rotation_from_scaled_axis(
-        @core.Vec3::new(next_rx, next_ry, next_rz),
-      ),
+    let next_pos = @core.Isometry3(
+      Vec3(next_x * multiplier, next_y * multiplier, next_z * multiplier),
+      @core.rotation_from_scaled_axis(Vec3(next_rx, next_ry, next_rz)),
     )
-    let rb_pos = RigidBodyPosition3::new(curr_pos, next_pos)
+    let rb_pos = RigidBodyPosition3::RigidBodyPosition3(curr_pos, next_pos)
     let vel = rb_pos.interpolate_velocity(1.0F / dt, local_com)
     let interp_pos = vel.integrate(dt, curr_pos, local_com)
     let dx = @core.abs(interp_pos.translation.x - next_pos.translation.x)

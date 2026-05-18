@@ -19,14 +19,14 @@
 ///|
 test "examples3d/debug_long_chain3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_long_chain3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -42,7 +42,7 @@ test "examples3d/debug_long_chain3.rs parity (3DReal headless)" {
       } else {
         @dynamics.RigidBodyBuilder3D::dynamic()
       })
-      .translation(@core.Vec3::new(0.0F, 0.0F, fi * shift))
+      .translation(Vec3(0.0F, 0.0F, fi * shift))
       .can_sleep(false)
       .build(),
     )
@@ -59,14 +59,14 @@ test "examples3d/debug_long_chain3.rs parity (3DReal headless)" {
           parent,
           rb,
           @core.Vec3::zero(),
-          @core.Vec3::new(0.0F, 0.0F, -shift),
+          Vec3(0.0F, 0.0F, -shift),
         )
       } else {
         joints.insert_spherical(
           parent,
           rb,
-          @core.Vec3::new(0.0F, 0.0F, shift / 2.0F),
-          @core.Vec3::new(0.0F, 0.0F, -shift / 2.0F),
+          Vec3(0.0F, 0.0F, shift / 2.0F),
+          Vec3(0.0F, 0.0F, -shift / 2.0F),
         )
       }
     }
@@ -95,14 +95,14 @@ test "examples3d/debug_long_chain3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_chain_high_mass_ratio3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -125,7 +125,7 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless)" {
       } else {
         @dynamics.RigidBodyBuilder3D::dynamic()
       })
-      .translation(@core.Vec3::new(0.0F, 5.0F, z))
+      .translation(Vec3(0.0F, 5.0F, z))
       .can_sleep(false)
       .build(),
     )
@@ -142,14 +142,14 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless)" {
           parent,
           rb,
           @core.Vec3::zero(),
-          @core.Vec3::new(0.0F, 0.0F, -shift1 * 2.0F),
+          Vec3(0.0F, 0.0F, -shift1 * 2.0F),
         )
       } else {
         joints.insert_spherical(
           parent,
           rb,
-          @core.Vec3::new(0.0F, 0.0F, shift1),
-          @core.Vec3::new(0.0F, 0.0F, -shift2),
+          Vec3(0.0F, 0.0F, shift1),
+          Vec3(0.0F, 0.0F, -shift2),
         )
       }
     }
@@ -176,14 +176,14 @@ test "examples3d/debug_chain_high_mass_ratio3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_prismatic3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -193,7 +193,7 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
   let ground_height = 0.1F
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -ground_height, 0.0F))
+    .translation(Vec3(0.0F, -ground_height, 0.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -206,7 +206,7 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
   |> ignore
 
   // Chassis.
-  let box_center = @core.Vec3::new(0.0F, 5.0F, 0.0F)
+  let box_center = @core.Vec3(0.0F, 5.0F, 0.0F)
   let box_rb = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(box_center)
@@ -221,10 +221,10 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
   |> ignore
   let wheel_y = -1.0F
   let wheel_positions = [
-    @core.Vec3::new(1.0F, wheel_y, -1.0F),
-    @core.Vec3::new(-1.0F, wheel_y, -1.0F),
-    @core.Vec3::new(1.0F, wheel_y, 1.0F),
-    @core.Vec3::new(-1.0F, wheel_y, 1.0F),
+    @core.Vec3(1.0F, wheel_y, -1.0F),
+    Vec3(-1.0F, wheel_y, -1.0F),
+    Vec3(1.0F, wheel_y, 1.0F),
+    Vec3(-1.0F, wheel_y, 1.0F),
   ]
   for pos in wheel_positions {
     let wheel_world = box_center.add(pos)
@@ -243,7 +243,7 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
     joints.insert_prismatic_motor_position(
       box_rb,
       wheel_rb,
-      @core.Vec3::new(0.0F, 1.0F, 0.0F),
+      Vec3(0.0F, 1.0F, 0.0F),
       pos,
       @core.Vec3::zero(),
       0.0F,
@@ -255,9 +255,7 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
   // Small "gravel" under one wheel.
   let gravel = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(
-      @core.Vec3::new(box_center.x + 1.0F, box_center.y - 2.4F, -1.0F),
-    )
+    .translation(Vec3(box_center.x + 1.0F, box_center.y - 2.4F, -1.0F))
     .can_sleep(false)
     .build(),
   )
@@ -288,14 +286,14 @@ test "examples3d/debug_prismatic3.rs parity (3DReal headless)" {
 test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_articulations3.rs` (headless; uses spherical
   // constraints for both multibody and impulse joints).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -304,10 +302,8 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(30.0F, 0.01F, 30.0F)
-    .translation(@core.Vec3::new(0.0F, -3.02F, 0.0F))
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.1F, 0.0F, 0.1F)),
-    )
+    .translation(Vec3(0.0F, -3.02F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.1F, 0.0F, 0.1F)))
     .build(),
     ground,
     bodies,
@@ -320,10 +316,8 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
   )
   colliders.insert_with_parent(
     @collision.ColliderBuilder3D::cuboid(30.0F, 0.01F, 30.0F)
-    .translation(@core.Vec3::new(0.0F, -3.0F, 0.0F))
-    .rotation(
-      @core.rotation_from_scaled_axis(@core.Vec3::new(0.1F, 0.0F, 0.1F)),
-    )
+    .translation(Vec3(0.0F, -3.0F, 0.0F))
+    .rotation(@core.rotation_from_scaled_axis(Vec3(0.1F, 0.0F, 0.1F)))
     .build(),
     platform,
     bodies,
@@ -333,9 +327,7 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
   let rad = 0.4F
   let shift = 1.0F
   let body_handles : Array[@dynamics.RigidBodyHandle] = []
-  let cap_rot = @core.rotation_from_scaled_axis(
-    @core.Vec3::new(1.5707964F, 0.0F, 0.0F),
-  )
+  let cap_rot = @core.rotation_from_scaled_axis(Vec3(1.5707964F, 0.0F, 0.0F))
   for k in 0..<num {
     for i in 0..<num {
       let fk = Float::from_int(k)
@@ -347,7 +339,7 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
         } else {
           @dynamics.RigidBodyBuilder3D::dynamic().can_sleep(false)
         })
-        .translation(@core.Vec3::new(fk * shift, 0.0F, fi * shift * 2.0F))
+        .translation(Vec3(fk * shift, 0.0F, fi * shift * 2.0F))
         .build(),
       )
       colliders.insert_with_parent(
@@ -365,7 +357,7 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
           parent,
           rb,
           @core.Vec3::zero(),
-          @core.Vec3::new(0.0F, 0.0F, -shift * 2.0F),
+          Vec3(0.0F, 0.0F, -shift * 2.0F),
         )
       }
       if k > 0 && i > 0 {
@@ -376,7 +368,7 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
           parent,
           rb,
           @core.Vec3::zero(),
-          @core.Vec3::new(-shift, 0.0F, 0.0F),
+          Vec3(-shift, 0.0F, 0.0F),
         )
       }
       body_handles.push(rb)
@@ -405,14 +397,14 @@ test "examples3d/debug_articulations3.rs parity (3DReal headless)" {
 ///|
 test "examples3d/debug_multibody_ang_motor_pos3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/debug_multibody_ang_motor_pos3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
@@ -425,7 +417,7 @@ test "examples3d/debug_multibody_ang_motor_pos3.rs parity (3DReal headless)" {
   |> ignore
   let body_part = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 1.0F, 0.0F))
+    .translation(Vec3(0.0F, 1.0F, 0.0F))
     .can_sleep(false)
     .build(),
   )
@@ -438,13 +430,13 @@ test "examples3d/debug_multibody_ang_motor_pos3.rs parity (3DReal headless)" {
   joints.insert_spherical(
     ground,
     body_part,
-    @core.Vec3::new(0.0F, 4.0F, 0.0F),
+    Vec3(0.0F, 4.0F, 0.0F),
     @core.Vec3::zero(),
   )
   joints.insert_spherical_motor_rotation(
     ground,
     body_part,
-    @core.rotation_from_scaled_axis(@core.Vec3::new(1.0F, 0.0F, 0.0F)),
+    @core.rotation_from_scaled_axis(Vec3(1.0F, 0.0F, 0.0F)),
     1000.0F,
     1.0F,
   )

@@ -35,13 +35,8 @@ pub struct PhysicsPipeline3DReal {
 
 ///|
 pub fn PhysicsPipeline3DReal::PhysicsPipeline3DReal() -> PhysicsPipeline3DReal {
-  PhysicsPipeline3DReal::new()
-}
-
-///|
-pub fn PhysicsPipeline3DReal::new() -> PhysicsPipeline3DReal {
   {
-    contact_cache: ContactSolverCache3D::new(),
+    contact_cache: ContactSolverCache3D(),
     contact_twist_cache: HashMap([]),
     sensor_pairs: [],
     contact_pairs: [],
@@ -58,10 +53,8 @@ fn integrate_lin_ang_3d_real(
   angvel : @core.Vec3,
 ) -> @core.Isometry3 {
   let com = curr_pos.transform_point(local_com)
-  let shift = @core.Isometry3::from_translation(
-    @core.Vec3::new(-com.x, -com.y, -com.z),
-  )
-  let rot = @core.Isometry3::new(
+  let shift = @core.Isometry3::from_translation(Vec3(-com.x, -com.y, -com.z))
+  let rot = @core.Isometry3(
     @core.Vec3::zero(),
     @core.rotation_from_scaled_axis(angvel.scale(dt)),
   )
@@ -211,8 +204,8 @@ fn find_first_impact_3d_real(
   if dt <= 0.0F {
     return None
   }
-  let base_query = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+  let base_query = @collision.QueryPipeline3DReal(
+    QueryFilter3DReal(),
     bodies,
     colliders,
   )
@@ -245,12 +238,12 @@ fn find_first_impact_3d_real(
       }
       let shape_vel = delta.scale(1.0F / dt)
       let query = base_query.with_filter(
-        @collision.QueryFilter3DReal::new()
+        @collision.QueryFilter3DReal()
         .exclude_rigid_body(bh)
         .groups(co.collision_groups())
         .exclude_sensors(),
       )
-      let options = @collision.ShapeCastOptions3::new(dt, true)
+      let options = @collision.ShapeCastOptions3(dt, true)
       if query.cast_shape(
           bodies,
           colliders,
@@ -286,8 +279,8 @@ fn clamp_fast_ccd_body_motions_3d_real(
   if dt <= 0.0F {
     return
   }
-  let base_query = @collision.QueryPipeline3DReal::new(
-    @collision.QueryFilter3DReal::new(),
+  let base_query = @collision.QueryPipeline3DReal(
+    QueryFilter3DReal(),
     bodies,
     colliders,
   )
@@ -326,12 +319,12 @@ fn clamp_fast_ccd_body_motions_3d_real(
       }
       let shape_vel = delta.scale(1.0F / dt)
       let query = base_query.with_filter(
-        @collision.QueryFilter3DReal::new()
+        @collision.QueryFilter3DReal()
         .exclude_rigid_body(bh)
         .groups(co.collision_groups())
         .exclude_sensors(),
       )
-      let options = @collision.ShapeCastOptions3::new(dt, true)
+      let options = @collision.ShapeCastOptions3(dt, true)
       if query.cast_shape(
           bodies,
           colliders,
@@ -650,31 +643,23 @@ fn emit_intersection_events_for_pair_diffs(
   while i < prev_pairs.length() || j < next_pairs.length() {
     if i >= prev_pairs.length() {
       let p = next_pairs[j]
-      handler.push_intersection_event(
-        @collision.IntersectionEvent3D::new(p.0, p.1, true),
-      )
+      handler.push_intersection_event(IntersectionEvent3D(p.0, p.1, true))
       j = j + 1
       continue
     }
     if j >= next_pairs.length() {
       let p = prev_pairs[i]
-      handler.push_intersection_event(
-        @collision.IntersectionEvent3D::new(p.0, p.1, false),
-      )
+      handler.push_intersection_event(IntersectionEvent3D(p.0, p.1, false))
       i = i + 1
       continue
     }
     let a = prev_pairs[i]
     let b = next_pairs[j]
     if pair_less_3d(a, b) {
-      handler.push_intersection_event(
-        @collision.IntersectionEvent3D::new(a.0, a.1, false),
-      )
+      handler.push_intersection_event(IntersectionEvent3D(a.0, a.1, false))
       i = i + 1
     } else if pair_less_3d(b, a) {
-      handler.push_intersection_event(
-        @collision.IntersectionEvent3D::new(b.0, b.1, true),
-      )
+      handler.push_intersection_event(IntersectionEvent3D(b.0, b.1, true))
       j = j + 1
     } else {
       i = i + 1
@@ -1479,7 +1464,7 @@ fn PhysicsPipeline3DReal::step_impl_one(
   let mut cache_in = self.contact_cache
   let mut twist_cache_in = self.contact_twist_cache
   for pass in 0..<coupling_passes {
-    let cache_out = ContactSolverCache3D::new()
+    let cache_out = ContactSolverCache3D()
     let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
     )
     let pass_events = if pass + 1 == coupling_passes { events } else { None }

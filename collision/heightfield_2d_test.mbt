@@ -16,7 +16,7 @@
 /// Regression test for Issue #15: heightfield must be a true primitive, not a polyline alias.
 test "heightfield builder produces Shape::HeightField" {
   let heights = [0.0F, 1.0F, 0.0F]
-  let scale = @core.Vec2::new(10.0F, 2.0F)
+  let scale = @core.Vec2(10.0F, 2.0F)
   let collider = ColliderBuilder::heightfield(heights, scale).build()
   match collider.shape() {
     HeightField(hs, sc) => {
@@ -30,21 +30,19 @@ test "heightfield builder produces Shape::HeightField" {
 
 ///|
 test "heightfield participates in contacts and ray queries" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
-  let narrow_phase = NarrowPhase::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
+  let narrow_phase = NarrowPhase::NarrowPhase()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
-    ColliderBuilder::heightfield([0.0F, 0.0F], @core.Vec2::new(10.0F, 1.0F)).build(),
+    ColliderBuilder::heightfield([0.0F, 0.0F], Vec2(10.0F, 1.0F)).build(),
     ground_body,
     bodies,
   )
   let ball_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.5F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.5F)).build(),
   )
   let ball = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -64,13 +62,13 @@ test "heightfield participates in contacts and ray queries" {
   } else {
     inspect(false, content="true")
   }
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   // Cast far enough from the ball so the first hit is the terrain.
-  let ray = Ray::new(@core.Vec2::new(4.0F, 10.0F), @core.Vec2::new(0.0F, -1.0F))
+  let ray = Ray::Ray(Vec2(4.0F, 10.0F), Vec2(0.0F, -1.0F))
   if query_pipeline.cast_ray_and_get_normal(
       bodies, colliders, ray, 100.0F, true,
     )

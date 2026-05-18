@@ -44,7 +44,7 @@ struct IslandsOptimizer3D {
 }
 
 ///|
-fn IslandsOptimizer3D::new() -> IslandsOptimizer3D {
+fn IslandsOptimizer3D::IslandsOptimizer3D() -> IslandsOptimizer3D {
   {
     min_island_size: MIN_ISLAND_SIZE_3D,
     max_island_size: MAX_ISLAND_SIZE_3D,
@@ -106,11 +106,6 @@ pub struct IslandManager3D {
 
 ///|
 pub fn IslandManager3D::IslandManager3D() -> IslandManager3D {
-  IslandManager3D::new()
-}
-
-///|
-pub fn IslandManager3D::new() -> IslandManager3D {
   let manager = {
     active_bodies: [],
     islands: [],
@@ -125,7 +120,7 @@ pub fn IslandManager3D::new() -> IslandManager3D {
     body_sleep_states: [],
     body_traversal_timestamps: [],
     stack: [],
-    optimizer: IslandsOptimizer3D::new(),
+    optimizer: IslandsOptimizer3D(),
     traversal_timestamp: 0,
   }
   manager.set_island_size_limits(MIN_ISLAND_SIZE_3D, MAX_ISLAND_SIZE_3D)

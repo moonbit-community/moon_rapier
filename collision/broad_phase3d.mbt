@@ -23,14 +23,6 @@ pub fn ColliderPair3D::ColliderPair3D(
   collider1 : ColliderHandle3D,
   collider2 : ColliderHandle3D,
 ) -> ColliderPair3D {
-  ColliderPair3D::new(collider1, collider2)
-}
-
-///|
-pub fn ColliderPair3D::new(
-  collider1 : ColliderHandle3D,
-  collider2 : ColliderHandle3D,
-) -> ColliderPair3D {
   { collider1, collider2 }
 }
 
@@ -59,11 +51,6 @@ pub struct BroadPhase3D {
 
 ///|
 pub fn BroadPhase3D::BroadPhase3D() -> BroadPhase3D {
-  BroadPhase3D::new()
-}
-
-///|
-pub fn BroadPhase3D::new() -> BroadPhase3D {
   { pairs: [], prev_pairs: [], events: [] }
 }
 
@@ -363,23 +350,23 @@ pub fn BroadPhase3D::update(
   while i < self.prev_pairs.length() || j < self.pairs.length() {
     if i >= self.prev_pairs.length() {
       let p = self.pairs[j]
-      self.events.push(AddPair(ColliderPair3D::new(p.0, p.1)))
+      self.events.push(AddPair(ColliderPair3D(p.0, p.1)))
       j = j + 1
       continue
     }
     if j >= self.pairs.length() {
       let p = self.prev_pairs[i]
-      self.events.push(DeletePair(ColliderPair3D::new(p.0, p.1)))
+      self.events.push(DeletePair(ColliderPair3D(p.0, p.1)))
       i = i + 1
       continue
     }
     let a = self.prev_pairs[i]
     let b = self.pairs[j]
     if pair_less_3d(a, b) {
-      self.events.push(DeletePair(ColliderPair3D::new(a.0, a.1)))
+      self.events.push(DeletePair(ColliderPair3D(a.0, a.1)))
       i = i + 1
     } else if pair_less_3d(b, a) {
-      self.events.push(AddPair(ColliderPair3D::new(b.0, b.1)))
+      self.events.push(AddPair(ColliderPair3D(b.0, b.1)))
       j = j + 1
     } else {
       i = i + 1

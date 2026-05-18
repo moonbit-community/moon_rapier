@@ -15,7 +15,7 @@
 ///|
 test "mat3 identity mul_vec3" {
   let m = Mat3::identity()
-  let v = Vec3::new(1.0F, -2.0F, 3.5F)
+  let v = Vec3::Vec3(1.0F, -2.0F, 3.5F)
   let r = m.mul_vec3(v)
   inspect(abs(r.x - v.x) < 1.0e-6F, content="true")
   inspect(abs(r.y - v.y) < 1.0e-6F, content="true")
@@ -24,7 +24,7 @@ test "mat3 identity mul_vec3" {
 
 ///|
 test "mat3 inverse roundtrip" {
-  let m = Mat3::new(2.0F, 1.0F, 0.0F, -1.0F, 3.0F, 1.0F, 0.5F, 0.0F, 4.0F)
+  let m = Mat3::Mat3(2.0F, 1.0F, 0.0F, -1.0F, 3.0F, 1.0F, 0.5F, 0.0F, 4.0F)
   let inv = m.inverse()
   let id = m.mul(inv)
   inspect(abs(id.m00 - 1.0F) < 1.0e-4F, content="true")
@@ -40,9 +40,9 @@ test "mat3 inverse roundtrip" {
 
 ///|
 test "sdpmat3 inverse diagonal" {
-  let i = SdpMat3::from_diagonal(Vec3::new(2.0F, 3.0F, 4.0F))
+  let i = SdpMat3::from_diagonal(Vec3(2.0F, 3.0F, 4.0F))
   let inv = i.inverse()
-  let v = Vec3::new(6.0F, 12.0F, 8.0F)
+  let v = Vec3::Vec3(6.0F, 12.0F, 8.0F)
   let r = inv.transform_vec3(v)
   inspect(abs(r.x - 3.0F) < 1.0e-6F, content="true")
   inspect(abs(r.y - 4.0F) < 1.0e-6F, content="true")
@@ -51,9 +51,9 @@ test "sdpmat3 inverse diagonal" {
 
 ///|
 test "quat to_mat3 consistent with rotate_vec3" {
-  let q = rotation_from_scaled_axis(Vec3::new(0.3F, -0.7F, 0.1F))
+  let q = rotation_from_scaled_axis(Vec3(0.3F, -0.7F, 0.1F))
   let m = q.to_mat3()
-  let v = Vec3::new(1.5F, 0.25F, -2.0F)
+  let v = Vec3::Vec3(1.5F, 0.25F, -2.0F)
   let r0 = q.rotate_vec3(v)
   let r1 = m.mul_vec3(v)
   inspect(abs(r0.x - r1.x) < 1.0e-5F, content="true")

@@ -31,17 +31,12 @@ pub struct JointAxesMask {
 }
 
 ///|
-pub fn JointAxesMask::JointAxesMask(bits : Int) -> JointAxesMask {
-  JointAxesMask::new(bits)
-}
-
-///|
 pub fn JointAxesMask::empty() -> JointAxesMask {
   { bits: 0 }
 }
 
 ///|
-pub fn JointAxesMask::new(bits : Int) -> JointAxesMask {
+pub fn JointAxesMask::JointAxesMask(bits : Int) -> JointAxesMask {
   { bits, }
 }
 
@@ -163,7 +158,7 @@ pub fn JointAxesMask::locked_prismatic_axes3() -> JointAxesMask {
 
 ///|
 pub fn JointAxesMask::locked_pin_slot_axes() -> JointAxesMask {
-  JointAxesMask::new(1 << 1)
+  JointAxesMask(1 << 1)
 }
 
 ///|
@@ -219,20 +214,15 @@ pub struct JointLimits {
 }
 
 ///|
-pub fn JointLimits::JointLimits(
-  min : @core.Real,
-  max : @core.Real,
-) -> JointLimits {
-  JointLimits::new(min, max)
-}
-
-///|
 pub fn JointLimits::default() -> JointLimits {
   { min: -REAL_MAX, max: REAL_MAX, impulse: 0.0F }
 }
 
 ///|
-pub fn JointLimits::new(min : @core.Real, max : @core.Real) -> JointLimits {
+pub fn JointLimits::JointLimits(
+  min : @core.Real,
+  max : @core.Real,
+) -> JointLimits {
   { min, max, impulse: 0.0F }
 }
 

@@ -115,11 +115,11 @@ fn trimesh_closest_point(
   indices : Array[(Int, Int, Int)],
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if indices.length() == 0 || vertices.length() == 0 {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let mut best_dist2 = 1.0e30F
   let mut best_point = @core.Vec3::zero()
-  let mut best_normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
+  let mut best_normal = @core.Vec3(0.0F, 1.0F, 0.0F)
   let mut best_normal_sum = @core.Vec3::zero()
   let mut best_count = 0
   let eps_d2 = 1.0e-6F
@@ -143,7 +143,7 @@ fn trimesh_closest_point(
     let n_norm = if n.length_squared() > 1.0e-12F {
       n.normalize()
     } else {
-      @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      Vec3(0.0F, 1.0F, 0.0F)
     }
     if d2 + eps_d2 < best_dist2 {
       best_dist2 = d2
@@ -180,7 +180,7 @@ fn heightfield_closest_point(
   flags : Int,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   // Work in the heightfield local-space to avoid per-triangle transforms.
   let inv = mesh_pos.inverse()
@@ -192,7 +192,7 @@ fn heightfield_closest_point(
   let dx = if dx0 < 0.0F { -dx0 } else { dx0 }
   let dz = if dz0 < 0.0F { -dz0 } else { dz0 }
   if dx <= 1.0e-12F || dz <= 1.0e-12F {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let cells_x = nrows - 1
   let cells_z = ncols - 1
@@ -285,7 +285,7 @@ fn heightfield_closest_point(
         maxy = v.y
       }
     }
-    (@core.Vec3::new(minx, miny, minz), @core.Vec3::new(maxx, maxy, maxz))
+    (Vec3(minx, miny, minz), Vec3(maxx, maxy, maxz))
   }
 
   // Min-heap of (lower_bound_dist2, i, j).
@@ -395,7 +395,7 @@ fn heightfield_closest_point(
       let n_norm = if n.length_squared() > 1.0e-12F {
         n.normalize()
       } else {
-        @core.Vec3::new(0.0F, 1.0F, 0.0F)
+        Vec3(0.0F, 1.0F, 0.0F)
       }
       if d2 + eps_d2 < best_dist2 {
         (d2, q, n_norm, 1)
@@ -463,12 +463,12 @@ fn heightfield_closest_point(
     }
   }
   if best_count == 0 {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let best_normal_local = if best_normal_sum.length_squared() > 1.0e-12F {
     best_normal_sum.normalize()
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   let best_point = mesh_pos.transform_point(best_point_local)
   let best_normal = mesh_pos.rotation.rotate_vec3(best_normal_local)
@@ -490,7 +490,7 @@ fn heightfield_closest_point_bounded(
   max_dist : @core.Real,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let inv = mesh_pos.inverse()
   let p_local = inv.transform_point(p)
@@ -501,7 +501,7 @@ fn heightfield_closest_point_bounded(
   let dx = if dx0 < 0.0F { -dx0 } else { dx0 }
   let dz = if dz0 < 0.0F { -dz0 } else { dz0 }
   if dx <= 1.0e-12F || dz <= 1.0e-12F {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let cells_x = nrows - 1
   let cells_z = ncols - 1
@@ -578,7 +578,7 @@ fn heightfield_closest_point_bounded(
         let n_norm = if n.length_squared() > 1.0e-12F {
           n.normalize()
         } else {
-          @core.Vec3::new(0.0F, 1.0F, 0.0F)
+          Vec3(0.0F, 1.0F, 0.0F)
         }
         if d2 + eps_d2 < best_dist2 {
           (d2, q, n_norm, 1)
@@ -618,12 +618,12 @@ fn heightfield_closest_point_bounded(
     }
   }
   if best_count == 0 {
-    return (@core.Vec3::zero(), @core.Vec3::new(0.0F, 1.0F, 0.0F), 0.0F, false)
+    return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
   }
   let best_normal_local = if best_normal_sum.length_squared() > 1.0e-12F {
     best_normal_sum.normalize()
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   (
     mesh_pos.transform_point(best_point_local),
@@ -736,12 +736,12 @@ fn voxel_cell_aabb_local(
   let sx = voxels.voxel_size.x
   let sy = voxels.voxel_size.y
   let sz = voxels.voxel_size.z
-  let mins = @core.Vec3::new(
+  let mins = @core.Vec3(
     Float::from_int(key.0) * sx,
     Float::from_int(key.1) * sy,
     Float::from_int(key.2) * sz,
   )
-  let maxs = mins.add(@core.Vec3::new(sx, sy, sz))
+  let maxs = mins.add(Vec3(sx, sy, sz))
   (mins, maxs)
 }
 
@@ -755,7 +755,7 @@ fn compute_sphere_voxel_contact_local(
   key : (Int, Int, Int),
 ) -> ContactPoint3D? {
   let (mins, maxs) = voxel_cell_aabb_local(voxels, key)
-  let clamped = @core.Vec3::new(
+  let clamped = @core.Vec3(
     @core.clamp(center_local.x, mins.x, maxs.x),
     @core.clamp(center_local.y, mins.y, maxs.y),
     @core.clamp(center_local.z, mins.z, maxs.z),
@@ -777,32 +777,32 @@ fn compute_sphere_voxel_contact_local(
     let dz0 = center_local.z - mins.z
     let dz1 = maxs.z - center_local.z
     let mut best_d = dx0
-    let mut normal = @core.Vec3::new(-1.0F, 0.0F, 0.0F)
-    let mut point2 = @core.Vec3::new(mins.x, center_local.y, center_local.z)
+    let mut normal = @core.Vec3(-1.0F, 0.0F, 0.0F)
+    let mut point2 = @core.Vec3(mins.x, center_local.y, center_local.z)
     if dx1 < best_d {
       best_d = dx1
-      normal = @core.Vec3::new(1.0F, 0.0F, 0.0F)
-      point2 = @core.Vec3::new(maxs.x, center_local.y, center_local.z)
+      normal = Vec3(1.0F, 0.0F, 0.0F)
+      point2 = Vec3(maxs.x, center_local.y, center_local.z)
     }
     if dy0 < best_d {
       best_d = dy0
-      normal = @core.Vec3::new(0.0F, -1.0F, 0.0F)
-      point2 = @core.Vec3::new(center_local.x, mins.y, center_local.z)
+      normal = Vec3(0.0F, -1.0F, 0.0F)
+      point2 = Vec3(center_local.x, mins.y, center_local.z)
     }
     if dy1 < best_d {
       best_d = dy1
-      normal = @core.Vec3::new(0.0F, 1.0F, 0.0F)
-      point2 = @core.Vec3::new(center_local.x, maxs.y, center_local.z)
+      normal = Vec3(0.0F, 1.0F, 0.0F)
+      point2 = Vec3(center_local.x, maxs.y, center_local.z)
     }
     if dz0 < best_d {
       best_d = dz0
-      normal = @core.Vec3::new(0.0F, 0.0F, -1.0F)
-      point2 = @core.Vec3::new(center_local.x, center_local.y, mins.z)
+      normal = Vec3(0.0F, 0.0F, -1.0F)
+      point2 = Vec3(center_local.x, center_local.y, mins.z)
     }
     if dz1 < best_d {
       best_d = dz1
-      normal = @core.Vec3::new(0.0F, 0.0F, 1.0F)
-      point2 = @core.Vec3::new(center_local.x, center_local.y, maxs.z)
+      normal = Vec3(0.0F, 0.0F, 1.0F)
+      point2 = Vec3(center_local.x, center_local.y, maxs.z)
     }
     (normal, point2, radius + best_d)
   }
@@ -888,11 +888,11 @@ pub fn compute_cuboid_voxels_contact(
   let hz = cuboid_half_extents.z
   let skin = 0.05F
   let samples = [
-    @core.Vec3::new(-hx, -hy, -hz),
-    @core.Vec3::new(-hx, -hy, hz),
-    @core.Vec3::new(hx, -hy, -hz),
-    @core.Vec3::new(hx, -hy, hz),
-    @core.Vec3::new(0.0F, -hy, 0.0F),
+    @core.Vec3(-hx, -hy, -hz),
+    Vec3(-hx, -hy, hz),
+    Vec3(hx, -hy, -hz),
+    Vec3(hx, -hy, hz),
+    Vec3(0.0F, -hy, 0.0F),
   ]
   for i in 0..<samples.length() {
     let pw = cuboid_pos.transform_point(samples[i])
@@ -921,11 +921,11 @@ pub fn compute_capsule_voxels_contact(
   let mut best_pen = -1.0F
   let hh = capsule_half_height
   let centers_local = [
-    @core.Vec3::new(0.0F, -hh, 0.0F),
-    @core.Vec3::new(0.0F, -hh * 0.5F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, hh * 0.5F, 0.0F),
-    @core.Vec3::new(0.0F, hh, 0.0F),
+    @core.Vec3(0.0F, -hh, 0.0F),
+    Vec3(0.0F, -hh * 0.5F, 0.0F),
+    Vec3(0.0F, 0.0F, 0.0F),
+    Vec3(0.0F, hh * 0.5F, 0.0F),
+    Vec3(0.0F, hh, 0.0F),
   ]
   for i in 0..<centers_local.length() {
     let pw = capsule_pos.transform_point(centers_local[i])
@@ -957,18 +957,18 @@ pub fn compute_cylinder_voxels_contact(
   let r = cyl_radius
   let a = 0.70710677F
   let ring_dirs = [
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    @core.Vec3::new(0.0F, 0.0F, -1.0F),
-    @core.Vec3::new(a, 0.0F, a),
-    @core.Vec3::new(a, 0.0F, -a),
-    @core.Vec3::new(-a, 0.0F, a),
-    @core.Vec3::new(-a, 0.0F, -a),
+    @core.Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(-1.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
+    Vec3(0.0F, 0.0F, -1.0F),
+    Vec3(a, 0.0F, a),
+    Vec3(a, 0.0F, -a),
+    Vec3(-a, 0.0F, a),
+    Vec3(-a, 0.0F, -a),
   ]
   // Bottom cap ring + center.
   for i in 0..<ring_dirs.length() {
-    let pt_local = ring_dirs[i].scale(r).add(@core.Vec3::new(0.0F, -hh, 0.0F))
+    let pt_local = ring_dirs[i].scale(r).add(Vec3(0.0F, -hh, 0.0F))
     let pw = cyl_pos.transform_point(pt_local)
     let pl = inv.transform_point(pw)
     if compute_sphere_voxels_contact(pw, pl, skin, voxels_pos, voxels)
@@ -979,7 +979,7 @@ pub fn compute_cylinder_voxels_contact(
       }
     }
   }
-  let pw0 = cyl_pos.transform_point(@core.Vec3::new(0.0F, -hh, 0.0F))
+  let pw0 = cyl_pos.transform_point(Vec3(0.0F, -hh, 0.0F))
   let pl0 = inv.transform_point(pw0)
   if compute_sphere_voxels_contact(pw0, pl0, skin, voxels_pos, voxels)
     is Some(cp0) {
@@ -1007,18 +1007,18 @@ pub fn compute_cone_voxels_contact(
   let r = cone_radius
   let a = 0.70710677F
   let ring_dirs = [
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    @core.Vec3::new(0.0F, 0.0F, -1.0F),
-    @core.Vec3::new(a, 0.0F, a),
-    @core.Vec3::new(a, 0.0F, -a),
-    @core.Vec3::new(-a, 0.0F, a),
-    @core.Vec3::new(-a, 0.0F, -a),
+    @core.Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(-1.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
+    Vec3(0.0F, 0.0F, -1.0F),
+    Vec3(a, 0.0F, a),
+    Vec3(a, 0.0F, -a),
+    Vec3(-a, 0.0F, a),
+    Vec3(-a, 0.0F, -a),
   ]
   // Base ring.
   for i in 0..<ring_dirs.length() {
-    let pt_local = ring_dirs[i].scale(r).add(@core.Vec3::new(0.0F, -hh, 0.0F))
+    let pt_local = ring_dirs[i].scale(r).add(Vec3(0.0F, -hh, 0.0F))
     let pw = cone_pos.transform_point(pt_local)
     let pl = inv.transform_point(pw)
     if compute_sphere_voxels_contact(pw, pl, skin, voxels_pos, voxels)
@@ -1030,7 +1030,7 @@ pub fn compute_cone_voxels_contact(
     }
   }
   // Tip.
-  let pw_tip = cone_pos.transform_point(@core.Vec3::new(0.0F, hh, 0.0F))
+  let pw_tip = cone_pos.transform_point(Vec3(0.0F, hh, 0.0F))
   let pl_tip = inv.transform_point(pw_tip)
   if compute_sphere_voxels_contact(pw_tip, pl_tip, skin, voxels_pos, voxels)
     is Some(cp_tip) {
@@ -1106,7 +1106,7 @@ pub fn compute_cuboid_triangle_contact(
   let centroid = v0.add(v1).add(v2).scale(1.0F / 3.0F)
   let eps = 1.0e-12F
   let mut best_overlap = 1.0e30F
-  let mut best_axis = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  let mut best_axis = @core.Vec3(1.0F, 0.0F, 0.0F)
   fn update_best(
     axis : @core.Vec3,
     overlap : @core.Real,
@@ -1178,7 +1178,7 @@ pub fn compute_cuboid_triangle_contact(
     )
     if overlap_box_interval(minx, maxx, cuboid_half_extents.x) is Some(o) {
       let (bo, ba) = update_best(
-        @core.Vec3::new(1.0F, 0.0F, 0.0F),
+        Vec3(1.0F, 0.0F, 0.0F),
         o,
         centroid,
         best_overlap,
@@ -1195,7 +1195,7 @@ pub fn compute_cuboid_triangle_contact(
     )
     if overlap_box_interval(miny, maxy, cuboid_half_extents.y) is Some(o) {
       let (bo, ba) = update_best(
-        @core.Vec3::new(0.0F, 1.0F, 0.0F),
+        Vec3(0.0F, 1.0F, 0.0F),
         o,
         centroid,
         best_overlap,
@@ -1212,7 +1212,7 @@ pub fn compute_cuboid_triangle_contact(
     )
     if overlap_box_interval(minz, maxz, cuboid_half_extents.z) is Some(o) {
       let (bo, ba) = update_best(
-        @core.Vec3::new(0.0F, 0.0F, 1.0F),
+        Vec3(0.0F, 0.0F, 1.0F),
         o,
         centroid,
         best_overlap,
@@ -1245,9 +1245,9 @@ pub fn compute_cuboid_triangle_contact(
   // 3) Test the 9 cross-product axes (triangle edges x box axes).
   let edges = [e0, e1, e2]
   let box_axes = [
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 1.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
+    @core.Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 1.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
   ]
   for edge in edges {
     for ax in box_axes {
@@ -1330,7 +1330,7 @@ pub fn compute_cuboid_triangle_contact(
       cuboid_half_extents.z,
     )
   }
-  let point1 = cuboid_pos.transform_point(@core.Vec3::new(sx, sy, sz))
+  let point1 = cuboid_pos.transform_point(Vec3(sx, sy, sz))
   let point2 = closest_point_on_triangle3d(point1, wa, wb, wc)
   // Convert the witness points to a penetration depth along the chosen normal.
   let pen = -normal.dot(point2.sub(point1))
@@ -1729,32 +1729,32 @@ pub fn compute_cuboid_heightfield_contact_with_flags(
   let hy = cuboid_half_extents.y
   let hz = cuboid_half_extents.z
   let points = [
-    @core.Vec3::new(-hx, -hy, -hz),
-    @core.Vec3::new(hx, -hy, -hz),
-    @core.Vec3::new(-hx, hy, -hz),
-    @core.Vec3::new(hx, hy, -hz),
-    @core.Vec3::new(-hx, -hy, hz),
-    @core.Vec3::new(hx, -hy, hz),
-    @core.Vec3::new(-hx, hy, hz),
-    @core.Vec3::new(hx, hy, hz),
-    @core.Vec3::new(0.0F, -hy, 0.0F),
-    @core.Vec3::new(0.0F, hy, 0.0F),
-    @core.Vec3::new(-hx, 0.0F, 0.0F),
-    @core.Vec3::new(hx, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, -hz),
-    @core.Vec3::new(0.0F, 0.0F, hz),
-    @core.Vec3::new(0.0F, -hy, -hz),
-    @core.Vec3::new(0.0F, -hy, hz),
-    @core.Vec3::new(0.0F, hy, -hz),
-    @core.Vec3::new(0.0F, hy, hz),
-    @core.Vec3::new(-hx, 0.0F, -hz),
-    @core.Vec3::new(-hx, 0.0F, hz),
-    @core.Vec3::new(hx, 0.0F, -hz),
-    @core.Vec3::new(hx, 0.0F, hz),
-    @core.Vec3::new(-hx, -hy, 0.0F),
-    @core.Vec3::new(hx, -hy, 0.0F),
-    @core.Vec3::new(-hx, hy, 0.0F),
-    @core.Vec3::new(hx, hy, 0.0F),
+    @core.Vec3(-hx, -hy, -hz),
+    Vec3(hx, -hy, -hz),
+    Vec3(-hx, hy, -hz),
+    Vec3(hx, hy, -hz),
+    Vec3(-hx, -hy, hz),
+    Vec3(hx, -hy, hz),
+    Vec3(-hx, hy, hz),
+    Vec3(hx, hy, hz),
+    Vec3(0.0F, -hy, 0.0F),
+    Vec3(0.0F, hy, 0.0F),
+    Vec3(-hx, 0.0F, 0.0F),
+    Vec3(hx, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, -hz),
+    Vec3(0.0F, 0.0F, hz),
+    Vec3(0.0F, -hy, -hz),
+    Vec3(0.0F, -hy, hz),
+    Vec3(0.0F, hy, -hz),
+    Vec3(0.0F, hy, hz),
+    Vec3(-hx, 0.0F, -hz),
+    Vec3(-hx, 0.0F, hz),
+    Vec3(hx, 0.0F, -hz),
+    Vec3(hx, 0.0F, hz),
+    Vec3(-hx, -hy, 0.0F),
+    Vec3(hx, -hy, 0.0F),
+    Vec3(-hx, hy, 0.0F),
+    Vec3(hx, hy, 0.0F),
   ]
   let mut best : ContactPoint3D? = None
   let mut best_pen = -1.0F
@@ -1862,21 +1862,19 @@ pub fn compute_cylinder_heightfield_contact_with_flags(
   let h = cyl_half_height
   let a = 0.70710677F
   let ring = [
-    @core.Vec3::new(r, 0.0F, 0.0F),
-    @core.Vec3::new(-r, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, r),
-    @core.Vec3::new(0.0F, 0.0F, -r),
-    @core.Vec3::new(r * a, 0.0F, r * a),
-    @core.Vec3::new(r * a, 0.0F, -r * a),
-    @core.Vec3::new(-r * a, 0.0F, r * a),
-    @core.Vec3::new(-r * a, 0.0F, -r * a),
+    @core.Vec3(r, 0.0F, 0.0F),
+    Vec3(-r, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, r),
+    Vec3(0.0F, 0.0F, -r),
+    Vec3(r * a, 0.0F, r * a),
+    Vec3(r * a, 0.0F, -r * a),
+    Vec3(-r * a, 0.0F, r * a),
+    Vec3(-r * a, 0.0F, -r * a),
   ]
   let mut best : ContactPoint3D? = None
   let mut best_pen = -1.0F
   for i in 0..<ring.length() {
-    let p0 = cyl_pos.transform_point(
-      ring[i].add(@core.Vec3::new(0.0F, -h, 0.0F)),
-    )
+    let p0 = cyl_pos.transform_point(ring[i].add(Vec3(0.0F, -h, 0.0F)))
     if compute_point_heightfield_contact_with_flags(
         p0, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
@@ -1886,9 +1884,7 @@ pub fn compute_cylinder_heightfield_contact_with_flags(
         best = Some(cp)
       }
     }
-    let p1 = cyl_pos.transform_point(
-      ring[i].add(@core.Vec3::new(0.0F, h, 0.0F)),
-    )
+    let p1 = cyl_pos.transform_point(ring[i].add(Vec3(0.0F, h, 0.0F)))
     if compute_point_heightfield_contact_with_flags(
         p1, skin, heightfield_pos, vertices, nrows, ncols, flags,
       )
@@ -1985,14 +1981,14 @@ pub fn compute_cone_heightfield_contact_with_flags(
   let hh = cone_half_height
   let a = 0.70710677F
   let ring_dirs = [
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(-1.0F, 0.0F, 0.0F),
-    @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    @core.Vec3::new(0.0F, 0.0F, -1.0F),
-    @core.Vec3::new(a, 0.0F, a),
-    @core.Vec3::new(a, 0.0F, -a),
-    @core.Vec3::new(-a, 0.0F, a),
-    @core.Vec3::new(-a, 0.0F, -a),
+    @core.Vec3(1.0F, 0.0F, 0.0F),
+    Vec3(-1.0F, 0.0F, 0.0F),
+    Vec3(0.0F, 0.0F, 1.0F),
+    Vec3(0.0F, 0.0F, -1.0F),
+    Vec3(a, 0.0F, a),
+    Vec3(a, 0.0F, -a),
+    Vec3(-a, 0.0F, a),
+    Vec3(-a, 0.0F, -a),
   ]
   let slices = [1.0F, 0.66F, 0.33F]
   let mut best : ContactPoint3D? = None
@@ -2001,7 +1997,7 @@ pub fn compute_cone_heightfield_contact_with_flags(
     let y = -hh + (1.0F - s) * (2.0F * hh)
     let rr = r * s
     for i in 0..<ring_dirs.length() {
-      let pt_local = ring_dirs[i].scale(rr).add(@core.Vec3::new(0.0F, y, 0.0F))
+      let pt_local = ring_dirs[i].scale(rr).add(Vec3(0.0F, y, 0.0F))
       let p = cone_pos.transform_point(pt_local)
       if compute_point_heightfield_contact_with_flags(
           p, skin, heightfield_pos, vertices, nrows, ncols, flags,
@@ -2027,7 +2023,7 @@ pub fn compute_halfspace_contact(
   fn normalize_or_default(v : @core.Vec3) -> @core.Vec3 {
     let n2 = v.length_squared()
     if n2 <= 1.0e-12F {
-      @core.Vec3::new(0.0F, 1.0F, 0.0F)
+      Vec3(0.0F, 1.0F, 0.0F)
     } else {
       v.scale(1.0F / local_sqrt(n2))
     }
@@ -2094,7 +2090,7 @@ pub fn compute_halfspace_contact(
         let x1 = Float::from_int(ix1 + 1) * sx
         let y1 = Float::from_int(iy1 + 1) * sy
         let z1 = Float::from_int(iz1 + 1) * sz
-        let corner = @core.Vec3::new(
+        let corner = @core.Vec3(
           if local_dir.x >= 0.0F {
             x1
           } else {
@@ -2184,7 +2180,7 @@ pub fn compute_ball_ball_contact(
   let dist = local_sqrt(dist2)
   let normal = if dist <= 1.0e-6F {
     // Deterministic fallback to avoid NaNs.
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
     delta.scale(1.0F / dist)
   }
@@ -2203,7 +2199,7 @@ pub fn compute_ball_cuboid_contact(
   let inv = cuboid_pos.inverse()
   let local_center = inv.transform_point(ball_center)
   let he = cuboid_half_extents
-  let clamped = @core.Vec3::new(
+  let clamped = @core.Vec3(
     @core.clamp(local_center.x, -he.x, he.x),
     @core.clamp(local_center.y, -he.y, he.y),
     @core.clamp(local_center.z, -he.z, he.z),
@@ -2225,46 +2221,22 @@ pub fn compute_ball_cuboid_contact(
     let dy = he.y - @core.abs(local_center.y)
     let dz = he.z - @core.abs(local_center.z)
     if dx <= dy && dx <= dz {
-      @core.Vec3::new(
-        if local_center.x >= 0.0F {
-          1.0F
-        } else {
-          -1.0F
-        },
-        0.0F,
-        0.0F,
-      )
+      Vec3(if local_center.x >= 0.0F { 1.0F } else { -1.0F }, 0.0F, 0.0F)
     } else if dy <= dz {
-      @core.Vec3::new(
-        0.0F,
-        if local_center.y >= 0.0F {
-          1.0F
-        } else {
-          -1.0F
-        },
-        0.0F,
-      )
+      Vec3(0.0F, if local_center.y >= 0.0F { 1.0F } else { -1.0F }, 0.0F)
     } else {
-      @core.Vec3::new(
-        0.0F,
-        0.0F,
-        if local_center.z >= 0.0F {
-          1.0F
-        } else {
-          -1.0F
-        },
-      )
+      Vec3(0.0F, 0.0F, if local_center.z >= 0.0F { 1.0F } else { -1.0F })
     }
   }
   let normal = cuboid_pos.rotation.rotate_vec3(normal_local)
   let point2_local = if dist > 1.0e-6F {
     clamped
   } else if @core.abs(normal_local.x) > 0.0F {
-    @core.Vec3::new(normal_local.x * he.x, local_center.y, local_center.z)
+    Vec3(normal_local.x * he.x, local_center.y, local_center.z)
   } else if @core.abs(normal_local.y) > 0.0F {
-    @core.Vec3::new(local_center.x, normal_local.y * he.y, local_center.z)
+    Vec3(local_center.x, normal_local.y * he.y, local_center.z)
   } else {
-    @core.Vec3::new(local_center.x, local_center.y, normal_local.z * he.z)
+    Vec3(local_center.x, local_center.y, normal_local.z * he.z)
   }
   let point2 = cuboid_pos.transform_point(point2_local)
   let point1 = ball_center.add(normal.scale(ball_radius))
@@ -2389,8 +2361,8 @@ fn capsule_segment_endpoints(
   pos : @core.Isometry3,
   half_height : @core.Real,
 ) -> (@core.Vec3, @core.Vec3) {
-  let a = pos.transform_point(@core.Vec3::new(0.0F, -half_height, 0.0F))
-  let b = pos.transform_point(@core.Vec3::new(0.0F, half_height, 0.0F))
+  let a = pos.transform_point(Vec3(0.0F, -half_height, 0.0F))
+  let b = pos.transform_point(Vec3(0.0F, half_height, 0.0F))
   (a, b)
 }
 
@@ -2454,7 +2426,7 @@ fn segment_aabb_closest_points(
   let mut best_t = 0.0F
   let mut best_dist2 = 1.0e30F
   let mut best_p = a
-  let mut best_q = @core.Vec3::new(
+  let mut best_q = @core.Vec3(
     @core.clamp(a.x, -he.x, he.x),
     @core.clamp(a.y, -he.y, he.y),
     @core.clamp(a.z, -he.z, he.z),
@@ -2512,7 +2484,7 @@ fn segment_aabb_closest_points(
           t = if f_hi < f_lo { hi } else { lo }
         }
         let p = p0.add(d.scale(t))
-        let q = @core.Vec3::new(
+        let q = @core.Vec3(
           @core.clamp(p.x, -he.x, he.x),
           @core.clamp(p.y, -he.y, he.y),
           @core.clamp(p.z, -he.z, he.z),
@@ -2549,7 +2521,7 @@ pub fn compute_ball_capsule_contact(
   }
   let dist = local_sqrt(dist2)
   let normal = if dist <= 1.0e-6F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
     delta.scale(1.0F / dist)
   }
@@ -2626,7 +2598,7 @@ pub fn compute_capsule_capsule_contact(
   }
   let dist = local_sqrt(dist2)
   let normal = if dist <= 1.0e-6F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
     delta.scale(1.0F / dist)
   }
@@ -2670,7 +2642,7 @@ pub fn compute_capsule_cuboid_contact(
     let dy = he.y - @core.abs(axis_local.y)
     let dz = he.z - @core.abs(axis_local.z)
     if dx <= dy && dx <= dz {
-      normal_local = @core.Vec3::new(
+      normal_local = Vec3(
         if axis_local.x >= 0.0F {
           1.0F
         } else {
@@ -2679,14 +2651,10 @@ pub fn compute_capsule_cuboid_contact(
         0.0F,
         0.0F,
       )
-      point2_local = @core.Vec3::new(
-        normal_local.x * he.x,
-        axis_local.y,
-        axis_local.z,
-      )
+      point2_local = Vec3(normal_local.x * he.x, axis_local.y, axis_local.z)
       capsule_radius + dx
     } else if dy <= dz {
-      normal_local = @core.Vec3::new(
+      normal_local = Vec3(
         0.0F,
         if axis_local.y >= 0.0F {
           1.0F
@@ -2695,14 +2663,10 @@ pub fn compute_capsule_cuboid_contact(
         },
         0.0F,
       )
-      point2_local = @core.Vec3::new(
-        axis_local.x,
-        normal_local.y * he.y,
-        axis_local.z,
-      )
+      point2_local = Vec3(axis_local.x, normal_local.y * he.y, axis_local.z)
       capsule_radius + dy
     } else {
-      normal_local = @core.Vec3::new(
+      normal_local = Vec3(
         0.0F,
         0.0F,
         if axis_local.z >= 0.0F {
@@ -2711,11 +2675,7 @@ pub fn compute_capsule_cuboid_contact(
           -1.0F
         },
       )
-      point2_local = @core.Vec3::new(
-        axis_local.x,
-        axis_local.y,
-        normal_local.z * he.z,
-      )
+      point2_local = Vec3(axis_local.x, axis_local.y, normal_local.z * he.z)
       capsule_radius + dz
     }
   }
@@ -2753,7 +2713,7 @@ pub fn compute_ball_cylinder_contact(
     x = 0.0F
     z = 0.0F
   }
-  let point2_local = @core.Vec3::new(x, y, z)
+  let point2_local = @core.Vec3(x, y, z)
   let delta = local_center.sub(point2_local)
   let dist2 = delta.length_squared()
   if dist2 > ball_radius * ball_radius {
@@ -2768,19 +2728,11 @@ pub fn compute_ball_cylinder_contact(
     let dr = r - radial
     let dy = hh - @core.abs(local_center.y)
     if dy <= dr {
-      @core.Vec3::new(
-        0.0F,
-        if local_center.y >= 0.0F {
-          1.0F
-        } else {
-          -1.0F
-        },
-        0.0F,
-      )
+      Vec3(0.0F, if local_center.y >= 0.0F { 1.0F } else { -1.0F }, 0.0F)
     } else if radial > 1.0e-6F {
-      @core.Vec3::new(local_center.x / radial, 0.0F, local_center.z / radial)
+      Vec3(local_center.x / radial, 0.0F, local_center.z / radial)
     } else {
-      @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      Vec3(1.0F, 0.0F, 0.0F)
     }
   }
   let normal = cyl_pos.rotation.rotate_vec3(normal_local)
@@ -2842,7 +2794,7 @@ pub fn compute_ball_cone_contact(
   } else {
     (target_x, 0.0F)
   }
-  let point2_local = @core.Vec3::new(tx, target_y, tz)
+  let point2_local = @core.Vec3(tx, target_y, tz)
   let delta = local_center.sub(point2_local)
   let dist2 = delta.length_squared()
   if dist2 > ball_radius * ball_radius {
@@ -2858,11 +2810,11 @@ pub fn compute_ball_cone_contact(
     let radius_y = (hh - local_center.y) * slope
     let dist_side = radius_y - s
     if dist_base <= dist_side {
-      @core.Vec3::new(0.0F, -1.0F, 0.0F)
+      Vec3(0.0F, -1.0F, 0.0F)
     } else if s > 1.0e-6F {
-      @core.Vec3::new(local_center.x / s, slope, local_center.z / s).normalize()
+      @core.Vec3(local_center.x / s, slope, local_center.z / s).normalize()
     } else {
-      @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      Vec3(1.0F, 0.0F, 0.0F)
     }
   }
   let normal = cone_pos.rotation.rotate_vec3(normal_local)
@@ -2894,9 +2846,9 @@ pub fn compute_cuboid_cuboid_contact(
   let rb = pos2.rotation.to_mat3()
   fn col(m : @core.Mat3, i : Int) -> @core.Vec3 {
     match i {
-      0 => @core.Vec3::new(m.m00, m.m10, m.m20)
-      1 => @core.Vec3::new(m.m01, m.m11, m.m21)
-      _ => @core.Vec3::new(m.m02, m.m12, m.m22)
+      0 => Vec3(m.m00, m.m10, m.m20)
+      1 => Vec3(m.m01, m.m11, m.m21)
+      _ => Vec3(m.m02, m.m12, m.m22)
     }
   }
 
@@ -3038,7 +2990,7 @@ pub fn compute_cuboid_cuboid_contact(
       let axis = a_axis[i].cross(b_axis[j])
       let len = local_sqrt(axis.length_squared())
       if len <= 1.0e-6F {
-        @core.Vec3::new(1.0F, 0.0F, 0.0F)
+        Vec3(1.0F, 0.0F, 0.0F)
       } else {
         axis.scale(1.0F / len)
       }
@@ -3056,7 +3008,7 @@ pub fn compute_cuboid_cuboid_contact(
     let sx = if local_dir.x >= 0.0F { he.x } else { -he.x }
     let sy = if local_dir.y >= 0.0F { he.y } else { -he.y }
     let sz = if local_dir.z >= 0.0F { he.z } else { -he.z }
-    pos.transform_point(@core.Vec3::new(sx, sy, sz))
+    pos.transform_point(Vec3(sx, sy, sz))
   }
 
   let point1 = support(pos1, he1, normal)
@@ -3071,7 +3023,7 @@ priv struct CuboidFeature3D {
 
 ///|
 fn cuboid_local_support_point(he : @core.Vec3, dir : @core.Vec3) -> @core.Vec3 {
-  @core.Vec3::new(
+  Vec3(
     if dir.x >= 0.0F {
       he.x
     } else {
@@ -3102,9 +3054,9 @@ fn vec3_component(v : @core.Vec3, i : Int) -> @core.Real {
 ///|
 fn vec3_axis(i : Int, sign : @core.Real) -> @core.Vec3 {
   match i {
-    0 => @core.Vec3::new(sign, 0.0F, 0.0F)
-    1 => @core.Vec3::new(0.0F, sign, 0.0F)
-    _ => @core.Vec3::new(0.0F, 0.0F, sign)
+    0 => Vec3(sign, 0.0F, 0.0F)
+    1 => Vec3(0.0F, sign, 0.0F)
+    _ => Vec3(0.0F, 0.0F, sign)
   }
 }
 
@@ -3127,24 +3079,24 @@ fn cuboid_support_face_feature(
   let vertices = match imax {
     0 =>
       [
-        @core.Vec3::new(he.x * sign, he.y, he.z),
-        @core.Vec3::new(he.x * sign, -he.y, he.z),
-        @core.Vec3::new(he.x * sign, -he.y, -he.z),
-        @core.Vec3::new(he.x * sign, he.y, -he.z),
+        @core.Vec3(he.x * sign, he.y, he.z),
+        Vec3(he.x * sign, -he.y, he.z),
+        Vec3(he.x * sign, -he.y, -he.z),
+        Vec3(he.x * sign, he.y, -he.z),
       ]
     1 =>
       [
-        @core.Vec3::new(he.x, he.y * sign, he.z),
-        @core.Vec3::new(-he.x, he.y * sign, he.z),
-        @core.Vec3::new(-he.x, he.y * sign, -he.z),
-        @core.Vec3::new(he.x, he.y * sign, -he.z),
+        Vec3(he.x, he.y * sign, he.z),
+        Vec3(-he.x, he.y * sign, he.z),
+        Vec3(-he.x, he.y * sign, -he.z),
+        Vec3(he.x, he.y * sign, -he.z),
       ]
     _ =>
       [
-        @core.Vec3::new(he.x, he.y, he.z * sign),
-        @core.Vec3::new(he.x, -he.y, he.z * sign),
-        @core.Vec3::new(-he.x, -he.y, he.z * sign),
-        @core.Vec3::new(-he.x, he.y, he.z * sign),
+        Vec3(he.x, he.y, he.z * sign),
+        Vec3(he.x, -he.y, he.z * sign),
+        Vec3(-he.x, -he.y, he.z * sign),
+        Vec3(-he.x, he.y, he.z * sign),
       ]
   }
   { vertices, }
@@ -3174,7 +3126,7 @@ fn cuboid_cuboid_find_local_separating_normal_oneway(
   pos12 : @core.Isometry3,
 ) -> (@core.Real, @core.Vec3) {
   let mut best_separation = -1.0e30F
-  let mut best_dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  let mut best_dir = @core.Vec3(1.0F, 0.0F, 0.0F)
   for i in 0..<3 {
     let sign = if vec3_component(pos12.translation, i) >= 0.0F {
       1.0F
@@ -3200,22 +3152,22 @@ fn cuboid_cuboid_find_local_separating_edge_twoway(
   he2 : @core.Vec3,
   pos12 : @core.Isometry3,
 ) -> (@core.Real, @core.Vec3) {
-  let x2 = pos12.rotation.rotate_vec3(@core.Vec3::new(1.0F, 0.0F, 0.0F))
-  let y2 = pos12.rotation.rotate_vec3(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-  let z2 = pos12.rotation.rotate_vec3(@core.Vec3::new(0.0F, 0.0F, 1.0F))
+  let x2 = pos12.rotation.rotate_vec3(Vec3(1.0F, 0.0F, 0.0F))
+  let y2 = pos12.rotation.rotate_vec3(Vec3(0.0F, 1.0F, 0.0F))
+  let z2 = pos12.rotation.rotate_vec3(Vec3(0.0F, 0.0F, 1.0F))
   let axes = [
-    @core.Vec3::new(0.0F, -x2.z, x2.y),
-    @core.Vec3::new(x2.z, 0.0F, -x2.x),
-    @core.Vec3::new(-x2.y, x2.x, 0.0F),
-    @core.Vec3::new(0.0F, -y2.z, y2.y),
-    @core.Vec3::new(y2.z, 0.0F, -y2.x),
-    @core.Vec3::new(-y2.y, y2.x, 0.0F),
-    @core.Vec3::new(0.0F, -z2.z, z2.y),
-    @core.Vec3::new(z2.z, 0.0F, -z2.x),
-    @core.Vec3::new(-z2.y, z2.x, 0.0F),
+    @core.Vec3(0.0F, -x2.z, x2.y),
+    Vec3(x2.z, 0.0F, -x2.x),
+    Vec3(-x2.y, x2.x, 0.0F),
+    Vec3(0.0F, -y2.z, y2.y),
+    Vec3(y2.z, 0.0F, -y2.x),
+    Vec3(-y2.y, y2.x, 0.0F),
+    Vec3(0.0F, -z2.z, z2.y),
+    Vec3(z2.z, 0.0F, -z2.x),
+    Vec3(-z2.y, z2.x, 0.0F),
   ]
   let mut best_separation = -1.0e30F
-  let mut best_dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+  let mut best_dir = @core.Vec3(1.0F, 0.0F, 0.0F)
   for axis in axes {
     let norm = axis.length()
     if norm > 1.0e-6F {
@@ -3242,22 +3194,16 @@ fn local_perp_dot_2d(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
 ///|
 fn local_orthonormal_basis(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
   if n.length_squared() <= 1.0e-12F {
-    return (
-      @core.Vec3::new(1.0F, 0.0F, 0.0F),
-      @core.Vec3::new(0.0F, 1.0F, 0.0F),
-    )
+    return (Vec3(1.0F, 0.0F, 0.0F), Vec3(0.0F, 1.0F, 0.0F))
   }
   let base = if @core.abs(n.x) < 0.9F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   let t0 = n.cross(base)
   if t0.length_squared() <= 1.0e-12F {
-    return (
-      @core.Vec3::new(0.0F, 1.0F, 0.0F),
-      @core.Vec3::new(0.0F, 0.0F, 1.0F),
-    )
+    return (Vec3(0.0F, 1.0F, 0.0F), Vec3(0.0F, 0.0F, 1.0F))
   }
   let u = t0.normalize()
   let v = n.cross(u)
@@ -3361,7 +3307,7 @@ fn local_compute_feature_contacts_face_face(
 
   let projected_face1 : Array[@core.Vec2] = []
   for p in feature1.vertices {
-    projected_face1.push(@core.Vec2::new(p.dot(basis_u), p.dot(basis_v)))
+    projected_face1.push(Vec2(p.dot(basis_u), p.dot(basis_v)))
   }
   let vertices2_1 : Array[@core.Vec3] = []
   for p in feature2.vertices {
@@ -3369,7 +3315,7 @@ fn local_compute_feature_contacts_face_face(
   }
   let projected_face2 : Array[@core.Vec2] = []
   for p in vertices2_1 {
-    projected_face2.push(@core.Vec2::new(p.dot(basis_u), p.dot(basis_v)))
+    projected_face2.push(Vec2(p.dot(basis_u), p.dot(basis_v)))
   }
 
   if feature2.vertices.length() > 2 {
@@ -3561,7 +3507,7 @@ fn support_world_for_cuboid(
   let sx = if local_dir.x >= 0.0F { he.x } else { -he.x }
   let sy = if local_dir.y >= 0.0F { he.y } else { -he.y }
   let sz = if local_dir.z >= 0.0F { he.z } else { -he.z }
-  pos.transform_point(@core.Vec3::new(sx, sy, sz))
+  pos.transform_point(Vec3(sx, sy, sz))
 }
 
 ///|
@@ -3594,7 +3540,7 @@ fn support_world_for_cylinder_y(
 ) -> @core.Vec3 {
   let local_dir = pos.rotation.inverse().rotate_vec3(dir)
   let y = if local_dir.y >= 0.0F { half_height } else { -half_height }
-  let radial = @core.Vec3::new(local_dir.x, 0.0F, local_dir.z)
+  let radial = @core.Vec3(local_dir.x, 0.0F, local_dir.z)
   let rl2 = radial.length_squared()
   let (x, z) = if rl2 <= 1.0e-12F {
     // Any point on the cap is valid when the direction is purely along Y.
@@ -3605,7 +3551,7 @@ fn support_world_for_cylinder_y(
     let inv = 1.0F / local_sqrt(rl2)
     (radial.x * inv * radius, radial.z * inv * radius)
   }
-  pos.transform_point(@core.Vec3::new(x, y, z))
+  pos.transform_point(Vec3(x, y, z))
 }
 
 ///|
@@ -3617,10 +3563,10 @@ fn support_world_for_capsule_y(
 ) -> @core.Vec3 {
   let local_dir = pos.rotation.inverse().rotate_vec3(dir)
   let cap_y = if local_dir.y >= 0.0F { half_height } else { -half_height }
-  let base = @core.Vec3::new(0.0F, cap_y, 0.0F)
+  let base = @core.Vec3(0.0F, cap_y, 0.0F)
   let d2 = local_dir.length_squared()
   let offset = if d2 <= 1.0e-12F {
-    @core.Vec3::new(radius, 0.0F, 0.0F)
+    @core.Vec3(radius, 0.0F, 0.0F)
   } else {
     local_dir.scale(radius / local_sqrt(d2))
   }
@@ -3635,20 +3581,16 @@ fn support_world_for_cone_y(
   dir : @core.Vec3,
 ) -> @core.Vec3 {
   let local_dir = pos.rotation.inverse().rotate_vec3(dir)
-  let apex = @core.Vec3::new(0.0F, half_height, 0.0F)
-  let radial = @core.Vec3::new(local_dir.x, 0.0F, local_dir.z)
+  let apex = @core.Vec3(0.0F, half_height, 0.0F)
+  let radial = @core.Vec3(local_dir.x, 0.0F, local_dir.z)
   let rl2 = radial.length_squared()
   let base_pt = if rl2 <= 1.0e-12F {
     // When the direction is purely along Y, any point on the base disk is valid.
     // Pick the center to keep support points symmetric.
-    @core.Vec3::new(0.0F, -half_height, 0.0F)
+    @core.Vec3(0.0F, -half_height, 0.0F)
   } else {
     let inv = 1.0F / local_sqrt(rl2)
-    @core.Vec3::new(
-      radial.x * inv * radius,
-      -half_height,
-      radial.z * inv * radius,
-    )
+    Vec3(radial.x * inv * radius, -half_height, radial.z * inv * radius)
   }
   let da = apex.dot(local_dir)
   let db = base_pt.dot(local_dir)
@@ -3716,7 +3658,7 @@ fn gjk_update_simplex(
       if d.length_squared() > 1.0e-12F {
         (d, false)
       } else {
-        (ab.cross(@core.Vec3::new(0.0F, 1.0F, 0.0F)), false)
+        (ab.cross(Vec3(0.0F, 1.0F, 0.0F)), false)
       }
     } else {
       simplex.clear()
@@ -3817,7 +3759,7 @@ fn gjk_intersect(
 ) -> Array[SupportVertex3D]? {
   let mut dir = pos2.translation.sub(pos1.translation)
   if dir.length_squared() <= 1.0e-12F {
-    dir = @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    dir = Vec3(1.0F, 0.0F, 0.0F)
   }
   let simplex : Array[SupportVertex3D] = []
   if support_minkowski(pos1, s1, pos2, s2, dir) is Some(v0) {
@@ -3968,7 +3910,7 @@ fn epa_contact(
   // If we don't have a tetrahedron, try to grow it along a fixed direction.
   while verts.length() < 4 {
     let dir = if verts.length() == 1 {
-      @core.Vec3::new(1.0F, 0.0F, 0.0F)
+      @core.Vec3(1.0F, 0.0F, 0.0F)
     } else {
       verts[verts.length() - 1].p.scale(-1.0F)
     }

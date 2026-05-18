@@ -15,8 +15,8 @@
 ///|
 /// Ported from rapier/src/geometry/narrow_phase.rs (collider_set_parent_depenetration) for 2D.
 test "collider set parent depenetration" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
   let collider = @collision.ColliderBuilder::ball(0.5F)
   let rigid_body_1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
@@ -38,13 +38,13 @@ test "collider set parent depenetration" {
   let body_2_handle = rigid_body_set.insert(rigid_body_2)
   let gravity = @core.Vec2::zero()
   let integration_parameters = IntegrationParameters::default()
-  let physics_pipeline = PhysicsPipeline::new()
-  let island_manager = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
-  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let island_manager = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joint_set = @dynamics.ImpulseJointSet()
+  let multibody_joint_set = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -56,8 +56,8 @@ test "collider set parent depenetration" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   if collider_set.get(collider_1_handle) is Some(c1) {
     if collider_set.get(collider_2_handle) is Some(c2) {
@@ -91,8 +91,8 @@ test "collider set parent depenetration" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let contact_pair2 = narrow_phase.contact_pair(
     collider_1_handle, collider_2_handle,
@@ -112,8 +112,8 @@ test "collider set parent depenetration" {
       impulse_joint_set,
       multibody_joint_set,
       ccd_solver,
-      PhysicsHooks::new(),
-      EventHandler::new(),
+      PhysicsHooks(),
+      EventHandler(),
     )
   }
   if collider_set.get(collider_1_handle) is Some(c1) {
@@ -127,8 +127,8 @@ test "collider set parent depenetration" {
 ///|
 /// Ported from rapier/src/geometry/narrow_phase.rs (collider_set_parent_no_self_intersection) for 2D.
 test "collider set parent no self intersection" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
   let collider = @collision.ColliderBuilder::ball(0.5F)
   let rigid_body_1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
@@ -150,13 +150,13 @@ test "collider set parent no self intersection" {
   )
   let gravity = @core.Vec2::zero()
   let integration_parameters = IntegrationParameters::default()
-  let physics_pipeline = PhysicsPipeline::new()
-  let island_manager = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
-  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let island_manager = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joint_set = @dynamics.ImpulseJointSet()
+  let multibody_joint_set = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     gravity,
     integration_parameters,
@@ -168,8 +168,8 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let contact_pair = narrow_phase.contact_pair(
     collider_1_handle, collider_2_handle,
@@ -193,8 +193,8 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let contact_pair2 = narrow_phase.contact_pair(
     collider_1_handle, collider_2_handle,
@@ -218,8 +218,8 @@ test "collider set parent no self intersection" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   let contact_pair3 = narrow_phase.contact_pair(
     collider_1_handle, collider_2_handle,
@@ -232,18 +232,18 @@ test "collider set parent no self intersection" {
 ///|
 /// Ported from rapier narrow-phase collision filtering (collision groups).
 test "narrow phase collision groups filtering" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
   let body1 = @dynamics.RigidBodyBuilder::dynamic().build()
   let body2 = @dynamics.RigidBodyBuilder::dynamic().build()
   let body1_handle = rigid_body_set.insert(body1)
   let body2_handle = rigid_body_set.insert(body2)
-  let groups1 = @dynamics.InteractionGroups::new(
+  let groups1 = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
     And,
   )
-  let groups2 = @dynamics.InteractionGroups::new(
+  let groups2 = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
     And,
@@ -260,13 +260,13 @@ test "narrow phase collision groups filtering" {
   let collider2_handle = collider_set.insert_with_parent(
     collider2, body2_handle, rigid_body_set,
   )
-  let physics_pipeline = PhysicsPipeline::new()
-  let island_manager = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
-  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let island_manager = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joint_set = @dynamics.ImpulseJointSet()
+  let multibody_joint_set = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),
@@ -278,8 +278,8 @@ test "narrow phase collision groups filtering" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(
     narrow_phase.contact_pair(collider1_handle, collider2_handle) is None,
@@ -295,9 +295,9 @@ test "narrow phase collision groups filtering" {
 test "narrow phase contact manifolds: basic shapes" {
   // Ball-ball.
   {
-    let rigid_body_set = @dynamics.RigidBodySet::new()
-    let collider_set = @collision.ColliderSet::new()
-    let narrow_phase = @collision.NarrowPhase::new()
+    let rigid_body_set = @dynamics.RigidBodySet()
+    let collider_set = @collision.ColliderSet()
+    let narrow_phase = @collision.NarrowPhase()
     let b1 = rigid_body_set.insert(
       @dynamics.RigidBodyBuilder::dynamic()
       .translation(@core.Vec2::zero())
@@ -305,7 +305,7 @@ test "narrow phase contact manifolds: basic shapes" {
     )
     let b2 = rigid_body_set.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(0.75F, 0.0F))
+      .translation(Vec2(0.75F, 0.0F))
       .build(),
     )
     let c1 = collider_set.insert_with_parent(
@@ -318,8 +318,8 @@ test "narrow phase contact manifolds: basic shapes" {
       b2,
       rigid_body_set,
     )
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
     narrow_phase.update(
       rigid_body_set, collider_set, impulse_joints, multibody_joints,
     )
@@ -338,18 +338,16 @@ test "narrow phase contact manifolds: basic shapes" {
 
   // Ball-cuboid (ball is collider1, cuboid is collider2).
   {
-    let rigid_body_set = @dynamics.RigidBodySet::new()
-    let collider_set = @collision.ColliderSet::new()
-    let narrow_phase = @collision.NarrowPhase::new()
+    let rigid_body_set = @dynamics.RigidBodySet()
+    let collider_set = @collision.ColliderSet()
+    let narrow_phase = @collision.NarrowPhase()
     let b3 = rigid_body_set.insert(
       @dynamics.RigidBodyBuilder::dynamic()
       .translation(@core.Vec2::zero())
       .build(),
     )
     let b4 = rigid_body_set.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(1.5F, 0.0F))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(1.5F, 0.0F)).build(),
     )
     let ball = collider_set.insert_with_parent(
       @collision.ColliderBuilder::ball(1.0F).build(),
@@ -361,8 +359,8 @@ test "narrow phase contact manifolds: basic shapes" {
       b4,
       rigid_body_set,
     )
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
     narrow_phase.update(
       rigid_body_set, collider_set, impulse_joints, multibody_joints,
     )
@@ -384,18 +382,16 @@ test "narrow phase contact manifolds: basic shapes" {
 
   // Cuboid-cuboid (expect two contact points with stable vertex ids).
   {
-    let rigid_body_set = @dynamics.RigidBodySet::new()
-    let collider_set = @collision.ColliderSet::new()
-    let narrow_phase = @collision.NarrowPhase::new()
+    let rigid_body_set = @dynamics.RigidBodySet()
+    let collider_set = @collision.ColliderSet()
+    let narrow_phase = @collision.NarrowPhase()
     let a = rigid_body_set.insert(
       @dynamics.RigidBodyBuilder::dynamic()
       .translation(@core.Vec2::zero())
       .build(),
     )
     let b = rigid_body_set.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(1.5F, 0.0F))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(1.5F, 0.0F)).build(),
     )
     let ca = collider_set.insert_with_parent(
       @collision.ColliderBuilder::cuboid(1.0F, 1.0F).build(),
@@ -407,8 +403,8 @@ test "narrow phase contact manifolds: basic shapes" {
       b,
       rigid_body_set,
     )
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
     narrow_phase.update(
       rigid_body_set, collider_set, impulse_joints, multibody_joints,
     )
@@ -436,16 +432,14 @@ test "narrow phase contact manifolds: basic shapes" {
   }
 
   // Capsule-ball (capsule is collider1).
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
-  let narrow_phase = @collision.NarrowPhase::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
+  let narrow_phase = @collision.NarrowPhase()
   let a = rigid_body_set.insert(
     @dynamics.RigidBodyBuilder::fixed().translation(@core.Vec2::zero()).build(),
   )
   let b = rigid_body_set.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.8F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.8F, 0.0F)).build(),
   )
   let capsule = collider_set.insert_with_parent(
     @collision.ColliderBuilder::capsule_x(1.0F, 0.5F).build(),
@@ -457,8 +451,8 @@ test "narrow phase contact manifolds: basic shapes" {
     b,
     rigid_body_set,
   )
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   narrow_phase.update(
     rigid_body_set, collider_set, impulse_joints, multibody_joints,
   )
@@ -475,18 +469,16 @@ test "narrow phase contact manifolds: basic shapes" {
   }
 
   // Capsule-cuboid (capsule is collider1, no direct segment-box intersection).
-  let rigid_body_set2 = @dynamics.RigidBodySet::new()
-  let collider_set2 = @collision.ColliderSet::new()
-  let narrow_phase2 = @collision.NarrowPhase::new()
+  let rigid_body_set2 = @dynamics.RigidBodySet()
+  let collider_set2 = @collision.ColliderSet()
+  let narrow_phase2 = @collision.NarrowPhase()
   let cbody = rigid_body_set2.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build(),
   )
   let bbox = rigid_body_set2.insert(
-    @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(2.4F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::fixed().translation(Vec2(2.4F, 0.0F)).build(),
   )
   let capsule2 = collider_set2.insert_with_parent(
     @collision.ColliderBuilder::capsule_x(1.0F, 0.5F).build(),
@@ -498,8 +490,8 @@ test "narrow phase contact manifolds: basic shapes" {
     bbox,
     rigid_body_set2,
   )
-  let impulse_joints2 = @dynamics.ImpulseJointSet::new()
-  let multibody_joints2 = @dynamics.MultibodyJointSet::new()
+  let impulse_joints2 = @dynamics.ImpulseJointSet()
+  let multibody_joints2 = @dynamics.MultibodyJointSet()
   narrow_phase2.update(
     rigid_body_set2, collider_set2, impulse_joints2, multibody_joints2,
   )
@@ -517,8 +509,8 @@ test "narrow phase contact manifolds: basic shapes" {
 ///|
 /// Ported from rapier narrow-phase collision filtering (active collision types).
 test "narrow phase active collision types filtering" {
-  let rigid_body_set = @dynamics.RigidBodySet::new()
-  let collider_set = @collision.ColliderSet::new()
+  let rigid_body_set = @dynamics.RigidBodySet()
+  let collider_set = @collision.ColliderSet()
   let fixed = @dynamics.RigidBodyBuilder::fixed().build()
   let kinematic = @dynamics.RigidBodyBuilder::kinematic_position_based().build()
   let fixed_handle = rigid_body_set.insert(fixed)
@@ -531,13 +523,13 @@ test "narrow phase active collision types filtering" {
   let collider_kinematic_handle = collider_set.insert_with_parent(
     collider_kinematic, kinematic_handle, rigid_body_set,
   )
-  let physics_pipeline = PhysicsPipeline::new()
-  let island_manager = @dynamics.IslandManager::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let impulse_joint_set = @dynamics.ImpulseJointSet::new()
-  let multibody_joint_set = @dynamics.MultibodyJointSet::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let island_manager = @dynamics.IslandManager()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let impulse_joint_set = @dynamics.ImpulseJointSet()
+  let multibody_joint_set = @dynamics.MultibodyJointSet()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     @core.Vec2::zero(),
     IntegrationParameters::default(),
@@ -549,8 +541,8 @@ test "narrow phase active collision types filtering" {
     impulse_joint_set,
     multibody_joint_set,
     ccd_solver,
-    PhysicsHooks::new(),
-    EventHandler::new(),
+    PhysicsHooks(),
+    EventHandler(),
   )
   inspect(
     narrow_phase.contact_pair(collider_fixed_handle, collider_kinematic_handle)

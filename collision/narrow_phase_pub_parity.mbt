@@ -40,19 +40,6 @@ pub(all) struct ContactData {
 }
 
 ///|
-pub fn ContactData::ContactData(
-  impulse : @core.Real,
-  tangent_impulse : @core.Vec2,
-  warmstart_impulse : @core.Real,
-  warmstart_tangent_impulse : @core.Vec2,
-  warmstart_twist_impulse : @core.Real,
-) -> ContactData {
-  ContactData::new(
-    impulse, tangent_impulse, warmstart_impulse, warmstart_tangent_impulse, warmstart_twist_impulse,
-  )
-}
-
-///|
 pub fn ContactData::default() -> ContactData {
   {
     impulse: 0.0F,
@@ -64,7 +51,7 @@ pub fn ContactData::default() -> ContactData {
 }
 
 ///|
-pub fn ContactData::new(
+pub fn ContactData::ContactData(
   impulse : @core.Real,
   tangent_impulse : @core.Vec2,
   warmstart_impulse : @core.Real,
@@ -161,7 +148,7 @@ pub fn ContactPair::has_any_active_contact(self : ContactPair) -> Bool {
 ///|
 pub fn ContactPair::total_impulse(self : ContactPair) -> @core.Vec2 {
   fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-    @core.Vec2::new(v.x * s, v.y * s)
+    Vec2(v.x * s, v.y * s)
   }
 
   let mut out = @core.Vec2::zero()
@@ -259,11 +246,11 @@ pub fn ContactForceEvent::from_contact_pair(
   total_force_magnitude : @core.Real,
 ) -> ContactForceEvent {
   fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-    @core.Vec2::new(v.x * s, v.y * s)
+    Vec2(v.x * s, v.y * s)
   }
 
   if dt <= 0.0F {
-    return ContactForceEvent::new(
+    return ContactForceEvent(
       collider1,
       collider2,
       @core.Vec2::zero(),
@@ -291,7 +278,7 @@ pub fn ContactForceEvent::from_contact_pair(
     total_impulse = total_impulse.add(vec2_scale(m.normal(), manifold_impulse))
   }
   let inv_dt = 1.0F / dt
-  ContactForceEvent::new(
+  ContactForceEvent(
     collider1,
     collider2,
     vec2_scale(total_impulse, inv_dt),
@@ -323,11 +310,6 @@ pub struct InteractionGraph[T] {
 
 ///|
 pub fn[T] InteractionGraph::InteractionGraph() -> InteractionGraph[T] {
-  InteractionGraph::new()
-}
-
-///|
-pub fn[T] InteractionGraph::new() -> InteractionGraph[T] {
   { interactions: [] }
 }
 

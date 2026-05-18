@@ -23,18 +23,10 @@ pub struct RevoluteJoint3 {
 
 ///|
 pub fn RevoluteJoint3::RevoluteJoint3(axis : @core.Vec3) -> RevoluteJoint3 {
-  RevoluteJoint3::new(axis)
-}
-
-///|
-pub fn RevoluteJoint3::new(axis : @core.Vec3) -> RevoluteJoint3 {
   let axis_n = axis.normalize()
   // Rapier expresses the free revolute DOF as AngX in joint-space. Build a frame
   // rotation whose local +X axis corresponds to the provided hinge axis.
-  let joint_frame = @core.rotation_between(
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    axis_n,
-  )
+  let joint_frame = @core.rotation_between(Vec3(1.0F, 0.0F, 0.0F), axis_n)
   {
     axis: axis_n,
     local_frame1_rotation: joint_frame,
@@ -61,12 +53,7 @@ pub fn RevoluteJoint3::angle(
 }
 
 ///|
-pub struct RevoluteJoint3Builder(RevoluteJoint3)
-
-///|
-pub fn RevoluteJoint3Builder::new(axis : @core.Vec3) -> RevoluteJoint3Builder {
-  RevoluteJoint3Builder(RevoluteJoint3::new(axis))
-}
+pub(all) struct RevoluteJoint3Builder(RevoluteJoint3)
 
 ///|
 pub fn RevoluteJoint3Builder::build(

@@ -17,13 +17,15 @@ const TEST_SPATIAL_DIM3_REAL : Int = 6
 
 ///|
 test "multibody append (dim3 real bodies)" {
-  let bodies = RigidBodySet3D::new()
-  let joints = MultibodyJointSet3DReal::new()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let joints = MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let a = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let b = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let c = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let d = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(1.0F, 0.0F, 0.0F)).build()
+  let joint = RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+    Vec3(1.0F, 0.0F, 0.0F),
+  ).build()
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
@@ -40,17 +42,19 @@ test "multibody append (dim3 real bodies)" {
 
 ///|
 test "multibody jacobian cols match ndofs for dynamic root (dim3 real bodies)" {
-  let bodies = RigidBodySet3D::new()
-  let joints = MultibodyJointSet3DReal::new()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let joints = MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let root = bodies.insert(
     RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.5F, 1.0F))
-    .rotation_scaled_axis(@core.Vec3::new(0.2F, -0.1F, 0.3F))
+    .translation(Vec3(0.0F, 0.5F, 1.0F))
+    .rotation_scaled_axis(Vec3(0.2F, -0.1F, 0.3F))
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -0.5F))
+  let joint = RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+      Vec3(0.0F, 1.0F, 0.0F),
+    )
+    .local_anchor2(Vec3(0.0F, 0.0F, -0.5F))
     .build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
@@ -68,16 +72,18 @@ test "multibody jacobian cols match ndofs for dynamic root (dim3 real bodies)" {
 
 ///|
 test "multibody apply_displacements preserves dynamic root 3d dofs (real bodies)" {
-  let bodies = RigidBodySet3D::new()
-  let joints = MultibodyJointSet3DReal::new()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let joints = MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let root = bodies.insert(
     RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(1.0F, 2.0F, 3.0F))
-    .rotation_scaled_axis(@core.Vec3::new(0.25F, -0.1F, 0.2F))
+    .translation(Vec3(1.0F, 2.0F, 3.0F))
+    .rotation_scaled_axis(Vec3(0.25F, -0.1F, 0.2F))
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 0.0F, 1.0F)).build()
+  let joint = RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+    Vec3(0.0F, 0.0F, 1.0F),
+  ).build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {
     if joints.get_mut(link_handle) is Some((multibody, link_id)) {
@@ -110,17 +116,19 @@ test "multibody apply_displacements preserves dynamic root 3d dofs (real bodies)
 
 ///|
 test "multibody sync_rigid_bodies writes back full 3d poses" {
-  let bodies = RigidBodySet3D::new()
-  let joints = MultibodyJointSet3DReal::new()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let joints = MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let root = bodies.insert(
     RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 0.0F, 0.5F))
-    .rotation_scaled_axis(@core.Vec3::new(0.2F, 0.0F, 0.0F))
+    .translation(Vec3(0.0F, 0.0F, 0.5F))
+    .rotation_scaled_axis(Vec3(0.2F, 0.0F, 0.0F))
     .build(),
   )
   let child = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let joint = RevoluteJoint3DRealBuilder::new(@core.Vec3::new(0.0F, 1.0F, 0.0F))
-    .local_anchor2(@core.Vec3::new(0.0F, 0.0F, -1.0F))
+  let joint = RevoluteJoint3DRealBuilder::RevoluteJoint3DRealBuilder(
+      Vec3(0.0F, 1.0F, 0.0F),
+    )
+    .local_anchor2(Vec3(0.0F, 0.0F, -1.0F))
     .build()
   let handle = joints.insert(root, child, joint, true)
   if handle is Some(link_handle) {

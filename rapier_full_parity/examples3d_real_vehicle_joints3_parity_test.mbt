@@ -18,20 +18,20 @@
 ///|
 test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/vehicle_joints3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let joints = @dynamics.JointSet3DReal::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let joints = @dynamics.JointSet3DReal()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
     16,
   )
 
   // Ground heightfield.
-  let ground_size = @core.Vec3::new(60.0F, 0.4F, 60.0F)
+  let ground_size = @core.Vec3(60.0F, 0.4F, 60.0F)
   let nsubdivs = 100
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
@@ -58,28 +58,24 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
       ground_size,
     )
     .unwrap()
-    .translation(@core.Vec3::new(-7.0F, 0.0F, 0.0F))
+    .translation(Vec3(-7.0F, 0.0F, 0.0F))
     .friction(1.0F)
     .build()
   colliders.insert_with_parent(hf, ground, bodies) |> ignore
 
   // Vehicle chassis + wheels, simulated with joints.
   let wheel_params = [
-    @core.Vec3::new(0.6874F, 0.2783F, -0.7802F),
-    @core.Vec3::new(-0.6874F, 0.2783F, -0.7802F),
-    @core.Vec3::new(0.64F, 0.2783F, 1.0254F),
-    @core.Vec3::new(-0.64F, 0.2783F, 1.0254F),
+    @core.Vec3(0.6874F, 0.2783F, -0.7802F),
+    Vec3(-0.6874F, 0.2783F, -0.7802F),
+    Vec3(0.64F, 0.2783F, 1.0254F),
+    Vec3(-0.64F, 0.2783F, 1.0254F),
   ]
   let suspension_height = 0.12F
   let max_steering_angle = 0.61086524F // 35 degrees in radians.
   let drive_strength = 1.0F
   let wheel_radius = 0.28F
-  let car_position = @core.Vec3::new(
-    0.0F,
-    wheel_radius + suspension_height,
-    0.0F,
-  )
-  let body_position_in_car_space = @core.Vec3::new(0.0F, 0.4739F, 0.0F)
+  let car_position = @core.Vec3(0.0F, wheel_radius + suspension_height, 0.0F)
+  let body_position_in_car_space = @core.Vec3(0.0F, 0.4739F, 0.0F)
   let body_position = car_position.add(body_position_in_car_space)
   let chassis = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
@@ -139,9 +135,7 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
     if !is_front {
       locked_axes = locked_axes.or(@dynamics.JointAxesMask3DReal::ang_y())
     }
-    let mut suspension_joint = @dynamics.GenericJoint3DRealBuilder::new(
-        locked_axes,
-      )
+    let mut suspension_joint = @dynamics.GenericJoint3DRealBuilder(locked_axes)
       .local_anchor1(suspension_attachment_in_body_space)
       .limits(LinY, 0.0F, suspension_height)
       .motor_position(LinY, 0.0F, 1.0e4F, 1.0e3F)
@@ -166,7 +160,7 @@ test "examples3d/vehicle_joints3.rs parity (3DReal headless)" {
     let wheel_joint = joints.insert_revolute(
       axle,
       wheel,
-      @core.Vec3::new(1.0F, 0.0F, 0.0F),
+      Vec3(1.0F, 0.0F, 0.0F),
       @core.Vec3::zero(),
       @core.Vec3::zero(),
       true,

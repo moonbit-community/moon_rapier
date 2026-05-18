@@ -14,19 +14,19 @@
 
 ///|
 test "physics_pipeline3d step runs collisions and solver" {
-  let pipeline = PhysicsPipeline3D::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = PhysicsPipeline3D::PhysicsPipeline3D()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let islands = @dynamics.IslandManager3D()
+  let colliders = @collision.ColliderSet3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let bodies = @dynamics.RigidBodySet3D::new()
+  let bodies = @dynamics.RigidBodySet3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
-    .translation(@core.Vec3::new(0.0F, -1.0F, 0.0F))
+    .translation(Vec3(0.0F, -1.0F, 0.0F))
     .build(),
   )
   let ground_collider = colliders.insert_with_parent(
@@ -36,7 +36,7 @@ test "physics_pipeline3d step runs collisions and solver" {
   )
   let ball = bodies.insert(
     @dynamics.RigidBodyBuilder3D::dynamic()
-    .translation(@core.Vec3::new(0.0F, 5.0F, 0.0F))
+    .translation(Vec3(0.0F, 5.0F, 0.0F))
     .build(),
   )
   let ball_collider = colliders.insert_with_parent(

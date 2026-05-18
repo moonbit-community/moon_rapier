@@ -252,11 +252,6 @@ pub struct NarrowPhase3D {
 
 ///|
 pub fn NarrowPhase3D::NarrowPhase3D() -> NarrowPhase3D {
-  NarrowPhase3D::new()
-}
-
-///|
-pub fn NarrowPhase3D::new() -> NarrowPhase3D {
   { contact_pairs: [], intersection_pairs: [] }
 }
 

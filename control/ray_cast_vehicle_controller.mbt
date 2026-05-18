@@ -272,13 +272,6 @@ pub struct DynamicRayCastVehicleController {
 pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController {
-  DynamicRayCastVehicleController::new(chassis)
-}
-
-///|
-pub fn DynamicRayCastVehicleController::new(
-  chassis : @dynamics.RigidBodyHandle,
-) -> DynamicRayCastVehicleController {
   { wheels: [], chassis, index_up_axis: 1, index_forward_axis: 0 }
 }
 
@@ -329,20 +322,20 @@ pub fn DynamicRayCastVehicleController::set_brake(
 ///|
 fn axis_vec2(axis : Int) -> @core.Vec2 {
   if axis == 0 {
-    @core.Vec2::new(1.0F, 0.0F)
+    Vec2(1.0F, 0.0F)
   } else {
-    @core.Vec2::new(0.0F, 1.0F)
+    Vec2(0.0F, 1.0F)
   }
 }
 
 ///|
 fn veh_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
 fn veh_vec2_neg(v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-v.x, -v.y)
+  Vec2(-v.x, -v.y)
 }
 
 ///|
@@ -365,7 +358,7 @@ fn velocity_at_point(
   let com = rb.world_com()
   let r = world_pt.sub(com)
   // 2D: w x r = (-w * r.y, w * r.x)
-  let ang = @core.Vec2::new(-w * r.y, w * r.x)
+  let ang = @core.Vec2(-w * r.y, w * r.x)
   linvel.add(ang)
 }
 
@@ -425,7 +418,7 @@ fn ray_cast(
   let raylen = out.suspension_rest_length + out.radius
   let ray_dir = out.wheel_direction_ws
   let source = out.raycast_info.hard_point_ws
-  let ray = @collision.Ray::new(source, ray_dir)
+  let ray = @collision.Ray(source, ray_dir)
   out.raycast_info.contact_point_ws = source.add(
     veh_vec2_scale(ray_dir, raylen),
   )
@@ -657,7 +650,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
       fwd = veh_normalize_or_zero(fwd)
       if fwd.length_squared() <= 1.0e-12F {
         // Fallback: pick any tangent.
-        fwd = veh_normalize_or_zero(@core.Vec2::new(-normal.y, normal.x))
+        fwd = veh_normalize_or_zero(Vec2(-normal.y, normal.x))
       }
       // Choose tangent sign to align with the chassis forward axis.
       if fwd.dot(fwd_axis_ws) < 0.0F {
@@ -717,7 +710,7 @@ pub fn DynamicRayCastVehicleController::update_vehicle(
           fwd.sub(veh_vec2_scale(normal, fwd.dot(normal))),
         )
         if fwd.length_squared() <= 1.0e-12F {
-          fwd = veh_normalize_or_zero(@core.Vec2::new(-normal.y, normal.x))
+          fwd = veh_normalize_or_zero(Vec2(-normal.y, normal.x))
         }
         if fwd.dot(fwd_axis_ws) < 0.0F {
           fwd = veh_vec2_neg(fwd)

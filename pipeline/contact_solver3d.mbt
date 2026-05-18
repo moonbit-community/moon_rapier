@@ -51,11 +51,6 @@ pub struct ContactSolverCache3D {
 
 ///|
 pub fn ContactSolverCache3D::ContactSolverCache3D() -> ContactSolverCache3D {
-  ContactSolverCache3D::new()
-}
-
-///|
-pub fn ContactSolverCache3D::new() -> ContactSolverCache3D {
   { entries: HashMap([]) }
 }
 
@@ -174,9 +169,9 @@ priv struct ContactSolvePoint3D {
 ///|
 fn orthonormal_basis(n : @core.Vec3) -> (@core.Vec3, @core.Vec3) {
   let fallback = if @core.abs(n.x) < 0.9F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
-    @core.Vec3::new(0.0F, 1.0F, 0.0F)
+    Vec3(0.0F, 1.0F, 0.0F)
   }
   let t1 = n.cross(fallback).normalize()
   let t2 = n.cross(t1)
@@ -247,7 +242,7 @@ fn apply_translation_correction(
 ) -> Unit {
   let curr = body.translation()
   let locked_axes = body.locked_axes()
-  let next = @core.Vec3::new(
+  let next = @core.Vec3(
     if locked_axes.contains(@dynamics.LockedAxes::translation_locked_x()) {
       curr.x
     } else {
@@ -757,7 +752,7 @@ fn solve_contacts_3d_impl(
       let friction_normal = if points.length() > 0 {
         points[0].normal
       } else {
-        @core.Vec3::new(0.0F, 1.0F, 0.0F)
+        Vec3(0.0F, 1.0F, 0.0F)
       }
       let (friction_t1, friction_t2) = tangent_contact_directions(
         friction_normal,
@@ -1208,7 +1203,7 @@ fn solve_contacts_3d_impl(
           let total_force_magnitude = total_impulse * inv_dt
           if total_force_magnitude > threshold {
             handler.push_contact_force_event(
-              @collision.ContactForceEvent3D::new(
+              ContactForceEvent3D(
                 a,
                 b,
                 total_vec.scale(inv_dt),

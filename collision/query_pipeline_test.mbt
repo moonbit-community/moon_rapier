@@ -14,29 +14,25 @@
 
 ///|
 test "query pipeline cast_ray hits nearest collider" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let h2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   let c1 = ColliderBuilder::ball(0.5F).build()
   let c2 = ColliderBuilder::ball(0.5F).build()
   let ch1 = colliders.insert_with_parent(c1, h1, bodies)
   let ch2 = colliders.insert_with_parent(c2, h2, bodies)
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, ch1), content="true")
     inspect(!ColliderHandle::equals(hit.0, ch2), content="true")
@@ -48,28 +44,24 @@ test "query pipeline cast_ray hits nearest collider" {
 
 ///|
 test "query pipeline intersect_ray returns all hits" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let h2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   let c1 = ColliderBuilder::ball(0.5F).build()
   let c2 = ColliderBuilder::ball(0.5F).build()
   let ch1 = colliders.insert_with_parent(c1, h1, bodies)
   let ch2 = colliders.insert_with_parent(c2, h2, bodies)
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   let hits = query_pipeline.intersect_ray(bodies, colliders, ray, 100.0F, true)
   let mut found1 = false
   let mut found2 = false
@@ -89,21 +81,21 @@ test "query pipeline intersect_ray returns all hits" {
 
 ///|
 test "query pipeline cast_ray solid vs hollow" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let ch1 = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
     h1,
     bodies,
   )
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(0.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(0.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 10.0F, true)
     is Some(hit_solid) {
     inspect(ColliderHandle::equals(hit_solid.0, ch1), content="true")
@@ -122,17 +114,17 @@ test "query pipeline cast_ray solid vs hollow" {
 
 ///|
 test "query pipeline cast_ray_and_get_normal returns toi and outward normal" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let ball = ColliderBuilder::ball(1.0F).build()
   let handle = colliders.insert_with_parent(ball, body, bodies)
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray_and_get_normal(
       bodies, colliders, ray, 100.0F, true,
     )
@@ -149,8 +141,8 @@ test "query pipeline cast_ray_and_get_normal returns toi and outward normal" {
 
 ///|
 test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -158,12 +150,12 @@ test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(0.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(0.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray_and_get_normal(
       bodies, colliders, ray, 100.0F, true,
     )
@@ -191,24 +183,22 @@ test "query pipeline cast_ray_and_get_normal inside solid vs hollow" {
 
 ///|
 test "query pipeline cast_shape ball hits ball" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(-10.0F, 0.0F),
-  )
-  let vel = @core.Vec2::new(1.0F, 0.0F)
-  let options = ShapeCastOptions::new(100.0F, true)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(-10.0F, 0.0F))
+  let vel = @core.Vec2(1.0F, 0.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -233,8 +223,8 @@ test "query pipeline cast_shape ball hits ball" {
 
 ///|
 test "query pipeline cast_shape ball hits rotated cuboid" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
@@ -245,16 +235,14 @@ test "query pipeline cast_shape ball hits rotated cuboid" {
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(-10.0F, 0.0F),
-  )
-  let vel = @core.Vec2::new(1.0F, 0.0F)
-  let options = ShapeCastOptions::new(100.0F, true)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(-10.0F, 0.0F))
+  let vel = @core.Vec2(1.0F, 0.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true)
   // Ball radius 0.5 against a 90deg-rotated cuboid with world x half-extent 0.5:
   // expanded boundary is at x = -(0.5 + 0.5) = -1.0, so toi = 9.0.
   if query_pipeline.cast_shape(
@@ -281,17 +269,13 @@ test "query pipeline cast_shape ball hits rotated cuboid" {
 
 ///|
 test "query pipeline filter exclude rigid body" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.0F)).build(),
   )
   let body2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
@@ -304,10 +288,10 @@ test "query pipeline filter exclude rigid body" {
     body2,
     bodies,
   )
-  let filter = QueryFilter::new().exclude_rigid_body(body1)
-  let broad_phase = BroadPhaseBvh::new()
+  let filter = QueryFilter::QueryFilter().exclude_rigid_body(body1)
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, ch2), content="true")
   } else {
@@ -317,25 +301,25 @@ test "query pipeline filter exclude rigid body" {
 
 ///|
 test "query pipeline filter collision groups" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
-  let groups = @dynamics.InteractionGroups::new(
+  let groups = @dynamics.InteractionGroups(
     @dynamics.Group::group_1(),
     @dynamics.Group::group_1(),
     And,
   )
   let collider = ColliderBuilder::ball(1.0F).collision_groups(groups).build()
   colliders.insert_with_parent(collider, h1, bodies) |> ignore
-  let filter_groups = @dynamics.InteractionGroups::new(
+  let filter_groups = @dynamics.InteractionGroups(
     @dynamics.Group::group_2(),
     @dynamics.Group::group_2(),
     And,
   )
-  let filter = QueryFilter::new().groups(filter_groups)
-  let broad_phase = BroadPhaseBvh::new()
+  let filter = QueryFilter::QueryFilter().groups(filter_groups)
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(bodies, colliders, filter)
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   inspect(
     query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is None,
     content="true",
@@ -344,13 +328,11 @@ test "query pipeline filter collision groups" {
 
 ///|
 test "query filter predicate can exclude colliders" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   let near = colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
@@ -362,16 +344,16 @@ test "query filter predicate can exclude colliders" {
     h2,
     bodies,
   )
-  let filter = QueryFilter::new().predicate(fn(
+  let filter = QueryFilter::QueryFilter().predicate(fn(
     handle : ColliderHandle,
     _ : Collider,
   ) -> Bool {
     ColliderHandle::equals(handle, far)
   })
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies, colliders, filter,
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(!ColliderHandle::equals(hit.0, near), content="true")
     inspect(ColliderHandle::equals(hit.0, far), content="true")
@@ -382,17 +364,17 @@ test "query filter predicate can exclude colliders" {
 
 ///|
 test "query pipeline cast_ray hits capsule" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let capsule = ColliderBuilder::capsule_y(1.0F, 0.5F).build()
   let handle = colliders.insert_with_parent(capsule, body, bodies)
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray_and_get_normal(
       bodies, colliders, ray, 100.0F, true,
     )
@@ -409,24 +391,22 @@ test "query pipeline cast_ray hits capsule" {
 
 ///|
 test "query pipeline cast_shape capsule hits ball" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(-10.0F, 0.0F),
-  )
-  let vel = @core.Vec2::new(1.0F, 0.0F)
-  let options = ShapeCastOptions::new(100.0F, true)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(-10.0F, 0.0F))
+  let vel = @core.Vec2(1.0F, 0.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -451,20 +431,17 @@ test "query pipeline cast_shape capsule hits ball" {
 
 ///|
 test "query pipeline cast_ray hits segment" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
-  let seg = ColliderBuilder::segment(
-    @core.Vec2::new(-1.0F, 0.0F),
-    @core.Vec2::new(1.0F, 0.0F),
-  ).build()
+  let seg = ColliderBuilder::segment(Vec2(-1.0F, 0.0F), Vec2(1.0F, 0.0F)).build()
   let handle = colliders.insert_with_parent(seg, body, bodies)
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(0.0F, -1.0F), @core.Vec2::new(0.0F, 1.0F))
+  let ray = Ray::Ray(Vec2(0.0F, -1.0F), Vec2(0.0F, 1.0F))
   if query_pipeline.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
     is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
@@ -479,28 +456,23 @@ test "query pipeline cast_ray hits segment" {
 
 ///|
 test "query pipeline cast_shape ball hits segment (core)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-1.0F, 0.0F),
-      @core.Vec2::new(1.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-1.0F, 0.0F), Vec2(1.0F, 0.0F)).build(),
     body,
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(0.0F, -10.0F),
-  )
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(100.0F, true)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, -10.0F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -524,26 +496,23 @@ test "query pipeline cast_shape ball hits segment (core)" {
 
 ///|
 test "query pipeline cast_shape ball hits segment endpoint (rounded caps)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-1.0F, 0.0F),
-      @core.Vec2::new(1.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-1.0F, 0.0F), Vec2(1.0F, 0.0F)).build(),
     body,
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(2.0F, 0.5F))
-  let vel = @core.Vec2::new(-1.0F, 0.0F)
-  let options = ShapeCastOptions::new(10.0F, true)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(2.0F, 0.5F))
+  let vel = @core.Vec2(-1.0F, 0.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(10.0F, true)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -569,28 +538,25 @@ test "query pipeline cast_shape ball hits segment endpoint (rounded caps)" {
 
 ///|
 test "query pipeline cast_shape cuboid hits segment with target_distance" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-5.0F, 0.0F),
-      @core.Vec2::new(5.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-5.0F, 0.0F), Vec2(5.0F, 0.0F)).build(),
     body,
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(0.0F, -10.0F),
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, -10.0F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true).with_target_distance(
+    0.2F,
   )
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -613,28 +579,25 @@ test "query pipeline cast_shape cuboid hits segment with target_distance" {
 
 ///|
 test "query pipeline cast_shape capsule_y hits segment with target_distance" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-5.0F, 0.0F),
-      @core.Vec2::new(5.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-5.0F, 0.0F), Vec2(5.0F, 0.0F)).build(),
     body,
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(0.0F, -10.0F),
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, -10.0F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true).with_target_distance(
+    0.2F,
   )
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.2F)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -657,8 +620,8 @@ test "query pipeline cast_shape capsule_y hits segment with target_distance" {
 
 ///|
 test "query pipeline cast_shape target_distance applies to non-segment shapes (ball vs ball)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -666,16 +629,16 @@ test "query pipeline cast_shape target_distance applies to non-segment shapes (b
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(
-    @core.Vec2::new(0.0F, -10.0F),
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, -10.0F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(100.0F, true).with_target_distance(
+    0.5F,
   )
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(100.0F, true).with_target_distance(0.5F)
   if query_pipeline.cast_shape(
       bodies,
       colliders,
@@ -698,8 +661,8 @@ test "query pipeline cast_shape target_distance applies to non-segment shapes (b
 
 ///|
 test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs ball)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -707,15 +670,15 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   // Start overlapped (distance 0.5 < 2.0) and move further away.
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.5F))
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(10.0F, false)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, 0.5F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(10.0F, false)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -729,7 +692,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
     content="true",
   )
   // With stop_at_penetration=true, we keep the toi=0 hit.
-  let options2 = ShapeCastOptions::new(10.0F, true)
+  let options2 = ShapeCastOptions::ShapeCastOptions(10.0F, true)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -746,8 +709,8 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
 
 ///|
 test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs cuboid)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
     ColliderBuilder::cuboid(1.0F, 1.0F).build(),
@@ -755,15 +718,15 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   // Ball center starts inside expanded cuboid (hw+radius = 1.5) and moves outward (+x).
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(1.4F, 0.0F))
-  let vel = @core.Vec2::new(1.0F, 0.0F)
-  let options = ShapeCastOptions::new(10.0F, false)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(1.4F, 0.0F))
+  let vel = @core.Vec2(1.0F, 0.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(10.0F, false)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -776,7 +739,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
     is None,
     content="true",
   )
-  let options2 = ShapeCastOptions::new(10.0F, true)
+  let options2 = ShapeCastOptions::ShapeCastOptions(10.0F, true)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -793,27 +756,24 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
 
 ///|
 test "query pipeline cast_shape stop_at_penetration=false discards separating penetration (ball vs segment)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-1.0F, 0.0F),
-      @core.Vec2::new(1.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-1.0F, 0.0F), Vec2(1.0F, 0.0F)).build(),
     body,
     bodies,
   )
   |> ignore
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   // Ball starts overlapping the segment and moves further away (upward).
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.2F))
-  let vel = @core.Vec2::new(0.0F, 1.0F)
-  let options = ShapeCastOptions::new(10.0F, false)
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, 0.2F))
+  let vel = @core.Vec2(0.0F, 1.0F)
+  let options = ShapeCastOptions::ShapeCastOptions(10.0F, false)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -826,7 +786,7 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
     is None,
     content="true",
   )
-  let options2 = ShapeCastOptions::new(10.0F, true)
+  let options2 = ShapeCastOptions::ShapeCastOptions(10.0F, true)
   inspect(
     query_pipeline.cast_shape(
       bodies,
@@ -843,17 +803,13 @@ test "query pipeline cast_shape stop_at_penetration=false discards separating pe
 
 ///|
 test "query pipeline intersect_point" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let h1 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(1.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.0F, 0.0F)).build(),
   )
   let h2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(10.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(10.0F, 0.0F)).build(),
   )
   let ch1 = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -862,16 +818,16 @@ test "query pipeline intersect_point" {
   )
   colliders.insert_with_parent(ColliderBuilder::ball(1.0F).build(), h2, bodies)
   |> ignore
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   let results = query_pipeline.intersect_point(
     bodies,
     colliders,
-    @core.Vec2::new(1.0F, 0.0F),
+    Vec2(1.0F, 0.0F),
   )
   inspect(results.length() == 1, content="true")
   inspect(ColliderHandle::equals(results[0], ch1), content="true")
@@ -879,25 +835,25 @@ test "query pipeline intersect_point" {
 
 ///|
 test "query pipeline project_point ignores max_dist and matches solid semantics" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
 
   // Outside point; max_dist is ignored.
   if query_pipeline.project_point(
       bodies,
       colliders,
-      @core.Vec2::new(2.0F, 0.0F),
+      Vec2(2.0F, 0.0F),
       0.01F,
       true,
     )
@@ -914,7 +870,7 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
   if query_pipeline.project_point(
       bodies,
       colliders,
-      @core.Vec2::new(0.2F, 0.0F),
+      Vec2(0.2F, 0.0F),
       0.01F,
       true,
     )
@@ -929,7 +885,7 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
   if query_pipeline.project_point(
       bodies,
       colliders,
-      @core.Vec2::new(0.2F, 0.0F),
+      Vec2(0.2F, 0.0F),
       0.01F,
       false,
     )
@@ -943,25 +899,25 @@ test "query pipeline project_point ignores max_dist and matches solid semantics"
 
 ///|
 test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::cuboid(1.0F, 1.0F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
 
   // Near the +X face.
   if query_pipeline.project_point_and_get_feature(
       bodies,
       colliders,
-      @core.Vec2::new(3.0F, 0.25F),
+      Vec2(3.0F, 0.25F),
       0.0F,
       false,
     )
@@ -981,7 +937,7 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
   if query_pipeline.project_point_and_get_feature(
       bodies,
       colliders,
-      @core.Vec2::new(3.0F, 3.0F),
+      Vec2(3.0F, 3.0F),
       0.0F,
       false,
     )
@@ -1000,26 +956,23 @@ test "query pipeline project_point_and_get_feature cuboid face vs vertex" {
 
 ///|
 test "query pipeline project_point_and_get_feature segment endpoint" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
-    ColliderBuilder::segment(
-      @core.Vec2::new(-1.0F, 0.0F),
-      @core.Vec2::new(1.0F, 0.0F),
-    ).build(),
+    ColliderBuilder::segment(Vec2(-1.0F, 0.0F), Vec2(1.0F, 0.0F)).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   if query_pipeline.project_point_and_get_feature(
       bodies,
       colliders,
-      @core.Vec2::new(1.0F, 0.0F),
+      Vec2(1.0F, 0.0F),
       0.0F,
       false,
     )
@@ -1038,13 +991,11 @@ test "query pipeline project_point_and_get_feature segment endpoint" {
 
 ///|
 test "query pipeline with_filter overrides the pipeline filter" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   let sensor = colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).sensor(true).build(),
@@ -1056,15 +1007,15 @@ test "query pipeline with_filter overrides the pipeline filter" {
     body2,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   let filtered = query_pipeline.with_filter(
-    QueryFilter::new().exclude_sensors(),
+    QueryFilter::QueryFilter().exclude_sensors(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if filtered.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(!ColliderHandle::equals(hit.0, sensor), content="true")
     inspect(ColliderHandle::equals(hit.0, solid), content="true")
@@ -1075,8 +1026,8 @@ test "query pipeline with_filter overrides the pipeline filter" {
 
 ///|
 test "query pipeline cast_ray respects cuboid rotation" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
@@ -1084,13 +1035,13 @@ test "query pipeline cast_ray respects cuboid rotation" {
   )
   let cuboid = ColliderBuilder::cuboid(2.0F, 0.5F).build()
   let handle = colliders.insert_with_parent(cuboid, body, bodies)
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, handle), content="true")
     // Rotated cuboid has world half-extent 0.5 along x, so it hits at x = -0.5.
@@ -1102,13 +1053,11 @@ test "query pipeline cast_ray respects cuboid rotation" {
 
 ///|
 test "query pipeline intersect_aabb_conservative uses cached aabbs" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(10.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(10.0F, 0.0F)).build(),
   )
   let h1 = colliders.insert_with_parent(
     ColliderBuilder::ball(1.0F).build(),
@@ -1121,16 +1070,9 @@ test "query pipeline intersect_aabb_conservative uses cached aabbs" {
     bodies,
   )
   |> ignore
-  let broad_phase = BroadPhaseBvh::new()
-  let pipeline = broad_phase.as_query_pipeline(
-    bodies,
-    colliders,
-    QueryFilter::new(),
-  )
-  let query = @core.Aabb::new(
-    @core.Vec2::new(-2.0F, -2.0F),
-    @core.Vec2::new(2.0F, 2.0F),
-  )
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let pipeline = broad_phase.as_query_pipeline(bodies, colliders, QueryFilter())
+  let query = @core.Aabb(Vec2(-2.0F, -2.0F), Vec2(2.0F, 2.0F))
   let results = pipeline.intersect_aabb_conservative(bodies, colliders, query)
   inspect(results.length() == 1, content="true")
   inspect(ColliderHandle::equals(results[0], h1), content="true")
@@ -1138,7 +1080,7 @@ test "query pipeline intersect_aabb_conservative uses cached aabbs" {
   // Move the collider far away without recreating the pipeline. Conservative AABB queries
   // must still use the cached AABBs from the pipeline's creation.
   if bodies.get_mut(body1) is Some(b) {
-    b.set_translation(@core.Vec2::new(100.0F, 0.0F), true) |> ignore
+    b.set_translation(Vec2(100.0F, 0.0F), true) |> ignore
   }
   broad_phase.update(0.0F, bodies, colliders)
   let results_after = pipeline.intersect_aabb_conservative(
@@ -1150,8 +1092,8 @@ test "query pipeline intersect_aabb_conservative uses cached aabbs" {
 
 ///|
 test "query pipeline intersect_point respects cuboid rotation" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .rotation(@core.Rot2::from_angle(@core.pi() * 0.5F))
@@ -1163,43 +1105,43 @@ test "query pipeline intersect_point respects cuboid rotation" {
     bodies,
   )
   |> ignore
-  let broad_phase = BroadPhaseBvh::new()
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
   let query_pipeline = broad_phase.as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
   // This point is inside the AABB of the cuboid but outside the rotated cuboid itself.
   let results = query_pipeline.intersect_point(
     bodies,
     colliders,
-    @core.Vec2::new(1.2F, 0.0F),
+    Vec2(1.2F, 0.0F),
   )
   inspect(results.length() == 0, content="true")
 }
 
 ///|
 test "query filter exclude sensors vs solids" {
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
 
   // exclude_sensors: should hit the solid collider, not the sensor.
   {
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = ColliderSet::new()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = ColliderSet::ColliderSet()
     let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
     let b2 = bodies.insert(
       @dynamics.RigidBodyBuilder::dynamic()
-      .translation(@core.Vec2::new(5.0F, 0.0F))
+      .translation(Vec2(5.0F, 0.0F))
       .build(),
     )
     let sensor = ColliderBuilder::ball(0.5F).sensor(true).build()
     let solid = ColliderBuilder::ball(0.5F).sensor(false).build()
     colliders.insert_with_parent(sensor, b1, bodies) |> ignore
     let solid_handle = colliders.insert_with_parent(solid, b2, bodies)
-    let pipeline = BroadPhaseBvh::new().as_query_pipeline(
+    let pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
       bodies,
       colliders,
-      QueryFilter::new().exclude_sensors(),
+      QueryFilter::QueryFilter().exclude_sensors(),
     )
     if pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
       inspect(ColliderHandle::equals(hit.0, solid_handle), content="true")
@@ -1209,22 +1151,20 @@ test "query filter exclude sensors vs solids" {
   }
 
   // exclude_solids: should hit the sensor collider, not the solid.
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let b1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let b2 = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   let sensor = ColliderBuilder::ball(0.5F).sensor(true).build()
   let solid = ColliderBuilder::ball(0.5F).sensor(false).build()
   let sensor_handle = colliders.insert_with_parent(sensor, b1, bodies)
   colliders.insert_with_parent(solid, b2, bodies) |> ignore
-  let pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new().exclude_solids(),
+    QueryFilter::QueryFilter().exclude_solids(),
   )
   if pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, sensor_handle), content="true")
@@ -1235,13 +1175,11 @@ test "query filter exclude sensors vs solids" {
 
 ///|
 test "query filter only_dynamic ignores fixed colliders" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let fixed_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let dynamic_body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(5.0F, 0.0F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(5.0F, 0.0F)).build(),
   )
   colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
@@ -1254,12 +1192,12 @@ test "query filter only_dynamic ignores fixed colliders" {
     dynamic_body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
     QueryFilter::only_dynamic(),
   )
-  let ray = Ray::new(@core.Vec2::new(-10.0F, 0.0F), @core.Vec2::new(1.0F, 0.0F))
+  let ray = Ray::Ray(Vec2(-10.0F, 0.0F), Vec2(1.0F, 0.0F))
   if query_pipeline.cast_ray(bodies, colliders, ray, 100.0F, true) is Some(hit) {
     inspect(ColliderHandle::equals(hit.0, dynamic_collider), content="true")
   } else {
@@ -1269,20 +1207,20 @@ test "query filter only_dynamic ignores fixed colliders" {
 
 ///|
 test "query pipeline intersect_shape ball intersects cuboid" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::cuboid(1.0F, 1.0F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(1.4F, 0.0F))
+  let shape_pos = @core.Isometry2::from_translation(Vec2(1.4F, 0.0F))
   let hits = query_pipeline.intersect_shape(
     bodies,
     colliders,
@@ -1298,21 +1236,21 @@ test "query pipeline intersect_shape ball intersects cuboid" {
 
 ///|
 test "query pipeline intersect_shape uses query rotation" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let handle = colliders.insert_with_parent(
     ColliderBuilder::cuboid(0.2F, 1.0F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let shape_pos = @core.Isometry2::new(
-    @core.Vec2::new(1.1F, 0.0F),
+  let shape_pos = @core.Isometry2(
+    Vec2(1.1F, 0.0F),
     @core.Rot2::from_angle(@core.pi() * 0.5F),
   )
   let hits = query_pipeline.intersect_shape(
@@ -1330,8 +1268,8 @@ test "query pipeline intersect_shape uses query rotation" {
 
 ///|
 test "query pipeline intersect_shape respects exclude_sensors filter" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let body2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   colliders.insert_with_parent(
@@ -1345,12 +1283,12 @@ test "query pipeline intersect_shape respects exclude_sensors filter" {
     body2,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new().exclude_sensors(),
+    QueryFilter::QueryFilter().exclude_sensors(),
   )
-  let shape_pos = @core.Isometry2::from_translation(@core.Vec2::new(0.0F, 0.0F))
+  let shape_pos = @core.Isometry2::from_translation(Vec2(0.0F, 0.0F))
   let hits = query_pipeline.intersect_shape(
     bodies,
     colliders,
@@ -1366,24 +1304,22 @@ test "query pipeline intersect_shape respects exclude_sensors filter" {
 
 ///|
 test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let body = bodies.insert(
-    @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 2.45F))
-    .build(),
+    @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 2.45F)).build(),
   )
   let target = colliders.insert_with_parent(
     ColliderBuilder::ball(0.5F).build(),
     body,
     bodies,
   )
-  let query_pipeline = BroadPhaseBvh::new().as_query_pipeline(
+  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
-    QueryFilter::new(),
+    QueryFilter(),
   )
-  let motion = NonlinearRigidMotion::new(
+  let motion = NonlinearRigidMotion::NonlinearRigidMotion(
     @core.Isometry2::identity(),
     @core.Vec2::zero(),
     @core.pi() * 0.5F,
@@ -1407,10 +1343,10 @@ test "query pipeline cast_shape_nonlinear detects rotation-only hit" {
 
 ///|
 test "query pipeline update refreshes collider world state + aabb cache" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let rb = @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .translation(Vec2(0.0F, 0.0F))
     .build()
   let h = bodies.insert(rb)
   let ch = colliders.insert_with_parent(
@@ -1418,12 +1354,12 @@ test "query pipeline update refreshes collider world state + aabb cache" {
     h,
     bodies,
   )
-  let q = QueryPipeline::new(QueryFilter::new(), bodies, colliders)
-  let ray = Ray::new(@core.Vec2::new(5.0F, 10.0F), @core.Vec2::new(0.0F, -1.0F))
+  let q = QueryPipeline::QueryPipeline(QueryFilter(), bodies, colliders)
+  let ray = Ray::Ray(Vec2(5.0F, 10.0F), Vec2(0.0F, -1.0F))
 
   // Move the rigid-body but don't sync colliders manually.
   if bodies.get_mut(h) is Some(body) {
-    body.set_translation(@core.Vec2::new(5.0F, 0.0F), true) |> ignore
+    body.set_translation(Vec2(5.0F, 0.0F), true) |> ignore
   } else {
     inspect(false, content="true")
   }
@@ -1443,10 +1379,10 @@ test "query pipeline update refreshes collider world state + aabb cache" {
 
 ///|
 test "query pipeline mut wrapper provides as_ref and update" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = ColliderSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = ColliderSet::ColliderSet()
   let rb = @dynamics.RigidBodyBuilder::dynamic()
-    .translation(@core.Vec2::new(0.0F, 0.0F))
+    .translation(Vec2(0.0F, 0.0F))
     .build()
   let h = bodies.insert(rb)
   let ch = colliders.insert_with_parent(
@@ -1454,19 +1390,15 @@ test "query pipeline mut wrapper provides as_ref and update" {
     h,
     bodies,
   )
-  let broad_phase = BroadPhaseBvh::new()
-  let qm = broad_phase.as_query_pipeline_mut(
-    bodies,
-    colliders,
-    QueryFilter::new(),
-  )
+  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let qm = broad_phase.as_query_pipeline_mut(bodies, colliders, QueryFilter())
   if bodies.get_mut(h) is Some(body) {
-    body.set_translation(@core.Vec2::new(5.0F, 0.0F), true) |> ignore
+    body.set_translation(Vec2(5.0F, 0.0F), true) |> ignore
   } else {
     inspect(false, content="true")
   }
   qm.update(bodies, colliders)
-  let ray = Ray::new(@core.Vec2::new(5.0F, 10.0F), @core.Vec2::new(0.0F, -1.0F))
+  let ray = Ray::Ray(Vec2(5.0F, 10.0F), Vec2(0.0F, -1.0F))
   if qm.as_ref().cast_ray(bodies, colliders, ray, 100.0F, true)
     is Some((hit, _)) {
     inspect(ColliderHandle::equals(hit, ch), content="true")

@@ -52,11 +52,6 @@ pub struct Arena[T] {
 
 ///|
 pub fn[T] Arena::Arena() -> Arena[T] {
-  Arena::new()
-}
-
-///|
-pub fn[T] Arena::new() -> Arena[T] {
   Arena::with_capacity(DEFAULT_ARENA_CAPACITY)
 }
 

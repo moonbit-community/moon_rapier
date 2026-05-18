@@ -14,7 +14,7 @@
 
 ///|
 test "collider_set3d insert/remove generation" {
-  let set = ColliderSet3D::new()
+  let set = ColliderSet3D::ColliderSet3D()
   let h0 = set.insert(ColliderBuilder3D::ball(0.5F).build())
   inspect(set.len() == 1, content="true")
   let old = h0

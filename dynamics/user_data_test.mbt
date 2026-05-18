@@ -14,7 +14,7 @@
 
 ///|
 test "rigid body user_data128 roundtrip through RigidBodySet serialize/deserialize" {
-  let bodies = RigidBodySet::new()
+  let bodies = RigidBodySet::RigidBodySet()
   let data = @core.UserData128::from_parts(42UL, 99UL)
   let h = bodies.insert(RigidBodyBuilder::dynamic().user_data128(data).build())
   let snapshot = bodies.serialize()

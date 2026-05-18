@@ -14,8 +14,8 @@
 
 ///|
 test "island_manager3d update propagates activation across interactions" {
-  let islands = IslandManager3D::new()
-  let bodies = RigidBodySet3D::new()
+  let islands = IslandManager3D::IslandManager3D()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
   let b1 = bodies.insert(RigidBodyBuilder3D::dynamic().build())
   let b2 = bodies.insert(RigidBodyBuilder3D::dynamic().build())
 
@@ -48,8 +48,8 @@ test "island_manager3d update propagates activation across interactions" {
 
 ///|
 test "island_manager3d tracks per-island additional solver iterations" {
-  let islands = IslandManager3D::new()
-  let bodies = RigidBodySet3D::new()
+  let islands = IslandManager3D::IslandManager3D()
+  let bodies = RigidBodySet3D::RigidBodySet3D()
   let b1 = bodies.insert(
     RigidBodyBuilder3D::dynamic().additional_solver_iterations(2).build(),
   )

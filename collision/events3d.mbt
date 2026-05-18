@@ -79,15 +79,6 @@ pub fn IntersectionEvent3D::IntersectionEvent3D(
   collider2 : ColliderHandle3D,
   intersecting : Bool,
 ) -> IntersectionEvent3D {
-  IntersectionEvent3D::new(collider1, collider2, intersecting)
-}
-
-///|
-pub fn IntersectionEvent3D::new(
-  collider1 : ColliderHandle3D,
-  collider2 : ColliderHandle3D,
-  intersecting : Bool,
-) -> IntersectionEvent3D {
   { collider1, collider2, intersecting }
 }
 
@@ -129,21 +120,6 @@ pub fn ContactForceEvent3D::ContactForceEvent3D(
   max_force_direction : @core.Vec3,
   max_force_magnitude : @core.Real,
 ) -> ContactForceEvent3D {
-  ContactForceEvent3D::new(
-    collider1, collider2, total_force, total_force_magnitude, max_force_direction,
-    max_force_magnitude,
-  )
-}
-
-///|
-pub fn ContactForceEvent3D::new(
-  collider1 : ColliderHandle3D,
-  collider2 : ColliderHandle3D,
-  total_force : @core.Vec3,
-  total_force_magnitude : @core.Real,
-  max_force_direction : @core.Vec3,
-  max_force_magnitude : @core.Real,
-) -> ContactForceEvent3D {
   {
     collider1,
     collider2,
@@ -167,7 +143,7 @@ pub fn ContactForceEvent3D::from_contact_pair(
   total_force_magnitude : @core.Real,
 ) -> ContactForceEvent3D {
   if dt <= 0.0F {
-    return ContactForceEvent3D::new(
+    return ContactForceEvent3D(
       collider1,
       collider2,
       @core.Vec3::zero(),
@@ -179,7 +155,7 @@ pub fn ContactForceEvent3D::from_contact_pair(
   let inv_dt = 1.0F / dt
   let total_force = pair.total_impulse().scale(inv_dt)
   let (max_impulse, max_dir) = pair.max_impulse()
-  ContactForceEvent3D::new(
+  ContactForceEvent3D(
     collider1,
     collider2,
     total_force,

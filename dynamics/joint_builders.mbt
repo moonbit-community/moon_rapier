@@ -19,7 +19,7 @@ struct FixedJointBuilder {
 }
 
 ///|
-pub fn FixedJointBuilder::new() -> FixedJointBuilder {
+pub fn FixedJointBuilder::FixedJointBuilder() -> FixedJointBuilder {
   { local_anchor1: @core.Vec2::zero(), local_anchor2: @core.Vec2::zero() }
 }
 
@@ -79,11 +79,6 @@ pub struct RopeJointBuilder {
 pub fn RopeJointBuilder::RopeJointBuilder(
   max_length : @core.Real,
 ) -> RopeJointBuilder {
-  RopeJointBuilder::new(max_length)
-}
-
-///|
-pub fn RopeJointBuilder::new(max_length : @core.Real) -> RopeJointBuilder {
   {
     max_length,
     local_anchor1: @core.Vec2::zero(),
@@ -103,7 +98,7 @@ pub fn RopeJointBuilder::local_anchor1(
   anchor : @core.Vec2,
 ) -> RopeJointBuilder {
   self.local_anchor1 = anchor
-  self.local_anchor1_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
+  self.local_anchor1_3 = Vec3(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -113,7 +108,7 @@ pub fn RopeJointBuilder::local_anchor2(
   anchor : @core.Vec2,
 ) -> RopeJointBuilder {
   self.local_anchor2 = anchor
-  self.local_anchor2_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
+  self.local_anchor2_3 = Vec3(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -256,7 +251,7 @@ pub fn GenericJoint::from_rope(joint : RopeJoint) -> GenericJoint {
   let mut result = GenericJoint::{
     local_frame1: frame1,
     local_frame2: frame2,
-    axis3: @core.Vec3::new(1.0F, 0.0F, 0.0F),
+    axis3: Vec3(1.0F, 0.0F, 0.0F),
     local_anchor1_3: joint.local_anchor1_3,
     local_anchor2_3: joint.local_anchor2_3,
     local_frame1_rotation: @core.Quat::identity(),
@@ -305,13 +300,8 @@ pub struct PinSlotJointBuilder {
 pub fn PinSlotJointBuilder::PinSlotJointBuilder(
   axis : @core.Vec2,
 ) -> PinSlotJointBuilder {
-  PinSlotJointBuilder::new(axis)
-}
-
-///|
-pub fn PinSlotJointBuilder::new(axis : @core.Vec2) -> PinSlotJointBuilder {
   let norm_axis = if axis.length_squared() <= 1.0e-12F {
-    @core.Vec2::new(1.0F, 0.0F)
+    @core.Vec2(1.0F, 0.0F)
   } else {
     axis.normalize()
   }
@@ -349,7 +339,7 @@ pub fn PinSlotJointBuilder::limits(
   max : @core.Real,
 ) -> PinSlotJointBuilder {
   self.limits_enabled = true
-  self.limits = JointLimits::new(min, max)
+  self.limits = JointLimits(min, max)
   self
 }
 
@@ -399,7 +389,7 @@ pub fn PinSlotJoint::set_local_axis2(
 ///|
 pub fn GenericJoint::from_pin_slot(joint : PinSlotJoint) -> GenericJoint {
   let angle = @core.atan2(joint.axis.y, joint.axis.x)
-  let frame1 = @core.Isometry2::new(
+  let frame1 = @core.Isometry2(
     joint.local_anchor1,
     @core.Rot2::from_angle(angle),
   )
@@ -443,24 +433,26 @@ struct PrismaticJointBuilder {
 }
 
 ///|
-pub fn PrismaticJointBuilder::new(axis : @core.Vec2) -> PrismaticJointBuilder {
+pub fn PrismaticJointBuilder::PrismaticJointBuilder(
+  axis : @core.Vec2,
+) -> PrismaticJointBuilder {
   let norm_axis = if axis.length_squared() <= 1.0e-12F {
-    @core.Vec2::new(1.0F, 0.0F)
+    @core.Vec2(1.0F, 0.0F)
   } else {
     axis.normalize()
   }
   {
     axis: norm_axis,
-    axis3: @core.Vec3::new(norm_axis.x, norm_axis.y, 0.0F),
+    axis3: Vec3(norm_axis.x, norm_axis.y, 0.0F),
     local_anchor1: @core.Vec2::zero(),
     local_anchor2: @core.Vec2::zero(),
     local_anchor1_3: @core.Vec3::zero(),
     local_anchor2_3: @core.Vec3::zero(),
     local_frame1_rotation: @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
+      Vec3(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
     ),
     local_frame2_rotation: @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
+      Vec3(0.0F, 0.0F, @core.atan2(norm_axis.y, norm_axis.x)),
     ),
     is_spatial: false,
     softness: SpringCoefficients::joint_defaults(),
@@ -477,7 +469,7 @@ pub fn PrismaticJointBuilder::local_anchor1(
   anchor : @core.Vec2,
 ) -> PrismaticJointBuilder {
   self.local_anchor1 = anchor
-  self.local_anchor1_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
+  self.local_anchor1_3 = Vec3(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -487,7 +479,7 @@ pub fn PrismaticJointBuilder::local_anchor2(
   anchor : @core.Vec2,
 ) -> PrismaticJointBuilder {
   self.local_anchor2 = anchor
-  self.local_anchor2_3 = @core.Vec3::new(anchor.x, anchor.y, 0.0F)
+  self.local_anchor2_3 = Vec3(anchor.x, anchor.y, 0.0F)
   self
 }
 
@@ -555,7 +547,7 @@ pub fn PrismaticJointBuilder::limits(
   max : @core.Real,
 ) -> PrismaticJointBuilder {
   self.limits_enabled = true
-  self.limits = JointLimits::new(min, max)
+  self.limits = JointLimits(min, max)
   self
 }
 
@@ -608,14 +600,14 @@ pub fn PrismaticJoint::set_local_axis1(
     axis,
     local_anchor1: self.local_anchor1,
     local_anchor2: self.local_anchor2,
-    axis3: @core.Vec3::new(axis.x, axis.y, self.axis3.z),
+    axis3: Vec3(axis.x, axis.y, self.axis3.z),
     local_anchor1_3: self.local_anchor1_3,
     local_anchor2_3: self.local_anchor2_3,
     local_frame1_rotation: @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
+      Vec3(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
     ),
     local_frame2_rotation: @core.rotation_from_scaled_axis(
-      @core.Vec3::new(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
+      Vec3(0.0F, 0.0F, @core.atan2(axis.y, axis.x)),
     ),
     is_spatial: self.is_spatial,
     softness: self.softness,
@@ -652,7 +644,7 @@ pub fn PrismaticJoint::motor(self : PrismaticJoint) -> JointMotor? {
 ///|
 pub fn GenericJoint::from_prismatic(joint : PrismaticJoint) -> GenericJoint {
   let angle = @core.atan2(joint.axis.y, joint.axis.x)
-  let frame1 = @core.Isometry2::new(
+  let frame1 = @core.Isometry2(
     joint.local_anchor1,
     @core.Rot2::from_angle(angle),
   )

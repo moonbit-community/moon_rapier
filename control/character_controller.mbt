@@ -111,14 +111,6 @@ pub fn CharacterAutostep::CharacterAutostep(
   max_height : CharacterLength,
   min_width : CharacterLength,
 ) -> CharacterAutostep {
-  CharacterAutostep::new(max_height, min_width)
-}
-
-///|
-pub fn CharacterAutostep::new(
-  max_height : CharacterLength,
-  min_width : CharacterLength,
-) -> CharacterAutostep {
   // Rapier parity: include dynamic bodies by default.
   { max_height, min_width, include_dynamic_bodies: true }
 }
@@ -210,13 +202,8 @@ pub struct KinematicCharacterController {
 
 ///|
 pub fn KinematicCharacterController::KinematicCharacterController() -> KinematicCharacterController {
-  KinematicCharacterController::new()
-}
-
-///|
-pub fn KinematicCharacterController::new() -> KinematicCharacterController {
   {
-    up: @core.Vec2::new(0.0F, 1.0F),
+    up: Vec2(0.0F, 1.0F),
     offset: CharacterLength::relative(0.01F),
     slide: true,
     max_slope_climb_angle: 0.785398163F,
@@ -229,7 +216,7 @@ pub fn KinematicCharacterController::new() -> KinematicCharacterController {
 
 ///|
 pub fn KinematicCharacterController::default() -> KinematicCharacterController {
-  KinematicCharacterController::new()
+  KinematicCharacterController()
 }
 
 ///|
@@ -370,12 +357,12 @@ pub fn KinematicCharacterController::with_normal_nudge_factor(
 
 ///|
 fn vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
-  @core.Vec2::new(v.x * s, v.y * s)
+  Vec2(v.x * s, v.y * s)
 }
 
 ///|
 fn vec2_neg(v : @core.Vec2) -> @core.Vec2 {
-  @core.Vec2::new(-v.x, -v.y)
+  Vec2(-v.x, -v.y)
 }
 
 ///|
@@ -494,8 +481,8 @@ fn compute_dims_with_up(
   up : @core.Vec2,
 ) -> (@core.Real, @core.Real) {
   let (hw, hh) = compute_extents(shape)
-  let extents = @core.Vec2::new(hw, hh)
-  let up_abs = @core.Vec2::new(@core.abs(up.x), @core.abs(up.y))
+  let extents = @core.Vec2(hw, hh)
+  let up_abs = @core.Vec2(@core.abs(up.x), @core.abs(up.y))
   let up_extent = extents.dot(up_abs)
   let side_vec = extents.sub(vec2_scale(up_abs, up_extent))
   let side_extent = side_vec.length()
@@ -659,7 +646,7 @@ fn detect_ground_contact(
 ) -> (@collision.ColliderHandle, @core.Vec2, @core.Vec2)? {
   // Rapier parity: grounded detection uses a conservative prediction based on offset.
   let down = vec2_neg(up)
-  let options = @collision.ShapeCastOptions::new(prediction, true).with_target_distance(
+  let options = @collision.ShapeCastOptions(prediction, true).with_target_distance(
     offset,
   )
   if query.cast_shape(bodies, colliders, position, down, shape, options)
@@ -710,7 +697,7 @@ fn attempt_autostep(
       return None
     }
   }
-  let shifted_pos = @core.Isometry2::new(
+  let shifted_pos = @core.Isometry2(
     start_pos.translation.add(vec2_scale(up, max_height)),
     start_pos.rotation,
   )
@@ -729,7 +716,7 @@ fn attempt_autostep(
       start_pos,
       up,
       shape,
-      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -744,16 +731,14 @@ fn attempt_autostep(
       shifted_pos,
       horizontal_dir,
       shape,
-      @collision.ShapeCastOptions::new(min_width, false).with_target_distance(
-        offset,
-      ),
+      @collision.ShapeCastOptions(min_width, false).with_target_distance(offset),
     )
     is Some(_) {
     return None
   }
 
   // Check the ramp we would land on isn't too steep.
-  let pos_on_stair = @core.Isometry2::new(
+  let pos_on_stair = @core.Isometry2(
     shifted_pos.translation.add(vec2_scale(horizontal_dir, min_width)),
     shifted_pos.rotation,
   )
@@ -763,7 +748,7 @@ fn attempt_autostep(
       pos_on_stair,
       down,
       shape,
-      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -788,7 +773,7 @@ fn attempt_autostep(
       pos_on_stair,
       down,
       shape,
-      @collision.ShapeCastOptions::new(max_height, false).with_target_distance(
+      @collision.ShapeCastOptions(max_height, false).with_target_distance(
         offset,
       ),
     )
@@ -879,10 +864,7 @@ pub fn KinematicCharacterController::move_shape(
       bodies,
       colliders,
       shape,
-      @core.Isometry2::new(
-        position.translation.add(result_translation),
-        position.rotation,
-      ),
+      Isometry2(position.translation.add(result_translation), position.rotation),
       up,
       prediction,
       offset,
@@ -897,11 +879,11 @@ pub fn KinematicCharacterController::move_shape(
     iters = iters + 1
     let dir = step.0
     let dist = step.1
-    let current_pos = @core.Isometry2::new(
+    let current_pos = @core.Isometry2(
       position.translation.add(result_translation),
       position.rotation,
     )
-    let options = @collision.ShapeCastOptions::new(dist, false).with_target_distance(
+    let options = @collision.ShapeCastOptions(dist, false).with_target_distance(
       offset,
     )
     if query.cast_shape(bodies, colliders, current_pos, dir, shape, options)
@@ -911,7 +893,7 @@ pub fn KinematicCharacterController::move_shape(
       let applied = vec2_scale(dir, allowed_dist)
       result_translation = result_translation.add(applied)
       remaining = remaining.sub(applied)
-      let event_pos = @core.Isometry2::new(
+      let event_pos = @core.Isometry2(
         position.translation.add(result_translation),
         position.rotation,
       )
@@ -958,7 +940,7 @@ pub fn KinematicCharacterController::move_shape(
         bodies,
         colliders,
         shape,
-        @core.Isometry2::new(
+        Isometry2(
           position.translation.add(result_translation),
           position.rotation,
         ),
@@ -978,12 +960,12 @@ pub fn KinematicCharacterController::move_shape(
   if grounded_at_start && !grounded && self.snap_to_ground is Some(snap_length) {
     let snap_dist = character_length_eval(snap_length, up_extent)
     if result_translation.dot(up) < -1.0e-5F && snap_dist > 0.0F {
-      let current_pos = @core.Isometry2::new(
+      let current_pos = @core.Isometry2(
         position.translation.add(result_translation),
         position.rotation,
       )
       let down = vec2_neg(up)
-      let options = @collision.ShapeCastOptions::new(snap_dist, false).with_target_distance(
+      let options = @collision.ShapeCastOptions(snap_dist, false).with_target_distance(
         offset,
       )
       if query.cast_shape(bodies, colliders, current_pos, down, shape, options)
@@ -995,7 +977,7 @@ pub fn KinematicCharacterController::move_shape(
       }
     }
   }
-  let final_pos = @core.Isometry2::new(
+  let final_pos = @core.Isometry2(
     position.translation.add(result_translation),
     position.rotation,
   )
@@ -1041,7 +1023,7 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
     let proj = remaining.dot(normal0)
     // Ensure the normal points in the direction of motion we want to transfer.
     let normal = if proj < 0.0F {
-      @core.Vec2::new(-normal0.x, -normal0.y)
+      @core.Vec2(-normal0.x, -normal0.y)
     } else {
       normal0
     }
@@ -1061,7 +1043,7 @@ pub fn KinematicCharacterController::solve_character_collision_impulses(
       let r = point.sub(body.world_com())
       let body_vel_at_point = body
         .linvel()
-        .add(@core.Vec2::new(-body.angvel() * r.y, body.angvel() * r.x))
+        .add(Vec2(-body.angvel() * r.y, body.angvel() * r.x))
       let delta_v = vel_to_transfer.sub(body_vel_at_point).dot(normal)
       if delta_v <= 0.0F {
         continue

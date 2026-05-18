@@ -23,14 +23,6 @@ pub fn SpringCoefficients::SpringCoefficients(
   natural_frequency : @core.Real,
   damping_ratio : @core.Real,
 ) -> SpringCoefficients {
-  SpringCoefficients::new(natural_frequency, damping_ratio)
-}
-
-///|
-pub fn SpringCoefficients::new(
-  natural_frequency : @core.Real,
-  damping_ratio : @core.Real,
-) -> SpringCoefficients {
   { natural_frequency, damping_ratio }
 }
 
@@ -144,11 +136,6 @@ pub struct IntegrationParameters {
 }
 
 ///|
-pub fn IntegrationParameters::IntegrationParameters() -> IntegrationParameters {
-  IntegrationParameters::new()
-}
-
-///|
 pub fn IntegrationParameters::default() -> IntegrationParameters {
   {
     dt: 1.0F / 60.0F,
@@ -169,7 +156,7 @@ pub fn IntegrationParameters::default() -> IntegrationParameters {
 }
 
 ///|
-pub fn IntegrationParameters::new() -> IntegrationParameters {
+pub fn IntegrationParameters::IntegrationParameters() -> IntegrationParameters {
   IntegrationParameters::default()
 }
 

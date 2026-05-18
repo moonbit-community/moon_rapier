@@ -15,24 +15,22 @@
 ///|
 test "solver regression: stack stability + deterministic stepping" {
   fn simulate() -> Array[@core.Vec2] {
-    let pipeline = PhysicsPipeline::new()
-    let broad_phase = @collision.BroadPhaseBvh::new()
-    let narrow_phase = @collision.NarrowPhase::new()
-    let bodies = @dynamics.RigidBodySet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = @dynamics.ImpulseJointSet::new()
-    let multibody_joints = @dynamics.MultibodyJointSet::new()
-    let islands = @dynamics.IslandManager::new()
-    let hooks = PhysicsHooks::new()
-    let events = EventHandler::new()
-    let gravity = @core.Vec2::new(0.0F, -9.81F)
+    let pipeline = PhysicsPipeline::PhysicsPipeline()
+    let broad_phase = @collision.BroadPhaseBvh()
+    let narrow_phase = @collision.NarrowPhase()
+    let bodies = @dynamics.RigidBodySet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = @dynamics.ImpulseJointSet()
+    let multibody_joints = @dynamics.MultibodyJointSet()
+    let islands = @dynamics.IslandManager()
+    let hooks = PhysicsHooks::PhysicsHooks()
+    let events = EventHandler::EventHandler()
+    let gravity = @core.Vec2(0.0F, -9.81F)
     let params = IntegrationParameters::default()
 
     // Ground.
     let ground = bodies.insert(
-      @dynamics.RigidBodyBuilder::fixed()
-      .translation(@core.Vec2::new(0.0F, -0.1F))
-      .build(),
+      @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -0.1F)).build(),
     )
     colliders.insert_with_parent(
       @collision.ColliderBuilder::cuboid(10.0F, 0.1F).friction(1.0F).build(),
@@ -50,7 +48,7 @@ test "solver regression: stack stability + deterministic stepping" {
       let y = 0.2F + Float::from_int(i) * (rad * 2.0F + gap)
       let h = bodies.insert(
         @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(0.0F, y))
+        .translation(Vec2(0.0F, y))
         .can_sleep(false)
         .build(),
       )
@@ -78,7 +76,7 @@ test "solver regression: stack stability + deterministic stepping" {
         colliders,
         impulse_joints,
         multibody_joints,
-        @dynamics_ccd.CCDSolver::new(),
+        CCDSolver(),
         hooks,
         events,
       )

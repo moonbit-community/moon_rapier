@@ -57,13 +57,6 @@ pub struct GenericJoint3DRealBuilder {
 pub fn GenericJoint3DRealBuilder::GenericJoint3DRealBuilder(
   locked_axes : JointAxesMask3DReal,
 ) -> GenericJoint3DRealBuilder {
-  GenericJoint3DRealBuilder::new(locked_axes)
-}
-
-///|
-pub fn GenericJoint3DRealBuilder::new(
-  locked_axes : JointAxesMask3DReal,
-) -> GenericJoint3DRealBuilder {
   let axis_states : Array[AxisState3DReal] = []
   let motors : Array[MotorState3DReal] = []
   for i in 0..<6 {
@@ -142,14 +135,11 @@ pub fn GenericJoint3DRealBuilder::local_axis1(
   axis : @core.Vec3,
 ) -> GenericJoint3DRealBuilder {
   let a = if axis.length_squared() <= 1.0e-12F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
     axis.normalize()
   }
-  self.local_basis1 = @core.rotation_between(
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    a,
-  )
+  self.local_basis1 = @core.rotation_between(Vec3(1.0F, 0.0F, 0.0F), a)
   self
 }
 
@@ -159,14 +149,11 @@ pub fn GenericJoint3DRealBuilder::local_axis2(
   axis : @core.Vec3,
 ) -> GenericJoint3DRealBuilder {
   let a = if axis.length_squared() <= 1.0e-12F {
-    @core.Vec3::new(1.0F, 0.0F, 0.0F)
+    @core.Vec3(1.0F, 0.0F, 0.0F)
   } else {
     axis.normalize()
   }
-  self.local_basis2 = @core.rotation_between(
-    @core.Vec3::new(1.0F, 0.0F, 0.0F),
-    a,
-  )
+  self.local_basis2 = @core.rotation_between(Vec3(1.0F, 0.0F, 0.0F), a)
   self
 }
 
@@ -238,8 +225,8 @@ pub fn GenericJoint3DRealBuilder::build(
   self : GenericJoint3DRealBuilder,
 ) -> GenericJoint3DReal {
   {
-    local_frame1: @core.Isometry3::new(self.local_anchor1, self.local_basis1),
-    local_frame2: @core.Isometry3::new(self.local_anchor2, self.local_basis2),
+    local_frame1: Isometry3(self.local_anchor1, self.local_basis1),
+    local_frame2: Isometry3(self.local_anchor2, self.local_basis2),
     axis_states: self.axis_states,
     motors: self.motors,
     coupled_axes: self.coupled_axes,

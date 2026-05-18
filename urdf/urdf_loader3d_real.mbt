@@ -204,7 +204,7 @@ fn urdf_parse_real(text : String) -> @core.Real {
 ///|
 fn urdf_split_ws(text : String) -> Array[String] {
   let parts : Array[String] = []
-  let cur = StringBuilder::new()
+  let cur = StringBuilder()
   for c in text {
     if c == ' ' || c == '\n' || c == '\r' || c == '\t' {
       if !cur.is_empty() {
@@ -227,7 +227,7 @@ fn urdf_parse_vec3(text : String) -> @core.Vec3 {
   if parts.length() < 3 {
     return @core.Vec3::zero()
   }
-  @core.Vec3::new(
+  Vec3(
     urdf_parse_real(parts[0]),
     urdf_parse_real(parts[1]),
     urdf_parse_real(parts[2]),
@@ -236,9 +236,9 @@ fn urdf_parse_vec3(text : String) -> @core.Vec3 {
 
 ///|
 fn urdf_quat_from_rpy(rpy : @core.Vec3) -> @core.Quat {
-  let qx = @core.rotation_from_scaled_axis(@core.Vec3::new(rpy.x, 0.0F, 0.0F))
-  let qy = @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, rpy.y, 0.0F))
-  let qz = @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, rpy.z))
+  let qx = @core.rotation_from_scaled_axis(Vec3(rpy.x, 0.0F, 0.0F))
+  let qy = @core.rotation_from_scaled_axis(Vec3(0.0F, rpy.y, 0.0F))
+  let qz = @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, rpy.z))
   // Apply roll (X), then pitch (Y), then yaw (Z).
   qz.mul(qy.mul(qx))
 }
@@ -248,7 +248,7 @@ fn urdf_pose_from_xyz_rpy(
   xyz : @core.Vec3,
   rpy : @core.Vec3,
 ) -> @core.Isometry3 {
-  @core.Isometry3::new(xyz, urdf_quat_from_rpy(rpy))
+  Isometry3(xyz, urdf_quat_from_rpy(rpy))
 }
 
 ///|
@@ -279,7 +279,7 @@ fn xml_skip_ws(s : String, i : Int) -> Int {
 ///|
 fn xml_parse_ident(s : String, i : Int) -> (String, Int) {
   let mut j = i
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   while j < s.length() {
     let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
     if xml_is_ws(c) || c == '>' || c == '/' || c == '=' {
@@ -302,7 +302,7 @@ fn xml_parse_quoted(s : String, i : Int) -> (String, Int) {
     return ("", j)
   }
   j = j + 1
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   while j < s.length() {
     let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
     if c == quote {
@@ -436,7 +436,7 @@ fn urdf_parse_positive_scale(text : String) -> @core.Vec3 {
   let x = if s.x <= 0.0F { 1.0F } else { s.x }
   let y = if s.y <= 0.0F { 1.0F } else { s.y }
   let z = if s.z <= 0.0F { 1.0F } else { s.z }
-  @core.Vec3::new(x, y, z)
+  Vec3(x, y, z)
 }
 
 ///|
@@ -542,7 +542,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
         parent: "",
         child: "",
         origin: @core.Isometry3::identity(),
-        axis: @core.Vec3::new(1.0F, 0.0F, 0.0F),
+        axis: Vec3(1.0F, 0.0F, 0.0F),
         limit_lower: 0.0F,
         limit_upper: 0.0F,
         has_limits: false,
@@ -614,7 +614,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
       let iyy = a(tag.attrs, "iyy")
       let iyz = a(tag.attrs, "iyz")
       let izz = a(tag.attrs, "izz")
-      cur_inertial_inertia = @core.SdpMat3::new(ixx, ixy, ixz, iyy, iyz, izz)
+      cur_inertial_inertia = SdpMat3(ixx, ixy, ixz, iyy, iyz, izz)
       continue
     }
     if tag.name == "mesh" {
@@ -623,7 +623,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
         let scale = if attr_get(tag.attrs, "scale") is Some(s) {
           urdf_parse_positive_scale(s)
         } else {
-          @core.Vec3::new(1.0F, 1.0F, 1.0F)
+          Vec3(1.0F, 1.0F, 1.0F)
         }
         cur_geom = Some(Mesh(basename(f), scale))
       }
@@ -762,11 +762,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
       link_inertials.get(name) is Some(inert) &&
       inert is Some(ine) &&
       ine.mass > 0.0F {
-      let mp0 = @core.MassProperties3::new(
-        ine.mass,
-        ine.inertia,
-        @core.Vec3::zero(),
-      )
+      let mp0 = @core.MassProperties3(ine.mass, ine.inertia, @core.Vec3::zero())
       rb_builder = rb_builder.mass_properties(mp0.transform_by(ine.origin))
     }
     let h = bodies.insert(rb_builder.build())
@@ -821,9 +817,9 @@ pub fn UrdfRobot3DReal::insert_3d_real(
         Cylinder(r, len) => {
           // URDF cylinders are aligned along +Z. Our cylinder is aligned along +Y.
           let rot = @core.rotation_from_scaled_axis(
-            @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
+            Vec3(-@core.pi() * 0.5F, 0.0F, 0.0F),
           )
-          let extra = @core.Isometry3::new(@core.Vec3::zero(), rot)
+          let extra = @core.Isometry3(@core.Vec3::zero(), rot)
           colliders.insert_with_parent(
             @collision.ColliderBuilder3D::cylinder(r, len * 0.5F)
             .position(v.origin.mul(extra))
@@ -836,9 +832,9 @@ pub fn UrdfRobot3DReal::insert_3d_real(
         Capsule(r, len) => {
           // URDF capsules are aligned along +Z. Our capsule is aligned along +Y.
           let rot = @core.rotation_from_scaled_axis(
-            @core.Vec3::new(-@core.pi() * 0.5F, 0.0F, 0.0F),
+            Vec3(-@core.pi() * 0.5F, 0.0F, 0.0F),
           )
-          let extra = @core.Isometry3::new(@core.Vec3::zero(), rot)
+          let extra = @core.Isometry3(@core.Vec3::zero(), rot)
           colliders.insert_with_parent(
             @collision.ColliderBuilder3D::capsule_y(r, len * 0.5F)
             .position(v.origin.mul(extra))
@@ -850,12 +846,12 @@ pub fn UrdfRobot3DReal::insert_3d_real(
         }
         Mesh(mesh, scale) =>
           if mesh_bounds.get(mesh) is Some((mins0, maxs0)) {
-            let mins = @core.Vec3::new(
+            let mins = @core.Vec3(
               mins0.x * scale.x,
               mins0.y * scale.y,
               mins0.z * scale.z,
             )
-            let maxs = @core.Vec3::new(
+            let maxs = @core.Vec3(
               maxs0.x * scale.x,
               maxs0.y * scale.y,
               maxs0.z * scale.z,
@@ -913,7 +909,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
           link_inertials.get(j.child) is Some(inert) &&
           inert is Some(ine) &&
           ine.mass > 0.0F {
-          let mp0 = @core.MassProperties3::new(
+          let mp0 = @core.MassProperties3(
             ine.mass,
             ine.inertia,
             @core.Vec3::zero(),
@@ -932,7 +928,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
 
         // Build the joint configuration.
         let axis = if j.axis.length_squared() <= 1.0e-12F {
-          @core.Vec3::new(1.0F, 0.0F, 0.0F)
+          @core.Vec3(1.0F, 0.0F, 0.0F)
         } else {
           j.axis.normalize()
         }
@@ -958,7 +954,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
             .or(@dynamics.JointAxesMask3DReal::ang_z())
           Floating => @dynamics.JointAxesMask3DReal::empty()
         }
-        let mut builder = @dynamics.GenericJoint3DRealBuilder::new(locked)
+        let mut builder = @dynamics.GenericJoint3DRealBuilder(locked)
           .contacts_enabled(options.enable_joint_collisions)
           .local_anchor1(j.origin.translation)
           .local_anchor2(@core.Vec3::zero())

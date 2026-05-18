@@ -18,13 +18,13 @@
 ///|
 fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
   // Ported from `rapier-reference/examples3d/heightfield3.rs` (headless).
-  let pipeline = @pipeline.PhysicsPipeline3DReal::new()
-  let broad_phase = @collision.BroadPhase3D::new()
-  let narrow_phase = @collision.NarrowPhase3D::new()
-  let bodies = @dynamics.RigidBodySet3D::new()
-  let colliders = @collision.ColliderSet3D::new()
-  let islands = @dynamics.IslandManager3D::new()
-  let gravity = @core.Vec3::new(0.0F, -9.81F, 0.0F)
+  let pipeline = @pipeline.PhysicsPipeline3DReal()
+  let broad_phase = @collision.BroadPhase3D()
+  let narrow_phase = @collision.NarrowPhase3D()
+  let bodies = @dynamics.RigidBodySet3D()
+  let colliders = @collision.ColliderSet3D()
+  let islands = @dynamics.IslandManager3D()
+  let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
   // Keep default mode relatively small; heavy mode moves toward upstream scale.
   let solver_iters = if heavy { 10 } else { 8 }
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(
@@ -32,7 +32,7 @@ fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
   )
 
   // Ground heightfield.
-  let ground_size = @core.Vec3::new(100.0F, 1.0F, 100.0F)
+  let ground_size = @core.Vec3(100.0F, 1.0F, 100.0F)
   let nsubdivs = if heavy { 7 } else { 6 }
   let heights : Array[@core.Real] = []
   for i in 0..<(nsubdivs + 1) {
@@ -74,7 +74,7 @@ fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
         let z = Float::from_int(k) * shift - center
         let h = bodies.insert(
           @dynamics.RigidBodyBuilder3D::dynamic()
-          .translation(@core.Vec3::new(x, y, z))
+          .translation(Vec3(x, y, z))
           .build(),
         )
         handles.push(h)
@@ -130,7 +130,7 @@ fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
                   rad / 2.0F,
                   rad,
                   rad / 2.0F,
-                ).translation(@core.Vec3::new(rad, 0.0F, 0.0F)),
+                ).translation(Vec3(rad, 0.0F, 0.0F)),
               ),
               (
                 @core.Isometry3::identity(),
@@ -138,7 +138,7 @@ fn run_examples3d_heightfield3_profile(heavy : Bool) -> Bool {
                   rad / 2.0F,
                   rad,
                   rad / 2.0F,
-                ).translation(@core.Vec3::new(-rad, 0.0F, 0.0F)),
+                ).translation(Vec3(-rad, 0.0F, 0.0F)),
               ),
             ])
             .unwrap()

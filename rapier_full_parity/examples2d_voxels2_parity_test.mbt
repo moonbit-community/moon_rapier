@@ -40,19 +40,19 @@ fn step_pipeline_2d_n_voxels2(
 ///|
 /// Ported from `rapier-reference/examples2d/voxels2.rs` (testbed settings fixed to defaults).
 test "examples2d/voxels2.rs parity" {
-  let pipeline = @pipeline.PhysicsPipeline::new()
-  let broad_phase = @collision.BroadPhaseBvh::new()
-  let narrow_phase = @collision.NarrowPhase::new()
-  let bodies = @dynamics.RigidBodySet::new()
-  let colliders = @collision.ColliderSet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
-  let islands = @dynamics.IslandManager::new()
-  let hooks = @pipeline.PhysicsHooks::new()
-  let events = @pipeline.EventHandler::new()
-  let ccd_solver = @dynamics_ccd.CCDSolver::new()
+  let pipeline = @pipeline.PhysicsPipeline()
+  let broad_phase = @collision.BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase()
+  let bodies = @dynamics.RigidBodySet()
+  let colliders = @collision.ColliderSet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
+  let islands = @dynamics.IslandManager()
+  let hooks = @pipeline.PhysicsHooks()
+  let events = @pipeline.EventHandler()
+  let ccd_solver = @dynamics_ccd.CCDSolver()
   let parameters = @dynamics.IntegrationParameters::default()
-  let gravity = @core.Vec2::new(0.0F, -9.81F)
+  let gravity = @core.Vec2(0.0F, -9.81F)
 
   // Defaults from the testbed UI:
   // - Falling objects = Mixed (3)
@@ -60,7 +60,7 @@ test "examples2d/voxels2.rs parity" {
   // - CCD disabled
   let falling_objects_default = 3
   let voxel_size_y = 1.0F
-  let voxel_size = @core.Vec2::new(1.0F, voxel_size_y)
+  let voxel_size = @core.Vec2(1.0F, voxel_size_y)
 
   // Create dynamic objects to fall on voxels.
   let nx = 50
@@ -72,9 +72,7 @@ test "examples2d/voxels2.rs parity" {
         Float::from_double(nx.to_double()) / 2.0F
       let y = 20.0F + Float::from_double(j.to_double()) * 2.0F
       let rb_handle = bodies.insert(
-        @dynamics.RigidBodyBuilder::dynamic()
-        .translation(@core.Vec2::new(x, y))
-        .build(),
+        @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(x, y)).build(),
       )
       let falling_objects = if falling_objects_default == 3 {
         j % 3
@@ -95,14 +93,14 @@ test "examples2d/voxels2.rs parity" {
 
   // Voxelization of a polyline mesh.
   let polyline = [
-    @core.Vec2::new(0.0F, 0.0F),
-    @core.Vec2::new(0.0F, 10.0F),
-    @core.Vec2::new(7.0F, 4.0F),
-    @core.Vec2::new(14.0F, 10.0F),
-    @core.Vec2::new(14.0F, 0.0F),
-    @core.Vec2::new(13.0F, 7.0F),
-    @core.Vec2::new(7.0F, 2.0F),
-    @core.Vec2::new(1.0F, 7.0F),
+    @core.Vec2(0.0F, 0.0F),
+    Vec2(0.0F, 10.0F),
+    Vec2(7.0F, 4.0F),
+    Vec2(14.0F, 10.0F),
+    Vec2(14.0F, 0.0F),
+    Vec2(13.0F, 7.0F),
+    Vec2(7.0F, 2.0F),
+    Vec2(1.0F, 7.0F),
   ]
   let poly_idx : Array[(Int, Int)] = []
   for i in 0..<polyline.length() {
@@ -110,7 +108,7 @@ test "examples2d/voxels2.rs parity" {
   }
   let mesh_body = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed()
-    .translation(@core.Vec2::new(-20.0F, -10.0F))
+    .translation(Vec2(-20.0F, -10.0F))
     .build(),
   )
   colliders.insert_with_parent(
@@ -137,7 +135,7 @@ test "examples2d/voxels2.rs parity" {
     }
     y = y * 20.0F
     let x = (Float::from_double(i.to_double()) - 125.0F) * voxel_size.x / 2.0F
-    voxels.push(@core.Vec2::new(x, y * voxel_size.y))
+    voxels.push(Vec2(x, y * voxel_size.y))
   }
   colliders.insert(
     @collision.ColliderBuilder::voxels_from_points(voxel_size, voxels).build(),

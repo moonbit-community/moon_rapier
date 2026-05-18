@@ -14,7 +14,6 @@ pub struct CCDCounters {
   narrow_phase_time : Timer
 }
 pub fn CCDCounters::CCDCounters() -> Self
-pub fn CCDCounters::new() -> Self
 pub fn CCDCounters::num_substeps(Self) -> Int
 pub fn CCDCounters::reset(Self) -> Unit
 pub fn CCDCounters::set_num_substeps(Self, Int) -> Unit
@@ -28,7 +27,6 @@ pub struct CollisionDetectionCounters {
 }
 pub fn CollisionDetectionCounters::CollisionDetectionCounters() -> Self
 pub fn CollisionDetectionCounters::ncontact_pairs(Self) -> Int
-pub fn CollisionDetectionCounters::new() -> Self
 pub fn CollisionDetectionCounters::reset(Self) -> Unit
 pub fn CollisionDetectionCounters::set_ncontact_pairs(Self, Int) -> Unit
 pub fn CollisionDetectionCounters::to_string(Self) -> String
@@ -69,7 +67,6 @@ pub fn Counters::island_construction_time_ms(Self) -> Double
 pub fn Counters::narrow_phase_completed(Self) -> Unit
 pub fn Counters::narrow_phase_started(Self) -> Unit
 pub fn Counters::narrow_phase_time_ms(Self) -> Double
-pub fn Counters::new(Bool) -> Self
 pub fn Counters::reset(Self) -> Unit
 pub fn Counters::set_nconstraints(Self, Int) -> Unit
 pub fn Counters::set_ncontact_pairs(Self, Int) -> Unit
@@ -104,7 +101,6 @@ pub struct SolverCounters {
 pub fn SolverCounters::SolverCounters() -> Self
 pub fn SolverCounters::nconstraints(Self) -> Int
 pub fn SolverCounters::ncontacts(Self) -> Int
-pub fn SolverCounters::new() -> Self
 pub fn SolverCounters::reset(Self) -> Unit
 pub fn SolverCounters::set_nconstraints(Self, Int) -> Unit
 pub fn SolverCounters::set_ncontacts(Self, Int) -> Unit
@@ -120,7 +116,6 @@ pub struct StagesCounters {
   user_changes : Timer
 }
 pub fn StagesCounters::StagesCounters() -> Self
-pub fn StagesCounters::new() -> Self
 pub fn StagesCounters::reset(Self) -> Unit
 pub fn StagesCounters::to_string(Self) -> String
 
@@ -128,7 +123,6 @@ pub struct Timer {
   mut time_ms : Double
 }
 pub fn Timer::Timer() -> Self
-pub fn Timer::new() -> Self
 pub fn Timer::pause(Self) -> Unit
 pub fn Timer::reset(Self) -> Unit
 pub fn Timer::resume_(Self) -> Unit

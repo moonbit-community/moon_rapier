@@ -14,20 +14,18 @@
 
 ///|
 test "joint solver motor applies angular impulse (wbtest)" {
-  let bodies = @dynamics.RigidBodySet::new()
-  let impulse_joints = @dynamics.ImpulseJointSet::new()
-  let multibody_joints = @dynamics.MultibodyJointSet::new()
+  let bodies = @dynamics.RigidBodySet()
+  let impulse_joints = @dynamics.ImpulseJointSet()
+  let multibody_joints = @dynamics.MultibodyJointSet()
   let fixed = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let dynamic = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   if bodies.get_mut_internal(dynamic) is Some(rb) {
-    rb.set_local_mass_properties(
-      @core.MassProperties::new(1.0F, 0.1F, @core.Vec2::zero()),
-    )
+    rb.set_local_mass_properties(MassProperties(1.0F, 0.1F, @core.Vec2::zero()))
     |> ignore
   }
   let target = @core.pi() / 2.0F
   let joint = @dynamics.GenericJoint::from_revolute(
-    @dynamics.RevoluteJointBuilder::new()
+    @dynamics.RevoluteJointBuilder()
     .motor_position(target, 20.0F, 1.0F)
     .motor_max_force(1000.0F)
     .build(),

@@ -24,17 +24,12 @@ pub struct LockedAxes {
 
 ///|
 pub fn LockedAxes::LockedAxes(bits : Int) -> LockedAxes {
-  LockedAxes::new(bits)
-}
-
-///|
-pub fn LockedAxes::new(bits : Int) -> LockedAxes {
   { bits, }
 }
 
 ///|
 pub fn LockedAxes::empty() -> LockedAxes {
-  LockedAxes::new(0)
+  LockedAxes(0)
 }
 
 ///|
@@ -49,12 +44,12 @@ pub fn LockedAxes::contains(self : LockedAxes, other : LockedAxes) -> Bool {
 
 ///|
 pub fn LockedAxes::insert(self : LockedAxes, other : LockedAxes) -> LockedAxes {
-  LockedAxes::new(self.bits | other.bits)
+  LockedAxes(self.bits | other.bits)
 }
 
 ///|
 pub fn LockedAxes::remove(self : LockedAxes, other : LockedAxes) -> LockedAxes {
-  LockedAxes::new(self.bits & Int::lnot(other.bits))
+  LockedAxes(self.bits & Int::lnot(other.bits))
 }
 
 ///|
@@ -77,32 +72,32 @@ const LOCKED_ROTATION_Z : Int = 1 << 5
 
 ///|
 pub fn LockedAxes::translation_locked_x() -> LockedAxes {
-  LockedAxes::new(LOCKED_TRANSLATION_X)
+  LockedAxes(LOCKED_TRANSLATION_X)
 }
 
 ///|
 pub fn LockedAxes::translation_locked_y() -> LockedAxes {
-  LockedAxes::new(LOCKED_TRANSLATION_Y)
+  LockedAxes(LOCKED_TRANSLATION_Y)
 }
 
 ///|
 pub fn LockedAxes::translation_locked_z() -> LockedAxes {
-  LockedAxes::new(LOCKED_TRANSLATION_Z)
+  LockedAxes(LOCKED_TRANSLATION_Z)
 }
 
 ///|
 pub fn LockedAxes::rotation_locked_x() -> LockedAxes {
-  LockedAxes::new(LOCKED_ROTATION_X)
+  LockedAxes(LOCKED_ROTATION_X)
 }
 
 ///|
 pub fn LockedAxes::rotation_locked_y() -> LockedAxes {
-  LockedAxes::new(LOCKED_ROTATION_Y)
+  LockedAxes(LOCKED_ROTATION_Y)
 }
 
 ///|
 pub fn LockedAxes::rotation_locked_z() -> LockedAxes {
-  LockedAxes::new(LOCKED_ROTATION_Z)
+  LockedAxes(LOCKED_ROTATION_Z)
 }
 
 ///|

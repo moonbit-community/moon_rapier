@@ -14,8 +14,8 @@
 
 ///|
 test "mat2 mul_vec2" {
-  let m = Mat2::new(1.0F, 2.0F, 3.0F, 4.0F)
-  let v = Vec2::new(5.0F, 6.0F)
+  let m = Mat2::Mat2(1.0F, 2.0F, 3.0F, 4.0F)
+  let v = Vec2::Vec2(5.0F, 6.0F)
   let out = m.mul_vec2(v)
   inspect(out.x.to_int(), content="17")
   inspect(out.y.to_int(), content="39")
@@ -23,7 +23,7 @@ test "mat2 mul_vec2" {
 
 ///|
 test "mat2 inverse roundtrip" {
-  let m = Mat2::new(2.0F, 1.0F, 3.0F, 4.0F)
+  let m = Mat2::Mat2(2.0F, 1.0F, 3.0F, 4.0F)
   let inv = m.inverse()
   let prod = m.mul(inv)
   inspect(abs(prod.m00 - 1.0F) < 1.0e-5F, content="true")

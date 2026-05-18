@@ -87,7 +87,7 @@ pub fn Shape3D::cuboid(
   hy : @core.Real,
   hz : @core.Real,
 ) -> Shape3D {
-  Cuboid(@core.Vec3::new(hx, hy, hz))
+  Cuboid(Vec3(hx, hy, hz))
 }
 
 ///|
@@ -137,94 +137,80 @@ pub fn Shape3D::triangle(
 ///|
 pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
   match self {
-    Ball(r) =>
-      @core.Aabb3::new(@core.Vec3::new(-r, -r, -r), @core.Vec3::new(r, r, r))
-    Cuboid(he) =>
-      @core.Aabb3::new(
-        @core.Vec3::new(-he.x, -he.y, -he.z),
-        @core.Vec3::new(he.x, he.y, he.z),
-      )
-    CapsuleY(r, hh) =>
-      @core.Aabb3::new(
-        @core.Vec3::new(-r, -(hh + r), -r),
-        @core.Vec3::new(r, hh + r, r),
-      )
-    Cylinder(r, hh) =>
-      @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Ball(r) => Aabb3(Vec3(-r, -r, -r), Vec3(r, r, r))
+    Cuboid(he) => Aabb3(Vec3(-he.x, -he.y, -he.z), Vec3(he.x, he.y, he.z))
+    CapsuleY(r, hh) => Aabb3(Vec3(-r, -(hh + r), -r), Vec3(r, hh + r, r))
+    Cylinder(r, hh) => Aabb3(Vec3(-r, -hh, -r), Vec3(r, hh, r))
     RoundCylinder(r, hh, br) => {
       let rr = r + br
       let yy = hh + br
-      @core.Aabb3::new(
-        @core.Vec3::new(-rr, -yy, -rr),
-        @core.Vec3::new(rr, yy, rr),
-      )
+      Aabb3(Vec3(-rr, -yy, -rr), Vec3(rr, yy, rr))
     }
-    Cone(r, hh) =>
-      @core.Aabb3::new(@core.Vec3::new(-r, -hh, -r), @core.Vec3::new(r, hh, r))
+    Cone(r, hh) => Aabb3(Vec3(-r, -hh, -r), Vec3(r, hh, r))
     HalfSpace(_) => {
       // The BVH broad-phase treats half-spaces specially (they are infinite). We still provide
       // a very large AABB as a defensive fallback for any code-path that expects a finite AABB.
       let m = 1.0e6F
-      @core.Aabb3::new(@core.Vec3::new(-m, -m, -m), @core.Vec3::new(m, m, m))
+      Aabb3(Vec3(-m, -m, -m), Vec3(m, m, m))
     }
     Triangle(a, b, c) => {
       let mut min = a
       let mut max = a
       for p in [b, c] {
         if p.x < min.x {
-          min = @core.Vec3::new(p.x, min.y, min.z)
+          min = Vec3(p.x, min.y, min.z)
         }
         if p.y < min.y {
-          min = @core.Vec3::new(min.x, p.y, min.z)
+          min = Vec3(min.x, p.y, min.z)
         }
         if p.z < min.z {
-          min = @core.Vec3::new(min.x, min.y, p.z)
+          min = Vec3(min.x, min.y, p.z)
         }
         if p.x > max.x {
-          max = @core.Vec3::new(p.x, max.y, max.z)
+          max = Vec3(p.x, max.y, max.z)
         }
         if p.y > max.y {
-          max = @core.Vec3::new(max.x, p.y, max.z)
+          max = Vec3(max.x, p.y, max.z)
         }
         if p.z > max.z {
-          max = @core.Vec3::new(max.x, max.y, p.z)
+          max = Vec3(max.x, max.y, p.z)
         }
       }
-      @core.Aabb3::new(min, max)
+      Aabb3(min, max)
     }
     ConvexHull(points, br) =>
       if points.length() == 0 {
-        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+        Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
         let mut min = points[0]
         let mut max = points[0]
         for i in 1..<points.length() {
           let p = points[i]
           if p.x < min.x {
-            min = @core.Vec3::new(p.x, min.y, min.z)
+            min = Vec3(p.x, min.y, min.z)
           }
           if p.y < min.y {
-            min = @core.Vec3::new(min.x, p.y, min.z)
+            min = Vec3(min.x, p.y, min.z)
           }
           if p.z < min.z {
-            min = @core.Vec3::new(min.x, min.y, p.z)
+            min = Vec3(min.x, min.y, p.z)
           }
           if p.x > max.x {
-            max = @core.Vec3::new(p.x, max.y, max.z)
+            max = Vec3(p.x, max.y, max.z)
           }
           if p.y > max.y {
-            max = @core.Vec3::new(max.x, p.y, max.z)
+            max = Vec3(max.x, p.y, max.z)
           }
           if p.z > max.z {
-            max = @core.Vec3::new(max.x, max.y, p.z)
+            max = Vec3(max.x, max.y, p.z)
           }
         }
-        let pad = @core.Vec3::new(br, br, br)
-        @core.Aabb3::new(min.sub(pad), max.add(pad))
+        let pad = @core.Vec3(br, br, br)
+        Aabb3(min.sub(pad), max.add(pad))
       }
     Compound(parts) =>
       if parts.length() == 0 {
-        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+        Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
         // Union all child AABBs transformed into the compound's local space.
         let mut aabb = aabb3_transform(parts[0].0, parts[0].1.local_aabb())
@@ -241,82 +227,82 @@ pub fn Shape3D::local_aabb(self : Shape3D) -> @core.Aabb3 {
       let sx = v.voxel_size.x
       let sy = v.voxel_size.y
       let sz = v.voxel_size.z
-      let min = @core.Vec3::new(
+      let min = @core.Vec3(
         Float::from_int(ix0) * sx,
         Float::from_int(iy0) * sy,
         Float::from_int(iz0) * sz,
       )
-      let max = @core.Vec3::new(
+      let max = @core.Vec3(
         Float::from_int(ix1 + 1) * sx,
         Float::from_int(iy1 + 1) * sy,
         Float::from_int(iz1 + 1) * sz,
       )
-      @core.Aabb3::new(min, max)
+      Aabb3(min, max)
     }
     Heightfield(vertices, _, _, _, _) =>
       if vertices.length() == 0 {
-        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+        Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
         let mut min = vertices[0]
         let mut max = vertices[0]
         for i in 1..<vertices.length() {
           let v = vertices[i]
           if v.x < min.x {
-            min = @core.Vec3::new(v.x, min.y, min.z)
+            min = Vec3(v.x, min.y, min.z)
           }
           if v.y < min.y {
-            min = @core.Vec3::new(min.x, v.y, min.z)
+            min = Vec3(min.x, v.y, min.z)
           }
           if v.z < min.z {
-            min = @core.Vec3::new(min.x, min.y, v.z)
+            min = Vec3(min.x, min.y, v.z)
           }
           if v.x > max.x {
-            max = @core.Vec3::new(v.x, max.y, max.z)
+            max = Vec3(v.x, max.y, max.z)
           }
           if v.y > max.y {
-            max = @core.Vec3::new(max.x, v.y, max.z)
+            max = Vec3(max.x, v.y, max.z)
           }
           if v.z > max.z {
-            max = @core.Vec3::new(max.x, max.y, v.z)
+            max = Vec3(max.x, max.y, v.z)
           }
         }
-        @core.Aabb3::new(min, max)
+        Aabb3(min, max)
       }
     TriMesh(vertices, _) =>
       if vertices.length() == 0 {
-        @core.Aabb3::new(@core.Vec3::zero(), @core.Vec3::zero())
+        Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
       } else {
         let mut min = vertices[0]
         let mut max = vertices[0]
         for i in 1..<vertices.length() {
           let v = vertices[i]
           if v.x < min.x {
-            min = @core.Vec3::new(v.x, min.y, min.z)
+            min = Vec3(v.x, min.y, min.z)
           }
           if v.y < min.y {
-            min = @core.Vec3::new(min.x, v.y, min.z)
+            min = Vec3(min.x, v.y, min.z)
           }
           if v.z < min.z {
-            min = @core.Vec3::new(min.x, min.y, v.z)
+            min = Vec3(min.x, min.y, v.z)
           }
           if v.x > max.x {
-            max = @core.Vec3::new(v.x, max.y, max.z)
+            max = Vec3(v.x, max.y, max.z)
           }
           if v.y > max.y {
-            max = @core.Vec3::new(max.x, v.y, max.z)
+            max = Vec3(max.x, v.y, max.z)
           }
           if v.z > max.z {
-            max = @core.Vec3::new(max.x, max.y, v.z)
+            max = Vec3(max.x, max.y, v.z)
           }
         }
-        @core.Aabb3::new(min, max)
+        Aabb3(min, max)
       }
   }
 }
 
 ///|
 fn abs_mat3(m : @core.Mat3) -> @core.Mat3 {
-  @core.Mat3::new(
+  Mat3(
     @core.abs(m.m00),
     @core.abs(m.m01),
     @core.abs(m.m02),
@@ -337,7 +323,7 @@ fn aabb3_transform(iso : @core.Isometry3, aabb : @core.Aabb3) -> @core.Aabb3 {
   let rot = abs_mat3(iso.rotation.to_mat3())
   let ext = rot.mul_vec3(half)
   let world_center = iso.transform_point(center)
-  @core.Aabb3::new(world_center.sub(ext), world_center.add(ext))
+  Aabb3(world_center.sub(ext), world_center.add(ext))
 }
 
 ///|
@@ -797,7 +783,7 @@ pub fn ColliderBuilder3D::capsule_x(
   half_height : @core.Real,
 ) -> ColliderBuilder3D {
   ColliderBuilder3D::capsule_y(radius, half_height).rotation(
-    @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, HALF_PI_3D)),
+    @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, HALF_PI_3D)),
   )
 }
 
@@ -808,7 +794,7 @@ pub fn ColliderBuilder3D::capsule_z(
 ) -> ColliderBuilder3D {
   // Rotate +Y into +Z (rotate around +X by -pi/2).
   ColliderBuilder3D::capsule_y(radius, half_height).rotation(
-    @core.rotation_from_scaled_axis(@core.Vec3::new(-HALF_PI_3D, 0.0F, 0.0F)),
+    @core.rotation_from_scaled_axis(Vec3(-HALF_PI_3D, 0.0F, 0.0F)),
   )
 }
 
@@ -999,22 +985,22 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
   for i in 1..<vertices.length() {
     let p = vertices[i]
     if p.x < min.x {
-      min = @core.Vec3::new(p.x, min.y, min.z)
+      min = Vec3(p.x, min.y, min.z)
     }
     if p.y < min.y {
-      min = @core.Vec3::new(min.x, p.y, min.z)
+      min = Vec3(min.x, p.y, min.z)
     }
     if p.z < min.z {
-      min = @core.Vec3::new(min.x, min.y, p.z)
+      min = Vec3(min.x, min.y, p.z)
     }
     if p.x > max.x {
-      max = @core.Vec3::new(p.x, max.y, max.z)
+      max = Vec3(p.x, max.y, max.z)
     }
     if p.y > max.y {
-      max = @core.Vec3::new(max.x, p.y, max.z)
+      max = Vec3(max.x, p.y, max.z)
     }
     if p.z > max.z {
-      max = @core.Vec3::new(max.x, max.y, p.z)
+      max = Vec3(max.x, max.y, p.z)
     }
   }
   let ext = max.sub(min)
@@ -1350,7 +1336,7 @@ fn heightfield_impl(
       let x = origin_x + Float::from_int(i) * dx
       let z = origin_z + Float::from_int(j) * dz
       let y = heights[i * ncols + j] * scale.y
-      vertices.push(@core.Vec3::new(x, y, z))
+      vertices.push(Vec3(x, y, z))
     }
   }
   fn vid(i : Int, j : Int, ncols : Int) -> Int {
@@ -1409,7 +1395,7 @@ pub fn ColliderBuilder3D::translation(
   self : ColliderBuilder3D,
   t : @core.Vec3,
 ) -> ColliderBuilder3D {
-  self.position = @core.Isometry3::new(t, self.position.rotation)
+  self.position = Isometry3(t, self.position.rotation)
   self
 }
 
@@ -1418,7 +1404,7 @@ pub fn ColliderBuilder3D::rotation(
   self : ColliderBuilder3D,
   r : @core.Quat,
 ) -> ColliderBuilder3D {
-  self.position = @core.Isometry3::new(self.position.translation, r)
+  self.position = Isometry3(self.position.translation, r)
   self
 }
 

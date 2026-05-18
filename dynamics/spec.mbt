@@ -84,7 +84,9 @@ pub type RigidBodyDominance
 
 ///|
 #declaration_only
-pub fn RigidBodyDominance::new(group : Int) -> RigidBodyDominance {
+pub fn RigidBodyDominance::RigidBodyDominance(
+  group : Int,
+) -> RigidBodyDominance {
   ...
 }
 
@@ -141,7 +143,7 @@ pub fn AxesMask::all() -> AxesMask {
 
 ///|
 #declaration_only
-pub fn AxesMask::new(bits : Int) -> AxesMask {
+pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
   ...
 }
 
@@ -205,7 +207,7 @@ pub type Group
 
 ///|
 #declaration_only
-pub fn Group::new(bits : Int) -> Group {
+pub fn Group::Group(bits : Int) -> Group {
   ...
 }
 
@@ -353,7 +355,7 @@ pub type InteractionGroups
 
 ///|
 #declaration_only
-pub fn InteractionGroups::new(
+pub fn InteractionGroups::InteractionGroups(
   memberships : Group,
   filter : Group,
   test_mode : InteractionTestMode,
@@ -450,7 +452,7 @@ pub type SpringCoefficients
 
 ///|
 #declaration_only
-pub fn SpringCoefficients::new(
+pub fn SpringCoefficients::SpringCoefficients(
   natural_frequency : @core.Real,
   damping_ratio : @core.Real,
 ) -> SpringCoefficients {
@@ -525,7 +527,7 @@ pub fn IntegrationParameters::default() -> IntegrationParameters {
 
 ///|
 #declaration_only
-pub fn IntegrationParameters::new() -> IntegrationParameters {
+pub fn IntegrationParameters::IntegrationParameters() -> IntegrationParameters {
   ...
 }
 
@@ -848,7 +850,7 @@ pub type RigidBodySet
 
 ///|
 #declaration_only
-pub fn RigidBodySet::new() -> RigidBodySet {
+pub fn RigidBodySet::RigidBodySet() -> RigidBodySet {
   ...
 }
 
@@ -1660,7 +1662,7 @@ pub type RigidBodyPosition
 
 ///|
 #declaration_only
-pub fn RigidBodyPosition::new(
+pub fn RigidBodyPosition::RigidBodyPosition(
   position : @core.Isometry2,
   next_position : @core.Isometry2,
 ) -> RigidBodyPosition {
@@ -1695,7 +1697,7 @@ pub type RigidBodyVelocity
 
 ///|
 #declaration_only
-pub fn RigidBodyVelocity::new(
+pub fn RigidBodyVelocity::RigidBodyVelocity(
   linvel : @core.Vec2,
   angvel : @core.Real,
 ) -> RigidBodyVelocity {
@@ -1751,7 +1753,7 @@ pub type ContactGraph
 
 ///|
 #declaration_only
-pub fn ContactGraph::new() -> ContactGraph {
+pub fn ContactGraph::ContactGraph() -> ContactGraph {
   ...
 }
 
@@ -1773,7 +1775,7 @@ pub fn ContactGraph::add_pair(
 
 ///|
 #declaration_only
-pub fn IslandManager::new() -> IslandManager {
+pub fn IslandManager::IslandManager() -> IslandManager {
   ...
 }
 
@@ -1849,7 +1851,7 @@ pub type CCDSolver
 
 ///|
 #declaration_only
-pub fn CCDSolver::new() -> CCDSolver {
+pub fn CCDSolver::CCDSolver() -> CCDSolver {
   ...
 }
 
@@ -2020,7 +2022,7 @@ pub fn ImpulseJointHandle::invalid() -> ImpulseJointHandle {
 
 ///|
 #declaration_only
-pub fn ImpulseJointSet::new() -> ImpulseJointSet {
+pub fn ImpulseJointSet::ImpulseJointSet() -> ImpulseJointSet {
   ...
 }
 
@@ -2247,7 +2249,7 @@ pub type MultibodyJointSet
 
 ///|
 #declaration_only
-pub fn MultibodyJointSet::new() -> MultibodyJointSet {
+pub fn MultibodyJointSet::MultibodyJointSet() -> MultibodyJointSet {
   ...
 }
 
@@ -2293,7 +2295,7 @@ pub type RevoluteJointBuilder
 
 ///|
 #declaration_only
-pub fn RevoluteJointBuilder::new() -> RevoluteJointBuilder {
+pub fn RevoluteJointBuilder::RevoluteJointBuilder() -> RevoluteJointBuilder {
   ...
 }
 
@@ -2841,7 +2843,7 @@ pub type IndexSequence
 
 ///|
 #declaration_only
-pub fn IndexSequence::new() -> IndexSequence {
+pub fn IndexSequence::IndexSequence() -> IndexSequence {
   ...
 }
 

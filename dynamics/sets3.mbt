@@ -20,12 +20,7 @@ pub struct IslandManager3 {
 
 ///|
 pub fn IslandManager3::IslandManager3() -> IslandManager3 {
-  IslandManager3::new()
-}
-
-///|
-pub fn IslandManager3::new() -> IslandManager3 {
-  { inner: IslandManager::new() }
+  { inner: IslandManager() }
 }
 
 ///|
@@ -328,12 +323,7 @@ pub struct RigidBodySet3 {
 
 ///|
 pub fn RigidBodySet3::RigidBodySet3() -> RigidBodySet3 {
-  RigidBodySet3::new()
-}
-
-///|
-pub fn RigidBodySet3::new() -> RigidBodySet3 {
-  { inner: RigidBodySet::new() }
+  { inner: RigidBodySet() }
 }
 
 ///|
@@ -365,13 +355,13 @@ pub fn RigidBodySet3::remove(
   wake_up : Bool,
 ) -> RigidBody? {
   colliders |> ignore
-  let empty_impulse_joints = ImpulseJointSet::new()
+  let empty_impulse_joints = ImpulseJointSet()
   let removed = self.inner.remove(
     handle,
     islands.inner,
     (),
     empty_impulse_joints,
-    MultibodyJointSet::new(),
+    MultibodyJointSet(),
     wake_up,
   )
   if removed is Some(_) {
@@ -425,7 +415,7 @@ pub fn RigidBodySet3::translation(
 ) -> @core.Vec3 {
   if self.inner.get(handle) is Some(body) {
     let t2 = body.translation()
-    @core.Vec3::new(t2.x, t2.y, 0.0F)
+    Vec3(t2.x, t2.y, 0.0F)
   } else {
     @core.Vec3::zero()
   }
@@ -439,7 +429,7 @@ pub fn RigidBodySet3::rotation(
   if self.inner.get(handle) is Some(body) {
     let r2 = body.rotation()
     // Map 2D angle to a quaternion around +Z.
-    @core.rotation_from_scaled_axis(@core.Vec3::new(0.0F, 0.0F, r2.angle()))
+    @core.rotation_from_scaled_axis(Vec3(0.0F, 0.0F, r2.angle()))
   } else {
     @core.Quat::identity()
   }

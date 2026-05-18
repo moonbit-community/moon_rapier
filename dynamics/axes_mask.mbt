@@ -18,11 +18,6 @@ pub struct AxesMask {
 }
 
 ///|
-pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
-  AxesMask::new(bits)
-}
-
-///|
 pub fn AxesMask::empty() -> AxesMask {
   { bits: 0 }
 }
@@ -33,7 +28,7 @@ pub fn AxesMask::all() -> AxesMask {
 }
 
 ///|
-pub fn AxesMask::new(bits : Int) -> AxesMask {
+pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
   { bits, }
 }
 
@@ -49,42 +44,42 @@ pub fn AxesMask::contains(self : AxesMask, other : AxesMask) -> Bool {
 
 ///|
 pub fn AxesMask::insert(self : AxesMask, other : AxesMask) -> AxesMask {
-  AxesMask::new(self.bits | other.bits)
+  AxesMask(self.bits | other.bits)
 }
 
 ///|
 pub fn AxesMask::remove(self : AxesMask, other : AxesMask) -> AxesMask {
-  AxesMask::new(self.bits & Int::lnot(other.bits))
+  AxesMask(self.bits & Int::lnot(other.bits))
 }
 
 ///|
 pub fn AxesMask::lin_x() -> AxesMask {
-  AxesMask::new(1 << 0)
+  AxesMask(1 << 0)
 }
 
 ///|
 pub fn AxesMask::lin_y() -> AxesMask {
-  AxesMask::new(1 << 1)
+  AxesMask(1 << 1)
 }
 
 ///|
 pub fn AxesMask::lin_z() -> AxesMask {
-  AxesMask::new(1 << 2)
+  AxesMask(1 << 2)
 }
 
 ///|
 pub fn AxesMask::ang_x() -> AxesMask {
-  AxesMask::new(1 << 3)
+  AxesMask(1 << 3)
 }
 
 ///|
 pub fn AxesMask::ang_y() -> AxesMask {
-  AxesMask::new(1 << 4)
+  AxesMask(1 << 4)
 }
 
 ///|
 pub fn AxesMask::ang_z() -> AxesMask {
-  AxesMask::new(1 << 5)
+  AxesMask(1 << 5)
 }
 
 ///|

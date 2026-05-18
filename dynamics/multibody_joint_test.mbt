@@ -90,13 +90,15 @@ fn shuffle_handle_array(values : Array[RigidBodyHandle], seed : Int) -> Int {
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_append).
 test "multibody append" {
   let spatial_dim : Int = TEST_SPATIAL_DIM
-  let bodies : RigidBodySet = RigidBodySet::new()
-  let joints : MultibodyJointSet = MultibodyJointSet::new()
+  let bodies : RigidBodySet = RigidBodySet()
+  let joints : MultibodyJointSet = MultibodyJointSet()
   let a : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let b : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let c : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
   let d : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
   joints.insert(b, c, joint, true) |> ignore
@@ -110,20 +112,20 @@ test "multibody append" {
 
 ///|
 test "multibody computes non-placeholder inv_augmented_mass" {
-  let bodies = RigidBodySet::new()
-  let joints = MultibodyJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = MultibodyJointSet::MultibodyJointSet()
   let root = bodies.insert(
     RigidBodyBuilder::dynamic().additional_mass(2.0F).build(),
   )
   let child = bodies.insert(
     RigidBodyBuilder::dynamic()
     .additional_mass(3.0F)
-    .translation(@core.Vec2::new(1.0F, 0.0F))
+    .translation(Vec2(1.0F, 0.0F))
     .build(),
   )
   let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::new()
-    .local_anchor2(@core.Vec2::new(-1.0F, 0.0F))
+    RevoluteJointBuilder::RevoluteJointBuilder()
+    .local_anchor2(Vec2(-1.0F, 0.0F))
     .build(),
   )
   if joints.insert(root, child, joint, true) is Some(handle) {
@@ -159,8 +161,8 @@ test "multibody insert" {
   let mut seed = 1234
   let num_links = 100
   for scenario in 0..<10 {
-    let bodies : RigidBodySet = RigidBodySet::new()
-    let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
+    let bodies : RigidBodySet = RigidBodySet()
+    let multibody_joints : MultibodyJointSet = MultibodyJointSet()
     let handles : Array[RigidBodyHandle] = []
     for _ in 0..<num_links {
       handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
@@ -174,7 +176,9 @@ test "multibody insert" {
     } else if scenario > 1 {
       seed = shuffle_int_array(insertion_ids, seed)
     }
-    let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+    let joint = GenericJoint::from_revolute(
+      RevoluteJointBuilder::RevoluteJointBuilder().build(),
+    )
     let mut mb_handle : MultibodyJointHandle = MultibodyJointHandle::invalid()
     for index in insertion_ids {
       let inserted = multibody_joints.insert(
@@ -200,16 +204,18 @@ test "multibody remove" {
   let mut seed = 1234
   let num_links = 100
   for scenario in 0..<10 {
-    let bodies : RigidBodySet = RigidBodySet::new()
-    let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
-    let colliders = @collision.ColliderSet::new()
-    let impulse_joints = ImpulseJointSet::new()
-    let islands = IslandManager::new()
+    let bodies : RigidBodySet = RigidBodySet()
+    let multibody_joints : MultibodyJointSet = MultibodyJointSet()
+    let colliders = @collision.ColliderSet()
+    let impulse_joints = ImpulseJointSet::ImpulseJointSet()
+    let islands = IslandManager::IslandManager()
     let handles : Array[RigidBodyHandle] = []
     for _ in 0..<num_links {
       handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
     }
-    let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+    let joint = GenericJoint::from_revolute(
+      RevoluteJointBuilder::RevoluteJointBuilder().build(),
+    )
     for index in 0..<(num_links - 1) {
       multibody_joints.insert(handles[index], handles[index + 1], joint, true)
       |> ignore
@@ -230,11 +236,13 @@ test "multibody remove" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody_joint_set.rs behavior.
 test "multibody remove wakes links" {
-  let bodies : RigidBodySet = RigidBodySet::new()
-  let multibody_joints : MultibodyJointSet = MultibodyJointSet::new()
-  let islands = IslandManager::new()
-  let impulse_joints = ImpulseJointSet::new()
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let bodies : RigidBodySet = RigidBodySet()
+  let multibody_joints : MultibodyJointSet = MultibodyJointSet()
+  let islands = IslandManager::IslandManager()
+  let impulse_joints = ImpulseJointSet::ImpulseJointSet()
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
   let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
@@ -258,11 +266,13 @@ test "multibody remove wakes links" {
 
 ///|
 test "multibody handles preserve rigid body generations" {
-  let bodies = RigidBodySet::new()
-  let joints = MultibodyJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = MultibodyJointSet::MultibodyJointSet()
   let parent = bodies.insert(RigidBodyBuilder::dynamic().build())
   let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(RevoluteJointBuilder::new().build())
+  let joint = GenericJoint::from_revolute(
+    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  )
   let inserted = joints.insert(parent, child, joint, true)
   if inserted is Some(handle) {
     inspect(handle.into_raw_parts() == child.into_raw_parts(), content="true")
@@ -282,11 +292,11 @@ test "multibody handles preserve rigid body generations" {
 
 ///|
 test "multibody insert accepts generic prismatic joint" {
-  let bodies = RigidBodySet::new()
-  let joints = MultibodyJointSet::new()
+  let bodies = RigidBodySet::RigidBodySet()
+  let joints = MultibodyJointSet::MultibodyJointSet()
   let root = bodies.insert(RigidBodyBuilder::fixed().build())
   let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::new(JointAxesMask::locked_prismatic_axes())
+  let joint = GenericJoint::GenericJoint(JointAxesMask::locked_prismatic_axes())
   let inserted = joints.insert(root, child, joint, true)
   if inserted is Some(handle) {
     if joints.get_mut(handle) is Some((multibody, link_id)) {
@@ -311,7 +321,7 @@ test "multibody insert accepts generic prismatic joint" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns" {
-  let seq : IndexSequence = IndexSequence::new()
+  let seq : IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)
@@ -332,7 +342,7 @@ test "index sequence rearrange columns" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_rows).
 test "index sequence rearrange rows" {
-  let seq : IndexSequence = IndexSequence::new()
+  let seq : IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)
@@ -358,7 +368,7 @@ test "index sequence rearrange rows" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_with_rearranged_rows_mut).
 test "index sequence with rearranged rows mut" {
-  let seq : IndexSequence = IndexSequence::new()
+  let seq : IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)

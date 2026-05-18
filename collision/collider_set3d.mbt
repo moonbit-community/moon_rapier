@@ -19,7 +19,10 @@ pub struct ColliderHandle3D {
 }
 
 ///|
-fn ColliderHandle3D::new(id : Int, generation : Int) -> ColliderHandle3D {
+fn ColliderHandle3D::ColliderHandle3D(
+  id : Int,
+  generation : Int,
+) -> ColliderHandle3D {
   { id, generation }
 }
 
@@ -36,7 +39,7 @@ pub fn ColliderHandle3D::from_raw_parts(
   id : Int,
   generation : Int,
 ) -> ColliderHandle3D {
-  ColliderHandle3D::new(id, generation)
+  ColliderHandle3D(id, generation)
 }
 
 ///|
@@ -46,7 +49,7 @@ pub fn ColliderHandle3D::into_raw_parts(self : ColliderHandle3D) -> (Int, Int) {
 
 ///|
 pub fn ColliderHandle3D::invalid() -> ColliderHandle3D {
-  ColliderHandle3D::new(-1, -1)
+  ColliderHandle3D(-1, -1)
 }
 
 ///|
@@ -58,11 +61,6 @@ pub struct ColliderSet3D {
 
 ///|
 pub fn ColliderSet3D::ColliderSet3D() -> ColliderSet3D {
-  ColliderSet3D::new()
-}
-
-///|
-pub fn ColliderSet3D::new() -> ColliderSet3D {
   { colliders: [], generations: [], free_list: [] }
 }
 
@@ -126,12 +124,12 @@ fn ColliderSet3D::insert_raw(
   if self.free_list.pop() is Some(index) {
     self.colliders[index] = Some(collider)
     let generation = self.generations[index]
-    ColliderHandle3D::new(index, generation)
+    ColliderHandle3D(index, generation)
   } else {
     let index = self.colliders.length()
     self.colliders.push(Some(collider))
     self.generations.push(0)
-    ColliderHandle3D::new(index, 0)
+    ColliderHandle3D(index, 0)
   }
 }
 
