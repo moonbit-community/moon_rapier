@@ -457,11 +457,15 @@ pub struct QueryPipelineMut {
 }
 
 ///|
-pub struct QueryDispatcher {}
+pub struct QueryDispatcher {
+  priv marker : Unit
+}
 
 ///|
 pub fn QueryDispatcher::QueryDispatcher() -> QueryDispatcher {
-  QueryDispatcher::{  }
+  let value = { marker: () }
+  value.marker |> ignore
+  value
 }
 
 ///|

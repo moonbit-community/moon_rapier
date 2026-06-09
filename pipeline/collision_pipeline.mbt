@@ -13,11 +13,15 @@
 // limitations under the License.
 
 ///|
-pub struct CollisionPipeline {}
+pub struct CollisionPipeline {
+  priv marker : Unit
+}
 
 ///|
 pub fn CollisionPipeline::CollisionPipeline() -> CollisionPipeline {
-  CollisionPipeline::{  }
+  let value = { marker: () }
+  value.marker |> ignore
+  value
 }
 
 ///|

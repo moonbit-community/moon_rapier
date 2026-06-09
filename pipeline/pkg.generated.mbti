@@ -42,6 +42,7 @@ pub fn ChannelEventCollector::take_contact_force_events(Self) -> Array[@collisio
 pub fn ChannelEventCollector::take_intersection_events(Self) -> Array[@collision.IntersectionEvent]
 
 pub struct CollisionPipeline {
+  // private fields
 }
 pub fn CollisionPipeline::CollisionPipeline() -> Self
 pub fn CollisionPipeline::step(Self, Float, @dynamics.IslandManager, @collision.BroadPhaseBvh, @collision.NarrowPhase, @dynamics.RigidBodySet, @collision.ColliderSet, @dynamics.ImpulseJointSet, @dynamics.MultibodyJointSet, PhysicsHooks, EventHandler) -> Unit

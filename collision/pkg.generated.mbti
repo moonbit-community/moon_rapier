@@ -979,6 +979,7 @@ pub fn PointProjection3::is_inside(Self) -> Bool
 pub fn PointProjection3::point(Self) -> @core.Vec3
 
 pub struct QueryDispatcher {
+  // private fields
 }
 pub fn QueryDispatcher::QueryDispatcher() -> Self
 

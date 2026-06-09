@@ -2768,7 +2768,11 @@ fn split_values(text : String, sep : String) -> Array[String] {
 
 ///|
 fn parse_int_value(text : String) -> Int {
-  let result = try? @string.parse_int(text[:], base=10)
+  let result = try @string.parse_int(text[:], base=10) catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   if result is Ok(value) {
     value
   } else {
@@ -2778,7 +2782,11 @@ fn parse_int_value(text : String) -> Int {
 
 ///|
 fn parse_real_value(text : String) -> @core.Real {
-  let result = try? @string.parse_double(text[:])
+  let result = try @string.parse_double(text[:]) catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   if result is Ok(value) {
     Float::from_double(value)
   } else {
@@ -2788,7 +2796,11 @@ fn parse_real_value(text : String) -> @core.Real {
 
 ///|
 fn parse_u64_value(text : String) -> UInt64 {
-  let result = try? @string.parse_uint64(text[:], base=10)
+  let result = try @string.parse_uint64(text[:], base=10) catch {
+    err => Err(err)
+  } noraise {
+    value => Ok(value)
+  }
   if result is Ok(value) {
     value
   } else {

@@ -209,7 +209,7 @@ pub struct Subscription[T] {
 
 // Traits
 pub(open) trait HasModifiedFlag {
-  has_modified_flag(Self) -> Bool
-  set_modified_flag(Self) -> Unit
+  fn has_modified_flag(Self) -> Bool
+  fn set_modified_flag(Self) -> Unit
 }
 

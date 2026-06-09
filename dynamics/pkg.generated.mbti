@@ -45,6 +45,7 @@ pub struct BodyPair {
 pub fn BodyPair::BodyPair(RigidBodyHandle, RigidBodyHandle) -> Self
 
 pub struct CCDSolver {
+  // private fields
 }
 pub fn CCDSolver::CCDSolver() -> Self
 pub fn CCDSolver::clamp_motions(Self, Float, RigidBodySet, PredictedImpacts) -> Unit

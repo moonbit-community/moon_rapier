@@ -13,11 +13,15 @@
 // limitations under the License.
 
 ///|
-pub struct CCDSolver {}
+pub struct CCDSolver {
+  priv marker : Unit
+}
 
 ///|
 pub fn CCDSolver::CCDSolver() -> CCDSolver {
-  CCDSolver::{  }
+  let value = { marker: () }
+  value.marker |> ignore
+  value
 }
 
 ///|
