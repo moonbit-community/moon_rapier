@@ -325,8 +325,8 @@ pub fn[Handle, Object] ModifiedObjects::as_mut_internal(
 
 ///|
 pub(open) trait HasModifiedFlag {
-  has_modified_flag(self : Self) -> Bool
-  set_modified_flag(self : Self) -> Unit
+  fn has_modified_flag(self : Self) -> Bool
+  fn set_modified_flag(self : Self) -> Unit
 }
 
 ///|

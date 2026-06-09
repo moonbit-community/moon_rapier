@@ -375,7 +375,9 @@ def extract_moon_exports(root: pathlib.Path) -> Dict[str, Any]:
                     # Example:
                     #   foo(Self) -> Unit
                     #   bar(Self, Int) -> Bool
-                    mth = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(", line)
+                    # Newer MoonBit signature syntax prints trait methods as:
+                    #   fn foo(Self) -> Unit
+                    mth = re.match(r"^\s*(?:fn\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(", line)
                     if mth:
                         add(pkg, f"{current_trait}::{mth.group(1)}", "trait_method", src)
                 continue
