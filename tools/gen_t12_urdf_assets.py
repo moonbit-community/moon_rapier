@@ -115,7 +115,7 @@ def main() -> None:
         out.write("\n///|\n/// Test-only embedded assets for the T12 URDF parity test.\n\n")
 
         out.write("pub fn t12_urdf_xml() -> String {\n")
-        out.write("  let b = StringBuilder::new()\n")
+        out.write("  let b = StringBuilder()\n")
         for line in urdf_lines:
             out.write(f'  b.write_string("{esc_mbt_string(line)}\\n")\n')
         out.write("  b.to_string()\n")
@@ -125,11 +125,11 @@ def main() -> None:
             "pub fn t12_mesh_bounds_map() -> @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)] {\n"
         )
         out.write(
-            f"  let m : @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)] = @hashmap.new(capacity={len(bounds)})\n"
+            f"  let m : @hashmap.HashMap[String, (@core.Vec3, @core.Vec3)] = HashMap([], capacity={len(bounds)})\n"
         )
         for name, (mn, mx) in sorted(bounds.items()):
             out.write(
-                "  m.set(\"%s\", (@core.Vec3::new(%0.6fF, %0.6fF, %0.6fF), @core.Vec3::new(%0.6fF, %0.6fF, %0.6fF)))\n"
+                "  m.set(\"%s\", (Vec3(%0.6fF, %0.6fF, %0.6fF), Vec3(%0.6fF, %0.6fF, %0.6fF)))\n"
                 % (name, mn[0], mn[1], mn[2], mx[0], mx[1], mx[2])
             )
         out.write("  m\n")
@@ -140,4 +140,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
