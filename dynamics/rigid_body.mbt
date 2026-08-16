@@ -2404,7 +2404,7 @@ fn parse_u64_value(text : String) -> UInt64 {
   if result is Ok(value) {
     value
   } else {
-    UInt64::default()
+    Default::default()
   }
 }
 

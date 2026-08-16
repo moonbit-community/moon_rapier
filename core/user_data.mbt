@@ -23,7 +23,7 @@ pub struct UserData128 {
 
 ///|
 pub fn UserData128::zero() -> UserData128 {
-  { hi: UInt64::default(), lo: UInt64::default() }
+  { hi: Default::default(), lo: Default::default() }
 }
 
 ///|
@@ -33,7 +33,7 @@ pub fn UserData128::from_parts(hi : UInt64, lo : UInt64) -> UserData128 {
 
 ///|
 pub fn UserData128::from_u64(value : UInt64) -> UserData128 {
-  { hi: UInt64::default(), lo: value }
+  { hi: Default::default(), lo: value }
 }
 
 ///|
