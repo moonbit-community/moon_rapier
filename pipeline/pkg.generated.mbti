@@ -345,4 +345,3 @@ pub fn SolverVel::zero() -> Self
 pub using @dynamics {type IntegrationParameters}
 
 // Traits
-

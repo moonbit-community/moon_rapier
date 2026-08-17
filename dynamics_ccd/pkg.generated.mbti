@@ -27,4 +27,3 @@ pub fn CCDSolver::update_ccd_active_flags3(Self, @dynamics.IslandManager3, @dyna
 // Type aliases
 
 // Traits
-

@@ -49,4 +49,3 @@ pub using @core {type Rot2}
 pub using @core {type Vec2}
 
 // Traits
-

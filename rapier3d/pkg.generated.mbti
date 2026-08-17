@@ -73,4 +73,3 @@ pub using @collision {type Shape3D as Shape}
 pub using @core {type Vec3}
 
 // Traits
-

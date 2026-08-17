@@ -290,4 +290,3 @@ pub using @core {type Vec2 as Vector2}
 pub using @core {type Vec3 as Vector3}
 
 // Traits
-

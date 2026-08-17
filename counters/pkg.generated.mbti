@@ -135,4 +135,3 @@ pub fn Timer::to_string(Self) -> String
 // Type aliases
 
 // Traits
-

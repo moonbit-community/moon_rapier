@@ -1362,4 +1362,3 @@ pub type RigidBodyGraphIndex = Int
 pub type TemporaryInteractionIndex = Int
 
 // Traits
-
