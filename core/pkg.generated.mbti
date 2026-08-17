@@ -293,4 +293,3 @@ pub type SimdAngularInertia2 = Float
 pub type TangentImpulse2 = Float
 
 // Traits
-

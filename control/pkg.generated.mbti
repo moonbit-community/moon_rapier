@@ -356,4 +356,3 @@ pub fn WheelTuning::with_suspension_stiffness(Self, Float) -> Self
 // Type aliases
 
 // Traits
-

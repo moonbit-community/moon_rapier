@@ -95,9 +95,7 @@ pub fn FixedJoint3DRealBuilder::local_anchor2(Self, @core.Vec3) -> Self
 pub fn FixedJoint3DRealBuilder::local_basis1(Self, @core.Quat) -> Self
 pub fn FixedJoint3DRealBuilder::local_basis2(Self, @core.Quat) -> Self
 
-pub struct FixedJointBuilder {
-  // private fields
-}
+type FixedJointBuilder
 pub fn FixedJointBuilder::FixedJointBuilder() -> Self
 pub fn FixedJointBuilder::build(Self) -> FixedJoint
 pub fn FixedJointBuilder::local_anchor1(Self, @core.Vec2) -> Self
@@ -334,9 +332,7 @@ pub fn ImpulseJointHandle::from_raw_parts(Int, Int) -> Self
 pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn ImpulseJointHandle::invalid() -> Self
 
-pub struct ImpulseJointSet {
-  // private fields
-}
+type ImpulseJointSet
 pub fn ImpulseJointSet::ImpulseJointSet() -> Self
 pub fn ImpulseJointSet::attached_enabled_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
@@ -364,9 +360,7 @@ pub fn ImpulseJointSet::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2
 pub fn ImpulseJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct ImpulseJointSet3 {
-  // private fields
-}
+type ImpulseJointSet3
 pub fn ImpulseJointSet3::ImpulseJointSet3() -> Self
 pub fn ImpulseJointSet3::as_2d(Self) -> ImpulseJointSet
 pub fn ImpulseJointSet3::attached_enabled_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint)]
@@ -393,9 +387,7 @@ pub fn ImpulseJointSet3::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec
 pub fn ImpulseJointSet3::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn ImpulseJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct IndexSequence {
-  // private fields
-}
+type IndexSequence
 pub fn IndexSequence::IndexSequence() -> Self
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
 pub fn IndexSequence::keep(Self, Int) -> Unit
@@ -788,9 +780,7 @@ pub(all) enum MotorState3DReal {
   Position(Float, Float, Float, Float)
 }
 
-pub struct Multibody {
-  // private fields
-}
+type Multibody
 pub fn Multibody::Multibody() -> Self
 pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
@@ -873,9 +863,7 @@ pub fn MultibodyJointHandle::from_raw_parts(Int, Int) -> Self
 pub fn MultibodyJointHandle::into_raw_parts(Self) -> (Int, Int)
 pub fn MultibodyJointHandle::invalid() -> Self
 
-pub struct MultibodyJointSet {
-  // private fields
-}
+type MultibodyJointSet
 pub fn MultibodyJointSet::MultibodyJointSet() -> Self
 pub fn MultibodyJointSet::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
 pub fn MultibodyJointSet::attached_joints(Self, RigidBodyHandle) -> Array[(RigidBodyHandle, RigidBodyHandle, MultibodyJointHandle)]
@@ -903,9 +891,7 @@ pub fn MultibodyJointSet::sync_rigid_bodies_from_multibodies(Self, RigidBodySet)
 pub fn MultibodyJointSet::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct MultibodyJointSet3 {
-  // private fields
-}
+type MultibodyJointSet3
 pub fn MultibodyJointSet3::MultibodyJointSet3() -> Self
 pub fn MultibodyJointSet3::as_2d(Self) -> MultibodyJointSet
 pub fn MultibodyJointSet3::attached_bodies(Self, RigidBodyHandle) -> Array[RigidBodyHandle]
@@ -962,9 +948,7 @@ pub fn MultibodyJointSet3DReal::sync_rigid_bodies_from_multibodies(Self, RigidBo
 pub fn MultibodyJointSet3DReal::take_to_join(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn MultibodyJointSet3DReal::take_wake_up(Self) -> Array[RigidBodyHandle]
 
-pub struct MultibodyLink {
-  // private fields
-}
+type MultibodyLink
 pub fn MultibodyLink::MultibodyLink(RigidBodyHandle, Int, Int, Int, MultibodyJoint, @core.Isometry2, @core.Isometry2) -> Self
 pub fn MultibodyLink::is_root(Self) -> Bool
 pub fn MultibodyLink::link_id(Self) -> LinkId
@@ -1067,9 +1051,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_max_force(Self, Float) -> Self
 pub fn PrismaticJoint3DRealBuilder::motor_position(Self, Float, Float, Float) -> Self
 pub fn PrismaticJoint3DRealBuilder::motor_velocity(Self, Float, Float) -> Self
 
-pub struct PrismaticJointBuilder {
-  // private fields
-}
+type PrismaticJointBuilder
 pub fn PrismaticJointBuilder::PrismaticJointBuilder(@core.Vec2) -> Self
 pub fn PrismaticJointBuilder::build(Self) -> PrismaticJoint
 pub fn PrismaticJointBuilder::limits(Self, Float, Float) -> Self
@@ -1098,9 +1080,7 @@ pub fn PrismaticJointBuilder3::motor_position(Self, Float, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::motor_velocity(Self, Float, Float) -> Self
 pub fn PrismaticJointBuilder3::softness(Self, SpringCoefficients) -> Self
 
-pub struct RevoluteJoint {
-  // private fields
-}
+type RevoluteJoint
 pub fn RevoluteJoint::RevoluteJoint() -> Self
 pub fn RevoluteJoint::angle(Self, @core.Rot2, @core.Rot2) -> Float
 pub fn RevoluteJoint::limits(Self) -> JointLimits?
@@ -1132,9 +1112,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_max_force(Self, Float) -> Self
 pub fn RevoluteJoint3DRealBuilder::motor_position(Self, Float, Float, Float) -> Self
 pub fn RevoluteJoint3DRealBuilder::motor_velocity(Self, Float, Float) -> Self
 
-pub struct RevoluteJointBuilder {
-  // private fields
-}
+type RevoluteJointBuilder
 pub fn RevoluteJointBuilder::RevoluteJointBuilder() -> Self
 pub fn RevoluteJointBuilder::build(Self) -> RevoluteJoint
 pub fn RevoluteJointBuilder::limits(Self, Float, Float) -> Self
@@ -1929,4 +1907,3 @@ pub(all) enum WritebackId {
 // Type aliases
 
 // Traits
-
