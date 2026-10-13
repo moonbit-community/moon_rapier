@@ -22,12 +22,13 @@ test "heightfield flags: FIX_INTERNAL_EDGES smoothes closest-point normal" {
   let mut q0 = @core.Vec3::zero()
   let mut n0 = @core.Vec3::zero()
   let mut d20 = 1.0e30F
-  if ColliderBuilder3D::heightfield(heights0, 2, 2, scale) is Some(b0) {
+  if @collision.ColliderBuilder3D::heightfield(heights0, 2, 2, scale)
+    is Some(b0) {
     let co0 = b0.build()
     match co0.shape() {
       Heightfield(vertices, _, rows, cols, flags) => {
         inspect(flags == 0, content="true")
-        if heightfield_closest_point_query_with_flags(
+        if @collision.heightfield_closest_point_query_with_flags(
             point, pos, vertices, rows, cols, flags,
           )
           is Some((q, n, d2)) {
@@ -46,13 +47,15 @@ test "heightfield flags: FIX_INTERNAL_EDGES smoothes closest-point normal" {
   let mut q1 = @core.Vec3::zero()
   let mut n1 = @core.Vec3::zero()
   let mut d21 = 1.0e30F
-  if ColliderBuilder3D::heightfield_with_flags(heights1, 2, 2, scale, 1)
+  if @collision.ColliderBuilder3D::heightfield_with_flags(
+      heights1, 2, 2, scale, 1,
+    )
     is Some(b1) {
     let co1 = b1.build()
     match co1.shape() {
       Heightfield(vertices, _, rows, cols, flags) => {
         inspect(flags == 1, content="true")
-        if heightfield_closest_point_query_with_flags(
+        if @collision.heightfield_closest_point_query_with_flags(
             point, pos, vertices, rows, cols, flags,
           )
           is Some((q, n, d2)) {

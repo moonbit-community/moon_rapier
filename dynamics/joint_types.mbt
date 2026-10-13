@@ -27,21 +27,21 @@ pub(all) enum JointAxis {
 
 ///|
 pub struct JointAxesMask {
-  bits : Int
+  bits : Int32
 }
 
 ///|
 pub fn JointAxesMask::empty() -> JointAxesMask {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
-pub fn JointAxesMask::JointAxesMask(bits : Int) -> JointAxesMask {
+pub fn JointAxesMask::JointAxesMask(bits : Int32) -> JointAxesMask {
   { bits, }
 }
 
 ///|
-pub fn JointAxesMask::bits(self : JointAxesMask) -> Int {
+pub fn JointAxesMask::bits(self : JointAxesMask) -> Int32 {
   self.bits
 }
 
@@ -58,7 +58,7 @@ pub fn JointAxesMask::or(
   self : JointAxesMask,
   other : JointAxesMask,
 ) -> JointAxesMask {
-  { bits: self.bits | other.bits }
+  { bits: self.bits | other.bits, }
 }
 
 ///|
@@ -66,37 +66,37 @@ pub fn JointAxesMask::intersection(
   self : JointAxesMask,
   other : JointAxesMask,
 ) -> JointAxesMask {
-  { bits: self.bits & other.bits }
+  { bits: self.bits & other.bits, }
 }
 
 ///|
 pub fn JointAxesMask::lin_x() -> JointAxesMask {
-  { bits: 1 << 0 }
+  { bits: 1 << 0, }
 }
 
 ///|
 pub fn JointAxesMask::lin_y() -> JointAxesMask {
-  { bits: 1 << 1 }
+  { bits: 1 << 1, }
 }
 
 ///|
 pub fn JointAxesMask::lin_z() -> JointAxesMask {
-  { bits: 1 << 2 }
+  { bits: 1 << 2, }
 }
 
 ///|
 pub fn JointAxesMask::ang_x() -> JointAxesMask {
-  { bits: 1 << 3 }
+  { bits: 1 << 3, }
 }
 
 ///|
 pub fn JointAxesMask::ang_y() -> JointAxesMask {
-  { bits: 1 << 4 }
+  { bits: 1 << 4, }
 }
 
 ///|
 pub fn JointAxesMask::ang_z() -> JointAxesMask {
-  { bits: 1 << 5 }
+  { bits: 1 << 5, }
 }
 
 ///|
@@ -215,7 +215,7 @@ pub struct JointLimits {
 
 ///|
 pub fn JointLimits::default() -> JointLimits {
-  { min: -REAL_MAX, max: REAL_MAX, impulse: 0.0F }
+  { min: -REAL_MAX, max: REAL_MAX, impulse: 0.0F, }
 }
 
 ///|
@@ -223,7 +223,7 @@ pub fn JointLimits::JointLimits(
   min : @core.Real,
   max : @core.Real,
 ) -> JointLimits {
-  { min, max, impulse: 0.0F }
+  { min, max, impulse: 0.0F, }
 }
 
 ///|
@@ -246,7 +246,7 @@ pub fn JointLimits::set_min(
   self : JointLimits,
   min : @core.Real,
 ) -> JointLimits {
-  { min, max: self.max, impulse: self.impulse }
+  { min, max: self.max, impulse: self.impulse, }
 }
 
 ///|
@@ -254,7 +254,7 @@ pub fn JointLimits::set_max(
   self : JointLimits,
   max : @core.Real,
 ) -> JointLimits {
-  { min: self.min, max, impulse: self.impulse }
+  { min: self.min, max, impulse: self.impulse, }
 }
 
 ///|

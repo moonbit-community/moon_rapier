@@ -14,12 +14,12 @@
 
 ///|
 pub struct HashMap {
-  entries : Array[(Int, String)]
+  entries : Array[(Int32, String)]
 }
 
 ///|
-pub fn HashMap::from_array(items : Array[(Int, String)]) -> HashMap {
-  let entries : Array[(Int, String)] = []
+pub fn HashMap::from_array(items : Array[(Int32, String)]) -> HashMap {
+  let entries : Array[(Int32, String)] = []
   for item in items {
     entries.push(item)
   }
@@ -92,7 +92,7 @@ fn split_values(text : String, sep : String) -> Array[String] {
 }
 
 ///|
-fn parse_int_value(text : String) -> Int {
+fn parse_int_value(text : String) -> Int32 {
   let mut sign = 1
   let mut value = 0
   let mut started = false
@@ -135,7 +135,7 @@ fn unescape_json_string(text : String) -> String {
 
 ///|
 pub fn deserialize_from_vec_tuple(value : String) -> HashMap {
-  let entries : Array[(Int, String)] = []
+  let entries : Array[(Int32, String)] = []
   if value.strip_prefix("{\"map\":["[:]) is Some(list_view) {
     if list_view.strip_suffix("]}"[:]) is Some(items_view) {
       let items = items_view.to_owned()

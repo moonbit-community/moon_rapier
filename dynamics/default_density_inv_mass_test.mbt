@@ -14,9 +14,9 @@
 
 ///|
 test "2d: attaching collider recomputes mass properties immediately (default density)" {
-  let bodies = RigidBodySet::RigidBodySet()
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
   let colliders = @collision.ColliderSet()
-  let rb = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let rb = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
 
   // Simulate a world that already processed the initial insertion.
   bodies.take_modified() |> ignore

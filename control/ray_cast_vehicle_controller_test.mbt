@@ -52,8 +52,8 @@ test "raycast vehicle controller: accelerates on flat ground (2D)" {
     bodies,
   )
   |> ignore
-  let tuning = WheelTuning::default()
-  let vehicle = DynamicRayCastVehicleController::DynamicRayCastVehicleController(
+  let tuning = @control.WheelTuning::default()
+  let vehicle = @control.DynamicRayCastVehicleController::DynamicRayCastVehicleController(
     chassis,
   )
   vehicle.add_wheel(Vec2(0.6F, -0.15F), Vec2(0.0F, -1.0F), 0.35F, 0.15F, tuning)
@@ -143,12 +143,12 @@ test "raycast vehicle controller: climbs a mild slope (2D port)" {
   )
   |> ignore
   // Use a stiffer suspension so the chassis height reacts visibly to the slope.
-  let tuning = WheelTuning::default()
+  let tuning = @control.WheelTuning::default()
     .with_suspension_stiffness(100.0F)
     .with_suspension_compression(10.0F)
     .with_suspension_damping(10.0F)
     .with_max_suspension_travel(2.0F)
-  let vehicle = DynamicRayCastVehicleController::DynamicRayCastVehicleController(
+  let vehicle = @control.DynamicRayCastVehicleController::DynamicRayCastVehicleController(
     chassis,
   )
   vehicle.add_wheel(Vec2(0.6F, -0.15F), Vec2(0.0F, -1.0F), 0.35F, 0.15F, tuning)
@@ -229,8 +229,8 @@ test "raycast vehicle controller: braking reduces forward speed (2D)" {
     bodies,
   )
   |> ignore
-  let tuning = WheelTuning::default()
-  let vehicle = DynamicRayCastVehicleController::DynamicRayCastVehicleController(
+  let tuning = @control.WheelTuning::default()
+  let vehicle = @control.DynamicRayCastVehicleController::DynamicRayCastVehicleController(
     chassis,
   )
   vehicle.add_wheel(Vec2(0.6F, -0.15F), Vec2(0.0F, -1.0F), 0.35F, 0.15F, tuning)

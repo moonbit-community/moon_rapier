@@ -19,7 +19,7 @@
 pub struct PhysicsPipeline3DReal {
   mut contact_cache : ContactSolverCache3D
   priv mut contact_twist_cache : @hashmap.HashMap[
-    (Int, Int, Int, Int),
+    (Int32, Int32, Int32, Int32),
     @core.Real,
   ]
   sensor_pairs : Array[
@@ -284,7 +284,8 @@ fn clamp_fast_ccd_body_motions_3d_real(
     bodies,
     colliders,
   )
-  let best_toi_by_body : @hashmap.HashMap[(Int, Int), @core.Real] = HashMap([])
+  let best_toi_by_body : @hashmap.HashMap[(Int32, Int32), @core.Real] = HashMap([],
+  )
   let collider_handles = colliders.all_handles()
   for i in 0..<collider_handles.length() {
     let ch = collider_handles[i]
@@ -385,7 +386,7 @@ fn clamp_fast_ccd_body_motions_3d_real(
 fn pair_key_3d(
   a : @collision.ColliderHandle3D,
   b : @collision.ColliderHandle3D,
-) -> (Int, Int, Int, Int) {
+) -> (Int32, Int32, Int32, Int32) {
   let (ai, ag) = a.into_raw_parts()
   let (bi, bg) = b.into_raw_parts()
   if ai < bi || (ai == bi && ag <= bg) {
@@ -672,7 +673,7 @@ fn emit_intersection_events_for_pair_diffs(
 fn rb_pair_key_3d(
   a : @dynamics.RigidBodyHandle,
   b : @dynamics.RigidBodyHandle,
-) -> (Int, Int, Int, Int) {
+) -> (Int32, Int32, Int32, Int32) {
   let (ai, ag) = a.into_raw_parts()
   let (bi, bg) = b.into_raw_parts()
   if ai < bi || (ai == bi && ag <= bg) {
@@ -691,7 +692,7 @@ fn filter_broad_phase_pairs_3d(
   multibody_joints : @dynamics.MultibodyJointSet3DReal?,
   hooks : PhysicsHooks3D?,
 ) -> Array[(@collision.ColliderHandle3D, @collision.ColliderHandle3D)] {
-  let mut disabled : @hashmap.HashMap[(Int, Int, Int, Int), Bool]? = None
+  let mut disabled : @hashmap.HashMap[(Int32, Int32, Int32, Int32), Bool]? = None
   let disabled_body_pairs : Array[
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ] = []
@@ -702,7 +703,7 @@ fn filter_broad_phase_pairs_3d(
     disabled_body_pairs.append(multibody.disabled_contact_pairs()[:])
   }
   if disabled_body_pairs.length() > 0 {
-    let out : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = HashMap(
+    let out : @hashmap.HashMap[(Int32, Int32, Int32, Int32), Bool] = HashMap(
       [],
       capacity=disabled_body_pairs.length() * 2,
     )
@@ -763,11 +764,11 @@ fn collect_solver_interactions_3d_real(
   let interactions : Array[
     (@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle),
   ] = []
-  let interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool] = HashMap([],
+  let interaction_keys : @hashmap.HashMap[(Int32, Int32, Int32, Int32), Bool] = HashMap([],
   )
   fn push_unique_interaction(
     interactions : Array[(@dynamics.RigidBodyHandle, @dynamics.RigidBodyHandle)],
-    interaction_keys : @hashmap.HashMap[(Int, Int, Int, Int), Bool],
+    interaction_keys : @hashmap.HashMap[(Int32, Int32, Int32, Int32), Bool],
     body1 : @dynamics.RigidBodyHandle,
     body2 : @dynamics.RigidBodyHandle,
   ) -> Unit {
@@ -816,8 +817,8 @@ fn collect_solver_interactions_3d_real(
 fn island_solver_iterations_3d_real(
   parameters : @dynamics.IntegrationParameters,
   islands : @dynamics.IslandManager3D,
-  island_id : Int,
-) -> Int {
+  island_id : Int32,
+) -> Int32 {
   let base_iters = if parameters.num_solver_iterations > 0 {
     parameters.num_solver_iterations
   } else {
@@ -1438,11 +1439,11 @@ fn PhysicsPipeline3DReal::step_impl_one(
   )
   islands.update(bodies, solver_interactions)
   let active_island_ids = islands.active_islands()
-  let island_stamps : Array[Int] = []
+  let island_stamps : Array[Int32] = []
   for _ in 0..<bodies.bodies.length() {
     island_stamps.push(0)
   }
-  let island_stamp_ids : Array[Int] = []
+  let island_stamp_ids : Array[Int32] = []
   let mut stamp_seed = 1
   for i in 0..<active_island_ids.length() {
     let island_id = active_island_ids[i]
@@ -1465,8 +1466,10 @@ fn PhysicsPipeline3DReal::step_impl_one(
   let mut twist_cache_in = self.contact_twist_cache
   for pass in 0..<coupling_passes {
     let cache_out = ContactSolverCache3D()
-    let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
-    )
+    let twist_cache_out : @hashmap.HashMap[
+      (Int32, Int32, Int32, Int32),
+      @core.Real,
+    ] = HashMap([])
     let pass_events = if pass + 1 == coupling_passes { events } else { None }
     if active_island_ids.length() > 0 {
       for island_idx in 0..<active_island_ids.length() {

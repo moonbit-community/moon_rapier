@@ -15,7 +15,7 @@
 ///|
 /// Ported from rapier/src/dynamics/joint/revolute_joint.rs (test_revolute_joint_angle) for dim3.
 test "revolute joint3 angle" {
-  let revolute = RevoluteJoint3Builder::RevoluteJoint3Builder(
+  let revolute = @dynamics.RevoluteJoint3Builder::RevoluteJoint3Builder(
     RevoluteJoint3(Vec3(0.0F, 1.0F, 0.0F)),
   ).build()
   let rot1 = @core.rotation_from_scaled_axis(Vec3(0.0F, 1.0F, 0.0F))

@@ -22,7 +22,7 @@ test "ContactModificationContext::update_as_oneway_platform state machine" {
   let solver_contacts : Array[@collision.SolverContact] = [
     SolverContact(@core.Vec2::zero(), -0.1F),
   ]
-  let ctx = ContactModificationContext::ContactModificationContext(
+  let ctx = @pipeline.ContactModificationContext::ContactModificationContext(
     bodies,
     colliders,
     collider1,

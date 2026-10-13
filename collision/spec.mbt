@@ -28,15 +28,15 @@ pub fn ColliderHandle::equals(
 ///|
 #declaration_only
 pub fn ColliderHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ColliderHandle {
   ...
 }
 
 ///|
 #declaration_only
-pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int, Int) {
+pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int32, Int32) {
   ...
 }
 
@@ -433,7 +433,7 @@ pub fn SharedShape::triangle(
 #declaration_only
 pub fn SharedShape::polyline(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> SharedShape {
   ...
 }
@@ -442,7 +442,7 @@ pub fn SharedShape::polyline(
 #declaration_only
 pub fn SharedShape::trimesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> SharedShape? {
   ...
 }
@@ -538,7 +538,7 @@ pub fn MeshConverter::convex_hull() -> MeshConverter {
 pub fn MeshConverter::apply(
   self : MeshConverter,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
   ...
 }
@@ -694,7 +694,7 @@ pub fn ColliderBuilder::segment(
 #declaration_only
 pub fn ColliderBuilder::polyline(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> ColliderBuilder {
   ...
 }
@@ -712,7 +712,7 @@ pub fn ColliderBuilder::heightfield(
 #declaration_only
 pub fn ColliderBuilder::trimesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ColliderBuilder? {
   ...
 }
@@ -864,7 +864,7 @@ pub fn ColliderBuilder::contact_force_event_threshold(
 #declaration_only
 pub fn ColliderBuilder::user_data(
   self : ColliderBuilder,
-  data : Int,
+  data : Int32,
 ) -> ColliderBuilder {
   ...
 }
@@ -1017,7 +1017,7 @@ pub fn Collider::contact_force_event_threshold(self : Collider) -> @core.Real {
 
 ///|
 #declaration_only
-pub fn Collider::user_data(self : Collider) -> Int {
+pub fn Collider::user_data(self : Collider) -> Int32 {
   ...
 }
 
@@ -1140,7 +1140,7 @@ pub fn Collider::set_contact_force_event_threshold(
 
 ///|
 #declaration_only
-pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
+pub fn Collider::set_user_data(self : Collider, data : Int32) -> Collider {
   ...
 }
 
@@ -1228,7 +1228,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
 
 ///|
 #declaration_only
-pub fn ColliderSet::len(self : ColliderSet) -> Int {
+pub fn ColliderSet::len(self : ColliderSet) -> Int32 {
   ...
 }
 
@@ -1356,7 +1356,7 @@ pub type ContactPair
 
 ///|
 #declaration_only
-pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
+pub fn ContactPair::manifold_count(self : ContactPair) -> Int32 {
   ...
 }
 
@@ -1843,7 +1843,7 @@ pub type QueryFilterFlags
 
 ///|
 #declaration_only
-pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
+pub fn QueryFilterFlags::QueryFilterFlags(bits : Int32) -> QueryFilterFlags {
   ...
 }
 
@@ -1855,7 +1855,10 @@ pub fn QueryFilterFlags::empty() -> QueryFilterFlags {
 
 ///|
 #declaration_only
-pub fn QueryFilterFlags::contains(self : QueryFilterFlags, bits : Int) -> Bool {
+pub fn QueryFilterFlags::contains(
+  self : QueryFilterFlags,
+  bits : Int32,
+) -> Bool {
   ...
 }
 
@@ -1863,7 +1866,7 @@ pub fn QueryFilterFlags::contains(self : QueryFilterFlags, bits : Int) -> Bool {
 #declaration_only
 pub fn QueryFilterFlags::insert(
   self : QueryFilterFlags,
-  bits : Int,
+  bits : Int32,
 ) -> QueryFilterFlags {
   ...
 }

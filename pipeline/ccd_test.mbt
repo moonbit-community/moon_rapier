@@ -14,8 +14,8 @@
 
 ///|
 test "ccd clamps fast-moving body to avoid tunneling (disabled vs enabled)" {
-  fn run(ccd_enabled : Bool, max_ccd_substeps : Int) -> @core.Real {
-    let pipeline = PhysicsPipeline::PhysicsPipeline()
+  fn run(ccd_enabled : Bool, max_ccd_substeps : Int32) -> @core.Real {
+    let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
     let broad_phase = @collision.BroadPhaseBvh()
     let narrow_phase = @collision.NarrowPhase()
     let bodies = @dynamics.RigidBodySet()

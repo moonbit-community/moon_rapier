@@ -13,10 +13,10 @@
 // limitations under the License.
 
 ///|
-const TEST_SPATIAL_DIM : Int = 3
+const TEST_SPATIAL_DIM : Int32 = 3
 
 ///|
-fn mb_lcg_next(seed : Int) -> Int {
+fn mb_lcg_next(seed : Int32) -> Int32 {
   let modulus = 65536
   let next = (seed * 25173 + 13849) % modulus
   if next < 0 {
@@ -27,7 +27,7 @@ fn mb_lcg_next(seed : Int) -> Int {
 }
 
 ///|
-fn mb_rand_range(seed : Int, max_exclusive : Int) -> (Int, Int) {
+fn mb_rand_range(seed : Int32, max_exclusive : Int32) -> (Int32, Int32) {
   let next = mb_lcg_next(seed)
   if max_exclusive <= 0 {
     (next, 0)
@@ -37,7 +37,7 @@ fn mb_rand_range(seed : Int, max_exclusive : Int) -> (Int, Int) {
 }
 
 ///|
-fn reverse_int_array(values : Array[Int]) -> Unit {
+fn reverse_int_array(values : Array[Int32]) -> Unit {
   let len = values.length()
   for index in 0..<(len / 2) {
     let swap_index = len - 1 - index
@@ -48,7 +48,7 @@ fn reverse_int_array(values : Array[Int]) -> Unit {
 }
 
 ///|
-fn shuffle_int_array(values : Array[Int], seed : Int) -> Int {
+fn shuffle_int_array(values : Array[Int32], seed : Int32) -> Int32 {
   let mut current_seed = seed
   let len = values.length()
   for index in 0..<len {
@@ -62,7 +62,7 @@ fn shuffle_int_array(values : Array[Int], seed : Int) -> Int {
 }
 
 ///|
-fn reverse_handle_array(values : Array[RigidBodyHandle]) -> Unit {
+fn reverse_handle_array(values : Array[@dynamics.RigidBodyHandle]) -> Unit {
   let len = values.length()
   for index in 0..<(len / 2) {
     let swap_index = len - 1 - index
@@ -73,7 +73,10 @@ fn reverse_handle_array(values : Array[RigidBodyHandle]) -> Unit {
 }
 
 ///|
-fn shuffle_handle_array(values : Array[RigidBodyHandle], seed : Int) -> Int {
+fn shuffle_handle_array(
+  values : Array[@dynamics.RigidBodyHandle],
+  seed : Int32,
+) -> Int32 {
   let mut current_seed = seed
   let len = values.length()
   for index in 0..<len {
@@ -89,15 +92,23 @@ fn shuffle_handle_array(values : Array[RigidBodyHandle], seed : Int) -> Int {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_append).
 test "multibody append" {
-  let spatial_dim : Int = TEST_SPATIAL_DIM
-  let bodies : RigidBodySet = RigidBodySet()
-  let joints : MultibodyJointSet = MultibodyJointSet()
-  let a : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let b : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let c : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let d : RigidBodyHandle = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  let spatial_dim : Int32 = TEST_SPATIAL_DIM
+  let bodies : @dynamics.RigidBodySet = RigidBodySet()
+  let joints : @dynamics.MultibodyJointSet = MultibodyJointSet()
+  let a : @dynamics.RigidBodyHandle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic().build(),
+  )
+  let b : @dynamics.RigidBodyHandle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic().build(),
+  )
+  let c : @dynamics.RigidBodyHandle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic().build(),
+  )
+  let d : @dynamics.RigidBodyHandle = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic().build(),
+  )
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build(),
   )
   let mb_handle = joints.insert(a, b, joint, true)
   joints.insert(c, d, joint, true) |> ignore
@@ -112,19 +123,19 @@ test "multibody append" {
 
 ///|
 test "multibody computes non-placeholder inv_augmented_mass" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let joints = MultibodyJointSet::MultibodyJointSet()
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let joints = @dynamics.MultibodyJointSet::MultibodyJointSet()
   let root = bodies.insert(
-    RigidBodyBuilder::dynamic().additional_mass(2.0F).build(),
+    @dynamics.RigidBodyBuilder::dynamic().additional_mass(2.0F).build(),
   )
   let child = bodies.insert(
-    RigidBodyBuilder::dynamic()
+    @dynamics.RigidBodyBuilder::dynamic()
     .additional_mass(3.0F)
     .translation(Vec2(1.0F, 0.0F))
     .build(),
   )
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::RevoluteJointBuilder()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::RevoluteJointBuilder()
     .local_anchor2(Vec2(-1.0F, 0.0F))
     .build(),
   )
@@ -157,17 +168,17 @@ test "multibody computes non-placeholder inv_augmented_mass" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (test_multibody_insert).
 test "multibody insert" {
-  let spatial_dim : Int = TEST_SPATIAL_DIM
+  let spatial_dim : Int32 = TEST_SPATIAL_DIM
   let mut seed = 1234
   let num_links = 100
   for scenario in 0..<10 {
-    let bodies : RigidBodySet = RigidBodySet()
-    let multibody_joints : MultibodyJointSet = MultibodyJointSet()
-    let handles : Array[RigidBodyHandle] = []
+    let bodies : @dynamics.RigidBodySet = RigidBodySet()
+    let multibody_joints : @dynamics.MultibodyJointSet = MultibodyJointSet()
+    let handles : Array[@dynamics.RigidBodyHandle] = []
     for _ in 0..<num_links {
-      handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
+      handles.push(bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build()))
     }
-    let insertion_ids : Array[Int] = []
+    let insertion_ids : Array[Int32] = []
     for index in 0..<(num_links - 1) {
       insertion_ids.push(index)
     }
@@ -176,10 +187,10 @@ test "multibody insert" {
     } else if scenario > 1 {
       seed = shuffle_int_array(insertion_ids, seed)
     }
-    let joint = GenericJoint::from_revolute(
-      RevoluteJointBuilder::RevoluteJointBuilder().build(),
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build(),
     )
-    let mut mb_handle : MultibodyJointHandle = MultibodyJointHandle::invalid()
+    let mut mb_handle : @dynamics.MultibodyJointHandle = @dynamics.MultibodyJointHandle::invalid()
     for index in insertion_ids {
       let inserted = multibody_joints.insert(
         handles[index],
@@ -204,17 +215,17 @@ test "multibody remove" {
   let mut seed = 1234
   let num_links = 100
   for scenario in 0..<10 {
-    let bodies : RigidBodySet = RigidBodySet()
-    let multibody_joints : MultibodyJointSet = MultibodyJointSet()
+    let bodies : @dynamics.RigidBodySet = RigidBodySet()
+    let multibody_joints : @dynamics.MultibodyJointSet = MultibodyJointSet()
     let colliders = @collision.ColliderSet()
-    let impulse_joints = ImpulseJointSet::ImpulseJointSet()
-    let islands = IslandManager::IslandManager()
-    let handles : Array[RigidBodyHandle] = []
+    let impulse_joints = @dynamics.ImpulseJointSet::ImpulseJointSet()
+    let islands = @dynamics.IslandManager::IslandManager()
+    let handles : Array[@dynamics.RigidBodyHandle] = []
     for _ in 0..<num_links {
-      handles.push(bodies.insert(RigidBodyBuilder::dynamic().build()))
+      handles.push(bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build()))
     }
-    let joint = GenericJoint::from_revolute(
-      RevoluteJointBuilder::RevoluteJointBuilder().build(),
+    let joint = @dynamics.GenericJoint::from_revolute(
+      @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build(),
     )
     for index in 0..<(num_links - 1) {
       multibody_joints.insert(handles[index], handles[index + 1], joint, true)
@@ -236,16 +247,16 @@ test "multibody remove" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody_joint_set.rs behavior.
 test "multibody remove wakes links" {
-  let bodies : RigidBodySet = RigidBodySet()
-  let multibody_joints : MultibodyJointSet = MultibodyJointSet()
-  let islands = IslandManager::IslandManager()
-  let impulse_joints = ImpulseJointSet::ImpulseJointSet()
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  let bodies : @dynamics.RigidBodySet = RigidBodySet()
+  let multibody_joints : @dynamics.MultibodyJointSet = MultibodyJointSet()
+  let islands = @dynamics.IslandManager::IslandManager()
+  let impulse_joints = @dynamics.ImpulseJointSet::ImpulseJointSet()
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build(),
   )
-  let handle1 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let handle2 = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let handle3 = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let handle1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let handle3 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let joint1 = multibody_joints.insert(handle1, handle2, joint, false)
   let joint2 = multibody_joints.insert(handle2, handle3, joint, false)
   bodies.remove(handle2, islands, (), impulse_joints, multibody_joints, true)
@@ -266,12 +277,12 @@ test "multibody remove wakes links" {
 
 ///|
 test "multibody handles preserve rigid body generations" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let joints = MultibodyJointSet::MultibodyJointSet()
-  let parent = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::RevoluteJointBuilder().build(),
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let joints = @dynamics.MultibodyJointSet::MultibodyJointSet()
+  let parent = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let child = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build(),
   )
   let inserted = joints.insert(parent, child, joint, true)
   if inserted is Some(handle) {
@@ -292,11 +303,13 @@ test "multibody handles preserve rigid body generations" {
 
 ///|
 test "multibody insert accepts generic prismatic joint" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let joints = MultibodyJointSet::MultibodyJointSet()
-  let root = bodies.insert(RigidBodyBuilder::fixed().build())
-  let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::GenericJoint(JointAxesMask::locked_prismatic_axes())
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let joints = @dynamics.MultibodyJointSet::MultibodyJointSet()
+  let root = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
+  let child = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
+  let joint = @dynamics.GenericJoint::GenericJoint(
+    @dynamics.JointAxesMask::locked_prismatic_axes(),
+  )
   let inserted = joints.insert(root, child, joint, true)
   if inserted is Some(handle) {
     if joints.get_mut(handle) is Some((multibody, link_id)) {
@@ -321,7 +334,7 @@ test "multibody insert accepts generic prismatic joint" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_columns).
 test "index sequence rearrange columns" {
-  let seq : IndexSequence = IndexSequence()
+  let seq : @dynamics.IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)
@@ -329,11 +342,11 @@ test "index sequence rearrange columns" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-  let vec = RowDVector::from_array([
+  let vec = @dynamics.RowDVector::from_array([
     0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
   ])
   seq.rearrange_columns(vec, true)
-  let expected = RowDVector::from_array([
+  let expected = @dynamics.RowDVector::from_array([
     0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
   ])
   inspect(vec.equals(expected), content="true")
@@ -342,7 +355,7 @@ test "index sequence rearrange columns" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_rearrange_rows).
 test "index sequence rearrange rows" {
-  let seq : IndexSequence = IndexSequence()
+  let seq : @dynamics.IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)
@@ -350,16 +363,16 @@ test "index sequence rearrange rows" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-  let vec = DVector::from_array([
+  let vec = @dynamics.DVector::from_array([
     0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
   ])
   seq.rearrange_rows(vec, true)
-  let expected = DVector::from_array([
+  let expected = @dynamics.DVector::from_array([
     0.0F, 1.0F, 5.0F, 6.0F, 8.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F,
   ])
   inspect(vec.equals(expected), content="true")
   seq.inv_rearrange_rows(vec)
-  let expected2 = DVector::from_array([
+  let expected2 = @dynamics.DVector::from_array([
     0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 5.0F, 6.0F, 0.0F, 8.0F, 0.0F,
   ])
   inspect(vec.equals(expected2), content="true")
@@ -368,7 +381,7 @@ test "index sequence rearrange rows" {
 ///|
 /// Ported from rapier/src/dynamics/joint/multibody_joint/multibody.rs (index_sequence_with_rearranged_rows_mut).
 test "index sequence with rearranged rows mut" {
-  let seq : IndexSequence = IndexSequence()
+  let seq : @dynamics.IndexSequence = IndexSequence()
   seq.remove(2)
   seq.remove(3)
   seq.remove(4)
@@ -376,20 +389,20 @@ test "index sequence with rearranged rows mut" {
   seq.keep(6)
   seq.remove(7)
   seq.keep(8)
-  let vec = DVector::from_array([
+  let vec = @dynamics.DVector::from_array([
     0.0F, 1.0F, 2.0F, 3.0F, 4.0F, 5.0F, 6.0F, 7.0F, 8.0F, 9.0F,
   ])
   let mut rearranged_len = 0
   let mut rearranged_equals = false
   seq.with_rearranged_rows_mut(vec, fn(v) {
     rearranged_len = v.len()
-    let expected = DVector::from_array([0.0F, 1.0F, 5.0F, 6.0F, 8.0F])
+    let expected = @dynamics.DVector::from_array([0.0F, 1.0F, 5.0F, 6.0F, 8.0F])
     rearranged_equals = v.equals(expected)
     v.scale_in_place(10.0F)
   })
   inspect(rearranged_len == 5, content="true")
   inspect(rearranged_equals, content="true")
-  let expected = DVector::from_array([
+  let expected = @dynamics.DVector::from_array([
     0.0F, 10.0F, 0.0F, 0.0F, 0.0F, 50.0F, 60.0F, 0.0F, 80.0F, 0.0F,
   ])
   inspect(vec.equals(expected), content="true")

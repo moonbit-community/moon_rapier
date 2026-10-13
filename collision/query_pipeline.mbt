@@ -14,43 +14,43 @@
 
 ///|
 pub fn Ray::Ray(origin : @core.Vec2, dir : @core.Vec2) -> Ray {
-  { origin, dir }
+  { origin, dir, }
 }
 
 ///|
-const QUERY_FILTER_EXCLUDE_FIXED : Int = 1 << 0
+const QUERY_FILTER_EXCLUDE_FIXED : Int32 = 1 << 0
 
 ///|
-const QUERY_FILTER_EXCLUDE_KINEMATIC : Int = 1 << 1
+const QUERY_FILTER_EXCLUDE_KINEMATIC : Int32 = 1 << 1
 
 ///|
-const QUERY_FILTER_EXCLUDE_DYNAMIC : Int = 1 << 2
+const QUERY_FILTER_EXCLUDE_DYNAMIC : Int32 = 1 << 2
 
 ///|
-const QUERY_FILTER_EXCLUDE_SENSORS : Int = 1 << 3
+const QUERY_FILTER_EXCLUDE_SENSORS : Int32 = 1 << 3
 
 ///|
-const QUERY_FILTER_EXCLUDE_SOLIDS : Int = 1 << 4
+const QUERY_FILTER_EXCLUDE_SOLIDS : Int32 = 1 << 4
 
 ///|
-const QUERY_FILTER_ONLY_DYNAMIC : Int = QUERY_FILTER_EXCLUDE_FIXED |
+const QUERY_FILTER_ONLY_DYNAMIC : Int32 = QUERY_FILTER_EXCLUDE_FIXED |
   QUERY_FILTER_EXCLUDE_KINEMATIC
 
 ///|
-const QUERY_FILTER_ONLY_KINEMATIC : Int = QUERY_FILTER_EXCLUDE_DYNAMIC |
+const QUERY_FILTER_ONLY_KINEMATIC : Int32 = QUERY_FILTER_EXCLUDE_DYNAMIC |
   QUERY_FILTER_EXCLUDE_FIXED
 
 ///|
-const QUERY_FILTER_ONLY_FIXED : Int = QUERY_FILTER_EXCLUDE_DYNAMIC |
+const QUERY_FILTER_ONLY_FIXED : Int32 = QUERY_FILTER_EXCLUDE_DYNAMIC |
   QUERY_FILTER_EXCLUDE_KINEMATIC
 
 ///|
 pub struct QueryFilterFlags {
-  mut bits : Int
+  mut bits : Int32
 }
 
 ///|
-fn query_filter_flags_all_bits() -> Int {
+fn query_filter_flags_all_bits() -> Int32 {
   QUERY_FILTER_EXCLUDE_FIXED |
   QUERY_FILTER_EXCLUDE_KINEMATIC |
   QUERY_FILTER_EXCLUDE_DYNAMIC |
@@ -59,7 +59,7 @@ fn query_filter_flags_all_bits() -> Int {
 }
 
 ///|
-pub fn QueryFilterFlags::QueryFilterFlags(bits : Int) -> QueryFilterFlags {
+pub fn QueryFilterFlags::QueryFilterFlags(bits : Int32) -> QueryFilterFlags {
   { bits, }
 }
 
@@ -109,14 +109,17 @@ pub fn QueryFilterFlags::only_fixed() -> QueryFilterFlags {
 }
 
 ///|
-pub fn QueryFilterFlags::contains(self : QueryFilterFlags, bits : Int) -> Bool {
+pub fn QueryFilterFlags::contains(
+  self : QueryFilterFlags,
+  bits : Int32,
+) -> Bool {
   (self.bits & bits) == bits
 }
 
 ///|
 pub fn QueryFilterFlags::insert(
   self : QueryFilterFlags,
-  bits : Int,
+  bits : Int32,
 ) -> QueryFilterFlags {
   self.bits = self.bits | bits
   self
@@ -127,7 +130,7 @@ pub fn QueryFilterFlags::union(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  { bits: self.bits | other.bits }
+  { bits: self.bits | other.bits, }
 }
 
 ///|
@@ -135,7 +138,7 @@ pub fn QueryFilterFlags::difference(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  { bits: self.bits & Int::lnot(other.bits) }
+  { bits: self.bits & Int32::lnot(other.bits), }
 }
 
 ///|
@@ -143,7 +146,7 @@ pub fn QueryFilterFlags::symmetric_difference(
   self : QueryFilterFlags,
   other : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  { bits: self.bits ^ other.bits }
+  { bits: self.bits ^ other.bits, }
 }
 
 ///|
@@ -158,7 +161,7 @@ pub fn QueryFilterFlags::toggle(
 pub fn QueryFilterFlags::complement(
   self : QueryFilterFlags,
 ) -> QueryFilterFlags {
-  { bits: query_filter_flags_all_bits() & Int::lnot(self.bits) }
+  { bits: query_filter_flags_all_bits() & Int32::lnot(self.bits), }
 }
 
 ///|
@@ -167,8 +170,8 @@ pub fn QueryFilterFlags::is_all(self : QueryFilterFlags) -> Bool {
 }
 
 ///|
-pub fn QueryFilterFlags::from_bits(bits : Int) -> QueryFilterFlags? {
-  if (bits & Int::lnot(query_filter_flags_all_bits())) == 0 {
+pub fn QueryFilterFlags::from_bits(bits : Int32) -> QueryFilterFlags? {
+  if (bits & Int32::lnot(query_filter_flags_all_bits())) == 0 {
     Some({ bits, })
   } else {
     None
@@ -176,12 +179,12 @@ pub fn QueryFilterFlags::from_bits(bits : Int) -> QueryFilterFlags? {
 }
 
 ///|
-pub fn QueryFilterFlags::from_bits_truncate(bits : Int) -> QueryFilterFlags {
-  { bits: bits & query_filter_flags_all_bits() }
+pub fn QueryFilterFlags::from_bits_truncate(bits : Int32) -> QueryFilterFlags {
+  { bits: bits & query_filter_flags_all_bits(), }
 }
 
 ///|
-pub fn QueryFilterFlags::from_bits_retain(bits : Int) -> QueryFilterFlags {
+pub fn QueryFilterFlags::from_bits_retain(bits : Int32) -> QueryFilterFlags {
   { bits, }
 }
 
@@ -463,7 +466,7 @@ pub struct QueryDispatcher {
 
 ///|
 pub fn QueryDispatcher::QueryDispatcher() -> QueryDispatcher {
-  let value = { marker: () }
+  let value = { marker: (), }
   value.marker |> ignore
   value
 }
@@ -503,9 +506,9 @@ pub fn PointProjection::is_inside(self : PointProjection) -> Bool {
 ///|
 pub(all) enum FeatureId {
   Unknown
-  Vertex(Int)
-  Edge(Int)
-  Face(Int)
+  Vertex(Int32)
+  Edge(Int32)
+  Face(Int32)
 }
 
 ///|
@@ -520,7 +523,7 @@ pub fn ShapeCastOptions::ShapeCastOptions(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastOptions {
-  { max_toi, target_distance: 0.0F, stop_at_penetration }
+  { max_toi, target_distance: 0.0F, stop_at_penetration, }
 }
 
 ///|
@@ -573,7 +576,7 @@ pub fn NonlinearRigidMotion::NonlinearRigidMotion(
   linvel : @core.Vec2,
   angvel : @core.Real,
 ) -> NonlinearRigidMotion {
-  { start_pos, linvel, angvel }
+  { start_pos, linvel, angvel, }
 }
 
 ///|
@@ -632,7 +635,7 @@ pub fn QueryPipeline::QueryPipeline(
 ) -> QueryPipeline {
   colliders.sync_with_bodies(bodies)
   let aabbs : Array[@core.Aabb?] = []
-  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let halfspaces : Array[(Int32, @core.Vec2)] = []
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -661,7 +664,7 @@ pub fn QueryPipeline::QueryPipeline(
       aabbs[idx] = Some(expanded)
     }
   }
-  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher() }
+  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher(), }
 }
 
 ///|
@@ -672,7 +675,7 @@ pub fn QueryPipeline::new3(
 ) -> QueryPipeline {
   colliders.sync_with_bodies(bodies)
   let aabbs : Array[@core.Aabb?] = []
-  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let halfspaces : Array[(Int32, @core.Vec2)] = []
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.inner.colliders.length() {
     if colliders.inner.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -700,7 +703,7 @@ pub fn QueryPipeline::new3(
       aabbs[idx] = Some(expanded)
     }
   }
-  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher() }
+  { bvh: Bvh(aabbs), filter, dispatcher: QueryDispatcher(), }
 }
 
 ///|
@@ -711,7 +714,7 @@ pub fn QueryPipeline::update(
 ) -> Unit {
   colliders.sync_with_bodies(bodies)
   self.bvh.aabbs.clear()
-  let halfspaces : Array[(Int, @core.Vec2)] = []
+  let halfspaces : Array[(Int32, @core.Vec2)] = []
   let mut global_aabb : @core.Aabb? = None
   for i in 0..<colliders.colliders.length() {
     if colliders.colliders[i] is Some(collider) && collider.is_enabled() {
@@ -746,7 +749,7 @@ pub fn QueryPipeline::with_filter(
   self : QueryPipeline,
   filter : QueryFilter,
 ) -> QueryPipeline {
-  { bvh: self.bvh, filter, dispatcher: self.dispatcher }
+  { bvh: self.bvh, filter, dispatcher: self.dispatcher, }
 }
 
 ///|
@@ -756,7 +759,7 @@ pub fn QueryPipelineMut::QueryPipelineMut(
   colliders : ColliderSet,
 ) -> QueryPipelineMut {
   let pipeline = QueryPipeline(filter, bodies, colliders)
-  { pipeline, dispatcher: pipeline.dispatcher }
+  { pipeline, dispatcher: pipeline.dispatcher, }
 }
 
 ///|
@@ -766,7 +769,7 @@ pub fn QueryPipelineMut::new3(
   colliders : ColliderSet3,
 ) -> QueryPipelineMut {
   let pipeline = QueryPipeline::new3(filter, bodies, colliders)
-  { pipeline, dispatcher: pipeline.dispatcher }
+  { pipeline, dispatcher: pipeline.dispatcher, }
 }
 
 ///|
@@ -921,7 +924,7 @@ fn ray_intersect_ball_and_get_normal(
       let p = ray_point(ray, hit)
       normalize_or_fallback(p.sub(center), Vec2(1.0F, 0.0F))
     }
-    Some({ toi: hit, normal })
+    Some({ toi: hit, normal, })
   } else {
     None
   }
@@ -1009,14 +1012,14 @@ fn ray_intersect_cuboid_local_and_get_normal(
         Vec2(-ray.dir.x, -ray.dir.y),
         Vec2(1.0F, 0.0F),
       )
-      Some({ toi: 0.0F, normal })
+      Some({ toi: 0.0F, normal, })
     } else if tmax <= max_toi {
-      Some({ toi: tmax, normal: exit_normal })
+      Some({ toi: tmax, normal: exit_normal, })
     } else {
       None
     }
   } else if tmin >= 0.0F && tmin <= max_toi {
-    Some({ toi: tmin, normal: enter_normal })
+    Some({ toi: tmin, normal: enter_normal, })
   } else {
     None
   }
@@ -1042,7 +1045,7 @@ fn ray_intersect_cuboid_oriented_and_get_normal(
       local_ray, half_width, half_height, max_toi, solid,
     )
     is Some(hit) {
-    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal), })
   } else {
     None
   }
@@ -1069,7 +1072,7 @@ fn ray_intersect_segment_and_get_normal(
       Vec2(-ray.dir.x, -ray.dir.y),
       Vec2(1.0F, 0.0F),
     )
-    return Some({ toi: 0.0F, normal })
+    return Some({ toi: 0.0F, normal, })
   }
   if @core.abs(denom) <= 1.0e-12F {
     return None
@@ -1084,7 +1087,7 @@ fn ray_intersect_segment_and_get_normal(
   if normal.dot(ray.dir) > 0.0F {
     normal = Vec2(-normal.x, -normal.y)
   }
-  Some({ toi: t, normal })
+  Some({ toi: t, normal, })
 }
 
 ///|
@@ -1138,14 +1141,14 @@ fn ray_intersect_convex_polygon_local_and_get_normal(
         Vec2(-ray.dir.x, -ray.dir.y),
         Vec2(1.0F, 0.0F),
       )
-      Some({ toi: 0.0F, normal })
+      Some({ toi: 0.0F, normal, })
     } else if tmax <= max_toi {
-      Some({ toi: tmax, normal: exit_normal })
+      Some({ toi: tmax, normal: exit_normal, })
     } else {
       None
     }
   } else if tmin >= 0.0F && tmin <= max_toi {
-    Some({ toi: tmin, normal: enter_normal })
+    Some({ toi: tmin, normal: enter_normal, })
   } else {
     None
   }
@@ -1170,7 +1173,7 @@ fn ray_intersect_convex_polygon_oriented_and_get_normal(
       local_ray, vertices, max_toi, solid,
     )
     is Some(hit) {
-    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal) })
+    Some({ toi: hit.toi, normal: rot.rotate_vec2(hit.normal), })
   } else {
     None
   }
@@ -1342,7 +1345,7 @@ fn shape_cast_ball_ball(
       return None
     }
     let point = center2.add(vec2_scale(normal, radius2))
-    Some({ toi, point, normal })
+    Some({ toi, point, normal, })
   } else {
     None
   }
@@ -1397,7 +1400,7 @@ fn shape_cast_ball_cuboid(
     }
     let center = ray_point(ray, hit.toi)
     let point = center.sub(vec2_scale(normal, radius))
-    Some({ toi: hit.toi, point, normal })
+    Some({ toi: hit.toi, point, normal, })
   } else {
     None
   }
@@ -1491,7 +1494,7 @@ fn shape_cast_ball_segment(
     } else {
       let center = ray_point(ray, hit.toi)
       let point = center.sub(vec2_scale(normal, ball_radius))
-      let h = ShapeCastHit::{ toi: hit.toi, point, normal }
+      let h = ShapeCastHit::{ toi: hit.toi, point, normal, }
       if best is Some(cur) {
         if h.toi < cur.toi {
           best = Some(h)
@@ -1540,7 +1543,7 @@ fn shape_cast_cuboid_ball(
     is Some(hit) {
     let normal = @core.Vec2(-hit.normal.x, -hit.normal.y)
     let point = ball_center.add(vec2_scale(normal, ball_radius))
-    Some({ toi: hit.toi, point, normal })
+    Some({ toi: hit.toi, point, normal, })
   } else {
     None
   }
@@ -1656,7 +1659,7 @@ fn shape_cast_cuboid_cuboid(
   let point = shape_cast_support_point_cuboid(
     center2, rotation2, half_width2, half_height2, normal,
   )
-  Some({ toi, point, normal })
+  Some({ toi, point, normal, })
 }
 
 ///|
@@ -2438,7 +2441,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
     c1 : @core.Vec2,
     radius : @core.Real,
     angvel : @core.Real,
-  ) -> Int {
+  ) -> Int32 {
     let dist = c1.sub(c0).length()
     let trans_scale = radius * 0.25F + 0.05F
     let trans_steps = if trans_scale <= 1.0e-6F {
@@ -2616,7 +2619,7 @@ pub fn QueryPipeline::cast_shape_nonlinear(
         let (point_on_target, _, normal) = contact_at_time(
           toi, target_shape, target_center, target_rot,
         )
-        let hit = ShapeCastHit::{ toi, point: point_on_target, normal }
+        let hit = ShapeCastHit::{ toi, point: point_on_target, normal, }
         if best is Some(current) {
           if hit.toi < current.1.toi {
             best = Some((handle, hit))
@@ -3036,12 +3039,12 @@ fn project_point_on_ball(
   let dist2 = v.dot(v)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    { point, is_inside: true }
+    { point, is_inside: true, }
   } else if dist2 <= 1.0e-12F {
-    { point: center.add(Vec2(radius, 0.0F)), is_inside: inside }
+    { point: center.add(Vec2(radius, 0.0F)), is_inside: inside, }
   } else {
     let dir = v.normalize()
-    { point: center.add(vec2_scale(dir, radius)), is_inside: inside }
+    { point: center.add(vec2_scale(dir, radius)), is_inside: inside, }
   }
 }
 
@@ -3076,7 +3079,7 @@ fn project_point_on_cuboid_oriented(
   let inside = @core.abs(local_point.x) <= half_width &&
     @core.abs(local_point.y) <= half_height
   if inside && solid {
-    return { point, is_inside: true }
+    return { point, is_inside: true, }
   }
   let projected_local = if inside {
     let dx = half_width - @core.abs(local_point.x)
@@ -3095,7 +3098,7 @@ fn project_point_on_cuboid_oriented(
     )
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  { point: projected, is_inside: inside }
+  { point: projected, is_inside: inside, }
 }
 
 ///|
@@ -3113,7 +3116,7 @@ fn project_point_on_cuboid_oriented_and_get_feature(
   let inside = @core.abs(local_point.x) <= half_width &&
     @core.abs(local_point.y) <= half_height
   if inside && solid {
-    return ({ point, is_inside: true }, Unknown)
+    return ({ point, is_inside: true, }, Unknown)
   }
   let projected_local = if inside {
     let dx = half_width - @core.abs(local_point.x)
@@ -3132,7 +3135,7 @@ fn project_point_on_cuboid_oriented_and_get_feature(
     )
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  let projection = PointProjection::{ point: projected, is_inside: inside }
+  let projection = PointProjection::{ point: projected, is_inside: inside, }
 
   // Feature indices:
   // - Edges: 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
@@ -3192,7 +3195,7 @@ fn project_point_on_convex_polygon_oriented(
   let local_point = inv.rotate_vec2(point.sub(center))
   let inside = point_in_convex_polygon_local(vertices, local_point)
   if inside && solid {
-    return { point, is_inside: true }
+    return { point, is_inside: true, }
   }
   let mut best_dist2 = 1.0e30F
   let mut best_local = local_point
@@ -3215,7 +3218,7 @@ fn project_point_on_convex_polygon_oriented(
     }
   }
   let projected = center.add(rot.rotate_vec2(best_local))
-  { point: projected, is_inside: inside }
+  { point: projected, is_inside: inside, }
 }
 
 ///|
@@ -3231,7 +3234,7 @@ fn project_point_on_convex_polygon_oriented_and_get_feature(
   let local_point = inv.rotate_vec2(point.sub(center))
   let inside = point_in_convex_polygon_local(vertices, local_point)
   if inside && solid {
-    return ({ point, is_inside: true }, Unknown)
+    return ({ point, is_inside: true, }, Unknown)
   }
   let mut best_dist2 = 1.0e30F
   let mut best_local = local_point
@@ -3263,7 +3266,7 @@ fn project_point_on_convex_polygon_oriented_and_get_feature(
     }
   }
   let projected = center.add(rot.rotate_vec2(best_local))
-  ({ point: projected, is_inside: inside }, best_feature)
+  ({ point: projected, is_inside: inside, }, best_feature)
 }
 
 ///|
@@ -3290,7 +3293,7 @@ fn project_point_on_capsule_oriented(
   let dist2 = delta.dot(delta)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    return { point, is_inside: true }
+    return { point, is_inside: true, }
   }
   let projected_local = if dist2 <= 1.0e-12F {
     // Arbitrary direction (consistent with project_point_on_ball fallback).
@@ -3299,7 +3302,7 @@ fn project_point_on_capsule_oriented(
     closest_line_point.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  { point: projected, is_inside: inside }
+  { point: projected, is_inside: inside, }
 }
 
 ///|
@@ -3341,7 +3344,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
   let dist2 = delta.dot(delta)
   let inside = dist2 <= radius * radius
   if inside && solid {
-    return ({ point, is_inside: true }, Unknown)
+    return ({ point, is_inside: true, }, Unknown)
   }
   let projected_local = if dist2 <= 1.0e-12F {
     clamped.add(Vec2(radius, 0.0F))
@@ -3349,7 +3352,7 @@ fn project_point_on_capsule_oriented_and_get_feature(
     clamped.add(vec2_scale(delta, radius / Float::sqrt(dist2)))
   }
   let projected = center.add(rot.rotate_vec2(projected_local))
-  let projection = PointProjection::{ point: projected, is_inside: inside }
+  let projection = PointProjection::{ point: projected, is_inside: inside, }
   let feature = if cap_id >= 0 { FeatureId::Vertex(cap_id) } else { Edge(0) }
   (projection, feature)
 }
@@ -3364,7 +3367,7 @@ fn project_point_on_segment(
 ) -> PointProjection {
   let (wa, wb) = segment_world_endpoints(center, rotation, a, b)
   let q = closest_point_on_segment(wa, wb, point)
-  { point: q, is_inside: false }
+  { point: q, is_inside: false, }
 }
 
 ///|
@@ -3390,14 +3393,14 @@ fn project_point_on_segment_and_get_feature(
   } else {
     Edge(0)
   }
-  ({ point: q, is_inside: false }, feature)
+  ({ point: q, is_inside: false, }, feature)
 }
 
 ///|
 fn polyline_for_each_segment(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
-  callback : (Int, @core.Vec2, @core.Vec2) -> Unit,
+  indices : Array[(Int32, Int32)]?,
+  callback : (Int32, @core.Vec2, @core.Vec2) -> Unit,
 ) -> Unit {
   if indices is Some(idxs) {
     for i in 0..<idxs.length() {
@@ -3425,13 +3428,13 @@ fn project_point_on_polyline(
   center : @core.Vec2,
   rotation : @core.Real,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
   point : @core.Vec2,
 ) -> PointProjection {
   let mut best : PointProjection? = None
   let mut best_dist2 = 1.0e30F
   polyline_for_each_segment(vertices, indices, fn(
-    _seg_index : Int,
+    _seg_index : Int32,
     a : @core.Vec2,
     b : @core.Vec2,
   ) -> Unit {
@@ -3446,7 +3449,7 @@ fn project_point_on_polyline(
   if best is Some(p) {
     p
   } else {
-    { point, is_inside: false }
+    { point, is_inside: false, }
   }
 }
 
@@ -3455,13 +3458,13 @@ fn project_point_on_polyline_and_get_feature(
   center : @core.Vec2,
   rotation : @core.Real,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
   point : @core.Vec2,
 ) -> (PointProjection, FeatureId) {
   let mut best : (PointProjection, FeatureId)? = None
   let mut best_dist2 = 1.0e30F
   polyline_for_each_segment(vertices, indices, fn(
-    seg_index : Int,
+    seg_index : Int32,
     a : @core.Vec2,
     b : @core.Vec2,
   ) -> Unit {
@@ -3476,7 +3479,7 @@ fn project_point_on_polyline_and_get_feature(
   if best is Some(r) {
     r
   } else {
-    ({ point, is_inside: false }, Unknown)
+    ({ point, is_inside: false, }, Unknown)
   }
 }
 
@@ -3486,13 +3489,13 @@ fn ray_intersect_polyline_and_get_normal(
   center : @core.Vec2,
   rotation : @core.Real,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
   max_dist : @core.Real,
   solid : Bool,
 ) -> RayIntersection? {
   let mut best : RayIntersection? = None
   polyline_for_each_segment(vertices, indices, fn(
-    _seg_index : Int,
+    _seg_index : Int32,
     a : @core.Vec2,
     b : @core.Vec2,
   ) -> Unit {
@@ -3529,7 +3532,7 @@ fn ray_intersect_halfspace_and_get_normal(
       Vec2(-ray.dir.x, -ray.dir.y),
       Vec2(1.0F, 0.0F),
     )
-    return Some({ toi: 0.0F, normal })
+    return Some({ toi: 0.0F, normal, })
   }
   let denom = n.dot(ray.dir)
   if @core.abs(denom) <= 1.0e-12F {
@@ -3540,7 +3543,7 @@ fn ray_intersect_halfspace_and_get_normal(
     return None
   }
   let normal = if denom < 0.0F { n } else { Vec2(-n.x, -n.y) }
-  Some({ toi, normal })
+  Some({ toi, normal, })
 }
 
 ///|
@@ -3582,7 +3585,7 @@ fn ray_intersect_shape_and_get_normal(
             Vec2(-ray.dir.x, -ray.dir.y),
             Vec2(1.0F, 0.0F),
           )
-          return Some({ toi: 0.0F, normal })
+          return Some({ toi: 0.0F, normal, })
         }
         // Treat the ray as starting inside the rounded region; find the first exit.
         start_dist = r - 1.0e-12F
@@ -3648,7 +3651,7 @@ fn ray_intersect_shape_and_get_normal(
       } else {
         normalize_or_fallback(Vec2(-ray.dir.x, -ray.dir.y), Vec2(1.0F, 0.0F))
       }
-      Some({ toi, normal })
+      Some({ toi, normal, })
     }
     Ball(radius) =>
       ray_intersect_ball_and_get_normal(ray, center, radius, max_dist, solid)
@@ -3803,7 +3806,7 @@ fn project_point_on_shape(
         let dist = delta.length()
         let inside_round = inside_inner || dist <= r
         if solid && inside_round {
-          { point, is_inside: true }
+          { point, is_inside: true, }
         } else {
           let mut dir = if inside_inner {
             @core.Vec2(-delta.x, -delta.y)
@@ -3816,7 +3819,7 @@ fn project_point_on_shape(
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
           )
-          { point: boundary, is_inside: inside_round }
+          { point: boundary, is_inside: inside_round, }
         }
       }
     }
@@ -3829,9 +3832,9 @@ fn project_point_on_shape(
       let dist = n.dot(point.sub(center))
       let inside = dist <= 0.0F
       if solid && inside {
-        { point, is_inside: true }
+        { point, is_inside: true, }
       } else {
-        { point: point.sub(vec2_scale(n, dist)), is_inside: inside }
+        { point: point.sub(vec2_scale(n, dist)), is_inside: inside, }
       }
     }
     CapsuleX(half_height, radius) =>
@@ -3907,12 +3910,12 @@ fn project_point_on_shape(
       if best is Some(p) {
         p
       } else {
-        { point, is_inside: false }
+        { point, is_inside: false, }
       }
     }
     Compound(parts) => {
       if parts.length() == 0 {
-        return { point, is_inside: false }
+        return { point, is_inside: false, }
       }
       let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       let mut best : PointProjection? = None
@@ -3933,7 +3936,7 @@ fn project_point_on_shape(
       if best is Some(p) {
         p
       } else {
-        { point, is_inside: false }
+        { point, is_inside: false, }
       }
     }
   }
@@ -3947,7 +3950,7 @@ fn project_point_on_shape_and_get_feature(
   point : @core.Vec2,
   solid : Bool,
 ) -> (PointProjection, FeatureId) {
-  fn pack_feature(prefix : Int, fid : FeatureId) -> FeatureId {
+  fn pack_feature(prefix : Int32, fid : FeatureId) -> FeatureId {
     if prefix == 0 {
       return fid
     }
@@ -3980,7 +3983,7 @@ fn project_point_on_shape_and_get_feature(
         let dist = delta.length()
         let inside_round = inside_inner || dist <= r
         if solid && inside_round {
-          ({ point, is_inside: true }, fid_solid)
+          ({ point, is_inside: true, }, fid_solid)
         } else {
           let mut dir = if inside_inner {
             @core.Vec2(-delta.x, -delta.y)
@@ -3993,7 +3996,7 @@ fn project_point_on_shape_and_get_feature(
           let boundary = inner_boundary.point.add(
             vec2_scale(dir.normalize(), r),
           )
-          ({ point: boundary, is_inside: inside_round }, fid_boundary)
+          ({ point: boundary, is_inside: inside_round, }, fid_boundary)
         }
       }
     }
@@ -4009,9 +4012,9 @@ fn project_point_on_shape_and_get_feature(
       let dist = n.dot(point.sub(center))
       let inside = dist <= 0.0F
       if solid && inside {
-        ({ point, is_inside: true }, Face(0))
+        ({ point, is_inside: true, }, Face(0))
       } else {
-        ({ point: point.sub(vec2_scale(n, dist)), is_inside: inside }, Face(0))
+        ({ point: point.sub(vec2_scale(n, dist)), is_inside: inside, }, Face(0))
       }
     }
     CapsuleX(half_height, radius) =>
@@ -4090,12 +4093,12 @@ fn project_point_on_shape_and_get_feature(
       if best is Some(r) {
         r
       } else {
-        ({ point, is_inside: false }, Unknown)
+        ({ point, is_inside: false, }, Unknown)
       }
     }
     Compound(parts) => {
       if parts.length() == 0 {
-        return ({ point, is_inside: false }, Unknown)
+        return ({ point, is_inside: false, }, Unknown)
       }
       let parent_iso = @core.Isometry2(center, @core.Rot2::from_angle(rotation))
       let mut best : (PointProjection, FeatureId)? = None
@@ -4118,7 +4121,7 @@ fn project_point_on_shape_and_get_feature(
       if best is Some(result) {
         result
       } else {
-        ({ point, is_inside: false }, Unknown)
+        ({ point, is_inside: false, }, Unknown)
       }
     }
   }

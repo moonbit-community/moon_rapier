@@ -376,7 +376,7 @@ fn cc3d_real_compute_hit_info(
   let is_wall = angle_with_floor >= controller.max_slope_climb_angle &&
     !is_ceiling
   let is_nonslip_slope = angle_with_floor <= controller.min_slope_slide_angle
-  { toi, is_wall, is_nonslip_slope }
+  { toi, is_wall, is_nonslip_slope, }
 }
 
 ///|
@@ -397,7 +397,7 @@ fn cc3d_real_decompose_hit(
     controller.up,
     tangent,
   )
-  { normal_part, horizontal_tangent, vertical_tangent }
+  { normal_part, horizontal_tangent, vertical_tangent, }
 }
 
 ///|

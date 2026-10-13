@@ -17,7 +17,7 @@
 test "heightfield builder produces Shape::HeightField" {
   let heights = [0.0F, 1.0F, 0.0F]
   let scale = @core.Vec2(10.0F, 2.0F)
-  let collider = ColliderBuilder::heightfield(heights, scale).build()
+  let collider = @collision.ColliderBuilder::heightfield(heights, scale).build()
   match collider.shape() {
     HeightField(hs, sc) => {
       inspect(hs.length() == heights.length(), content="true")
@@ -31,13 +31,13 @@ test "heightfield builder produces Shape::HeightField" {
 ///|
 test "heightfield participates in contacts and ray queries" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
-  let narrow_phase = NarrowPhase::NarrowPhase()
+  let colliders = @collision.ColliderSet::ColliderSet()
+  let narrow_phase = @collision.NarrowPhase::NarrowPhase()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
-    ColliderBuilder::heightfield([0.0F, 0.0F], Vec2(10.0F, 1.0F)).build(),
+    @collision.ColliderBuilder::heightfield([0.0F, 0.0F], Vec2(10.0F, 1.0F)).build(),
     ground_body,
     bodies,
   )
@@ -45,7 +45,7 @@ test "heightfield participates in contacts and ray queries" {
     @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(0.0F, 0.5F)).build(),
   )
   let ball = colliders.insert_with_parent(
-    ColliderBuilder::ball(1.0F).build(),
+    @collision.ColliderBuilder::ball(1.0F).build(),
     ball_body,
     bodies,
   )
@@ -62,18 +62,18 @@ test "heightfield participates in contacts and ray queries" {
   } else {
     inspect(false, content="true")
   }
-  let query_pipeline = BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
+  let query_pipeline = @collision.BroadPhaseBvh::BroadPhaseBvh().as_query_pipeline(
     bodies,
     colliders,
     QueryFilter(),
   )
   // Cast far enough from the ball so the first hit is the terrain.
-  let ray = Ray::Ray(Vec2(4.0F, 10.0F), Vec2(0.0F, -1.0F))
+  let ray = @collision.Ray::Ray(Vec2(4.0F, 10.0F), Vec2(0.0F, -1.0F))
   if query_pipeline.cast_ray_and_get_normal(
       bodies, colliders, ray, 100.0F, true,
     )
     is Some(hit) {
-    inspect(ColliderHandle::equals(hit.0, ground), content="true")
+    inspect(@collision.ColliderHandle::equals(hit.0, ground), content="true")
     inspect(@core.abs(hit.1.toi() - 10.0F) < 1.0e-4F, content="true")
   } else {
     inspect(false, content="true")

@@ -14,7 +14,7 @@
 
 ///|
 test "joint solver linear motor (prismatic lin_x velocity)" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -22,8 +22,8 @@ test "joint solver linear motor (prismatic lin_x velocity)" {
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
   let islands = @dynamics.IslandManager()
-  let hooks = PhysicsHooks::PhysicsHooks()
-  let events = EventHandler::EventHandler()
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks()
+  let events = @pipeline.EventHandler::EventHandler()
   let ccd_solver = @dynamics_ccd.CCDSolver()
   let gravity = @core.Vec2::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_num_solver_iterations(

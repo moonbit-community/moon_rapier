@@ -14,10 +14,10 @@
 
 ///|
 test "island_manager3d update propagates activation across interactions" {
-  let islands = IslandManager3D::IslandManager3D()
-  let bodies = RigidBodySet3D::RigidBodySet3D()
-  let b1 = bodies.insert(RigidBodyBuilder3D::dynamic().build())
-  let b2 = bodies.insert(RigidBodyBuilder3D::dynamic().build())
+  let islands = @dynamics.IslandManager3D::IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
+  let b1 = bodies.insert(@dynamics.RigidBodyBuilder3D::dynamic().build())
+  let b2 = bodies.insert(@dynamics.RigidBodyBuilder3D::dynamic().build())
 
   // Put both bodies to sleep (default time_until_sleep is 2s).
   bodies.update_sleep_all(2.1F, 1.0F)
@@ -48,16 +48,22 @@ test "island_manager3d update propagates activation across interactions" {
 
 ///|
 test "island_manager3d tracks per-island additional solver iterations" {
-  let islands = IslandManager3D::IslandManager3D()
-  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let islands = @dynamics.IslandManager3D::IslandManager3D()
+  let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
   let b1 = bodies.insert(
-    RigidBodyBuilder3D::dynamic().additional_solver_iterations(2).build(),
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .additional_solver_iterations(2)
+    .build(),
   )
   let b2 = bodies.insert(
-    RigidBodyBuilder3D::dynamic().additional_solver_iterations(5).build(),
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .additional_solver_iterations(5)
+    .build(),
   )
   let b3 = bodies.insert(
-    RigidBodyBuilder3D::dynamic().additional_solver_iterations(1).build(),
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .additional_solver_iterations(1)
+    .build(),
   )
   islands.update(bodies, [(b1, b2)])
   let active_islands = islands.active_islands()

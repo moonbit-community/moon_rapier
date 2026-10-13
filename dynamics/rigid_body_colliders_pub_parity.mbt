@@ -18,24 +18,24 @@
 /// We store collider handles as `(id, generation)` raw parts so this package stays
 /// independent from `collision::ColliderHandle` while preserving full handle identity.
 pub struct RigidBodyColliders {
-  mut colliders : Array[(Int, Int)]
+  mut colliders : Array[(Int32, Int32)]
 }
 
 ///|
 pub fn RigidBodyColliders::RigidBodyColliders() -> RigidBodyColliders {
-  { colliders: [] }
+  { colliders: [], }
 }
 
 ///|
-pub fn RigidBodyColliders::len(self : RigidBodyColliders) -> Int {
+pub fn RigidBodyColliders::len(self : RigidBodyColliders) -> Int32 {
   self.colliders.length()
 }
 
 ///|
 pub fn RigidBodyColliders::handles(
   self : RigidBodyColliders,
-) -> Array[(Int, Int)] {
-  let out : Array[(Int, Int)] = []
+) -> Array[(Int32, Int32)] {
+  let out : Array[(Int32, Int32)] = []
   for i in 0..<self.colliders.length() {
     out.push(self.colliders[i])
   }
@@ -44,9 +44,9 @@ pub fn RigidBodyColliders::handles(
 
 ///|
 fn rigid_body_collider_handle_equals(
-  left : (Int, Int),
-  id : Int,
-  generation : Int,
+  left : (Int32, Int32),
+  id : Int32,
+  generation : Int32,
 ) -> Bool {
   left.0 == id && left.1 == generation
 }
@@ -54,8 +54,8 @@ fn rigid_body_collider_handle_equals(
 ///|
 pub fn RigidBodyColliders::attach_collider_raw(
   self : RigidBodyColliders,
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBodyColliders {
   for i in 0..<self.colliders.length() {
     if rigid_body_collider_handle_equals(self.colliders[i], id, generation) {
@@ -69,10 +69,10 @@ pub fn RigidBodyColliders::attach_collider_raw(
 ///|
 pub fn RigidBodyColliders::detach_collider_raw(
   self : RigidBodyColliders,
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBodyColliders {
-  let out : Array[(Int, Int)] = []
+  let out : Array[(Int32, Int32)] = []
   for i in 0..<self.colliders.length() {
     let current = self.colliders[i]
     if !rigid_body_collider_handle_equals(current, id, generation) {
@@ -87,7 +87,7 @@ pub fn RigidBodyColliders::detach_collider_raw(
 /// Backward-compatible helper that attaches a raw collider id with generation `0`.
 pub fn RigidBodyColliders::attach_collider(
   self : RigidBodyColliders,
-  handle : Int,
+  handle : Int32,
 ) -> RigidBodyColliders {
   self.attach_collider_raw(handle, 0)
 }
@@ -96,7 +96,7 @@ pub fn RigidBodyColliders::attach_collider(
 /// Backward-compatible helper that detaches a raw collider id with generation `0`.
 pub fn RigidBodyColliders::detach_collider(
   self : RigidBodyColliders,
-  handle : Int,
+  handle : Int32,
 ) -> RigidBodyColliders {
   self.detach_collider_raw(handle, 0)
 }

@@ -193,8 +193,8 @@ priv struct SolverConstraint {
 
 ///|
 priv struct SolverManifold {
-  start : Int
-  len : Int
+  start : Int32
+  len : Int32
 }
 
 ///|
@@ -207,8 +207,8 @@ fn build_constraints(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> (Array[SolverConstraint], Array[SolverManifold]) {
   let allowed_error = parameters.allowed_linear_error()
   let max_corrective_velocity = parameters.max_corrective_velocity()
@@ -539,7 +539,7 @@ fn build_constraints(
         }
         let len = constraints.length() - start
         if len > 0 {
-          solver_manifolds.push({ start, len })
+          solver_manifolds.push({ start, len, })
         }
       }
     }
@@ -638,7 +638,7 @@ fn get_body_inv_mass_inertia(
 ///|
 fn update_contact_constraints(
   parameters : IntegrationParameters,
-  small_step_id : Int,
+  small_step_id : Int32,
   bodies : @dynamics.RigidBodySet,
   solver_bodies : SolverBodies,
   constraints : Array[SolverConstraint],
@@ -719,7 +719,7 @@ fn solve_velocity_constraints(
   dt : @core.Real,
   constraints : Array[SolverConstraint],
   manifolds : Array[SolverManifold],
-  iterations : Int,
+  iterations : Int32,
 ) -> Unit {
   if dt <= 0.0F {
     return
@@ -1123,7 +1123,7 @@ priv struct ContactConstraintsSet {
 
 ///|
 fn ContactConstraintsSet::ContactConstraintsSet() -> ContactConstraintsSet {
-  { constraints: [], manifolds: [], builders: [], cache_entries: [] }
+  { constraints: [], manifolds: [], builders: [], cache_entries: [], }
 }
 
 ///|
@@ -1137,8 +1137,8 @@ fn ContactConstraintsSet::init(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Unit {
   let (constraints, manifolds) = build_constraints(
     parameters, bodies, colliders, hooks, narrow_phase, dt, cache, warmstart_coefficient,
@@ -1157,7 +1157,7 @@ fn ContactConstraintsSet::init(
 fn ContactConstraintsSet::update(
   self : ContactConstraintsSet,
   parameters : IntegrationParameters,
-  small_step_id : Int,
+  small_step_id : Int32,
   bodies : @dynamics.RigidBodySet,
   solver_bodies : SolverBodies,
 ) -> Unit {
@@ -1236,7 +1236,7 @@ fn ContactConstraintsSet::solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
   solver_bodies : SolverBodies,
   dt : @core.Real,
-  iterations : Int,
+  iterations : Int32,
 ) -> Unit {
   solve_velocity_constraints(
     bodies,
@@ -1785,8 +1785,8 @@ fn build_constraints3(
   dt : @core.Real,
   cache : Array[ContactImpulseCacheEntry],
   warmstart_coefficient : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> (Array[SolverConstraint], Array[SolverManifold]) {
   build_constraints(
     parameters,

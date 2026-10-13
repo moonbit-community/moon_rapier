@@ -37,8 +37,8 @@ test "collider set parent depenetration" {
     .build()
   let body_2_handle = rigid_body_set.insert(rigid_body_2)
   let gravity = @core.Vec2::zero()
-  let integration_parameters = IntegrationParameters::default()
-  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
+  let physics_pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let island_manager = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
@@ -149,8 +149,8 @@ test "collider set parent no self intersection" {
     rigid_body_set,
   )
   let gravity = @core.Vec2::zero()
-  let integration_parameters = IntegrationParameters::default()
-  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
+  let physics_pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let island_manager = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
@@ -260,7 +260,7 @@ test "narrow phase collision groups filtering" {
   let collider2_handle = collider_set.insert_with_parent(
     collider2, body2_handle, rigid_body_set,
   )
-  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let physics_pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let island_manager = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
@@ -269,7 +269,7 @@ test "narrow phase collision groups filtering" {
   let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     @core.Vec2::zero(),
-    IntegrationParameters::default(),
+    @pipeline.IntegrationParameters::default(),
     island_manager,
     broad_phase,
     narrow_phase,
@@ -523,7 +523,7 @@ test "narrow phase active collision types filtering" {
   let collider_kinematic_handle = collider_set.insert_with_parent(
     collider_kinematic, kinematic_handle, rigid_body_set,
   )
-  let physics_pipeline = PhysicsPipeline::PhysicsPipeline()
+  let physics_pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let island_manager = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
@@ -532,7 +532,7 @@ test "narrow phase active collision types filtering" {
   let ccd_solver = @dynamics_ccd.CCDSolver()
   physics_pipeline.step(
     @core.Vec2::zero(),
-    IntegrationParameters::default(),
+    @pipeline.IntegrationParameters::default(),
     island_manager,
     broad_phase,
     narrow_phase,

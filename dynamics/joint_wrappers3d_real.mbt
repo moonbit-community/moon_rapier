@@ -44,7 +44,7 @@ pub fn RevoluteJoint3DRealBuilder::local_anchor1(
   self : RevoluteJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.local_anchor1(a) }
+  { inner: self.inner.local_anchor1(a), }
 }
 
 ///|
@@ -52,7 +52,7 @@ pub fn RevoluteJoint3DRealBuilder::local_anchor2(
   self : RevoluteJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.local_anchor2(a) }
+  { inner: self.inner.local_anchor2(a), }
 }
 
 ///|
@@ -61,7 +61,7 @@ pub fn RevoluteJoint3DRealBuilder::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.limits(AngX, min, max) }
+  { inner: self.inner.limits(AngX, min, max), }
 }
 
 ///|
@@ -71,7 +71,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.motor_position(AngX, target_pos, stiffness, damping) }
+  { inner: self.inner.motor_position(AngX, target_pos, stiffness, damping), }
 }
 
 ///|
@@ -80,7 +80,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_velocity(
   target_vel : @core.Real,
   damping : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.motor_velocity(AngX, target_vel, damping) }
+  { inner: self.inner.motor_velocity(AngX, target_vel, damping), }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn RevoluteJoint3DRealBuilder::motor_max_force(
   self : RevoluteJoint3DRealBuilder,
   max_force : @core.Real,
 ) -> RevoluteJoint3DRealBuilder {
-  { inner: self.inner.motor_max_force(AngX, max_force) }
+  { inner: self.inner.motor_max_force(AngX, max_force), }
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn PrismaticJoint3DRealBuilder::local_anchor1(
   self : PrismaticJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.local_anchor1(a) }
+  { inner: self.inner.local_anchor1(a), }
 }
 
 ///|
@@ -129,7 +129,7 @@ pub fn PrismaticJoint3DRealBuilder::local_anchor2(
   self : PrismaticJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.local_anchor2(a) }
+  { inner: self.inner.local_anchor2(a), }
 }
 
 ///|
@@ -138,7 +138,7 @@ pub fn PrismaticJoint3DRealBuilder::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.limits(LinX, min, max) }
+  { inner: self.inner.limits(LinX, min, max), }
 }
 
 ///|
@@ -148,7 +148,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.motor_position(LinX, target_pos, stiffness, damping) }
+  { inner: self.inner.motor_position(LinX, target_pos, stiffness, damping), }
 }
 
 ///|
@@ -157,7 +157,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_velocity(
   target_vel : @core.Real,
   damping : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.motor_velocity(LinX, target_vel, damping) }
+  { inner: self.inner.motor_velocity(LinX, target_vel, damping), }
 }
 
 ///|
@@ -165,7 +165,7 @@ pub fn PrismaticJoint3DRealBuilder::motor_max_force(
   self : PrismaticJoint3DRealBuilder,
   max_force : @core.Real,
 ) -> PrismaticJoint3DRealBuilder {
-  { inner: self.inner.motor_max_force(LinX, max_force) }
+  { inner: self.inner.motor_max_force(LinX, max_force), }
 }
 
 ///|
@@ -182,7 +182,7 @@ pub struct FixedJoint3DRealBuilder {
 
 ///|
 pub fn FixedJoint3DRealBuilder::FixedJoint3DRealBuilder() -> FixedJoint3DRealBuilder {
-  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::all()) }
+  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::all()), }
 }
 
 ///|
@@ -190,7 +190,7 @@ pub fn FixedJoint3DRealBuilder::local_anchor1(
   self : FixedJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> FixedJoint3DRealBuilder {
-  { inner: self.inner.local_anchor1(a) }
+  { inner: self.inner.local_anchor1(a), }
 }
 
 ///|
@@ -198,7 +198,7 @@ pub fn FixedJoint3DRealBuilder::local_anchor2(
   self : FixedJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> FixedJoint3DRealBuilder {
-  { inner: self.inner.local_anchor2(a) }
+  { inner: self.inner.local_anchor2(a), }
 }
 
 ///|
@@ -206,7 +206,7 @@ pub fn FixedJoint3DRealBuilder::local_basis1(
   self : FixedJoint3DRealBuilder,
   q : @core.Quat,
 ) -> FixedJoint3DRealBuilder {
-  { inner: self.inner.local_basis1(q) }
+  { inner: self.inner.local_basis1(q), }
 }
 
 ///|
@@ -214,7 +214,7 @@ pub fn FixedJoint3DRealBuilder::local_basis2(
   self : FixedJoint3DRealBuilder,
   q : @core.Quat,
 ) -> FixedJoint3DRealBuilder {
-  { inner: self.inner.local_basis2(q) }
+  { inner: self.inner.local_basis2(q), }
 }
 
 ///|
@@ -231,7 +231,7 @@ pub struct SphericalJoint3DRealBuilder {
 
 ///|
 pub fn SphericalJoint3DRealBuilder::SphericalJoint3DRealBuilder() -> SphericalJoint3DRealBuilder {
-  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::lin_axes()) }
+  { inner: GenericJoint3DRealBuilder(JointAxesMask3DReal::lin_axes()), }
 }
 
 ///|
@@ -239,7 +239,7 @@ pub fn SphericalJoint3DRealBuilder::local_anchor1(
   self : SphericalJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.local_anchor1(a) }
+  { inner: self.inner.local_anchor1(a), }
 }
 
 ///|
@@ -247,7 +247,7 @@ pub fn SphericalJoint3DRealBuilder::local_anchor2(
   self : SphericalJoint3DRealBuilder,
   a : @core.Vec3,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.local_anchor2(a) }
+  { inner: self.inner.local_anchor2(a), }
 }
 
 ///|
@@ -257,7 +257,7 @@ pub fn SphericalJoint3DRealBuilder::limits(
   min : @core.Real,
   max : @core.Real,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.limits(axis, min, max) }
+  { inner: self.inner.limits(axis, min, max), }
 }
 
 ///|
@@ -268,7 +268,7 @@ pub fn SphericalJoint3DRealBuilder::motor_position(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.motor_position(axis, target_pos, stiffness, damping) }
+  { inner: self.inner.motor_position(axis, target_pos, stiffness, damping), }
 }
 
 ///|
@@ -278,7 +278,7 @@ pub fn SphericalJoint3DRealBuilder::motor_velocity(
   target_vel : @core.Real,
   damping : @core.Real,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.motor_velocity(axis, target_vel, damping) }
+  { inner: self.inner.motor_velocity(axis, target_vel, damping), }
 }
 
 ///|
@@ -287,7 +287,7 @@ pub fn SphericalJoint3DRealBuilder::motor_max_force(
   axis : JointAxis3DReal,
   max_force : @core.Real,
 ) -> SphericalJoint3DRealBuilder {
-  { inner: self.inner.motor_max_force(axis, max_force) }
+  { inner: self.inner.motor_max_force(axis, max_force), }
 }
 
 ///|

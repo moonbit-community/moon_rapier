@@ -14,8 +14,8 @@
 
 ///|
 pub struct SolverCounters {
-  mut nconstraints : Int
-  mut ncontacts : Int
+  mut nconstraints : Int32
+  mut ncontacts : Int32
   velocity_resolution_time : Timer
   velocity_assembly_time : Timer
   velocity_assembly_time_solver_bodies : Timer
@@ -51,22 +51,25 @@ pub fn SolverCounters::reset(self : SolverCounters) -> Unit {
 }
 
 ///|
-pub fn SolverCounters::nconstraints(self : SolverCounters) -> Int {
+pub fn SolverCounters::nconstraints(self : SolverCounters) -> Int32 {
   self.nconstraints
 }
 
 ///|
-pub fn SolverCounters::set_nconstraints(self : SolverCounters, n : Int) -> Unit {
+pub fn SolverCounters::set_nconstraints(
+  self : SolverCounters,
+  n : Int32,
+) -> Unit {
   self.nconstraints = n
 }
 
 ///|
-pub fn SolverCounters::ncontacts(self : SolverCounters) -> Int {
+pub fn SolverCounters::ncontacts(self : SolverCounters) -> Int32 {
   self.ncontacts
 }
 
 ///|
-pub fn SolverCounters::set_ncontacts(self : SolverCounters, n : Int) -> Unit {
+pub fn SolverCounters::set_ncontacts(self : SolverCounters, n : Int32) -> Unit {
   self.ncontacts = n
 }
 

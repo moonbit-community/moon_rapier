@@ -14,7 +14,7 @@
 
 ///|
 test "physics_pipeline3d step runs collisions and solver" {
-  let pipeline = PhysicsPipeline3D::PhysicsPipeline3D()
+  let pipeline = @pipeline.PhysicsPipeline3D::PhysicsPipeline3D()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()

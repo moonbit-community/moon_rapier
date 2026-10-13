@@ -14,29 +14,29 @@
 
 ///|
 pub struct Subscription[T] {
-  id : Int
+  id : Int32
   marker : T?
 }
 
 ///|
 struct PubSubCursor {
   // Index into the `offsets` deque, in the same absolute space as `deleted_offsets`.
-  mut id : Int
+  mut id : Int32
   // Index into the `messages` deque, in the same absolute space as `deleted_messages`.
-  mut next : Int
+  mut next : Int32
 }
 
 ///|
 pub struct PubSub[T] {
-  mut deleted_messages : Int
-  mut deleted_offsets : Int
+  mut deleted_messages : Int32
+  mut deleted_offsets : Int32
   messages : Array[T]
-  offsets : Array[Int]
+  offsets : Array[Int32]
   cursors : Array[PubSubCursor]
 }
 
 ///|
-const INVALID_OFFSET : Int = -1
+const INVALID_OFFSET : Int32 = -1
 
 ///|
 pub fn[T] PubSub::PubSub() -> PubSub[T] {
@@ -50,7 +50,7 @@ pub fn[T] PubSub::PubSub() -> PubSub[T] {
 }
 
 ///|
-fn[T] PubSub::offsets_len(self : PubSub[T]) -> Int {
+fn[T] PubSub::offsets_len(self : PubSub[T]) -> Int32 {
   self.offsets.length() - self.deleted_offsets
 }
 
@@ -101,7 +101,7 @@ pub fn[T] PubSub::subscribe(self : PubSub[T]) -> Subscription[T] {
     next: self.messages.length(),
     id: self.offsets.length(),
   }
-  let sub : Subscription[T] = { id: self.cursors.length(), marker: None }
+  let sub : Subscription[T] = { id: self.cursors.length(), marker: None, }
   self.offsets.push(cursor.next)
   self.cursors.push(cursor)
   sub
@@ -111,7 +111,7 @@ pub fn[T] PubSub::subscribe(self : PubSub[T]) -> Subscription[T] {
 pub fn[T] PubSub::read_ith(
   self : PubSub[T],
   sub : Subscription[T],
-  i : Int,
+  i : Int32,
 ) -> T? {
   if i < 0 {
     return None

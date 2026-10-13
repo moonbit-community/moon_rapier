@@ -14,16 +14,16 @@
 
 ///|
 pub struct ColliderHandle3D {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 
 ///|
 fn ColliderHandle3D::ColliderHandle3D(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ColliderHandle3D {
-  { id, generation }
+  { id, generation, }
 }
 
 ///|
@@ -36,14 +36,16 @@ pub fn ColliderHandle3D::equals(
 
 ///|
 pub fn ColliderHandle3D::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ColliderHandle3D {
   ColliderHandle3D(id, generation)
 }
 
 ///|
-pub fn ColliderHandle3D::into_raw_parts(self : ColliderHandle3D) -> (Int, Int) {
+pub fn ColliderHandle3D::into_raw_parts(
+  self : ColliderHandle3D,
+) -> (Int32, Int32) {
   (self.id, self.generation)
 }
 
@@ -55,17 +57,17 @@ pub fn ColliderHandle3D::invalid() -> ColliderHandle3D {
 ///|
 pub struct ColliderSet3D {
   colliders : Array[Collider3D?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
 }
 
 ///|
 pub fn ColliderSet3D::ColliderSet3D() -> ColliderSet3D {
-  { colliders: [], generations: [], free_list: [] }
+  { colliders: [], generations: [], free_list: [], }
 }
 
 ///|
-pub fn ColliderSet3D::len(self : ColliderSet3D) -> Int {
+pub fn ColliderSet3D::len(self : ColliderSet3D) -> Int32 {
   let mut count = 0
   for i in 0..<self.colliders.length() {
     if self.colliders[i] is Some(_) {

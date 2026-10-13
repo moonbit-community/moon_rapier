@@ -23,12 +23,12 @@ pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> ModifiedObjects[
   Handle,
   Object,
 ] {
-  { handles: [], object_marker: None }
+  { handles: [], object_marker: None, }
 }
 
 ///|
 pub fn[Handle, Object] ModifiedObjects::with_capacity(
-  capacity : Int,
+  capacity : Int32,
 ) -> ModifiedObjects[Handle, Object] {
   let result : ModifiedObjects[Handle, Object] = {
     handles: [],

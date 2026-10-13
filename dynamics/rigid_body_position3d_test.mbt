@@ -17,8 +17,8 @@
 /// (cfg dim3).
 test "rigid_body_position3d interpolate_velocity roundtrip" {
   // Deterministic xorshift RNG.
-  let mut state : Int = 0x12345678
-  fn next_u32() -> Int {
+  let mut state : Int32 = 0x12345678
+  fn next_u32() -> Int32 {
     state = state ^ (state << 13)
     state = state ^ (state >> 17)
     state = state ^ (state << 5)
@@ -49,7 +49,9 @@ test "rigid_body_position3d interpolate_velocity roundtrip" {
     )
     let dt = 0.016F
     let inv_dt = 1.0F / dt
-    let rb_pos = RigidBodyPosition3D::RigidBodyPosition3D(curr_pos, next_pos)
+    let rb_pos = @dynamics.RigidBodyPosition3D::RigidBodyPosition3D(
+      curr_pos, next_pos,
+    )
     let vel = rb_pos.interpolate_velocity(inv_dt, local_com)
     let interp_pos = vel.integrate(dt, curr_pos, local_com)
     inspect(

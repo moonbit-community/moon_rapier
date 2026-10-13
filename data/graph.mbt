@@ -21,16 +21,16 @@
 
 ///|
 pub struct NodeIndex {
-  index : Int
+  index : Int32
 }
 
 ///|
-pub fn NodeIndex::NodeIndex(x : Int) -> NodeIndex {
-  { index: x }
+pub fn NodeIndex::NodeIndex(x : Int32) -> NodeIndex {
+  { index: x, }
 }
 
 ///|
-pub fn NodeIndex::index(self : NodeIndex) -> Int {
+pub fn NodeIndex::index(self : NodeIndex) -> Int32 {
   self.index
 }
 
@@ -41,16 +41,16 @@ pub fn NodeIndex::end() -> NodeIndex {
 
 ///|
 pub struct EdgeIndex {
-  index : Int
+  index : Int32
 }
 
 ///|
-pub fn EdgeIndex::EdgeIndex(x : Int) -> EdgeIndex {
-  { index: x }
+pub fn EdgeIndex::EdgeIndex(x : Int32) -> EdgeIndex {
+  { index: x, }
 }
 
 ///|
-pub fn EdgeIndex::index(self : EdgeIndex) -> Int {
+pub fn EdgeIndex::index(self : EdgeIndex) -> Int32 {
   self.index
 }
 
@@ -106,12 +106,12 @@ pub struct Graph[N, E] {
 }
 
 ///|
-pub fn[N, E] Graph::with_capacity(nodes : Int, edges : Int) -> Graph[N, E] {
+pub fn[N, E] Graph::with_capacity(nodes : Int32, edges : Int32) -> Graph[N, E] {
   let ns : Array[Node[N]] = []
   let es : Array[Edge[E]] = []
   ns.reserve_capacity(nodes)
   es.reserve_capacity(edges)
-  { nodes: ns, edges: es }
+  { nodes: ns, edges: es, }
 }
 
 ///|
@@ -187,7 +187,7 @@ pub fn[N, E] Graph::edge_weight_mut(
   if i < 0 || i >= self.edges.length() {
     return None
   }
-  Some({ graph: self, edge: a })
+  Some({ graph: self, edge: a, })
 }
 
 ///|
@@ -307,7 +307,7 @@ fn[N, E] Graph::change_edge_links(
 }
 
 ///|
-fn[N, E] Graph::swap_remove_edge(self : Graph[N, E], idx : Int) -> Edge[E]? {
+fn[N, E] Graph::swap_remove_edge(self : Graph[N, E], idx : Int32) -> Edge[E]? {
   let last = self.edges.length() - 1
   if idx < 0 || idx > last {
     return None
@@ -358,7 +358,7 @@ pub fn[N, E] Graph::remove_edge(self : Graph[N, E], e : EdgeIndex) -> E? {
 }
 
 ///|
-fn[N, E] Graph::swap_remove_node(self : Graph[N, E], idx : Int) -> Node[N]? {
+fn[N, E] Graph::swap_remove_node(self : Graph[N, E], idx : Int32) -> Node[N]? {
   let last = self.nodes.length() - 1
   if idx < 0 || idx > last {
     return None
@@ -507,7 +507,7 @@ pub fn[N, E] Edges::next(self : Edges[N, E]) -> EdgeReference[E]? {
     if i >= 0 && i < self.graph.edges.length() {
       let ed = self.graph.edges[i]
       self.next_out = ed.next_out
-      return Some({ index: EdgeIndex(i), weight: ed.weight })
+      return Some({ index: EdgeIndex(i), weight: ed.weight, })
     }
     self.next_out = EdgeIndex::end()
   }
@@ -523,7 +523,7 @@ pub fn[N, E] Edges::next(self : Edges[N, E]) -> EdgeReference[E]? {
     if ed.node0.index() == self.skip_start.index() {
       continue
     }
-    return Some({ index: edge_index, weight: ed.weight })
+    return Some({ index: edge_index, weight: ed.weight, })
   }
   None
 }

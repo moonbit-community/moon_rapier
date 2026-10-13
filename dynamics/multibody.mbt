@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-const SPATIAL_DIM : Int = 3
+const SPATIAL_DIM : Int32 = 3
 
 ///|
 fn revolute_joint_axis3_or_default(axis : @core.Vec3) -> @core.Vec3 {
@@ -257,7 +257,7 @@ pub fn RevoluteJoint::angle(
 fn multibody_joint_local_displacements(
   joint : MultibodyJoint,
   displacements : Array[@core.Real]?,
-  assembly_id : Int,
+  assembly_id : Int32,
 ) -> Array[@core.Real] {
   let result : Array[@core.Real] = []
   let ndofs = joint.ndofs()
@@ -282,7 +282,7 @@ fn multibody_joint_local_displacements(
 fn multibody_joint_with_local_displacements(
   joint : MultibodyJoint,
   displacements : Array[@core.Real]?,
-  assembly_id : Int,
+  assembly_id : Int32,
 ) -> MultibodyJoint {
   let result = MultibodyJoint::{
     data: joint.data,
@@ -309,19 +309,19 @@ fn multibody_joint_with_local_displacements(
 
 ///|
 pub struct LinkId {
-  value : Int
+  value : Int32
 }
 
 ///|
-fn LinkId::LinkId(value : Int) -> LinkId {
+fn LinkId::LinkId(value : Int32) -> LinkId {
   { value, }
 }
 
 ///|
 struct MultibodyLink {
-  mut internal_id : Int
-  mut parent_internal_id : Int
-  mut assembly_id : Int
+  mut internal_id : Int32
+  mut parent_internal_id : Int32
+  mut assembly_id : Int32
   rigid_body : RigidBodyHandle
   mut joint : MultibodyJoint
   mut local_to_parent : @core.Isometry2
@@ -331,9 +331,9 @@ struct MultibodyLink {
 ///|
 pub fn MultibodyLink::MultibodyLink(
   rigid_body : RigidBodyHandle,
-  internal_id : Int,
-  assembly_id : Int,
-  parent_internal_id : Int,
+  internal_id : Int32,
+  assembly_id : Int32,
+  parent_internal_id : Int32,
   joint : MultibodyJoint,
   local_to_world : @core.Isometry2,
   local_to_parent : @core.Isometry2,
@@ -366,12 +366,12 @@ pub fn MultibodyLink::is_root(self : MultibodyLink) -> Bool {
 
 ///|
 pub fn MultibodyLink::link_id(self : MultibodyLink) -> LinkId {
-  { value: self.internal_id }
+  { value: self.internal_id, }
 }
 
 ///|
 pub fn MultibodyLink::parent_id(self : MultibodyLink) -> LinkId {
-  { value: self.parent_internal_id }
+  { value: self.parent_internal_id, }
 }
 
 ///|
@@ -384,7 +384,7 @@ pub fn MultibodyLink::rigid_body_handle(
 ///|
 struct Multibody {
   links : Array[MultibodyLink]
-  mut ndofs : Int
+  mut ndofs : Int32
   mut root_is_dynamic : Bool
   mut root_translation : @core.Vec2
   mut root_angle : @core.Real
@@ -394,7 +394,7 @@ struct Multibody {
   mut damping : DVector
   mut accelerations : DVector
   mut inv_augmented_mass : @core.DMatrix
-  solver_id : Int
+  solver_id : Int32
   mut self_contacts_enabled : Bool
 }
 
@@ -479,7 +479,7 @@ fn Multibody::update_root_from_body(self : Multibody, body : RigidBody) -> Unit 
 }
 
 ///|
-fn Multibody::rebuild_indices(self : Multibody, root_dofs : Int) -> Unit {
+fn Multibody::rebuild_indices(self : Multibody, root_dofs : Int32) -> Unit {
   let mut assembly = root_dofs
   for i in 0..<self.links.length() {
     let link = self.links[i]
@@ -500,7 +500,7 @@ fn Multibody::ensure_buffers(self : Multibody) -> Unit {
   if n < 0 {
     n = 0
   }
-  fn copy_prefix(src : DVector, dst : DVector, n : Int) -> Unit {
+  fn copy_prefix(src : DVector, dst : DVector, n : Int32) -> Unit {
     let limit = if src.len() < n { src.len() } else { n }
     for i in 0..<limit {
       dst.set_value(i, src.value_at(i))
@@ -529,8 +529,8 @@ fn Multibody::ensure_buffers(self : Multibody) -> Unit {
 ///|
 fn dmatrix_get_or_zero(
   matrix : @core.DMatrix,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
 ) -> @core.Real {
   if matrix.get(row, col) is Some(value) {
     value
@@ -556,14 +556,14 @@ fn dmatrix_inverse_or_identity(matrix : @core.DMatrix) -> @core.DMatrix {
     }
   }
 
-  fn idx(cols : Int, row : Int, col : Int) -> Int {
+  fn idx(cols : Int32, row : Int32, col : Int32) -> Int32 {
     row * cols + col
   }
 
   let eps = 1.0e-9F
   fn diagonal_inverse_fallback(
     matrix : @core.DMatrix,
-    n : Int,
+    n : Int32,
     eps : @core.Real,
   ) -> @core.DMatrix {
     let mut out = @core.DMatrix::zeros(n, n)
@@ -656,7 +656,7 @@ fn Multibody::update_inv_augmented_mass(
     if bodies.get(link.rigid_body) is Some(body) {
       let eff_mass = body.mass_props.effective_mass()
       let eff_inertia = body.mass_props.effective_angular_inertia()
-      let jacobian = self.body_jacobian({ value: link.internal_id })
+      let jacobian = self.body_jacobian({ value: link.internal_id, })
       for r in 0..<n {
         let j0r = jacobian.value_at(0, r)
         let j1r = jacobian.value_at(1, r)
@@ -786,18 +786,18 @@ pub fn Multibody::update_rigid_bodies(
 }
 
 ///|
-pub fn Multibody::ndofs(self : Multibody) -> Int {
+pub fn Multibody::ndofs(self : Multibody) -> Int32 {
   self.ndofs
 }
 
 ///|
-pub fn Multibody::num_links(self : Multibody) -> Int {
+pub fn Multibody::num_links(self : Multibody) -> Int32 {
   self.links.length()
 }
 
 ///|
 pub fn Multibody::root(self : Multibody) -> MultibodyLink? {
-  self.link({ value: 0 })
+  self.link({ value: 0, })
 }
 
 ///|
@@ -819,9 +819,9 @@ pub fn Multibody::link_mut(self : Multibody, id : LinkId) -> MultibodyLink? {
 ///|
 pub fn Multibody::kinematic_branch(
   self : Multibody,
-  link_id : Int,
-) -> Array[Int] {
-  self.branch_ids({ value: link_id })
+  link_id : Int32,
+) -> Array[Int32] {
+  self.branch_ids({ value: link_id, })
 }
 
 ///|
@@ -885,7 +885,7 @@ pub fn Multibody::joint_velocity(
 pub fn Multibody::forward_kinematics_single_branch(
   self : Multibody,
   bodies : RigidBodySet,
-  branch : Array[Int],
+  branch : Array[Int32],
   displacements : Array[@core.Real]?,
   out_jacobian : Jacobian?,
 ) -> @core.Isometry2 {
@@ -936,7 +936,7 @@ pub fn Multibody::forward_kinematics_single_branch(
 
   // If a jacobian is requested, compute it for the last link of the branch.
   if out_jacobian is Some(jacobian) {
-    self.compute_link_pose({ value: last }, displacements, Some(jacobian))
+    self.compute_link_pose({ value: last, }, displacements, Some(jacobian))
     |> ignore
   }
   if last < 0 || last >= self.links.length() {
@@ -990,8 +990,8 @@ pub fn Multibody::link(self : Multibody, id : LinkId) -> MultibodyLink? {
 }
 
 ///|
-fn Multibody::branch_ids(self : Multibody, id : LinkId) -> Array[Int] {
-  let branch : Array[Int] = []
+fn Multibody::branch_ids(self : Multibody, id : LinkId) -> Array[Int32] {
+  let branch : Array[Int32] = []
   let mut current = id.value
   if current < 0 || current >= self.links.length() {
     return branch
@@ -1003,7 +1003,7 @@ fn Multibody::branch_ids(self : Multibody, id : LinkId) -> Array[Int] {
     }
     current = self.links[current].parent_internal_id
   }
-  let reversed : Array[Int] = []
+  let reversed : Array[Int32] = []
   let len = branch.length()
   for i in 0..<len {
     reversed.push(branch[len - 1 - i])
@@ -1025,7 +1025,7 @@ fn Multibody::compute_link_pose(
   let root_pose = self.root_pose(displacements)
   let mut current_pose = root_pose
   let joint_positions : Array[@core.Vec2] = []
-  let joint_cols : Array[Int] = []
+  let joint_cols : Array[Int32] = []
   for i in 1..<branch.length() {
     let link_id = branch[i]
     let link = self.links[link_id]
@@ -1128,7 +1128,7 @@ pub fn Multibody::apply_displacements(
 ///|
 pub struct InverseKinematicsOption {
   mut damping : @core.Real
-  mut max_iters : Int
+  mut max_iters : Int32
   mut constrained_axes : JointAxesMask
   mut epsilon_linear : @core.Real
   mut epsilon_angular : @core.Real
@@ -1157,7 +1157,7 @@ pub fn InverseKinematicsOption::set_damping(
 ///|
 pub fn InverseKinematicsOption::set_max_iters(
   self : InverseKinematicsOption,
-  max_iters : Int,
+  max_iters : Int32,
 ) -> InverseKinematicsOption {
   self.max_iters = max_iters
   self
@@ -1402,8 +1402,8 @@ fn MultibodyJointHandle::arena_index(
 
 ///|
 pub fn MultibodyJointHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> MultibodyJointHandle {
   MultibodyJointHandle(@data.Index::from_raw_parts(id, generation))
 }
@@ -1411,7 +1411,7 @@ pub fn MultibodyJointHandle::from_raw_parts(
 ///|
 pub fn MultibodyJointHandle::into_raw_parts(
   self : MultibodyJointHandle,
-) -> (Int, Int) {
+) -> (Int32, Int32) {
   self.index.into_raw_parts()
 }
 
@@ -1450,18 +1450,18 @@ pub fn MultibodyIndex::invalid() -> MultibodyIndex {
 
 ///|
 struct MultibodyLinkId {
-  mut graph_id : Int
+  mut graph_id : Int32
   multibody : MultibodyIndex
-  id : Int
+  id : Int32
 }
 
 ///|
 fn MultibodyLinkId::MultibodyLinkId(
-  graph_id : Int,
+  graph_id : Int32,
   multibody : MultibodyIndex,
-  id : Int,
+  id : Int32,
 ) -> MultibodyLinkId {
-  { graph_id, multibody, id }
+  { graph_id, multibody, id, }
 }
 
 ///|
@@ -1475,14 +1475,14 @@ pub fn MultibodyLinkId::multibody(self : MultibodyLinkId) -> MultibodyIndex {
 }
 
 ///|
-pub fn MultibodyLinkId::id(self : MultibodyLinkId) -> Int {
+pub fn MultibodyLinkId::id(self : MultibodyLinkId) -> Int32 {
   self.id
 }
 
 ///|
 priv struct MultibodyGraphEdge {
-  node1 : Int
-  node2 : Int
+  node1 : Int32
+  node2 : Int32
   parent : RigidBodyHandle
   child : RigidBodyHandle
 }
@@ -1507,7 +1507,7 @@ struct MultibodyJointSet {
   rb2mb : @data.Coarena[MultibodyLinkId]
   graph_nodes : Array[RigidBodyHandle]
   graph_edges : Array[MultibodyGraphEdge]
-  adjacency : Array[Array[Int]]
+  adjacency : Array[Array[Int32]]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -1518,7 +1518,7 @@ fn rb_handle_index(handle : RigidBodyHandle) -> @data.Index {
 }
 
 ///|
-fn remove_graph_edge_index(values : Array[Int], index : Int) -> Unit {
+fn remove_graph_edge_index(values : Array[Int32], index : Int32) -> Unit {
   let mut found = -1
   for i in 0..<values.length() {
     if values[i] == index {
@@ -1538,9 +1538,9 @@ fn remove_graph_edge_index(values : Array[Int], index : Int) -> Unit {
 
 ///|
 fn replace_graph_edge_index(
-  values : Array[Int],
-  old_index : Int,
-  new_index : Int,
+  values : Array[Int32],
+  old_index : Int32,
+  new_index : Int32,
 ) -> Unit {
   for i in 0..<values.length() {
     if values[i] == old_index {
@@ -1553,7 +1553,7 @@ fn replace_graph_edge_index(
 ///|
 fn multibody_root_pose(
   multibody : Multibody,
-  root_id : Int,
+  root_id : Int32,
 ) -> (@core.Vec2, @core.Real) {
   if root_id < 0 || root_id >= multibody.links.length() {
     return (@core.Vec2::zero(), 0.0F)
@@ -1564,12 +1564,15 @@ fn multibody_root_pose(
 }
 
 ///|
-fn collect_subtree_indices(multibody : Multibody, root_id : Int) -> Array[Int] {
+fn collect_subtree_indices(
+  multibody : Multibody,
+  root_id : Int32,
+) -> Array[Int32] {
   if root_id < 0 || root_id >= multibody.links.length() {
     return []
   }
   let count = multibody.links.length()
-  let children : Array[Array[Int]] = []
+  let children : Array[Array[Int32]] = []
   for _ in 0..<count {
     children.push([])
   }
@@ -1584,8 +1587,8 @@ fn collect_subtree_indices(multibody : Multibody, root_id : Int) -> Array[Int] {
   for _ in 0..<count {
     visited.push(false)
   }
-  let stack : Array[Int] = [root_id]
-  let result : Array[Int] = []
+  let stack : Array[Int32] = [root_id]
+  let result : Array[Int32] = []
   while stack.pop() is Some(id) {
     if id < 0 || id >= count {
       continue
@@ -1606,18 +1609,18 @@ fn collect_subtree_indices(multibody : Multibody, root_id : Int) -> Array[Int] {
 ///|
 fn build_multibody_from_indices(
   multibody : Multibody,
-  indices : Array[Int],
-  root_id : Int,
+  indices : Array[Int32],
+  root_id : Int32,
 ) -> Multibody {
   let total = multibody.links.length()
-  let mut_order : Array[Int] = [root_id]
+  let mut_order : Array[Int32] = [root_id]
   for i in 0..<indices.length() {
     let id = indices[i]
     if id != root_id {
       mut_order.push(id)
     }
   }
-  let map : Array[Int] = []
+  let map : Array[Int32] = []
   for _ in 0..<total {
     map.push(-1)
   }
@@ -1689,7 +1692,7 @@ fn MultibodyJointSet::set_link(
 fn MultibodyJointSet::graph_node_for(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if self.rb2mb.get(rb_handle_index(handle)) is Some(link) {
     let graph_id = link.graph_id
     if graph_id >= 0 &&
@@ -1708,7 +1711,7 @@ fn MultibodyJointSet::graph_node_for(
 fn MultibodyJointSet::update_graph_id(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
-  graph_id : Int,
+  graph_id : Int32,
 ) -> Unit {
   let key = rb_handle_index(handle)
   if self.rb2mb.get(key) is Some(link) {
@@ -1721,7 +1724,7 @@ fn MultibodyJointSet::update_graph_id(
 fn MultibodyJointSet::ensure_graph_node(
   self : MultibodyJointSet,
   handle : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   if self.graph_node_for(handle) is Some(node_id) {
     node_id
   } else {
@@ -1741,7 +1744,7 @@ fn MultibodyJointSet::insert_graph_edge(
   let node1 = self.ensure_graph_node(parent)
   let node2 = self.ensure_graph_node(child)
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push({ node1, node2, parent, child })
+  self.graph_edges.push({ node1, node2, parent, child, })
   self.adjacency[node1].push(edge_id)
   self.adjacency[node2].push(edge_id)
 }
@@ -1749,7 +1752,7 @@ fn MultibodyJointSet::insert_graph_edge(
 ///|
 fn MultibodyJointSet::remove_graph_edge(
   self : MultibodyJointSet,
-  edge_id : Int,
+  edge_id : Int32,
 ) -> MultibodyGraphEdge? {
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
@@ -1783,7 +1786,7 @@ fn MultibodyJointSet::remove_graph_edge(
 ///|
 fn MultibodyJointSet::remove_graph_node(
   self : MultibodyJointSet,
-  node_id : Int,
+  node_id : Int32,
 ) -> Unit {
   if node_id < 0 || node_id >= self.graph_nodes.length() {
     return
@@ -1839,7 +1842,7 @@ fn MultibodyJointSet::remove_graph_node_for_handle(
 fn MultibodyJointSet::find_graph_edge_by_child(
   self : MultibodyJointSet,
   child : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if self.graph_node_for(child) is Some(node_id) {
     let edges = self.adjacency[node_id]
     for i in 0..<edges.length() {
@@ -1868,7 +1871,7 @@ fn mb_split_values(text : String, sep : String) -> Array[String] {
 }
 
 ///|
-fn mb_parse_int_value(text : String) -> Int {
+fn mb_parse_int_value(text : String) -> Int32 {
   let result = try @string.parse_int(text[:], base=10) catch {
     err => Err(err)
   } noraise {
@@ -1901,7 +1904,7 @@ fn mb_parse_bool_value(text : String) -> Bool {
 }
 
 ///|
-fn mb_motor_model_from_int(value : Int) -> MotorModel {
+fn mb_motor_model_from_int(value : Int32) -> MotorModel {
   if value == 1 {
     ForceBased
   } else {
@@ -2503,7 +2506,7 @@ pub fn MultibodyJointSet::remove(
         self.multibodies.insert(multibody) |> ignore
         return
       }
-      let remaining : Array[Int] = []
+      let remaining : Array[Int32] = []
       for i in 0..<multibody.links.length() {
         let mut in_subtree = false
         for j in 0..<subtree.length() {
@@ -2675,7 +2678,7 @@ pub fn MultibodyJointSet::get_mut_internal(
 ///|
 pub fn MultibodyJointSet::get_unknown_gen(
   self : MultibodyJointSet,
-  id : Int,
+  id : Int32,
 ) -> (Multibody, LinkId, MultibodyJointHandle)? {
   if self.rb2mb.get_unknown_gen(id) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {

@@ -14,9 +14,9 @@
 
 ///|
 test "generic joint flip respects coupled axes" {
-  let mut joint = GenericJoint::default()
+  let mut joint = @dynamics.GenericJoint::default()
   joint = joint
-    .set_coupled_axes(JointAxesMask::lin_axes())
+    .set_coupled_axes(@dynamics.JointAxesMask::lin_axes())
     .set_limits_axis(LinX, 1.0F, 2.0F)
     .set_limits_axis(LinY, -3.0F, 4.0F)
     .set_limits_axis(AngZ, 5.0F, 6.0F)

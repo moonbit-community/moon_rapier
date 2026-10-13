@@ -20,16 +20,16 @@
 /// particular solver implementation.
 pub(all) enum LinkOrBodyRef {
   Link(MultibodyLinkId)
-  Body(Int)
+  Body(Int32)
   Fixed
 }
 
 ///|
 /// Identifies the kind of impulse to write back for a joint constraint.
 pub(all) enum WritebackId {
-  Dof(Int)
-  Limit(Int)
-  Motor(Int)
+  Dof(Int32)
+  Limit(Int32)
+  Motor(Int32)
 }
 
 ///|
@@ -38,7 +38,7 @@ pub struct JointSolverBody {
   im : @core.Vec2
   ii : @core.Real
   world_com : @core.Vec2
-  solver_vel : Int
+  solver_vel : Int32
 }
 
 ///|
@@ -59,13 +59,13 @@ pub fn JointSolverBody::invalid() -> JointSolverBody {
 pub struct GenericJointConstraint {
   is_rigid_body1 : Bool
   is_rigid_body2 : Bool
-  solver_vel1 : Int
-  solver_vel2 : Int
-  ndofs1 : Int
-  j_id1 : Int
-  ndofs2 : Int
-  j_id2 : Int
-  joint_id : Int
+  solver_vel1 : Int32
+  solver_vel2 : Int32
+  ndofs1 : Int32
+  j_id1 : Int32
+  ndofs2 : Int32
+  j_id2 : Int32
+  joint_id : Int32
   impulse : @core.Real
   impulse_bounds : (@core.Real, @core.Real)
   inv_lhs : @core.Real

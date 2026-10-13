@@ -14,19 +14,19 @@
 
 ///|
 pub struct Coarena[T] {
-  data : Array[(Int, T)]
+  data : Array[(Int32, T)]
 }
 
 ///|
-const INVALID_GENERATION : Int = -1
+const INVALID_GENERATION : Int32 = -1
 
 ///|
 pub fn[T] Coarena::Coarena() -> Coarena[T] {
-  { data: [] }
+  { data: [], }
 }
 
 ///|
-pub fn[T] Coarena::len(self : Coarena[T]) -> Int {
+pub fn[T] Coarena::len(self : Coarena[T]) -> Int32 {
   let mut n = 0
   for i in 0..<self.data.length() {
     if self.data[i].0 != INVALID_GENERATION {
@@ -37,7 +37,7 @@ pub fn[T] Coarena::len(self : Coarena[T]) -> Int {
 }
 
 ///|
-pub fn[T] Coarena::reserve(self : Coarena[T], additional : Int) -> Unit {
+pub fn[T] Coarena::reserve(self : Coarena[T], additional : Int32) -> Unit {
   self.data.reserve_capacity(additional)
 }
 
@@ -54,7 +54,7 @@ pub fn[T] Coarena::iter(self : Coarena[T]) -> Array[(Index, T)] {
 }
 
 ///|
-pub fn[T] Coarena::get_unknown_gen(self : Coarena[T], index : Int) -> T? {
+pub fn[T] Coarena::get_unknown_gen(self : Coarena[T], index : Int32) -> T? {
   if index < 0 {
     return None
   }
@@ -65,7 +65,7 @@ pub fn[T] Coarena::get_unknown_gen(self : Coarena[T], index : Int) -> T? {
 }
 
 ///|
-pub fn[T] Coarena::get_mut_unknown_gen(self : Coarena[T], index : Int) -> T? {
+pub fn[T] Coarena::get_mut_unknown_gen(self : Coarena[T], index : Int32) -> T? {
   // MoonBit doesn't expose a stable `&mut` reference, so this mirrors `get_unknown_gen`.
   self.get_unknown_gen(index)
 }
@@ -125,7 +125,7 @@ pub fn[T] Coarena::set(
 }
 
 ///|
-pub fn[T] Coarena::get_gen(self : Coarena[T], index : Int) -> Int? {
+pub fn[T] Coarena::get_gen(self : Coarena[T], index : Int32) -> Int32? {
   if index < 0 || index >= self.data.length() {
     return None
   }

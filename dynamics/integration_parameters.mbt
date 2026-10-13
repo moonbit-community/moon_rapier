@@ -23,17 +23,17 @@ pub fn SpringCoefficients::SpringCoefficients(
   natural_frequency : @core.Real,
   damping_ratio : @core.Real,
 ) -> SpringCoefficients {
-  { natural_frequency, damping_ratio }
+  { natural_frequency, damping_ratio, }
 }
 
 ///|
 pub fn SpringCoefficients::contact_defaults() -> SpringCoefficients {
-  { natural_frequency: 30.0F, damping_ratio: 5.0F }
+  { natural_frequency: 30.0F, damping_ratio: 5.0F, }
 }
 
 ///|
 pub fn SpringCoefficients::joint_defaults() -> SpringCoefficients {
-  { natural_frequency: 1.0e6F, damping_ratio: 1.0F }
+  { natural_frequency: 1.0e6F, damping_ratio: 1.0F, }
 }
 
 ///|
@@ -127,11 +127,11 @@ pub struct IntegrationParameters {
   mut normalized_allowed_linear_error : @core.Real
   mut normalized_max_corrective_velocity : @core.Real
   mut normalized_prediction_distance : @core.Real
-  mut num_solver_iterations : Int
-  mut num_internal_pgs_iterations : Int
-  mut num_internal_stabilization_iterations : Int
-  mut min_island_size : Int
-  mut max_ccd_substeps : Int
+  mut num_solver_iterations : Int32
+  mut num_internal_pgs_iterations : Int32
+  mut num_internal_stabilization_iterations : Int32
+  mut min_island_size : Int32
+  mut max_ccd_substeps : Int32
   friction_model : FrictionModel
 }
 
@@ -283,7 +283,7 @@ pub fn IntegrationParameters::set_normalized_prediction_distance(
 ///|
 pub fn IntegrationParameters::set_num_solver_iterations(
   self : IntegrationParameters,
-  num_solver_iterations : Int,
+  num_solver_iterations : Int32,
 ) -> IntegrationParameters {
   self.num_solver_iterations = num_solver_iterations
   self
@@ -292,7 +292,7 @@ pub fn IntegrationParameters::set_num_solver_iterations(
 ///|
 pub fn IntegrationParameters::set_num_internal_pgs_iterations(
   self : IntegrationParameters,
-  num_internal_pgs_iterations : Int,
+  num_internal_pgs_iterations : Int32,
 ) -> IntegrationParameters {
   self.num_internal_pgs_iterations = num_internal_pgs_iterations
   self
@@ -301,7 +301,7 @@ pub fn IntegrationParameters::set_num_internal_pgs_iterations(
 ///|
 pub fn IntegrationParameters::set_num_internal_stabilization_iterations(
   self : IntegrationParameters,
-  num_internal_stabilization_iterations : Int,
+  num_internal_stabilization_iterations : Int32,
 ) -> IntegrationParameters {
   self.num_internal_stabilization_iterations = num_internal_stabilization_iterations
   self
@@ -310,7 +310,7 @@ pub fn IntegrationParameters::set_num_internal_stabilization_iterations(
 ///|
 pub fn IntegrationParameters::set_min_island_size(
   self : IntegrationParameters,
-  min_island_size : Int,
+  min_island_size : Int32,
 ) -> IntegrationParameters {
   self.min_island_size = min_island_size
   self
@@ -319,7 +319,7 @@ pub fn IntegrationParameters::set_min_island_size(
 ///|
 pub fn IntegrationParameters::set_max_ccd_substeps(
   self : IntegrationParameters,
-  max_ccd_substeps : Int,
+  max_ccd_substeps : Int32,
 ) -> IntegrationParameters {
   self.max_ccd_substeps = max_ccd_substeps
   self

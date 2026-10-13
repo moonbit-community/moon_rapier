@@ -33,7 +33,7 @@ fn step_world3_real(
   narrow_phase : @collision.NarrowPhase3D,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step(
@@ -395,7 +395,7 @@ fn run_examples3d_fountain3(profile : WorldsProfile) -> Bool {
   } else {
     10
   }
-  fn dynamic_count(bodies : @dynamics.RigidBodySet3D) -> Int {
+  fn dynamic_count(bodies : @dynamics.RigidBodySet3D) -> Int32 {
     let mut count = 0
     for h in bodies.all_handles() {
       if bodies.get(h) is Some(rb) && rb.body_type().is_dynamic() {

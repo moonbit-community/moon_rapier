@@ -31,7 +31,7 @@ pub struct RopeJointSet3DReal {
 
 ///|
 pub fn RopeJointSet3DReal::RopeJointSet3DReal() -> RopeJointSet3DReal {
-  { joints: [] }
+  { joints: [], }
 }
 
 ///|
@@ -41,7 +41,7 @@ pub fn RopeJointSet3DReal::insert(
   body2 : RigidBodyHandle,
   max_length : @core.Real,
 ) -> Unit {
-  self.joints.push({ body1, body2, max_length })
+  self.joints.push({ body1, body2, max_length, })
 }
 
 ///|
@@ -58,8 +58,8 @@ pub fn RopeJointSet3DReal::interaction_pairs(
 ///|
 fn rope_joint_in_island(
   joint : RopeJoint3DReal,
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
 ) -> Bool {
   if island_stamps is None {
     return true
@@ -94,8 +94,8 @@ pub fn RopeJointSet3DReal::solve_with_island_stamp(
   self : RopeJointSet3DReal,
   bodies : RigidBodySet3D,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
 ) -> Unit {
   dt |> ignore
   for i in 0..<self.joints.length() {

@@ -27,23 +27,23 @@ pub(all) enum JointAxis3DReal {
 
 ///|
 pub struct JointAxesMask3DReal {
-  bits : Int
+  bits : Int32
 }
 
 ///|
 pub fn JointAxesMask3DReal::empty() -> JointAxesMask3DReal {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::JointAxesMask3DReal(
-  bits : Int,
+  bits : Int32,
 ) -> JointAxesMask3DReal {
   { bits, }
 }
 
 ///|
-pub fn JointAxesMask3DReal::bits(self : JointAxesMask3DReal) -> Int {
+pub fn JointAxesMask3DReal::bits(self : JointAxesMask3DReal) -> Int32 {
   self.bits
 }
 
@@ -60,37 +60,37 @@ pub fn JointAxesMask3DReal::or(
   self : JointAxesMask3DReal,
   other : JointAxesMask3DReal,
 ) -> JointAxesMask3DReal {
-  { bits: self.bits | other.bits }
+  { bits: self.bits | other.bits, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::lin_x() -> JointAxesMask3DReal {
-  { bits: 1 << 0 }
+  { bits: 1 << 0, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::lin_y() -> JointAxesMask3DReal {
-  { bits: 1 << 1 }
+  { bits: 1 << 1, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::lin_z() -> JointAxesMask3DReal {
-  { bits: 1 << 2 }
+  { bits: 1 << 2, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::ang_x() -> JointAxesMask3DReal {
-  { bits: 1 << 3 }
+  { bits: 1 << 3, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::ang_y() -> JointAxesMask3DReal {
-  { bits: 1 << 4 }
+  { bits: 1 << 4, }
 }
 
 ///|
 pub fn JointAxesMask3DReal::ang_z() -> JointAxesMask3DReal {
-  { bits: 1 << 5 }
+  { bits: 1 << 5, }
 }
 
 ///|
@@ -117,7 +117,7 @@ pub fn JointAxesMask3DReal::intersection(
   self : JointAxesMask3DReal,
   other : JointAxesMask3DReal,
 ) -> JointAxesMask3DReal {
-  { bits: self.bits & other.bits }
+  { bits: self.bits & other.bits, }
 }
 
 ///|

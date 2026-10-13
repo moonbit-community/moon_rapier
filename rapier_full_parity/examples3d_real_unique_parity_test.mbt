@@ -26,7 +26,7 @@ fn step_world3d_n(
   narrow_phase : @collision.NarrowPhase3D,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step(
@@ -46,7 +46,7 @@ fn step_world3d_with_joints_n(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   joints : @dynamics.JointSet3DReal,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step_with_joints(
@@ -67,7 +67,7 @@ fn step_world3d_with_rope_joints_n(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   rope_joints : @dynamics.RopeJointSet3DReal,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step_with_rope_joints(
@@ -446,7 +446,7 @@ fn run_examples3d_real_inverse_kinematics3() -> Bool {
 
   if multibody_joints.get_mut(last_link) is Some((multibody, link_id)) {
     let displacements = @dynamics.DVector::from_fn(multibody.ndofs(), fn(
-      _ : Int,
+      _ : Int32,
     ) -> @core.Real {
       0.0F
     })

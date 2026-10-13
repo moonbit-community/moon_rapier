@@ -19,7 +19,7 @@ pub struct CollisionPipeline {
 
 ///|
 pub fn CollisionPipeline::CollisionPipeline() -> CollisionPipeline {
-  let value = { marker: () }
+  let value = { marker: (), }
   value.marker |> ignore
   value
 }

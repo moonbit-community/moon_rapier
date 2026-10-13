@@ -24,7 +24,7 @@ fn step_world3_flags_real(
   narrow_phase : @collision.NarrowPhase3D,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step(
@@ -44,7 +44,7 @@ fn step_world3_flags_real_with_events(
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
   events : @pipeline.EventHandler3D,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step_with_events(

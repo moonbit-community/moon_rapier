@@ -268,10 +268,10 @@ fn xml_is_ws(ch : Char) -> Bool {
 }
 
 ///|
-fn xml_skip_ws(s : String, i : Int) -> Int {
+fn xml_skip_ws(s : String, i : Int32) -> Int32 {
   let mut j = i
   while j < s.length() {
-    let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
+    let c = Int32::unsafe_to_char(s.code_unit_at(j).to_int())
     if !xml_is_ws(c) {
       break
     }
@@ -281,11 +281,11 @@ fn xml_skip_ws(s : String, i : Int) -> Int {
 }
 
 ///|
-fn xml_parse_ident(s : String, i : Int) -> (String, Int) {
+fn xml_parse_ident(s : String, i : Int32) -> (String, Int32) {
   let mut j = i
   let b = StringBuilder()
   while j < s.length() {
-    let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
+    let c = Int32::unsafe_to_char(s.code_unit_at(j).to_int())
     if xml_is_ws(c) || c == '>' || c == '/' || c == '=' {
       break
     }
@@ -296,19 +296,19 @@ fn xml_parse_ident(s : String, i : Int) -> (String, Int) {
 }
 
 ///|
-fn xml_parse_quoted(s : String, i : Int) -> (String, Int) {
+fn xml_parse_quoted(s : String, i : Int32) -> (String, Int32) {
   let mut j = i
   if j >= s.length() {
     return ("", j)
   }
-  let quote = Int::unsafe_to_char(s.code_unit_at(j).to_int())
+  let quote = Int32::unsafe_to_char(s.code_unit_at(j).to_int())
   if quote != '"' && quote != '\'' {
     return ("", j)
   }
   j = j + 1
   let b = StringBuilder()
   while j < s.length() {
-    let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
+    let c = Int32::unsafe_to_char(s.code_unit_at(j).to_int())
     if c == quote {
       j = j + 1
       break
@@ -320,15 +320,15 @@ fn xml_parse_quoted(s : String, i : Int) -> (String, Int) {
 }
 
 ///|
-fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
+fn xml_parse_tag(s : String, start : Int32) -> (XmlTag?, Int32) {
   let mut i = start
-  if i >= s.length() || Int::unsafe_to_char(s.code_unit_at(i).to_int()) != '<' {
+  if i >= s.length() || Int32::unsafe_to_char(s.code_unit_at(i).to_int()) != '<' {
     return (None, i + 1)
   }
   i = i + 1
   i = xml_skip_ws(s, i)
   let mut is_end = false
-  if i < s.length() && Int::unsafe_to_char(s.code_unit_at(i).to_int()) == '/' {
+  if i < s.length() && Int32::unsafe_to_char(s.code_unit_at(i).to_int()) == '/' {
     is_end = true
     i = i + 1
     i = xml_skip_ws(s, i)
@@ -341,7 +341,7 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
   let attrs : @hashmap.HashMap[String, String] = HashMap([])
   j = xml_skip_ws(s, j)
   while j < s.length() {
-    let c = Int::unsafe_to_char(s.code_unit_at(j).to_int())
+    let c = Int32::unsafe_to_char(s.code_unit_at(j).to_int())
     if c == '>' {
       j = j + 1
       break
@@ -351,7 +351,7 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
       j = j + 1
       j = xml_skip_ws(s, j)
       if j < s.length() &&
-        Int::unsafe_to_char(s.code_unit_at(j).to_int()) == '>' {
+        Int32::unsafe_to_char(s.code_unit_at(j).to_int()) == '>' {
         j = j + 1
       }
       break
@@ -359,7 +359,8 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
     // Attribute key.
     let (key, k0) = xml_parse_ident(s, j)
     let mut k = xml_skip_ws(s, k0)
-    if k < s.length() && Int::unsafe_to_char(s.code_unit_at(k).to_int()) == '=' {
+    if k < s.length() &&
+      Int32::unsafe_to_char(s.code_unit_at(k).to_int()) == '=' {
       k = k + 1
       k = xml_skip_ws(s, k)
       let (value, k2) = xml_parse_quoted(s, k)
@@ -370,7 +371,7 @@ fn xml_parse_tag(s : String, start : Int) -> (XmlTag?, Int) {
       j = xml_skip_ws(s, k)
     }
   }
-  (Some({ name, attrs, is_end }), j)
+  (Some({ name, attrs, is_end, }), j)
 }
 
 ///|
@@ -378,7 +379,7 @@ fn xml_iter_tags(s : String) -> Array[XmlTag] {
   let tags : Array[XmlTag] = []
   let mut i = 0
   while i < s.length() {
-    let c = Int::unsafe_to_char(s.code_unit_at(i).to_int())
+    let c = Int32::unsafe_to_char(s.code_unit_at(i).to_int())
     if c == '<' {
       let (tag_opt, next) = xml_parse_tag(s, i)
       if tag_opt is Some(tag) {
@@ -401,7 +402,7 @@ fn attr_get(attrs : @hashmap.HashMap[String, String], key : String) -> String? {
 fn basename(path : String) -> String {
   let mut last = -1
   for i in 0..<path.length() {
-    if Int::unsafe_to_char(path.code_unit_at(i).to_int()) == '/' {
+    if Int32::unsafe_to_char(path.code_unit_at(i).to_int()) == '/' {
       last = i
     }
   }
@@ -468,9 +469,9 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
     if cur_link is Some(l) {
       if (in_visual || in_collision) && cur_geom is Some(g) {
         if in_visual {
-          l.visuals.push({ origin: cur_origin, geometry: g })
+          l.visuals.push({ origin: cur_origin, geometry: g, })
         } else {
-          l.collisions.push({ origin: cur_origin, geometry: g })
+          l.collisions.push({ origin: cur_origin, geometry: g, })
         }
       }
       Some(l)
@@ -529,7 +530,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
     }
     if tag.name == "link" {
       if attr_get(tag.attrs, "name") is Some(name) {
-        cur_link = Some({ name, visuals: [], collisions: [], inertial: None })
+        cur_link = Some({ name, visuals: [], collisions: [], inertial: None, })
       }
       continue
     }
@@ -696,7 +697,7 @@ pub fn UrdfRobot3DReal::from_xml(xml : String) -> UrdfRobot3DReal? {
   if links.length() == 0 {
     None
   } else {
-    Some({ links, joints })
+    Some({ links, joints, })
   }
 }
 
@@ -896,7 +897,7 @@ pub fn UrdfRobot3DReal::insert_3d_real(
   for j in self.joints {
     remaining.push(j)
   }
-  let mut iter_guard : Int = 0
+  let mut iter_guard : Int32 = 0
   while remaining.length() > 0 && iter_guard < 2048 {
     iter_guard = iter_guard + 1
     let mut progressed = false

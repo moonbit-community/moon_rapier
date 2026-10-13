@@ -15,7 +15,7 @@
 ///|
 test "voxels_from_points merges adjacent voxels" {
   let pts = [@core.Vec2(0.1F, 0.1F), Vec2(0.9F, 0.1F), Vec2(1.1F, 0.1F)]
-  let co = ColliderBuilder::voxels_from_points(Vec2(1.0F, 1.0F), pts).build()
+  let co = @collision.ColliderBuilder::voxels_from_points(Vec2(1.0F, 1.0F), pts).build()
   if co.shape() is Compound(parts) {
     inspect(parts.length(), content="1")
     let part = parts[0]
@@ -36,11 +36,11 @@ test "voxels_from_points merges adjacent voxels" {
 test "voxelized_mesh SurfaceOnly produces voxels" {
   let vertices = [@core.Vec2(0.0F, 0.0F), Vec2(2.0F, 0.0F)]
   let indices = [(0, 1)]
-  let shape = Shape::voxelized_mesh(
+  let shape = @collision.Shape::voxelized_mesh(
     vertices,
     indices,
     1.0F,
-    FillMode::surface_only(),
+    @collision.FillMode::surface_only(),
   )
   if shape is Compound(parts) {
     inspect(parts.length() > 0, content="true")

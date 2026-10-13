@@ -22,9 +22,9 @@ pub struct ContactPoint3D {
 
 ///|
 priv enum CuboidBestAxis {
-  A(Int)
-  B(Int)
-  Cross(Int, Int)
+  A(Int32)
+  B(Int32)
+  Cross(Int32, Int32)
 }
 
 ///|
@@ -112,7 +112,7 @@ fn trimesh_closest_point(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if indices.length() == 0 || vertices.length() == 0 {
     return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
@@ -175,9 +175,9 @@ fn heightfield_closest_point(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
     return (@core.Vec3::zero(), Vec3(0.0F, 1.0F, 0.0F), 0.0F, false)
@@ -196,7 +196,7 @@ fn heightfield_closest_point(
   }
   let cells_x = nrows - 1
   let cells_z = ncols - 1
-  fn clamp_int(v : Int, lo : Int, hi : Int) -> Int {
+  fn clamp_int(v : Int32, lo : Int32, hi : Int32) -> Int32 {
     if v < lo {
       lo
     } else if v > hi {
@@ -206,7 +206,7 @@ fn heightfield_closest_point(
     }
   }
 
-  fn floor_to_int(x : @core.Real) -> Int {
+  fn floor_to_int(x : @core.Real) -> Int32 {
     // Matches Rust's `floor()` behavior for negative values.
     let i = x.to_int()
     if Float::from_int(i) > x {
@@ -220,7 +220,7 @@ fn heightfield_closest_point(
   let fz = (p_local.z - origin_z) / dz
   let start_i = clamp_int(floor_to_int(fx), 0, cells_x - 1)
   let start_j = clamp_int(floor_to_int(fz), 0, cells_z - 1)
-  fn cell_id(i : Int, j : Int, cells_z : Int) -> Int {
+  fn cell_id(i : Int32, j : Int32, cells_z : Int32) -> Int32 {
     i * cells_z + j
   }
 
@@ -255,13 +255,13 @@ fn heightfield_closest_point(
 
   fn cell_aabb(
     vertices : Array[@core.Vec3],
-    ncols : Int,
+    ncols : Int32,
     origin_x : @core.Real,
     origin_z : @core.Real,
     dx : @core.Real,
     dz : @core.Real,
-    i : Int,
-    j : Int,
+    i : Int32,
+    j : Int32,
   ) -> (@core.Vec3, @core.Vec3) {
     let x0 = origin_x + Float::from_int(i) * dx
     let x1 = origin_x + Float::from_int(i + 1) * dx
@@ -289,10 +289,10 @@ fn heightfield_closest_point(
   }
 
   // Min-heap of (lower_bound_dist2, i, j).
-  let heap : Array[(@core.Real, Int, Int)] = []
+  let heap : Array[(@core.Real, Int32, Int32)] = []
   fn heap_push(
-    heap : Array[(@core.Real, Int, Int)],
-    item : (@core.Real, Int, Int),
+    heap : Array[(@core.Real, Int32, Int32)],
+    item : (@core.Real, Int32, Int32),
   ) {
     heap.push(item)
     let mut k = heap.length() - 1
@@ -309,8 +309,8 @@ fn heightfield_closest_point(
   }
 
   fn heap_pop_min(
-    heap : Array[(@core.Real, Int, Int)],
-  ) -> (@core.Real, Int, Int)? {
+    heap : Array[(@core.Real, Int32, Int32)],
+  ) -> (@core.Real, Int32, Int32)? {
     if heap.length() == 0 {
       return None
     }
@@ -384,11 +384,11 @@ fn heightfield_closest_point(
       best_dist2 : @core.Real,
       best_point : @core.Vec3,
       best_normal_sum : @core.Vec3,
-      best_count : Int,
+      best_count : Int32,
       fix_internal_edges : Bool,
       eps_d2 : @core.Real,
       eps_q2 : @core.Real,
-    ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
+    ) -> (@core.Real, @core.Vec3, @core.Vec3, Int32) {
       let q = closest_point_on_triangle3d(p_local, a, b, c)
       let d2 = q.sub(p_local).length_squared()
       let n = b.sub(a).cross(c.sub(a))
@@ -484,9 +484,9 @@ fn heightfield_closest_point_bounded(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
   max_dist : @core.Real,
 ) -> (@core.Vec3, @core.Vec3, @core.Real, Bool) {
   if nrows <= 1 || ncols <= 1 || vertices.length() != nrows * ncols {
@@ -505,7 +505,7 @@ fn heightfield_closest_point_bounded(
   }
   let cells_x = nrows - 1
   let cells_z = ncols - 1
-  fn floor_to_int(x : @core.Real) -> Int {
+  fn floor_to_int(x : @core.Real) -> Int32 {
     let i = x.to_int()
     if Float::from_int(i) > x {
       i - 1
@@ -514,7 +514,7 @@ fn heightfield_closest_point_bounded(
     }
   }
 
-  fn clamp_int(v : Int, lo : Int, hi : Int) -> Int {
+  fn clamp_int(v : Int32, lo : Int32, hi : Int32) -> Int32 {
     if v < lo {
       lo
     } else if v > hi {
@@ -567,11 +567,11 @@ fn heightfield_closest_point_bounded(
         best_dist2 : @core.Real,
         best_point : @core.Vec3,
         best_normal_sum : @core.Vec3,
-        best_count : Int,
+        best_count : Int32,
         fix_internal_edges : Bool,
         eps_d2 : @core.Real,
         eps_q2 : @core.Real,
-      ) -> (@core.Real, @core.Vec3, @core.Vec3, Int) {
+      ) -> (@core.Real, @core.Vec3, @core.Vec3, Int32) {
         let q = closest_point_on_triangle3d(p_local, a, b, c)
         let d2 = q.sub(p_local).length_squared()
         let n = b.sub(a).cross(c.sub(a))
@@ -643,7 +643,7 @@ pub fn trimesh_closest_point_query(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> (@core.Vec3, @core.Vec3, @core.Real)? {
   let (best_point, best_normal, best_dist2, ok) = trimesh_closest_point(
     p, mesh_pos, vertices, indices,
@@ -661,8 +661,8 @@ pub fn heightfield_closest_point_query(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> (@core.Vec3, @core.Vec3, @core.Real)? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point(
     p, mesh_pos, vertices, nrows, ncols, 0,
@@ -680,9 +680,9 @@ pub fn heightfield_closest_point_query_with_flags(
   p : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> (@core.Vec3, @core.Vec3, @core.Real)? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point(
     p, mesh_pos, vertices, nrows, ncols, flags,
@@ -695,7 +695,7 @@ pub fn heightfield_closest_point_query_with_flags(
 }
 
 ///|
-fn voxels_floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+fn voxels_floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
   if denom == 0.0F {
     0
   } else {
@@ -708,7 +708,7 @@ fn voxels_scan_range_local(
   voxels : Voxels3DReal,
   center_local : @core.Vec3,
   radius : @core.Real,
-) -> (Int, Int, Int, Int, Int, Int) {
+) -> (Int32, Int32, Int32, Int32, Int32, Int32) {
   let sx = voxels.voxel_size.x
   let sy = voxels.voxel_size.y
   let sz = voxels.voxel_size.z
@@ -731,7 +731,7 @@ fn voxels_scan_range_local(
 ///|
 fn voxel_cell_aabb_local(
   voxels : Voxels3DReal,
-  key : (Int, Int, Int),
+  key : (Int32, Int32, Int32),
 ) -> (@core.Vec3, @core.Vec3) {
   let sx = voxels.voxel_size.x
   let sy = voxels.voxel_size.y
@@ -752,7 +752,7 @@ fn compute_sphere_voxel_contact_local(
   radius : @core.Real,
   voxels_pos : @core.Isometry3,
   voxels : Voxels3DReal,
-  key : (Int, Int, Int),
+  key : (Int32, Int32, Int32),
 ) -> ContactPoint3D? {
   let (mins, maxs) = voxel_cell_aabb_local(voxels, key)
   let clamped = @core.Vec3(
@@ -1048,7 +1048,7 @@ pub fn compute_ball_trimesh_contact(
   ball_radius : @core.Real,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   let (best_point, best_normal, best_dist2, ok) = trimesh_closest_point(
     ball_center, mesh_pos, vertices, indices,
@@ -1070,7 +1070,7 @@ pub fn compute_ball_trimesh_contact(
   }
   let point1 = ball_center.add(normal.scale(ball_radius))
   let point2 = best_point
-  Some({ point1, point2, normal, penetration: ball_radius - dist })
+  Some({ point1, point2, normal, penetration: ball_radius - dist, })
 }
 
 ///|
@@ -1335,7 +1335,7 @@ pub fn compute_cuboid_triangle_contact(
   // Convert the witness points to a penetration depth along the chosen normal.
   let pen = -normal.dot(point2.sub(point1))
   let penetration = if pen < 0.0F { 0.0F } else { pen }
-  Some({ point1, point2, normal, penetration })
+  Some({ point1, point2, normal, penetration, })
 }
 
 ///|
@@ -1373,7 +1373,7 @@ pub fn compute_cuboid_triangle_contacts(
     normal_local = normal_local.scale(-1.0F)
   }
   let normal = cuboid_pos.rotation.rotate_vec3(normal_local)
-  fn axis_value(v : @core.Vec3, axis : Int) -> @core.Real {
+  fn axis_value(v : @core.Vec3, axis : Int32) -> @core.Real {
     if axis == 0 {
       v.x
     } else if axis == 1 {
@@ -1385,7 +1385,7 @@ pub fn compute_cuboid_triangle_contacts(
 
   fn clip_poly(
     poly : Array[@core.Vec3],
-    axis : Int,
+    axis : Int32,
     sign : @core.Real,
     limit : @core.Real,
   ) -> Array[@core.Vec3] {
@@ -1500,7 +1500,7 @@ pub fn compute_cuboid_triangle_contacts(
     let p1 = cuboid_pos.transform_point(p1_local)
     let pen0 = -normal.dot(p2.sub(p1))
     let penetration = if pen0 < 0.0F { 0.0F } else { pen0 }
-    contacts.push({ point1: p1, point2: p2, normal, penetration })
+    contacts.push({ point1: p1, point2: p2, normal, penetration, })
   }
   contacts
 }
@@ -1515,7 +1515,7 @@ fn compute_convex_trimesh_contact(
   convex_shape : Shape3D,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   let mut best : ContactPoint3D? = None
   let mut best_pen = -1.0F
@@ -1539,7 +1539,7 @@ pub fn compute_cuboid_trimesh_contact(
   cuboid_half_extents : @core.Vec3,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cuboid_pos,
@@ -1557,7 +1557,7 @@ pub fn compute_capsule_trimesh_contact(
   capsule_half_height : @core.Real,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     capsule_pos,
@@ -1575,7 +1575,7 @@ pub fn compute_cylinder_trimesh_contact(
   cyl_half_height : @core.Real,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cyl_pos,
@@ -1594,7 +1594,7 @@ pub fn compute_round_cylinder_trimesh_contact(
   border_radius : @core.Real,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   compute_capsule_trimesh_contact(
     cyl_pos,
@@ -1613,7 +1613,7 @@ pub fn compute_cone_trimesh_contact(
   cone_half_height : @core.Real,
   mesh_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ContactPoint3D? {
   compute_convex_trimesh_contact(
     cone_pos,
@@ -1630,9 +1630,9 @@ fn compute_point_heightfield_contact_with_flags(
   radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
     point1, heightfield_pos, vertices, nrows, ncols, flags, radius,
@@ -1652,7 +1652,7 @@ fn compute_point_heightfield_contact_with_flags(
   }
   // Keep the same terrain-oriented convention as trimeshes.
   let normal = if normal0.y > 0.0F { normal0.scale(-1.0F) } else { normal0 }
-  Some({ point1, point2: best_point, normal, penetration: radius - dist })
+  Some({ point1, point2: best_point, normal, penetration: radius - dist, })
 }
 
 ///|
@@ -1661,8 +1661,8 @@ pub fn compute_ball_heightfield_contact(
   ball_radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_ball_heightfield_contact_with_flags(
     ball_center, ball_radius, heightfield_pos, vertices, nrows, ncols, 0,
@@ -1675,9 +1675,9 @@ pub fn compute_ball_heightfield_contact_with_flags(
   ball_radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let (best_point, best_normal, best_dist2, ok) = heightfield_closest_point_bounded(
     ball_center, heightfield_pos, vertices, nrows, ncols, flags, ball_radius,
@@ -1697,7 +1697,7 @@ pub fn compute_ball_heightfield_contact_with_flags(
   }
   let point1 = ball_center.add(normal.scale(ball_radius))
   let point2 = best_point
-  Some({ point1, point2, normal, penetration: ball_radius - dist })
+  Some({ point1, point2, normal, penetration: ball_radius - dist, })
 }
 
 ///|
@@ -1706,8 +1706,8 @@ pub fn compute_cuboid_heightfield_contact(
   cuboid_half_extents : @core.Vec3,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_cuboid_heightfield_contact_with_flags(
     cuboid_pos, cuboid_half_extents, heightfield_pos, vertices, nrows, ncols, 0,
@@ -1720,9 +1720,9 @@ pub fn compute_cuboid_heightfield_contact_with_flags(
   cuboid_half_extents : @core.Vec3,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let skin = 0.05F
   let hx = cuboid_half_extents.x
@@ -1780,8 +1780,8 @@ pub fn compute_capsule_heightfield_contact(
   capsule_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_capsule_heightfield_contact_with_flags(
     capsule_pos, capsule_radius, capsule_half_height, heightfield_pos, vertices,
@@ -1796,9 +1796,9 @@ pub fn compute_capsule_heightfield_contact_with_flags(
   capsule_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let (a, b) = capsule_segment_endpoints(capsule_pos, capsule_half_height)
   let centers = [
@@ -1837,8 +1837,8 @@ pub fn compute_cylinder_heightfield_contact(
   cyl_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_cylinder_heightfield_contact_with_flags(
     cyl_pos, cyl_radius, cyl_half_height, heightfield_pos, vertices, nrows, ncols,
@@ -1853,9 +1853,9 @@ pub fn compute_cylinder_heightfield_contact_with_flags(
   cyl_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let skin = 0.05F
   let r = cyl_radius
@@ -1916,8 +1916,8 @@ pub fn compute_round_cylinder_heightfield_contact(
   border_radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_round_cylinder_heightfield_contact_with_flags(
     cyl_pos, cyl_radius, cyl_half_height, border_radius, heightfield_pos, vertices,
@@ -1933,9 +1933,9 @@ pub fn compute_round_cylinder_heightfield_contact_with_flags(
   border_radius : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   compute_capsule_heightfield_contact_with_flags(
     cyl_pos,
@@ -1956,8 +1956,8 @@ pub fn compute_cone_heightfield_contact(
   cone_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
 ) -> ContactPoint3D? {
   compute_cone_heightfield_contact_with_flags(
     cone_pos, cone_radius, cone_half_height, heightfield_pos, vertices, nrows, ncols,
@@ -1972,9 +1972,9 @@ pub fn compute_cone_heightfield_contact_with_flags(
   cone_half_height : @core.Real,
   heightfield_pos : @core.Isometry3,
   vertices : Array[@core.Vec3],
-  nrows : Int,
-  ncols : Int,
-  flags : Int,
+  nrows : Int32,
+  ncols : Int32,
+  flags : Int32,
 ) -> ContactPoint3D? {
   let skin = 0.05F
   let r = cone_radius
@@ -2157,7 +2157,7 @@ pub fn compute_halfspace_contact(
     }
     // Point on the plane directly "below" the witness point.
     let p1 = p2.sub(normal.scale(dist))
-    Some({ point1: p1, point2: p2, normal, penetration: -dist })
+    Some({ point1: p1, point2: p2, normal, penetration: -dist, })
   } else {
     None
   }
@@ -2186,7 +2186,7 @@ pub fn compute_ball_ball_contact(
   }
   let point1 = center1.add(normal.scale(radius1))
   let point2 = center2.sub(normal.scale(radius2))
-  Some({ point1, point2, normal, penetration: r - dist })
+  Some({ point1, point2, normal, penetration: r - dist, })
 }
 
 ///|
@@ -2255,7 +2255,7 @@ pub fn compute_ball_cuboid_contact(
     }
     ball_radius + face_dist
   }
-  Some({ point1, point2, normal, penetration })
+  Some({ point1, point2, normal, penetration, })
 }
 
 ///|
@@ -2371,7 +2371,7 @@ fn axis_interval(
   p0 : @core.Real,
   d : @core.Real,
   he : @core.Real,
-  state : Int,
+  state : Int32,
 ) -> (@core.Real, @core.Real, Bool) {
   // state: 0=inside, 1=below, 2=above
   let neg_inf = -1.0e30F
@@ -2527,7 +2527,7 @@ pub fn compute_ball_capsule_contact(
   }
   let point1 = ball_center.add(normal.scale(ball_radius))
   let point2 = axis_pt.sub(normal.scale(capsule_radius))
-  Some({ point1, point2, normal, penetration: r - dist })
+  Some({ point1, point2, normal, penetration: r - dist, })
 }
 
 ///|
@@ -2604,7 +2604,7 @@ pub fn compute_capsule_capsule_contact(
   }
   let point1 = p1.add(normal.scale(r1))
   let point2 = p2.sub(normal.scale(r2))
-  Some({ point1, point2, normal, penetration: r - dist })
+  Some({ point1, point2, normal, penetration: r - dist, })
 }
 
 ///|
@@ -2683,7 +2683,7 @@ pub fn compute_capsule_cuboid_contact(
   let axis_world = cuboid_pos.transform_point(axis_local)
   let point2 = cuboid_pos.transform_point(point2_local)
   let point1 = axis_world.add(normal.scale(capsule_radius))
-  Some({ point1, point2, normal, penetration })
+  Some({ point1, point2, normal, penetration, })
 }
 
 ///|
@@ -2747,7 +2747,7 @@ pub fn compute_ball_cylinder_contact(
     let min_dist = if dy <= dr { dy } else { dr }
     ball_radius + min_dist
   }
-  Some({ point1, point2, normal, penetration })
+  Some({ point1, point2, normal, penetration, })
 }
 
 ///|
@@ -2830,7 +2830,7 @@ pub fn compute_ball_cone_contact(
     let min_dist = if dist_base <= dist_side { dist_base } else { dist_side }
     ball_radius + min_dist
   }
-  Some({ point1, point2, normal, penetration })
+  Some({ point1, point2, normal, penetration, })
 }
 
 ///|
@@ -2844,7 +2844,7 @@ pub fn compute_cuboid_cuboid_contact(
   let b = [he2.x, he2.y, he2.z]
   let ra = pos1.rotation.to_mat3()
   let rb = pos2.rotation.to_mat3()
-  fn col(m : @core.Mat3, i : Int) -> @core.Vec3 {
+  fn col(m : @core.Mat3, i : Int32) -> @core.Vec3 {
     match i {
       0 => Vec3(m.m00, m.m10, m.m20)
       1 => Vec3(m.m01, m.m11, m.m21)
@@ -2868,11 +2868,11 @@ pub fn compute_cuboid_cuboid_contact(
       abs_r.push(@core.abs(rij) + eps)
     }
   }
-  fn r_at(r : Array[@core.Real], i : Int, j : Int) -> @core.Real {
+  fn r_at(r : Array[@core.Real], i : Int32, j : Int32) -> @core.Real {
     r[i * 3 + j]
   }
 
-  fn abs_r_at(r : Array[@core.Real], i : Int, j : Int) -> @core.Real {
+  fn abs_r_at(r : Array[@core.Real], i : Int32, j : Int32) -> @core.Real {
     r[i * 3 + j]
   }
 
@@ -3013,7 +3013,7 @@ pub fn compute_cuboid_cuboid_contact(
 
   let point1 = support(pos1, he1, normal)
   let point2 = support(pos2, he2, normal.scale(-1.0F))
-  Some({ point1, point2, normal, penetration: min_overlap })
+  Some({ point1, point2, normal, penetration: min_overlap, })
 }
 
 ///|
@@ -3043,7 +3043,7 @@ fn cuboid_local_support_point(he : @core.Vec3, dir : @core.Vec3) -> @core.Vec3 {
 }
 
 ///|
-fn vec3_component(v : @core.Vec3, i : Int) -> @core.Real {
+fn vec3_component(v : @core.Vec3, i : Int32) -> @core.Real {
   match i {
     0 => v.x
     1 => v.y
@@ -3052,7 +3052,7 @@ fn vec3_component(v : @core.Vec3, i : Int) -> @core.Real {
 }
 
 ///|
-fn vec3_axis(i : Int, sign : @core.Real) -> @core.Vec3 {
+fn vec3_axis(i : Int32, sign : @core.Real) -> @core.Vec3 {
   match i {
     0 => Vec3(sign, 0.0F, 0.0F)
     1 => Vec3(0.0F, sign, 0.0F)
@@ -3631,7 +3631,7 @@ fn support_minkowski(
     Triangle(a, b, c) => support_world_for_triangle(pos2, a, b, c, neg_dir)
     _ => return None
   }
-  Some({ p: sup1.sub(sup2), sup1, sup2 })
+  Some({ p: sup1.sub(sup2), sup1, sup2, })
 }
 
 ///|
@@ -3792,9 +3792,9 @@ fn gjk_intersect(
 
 ///|
 priv struct EpaFace {
-  i0 : Int
-  i1 : Int
-  i2 : Int
+  i0 : Int32
+  i1 : Int32
+  i2 : Int32
   normal : @core.Vec3
   dist : @core.Real
 }
@@ -3802,9 +3802,9 @@ priv struct EpaFace {
 ///|
 fn epa_make_face(
   verts : Array[SupportVertex3D],
-  i0 : Int,
-  i1 : Int,
-  i2 : Int,
+  i0 : Int32,
+  i1 : Int32,
+  i2 : Int32,
 ) -> EpaFace? {
   let a = verts[i0].p
   let b = verts[i1].p
@@ -3826,16 +3826,16 @@ fn epa_make_face(
     i1 = i2
     i2 = tmp
   }
-  Some({ i0, i1, i2, normal, dist })
+  Some({ i0, i1, i2, normal, dist, })
 }
 
 ///|
 fn epa_make_face_with_opposite(
   verts : Array[SupportVertex3D],
-  i0 : Int,
-  i1 : Int,
-  i2 : Int,
-  i_opp : Int,
+  i0 : Int32,
+  i1 : Int32,
+  i2 : Int32,
+  i_opp : Int32,
 ) -> EpaFace? {
   let a = verts[i0].p
   let b = verts[i1].p
@@ -3865,7 +3865,7 @@ fn epa_make_face_with_opposite(
     i1 = i2
     i2 = tmp
   }
-  Some({ i0, i1, i2, normal, dist })
+  Some({ i0, i1, i2, normal, dist, })
 }
 
 ///|
@@ -3974,13 +3974,18 @@ fn epa_contact(
         if delta.length_squared() > 1.0e-12F && normal.dot(delta) < 0.0F {
           normal = normal.scale(-1.0F)
         }
-        return Some({ point1: cp1, point2: cp2, normal, penetration: best.dist })
+        return Some({
+          point1: cp1,
+          point2: cp2,
+          normal,
+          penetration: best.dist,
+        })
       }
       // Expand polytope.
       let new_index = verts.length()
       verts.push(v)
-      let edges : Array[(Int, Int)] = []
-      fn add_edge(edges : Array[(Int, Int)], a : Int, b : Int) -> Unit {
+      let edges : Array[(Int32, Int32)] = []
+      fn add_edge(edges : Array[(Int32, Int32)], a : Int32, b : Int32) -> Unit {
         for i in 0..<edges.length() {
           let e = edges[i]
           if e.0 == b && e.1 == a {

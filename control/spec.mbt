@@ -583,7 +583,7 @@ pub fn DynamicRayCastVehicleController::add_wheel(
 #declaration_only
 pub fn DynamicRayCastVehicleController::set_engine_force(
   self : DynamicRayCastVehicleController,
-  wheel_id : Int,
+  wheel_id : Int32,
   force : @core.Real,
 ) -> Unit {
   ...
@@ -593,7 +593,7 @@ pub fn DynamicRayCastVehicleController::set_engine_force(
 #declaration_only
 pub fn DynamicRayCastVehicleController::set_brake(
   self : DynamicRayCastVehicleController,
-  wheel_id : Int,
+  wheel_id : Int32,
   brake : @core.Real,
 ) -> Unit {
   ...
@@ -672,7 +672,7 @@ pub fn DynamicRayCastVehicleController3::add_wheel(
   suspension_rest_length : @core.Real,
   radius : @core.Real,
   tuning : WheelTuning,
-) -> Int {
+) -> Int32 {
   ...
 }
 
@@ -680,7 +680,7 @@ pub fn DynamicRayCastVehicleController3::add_wheel(
 #declaration_only
 pub fn DynamicRayCastVehicleController3::set_engine_force(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   force : @core.Real,
 ) -> Unit {
   ...
@@ -690,7 +690,7 @@ pub fn DynamicRayCastVehicleController3::set_engine_force(
 #declaration_only
 pub fn DynamicRayCastVehicleController3::set_brake(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   brake : @core.Real,
 ) -> Unit {
   ...
@@ -700,7 +700,7 @@ pub fn DynamicRayCastVehicleController3::set_brake(
 #declaration_only
 pub fn DynamicRayCastVehicleController3::set_steering_value(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   steering : @core.Real,
 ) -> Unit {
   ...
@@ -752,7 +752,7 @@ pub fn DynamicRayCastVehicleController3DReal::add_wheel(
   suspension_rest_length : @core.Real,
   radius : @core.Real,
   tuning : WheelTuning,
-) -> Int {
+) -> Int32 {
   ...
 }
 
@@ -760,7 +760,7 @@ pub fn DynamicRayCastVehicleController3DReal::add_wheel(
 #declaration_only
 pub fn DynamicRayCastVehicleController3DReal::set_engine_force(
   self : DynamicRayCastVehicleController3DReal,
-  wheel : Int,
+  wheel : Int32,
   value : @core.Real,
 ) -> Unit {
   ...
@@ -770,7 +770,7 @@ pub fn DynamicRayCastVehicleController3DReal::set_engine_force(
 #declaration_only
 pub fn DynamicRayCastVehicleController3DReal::set_brake(
   self : DynamicRayCastVehicleController3DReal,
-  wheel : Int,
+  wheel : Int32,
   value : @core.Real,
 ) -> Unit {
   ...
@@ -780,7 +780,7 @@ pub fn DynamicRayCastVehicleController3DReal::set_brake(
 #declaration_only
 pub fn DynamicRayCastVehicleController3DReal::set_steering_value(
   self : DynamicRayCastVehicleController3DReal,
-  wheel : Int,
+  wheel : Int32,
   value : @core.Real,
 ) -> Unit {
   ...

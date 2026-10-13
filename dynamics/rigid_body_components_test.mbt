@@ -14,7 +14,7 @@
 
 ///|
 /// Ported from rapier/src/dynamics/rigid_body_components.rs (test_interpolate_velocity).
-fn rb_lcg_next(seed : Int) -> Int {
+fn rb_lcg_next(seed : Int32) -> Int32 {
   let modulus = 65536
   let next = (seed * 25173 + 13849) % modulus
   if next < 0 {
@@ -25,7 +25,7 @@ fn rb_lcg_next(seed : Int) -> Int {
 }
 
 ///|
-fn rb_rand_real(seed : Int) -> (Int, @core.Real) {
+fn rb_rand_real(seed : Int32) -> (Int32, @core.Real) {
   let next = rb_lcg_next(seed)
   let value = Float::from_double(next.to_double() / 65536.0)
   (next, value)
@@ -55,7 +55,9 @@ test "interpolate velocity" {
       Vec2(next_x * multiplier, next_y * multiplier),
       @core.Rot2::from_angle(next_angle),
     )
-    let rb_pos = RigidBodyPosition::RigidBodyPosition(curr_pos, next_pos)
+    let rb_pos = @dynamics.RigidBodyPosition::RigidBodyPosition(
+      curr_pos, next_pos,
+    )
     let vel = rb_pos.interpolate_velocity(1.0F / dt, local_com)
     let interp_pos = vel.integrate(dt, curr_pos, local_com)
     let dx = @core.abs(interp_pos.translation.x - next_pos.translation.x)

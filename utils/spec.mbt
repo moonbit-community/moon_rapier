@@ -18,7 +18,7 @@ pub type HashMap
 
 ///|
 #declaration_only
-pub fn HashMap::from_array(items : Array[(Int, String)]) -> HashMap {
+pub fn HashMap::from_array(items : Array[(Int32, String)]) -> HashMap {
   ...
 }
 

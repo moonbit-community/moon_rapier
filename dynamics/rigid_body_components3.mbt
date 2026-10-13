@@ -30,7 +30,7 @@ pub fn RigidBodyPosition3::RigidBodyPosition3(
   position : @core.Isometry3,
   next_position : @core.Isometry3,
 ) -> RigidBodyPosition3 {
-  { position, next_position }
+  { position, next_position, }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn RigidBodyPosition3::pose_errors(
     .mul(self.next_position)
     .mul(self.position.inverse())
     .mul(shift)
-  { linear: dpos.translation, angular: dpos.rotation.to_scaled_axis() }
+  { linear: dpos.translation, angular: dpos.rotation.to_scaled_axis(), }
 }
 
 ///|

@@ -79,7 +79,7 @@ pub fn IntersectionEvent3D::IntersectionEvent3D(
   collider2 : ColliderHandle3D,
   intersecting : Bool,
 ) -> IntersectionEvent3D {
-  { collider1, collider2, intersecting }
+  { collider1, collider2, intersecting, }
 }
 
 ///|

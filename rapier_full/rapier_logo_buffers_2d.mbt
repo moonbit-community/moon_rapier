@@ -22,7 +22,7 @@
 // Auto-generated from rapier-reference/examples2d/utils/svg.rs via dump_rapier_logo.rs
 // DO NOT EDIT MANUALLY. Regenerate by running: cargo run --bin dump_rapier_logo
 pub fn rapier_logo_buffers_2d() -> Array[
-  (Array[@core.Vec2], Array[(Int, Int, Int)]),
+  (Array[@core.Vec2], Array[(Int32, Int32, Int32)]),
 ] {
   [
     (

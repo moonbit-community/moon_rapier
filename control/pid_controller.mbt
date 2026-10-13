@@ -20,7 +20,7 @@ pub(all) struct PdErrors {
 
 ///|
 pub fn PdErrors::from_vels(vels : @dynamics.RigidBodyVelocity) -> PdErrors {
-  { linear: vels.linvel(), angular: vels.angvel() }
+  { linear: vels.linvel(), angular: vels.angvel(), }
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn PdController::PdController(
   kd : @core.Real,
   axes : @dynamics.AxesMask,
 ) -> PdController {
-  { lin_kp: Vec2(kp, kp), lin_kd: Vec2(kd, kd), ang_kp: kp, ang_kd: kd, axes }
+  { lin_kp: Vec2(kp, kp), lin_kd: Vec2(kd, kd), ang_kp: kp, ang_kd: kd, axes, }
 }
 
 ///|
@@ -109,7 +109,7 @@ fn pose_errors_at_com(
   let curr_angle = current_pose.rotation.angle()
   let target_angle = target_pose.rotation.angle()
   let angular = wrap_angle_pi(target_angle - curr_angle)
-  { linear, angular }
+  { linear, angular, }
 }
 
 ///|

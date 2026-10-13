@@ -512,7 +512,7 @@ fn separation_vector(
 
   fn polyline_for_each_segment(
     vertices : Array[@core.Vec2],
-    indices : Array[(Int, Int)]?,
+    indices : Array[(Int32, Int32)]?,
     callback : (@core.Vec2, @core.Vec2) -> Unit,
   ) -> Unit {
     if indices is Some(idxs) {
@@ -538,7 +538,7 @@ fn separation_vector(
 
   fn separation_polyline_other(
     vertices : Array[@core.Vec2],
-    indices : Array[(Int, Int)]?,
+    indices : Array[(Int32, Int32)]?,
     poly_pos : @core.Vec2,
     poly_rot : @core.Real,
     other : @collision.Shape,
@@ -570,7 +570,7 @@ fn separation_vector(
     other_pos : @core.Vec2,
     other_rot : @core.Real,
     vertices : Array[@core.Vec2],
-    indices : Array[(Int, Int)]?,
+    indices : Array[(Int32, Int32)]?,
     poly_pos : @core.Vec2,
     poly_rot : @core.Real,
   ) -> @core.Vec2? {

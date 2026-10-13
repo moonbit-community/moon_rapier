@@ -19,11 +19,11 @@
 /// (`locked_translations` / `locked_rotations`). We still expose `LockedAxes`
 /// so the public surface matches Rapier's default-feature crates.
 pub struct LockedAxes {
-  bits : Int
+  bits : Int32
 }
 
 ///|
-pub fn LockedAxes::LockedAxes(bits : Int) -> LockedAxes {
+pub fn LockedAxes::LockedAxes(bits : Int32) -> LockedAxes {
   { bits, }
 }
 
@@ -33,7 +33,7 @@ pub fn LockedAxes::empty() -> LockedAxes {
 }
 
 ///|
-pub fn LockedAxes::bits(self : LockedAxes) -> Int {
+pub fn LockedAxes::bits(self : LockedAxes) -> Int32 {
   self.bits
 }
 
@@ -49,26 +49,26 @@ pub fn LockedAxes::insert(self : LockedAxes, other : LockedAxes) -> LockedAxes {
 
 ///|
 pub fn LockedAxes::remove(self : LockedAxes, other : LockedAxes) -> LockedAxes {
-  LockedAxes(self.bits & Int::lnot(other.bits))
+  LockedAxes(self.bits & Int32::lnot(other.bits))
 }
 
 ///|
-const LOCKED_TRANSLATION_X : Int = 1 << 0
+const LOCKED_TRANSLATION_X : Int32 = 1 << 0
 
 ///|
-const LOCKED_TRANSLATION_Y : Int = 1 << 1
+const LOCKED_TRANSLATION_Y : Int32 = 1 << 1
 
 ///|
-const LOCKED_TRANSLATION_Z : Int = 1 << 2
+const LOCKED_TRANSLATION_Z : Int32 = 1 << 2
 
 ///|
-const LOCKED_ROTATION_X : Int = 1 << 3
+const LOCKED_ROTATION_X : Int32 = 1 << 3
 
 ///|
-const LOCKED_ROTATION_Y : Int = 1 << 4
+const LOCKED_ROTATION_Y : Int32 = 1 << 4
 
 ///|
-const LOCKED_ROTATION_Z : Int = 1 << 5
+const LOCKED_ROTATION_Z : Int32 = 1 << 5
 
 ///|
 pub fn LockedAxes::translation_locked_x() -> LockedAxes {

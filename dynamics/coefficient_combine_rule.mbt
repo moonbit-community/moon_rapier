@@ -13,7 +13,7 @@
 // limitations under the License.
 
 ///|
-fn rule_rank(rule : CoefficientCombineRule) -> Int {
+fn rule_rank(rule : CoefficientCombineRule) -> Int32 {
   match rule {
     Average => 0
     Min => 1

@@ -19,7 +19,7 @@ pub struct ContactPair3D {
 }
 
 ///|
-pub fn ContactPair3D::manifolds_len(self : ContactPair3D) -> Int {
+pub fn ContactPair3D::manifolds_len(self : ContactPair3D) -> Int32 {
   self.manifolds.length()
 }
 
@@ -31,7 +31,7 @@ pub fn ContactPair3D::manifolds(self : ContactPair3D) -> Array[ContactPoint3D] {
 ///|
 pub fn ContactPair3D::set_normal_impulse_at(
   self : ContactPair3D,
-  idx : Int,
+  idx : Int32,
   impulse : @core.Real,
 ) -> Unit {
   if idx >= 0 && idx < self.impulses.length() {
@@ -113,7 +113,7 @@ pub fn IntersectionPair3D::intersecting(self : IntersectionPair3D) -> Bool {
 fn np_pair_key(
   a : ColliderHandle3D,
   b : ColliderHandle3D,
-) -> (Int, Int, Int, Int) {
+) -> (Int32, Int32, Int32, Int32) {
   let (ai, ag) = a.into_raw_parts()
   let (bi, bg) = b.into_raw_parts()
   if ai < bi || (ai == bi && ag <= bg) {
@@ -252,7 +252,7 @@ pub struct NarrowPhase3D {
 
 ///|
 pub fn NarrowPhase3D::NarrowPhase3D() -> NarrowPhase3D {
-  { contact_pairs: [], intersection_pairs: [] }
+  { contact_pairs: [], intersection_pairs: [], }
 }
 
 ///|
@@ -382,9 +382,9 @@ pub fn NarrowPhase3D::update(
         continue
       }
       if !co1.collision_groups.test_groups(co2.collision_groups) {
-        self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))
+        self.contact_pairs.push(((a, b), { manifolds: [], impulses: [], }))
         self.intersection_pairs.push(
-          ((a, b), { collider1: a, collider2: b, intersecting: false }),
+          ((a, b), { collider1: a, collider2: b, intersecting: false, }),
         )
         continue
       }
@@ -392,9 +392,9 @@ pub fn NarrowPhase3D::update(
       // Keep the pair, but avoid generating contacts between colliders attached to the same body.
       if co1.parent() is Some(p1) && co2.parent() is Some(p2) {
         if p1.equals(p2) {
-          self.contact_pairs.push(((a, b), { manifolds: [], impulses: [] }))
+          self.contact_pairs.push(((a, b), { manifolds: [], impulses: [], }))
           self.intersection_pairs.push(
-            ((a, b), { collider1: a, collider2: b, intersecting: false }),
+            ((a, b), { collider1: a, collider2: b, intersecting: false, }),
           )
           continue
         }
@@ -1198,11 +1198,11 @@ pub fn NarrowPhase3D::update(
       for _ in 0..<contacts.length() {
         impulses.push(0.0F)
       }
-      self.contact_pairs.push(((a, b), { manifolds: contacts, impulses }))
+      self.contact_pairs.push(((a, b), { manifolds: contacts, impulses, }))
       self.intersection_pairs.push(
         (
           (a, b),
-          { collider1: a, collider2: b, intersecting: contacts.length() > 0 },
+          { collider1: a, collider2: b, intersecting: contacts.length() > 0, },
         ),
       )
     }

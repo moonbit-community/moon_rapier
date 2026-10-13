@@ -15,63 +15,67 @@
 ///|
 struct RowDVector {
   data : Array[@core.Real]
-  start : Int
-  len : Int
+  start : Int32
+  len : Int32
 }
 
 ///|
 struct DVector {
   data : Array[@core.Real]
-  start : Int
-  len : Int
+  start : Int32
+  len : Int32
 }
 
 ///|
 fn RowDVector::new_view(
   data : Array[@core.Real],
-  start : Int,
-  len : Int,
+  start : Int32,
+  len : Int32,
 ) -> RowDVector {
-  { data, start, len }
+  { data, start, len, }
 }
 
 ///|
 fn DVector::new_view(
   data : Array[@core.Real],
-  start : Int,
-  len : Int,
+  start : Int32,
+  len : Int32,
 ) -> DVector {
-  { data, start, len }
+  { data, start, len, }
 }
 
 ///|
-fn RowDVector::value_at(self : RowDVector, index : Int) -> @core.Real {
+fn RowDVector::value_at(self : RowDVector, index : Int32) -> @core.Real {
   self.data[self.start + index]
 }
 
 ///|
 fn RowDVector::set_value(
   self : RowDVector,
-  index : Int,
+  index : Int32,
   value : @core.Real,
 ) -> Unit {
   self.data[self.start + index] = value
 }
 
 ///|
-fn DVector::value_at(self : DVector, index : Int) -> @core.Real {
+fn DVector::value_at(self : DVector, index : Int32) -> @core.Real {
   self.data[self.start + index]
 }
 
 ///|
-fn DVector::set_value(self : DVector, index : Int, value : @core.Real) -> Unit {
+fn DVector::set_value(
+  self : DVector,
+  index : Int32,
+  value : @core.Real,
+) -> Unit {
   self.data[self.start + index] = value
 }
 
 ///|
 pub fn RowDVector::from_fn(
-  size : Int,
-  init : (Int) -> @core.Real,
+  size : Int32,
+  init : (Int32) -> @core.Real,
 ) -> RowDVector {
   let values : Array[@core.Real] = []
   for i in 0..<size {
@@ -86,7 +90,7 @@ pub fn RowDVector::from_array(values : Array[@core.Real]) -> RowDVector {
 }
 
 ///|
-pub fn DVector::from_fn(size : Int, init : (Int) -> @core.Real) -> DVector {
+pub fn DVector::from_fn(size : Int32, init : (Int32) -> @core.Real) -> DVector {
   let values : Array[@core.Real] = []
   for i in 0..<size {
     values.push(init(i))
@@ -126,12 +130,12 @@ pub fn DVector::equals(self : DVector, other : DVector) -> Bool {
 }
 
 ///|
-pub fn RowDVector::len(self : RowDVector) -> Int {
+pub fn RowDVector::len(self : RowDVector) -> Int32 {
   self.len
 }
 
 ///|
-pub fn DVector::len(self : DVector) -> Int {
+pub fn DVector::len(self : DVector) -> Int32 {
   self.len
 }
 
@@ -170,26 +174,26 @@ pub fn DVector::scale_in_place(self : DVector, value : @core.Real) -> Unit {
 ///|
 struct Jacobian {
   data : Array[@core.Real]
-  mut cols : Int
+  mut cols : Int32
 }
 
 ///|
-pub fn Jacobian::spatial_dim() -> Int {
+pub fn Jacobian::spatial_dim() -> Int32 {
   3
 }
 
 ///|
-pub fn Jacobian::zeros(size : Int) -> Jacobian {
+pub fn Jacobian::zeros(size : Int32) -> Jacobian {
   let total = Jacobian::spatial_dim() * size
   let data : Array[@core.Real] = []
   for _ in 0..<total {
     data.push(0.0F)
   }
-  { data, cols: size }
+  { data, cols: size, }
 }
 
 ///|
-fn Jacobian::ensure_cols(self : Jacobian, cols : Int) -> Unit {
+fn Jacobian::ensure_cols(self : Jacobian, cols : Int32) -> Unit {
   if self.cols == cols {
     for i in 0..<self.data.length() {
       self.data[i] = 0.0F
@@ -207,20 +211,24 @@ fn Jacobian::ensure_cols(self : Jacobian, cols : Int) -> Unit {
 ///|
 fn Jacobian::set_value(
   self : Jacobian,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   value : @core.Real,
 ) -> Unit {
   self.data[row * self.cols + col] = value
 }
 
 ///|
-pub fn Jacobian::value_at(self : Jacobian, row : Int, col : Int) -> @core.Real {
+pub fn Jacobian::value_at(
+  self : Jacobian,
+  row : Int32,
+  col : Int32,
+) -> @core.Real {
   self.data[row * self.cols + col]
 }
 
 ///|
-pub fn Jacobian::cols(self : Jacobian) -> Int {
+pub fn Jacobian::cols(self : Jacobian) -> Int32 {
   self.cols
 }
 
@@ -242,24 +250,24 @@ pub fn Jacobian::equals(self : Jacobian, other : Jacobian) -> Bool {
 
 ///|
 struct IndexSequence {
-  mut first_to_remove : Int
-  index_map : Array[Int]
+  mut first_to_remove : Int32
+  index_map : Array[Int32]
 }
 
 ///|
 pub fn IndexSequence::IndexSequence() -> IndexSequence {
-  { first_to_remove: -1, index_map: [] }
+  { first_to_remove: -1, index_map: [], }
 }
 
 ///|
-pub fn IndexSequence::remove(self : IndexSequence, index : Int) -> Unit {
+pub fn IndexSequence::remove(self : IndexSequence, index : Int32) -> Unit {
   if self.first_to_remove < 0 {
     self.first_to_remove = index
   }
 }
 
 ///|
-pub fn IndexSequence::keep(self : IndexSequence, index : Int) -> Unit {
+pub fn IndexSequence::keep(self : IndexSequence, index : Int32) -> Unit {
   if self.first_to_remove < 0 {
     return
   }
@@ -269,8 +277,8 @@ pub fn IndexSequence::keep(self : IndexSequence, index : Int) -> Unit {
 ///|
 fn IndexSequence::dim_after_removal(
   self : IndexSequence,
-  original_dim : Int,
-) -> Int {
+  original_dim : Int32,
+) -> Int32 {
   if self.first_to_remove < 0 {
     original_dim
   } else {

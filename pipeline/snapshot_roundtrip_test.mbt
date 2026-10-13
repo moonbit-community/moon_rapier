@@ -14,7 +14,7 @@
 
 ///|
 test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -23,8 +23,8 @@ test "snapshot round-trip is deterministic (bodies/colliders/joints)" {
   let multibody_joints = @dynamics.MultibodyJointSet()
   let islands = @dynamics.IslandManager()
   let ccd_solver = @dynamics_ccd.CCDSolver()
-  let handler = EventHandler::EventHandler()
-  let params = IntegrationParameters::default()
+  let handler = @pipeline.EventHandler::EventHandler()
+  let params = @pipeline.IntegrationParameters::default()
   let gravity = @core.Vec2(0.0F, -9.81F)
 
   // A small chain driven by a multibody revolute joint.

@@ -13,27 +13,27 @@
 // limitations under the License.
 
 ///|
-const MAX_SLEEP_TRAVERSAL_COST : Int = 1000
+const MAX_SLEEP_TRAVERSAL_COST : Int32 = 1000
 
 ///|
-const MIN_ISLAND_SIZE : Int = 1024
+const MIN_ISLAND_SIZE : Int32 = 1024
 
 ///|
-const MAX_ISLAND_SIZE : Int = 4096
+const MAX_ISLAND_SIZE : Int32 = 4096
 
 ///|
 struct Island {
   bodies : Array[RigidBodyHandle]
-  mut id_in_awake_list : Int?
-  mut additional_solver_iterations : Int
+  mut id_in_awake_list : Int32?
+  mut additional_solver_iterations : Int32
 }
 
 ///|
 fn Island::Island(
   handle : RigidBodyHandle,
-  additional_solver_iterations : Int,
+  additional_solver_iterations : Int32,
 ) -> Island {
-  { bodies: [handle], id_in_awake_list: None, additional_solver_iterations }
+  { bodies: [handle], id_in_awake_list: None, additional_solver_iterations, }
 }
 
 ///|
@@ -48,7 +48,7 @@ pub struct ContactGraph {
 
 ///|
 pub fn ContactGraph::ContactGraph() -> ContactGraph {
-  { pairs: [] }
+  { pairs: [], }
 }
 
 ///|
@@ -69,19 +69,19 @@ pub fn ContactGraph::add_pair(
 
 ///|
 priv struct IslandsOptimizerMergeState {
-  mut curr_awake_id : Int
+  mut curr_awake_id : Int32
 }
 
 ///|
 priv struct IslandsOptimizerSplitState {
-  mut curr_awake_id : Int
+  mut curr_awake_id : Int32
 }
 
 ///|
 struct IslandsOptimizer {
-  mut min_island_size : Int
-  mut max_island_size : Int
-  mut mode : Int
+  mut min_island_size : Int32
+  mut max_island_size : Int32
+  mut mode : Int32
   merge_state : IslandsOptimizerMergeState
   split_state : IslandsOptimizerSplitState
 }
@@ -92,24 +92,24 @@ fn IslandsOptimizer::IslandsOptimizer() -> IslandsOptimizer {
     min_island_size: MIN_ISLAND_SIZE,
     max_island_size: MAX_ISLAND_SIZE,
     mode: 0,
-    merge_state: { curr_awake_id: 0 },
-    split_state: { curr_awake_id: 0 },
+    merge_state: { curr_awake_id: 0, },
+    split_state: { curr_awake_id: 0, },
   }
 }
 
 ///|
 pub struct IslandManager {
   islands : Array[Island?]
-  awake_islands : Array[Int]
-  free_islands : Array[Int]
+  awake_islands : Array[Int32]
+  free_islands : Array[Int32]
   traversal_candidates : Array[SleepCandidate]
-  mut traversal_timestamp : Int
+  mut traversal_timestamp : Int32
   optimizer : IslandsOptimizer
   stack : Array[RigidBodyHandle]
-  body_island_ids : Array[Int]
-  body_island_generations : Array[Int]
-  body_island_indices : Array[Int]
-  body_state_generations : Array[Int]
+  body_island_ids : Array[Int32]
+  body_island_generations : Array[Int32]
+  body_island_indices : Array[Int32]
+  body_state_generations : Array[Int32]
 }
 
 ///|
@@ -134,15 +134,18 @@ pub fn IslandManager::IslandManager() -> IslandManager {
 ///|
 fn IslandManager::set_island_size_limits(
   self : IslandManager,
-  min_island_size : Int,
-  max_island_size : Int,
+  min_island_size : Int32,
+  max_island_size : Int32,
 ) -> Unit {
   self.optimizer.min_island_size = min_island_size
   self.optimizer.max_island_size = max_island_size
 }
 
 ///|
-fn IslandManager::ensure_body_capacity(self : IslandManager, id : Int) -> Unit {
+fn IslandManager::ensure_body_capacity(
+  self : IslandManager,
+  id : Int32,
+) -> Unit {
   if id < 0 {
     return
   }
@@ -207,7 +210,7 @@ fn IslandManager::sync_body_state_generation(
 }
 
 ///|
-fn IslandManager::insert_island(self : IslandManager, island : Island) -> Int {
+fn IslandManager::insert_island(self : IslandManager, island : Island) -> Int32 {
   if self.free_islands.pop() is Some(index) {
     self.islands[index] = Some(island)
     index
@@ -221,7 +224,7 @@ fn IslandManager::insert_island(self : IslandManager, island : Island) -> Int {
 ///|
 fn IslandManager::remove_from_awake_list(
   self : IslandManager,
-  island_id : Int,
+  island_id : Int32,
 ) -> Unit {
   let island = self.islands[island_id]
   if island is Some(value) {
@@ -401,7 +404,7 @@ fn IslandManager::remove_body_with_ids(
 fn IslandManager::island_id_for(
   self : IslandManager,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if handle.id < 0 || handle.id >= self.body_island_ids.length() {
     return None
   }
@@ -420,7 +423,7 @@ fn IslandManager::island_id_for(
 }
 
 ///|
-fn truncate_handles(values : Array[RigidBodyHandle], len : Int) -> Unit {
+fn truncate_handles(values : Array[RigidBodyHandle], len : Int32) -> Unit {
   while values.length() > len {
     values.pop() |> ignore
   }
@@ -484,8 +487,8 @@ pub fn IslandManager::active_bodies(
 }
 
 ///|
-pub fn IslandManager::active_islands(self : IslandManager) -> Array[Int] {
-  let result : Array[Int] = []
+pub fn IslandManager::active_islands(self : IslandManager) -> Array[Int32] {
+  let result : Array[Int32] = []
   for i in 0..<self.awake_islands.length() {
     result.push(self.awake_islands[i])
   }
@@ -495,7 +498,7 @@ pub fn IslandManager::active_islands(self : IslandManager) -> Array[Int] {
 ///|
 pub fn IslandManager::island_bodies(
   self : IslandManager,
-  island_id : Int,
+  island_id : Int32,
 ) -> Array[RigidBodyHandle] {
   if island_id < 0 || island_id >= self.islands.length() {
     return []
@@ -514,8 +517,8 @@ pub fn IslandManager::island_bodies(
 ///|
 pub fn IslandManager::island_additional_solver_iterations(
   self : IslandManager,
-  island_id : Int,
-) -> Int {
+  island_id : Int32,
+) -> Int32 {
   if island_id < 0 || island_id >= self.islands.length() {
     return 0
   }
@@ -530,7 +533,7 @@ pub fn IslandManager::island_additional_solver_iterations(
 fn IslandManager::wake_up_island(
   self : IslandManager,
   bodies : RigidBodySet,
-  island_id : Int,
+  island_id : Int32,
 ) -> Unit {
   if island_id < 0 || island_id >= self.islands.length() {
     return
@@ -572,8 +575,8 @@ pub fn IslandManager::wake_up(
 fn IslandManager::merge_islands(
   self : IslandManager,
   bodies : RigidBodySet,
-  island_id1 : Int,
-  island_id2 : Int,
+  island_id1 : Int32,
+  island_id2 : Int32,
 ) -> Unit {
   if island_id1 == island_id2 {
     return
@@ -749,7 +752,7 @@ pub fn IslandManager::rigid_body_removed_or_disabled(
 fn IslandManager::extract_sub_island(
   self : IslandManager,
   bodies : RigidBodySet,
-  island_id : Int,
+  island_id : Int32,
   extracted : Array[RigidBodyHandle],
   sleeping : Bool,
 ) -> Unit {
@@ -854,7 +857,7 @@ fn IslandManager::extract_sleeping_island(
   impulse_joints : ImpulseJointSet,
   multibody_joints : MultibodyJointSet,
   sleep_root : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   if sleep_root.id < 0 {
     return 0
   }
@@ -1181,22 +1184,22 @@ pub fn ImpulseJointGraph::edges(
 
 ///|
 pub struct ImpulseJointHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 
 ///|
 fn ImpulseJointHandle::ImpulseJointHandle(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ImpulseJointHandle {
-  { id, generation }
+  { id, generation, }
 }
 
 ///|
 pub fn ImpulseJointHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ImpulseJointHandle {
   ImpulseJointHandle(id, generation)
 }
@@ -1204,7 +1207,7 @@ pub fn ImpulseJointHandle::from_raw_parts(
 ///|
 pub fn ImpulseJointHandle::into_raw_parts(
   self : ImpulseJointHandle,
-) -> (Int, Int) {
+) -> (Int32, Int32) {
   (self.id, self.generation)
 }
 
@@ -1231,7 +1234,7 @@ pub struct GenericJoint {
   mut softness : SpringCoefficients
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
-  user_data : Int
+  user_data : Int32
 }
 
 ///|
@@ -2089,13 +2092,13 @@ fn push_unique_pair(
 
 ///|
 priv struct JointGraphEdge {
-  mut node1 : Int
-  mut node2 : Int
+  mut node1 : Int32
+  mut node2 : Int32
   joint : ImpulseJoint
 }
 
 ///|
-fn remove_edge_index(values : Array[Int], target : Int) -> Unit {
+fn remove_edge_index(values : Array[Int32], target : Int32) -> Unit {
   let mut index = -1
   for i in 0..<values.length() {
     if values[i] == target {
@@ -2115,9 +2118,9 @@ fn remove_edge_index(values : Array[Int], target : Int) -> Unit {
 
 ///|
 fn replace_edge_index(
-  values : Array[Int],
-  old_index : Int,
-  new_index : Int,
+  values : Array[Int32],
+  old_index : Int32,
+  new_index : Int32,
 ) -> Unit {
   for i in 0..<values.length() {
     if values[i] == old_index {
@@ -2129,14 +2132,14 @@ fn replace_edge_index(
 
 ///|
 struct ImpulseJointSet {
-  rb_graph_ids : Array[Int]
-  rb_graph_generations : Array[Int]
+  rb_graph_ids : Array[Int32]
+  rb_graph_generations : Array[Int32]
   graph_nodes : Array[RigidBodyHandle]
   graph_edges : Array[JointGraphEdge]
-  adjacency : Array[Array[Int]]
-  joint_generations : Array[Int]
-  joint_edge_ids : Array[Int]
-  free_handles : Array[Int]
+  adjacency : Array[Array[Int32]]
+  joint_generations : Array[Int32]
+  joint_edge_ids : Array[Int32]
+  free_handles : Array[Int32]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -2170,7 +2173,7 @@ fn ij_split_values(text : String, sep : String) -> Array[String] {
 }
 
 ///|
-fn ij_parse_int_value(text : String) -> Int {
+fn ij_parse_int_value(text : String) -> Int32 {
   let result = try @string.parse_int(text[:], base=10) catch {
     err => Err(err)
   } noraise {
@@ -2203,7 +2206,7 @@ fn ij_parse_bool_value(text : String) -> Bool {
 }
 
 ///|
-fn motor_model_to_int(model : MotorModel) -> Int {
+fn motor_model_to_int(model : MotorModel) -> Int32 {
   match model {
     AccelerationBased => 0
     ForceBased => 1
@@ -2211,7 +2214,7 @@ fn motor_model_to_int(model : MotorModel) -> Int {
 }
 
 ///|
-fn motor_model_from_int(value : Int) -> MotorModel {
+fn motor_model_from_int(value : Int32) -> MotorModel {
   if value == 1 {
     ForceBased
   } else {
@@ -2220,7 +2223,7 @@ fn motor_model_from_int(value : Int) -> MotorModel {
 }
 
 ///|
-fn joint_enabled_to_int(value : JointEnabled) -> Int {
+fn joint_enabled_to_int(value : JointEnabled) -> Int32 {
   match value {
     Enabled => 0
     Disabled => 1
@@ -2229,7 +2232,7 @@ fn joint_enabled_to_int(value : JointEnabled) -> Int {
 }
 
 ///|
-fn joint_enabled_from_int(value : Int) -> JointEnabled {
+fn joint_enabled_from_int(value : Int32) -> JointEnabled {
   if value == 1 {
     Disabled
   } else if value == 2 {
@@ -2240,7 +2243,7 @@ fn joint_enabled_from_int(value : Int) -> JointEnabled {
 }
 
 ///|
-fn parse_isometry2(fields : Array[String], start : Int) -> @core.Isometry2 {
+fn parse_isometry2(fields : Array[String], start : Int32) -> @core.Isometry2 {
   let tx = if fields.length() > start {
     ij_parse_real_value(fields[start])
   } else {
@@ -2286,7 +2289,7 @@ fn write_limits_fields(sb : StringBuilder, limits : JointLimits) -> Unit {
 }
 
 ///|
-const SERIALIZED_GENERIC_JOINT_FIELD_COUNT : Int = 88
+const SERIALIZED_GENERIC_JOINT_FIELD_COUNT : Int32 = 88
 
 ///|
 fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit {
@@ -2374,7 +2377,7 @@ fn write_generic_joint_fields(sb : StringBuilder, joint : GenericJoint) -> Unit 
 }
 
 ///|
-fn parse_motor(fields : Array[String], start : Int) -> JointMotor {
+fn parse_motor(fields : Array[String], start : Int32) -> JointMotor {
   let target_vel = if fields.length() > start {
     ij_parse_real_value(fields[start])
   } else {
@@ -2410,11 +2413,11 @@ fn parse_motor(fields : Array[String], start : Int) -> JointMotor {
   } else {
     AccelerationBased
   }
-  { target_vel, target_pos, stiffness, damping, max_force, impulse, model }
+  { target_vel, target_pos, stiffness, damping, max_force, impulse, model, }
 }
 
 ///|
-fn parse_limits(fields : Array[String], start : Int) -> JointLimits {
+fn parse_limits(fields : Array[String], start : Int32) -> JointLimits {
   let min = if fields.length() > start {
     ij_parse_real_value(fields[start])
   } else {
@@ -2436,7 +2439,7 @@ fn parse_limits(fields : Array[String], start : Int) -> JointLimits {
 }
 
 ///|
-fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
+fn parse_generic_joint(fields : Array[String], start : Int32) -> GenericJoint {
   let frame1 = parse_isometry2(fields, start)
   let frame2 = parse_isometry2(fields, start + 3)
   let locked_axes = if fields.length() > start + 6 {
@@ -2547,7 +2550,14 @@ fn parse_generic_joint(fields : Array[String], start : Int) -> GenericJoint {
     limit_axes,
     motor_axes,
     coupled_axes,
-    limits: { lin_x: lx, lin_y: ly, lin_z: lz, ang_x: ax, ang_y: ay, ang_z: az },
+    limits: {
+      lin_x: lx,
+      lin_y: ly,
+      lin_z: lz,
+      ang_x: ax,
+      ang_y: ay,
+      ang_z: az,
+    },
     motors: {
       lin_x: mx,
       lin_y: my,
@@ -2630,8 +2640,8 @@ pub fn ImpulseJointSet::serialize(self : ImpulseJointSet) -> String {
 ///|
 pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
   let mut len = 0
-  let gens : Array[Int] = []
-  let free_handles : Array[Int] = []
+  let gens : Array[Int32] = []
+  let free_handles : Array[Int32] = []
   let entries : Array[String] = []
   for part in data.split(";"[:]) {
     let value = part.to_owned()
@@ -2733,7 +2743,7 @@ pub fn ImpulseJointSet::deserialize(data : String) -> ImpulseJointSet {
       let node1 = set.ensure_graph_node(body1)
       let node2 = set.ensure_graph_node(body2)
       let edge_id = set.graph_edges.length()
-      set.graph_edges.push({ node1, node2, joint })
+      set.graph_edges.push({ node1, node2, joint, })
       set.adjacency[node1].push(edge_id)
       set.adjacency[node2].push(edge_id)
       set.joint_edge_ids[id] = edge_id
@@ -2769,7 +2779,7 @@ pub fn ImpulseJointSet::take_to_join(
 ///|
 fn ImpulseJointSet::ensure_body_mapping_capacity(
   self : ImpulseJointSet,
-  id : Int,
+  id : Int32,
 ) -> Unit {
   if id < 0 {
     return
@@ -2786,7 +2796,7 @@ fn ImpulseJointSet::ensure_body_mapping_capacity(
 fn ImpulseJointSet::graph_node_for(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if handle.id < 0 || handle.id >= self.rb_graph_ids.length() {
     return None
   }
@@ -2807,7 +2817,7 @@ fn ImpulseJointSet::graph_node_for(
 fn ImpulseJointSet::ensure_graph_node(
   self : ImpulseJointSet,
   handle : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   self.ensure_body_mapping_capacity(handle.id)
   if self.graph_node_for(handle) is Some(node_id) {
     node_id
@@ -2854,7 +2864,7 @@ fn ImpulseJointSet::is_handle_valid(
 ///|
 fn ImpulseJointSet::remove_edge(
   self : ImpulseJointSet,
-  edge_id : Int,
+  edge_id : Int32,
 ) -> ImpulseJoint? {
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
@@ -2882,7 +2892,10 @@ fn ImpulseJointSet::remove_edge(
 }
 
 ///|
-fn ImpulseJointSet::remove_node(self : ImpulseJointSet, node_id : Int) -> Unit {
+fn ImpulseJointSet::remove_node(
+  self : ImpulseJointSet,
+  node_id : Int32,
+) -> Unit {
   if node_id < 0 || node_id >= self.graph_nodes.length() {
     return
   }
@@ -2962,7 +2975,7 @@ pub fn ImpulseJointSet::insert(
     handle,
   }
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push({ node1, node2, joint: impulse_joint })
+  self.graph_edges.push({ node1, node2, joint: impulse_joint, })
   self.adjacency[node1].push(edge_id)
   if node2 != node1 {
     self.adjacency[node2].push(edge_id)
@@ -2977,7 +2990,7 @@ pub fn ImpulseJointSet::insert(
 }
 
 ///|
-pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
+pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int32 {
   self.graph_edges.length()
 }
 
@@ -3009,7 +3022,7 @@ pub fn ImpulseJointSet::joint_graph(
     }
     edges.push((body1, body2, edge.joint))
   }
-  { nodes, edges }
+  { nodes, edges, }
 }
 
 ///|
@@ -3093,7 +3106,7 @@ pub fn ImpulseJointSet::set_impulses(
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
   joint.impulses = impulses
-  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint, }
 }
 
 ///|
@@ -3196,13 +3209,13 @@ pub fn ImpulseJointSet::set_solver_impulses(
   joint.data.limits = joint_limits_set_axis(
     updated_limits, angular_axis, updated_limit,
   )
-  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint, }
 }
 
 ///|
 pub fn ImpulseJointSet::get_unknown_gen(
   self : ImpulseJointSet,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   if id < 0 || id >= self.joint_edge_ids.length() {
     return None
@@ -3218,7 +3231,7 @@ pub fn ImpulseJointSet::get_unknown_gen(
 ///|
 pub fn ImpulseJointSet::get_unknown_gen_mut(
   self : ImpulseJointSet,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   self.get_unknown_gen(id)
 }
@@ -3388,7 +3401,7 @@ pub fn ImpulseJointSet::select_active_interactions(
   self : ImpulseJointSet,
   islands : IslandManager,
   bodies : RigidBodySet,
-  out : Array[Array[Int]],
+  out : Array[Array[Int32]],
 ) -> Unit {
   let awake_len = islands.awake_islands.length()
   for i in 0..<awake_len {

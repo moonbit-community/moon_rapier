@@ -47,9 +47,9 @@ fn run_examples3d_keva3_profile(heavy : Bool) -> Bool {
     colliders : @collision.ColliderSet3D,
     half_extents : @core.Vec3,
     shift : @core.Vec3,
-    numx : Int,
-    numy : Int,
-    numz : Int,
+    numx : Int32,
+    numy : Int32,
+    numz : Int32,
   ) -> Unit {
     let dimensions = [
       half_extents,

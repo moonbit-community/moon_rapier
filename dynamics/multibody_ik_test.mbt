@@ -36,11 +36,14 @@ fn isometry2_max_abs_diff(
 }
 
 ///|
-fn jacobian_max_abs_diff(left : Jacobian, right : Jacobian) -> @core.Real {
+fn jacobian_max_abs_diff(
+  left : @dynamics.Jacobian,
+  right : @dynamics.Jacobian,
+) -> @core.Real {
   if left.cols() != right.cols() {
     return 1.0e9F
   }
-  let rows = Jacobian::spatial_dim()
+  let rows = @dynamics.Jacobian::spatial_dim()
   let cols = left.cols()
   let mut max_diff = 0.0F
   for row_index in 0..<rows {
@@ -59,24 +62,26 @@ fn jacobian_max_abs_diff(left : Jacobian, right : Jacobian) -> @core.Real {
 
 ///|
 test "one link fwd kinematics" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let multibodies = MultibodyJointSet::MultibodyJointSet()
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let multibodies = @dynamics.MultibodyJointSet::MultibodyJointSet()
   let num_segments = 10
   let num_segments_real = Float::from_double(num_segments.to_double())
-  let body = RigidBodyBuilder::fixed().build()
+  let body = @dynamics.RigidBodyBuilder::fixed().build()
   let mut last_body = bodies.insert(body)
-  let mut last_link = MultibodyJointHandle::invalid()
+  let mut last_link = @dynamics.MultibodyJointHandle::invalid()
   for _ in 0..<num_segments {
-    let body_dyn = RigidBodyBuilder::dynamic().can_sleep(false).build()
+    let body_dyn = @dynamics.RigidBodyBuilder::dynamic()
+      .can_sleep(false)
+      .build()
     let new_body = bodies.insert(body_dyn)
     let anchor_delta = 0.5F / num_segments_real
-    let builder = RevoluteJointBuilder::RevoluteJointBuilder()
+    let builder = @dynamics.RevoluteJointBuilder::RevoluteJointBuilder()
       .local_anchor1(Vec2(0.0F, anchor_delta))
       .local_anchor2(Vec2(0.0F, -anchor_delta))
     let link = multibodies.insert(
       last_body,
       new_body,
-      GenericJoint::from_revolute(builder.build()),
+      @dynamics.GenericJoint::from_revolute(builder.build()),
       true,
     )
     if link is Some(handle) {
@@ -88,7 +93,7 @@ test "one link fwd kinematics" {
     let (multibody, last_id) = result
     multibody.forward_kinematics(bodies, true)
     inspect(multibody.ndofs() == num_segments, content="true")
-    let jacobian2 = Jacobian::zeros(0)
+    let jacobian2 = @dynamics.Jacobian::zeros(0)
     let mut link_pose1 = @core.Isometry2::identity()
     let mut link_pose1_valid = false
     if multibody.link(last_id) is Some(link_value) {

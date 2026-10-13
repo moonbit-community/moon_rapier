@@ -14,7 +14,7 @@
 
 ///|
 test "collider3d ball aabb" {
-  let co = ColliderBuilder3D::ball(0.5F)
+  let co = @collision.ColliderBuilder3D::ball(0.5F)
     .translation(Vec3(1.0F, 2.0F, 3.0F))
     .build()
   let aabb = co.compute_aabb()
@@ -28,7 +28,7 @@ test "collider3d ball aabb" {
 
 ///|
 test "collider3d cuboid aabb identity rotation" {
-  let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).build()
+  let co = @collision.ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).build()
   let aabb = co.compute_aabb()
   inspect(@core.abs(aabb.mins.x - -1.0F) < 1.0e-6F, content="true")
   inspect(@core.abs(aabb.mins.y - -2.0F) < 1.0e-6F, content="true")
@@ -41,7 +41,9 @@ test "collider3d cuboid aabb identity rotation" {
 ///|
 test "collider3d cuboid aabb rotated around y swaps x/z extents" {
   let rot = @core.rotation_from_scaled_axis(Vec3(0.0F, @core.pi() * 0.5F, 0.0F))
-  let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).rotation(rot).build()
+  let co = @collision.ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F)
+    .rotation(rot)
+    .build()
   let aabb = co.compute_aabb()
   // With 90deg around Y, the local X half-extent maps to world Z, local Z maps to world X.
   inspect(@core.abs(aabb.mins.x - -3.0F) < 1.0e-5F, content="true")
@@ -54,7 +56,7 @@ test "collider3d cuboid aabb rotated around y swaps x/z extents" {
 
 ///|
 test "collider3d capsule_y aabb" {
-  let co = ColliderBuilder3D::capsule_y(0.5F, 1.0F)
+  let co = @collision.ColliderBuilder3D::capsule_y(0.5F, 1.0F)
     .translation(Vec3(1.0F, 2.0F, 3.0F))
     .build()
   let aabb = co.compute_aabb()
@@ -68,7 +70,7 @@ test "collider3d capsule_y aabb" {
 
 ///|
 test "collider3d round_cylinder aabb" {
-  let co = ColliderBuilder3D::round_cylinder(1.0F, 2.0F, 0.25F).build()
+  let co = @collision.ColliderBuilder3D::round_cylinder(1.0F, 2.0F, 0.25F).build()
   let aabb = co.compute_aabb()
   inspect(@core.abs(aabb.mins.x - -1.25F) < 1.0e-6F, content="true")
   inspect(@core.abs(aabb.mins.y - -2.25F) < 1.0e-6F, content="true")
@@ -81,48 +83,50 @@ test "collider3d round_cylinder aabb" {
 ///|
 test "collider3d user_data128 stored on build" {
   let data = @core.UserData128::from_parts(10UL, 20UL)
-  let co = ColliderBuilder3D::ball(0.5F).user_data128(data).build()
+  let co = @collision.ColliderBuilder3D::ball(0.5F).user_data128(data).build()
   inspect(co.user_data128().equals(data), content="true")
 }
 
 ///|
 test "collider3d exposes active hooks/collision types APIs" {
-  let co = ColliderBuilder3D::ball(0.5F)
-    .active_events(ActiveEvents::collision_events())
-    .active_collision_types(ActiveCollisionTypes::all())
-    .active_hooks(ActiveHooks::filter_contact_pairs())
+  let co = @collision.ColliderBuilder3D::ball(0.5F)
+    .active_events(@collision.ActiveEvents::collision_events())
+    .active_collision_types(@collision.ActiveCollisionTypes::all())
+    .active_hooks(@collision.ActiveHooks::filter_contact_pairs())
     .build()
   inspect(
-    co.active_events().contains(ActiveEvents::collision_events()),
+    co.active_events().contains(@collision.ActiveEvents::collision_events()),
     content="true",
   )
   inspect(
-    co.active_collision_types().equals(ActiveCollisionTypes::all()),
+    co.active_collision_types().equals(@collision.ActiveCollisionTypes::all()),
     content="true",
   )
   inspect(
-    co.active_hooks().contains(ActiveHooks::filter_contact_pairs()),
+    co.active_hooks().contains(@collision.ActiveHooks::filter_contact_pairs()),
     content="true",
   )
 }
 
 ///|
 test "collider3d active flags setters update values" {
-  let co = ColliderBuilder3D::ball(0.5F).build()
-  co.set_active_events(ActiveEvents::collision_events()) |> ignore
-  co.set_active_collision_types(ActiveCollisionTypes::all()) |> ignore
-  co.set_active_hooks(ActiveHooks::modify_solver_contacts()) |> ignore
+  let co = @collision.ColliderBuilder3D::ball(0.5F).build()
+  co.set_active_events(@collision.ActiveEvents::collision_events()) |> ignore
+  co.set_active_collision_types(@collision.ActiveCollisionTypes::all())
+  |> ignore
+  co.set_active_hooks(@collision.ActiveHooks::modify_solver_contacts())
+  |> ignore
 
   inspect(
-    co.active_events().contains(ActiveEvents::collision_events()),
+    co.active_events().contains(@collision.ActiveEvents::collision_events()),
     content="true",
   )
   inspect(
-    co.active_collision_types().equals(ActiveCollisionTypes::all()),
+    co.active_collision_types().equals(@collision.ActiveCollisionTypes::all()),
     content="true",
   )
   inspect(
-    co.active_hooks().contains(ActiveHooks::modify_solver_contacts()),
+    co.active_hooks().contains(@collision.ActiveHooks::modify_solver_contacts()),
     content="true",
   )
 }
@@ -135,7 +139,7 @@ test "collider3d group and material setters update values" {
     And,
   )
   let solver_groups = @dynamics.InteractionGroups::none()
-  let co = ColliderBuilder3D::ball(0.5F)
+  let co = @collision.ColliderBuilder3D::ball(0.5F)
     .collision_groups(collision_groups)
     .solver_groups(solver_groups)
     .friction(0.25F)
@@ -181,7 +185,7 @@ test "collider3d group and material setters update values" {
 
 ///|
 test "collider3d contact skin builder and setter update values" {
-  let co = ColliderBuilder3D::ball(0.5F).contact_skin(0.2F).build()
+  let co = @collision.ColliderBuilder3D::ball(0.5F).contact_skin(0.2F).build()
   inspect(@core.abs(co.contact_skin() - 0.2F) < 1.0e-6F, content="true")
   let collision_aabb = co.compute_collision_aabb(0.1F)
   inspect(@core.abs(collision_aabb.maxs.x - 0.8F) < 1.0e-6F, content="true")
@@ -192,24 +196,27 @@ test "collider3d contact skin builder and setter update values" {
 ///|
 test "collider3d builder default helpers and delta update pose" {
   inspect(
-    @core.abs(ColliderBuilder3D::default_density() - 1.0F) < 1.0e-6F,
+    @core.abs(@collision.ColliderBuilder3D::default_density() - 1.0F) < 1.0e-6F,
     content="true",
   )
   inspect(
-    @core.abs(ColliderBuilder3D::default_friction() - 0.5F) < 1.0e-6F,
+    @core.abs(@collision.ColliderBuilder3D::default_friction() - 0.5F) < 1.0e-6F,
     content="true",
   )
   let delta = @core.Isometry3(
     Vec3(4.0F, 5.0F, 6.0F),
     @core.rotation_from_scaled_axis(Vec3(0.0F, @core.pi() / 4.0F, 0.0F)),
   )
-  let co = ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F).delta(delta).build()
+  let co = @collision.ColliderBuilder3D::cuboid(1.0F, 2.0F, 3.0F)
+    .delta(delta)
+    .build()
   inspect(
     co.position().translation.sub(delta.translation).length() < 1.0e-6F,
     content="true",
   )
   inspect(
-    @core.abs(co.friction() - ColliderBuilder3D::default_friction()) < 1.0e-6F,
+    @core.abs(co.friction() - @collision.ColliderBuilder3D::default_friction()) <
+    1.0e-6F,
     content="true",
   )
 }
@@ -219,7 +226,7 @@ test "collider_builder3 aliases the real dim3 builder" {
   let rotation = @core.rotation_from_scaled_axis(
     Vec3(0.0F, @core.pi() / 3.0F, 0.25F),
   )
-  let co = ColliderBuilder3::cuboid(1.0F, 2.0F, 3.0F)
+  let co = @collision.ColliderBuilder3::cuboid(1.0F, 2.0F, 3.0F)
     .translation(Vec3(4.0F, 5.0F, 6.0F))
     .rotation(rotation)
     .contact_skin(0.15F)

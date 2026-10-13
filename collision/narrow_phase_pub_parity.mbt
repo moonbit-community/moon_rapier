@@ -84,7 +84,7 @@ pub struct SolverContactGeneric {
   // Rapier uses a scalar for SIMD friendliness; we keep it as a scalar too.
   is_new : @core.Real
   // Rapier stores a fixed-size lane array; this port uses a dynamic array.
-  contact_id : Array[Int]
+  contact_id : Array[Int32]
 }
 
 ///|
@@ -114,7 +114,7 @@ pub type SimdSolverContact = SolverContactGeneric
 pub struct ContactManifoldData {
   solver_flags : SolverFlags
   solver_contacts : Array[SolverContactGeneric]
-  relative_dominance : Int
+  relative_dominance : Int32
 }
 
 ///|
@@ -129,7 +129,7 @@ pub fn ContactManifoldData::default() -> ContactManifoldData {
 ///|
 pub fn ContactManifoldData::num_active_contacts(
   self : ContactManifoldData,
-) -> Int {
+) -> Int32 {
   self.solver_contacts.length()
 }
 
@@ -204,7 +204,7 @@ pub fn ContactPair::find_deepest_contact(
   self : ContactPair,
 ) -> (ContactManifold, Contact)? {
   let mut found = false
-  let mut best_m = ContactManifold::{ normal: @core.Vec2::zero(), points: [] }
+  let mut best_m = ContactManifold::{ normal: @core.Vec2::zero(), points: [], }
   let mut best_c = ContactManifoldPoint::{
     local_p1: @core.Vec2::zero(),
     local_p2: @core.Vec2::zero(),
@@ -294,13 +294,13 @@ pub type DefaultBroadPhase = BroadPhaseBvh
 
 ///|
 /// Index types used by Rapier's interaction graphs.
-pub type ColliderGraphIndex = Int
+pub type ColliderGraphIndex = Int32
 
 ///|
-pub type RigidBodyGraphIndex = Int
+pub type RigidBodyGraphIndex = Int32
 
 ///|
-pub type TemporaryInteractionIndex = Int
+pub type TemporaryInteractionIndex = Int32
 
 ///|
 /// Minimal interaction-graph surface for pub parity with Rapier.
@@ -310,7 +310,7 @@ pub struct InteractionGraph[T] {
 
 ///|
 pub fn[T] InteractionGraph::InteractionGraph() -> InteractionGraph[T] {
-  { interactions: [] }
+  { interactions: [], }
 }
 
 ///|
@@ -336,7 +336,7 @@ pub fn[T] InteractionGraph::index_interaction(
   self : InteractionGraph[T],
   a : ColliderHandle,
   b : ColliderHandle,
-) -> Int? {
+) -> Int32? {
   for i in 0..<self.interactions.length() {
     let (c1, c2, _) = self.interactions[i]
     if (collider_handle_equals(c1, a) && collider_handle_equals(c2, b)) ||
@@ -439,7 +439,7 @@ fn contains_handle_id(
 pub fn NarrowPhase::contact_graph(
   self : NarrowPhase,
 ) -> InteractionGraph[ContactPair] {
-  { interactions: self.contacts }
+  { interactions: self.contacts, }
 }
 
 ///|
@@ -451,13 +451,13 @@ pub fn NarrowPhase::intersection_graph(
     let p = self.intersections[i]
     out.push((p.collider1, p.collider2, p))
   }
-  { interactions: out }
+  { interactions: out, }
 }
 
 ///|
 pub fn NarrowPhase::contact_pair_at_index(
   self : NarrowPhase,
-  index : Int,
+  index : Int32,
 ) -> (ColliderHandle, ColliderHandle, ContactPair)? {
   if index < 0 || index >= self.contacts.length() {
     None

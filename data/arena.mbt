@@ -14,8 +14,8 @@
 
 ///|
 pub struct Index {
-  index : Int
-  generation : Int
+  index : Int32
+  generation : Int32
 }
 
 ///|
@@ -24,30 +24,30 @@ pub fn Index::default() -> Index {
 }
 
 ///|
-pub fn Index::from_raw_parts(index : Int, generation : Int) -> Index {
-  { index, generation }
+pub fn Index::from_raw_parts(index : Int32, generation : Int32) -> Index {
+  { index, generation, }
 }
 
 ///|
-pub fn Index::into_raw_parts(self : Index) -> (Int, Int) {
+pub fn Index::into_raw_parts(self : Index) -> (Int32, Int32) {
   (self.index, self.generation)
 }
 
 ///|
-const DEFAULT_ARENA_CAPACITY : Int = 4
+const DEFAULT_ARENA_CAPACITY : Int32 = 4
 
 ///|
 enum Entry[T] {
-  Free(Int?)
-  Occupied(Int, T)
+  Free(Int32?)
+  Occupied(Int32, T)
 }
 
 ///|
 pub struct Arena[T] {
   items : Array[Entry[T]]
-  mut generation : Int
-  mut free_list_head : Int?
-  mut len : Int
+  mut generation : Int32
+  mut free_list_head : Int32?
+  mut len : Int32
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn[T] Arena::Arena() -> Arena[T] {
 }
 
 ///|
-pub fn[T] Arena::with_capacity(capacity : Int) -> Arena[T] {
+pub fn[T] Arena::with_capacity(capacity : Int32) -> Arena[T] {
   let mut cap = capacity
   if cap < 1 {
     cap = 1
@@ -80,7 +80,7 @@ pub fn[T] Arena::clear(self : Arena[T]) -> Unit {
   }
   self.items.clear()
   for i in 0..<end {
-    let next_free : Int? = if i == end - 1 { None } else { Some(i + 1) }
+    let next_free : Int32? = if i == end - 1 { None } else { Some(i + 1) }
     self.items.push(Free(next_free))
   }
   self.free_list_head = Some(0)
@@ -88,7 +88,7 @@ pub fn[T] Arena::clear(self : Arena[T]) -> Unit {
 }
 
 ///|
-pub fn[T] Arena::len(self : Arena[T]) -> Int {
+pub fn[T] Arena::len(self : Arena[T]) -> Int32 {
   self.len
 }
 
@@ -98,12 +98,12 @@ pub fn[T] Arena::is_empty(self : Arena[T]) -> Bool {
 }
 
 ///|
-pub fn[T] Arena::capacity(self : Arena[T]) -> Int {
+pub fn[T] Arena::capacity(self : Arena[T]) -> Int32 {
   self.items.length()
 }
 
 ///|
-pub fn[T] Arena::reserve(self : Arena[T], additional_capacity : Int) -> Unit {
+pub fn[T] Arena::reserve(self : Arena[T], additional_capacity : Int32) -> Unit {
   if additional_capacity <= 0 {
     return
   }
@@ -282,7 +282,7 @@ pub fn[T] Arena::set(self : Arena[T], index : Index, value : T) -> Bool {
 }
 
 ///|
-pub fn[T] Arena::get_gen(self : Arena[T], index : Int) -> Int? {
+pub fn[T] Arena::get_gen(self : Arena[T], index : Int32) -> Int32? {
   if index < 0 || index >= self.items.length() {
     return None
   }
@@ -361,13 +361,13 @@ pub fn[T] Arena::drain(self : Arena[T]) -> Drain[T] {
     }
   }
   self.items.clear()
-  { items: drained, cursor: 0 }
+  { items: drained, cursor: 0, }
 }
 
 ///|
 pub struct Drain[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 
 ///|
@@ -384,12 +384,12 @@ pub fn[T] Drain::next(self : Drain[T]) -> (Index, T)? {
 ///|
 pub struct Iter[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 
 ///|
 pub fn[T] Iter::from_arena(arena : Arena[T]) -> Iter[T] {
-  { items: arena.iter(), cursor: 0 }
+  { items: arena.iter(), cursor: 0, }
 }
 
 ///|
@@ -406,13 +406,13 @@ pub fn[T] Iter::next(self : Iter[T]) -> (Index, T)? {
 ///|
 pub struct IterMut[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 
 ///|
 pub fn[T] IterMut::from_arena(arena : Arena[T]) -> IterMut[T] {
   // MoonBit doesn't expose a stable `&mut` reference, so this mirrors `Iter`.
-  { items: arena.iter(), cursor: 0 }
+  { items: arena.iter(), cursor: 0, }
 }
 
 ///|
@@ -429,7 +429,7 @@ pub fn[T] IterMut::next(self : IterMut[T]) -> (Index, T)? {
 ///|
 pub struct IntoIter[T] {
   items : Array[T]
-  mut cursor : Int
+  mut cursor : Int32
 }
 
 ///|
@@ -441,7 +441,7 @@ pub fn[T] IntoIter::from_arena(arena : Arena[T]) -> IntoIter[T] {
       _ => ()
     }
   }
-  { items: values, cursor: 0 }
+  { items: values, cursor: 0, }
 }
 
 ///|

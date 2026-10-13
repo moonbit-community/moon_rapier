@@ -14,7 +14,7 @@
 
 ///|
 test "modify_solver_contacts_with_solver_contacts can disable impulse computation" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -22,9 +22,9 @@ test "modify_solver_contacts_with_solver_contacts can disable impulse computatio
   let islands = @dynamics.IslandManager()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
-  let handler = EventHandler::EventHandler()
+  let handler = @pipeline.EventHandler::EventHandler()
   let ccd_solver = @dynamics_ccd.CCDSolver()
-  let parameters = IntegrationParameters::default()
+  let parameters = @pipeline.IntegrationParameters::default()
   let gravity = @core.Vec2(0.0F, -9.81F)
   let floor = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -0.1F)).build(),
@@ -52,7 +52,7 @@ test "modify_solver_contacts_with_solver_contacts can disable impulse computatio
   let mut saw_compute_impulses_default = false
   let mut saw_contacts_nonempty = false
   let mut saw_solver_contact_mutations = false
-  let hooks = PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts(fn(
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts(fn(
       _bodies : @dynamics.RigidBodySet,
       _colliders : @collision.ColliderSet,
       _collider1 : @collision.ColliderHandle,
@@ -98,7 +98,7 @@ test "modify_solver_contacts_with_solver_contacts can disable impulse computatio
 
 ///|
 test "modify_solver_contacts_with_solver_contacts can apply tangent velocity" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -106,9 +106,9 @@ test "modify_solver_contacts_with_solver_contacts can apply tangent velocity" {
   let islands = @dynamics.IslandManager()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
-  let handler = EventHandler::EventHandler()
+  let handler = @pipeline.EventHandler::EventHandler()
   let ccd_solver = @dynamics_ccd.CCDSolver()
-  let parameters = IntegrationParameters::default()
+  let parameters = @pipeline.IntegrationParameters::default()
   let gravity = @core.Vec2(0.0F, -9.81F)
   let floor = bodies.insert(
     @dynamics.RigidBodyBuilder::fixed().translation(Vec2(0.0F, -0.1F)).build(),
@@ -132,7 +132,7 @@ test "modify_solver_contacts_with_solver_contacts can apply tangent velocity" {
     bodies,
   )
   |> ignore
-  let hooks = PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts(fn(
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts(fn(
       _bodies : @dynamics.RigidBodySet,
       _colliders : @collision.ColliderSet,
       _collider1 : @collision.ColliderHandle,
@@ -164,7 +164,7 @@ test "modify_solver_contacts_with_solver_contacts can apply tangent velocity" {
 
 ///|
 test "filter_contact_pair_with_user_data resolves collider and body user_data" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -172,9 +172,9 @@ test "filter_contact_pair_with_user_data resolves collider and body user_data" {
   let islands = @dynamics.IslandManager()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
-  let handler = EventHandler::EventHandler()
+  let handler = @pipeline.EventHandler::EventHandler()
   let ccd_solver = @dynamics_ccd.CCDSolver()
-  let parameters = IntegrationParameters::default()
+  let parameters = @pipeline.IntegrationParameters::default()
   let gravity = @core.Vec2(0.0F, -9.81F)
   let floor_collider_ud = @core.UserData128::from_int_truncate(11)
   let ball_collider_ud = @core.UserData128::from_int_truncate(22)
@@ -214,34 +214,35 @@ test "filter_contact_pair_with_user_data resolves collider and body user_data" {
   let mut called = false
   let mut saw_collider_ud = false
   let mut saw_body_ud = false
-  let hooks = PhysicsHooks::PhysicsHooks().filter_contact_pair_with_user_data(fn(
-    _bodies : @dynamics.RigidBodySet,
-    _colliders : @collision.ColliderSet,
-    _collider1 : @collision.ColliderHandle,
-    _collider2 : @collision.ColliderHandle,
-    ud1 : @core.UserData128,
-    ud2 : @core.UserData128,
-    rb1 : @dynamics.RigidBodyHandle?,
-    rb2 : @dynamics.RigidBodyHandle?,
-    rb_ud1 : @core.UserData128?,
-    rb_ud2 : @core.UserData128?,
-  ) -> Bool {
-    called = true
-    saw_collider_ud = (
-        ud1.equals(floor_collider_ud) && ud2.equals(ball_collider_ud)
-      ) ||
-      (ud1.equals(ball_collider_ud) && ud2.equals(floor_collider_ud))
-    saw_body_ud = rb1 is Some(_) &&
-      rb2 is Some(_) &&
-      rb_ud1 is Some(bud1) &&
-      rb_ud2 is Some(bud2) &&
-      (
-        (bud1.equals(floor_body_ud) && bud2.equals(ball_body_ud)) ||
-        (bud1.equals(ball_body_ud) && bud2.equals(floor_body_ud))
-      )
-    // Disable contacts for this pair so the ball falls through.
-    false
-  })
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().filter_contact_pair_with_user_data(fn(
+      _bodies : @dynamics.RigidBodySet,
+      _colliders : @collision.ColliderSet,
+      _collider1 : @collision.ColliderHandle,
+      _collider2 : @collision.ColliderHandle,
+      ud1 : @core.UserData128,
+      ud2 : @core.UserData128,
+      rb1 : @dynamics.RigidBodyHandle?,
+      rb2 : @dynamics.RigidBodyHandle?,
+      rb_ud1 : @core.UserData128?,
+      rb_ud2 : @core.UserData128?,
+    ) -> Bool {
+      called = true
+      saw_collider_ud = (
+          ud1.equals(floor_collider_ud) && ud2.equals(ball_collider_ud)
+        ) ||
+        (ud1.equals(ball_collider_ud) && ud2.equals(floor_collider_ud))
+      saw_body_ud = rb1 is Some(_) &&
+        rb2 is Some(_) &&
+        rb_ud1 is Some(bud1) &&
+        rb_ud2 is Some(bud2) &&
+        (
+          (bud1.equals(floor_body_ud) && bud2.equals(ball_body_ud)) ||
+          (bud1.equals(ball_body_ud) && bud2.equals(floor_body_ud))
+        )
+      // Disable contacts for this pair so the ball falls through.
+      false
+    },
+  )
   for _ in 0..<240 {
     pipeline.step(
       gravity, parameters, islands, broad_phase, narrow_phase, bodies, colliders,
@@ -260,7 +261,7 @@ test "filter_contact_pair_with_user_data resolves collider and body user_data" {
 
 ///|
 test "modify_solver_contacts_with_solver_contacts_with_user_data sees collider user_data" {
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -268,9 +269,9 @@ test "modify_solver_contacts_with_solver_contacts_with_user_data sees collider u
   let islands = @dynamics.IslandManager()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
-  let handler = EventHandler::EventHandler()
+  let handler = @pipeline.EventHandler::EventHandler()
   let ccd_solver = @dynamics_ccd.CCDSolver()
-  let parameters = IntegrationParameters::default()
+  let parameters = @pipeline.IntegrationParameters::default()
   let gravity = @core.Vec2(0.0F, -9.81F)
   let floor_ud = @core.UserData128::from_int_truncate(1001)
   let ball_ud = @core.UserData128::from_int_truncate(1002)
@@ -302,7 +303,7 @@ test "modify_solver_contacts_with_solver_contacts_with_user_data sees collider u
   )
   |> ignore
   let mut inspected = false
-  let hooks = PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts_with_user_data(fn(
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().modify_solver_contacts_with_solver_contacts_with_user_data(fn(
       _bodies : @dynamics.RigidBodySet,
       _colliders : @collision.ColliderSet,
       _collider1 : @collision.ColliderHandle,

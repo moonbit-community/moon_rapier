@@ -153,7 +153,7 @@ fn multibody_joint_is_spatial(joint : MultibodyJoint) -> Bool {
 }
 
 ///|
-fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int {
+fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int32 {
   let locked = self.data.locked_axes().bits()
   let mut ndofs = 0
   if multibody_joint_is_spatial(self) {
@@ -163,7 +163,7 @@ fn MultibodyJoint::ndofs(self : MultibodyJoint) -> Int {
       }
     }
   } else {
-    let planar_axes : Array[Int] = [0, 1, 5]
+    let planar_axes : Array[Int32] = [0, 1, 5]
     for axis in planar_axes {
       if (locked & (1 << axis)) == 0 {
         ndofs = ndofs + 1
@@ -298,9 +298,9 @@ pub fn MultibodyJoint::default_damping(
 }
 
 ///|
-fn multibody_joint_planar_ndofs(joint : MultibodyJoint) -> Int {
+fn multibody_joint_planar_ndofs(joint : MultibodyJoint) -> Int32 {
   let locked = joint.data.locked_axes().bits()
-  let planar_axes : Array[Int] = [0, 1, 5]
+  let planar_axes : Array[Int32] = [0, 1, 5]
   let mut ndofs = 0
   for axis in planar_axes {
     if (locked & (1 << axis)) == 0 {
@@ -371,12 +371,12 @@ pub fn MultibodyJoint::jacobian_mul_coordinates(
 }
 
 ///|
-pub fn MultibodyJoint::num_velocity_constraints(self : MultibodyJoint) -> Int {
+pub fn MultibodyJoint::num_velocity_constraints(self : MultibodyJoint) -> Int32 {
   let locked = self.data.locked_axes().bits()
   let limit = self.data.limit_axes().bits()
   let motor = self.data.motor_axes().bits()
   let mut n = 0
-  let axes : Array[Int] = if multibody_joint_is_spatial(self) {
+  let axes : Array[Int32] = if multibody_joint_is_spatial(self) {
     [0, 1, 2, 3, 4, 5]
   } else {
     [0, 1, 5]
@@ -406,7 +406,7 @@ fn inv_nonzero(value : @core.Real) -> @core.Real {
 ///|
 fn joint_axis_limit_values(
   limits : JointLimits3,
-  axis : Int,
+  axis : Int32,
 ) -> (@core.Real, @core.Real) {
   let limit = match axis {
     0 => limits.lin_x
@@ -420,7 +420,7 @@ fn joint_axis_limit_values(
 }
 
 ///|
-fn joint_axis_motor_value(motors : JointMotors3, axis : Int) -> JointMotor {
+fn joint_axis_motor_value(motors : JointMotors3, axis : Int32) -> JointMotor {
   match axis {
     0 => motors.lin_x
     1 => motors.lin_y
@@ -432,7 +432,10 @@ fn joint_axis_motor_value(motors : JointMotors3, axis : Int) -> JointMotor {
 }
 
 ///|
-fn MultibodyJoint::axis_coord(self : MultibodyJoint, axis : Int) -> @core.Real {
+fn MultibodyJoint::axis_coord(
+  self : MultibodyJoint,
+  axis : Int32,
+) -> @core.Real {
   match axis {
     0 => self.lin_coords3.x
     1 => self.lin_coords3.y
@@ -466,7 +469,7 @@ fn motor_target_params(
 ///|
 fn dvector_set_if_in_range(
   vec : DVector,
-  index : Int,
+  index : Int32,
   value : @core.Real,
 ) -> Unit {
   if index >= 0 && index < vec.len() {
@@ -477,7 +480,7 @@ fn dvector_set_if_in_range(
 ///|
 fn constraint_set_or_push(
   constraints : Array[GenericJointConstraint],
-  index : Int,
+  index : Int32,
   value : GenericJointConstraint,
 ) -> Unit {
   if index >= 0 && index < constraints.length() {
@@ -493,10 +496,10 @@ pub fn MultibodyJoint::velocity_constraints(
   params : IntegrationParameters,
   multibody : Multibody,
   link : MultibodyLink,
-  j_id : Int,
+  j_id : Int32,
   jacobians : DVector,
   constraints : Array[GenericJointConstraint],
-) -> Int {
+) -> Int32 {
   let locked = self.data.locked_axes().bits()
   let limit = self.data.limit_axes().bits()
   let motor = self.data.motor_axes().bits()
@@ -504,12 +507,12 @@ pub fn MultibodyJoint::velocity_constraints(
   let insert_base = constraints.length()
   let ndofs = multibody.ndofs()
   let mut curr_free_dof = 0
-  let linear_axes : Array[Int] = if multibody_joint_is_spatial(self) {
+  let linear_axes : Array[Int32] = if multibody_joint_is_spatial(self) {
     [0, 1, 2]
   } else {
     [0, 1]
   }
-  let angular_axes : Array[Int] = if multibody_joint_is_spatial(self) {
+  let angular_axes : Array[Int32] = if multibody_joint_is_spatial(self) {
     [3, 4, 5]
   } else {
     [5]
@@ -613,11 +616,11 @@ pub fn unit_joint_limit_constraint(
   link : MultibodyLink,
   limits : (@core.Real, @core.Real),
   curr_pos : @core.Real,
-  dof_id : Int,
-  j_id : Int,
+  dof_id : Int32,
+  j_id : Int32,
   jacobians : DVector,
   constraints : Array[GenericJointConstraint],
-  insert_at : Int,
+  insert_at : Int32,
 ) -> Unit {
   let ndofs = multibody.ndofs()
   if ndofs <= 0 {
@@ -687,11 +690,11 @@ pub fn unit_joint_motor_constraint(
   motor : JointMotor,
   curr_pos : @core.Real,
   limits : (@core.Real, @core.Real)?,
-  dof_id : Int,
-  j_id : Int,
+  dof_id : Int32,
+  j_id : Int32,
   jacobians : DVector,
   constraints : Array[GenericJointConstraint],
-  insert_at : Int,
+  insert_at : Int32,
 ) -> Unit {
   let ndofs = multibody.ndofs()
   if ndofs <= 0 {

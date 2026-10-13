@@ -14,7 +14,7 @@
 
 ///|
 pub struct CollisionDetectionCounters {
-  mut ncontact_pairs : Int
+  mut ncontact_pairs : Int32
   broad_phase_time : Timer
   final_broad_phase_time : Timer
   narrow_phase_time : Timer
@@ -43,14 +43,14 @@ pub fn CollisionDetectionCounters::reset(
 ///|
 pub fn CollisionDetectionCounters::ncontact_pairs(
   self : CollisionDetectionCounters,
-) -> Int {
+) -> Int32 {
   self.ncontact_pairs
 }
 
 ///|
 pub fn CollisionDetectionCounters::set_ncontact_pairs(
   self : CollisionDetectionCounters,
-  n : Int,
+  n : Int32,
 ) -> Unit {
   self.ncontact_pairs = n
 }

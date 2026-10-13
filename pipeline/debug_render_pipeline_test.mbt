@@ -56,8 +56,8 @@ test "debug-render output is deterministic (best-effort)" {
   )
   |> ignore
   fn render_snapshot() -> String {
-    let renderer = DebugRenderPipeline::default()
-    let backend = DebugRenderBackend::DebugRenderBackend()
+    let renderer = @pipeline.DebugRenderPipeline::default()
+    let backend = @pipeline.DebugRenderBackend::DebugRenderBackend()
     renderer.render(
       backend, bodies, colliders, impulse_joints, multibody_joints, narrow_phase,
     )
@@ -72,9 +72,9 @@ test "debug-render output is deterministic (best-effort)" {
 
 ///|
 test "debug-render backend polyline helpers and collider-aabb object are exported" {
-  let backend = DebugRenderBackend::DebugRenderBackend()
-  let color = DebugColor::DebugColor(0.0F, 0.0F, 0.0F, 1.0F)
-  let obj = DebugRenderObject::ColliderAabb(
+  let backend = @pipeline.DebugRenderBackend::DebugRenderBackend()
+  let color = @pipeline.DebugColor::DebugColor(0.0F, 0.0F, 0.0F, 1.0F)
+  let obj = @pipeline.DebugRenderObject::ColliderAabb(
     @collision.ColliderHandle::from_raw_parts(7, 0),
   )
   let vertices = [@core.Vec2(0.0F, 0.0F), Vec2(1.0F, 0.0F), Vec2(1.0F, 1.0F)]
@@ -83,7 +83,7 @@ test "debug-render backend polyline helpers and collider-aabb object are exporte
   backend.draw_line_strip(obj, vertices, color, true)
   inspect(backend.lines().length(), content="3")
 
-  let backend2 = DebugRenderBackend::DebugRenderBackend()
+  let backend2 = @pipeline.DebugRenderBackend::DebugRenderBackend()
   backend2.draw_polyline(obj, vertices, color, false)
   inspect(backend2.lines().length(), content="2")
 }

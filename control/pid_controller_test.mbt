@@ -14,13 +14,19 @@
 
 ///|
 test "pd_controller masks axes" {
-  let controller = PdController::PdController(
+  let controller = @control.PdController::PdController(
     1.0F,
     1.0F,
     @dynamics.AxesMask::lin_x().insert(@dynamics.AxesMask::ang_z()),
   )
-  let pose_errors = PdErrors::{ linear: Vec2(1.0F, 2.0F), angular: 3.0F }
-  let vel_errors = PdErrors::{ linear: Vec2(4.0F, 5.0F), angular: 6.0F }
+  let pose_errors = @control.PdErrors::{
+    linear: Vec2(1.0F, 2.0F),
+    angular: 3.0F,
+  }
+  let vel_errors = @control.PdErrors::{
+    linear: Vec2(4.0F, 5.0F),
+    angular: 6.0F,
+  }
   let correction = controller.correction(pose_errors, vel_errors)
   let linvel = correction.linvel()
   inspect(linvel.x == 5.0F, content="true")
@@ -30,14 +36,20 @@ test "pd_controller masks axes" {
 
 ///|
 test "pid_controller integrates errors" {
-  let controller = PidController::PidController(
+  let controller = @control.PidController::PidController(
     0.0F,
     1.0F,
     0.0F,
     @dynamics.AxesMask::all(),
   )
-  let pose_errors = PdErrors::{ linear: Vec2(1.0F, 0.0F), angular: 2.0F }
-  let vel_errors = PdErrors::{ linear: @core.Vec2::zero(), angular: 0.0F }
+  let pose_errors = @control.PdErrors::{
+    linear: Vec2(1.0F, 0.0F),
+    angular: 2.0F,
+  }
+  let vel_errors = @control.PdErrors::{
+    linear: @core.Vec2::zero(),
+    angular: 0.0F,
+  }
   let correction = controller.correction(0.5F, pose_errors, vel_errors)
   let linvel = correction.linvel()
   inspect(linvel.x == 0.5F, content="true")
@@ -53,7 +65,7 @@ test "pd_controller rigid_body_correction zero at target" {
     .linvel(Vec2(0.4F, -0.2F))
     .angvel(0.5F)
     .build()
-  let controller = PdController::PdController(
+  let controller = @control.PdController::PdController(
     10.0F,
     1.0F,
     @dynamics.AxesMask::all(),

@@ -112,7 +112,7 @@ pub fn CharacterAutostep::CharacterAutostep(
   min_width : CharacterLength,
 ) -> CharacterAutostep {
   // Rapier parity: include dynamic bodies by default.
-  { max_height, min_width, include_dynamic_bodies: true }
+  { max_height, min_width, include_dynamic_bodies: true, }
 }
 
 ///|
@@ -569,7 +569,7 @@ fn compute_hit_info(
   let is_wall = angle_with_floor >= controller.max_slope_climb_angle &&
     !is_ceiling
   let is_nonslip_slope = angle_with_floor <= controller.min_slope_slide_angle
-  { toi, is_wall, is_nonslip_slope }
+  { toi, is_wall, is_nonslip_slope, }
 }
 
 ///|

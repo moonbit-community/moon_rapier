@@ -27,13 +27,13 @@ pub fn DebugColor::DebugColor(
   l : @core.Real,
   a : @core.Real,
 ) -> DebugColor {
-  { h, s, l, a }
+  { h, s, l, a, }
 }
 
 ///|
 pub struct DebugRenderStyle {
-  subdivisions : Int
-  border_subdivisions : Int
+  subdivisions : Int32
+  border_subdivisions : Int32
   collider_dynamic_color : DebugColor
   collider_fixed_color : DebugColor
   collider_kinematic_color : DebugColor
@@ -76,33 +76,33 @@ pub fn DebugRenderStyle::default() -> DebugRenderStyle {
 
 ///|
 pub struct DebugRenderMode {
-  mut bits : Int
+  mut bits : Int32
 }
 
 ///|
-const DEBUG_RENDER_MODE_COLLIDER_SHAPES : Int = 1 << 0
+const DEBUG_RENDER_MODE_COLLIDER_SHAPES : Int32 = 1 << 0
 
 ///|
-const DEBUG_RENDER_MODE_RIGID_BODY_AXES : Int = 1 << 1
+const DEBUG_RENDER_MODE_RIGID_BODY_AXES : Int32 = 1 << 1
 
 ///|
-const DEBUG_RENDER_MODE_MULTIBODY_JOINTS : Int = 1 << 2
+const DEBUG_RENDER_MODE_MULTIBODY_JOINTS : Int32 = 1 << 2
 
 ///|
-const DEBUG_RENDER_MODE_IMPULSE_JOINTS : Int = 1 << 3
+const DEBUG_RENDER_MODE_IMPULSE_JOINTS : Int32 = 1 << 3
 
 ///|
-const DEBUG_RENDER_MODE_SOLVER_CONTACTS : Int = 1 << 4
+const DEBUG_RENDER_MODE_SOLVER_CONTACTS : Int32 = 1 << 4
 
 ///|
-const DEBUG_RENDER_MODE_CONTACTS : Int = 1 << 5
+const DEBUG_RENDER_MODE_CONTACTS : Int32 = 1 << 5
 
 ///|
-const DEBUG_RENDER_MODE_COLLIDER_AABBS : Int = 1 << 6
+const DEBUG_RENDER_MODE_COLLIDER_AABBS : Int32 = 1 << 6
 
 ///|
 pub fn DebugRenderMode::empty() -> DebugRenderMode {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
@@ -120,22 +120,22 @@ pub fn DebugRenderMode::all() -> DebugRenderMode {
 
 ///|
 pub fn DebugRenderMode::collider_shapes() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_COLLIDER_SHAPES }
+  { bits: DEBUG_RENDER_MODE_COLLIDER_SHAPES, }
 }
 
 ///|
 pub fn DebugRenderMode::rigid_body_axes() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_RIGID_BODY_AXES }
+  { bits: DEBUG_RENDER_MODE_RIGID_BODY_AXES, }
 }
 
 ///|
 pub fn DebugRenderMode::multibody_joints() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_MULTIBODY_JOINTS }
+  { bits: DEBUG_RENDER_MODE_MULTIBODY_JOINTS, }
 }
 
 ///|
 pub fn DebugRenderMode::impulse_joints() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_IMPULSE_JOINTS }
+  { bits: DEBUG_RENDER_MODE_IMPULSE_JOINTS, }
 }
 
 ///|
@@ -147,17 +147,17 @@ pub fn DebugRenderMode::joints() -> DebugRenderMode {
 
 ///|
 pub fn DebugRenderMode::solver_contacts() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_SOLVER_CONTACTS }
+  { bits: DEBUG_RENDER_MODE_SOLVER_CONTACTS, }
 }
 
 ///|
 pub fn DebugRenderMode::contacts() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_CONTACTS }
+  { bits: DEBUG_RENDER_MODE_CONTACTS, }
 }
 
 ///|
 pub fn DebugRenderMode::collider_aabbs() -> DebugRenderMode {
-  { bits: DEBUG_RENDER_MODE_COLLIDER_AABBS }
+  { bits: DEBUG_RENDER_MODE_COLLIDER_AABBS, }
 }
 
 ///|
@@ -189,7 +189,7 @@ pub fn DebugRenderMode::remove(
   self : DebugRenderMode,
   other : DebugRenderMode,
 ) -> DebugRenderMode {
-  self.bits = self.bits & Int::lnot(other.bits)
+  self.bits = self.bits & Int32::lnot(other.bits)
   self
 }
 
@@ -208,7 +208,7 @@ pub struct DebugRenderBackend {
 
 ///|
 pub fn DebugRenderBackend::DebugRenderBackend() -> DebugRenderBackend {
-  { lines: [] }
+  { lines: [], }
 }
 
 ///|
@@ -219,7 +219,7 @@ pub fn DebugRenderBackend::draw_line(
   b : @core.Vec2,
   color : DebugColor,
 ) -> Unit {
-  self.lines.push({ object, a, b, color })
+  self.lines.push({ object, a, b, color, })
 }
 
 ///|
@@ -366,7 +366,7 @@ pub fn DebugRenderPipeline::DebugRenderPipeline(
   style : DebugRenderStyle,
   mode : DebugRenderMode,
 ) -> DebugRenderPipeline {
-  { style, mode }
+  { style, mode, }
 }
 
 ///|

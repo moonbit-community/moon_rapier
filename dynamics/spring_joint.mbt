@@ -31,7 +31,7 @@ pub fn SpringJoint::SpringJoint(
     .set_coupled_axes(JointAxesMask::lin_axes())
     .set_motor_position(LinX, rest_length, stiffness, damping)
     .set_motor_model(LinX, ForceBased)
-  { data: joint }
+  { data: joint, }
 }
 
 ///|
@@ -106,7 +106,7 @@ pub fn SpringJointBuilder::SpringJointBuilder(
   stiffness : @core.Real,
   damping : @core.Real,
 ) -> SpringJointBuilder {
-  { inner: SpringJoint(rest_length, stiffness, damping) }
+  { inner: SpringJoint(rest_length, stiffness, damping), }
 }
 
 ///|

@@ -23,30 +23,30 @@ pub struct UserData128 {
 
 ///|
 pub fn UserData128::zero() -> UserData128 {
-  { hi: Default::default(), lo: Default::default() }
+  { hi: Default::default(), lo: Default::default(), }
 }
 
 ///|
 pub fn UserData128::from_parts(hi : UInt64, lo : UInt64) -> UserData128 {
-  { hi, lo }
+  { hi, lo, }
 }
 
 ///|
 pub fn UserData128::from_u64(value : UInt64) -> UserData128 {
-  { hi: Default::default(), lo: value }
+  { hi: Default::default(), lo: value, }
 }
 
 ///|
 /// Back-compat helper: interpret the given `Int` as an unsigned payload truncated to 64 bits,
 /// stored in the low 64 bits of this `UserData128`.
-pub fn UserData128::from_int_truncate(value : Int) -> UserData128 {
+pub fn UserData128::from_int_truncate(value : Int32) -> UserData128 {
   let lo = UInt64::extend_uint(value.reinterpret_as_uint())
   UserData128::from_u64(lo)
 }
 
 ///|
 /// Back-compat helper: return the low 64 bits truncated to `Int`.
-pub fn UserData128::to_int_truncate(self : UserData128) -> Int {
+pub fn UserData128::to_int_truncate(self : UserData128) -> Int32 {
   self.lo.to_int()
 }
 

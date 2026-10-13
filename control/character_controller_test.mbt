@@ -86,7 +86,7 @@ test "character controller climb" {
       EventHandler(),
     )
     let update_character_controller = fn(
-      controller : KinematicCharacterController,
+      controller : @control.KinematicCharacterController,
       handle : @dynamics.RigidBodyHandle,
     ) -> Bool {
       if bodies.get(handle) is Some(character_body) {
@@ -114,10 +114,10 @@ test "character controller climb" {
       }
       return false
     }
-    let controller_cannot = KinematicCharacterController::KinematicCharacterController().with_max_slope_climb_angle(
+    let controller_cannot = @control.KinematicCharacterController::KinematicCharacterController().with_max_slope_climb_angle(
       impossible_slope_angle - 0.001F,
     )
-    let controller_can = KinematicCharacterController::KinematicCharacterController().with_max_slope_climb_angle(
+    let controller_can = @control.KinematicCharacterController::KinematicCharacterController().with_max_slope_climb_angle(
       impossible_slope_angle + 0.001F,
     )
     inspect(
@@ -135,7 +135,7 @@ test "character controller climb" {
 
 ///|
 test "character controller utilities: CharacterLength map_* and defaults" {
-  let a = CharacterLength::absolute(1.0F)
+  let a = @control.CharacterLength::absolute(1.0F)
   let a2 = a.map_absolute(fn(v) { v + 1.0F })
   if a2 is Absolute(v) {
     inspect(@core.abs(v - 2.0F) < 1.0e-6F, content="true")
@@ -143,7 +143,7 @@ test "character controller utilities: CharacterLength map_* and defaults" {
     inspect(false, content="true")
   }
   // map_absolute should not affect Relative.
-  let r = CharacterLength::relative(0.5F)
+  let r = @control.CharacterLength::relative(0.5F)
   let r2 = r.map_absolute(fn(v) { v + 1.0F })
   if r2 is Relative(v) {
     inspect(@core.abs(v - 0.5F) < 1.0e-6F, content="true")
@@ -156,7 +156,7 @@ test "character controller utilities: CharacterLength map_* and defaults" {
   } else {
     inspect(false, content="true")
   }
-  let auto = CharacterAutostep::default()
+  let auto = @control.CharacterAutostep::default()
   if auto.max_height() is Relative(v) {
     inspect(@core.abs(v - 0.25F) < 1.0e-6F, content="true")
   } else {
@@ -168,7 +168,7 @@ test "character controller utilities: CharacterLength map_* and defaults" {
     inspect(false, content="true")
   }
   inspect(auto.include_dynamic_bodies(), content="true")
-  let c = KinematicCharacterController::default()
+  let c = @control.KinematicCharacterController::default()
   inspect(
     @core.abs(c.max_slope_climb_angle - 0.785398163F) < 1.0e-6F,
     content="true",
@@ -237,7 +237,7 @@ test "character controller moving platform keeps grounded and follows platform" 
   let character_collider = @collision.ColliderBuilder::ball(0.5F).build()
   let character_shape = character_collider.shape()
   colliders.insert_with_parent(character_collider, character, bodies) |> ignore
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let mut last_grounded = true
   for _ in 0..<240 {
     // Move platform horizontally.
@@ -356,11 +356,11 @@ test "character controller autostep climbs stairs" {
   colliders.insert_with_parent(character_collider, character, bodies) |> ignore
   // The stairs in this scenario have a relatively large step height, so use
   // an explicit autostep configuration.
-  let autostep = CharacterAutostep::CharacterAutostep(
-    CharacterLength::absolute(0.25F),
-    CharacterLength::absolute(0.2F),
+  let autostep = @control.CharacterAutostep::CharacterAutostep(
+    @control.CharacterLength::absolute(0.25F),
+    @control.CharacterLength::absolute(0.2F),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController().with_autostep(
+  let controller = @control.KinematicCharacterController::KinematicCharacterController().with_autostep(
     Some(autostep),
   )
   let mut max_y = -1.0F
@@ -460,8 +460,8 @@ test "character controller reports sliding on steep slope but not on flat ground
   let character_collider = @collision.ColliderBuilder::ball(0.5F).build()
   let character_shape = character_collider.shape()
   colliders.insert_with_parent(character_collider, character, bodies) |> ignore
-  let controller_flat = KinematicCharacterController::KinematicCharacterController()
-  let controller_steep = KinematicCharacterController::KinematicCharacterController()
+  let controller_flat = @control.KinematicCharacterController::KinematicCharacterController()
+  let controller_steep = @control.KinematicCharacterController::KinematicCharacterController()
     .with_min_slope_slide_angle(0.1F)
     .with_max_slope_climb_angle(1.2F)
 
@@ -561,7 +561,7 @@ test "character controller slides along wall" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(-2.0F, 0.0F))
   let desired = @core.Vec2(2.0F, 1.0F)
@@ -595,8 +595,8 @@ test "character controller collision event includes hit info" {
     colliders,
     QueryFilter(),
   )
-  let collisions : Array[CharacterCollision] = []
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let collisions : Array[@control.CharacterCollision] = []
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(-2.0F, 0.0F))
   let movement = controller.move_shape(
@@ -642,7 +642,7 @@ test "character controller follows kinematic platform velocity" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(0.0F, 0.5F))
   let movement = controller.move_shape(
@@ -682,7 +682,7 @@ test "character controller autostep moves past obstacle" {
   let shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(-2.0F, 0.5F))
   let desired = @core.Vec2(4.0F, 0.0F)
-  let controller_no_step = KinematicCharacterController::KinematicCharacterController()
+  let controller_no_step = @control.KinematicCharacterController::KinematicCharacterController()
   let no_step = controller_no_step.move_shape(
     0.016F,
     query_pipeline,
@@ -694,11 +694,11 @@ test "character controller autostep moves past obstacle" {
     fn(_collision) {  },
   )
   inspect(no_step.translation().x < 2.0F, content="true")
-  let controller_step = KinematicCharacterController::KinematicCharacterController().with_autostep(
+  let controller_step = @control.KinematicCharacterController::KinematicCharacterController().with_autostep(
     Some(
       CharacterAutostep(
-        CharacterLength::absolute(0.6F),
-        CharacterLength::absolute(2.2F),
+        @control.CharacterLength::absolute(0.6F),
+        @control.CharacterLength::absolute(2.2F),
       ),
     ),
   )
@@ -736,8 +736,8 @@ test "character controller ground detection" {
   let collider = @collision.ColliderBuilder::cuboid(ground_size, ground_height).build()
   colliders.insert_with_parent(collider, floor_handle, bodies) |> ignore
   let integration_parameters = @dynamics.IntegrationParameters::default()
-  let character_controller_snap = KinematicCharacterController::KinematicCharacterController().with_snap_to_ground(
-    Some(CharacterLength::relative(0.2F)),
+  let character_controller_snap = @control.KinematicCharacterController::KinematicCharacterController().with_snap_to_ground(
+    Some(@control.CharacterLength::relative(0.2F)),
   )
   let character_body_snap = @dynamics.RigidBodyBuilder::kinematic_position_based()
     .additional_mass(1.0F)
@@ -747,7 +747,7 @@ test "character controller ground detection" {
   let collider = @collision.ColliderBuilder::ball(0.5F).build()
   colliders.insert_with_parent(collider, character_handle_snap, bodies)
   |> ignore
-  let character_controller_no_snap = KinematicCharacterController::KinematicCharacterController().with_snap_to_ground(
+  let character_controller_no_snap = @control.KinematicCharacterController::KinematicCharacterController().with_snap_to_ground(
     None,
   )
   let character_body_no_snap = @dynamics.RigidBodyBuilder::kinematic_position_based()
@@ -775,7 +775,7 @@ test "character controller ground detection" {
       EventHandler(),
     )
     let update_character_controller = fn(
-      controller : KinematicCharacterController,
+      controller : @control.KinematicCharacterController,
       handle : @dynamics.RigidBodyHandle,
     ) -> Bool {
       if bodies.get(handle) is Some(character_body) {
@@ -835,7 +835,7 @@ test "character controller grounded on rotated cuboid (cuboid character)" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::Cuboid(0.5F, 0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(0.0F, 2.0F))
   let movement = controller.move_shape(
@@ -868,7 +868,7 @@ test "character controller grounded on rotated cuboid (capsule character)" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::CapsuleY(0.5F, 0.3F)
   let start_pos = @core.Isometry2::from_translation(Vec2(0.0F, 2.0F))
   let movement = controller.move_shape(
@@ -902,7 +902,7 @@ test "character controller grounded on segment" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(0.0F, 2.0F))
   let movement = controller.move_shape(
@@ -974,11 +974,11 @@ test "character controller transfers impulse to dynamic body" {
     colliders,
     QueryFilter(),
   )
-  let controller = KinematicCharacterController::KinematicCharacterController()
+  let controller = @control.KinematicCharacterController::KinematicCharacterController()
   let dt = 0.016F
   let character_shape = @collision.Shape::Ball(0.5F)
   let start_pos = @core.Isometry2::from_translation(Vec2(-2.0F, 0.5F))
-  let collisions : Array[CharacterCollision] = []
+  let collisions : Array[@control.CharacterCollision] = []
   let movement = controller.move_shape(
     dt,
     query_pipeline,

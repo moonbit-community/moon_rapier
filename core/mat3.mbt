@@ -38,7 +38,7 @@ pub fn Mat3::Mat3(
   m21 : Real,
   m22 : Real,
 ) -> Mat3 {
-  { m00, m01, m02, m10, m11, m12, m20, m21, m22 }
+  { m00, m01, m02, m10, m11, m12, m20, m21, m22, }
 }
 
 ///|
@@ -190,7 +190,7 @@ pub fn SdpMat3::SdpMat3(
   m23 : Real,
   m33 : Real,
 ) -> SdpMat3 {
-  { m11, m12, m13, m22, m23, m33 }
+  { m11, m12, m13, m22, m23, m33, }
 }
 
 ///|
@@ -267,7 +267,7 @@ pub fn MassProperties3::MassProperties3(
 ) -> MassProperties3 {
   let inv_mass = if mass <= EPSILON { 0.0F } else { 1.0F / mass }
   let inv_inertia = inertia.inverse()
-  { mass, inv_mass, inertia, inv_inertia, center_of_mass }
+  { mass, inv_mass, inertia, inv_inertia, center_of_mass, }
 }
 
 ///|

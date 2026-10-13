@@ -13,26 +13,26 @@
 // limitations under the License.
 
 ///|
-const ACTIVE_EVENTS_COLLISION_EVENTS : Int = 1 << 0
+const ACTIVE_EVENTS_COLLISION_EVENTS : Int32 = 1 << 0
 
 ///|
-const ACTIVE_EVENTS_CONTACT_FORCE_EVENTS : Int = 1 << 1
+const ACTIVE_EVENTS_CONTACT_FORCE_EVENTS : Int32 = 1 << 1
 
 ///|
-const ACTIVE_EVENTS_INTERSECTION_EVENTS : Int = 1 << 2
+const ACTIVE_EVENTS_INTERSECTION_EVENTS : Int32 = 1 << 2
 
 ///|
 pub struct ActiveEvents {
-  mut bits : Int
+  mut bits : Int32
 }
 
 ///|
-fn ActiveEvents::ActiveEvents(bits : Int) -> ActiveEvents {
+fn ActiveEvents::ActiveEvents(bits : Int32) -> ActiveEvents {
   { bits, }
 }
 
 ///|
-fn active_events_all_bits() -> Int {
+fn active_events_all_bits() -> Int32 {
   ACTIVE_EVENTS_COLLISION_EVENTS |
   ACTIVE_EVENTS_CONTACT_FORCE_EVENTS |
   ACTIVE_EVENTS_INTERSECTION_EVENTS
@@ -80,7 +80,7 @@ pub fn ActiveEvents::union(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  { bits: self.bits | other.bits }
+  { bits: self.bits | other.bits, }
 }
 
 ///|
@@ -88,7 +88,7 @@ pub fn ActiveEvents::difference(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  { bits: self.bits & Int::lnot(other.bits) }
+  { bits: self.bits & Int32::lnot(other.bits), }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ActiveEvents::symmetric_difference(
   self : ActiveEvents,
   other : ActiveEvents,
 ) -> ActiveEvents {
-  { bits: self.bits ^ other.bits }
+  { bits: self.bits ^ other.bits, }
 }
 
 ///|
@@ -109,7 +109,7 @@ pub fn ActiveEvents::toggle(
 
 ///|
 pub fn ActiveEvents::complement(self : ActiveEvents) -> ActiveEvents {
-  { bits: active_events_all_bits() & Int::lnot(self.bits) }
+  { bits: active_events_all_bits() & Int32::lnot(self.bits), }
 }
 
 ///|
@@ -118,8 +118,8 @@ pub fn ActiveEvents::is_all(self : ActiveEvents) -> Bool {
 }
 
 ///|
-pub fn ActiveEvents::from_bits(bits : Int) -> ActiveEvents? {
-  if (bits & Int::lnot(active_events_all_bits())) == 0 {
+pub fn ActiveEvents::from_bits(bits : Int32) -> ActiveEvents? {
+  if (bits & Int32::lnot(active_events_all_bits())) == 0 {
     Some({ bits, })
   } else {
     None
@@ -127,12 +127,12 @@ pub fn ActiveEvents::from_bits(bits : Int) -> ActiveEvents? {
 }
 
 ///|
-pub fn ActiveEvents::from_bits_truncate(bits : Int) -> ActiveEvents {
-  { bits: bits & active_events_all_bits() }
+pub fn ActiveEvents::from_bits_truncate(bits : Int32) -> ActiveEvents {
+  { bits: bits & active_events_all_bits(), }
 }
 
 ///|
-pub fn ActiveEvents::from_bits_retain(bits : Int) -> ActiveEvents {
+pub fn ActiveEvents::from_bits_retain(bits : Int32) -> ActiveEvents {
   { bits, }
 }
 
@@ -165,18 +165,20 @@ pub fn ActiveEvents::from_name(name : String) -> ActiveEvents? {
 }
 
 ///|
-const COLLISION_EVENT_FLAG_SENSOR : Int = 1 << 0
+const COLLISION_EVENT_FLAG_SENSOR : Int32 = 1 << 0
 
 ///|
-const COLLISION_EVENT_FLAG_REMOVED : Int = 1 << 1
+const COLLISION_EVENT_FLAG_REMOVED : Int32 = 1 << 1
 
 ///|
 pub struct CollisionEventFlags {
-  mut bits : Int
+  mut bits : Int32
 }
 
 ///|
-fn CollisionEventFlags::CollisionEventFlags(bits : Int) -> CollisionEventFlags {
+fn CollisionEventFlags::CollisionEventFlags(
+  bits : Int32,
+) -> CollisionEventFlags {
   { bits, }
 }
 
@@ -273,7 +275,7 @@ pub fn IntersectionEvent::IntersectionEvent(
   collider2 : ColliderHandle,
   intersecting : Bool,
 ) -> IntersectionEvent {
-  { collider1, collider2, intersecting }
+  { collider1, collider2, intersecting, }
 }
 
 ///|

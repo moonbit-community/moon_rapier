@@ -23,7 +23,7 @@ pub struct CollisionPipeline3 {
 
 ///|
 pub fn CollisionPipeline3::CollisionPipeline3() -> CollisionPipeline3 {
-  { inner: CollisionPipeline() }
+  { inner: CollisionPipeline(), }
 }
 
 ///|

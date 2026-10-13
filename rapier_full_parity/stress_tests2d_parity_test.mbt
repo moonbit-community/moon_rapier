@@ -440,11 +440,11 @@ test "examples2d/stress_tests/joint_prismatic2.rs parity" {
 
 ///|
 test "examples2d/stress_tests/convex_polygons2.rs parity" {
-  fn rng_next(seed : Int) -> Int {
+  fn rng_next(seed : Int32) -> Int32 {
     (seed * 1103515245 + 12345) & 0x7fffffff
   }
 
-  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+  fn rng_float01(seed : Int32) -> (@core.Real, Int32) {
     let next = rng_next(seed)
     let value = Float::from_double(next.to_double() / 2147483647.0)
     (value, next)

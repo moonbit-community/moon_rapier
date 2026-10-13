@@ -14,20 +14,20 @@
 
 ///|
 pub struct SolverFlags {
-  value : Int
+  value : Int32
 }
 
 ///|
-const SOLVER_FLAGS_COMPUTE_IMPULSES : Int = 1 << 0
+const SOLVER_FLAGS_COMPUTE_IMPULSES : Int32 = 1 << 0
 
 ///|
 pub fn SolverFlags::empty() -> SolverFlags {
-  { value: 0 }
+  { value: 0, }
 }
 
 ///|
 pub fn SolverFlags::compute_impulses() -> SolverFlags {
-  { value: SOLVER_FLAGS_COMPUTE_IMPULSES }
+  { value: SOLVER_FLAGS_COMPUTE_IMPULSES, }
 }
 
 ///|
@@ -45,7 +45,7 @@ pub fn SolverFlags::insert(
   self : SolverFlags,
   other : SolverFlags,
 ) -> SolverFlags {
-  { value: self.value | other.value }
+  { value: self.value | other.value, }
 }
 
 ///|
@@ -53,7 +53,7 @@ pub fn SolverFlags::remove(
   self : SolverFlags,
   other : SolverFlags,
 ) -> SolverFlags {
-  { value: self.value & Int::lnot(other.value) }
+  { value: self.value & Int32::lnot(other.value), }
 }
 
 ///|

@@ -37,7 +37,7 @@ fn IslandSolver::IslandSolver() -> IslandSolver {
 ///|
 fn IslandSolver::init_and_solve(
   self : IslandSolver,
-  island_id : Int,
+  island_id : Int32,
   base_parameters : IntegrationParameters,
   islands : @dynamics.IslandManager,
   bodies : @dynamics.RigidBodySet,
@@ -150,9 +150,9 @@ fn solve_joints_and_contacts_interleaved3(
   impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   solver_bodies : SolverBodies,
-  island_stamps : Array[Int]?,
-  stamp : Int,
-  additional_solver_iterations : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
+  additional_solver_iterations : Int32,
   dt : @core.Real,
   event_handler : EventHandler,
   contact_cache_in : Array[ContactImpulseCacheEntry],

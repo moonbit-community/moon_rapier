@@ -106,7 +106,7 @@ pub fn CollisionDetectionCounters::reset(
 #declaration_only
 pub fn CollisionDetectionCounters::ncontact_pairs(
   self : CollisionDetectionCounters,
-) -> Int {
+) -> Int32 {
   ...
 }
 
@@ -114,7 +114,7 @@ pub fn CollisionDetectionCounters::ncontact_pairs(
 #declaration_only
 pub fn CollisionDetectionCounters::set_ncontact_pairs(
   self : CollisionDetectionCounters,
-  n : Int,
+  n : Int32,
 ) -> Unit {
   ...
 }
@@ -145,25 +145,28 @@ pub fn SolverCounters::reset(self : SolverCounters) -> Unit {
 
 ///|
 #declaration_only
-pub fn SolverCounters::nconstraints(self : SolverCounters) -> Int {
+pub fn SolverCounters::nconstraints(self : SolverCounters) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn SolverCounters::set_nconstraints(self : SolverCounters, n : Int) -> Unit {
+pub fn SolverCounters::set_nconstraints(
+  self : SolverCounters,
+  n : Int32,
+) -> Unit {
   ...
 }
 
 ///|
 #declaration_only
-pub fn SolverCounters::ncontacts(self : SolverCounters) -> Int {
+pub fn SolverCounters::ncontacts(self : SolverCounters) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn SolverCounters::set_ncontacts(self : SolverCounters, n : Int) -> Unit {
+pub fn SolverCounters::set_ncontacts(self : SolverCounters, n : Int32) -> Unit {
   ...
 }
 
@@ -191,13 +194,13 @@ pub fn CCDCounters::reset(self : CCDCounters) -> Unit {
 
 ///|
 #declaration_only
-pub fn CCDCounters::num_substeps(self : CCDCounters) -> Int {
+pub fn CCDCounters::num_substeps(self : CCDCounters) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn CCDCounters::set_num_substeps(self : CCDCounters, n : Int) -> Unit {
+pub fn CCDCounters::set_num_substeps(self : CCDCounters, n : Int32) -> Unit {
   ...
 }
 
@@ -285,19 +288,19 @@ pub fn Counters::custom_time_ms(self : Counters) -> Double {
 
 ///|
 #declaration_only
-pub fn Counters::set_nconstraints(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_nconstraints(self : Counters, n : Int32) -> Unit {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Counters::set_ncontacts(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_ncontacts(self : Counters, n : Int32) -> Unit {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Counters::set_ncontact_pairs(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_ncontact_pairs(self : Counters, n : Int32) -> Unit {
   ...
 }
 

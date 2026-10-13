@@ -15,7 +15,7 @@
 ///|
 test "rigid_body3d integrates gravity (semi-implicit Euler)" {
   let gravity = @core.Vec3(0.0F, -9.81F, 0.0F)
-  let rb = RigidBodyBuilder3D::dynamic()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic()
     .translation(Vec3(0.0F, 0.0F, 0.0F))
     .linvel(@core.Vec3::zero())
     .build()
@@ -26,7 +26,7 @@ test "rigid_body3d integrates gravity (semi-implicit Euler)" {
 
 ///|
 test "rigid_body3d integrates angular velocity into quaternion" {
-  let rb = RigidBodyBuilder3D::dynamic()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic()
     .rotation(@core.Quat::identity())
     .angvel(Vec3(0.0F, @core.pi(), 0.0F))
     .build()
@@ -40,10 +40,10 @@ test "rigid_body3d integrates angular velocity into quaternion" {
 
 ///|
 test "rigid_body3d dominance and locked axes APIs" {
-  let locked_axes = LockedAxes::translation_locked_x().insert(
-    LockedAxes::rotation_locked_y(),
+  let locked_axes = @dynamics.LockedAxes::translation_locked_x().insert(
+    @dynamics.LockedAxes::rotation_locked_y(),
   )
-  let rb = RigidBodyBuilder3D::dynamic()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic()
     .dominance_group(7)
     .locked_axes(locked_axes)
     .linvel(Vec3(1.0F, 2.0F, 3.0F))
@@ -52,11 +52,11 @@ test "rigid_body3d dominance and locked axes APIs" {
   inspect(rb.dominance_group() == 7, content="true")
   inspect(rb.effective_dominance_group() == 7, content="true")
   inspect(
-    rb.locked_axes().contains(LockedAxes::translation_locked_x()),
+    rb.locked_axes().contains(@dynamics.LockedAxes::translation_locked_x()),
     content="true",
   )
   inspect(
-    rb.locked_axes().contains(LockedAxes::rotation_locked_y()),
+    rb.locked_axes().contains(@dynamics.LockedAxes::rotation_locked_y()),
     content="true",
   )
   inspect(rb.linvel().x == 0.0F, content="true")
@@ -77,13 +77,13 @@ test "rigid_body3d dominance and locked axes APIs" {
   rb.set_dominance_group(2)
   inspect(rb.dominance_group() == 2, content="true")
 
-  let fixed = RigidBodyBuilder3D::fixed().dominance_group(5).build()
+  let fixed = @dynamics.RigidBodyBuilder3D::fixed().dominance_group(5).build()
   inspect(fixed.effective_dominance_group() == 128, content="true")
 }
 
 ///|
 test "rigid_body3d builder additional mass updates mass properties" {
-  let rb = RigidBodyBuilder3D::dynamic().additional_mass(3.5F).build()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic().additional_mass(3.5F).build()
   inspect(@core.abs(rb.mass_properties().mass - 3.5F) < 1.0e-6F, content="true")
   inspect(
     @core.abs(rb.mass_properties().inv_mass - 1.0F / 3.5F) < 1.0e-6F,
@@ -93,7 +93,9 @@ test "rigid_body3d builder additional mass updates mass properties" {
 
 ///|
 test "rigid_body3d additional solver iterations builder and setter" {
-  let rb = RigidBodyBuilder3D::dynamic().additional_solver_iterations(3).build()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic()
+    .additional_solver_iterations(3)
+    .build()
   inspect(rb.additional_solver_iterations() == 3, content="true")
   rb.set_additional_solver_iterations(7)
   inspect(rb.additional_solver_iterations() == 7, content="true")
@@ -110,7 +112,7 @@ test "rigid_body3d builder pose aliases and sleeping flag" {
     @core.SdpMat3::from_diagonal(Vec3(4.0F, 5.0F, 6.0F)),
     Vec3(0.1F, 0.0F, -0.2F),
   )
-  let rb = RigidBodyBuilder3D::new_kinematic_position_based()
+  let rb = @dynamics.RigidBodyBuilder3D::new_kinematic_position_based()
     .pose(pose)
     .additional_mass_properties(props)
     .sleeping(true)
@@ -126,10 +128,10 @@ test "rigid_body3d builder pose aliases and sleeping flag" {
   inspect(rb.is_sleeping(), content="true")
   inspect(@core.abs(rb.mass_properties().mass - 2.0F) < 1.0e-6F, content="true")
 
-  let fixed = RigidBodyBuilder3D::new_static().build()
+  let fixed = @dynamics.RigidBodyBuilder3D::new_static().build()
   inspect(fixed.body_type() is Fixed, content="true")
 
-  let vel_based = RigidBodyBuilder3D::new_kinematic_velocity_based()
+  let vel_based = @dynamics.RigidBodyBuilder3D::new_kinematic_velocity_based()
     .position(@core.Isometry3::from_translation(Vec3(0.0F, 1.0F, 2.0F)))
     .build()
   inspect(
@@ -141,7 +143,7 @@ test "rigid_body3d builder pose aliases and sleeping flag" {
 ///|
 test "rigid_body_builder3 aliases the real dim3 builder" {
   let rotation = @core.rotation_from_scaled_axis(Vec3(0.2F, 0.3F, 0.4F))
-  let rb = RigidBodyBuilder3::dynamic()
+  let rb = @dynamics.RigidBodyBuilder3::dynamic()
     .translation(Vec3(1.0F, 2.0F, 3.0F))
     .rotation(rotation)
     .angvel(Vec3(4.0F, 5.0F, 6.0F))

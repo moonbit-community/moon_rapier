@@ -43,9 +43,18 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
   let nf = @collision.NarrowPhase3D()
   nf.update(bp.pairs(), bodies, colliders, 0.0F, 1.0F / 60.0F)
   let params = @dynamics.IntegrationParameters::default().set_dt(1.0F / 60.0F)
-  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
-  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
+  let cache0 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  @pipeline.solve_contacts_3d(
+    params,
+    bodies,
+    colliders,
+    nf,
+    cache0,
+    cache1,
+    None,
+    None,
+  )
 
   // Ensure the relative normal velocity is no longer strongly negative.
   if nf.contact_pair(c1, c2) is Some(pair) && pair.manifolds_len() == 1 {
@@ -82,8 +91,17 @@ test "contact solver 3d resolves approaching velocity (ball-ball)" {
   } else {
     @core.Vec3::zero()
   }
-  let cache2 = ContactSolverCache3D::ContactSolverCache3D()
-  solve_contacts_3d(params, bodies, colliders, nf, cache1, cache2, None, None)
+  let cache2 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  @pipeline.solve_contacts_3d(
+    params,
+    bodies,
+    colliders,
+    nf,
+    cache1,
+    cache2,
+    None,
+    None,
+  )
   let v1_after = if bodies.get(b1) is Some(rb1) {
     rb1.linvel()
   } else {
@@ -131,9 +149,18 @@ test "contact solver 3d restitution bounces (ball-ball)" {
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
-  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
+  let cache0 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  @pipeline.solve_contacts_3d(
+    params,
+    bodies,
+    colliders,
+    nf,
+    cache0,
+    cache1,
+    None,
+    None,
+  )
   if nf.contact_pair(c1, c2) is Some(pair) && pair.manifolds_len() == 1 {
     let cp = pair.manifolds()[0]
     if bodies.get(b1) is Some(rb1) && bodies.get(b2) is Some(rb2) {
@@ -192,9 +219,18 @@ test "contact solver 3d friction reduces tangential velocity (ball-ground)" {
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
-  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
+  let cache0 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  @pipeline.solve_contacts_3d(
+    params,
+    bodies,
+    colliders,
+    nf,
+    cache0,
+    cache1,
+    None,
+    None,
+  )
   if bodies.get(ball) is Some(rb) {
     inspect(rb.linvel().x < 0.2F, content="true")
   } else {
@@ -243,9 +279,18 @@ test "contact solver 3d uses combine rules for friction" {
   let params = @dynamics.IntegrationParameters::default()
     .set_dt(1.0F / 60.0F)
     .set_num_solver_iterations(20)
-  let cache0 = ContactSolverCache3D::ContactSolverCache3D()
-  let cache1 = ContactSolverCache3D::ContactSolverCache3D()
-  solve_contacts_3d(params, bodies, colliders, nf, cache0, cache1, None, None)
+  let cache0 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  let cache1 = @pipeline.ContactSolverCache3D::ContactSolverCache3D()
+  @pipeline.solve_contacts_3d(
+    params,
+    bodies,
+    colliders,
+    nf,
+    cache0,
+    cache1,
+    None,
+    None,
+  )
   if bodies.get(ball) is Some(rb) {
     inspect(rb.linvel().x < 0.2F, content="true")
   } else {

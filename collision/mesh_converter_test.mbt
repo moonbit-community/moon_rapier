@@ -20,7 +20,7 @@ test "mesh converter aabb returns cuboid + translation pose" {
     Vec2(2.0F, 4.0F),
     Vec2(0.0F, 4.0F),
   ]
-  let result = MeshConverter::aabb().apply(vertices, [])
+  let result = @collision.MeshConverter::aabb().apply(vertices, [])
   if result is Ok((shape, pose)) {
     if shape.as_shape() is Cuboid(hx, hy) {
       inspect(@core.abs(hx - 1.0F) < 1.0e-6F, content="true")
@@ -44,7 +44,7 @@ test "mesh converter convex hull returns convex polygon shape" {
     Vec2(0.0F, 1.0F),
     Vec2(0.1F, 0.1F),
   ]
-  let result = MeshConverter::convex_hull().apply(vertices, [])
+  let result = @collision.MeshConverter::convex_hull().apply(vertices, [])
   if result is Ok((shape, _)) {
     if shape.as_shape() is ConvexPolygon(hull) {
       inspect(hull.length() >= 3, content="true")
@@ -67,7 +67,7 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
     Vec2(0.0F, 2.0F),
   ]
   let indices = [(0, 1, 3), (1, 2, 3), (0, 3, 4)]
-  let hull = MeshConverter::convex_hull().apply(vertices, indices)
+  let hull = @collision.MeshConverter::convex_hull().apply(vertices, indices)
   if hull is Ok((shape, _)) {
     if shape.as_shape() is ConvexPolygon(h) {
       inspect(h.length() >= 3, content="true")
@@ -77,10 +77,10 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
   } else {
     inspect(false, content="true")
   }
-  let params_one = VHACDParameters::default().set_max_convex_hulls(1)
-  let decomp_one = MeshConverter::ConvexDecompositionWithParams(params_one).apply(
-    vertices, indices,
-  )
+  let params_one = @collision.VHACDParameters::default().set_max_convex_hulls(1)
+  let decomp_one = @collision.MeshConverter::ConvexDecompositionWithParams(
+    params_one,
+  ).apply(vertices, indices)
   if decomp_one is Ok((shape, _)) {
     // With a budget of 1 hull, we fall back to a single convex hull.
     if shape.as_shape() is ConvexPolygon(_) {
@@ -91,10 +91,12 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
   } else {
     inspect(false, content="true")
   }
-  let params_many = VHACDParameters::default().set_max_convex_hulls(16)
-  let decomp_many = MeshConverter::ConvexDecompositionWithParams(params_many).apply(
-    vertices, indices,
+  let params_many = @collision.VHACDParameters::default().set_max_convex_hulls(
+    16,
   )
+  let decomp_many = @collision.MeshConverter::ConvexDecompositionWithParams(
+    params_many,
+  ).apply(vertices, indices)
   if decomp_many is Ok((shape, _)) {
     // With a larger budget, we should get a compound of multiple convex pieces (not a single hull).
     if shape.as_shape() is Compound(parts) {
@@ -109,7 +111,7 @@ test "mesh converter convex decomposition honors max_convex_hulls" {
 
 ///|
 test "vhacd parameters expose upstream-equivalent configuration surface" {
-  let defaults = VHACDParameters::default()
+  let defaults = @collision.VHACDParameters::default()
   inspect(@core.abs(defaults.concavity() - 0.01F) < 1.0e-6F, content="true")
   inspect(@core.abs(defaults.alpha() - 0.05F) < 1.0e-6F, content="true")
   inspect(@core.abs(defaults.beta() - 0.05F) < 1.0e-6F, content="true")

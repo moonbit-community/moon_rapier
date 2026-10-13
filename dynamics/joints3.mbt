@@ -15,14 +15,14 @@
 ///|
 /// 3D-flavored impulse joint set.
 struct ImpulseJointSet3 {
-  rb_graph_ids : Array[Int]
-  rb_graph_generations : Array[Int]
+  rb_graph_ids : Array[Int32]
+  rb_graph_generations : Array[Int32]
   graph_nodes : Array[RigidBodyHandle]
   graph_edges : Array[JointGraphEdge]
-  adjacency : Array[Array[Int]]
-  joint_generations : Array[Int]
-  joint_edge_ids : Array[Int]
-  free_handles : Array[Int]
+  adjacency : Array[Array[Int32]]
+  joint_generations : Array[Int32]
+  joint_edge_ids : Array[Int32]
+  free_handles : Array[Int32]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -86,7 +86,7 @@ pub fn ImpulseJointSet3::take_to_join(
 ///|
 fn ImpulseJointSet3::ensure_body_mapping_capacity(
   self : ImpulseJointSet3,
-  id : Int,
+  id : Int32,
 ) -> Unit {
   if id < 0 {
     return
@@ -103,7 +103,7 @@ fn ImpulseJointSet3::ensure_body_mapping_capacity(
 fn ImpulseJointSet3::graph_node_for(
   self : ImpulseJointSet3,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if handle.id < 0 || handle.id >= self.rb_graph_ids.length() {
     return None
   }
@@ -124,7 +124,7 @@ fn ImpulseJointSet3::graph_node_for(
 fn ImpulseJointSet3::ensure_graph_node(
   self : ImpulseJointSet3,
   handle : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   self.ensure_body_mapping_capacity(handle.id)
   if self.graph_node_for(handle) is Some(node_id) {
     node_id
@@ -171,7 +171,7 @@ fn ImpulseJointSet3::is_handle_valid(
 ///|
 fn ImpulseJointSet3::remove_edge(
   self : ImpulseJointSet3,
-  edge_id : Int,
+  edge_id : Int32,
 ) -> ImpulseJoint? {
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
@@ -201,7 +201,7 @@ fn ImpulseJointSet3::remove_edge(
 ///|
 fn ImpulseJointSet3::remove_node(
   self : ImpulseJointSet3,
-  node_id : Int,
+  node_id : Int32,
 ) -> Unit {
   if node_id < 0 || node_id >= self.graph_nodes.length() {
     return
@@ -280,7 +280,7 @@ pub fn ImpulseJointSet3::insert(
     handle,
   }
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push({ node1, node2, joint: impulse_joint })
+  self.graph_edges.push({ node1, node2, joint: impulse_joint, })
   self.adjacency[node1].push(edge_id)
   if node2 != node1 {
     self.adjacency[node2].push(edge_id)
@@ -295,7 +295,7 @@ pub fn ImpulseJointSet3::insert(
 }
 
 ///|
-pub fn ImpulseJointSet3::len(self : ImpulseJointSet3) -> Int {
+pub fn ImpulseJointSet3::len(self : ImpulseJointSet3) -> Int32 {
   self.graph_edges.length()
 }
 
@@ -327,7 +327,7 @@ pub fn ImpulseJointSet3::joint_graph(
     }
     edges.push((body1, body2, edge.joint))
   }
-  { nodes, edges }
+  { nodes, edges, }
 }
 
 ///|
@@ -411,7 +411,7 @@ pub fn ImpulseJointSet3::set_impulses(
   let edge = self.graph_edges[edge_id]
   let joint = edge.joint
   joint.impulses = impulses
-  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint, }
 }
 
 ///|
@@ -469,13 +469,13 @@ pub fn ImpulseJointSet3::set_solver_impulses(
   joint.data.limits = joint_limits_set_axis(
     updated_limits, angular_axis, updated_limit,
   )
-  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint }
+  self.graph_edges[edge_id] = { node1: edge.node1, node2: edge.node2, joint, }
 }
 
 ///|
 pub fn ImpulseJointSet3::get_unknown_gen(
   self : ImpulseJointSet3,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   if id < 0 || id >= self.joint_edge_ids.length() {
     return None
@@ -491,7 +491,7 @@ pub fn ImpulseJointSet3::get_unknown_gen(
 ///|
 pub fn ImpulseJointSet3::get_unknown_gen_mut(
   self : ImpulseJointSet3,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   self.get_unknown_gen(id)
 }
@@ -661,7 +661,7 @@ pub fn ImpulseJointSet3::select_active_interactions(
   self : ImpulseJointSet3,
   islands : IslandManager,
   bodies : RigidBodySet,
-  out : Array[Array[Int]],
+  out : Array[Array[Int32]],
 ) -> Unit {
   let awake_len = islands.awake_islands.length()
   for i in 0..<awake_len {
@@ -722,7 +722,7 @@ struct MultibodyJointSet3 {
   rb2mb : @data.Coarena[MultibodyLinkId]
   graph_nodes : Array[RigidBodyHandle]
   graph_edges : Array[MultibodyGraphEdge]
-  adjacency : Array[Array[Int]]
+  adjacency : Array[Array[Int32]]
   to_wake_up : Array[RigidBodyHandle]
   to_join : Array[(RigidBodyHandle, RigidBodyHandle)]
 }
@@ -768,7 +768,7 @@ fn MultibodyJointSet3::set_link(
 fn MultibodyJointSet3::graph_node_for(
   self : MultibodyJointSet3,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if self.rb2mb.get(rb_handle_index(handle)) is Some(link) {
     let graph_id = link.graph_id
     if graph_id >= 0 &&
@@ -787,7 +787,7 @@ fn MultibodyJointSet3::graph_node_for(
 fn MultibodyJointSet3::update_graph_id(
   self : MultibodyJointSet3,
   handle : RigidBodyHandle,
-  graph_id : Int,
+  graph_id : Int32,
 ) -> Unit {
   let key = rb_handle_index(handle)
   if self.rb2mb.get(key) is Some(link) {
@@ -800,7 +800,7 @@ fn MultibodyJointSet3::update_graph_id(
 fn MultibodyJointSet3::ensure_graph_node(
   self : MultibodyJointSet3,
   handle : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   if self.graph_node_for(handle) is Some(node_id) {
     node_id
   } else {
@@ -820,7 +820,7 @@ fn MultibodyJointSet3::insert_graph_edge(
   let node1 = self.ensure_graph_node(parent)
   let node2 = self.ensure_graph_node(child)
   let edge_id = self.graph_edges.length()
-  self.graph_edges.push({ node1, node2, parent, child })
+  self.graph_edges.push({ node1, node2, parent, child, })
   self.adjacency[node1].push(edge_id)
   self.adjacency[node2].push(edge_id)
 }
@@ -828,7 +828,7 @@ fn MultibodyJointSet3::insert_graph_edge(
 ///|
 fn MultibodyJointSet3::remove_graph_edge(
   self : MultibodyJointSet3,
-  edge_id : Int,
+  edge_id : Int32,
 ) -> MultibodyGraphEdge? {
   if edge_id < 0 || edge_id >= self.graph_edges.length() {
     return None
@@ -862,7 +862,7 @@ fn MultibodyJointSet3::remove_graph_edge(
 ///|
 fn MultibodyJointSet3::remove_graph_node(
   self : MultibodyJointSet3,
-  node_id : Int,
+  node_id : Int32,
 ) -> Unit {
   if node_id < 0 || node_id >= self.graph_nodes.length() {
     return
@@ -918,7 +918,7 @@ fn MultibodyJointSet3::remove_graph_node_for_handle(
 fn MultibodyJointSet3::find_graph_edge_by_child(
   self : MultibodyJointSet3,
   child : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if self.graph_node_for(child) is Some(node_id) {
     let edges = self.adjacency[node_id]
     for i in 0..<edges.length() {
@@ -1265,7 +1265,7 @@ pub struct Multibody3 {
 }
 
 ///|
-pub fn Multibody3::ndofs(self : Multibody3) -> Int {
+pub fn Multibody3::ndofs(self : Multibody3) -> Int32 {
   mb3_logical_ndofs(self.inner)
 }
 
@@ -1276,7 +1276,7 @@ pub fn MultibodyJointSet3::get(
 ) -> (Multibody3, LinkId)? {
   if self.rb2mb.get(handle.arena_index()) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {
-      Some(({ inner: multibody }, LinkId(link.id)))
+      Some(({ inner: multibody, }, LinkId(link.id)))
     } else {
       None
     }
@@ -1322,7 +1322,7 @@ pub fn MultibodyJointSet3::remove(
         self.multibodies.insert(multibody) |> ignore
         return
       }
-      let remaining : Array[Int] = []
+      let remaining : Array[Int32] = []
       for i in 0..<multibody.links.length() {
         let mut in_subtree = false
         for j in 0..<subtree.length() {
@@ -1429,7 +1429,7 @@ pub fn MultibodyJointSet3::get_multibody(
   index : MultibodyIndex,
 ) -> Multibody3? {
   if self.multibodies.get(index.arena_index()) is Some(multibody) {
-    Some({ inner: multibody })
+    Some({ inner: multibody, })
   } else {
     None
   }
@@ -1458,7 +1458,7 @@ pub fn MultibodyJointSet3::multibodies(
   let result : Array[Multibody3] = []
   let items = self.multibodies.iter()
   for i in 0..<items.length() {
-    result.push({ inner: items[i].1 })
+    result.push({ inner: items[i].1, })
   }
   result
 }
@@ -1466,14 +1466,14 @@ pub fn MultibodyJointSet3::multibodies(
 ///|
 pub fn MultibodyJointSet3::get_unknown_gen(
   self : MultibodyJointSet3,
-  id : Int,
+  id : Int32,
 ) -> (Multibody3, LinkId, MultibodyJointHandle)? {
   if self.rb2mb.get_unknown_gen(id) is Some(link) {
     if self.multibodies.get(link.multibody.arena_index()) is Some(multibody) {
       if self.rb2mb.get_gen(id) is Some(generation) {
         Some(
           (
-            { inner: multibody },
+            { inner: multibody, },
             LinkId(link.id),
             MultibodyJointHandle::from_raw_parts(id, generation),
           ),
@@ -1513,7 +1513,7 @@ pub fn MultibodyJointSet3::joint_between(
         Some(
           (
             MultibodyJointHandle(rb_handle_index(body1)),
-            { inner: multibody },
+            { inner: multibody, },
             child1,
           ),
         )
@@ -1521,7 +1521,7 @@ pub fn MultibodyJointSet3::joint_between(
         Some(
           (
             MultibodyJointHandle(rb_handle_index(body2)),
-            { inner: multibody },
+            { inner: multibody, },
             child2,
           ),
         )
@@ -1617,7 +1617,7 @@ pub fn MultibodyJointSet3::iter(
           (
             MultibodyJointHandle(joint_handle),
             link,
-            { inner: multibody },
+            { inner: multibody, },
             multibody.links[link.id],
           ),
         )
@@ -1647,29 +1647,29 @@ fn MultibodyJointSet3::remove_joints_attached_to_rigid_body(
 
 ///|
 pub struct Jacobian3 {
-  mut cols_ : Int
+  mut cols_ : Int32
   data : Array[@core.Real]
 }
 
 ///|
-pub fn Jacobian3::zeros(size : Int) -> Jacobian3 {
+pub fn Jacobian3::zeros(size : Int32) -> Jacobian3 {
   let data : Array[@core.Real] = []
   for _ in 0..<(size * 6) {
     data.push(0.0F)
   }
-  { cols_: size, data }
+  { cols_: size, data, }
 }
 
 ///|
-pub fn Jacobian3::cols(self : Jacobian3) -> Int {
+pub fn Jacobian3::cols(self : Jacobian3) -> Int32 {
   self.cols_
 }
 
 ///|
 pub fn Jacobian3::value_at(
   self : Jacobian3,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
 ) -> @core.Real {
   if row < 0 || row >= 6 || col < 0 || col >= self.cols_ {
     0.0F
@@ -1679,7 +1679,7 @@ pub fn Jacobian3::value_at(
 }
 
 ///|
-fn Jacobian3::ensure_cols(self : Jacobian3, cols : Int) -> Unit {
+fn Jacobian3::ensure_cols(self : Jacobian3, cols : Int32) -> Unit {
   if self.cols_ != cols {
     self.cols_ = cols
     self.data.clear()
@@ -1696,8 +1696,8 @@ fn Jacobian3::ensure_cols(self : Jacobian3, cols : Int) -> Unit {
 ///|
 fn Jacobian3::set_value(
   self : Jacobian3,
-  row : Int,
-  col : Int,
+  row : Int32,
+  col : Int32,
   value : @core.Real,
 ) -> Unit {
   if row >= 0 && row < 6 && col >= 0 && col < self.cols_ {
@@ -1706,7 +1706,7 @@ fn Jacobian3::set_value(
 }
 
 ///|
-fn Jacobian3::clear_column(self : Jacobian3, col : Int) -> Unit {
+fn Jacobian3::clear_column(self : Jacobian3, col : Int32) -> Unit {
   if col < 0 || col >= self.cols_ {
     return
   }
@@ -1717,7 +1717,7 @@ fn Jacobian3::clear_column(self : Jacobian3, col : Int) -> Unit {
 }
 
 ///|
-fn mb3_logical_ndofs(multibody : Multibody) -> Int {
+fn mb3_logical_ndofs(multibody : Multibody) -> Int32 {
   if multibody.root_is_dynamic {
     multibody.ndofs() + 3
   } else {
@@ -1726,7 +1726,10 @@ fn mb3_logical_ndofs(multibody : Multibody) -> Int {
 }
 
 ///|
-fn mb3_joint_logical_column(multibody : Multibody, assembly_id : Int) -> Int {
+fn mb3_joint_logical_column(
+  multibody : Multibody,
+  assembly_id : Int32,
+) -> Int32 {
   if multibody.root_is_dynamic && assembly_id >= 3 {
     assembly_id + 3
   } else {
@@ -1737,7 +1740,7 @@ fn mb3_joint_logical_column(multibody : Multibody, assembly_id : Int) -> Int {
 ///|
 fn mb3_set_spatial_column(
   jacobian : Jacobian3,
-  col : Int,
+  col : Int32,
   linear : @core.Vec3,
   angular : @core.Vec3,
 ) -> Unit {
@@ -2018,7 +2021,7 @@ fn mb3_compute_link_pose(
 
   let dof_positions : Array[@core.Vec3] = []
   let dof_axes : Array[@core.Vec3] = []
-  let dof_cols : Array[Int] = []
+  let dof_cols : Array[Int32] = []
   let dof_is_angular : Array[Bool] = []
   let root_position = root_pose.translation
   let mut current_pose = root_pose
@@ -2600,7 +2603,7 @@ pub struct Multibody3DReal {
 }
 
 ///|
-pub fn Multibody3DReal::ndofs(self : Multibody3DReal) -> Int {
+pub fn Multibody3DReal::ndofs(self : Multibody3DReal) -> Int32 {
   mb3_logical_ndofs(self.inner)
 }
 
@@ -2618,7 +2621,7 @@ pub fn Multibody3DReal::apply_displacements(
   self : Multibody3DReal,
   displacements : Array[@core.Real],
 ) -> Unit {
-  Multibody3::{ inner: self.inner }.apply_displacements(displacements)
+  Multibody3::{ inner: self.inner, }.apply_displacements(displacements)
 }
 
 ///|
@@ -2626,7 +2629,7 @@ pub fn Multibody3DReal::link_pose(
   self : Multibody3DReal,
   id : LinkId,
 ) -> @core.Isometry3? {
-  Multibody3::{ inner: self.inner }.link_pose(id)
+  Multibody3::{ inner: self.inner, }.link_pose(id)
 }
 
 ///|
@@ -2634,7 +2637,7 @@ pub fn Multibody3DReal::body_jacobian(
   self : Multibody3DReal,
   id : LinkId,
 ) -> Jacobian3 {
-  Multibody3::{ inner: self.inner }.body_jacobian(id)
+  Multibody3::{ inner: self.inner, }.body_jacobian(id)
 }
 
 ///|
@@ -2761,7 +2764,7 @@ pub struct MultibodyJointSet3DReal {
 
 ///|
 pub fn MultibodyJointSet3DReal::MultibodyJointSet3DReal() -> MultibodyJointSet3DReal {
-  { inner: MultibodyJointSet3() }
+  { inner: MultibodyJointSet3(), }
 }
 
 ///|
@@ -2825,7 +2828,7 @@ pub fn MultibodyJointSet3DReal::get(
   handle : MultibodyJointHandle,
 ) -> (Multibody3DReal, LinkId)? {
   if self.inner.get(handle) is Some((multibody, link)) {
-    Some(({ inner: multibody.inner }, link))
+    Some(({ inner: multibody.inner, }, link))
   } else {
     None
   }
@@ -2837,7 +2840,7 @@ pub fn MultibodyJointSet3DReal::get_mut(
   handle : MultibodyJointHandle,
 ) -> (Multibody3DReal, LinkId)? {
   if self.inner.get_mut(handle) is Some((multibody, link)) {
-    Some(({ inner: multibody.inner }, link))
+    Some(({ inner: multibody.inner, }, link))
   } else {
     None
   }
@@ -2875,7 +2878,7 @@ pub fn MultibodyJointSet3DReal::get_multibody(
   index : MultibodyIndex,
 ) -> Multibody3DReal? {
   if self.inner.get_multibody(index) is Some(multibody) {
-    Some({ inner: multibody.inner })
+    Some({ inner: multibody.inner, })
   } else {
     None
   }
@@ -2887,7 +2890,7 @@ pub fn MultibodyJointSet3DReal::get_multibody_mut(
   index : MultibodyIndex,
 ) -> Multibody3DReal? {
   if self.inner.get_multibody_mut(index) is Some(multibody) {
-    Some({ inner: multibody.inner })
+    Some({ inner: multibody.inner, })
   } else {
     None
   }
@@ -2900,7 +2903,7 @@ pub fn MultibodyJointSet3DReal::multibodies(
   let result : Array[Multibody3DReal] = []
   let items = self.inner.multibodies()
   for i in 0..<items.length() {
-    result.push({ inner: items[i].inner })
+    result.push({ inner: items[i].inner, })
   }
   result
 }
@@ -2908,10 +2911,10 @@ pub fn MultibodyJointSet3DReal::multibodies(
 ///|
 pub fn MultibodyJointSet3DReal::get_unknown_gen(
   self : MultibodyJointSet3DReal,
-  id : Int,
+  id : Int32,
 ) -> (Multibody3DReal, LinkId, MultibodyJointHandle)? {
   if self.inner.get_unknown_gen(id) is Some((multibody, link, handle)) {
-    Some(({ inner: multibody.inner }, link, handle))
+    Some(({ inner: multibody.inner, }, link, handle))
   } else {
     None
   }
@@ -2924,7 +2927,7 @@ pub fn MultibodyJointSet3DReal::joint_between(
   body2 : RigidBodyHandle,
 ) -> (MultibodyJointHandle, Multibody3DReal, MultibodyLink)? {
   if self.inner.joint_between(body1, body2) is Some((handle, multibody, link)) {
-    Some((handle, { inner: multibody.inner }, link))
+    Some((handle, { inner: multibody.inner, }, link))
   } else {
     None
   }
@@ -2966,7 +2969,7 @@ pub fn MultibodyJointSet3DReal::iter(
   let items = self.inner.iter()
   for i in 0..<items.length() {
     let (handle, link_id, multibody, link) = items[i]
-    result.push((handle, link_id, { inner: multibody.inner }, link))
+    result.push((handle, link_id, { inner: multibody.inner, }, link))
   }
   result
 }

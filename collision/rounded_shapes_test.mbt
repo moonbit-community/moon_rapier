@@ -14,7 +14,7 @@
 
 ///|
 test "round_* builders create rounded geometry (not contact_skin)" {
-  let collider = ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build()
+  let collider = @collision.ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build()
   inspect(collider.contact_skin() == 0.0F, content="true")
   match collider.shape() {
     Round(_, r) => inspect(@core.abs(r - 0.2F) < 1.0e-6F, content="true")
@@ -24,7 +24,7 @@ test "round_* builders create rounded geometry (not contact_skin)" {
 
 ///|
 test "rounded shapes affect query projections and rays" {
-  fn collider_is_round(colliders : ColliderSet, id : Int) -> Bool {
+  fn collider_is_round(colliders : @collision.ColliderSet, id : Int32) -> Bool {
     if id < 0 || id >= colliders.colliders.length() {
       return false
     }
@@ -40,9 +40,9 @@ test "rounded shapes affect query projections and rays" {
 
   fn project_left_x(
     bodies : @dynamics.RigidBodySet,
-    colliders : ColliderSet,
+    colliders : @collision.ColliderSet,
   ) -> @core.Real {
-    let pipeline = QueryPipeline::QueryPipeline(
+    let pipeline = @collision.QueryPipeline::QueryPipeline(
       QueryFilter(),
       bodies,
       colliders,
@@ -56,15 +56,15 @@ test "rounded shapes affect query projections and rays" {
 
   fn cast_left_hit_toi(
     bodies : @dynamics.RigidBodySet,
-    colliders : ColliderSet,
+    colliders : @collision.ColliderSet,
     max_toi : @core.Real,
   ) -> @core.Real {
-    let pipeline = QueryPipeline::QueryPipeline(
+    let pipeline = @collision.QueryPipeline::QueryPipeline(
       QueryFilter(),
       bodies,
       colliders,
     )
-    let ray = Ray::Ray(Vec2(-3.0F, 0.0F), Vec2(1.0F, 0.0F))
+    let ray = @collision.Ray::Ray(Vec2(-3.0F, 0.0F), Vec2(1.0F, 0.0F))
     match pipeline.cast_ray(bodies, colliders, ray, max_toi, true) {
       Some(hit) => hit.1
       None => -1.0F
@@ -72,9 +72,9 @@ test "rounded shapes affect query projections and rays" {
   }
 
   let bodies0 = @dynamics.RigidBodySet()
-  let colliders_round0 = ColliderSet::ColliderSet()
+  let colliders_round0 = @collision.ColliderSet::ColliderSet()
   colliders_round0.insert(
-    ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build(),
+    @collision.ColliderBuilder::round_cuboid(1.0F, 1.0F, 0.2F).build(),
   )
   |> ignore
   inspect(collider_is_round(colliders_round0, 0), content="true")
@@ -85,9 +85,9 @@ test "rounded shapes affect query projections and rays" {
   let toi_round_short = cast_left_hit_toi(bodies0, colliders_round0, 1.9F)
   inspect(toi_round_short >= 0.0F, content="true")
   let bodies1 = @dynamics.RigidBodySet()
-  let colliders_skin1 = ColliderSet::ColliderSet()
+  let colliders_skin1 = @collision.ColliderSet::ColliderSet()
   colliders_skin1.insert(
-    ColliderBuilder::cuboid(1.0F, 1.0F).contact_skin(0.2F).build(),
+    @collision.ColliderBuilder::cuboid(1.0F, 1.0F).contact_skin(0.2F).build(),
   )
   |> ignore
   let proj_skin = project_left_x(bodies1, colliders_skin1)

@@ -24,7 +24,7 @@ pub struct Ray3 {
 
 ///|
 pub fn Ray3::Ray3(origin : @core.Vec3, dir : @core.Vec3) -> Ray3 {
-  { origin, dir }
+  { origin, dir, }
 }
 
 ///|
@@ -47,7 +47,7 @@ pub fn RayIntersection3::normal(self : RayIntersection3) -> @core.Vec3 {
 pub struct RayIntersection3Feature {
   toi : @core.Real
   normal : @core.Vec3
-  feature_id : Int
+  feature_id : Int32
 }
 
 ///|
@@ -67,7 +67,7 @@ pub fn RayIntersection3Feature::normal(
 ///|
 pub fn RayIntersection3Feature::feature_id(
   self : RayIntersection3Feature,
-) -> Int {
+) -> Int32 {
   self.feature_id
 }
 
@@ -121,7 +121,7 @@ pub fn ShapeCastOptions3::ShapeCastOptions3(
   max_toi : @core.Real,
   stop_at_penetration : Bool,
 ) -> ShapeCastOptions3 {
-  { max_toi, target_distance: 0.0F, stop_at_penetration }
+  { max_toi, target_distance: 0.0F, stop_at_penetration, }
 }
 
 ///|
@@ -155,30 +155,30 @@ pub fn ShapeCastOptions3::with_target_distance(
 }
 
 ///|
-const QUERY_FILTER_3D_EXCLUDE_FIXED : Int = 1 << 0
+const QUERY_FILTER_3D_EXCLUDE_FIXED : Int32 = 1 << 0
 
 ///|
-const QUERY_FILTER_3D_EXCLUDE_KINEMATIC : Int = 1 << 1
+const QUERY_FILTER_3D_EXCLUDE_KINEMATIC : Int32 = 1 << 1
 
 ///|
-const QUERY_FILTER_3D_EXCLUDE_DYNAMIC : Int = 1 << 2
+const QUERY_FILTER_3D_EXCLUDE_DYNAMIC : Int32 = 1 << 2
 
 ///|
-const QUERY_FILTER_3D_EXCLUDE_SENSORS : Int = 1 << 3
+const QUERY_FILTER_3D_EXCLUDE_SENSORS : Int32 = 1 << 3
 
 ///|
-const QUERY_FILTER_3D_EXCLUDE_SOLIDS : Int = 1 << 4
+const QUERY_FILTER_3D_EXCLUDE_SOLIDS : Int32 = 1 << 4
 
 ///|
-const QUERY_FILTER_3D_ONLY_DYNAMIC : Int = QUERY_FILTER_3D_EXCLUDE_FIXED |
+const QUERY_FILTER_3D_ONLY_DYNAMIC : Int32 = QUERY_FILTER_3D_EXCLUDE_FIXED |
   QUERY_FILTER_3D_EXCLUDE_KINEMATIC
 
 ///|
-const QUERY_FILTER_3D_ONLY_KINEMATIC : Int = QUERY_FILTER_3D_EXCLUDE_DYNAMIC |
+const QUERY_FILTER_3D_ONLY_KINEMATIC : Int32 = QUERY_FILTER_3D_EXCLUDE_DYNAMIC |
   QUERY_FILTER_3D_EXCLUDE_FIXED
 
 ///|
-const QUERY_FILTER_3D_ONLY_FIXED : Int = QUERY_FILTER_3D_EXCLUDE_DYNAMIC |
+const QUERY_FILTER_3D_ONLY_FIXED : Int32 = QUERY_FILTER_3D_EXCLUDE_DYNAMIC |
   QUERY_FILTER_3D_EXCLUDE_KINEMATIC
 
 ///|
@@ -389,7 +389,7 @@ pub fn QueryPipeline3DReal::QueryPipeline3DReal(
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
 ) -> QueryPipeline3DReal {
-  let qp = { filter, cached_aabbs: [] }
+  let qp = { filter, cached_aabbs: [], }
   qp.update(bodies, colliders)
   qp
 }
@@ -425,7 +425,7 @@ pub fn QueryPipeline3DReal::with_filter(
   self : QueryPipeline3DReal,
   filter : QueryFilter3DReal,
 ) -> QueryPipeline3DReal {
-  { filter, cached_aabbs: self.cached_aabbs }
+  { filter, cached_aabbs: self.cached_aabbs, }
 }
 
 ///|
@@ -434,7 +434,7 @@ pub fn QueryPipelineMut3DReal::QueryPipelineMut3DReal(
   bodies : @dynamics.RigidBodySet3D,
   colliders : ColliderSet3D,
 ) -> QueryPipelineMut3DReal {
-  { pipeline: QueryPipeline3DReal(filter, bodies, colliders) }
+  { pipeline: QueryPipeline3DReal(filter, bodies, colliders), }
 }
 
 ///|
@@ -541,7 +541,7 @@ fn ray_sphere_toi_normal(
     qp3d_real_normalized_or_default(hit.sub(center)),
     ray.dir,
   )
-  Some({ toi: t, normal: n })
+  Some({ toi: t, normal: n, })
 }
 
 ///|
@@ -677,7 +677,7 @@ fn ray_obb_toi_normal(
       pos.rotation.rotate_vec3(exit_normal),
       ray.dir,
     )
-    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit) })
+    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit), })
   }
   if tmin < 0.0F {
     if solid {
@@ -693,14 +693,14 @@ fn ray_obb_toi_normal(
       pos.rotation.rotate_vec3(exit_normal),
       ray.dir,
     )
-    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit) })
+    return Some({ toi: tmax, normal: qp3d_real_normalized_or_default(n_exit), })
   }
   // Transform entry normal back to world.
   let n_enter = orient_against_ray(
     pos.rotation.rotate_vec3(enter_normal),
     ray.dir,
   )
-  Some({ toi: tmin, normal: qp3d_real_normalized_or_default(n_enter) })
+  Some({ toi: tmin, normal: qp3d_real_normalized_or_default(n_enter), })
 }
 
 ///|
@@ -745,7 +745,7 @@ fn ray_triangle_toi_normal(
     return None
   }
   let n = qp3d_real_normalized_or_default(ab.cross(ac))
-  Some({ toi: t, normal: orient_against_ray(n, ray.dir) })
+  Some({ toi: t, normal: orient_against_ray(n, ray.dir), })
 }
 
 ///|
@@ -764,7 +764,7 @@ fn ray_plane_toi_normal(
   if t < 0.0F || t > max_toi {
     return None
   }
-  Some({ toi: t, normal: orient_against_ray(normal, ray.dir) })
+  Some({ toi: t, normal: orient_against_ray(normal, ray.dir), })
 }
 
 ///|
@@ -794,45 +794,45 @@ fn qp3d_real_hit_shape(
     Ball(r) =>
       if ray_sphere_toi_normal(ray, pos.translation, r, max_toi, solid)
         is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     Cuboid(he) =>
       if ray_obb_toi_normal(ray, pos, he, max_toi, solid) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     CapsuleY(r, hh) =>
       if ray_capsule_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     Cylinder(r, hh) =>
       if ray_cylinder_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     RoundCylinder(r, hh, br) =>
       if ray_cylinder_y_toi_normal(ray, pos, r + br, hh + br, max_toi)
         is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     Cone(r, hh) =>
       if ray_cone_y_toi_normal(ray, pos, r, hh, max_toi) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
     HalfSpace(n_local) => {
       let n = qp3d_real_normalized_or_default(pos.rotation.rotate_vec3(n_local))
       if ray_plane_toi_normal(ray, pos.translation, n, max_toi) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: -1 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: -1, })
       } else {
         None
       }
@@ -842,7 +842,7 @@ fn qp3d_real_hit_shape(
       let wb = pos.transform_point(b)
       let wc = pos.transform_point(c)
       if ray_triangle_toi_normal(ray, wa, wb, wc, max_toi) is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: 0 })
+        Some({ toi: it.toi, normal: it.normal, feature_id: 0, })
       } else {
         None
       }
@@ -888,7 +888,7 @@ fn qp3d_real_hit_shape(
           )
           let n0 = qp3d_real_normalized_or_default(hit_p.sub(proj2.point))
           let n = orient_against_ray(n0, ray.dir)
-          return Some({ toi, normal: n, feature_id: -1 })
+          return Some({ toi, normal: n, feature_id: -1, })
         }
         t_prev = t
         t = t + dist
@@ -991,7 +991,7 @@ fn qp3d_real_hit_shape(
         return None
       }
       let t0 = if t_min < 0.0F { 0.0F } else { t_min }
-      fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+      fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
         if denom == 0.0F {
           0
         } else {
@@ -1012,7 +1012,7 @@ fn qp3d_real_hit_shape(
         }
         if v.column_ys(ixv, izv) is Some(ys) {
           let mut best_t = max_toi + 1.0F
-          let mut best_key : (Int, Int, Int)? = None
+          let mut best_key : (Int32, Int32, Int32)? = None
           for i in 0..<ys.length() {
             let iyv = ys[i]
             let face_y = if local_ray.dir.y < 0.0F {
@@ -1256,7 +1256,7 @@ fn qp3d_real_hit_shape(
 
       // Determine initial cell at the ray entry point.
       let p_enter = local_ray.origin.add(local_ray.dir.scale(t_enter))
-      fn floor_to_int(x : @core.Real) -> Int {
+      fn floor_to_int(x : @core.Real) -> Int32 {
         let i = x.to_int()
         if Float::from_int(i) > x {
           i - 1
@@ -1265,7 +1265,7 @@ fn qp3d_real_hit_shape(
         }
       }
 
-      fn clamp_int(v : Int, lo : Int, hi : Int) -> Int {
+      fn clamp_int(v : Int32, lo : Int32, hi : Int32) -> Int32 {
         if v < lo {
           lo
         } else if v > hi {
@@ -1413,7 +1413,7 @@ fn qp3d_real_hit_shape(
         }
       }
       if best_local is Some(it) {
-        Some({ toi: it.toi, normal: it.normal, feature_id: best_tri })
+        Some({ toi: it.toi, normal: it.normal, feature_id: best_tri, })
       } else {
         None
       }
@@ -1459,7 +1459,7 @@ fn ray_capsule_y_toi_normal(
           )
           let n_world = pos.rotation.rotate_vec3(n_local)
           best_t = t
-          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
+          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir), })
         }
       }
     }
@@ -1486,7 +1486,7 @@ fn ray_capsule_y_toi_normal(
         let n_world = pos.rotation.rotate_vec3(n_local)
         (
           it.toi,
-          Some({ toi: it.toi, normal: orient_against_ray(n_world, ray.dir) }),
+          Some({ toi: it.toi, normal: orient_against_ray(n_world, ray.dir), }),
         )
       } else {
         (best_t, best)
@@ -1563,7 +1563,7 @@ fn ray_cylinder_y_toi_normal(
           )
           let n_world = pos.rotation.rotate_vec3(n_local)
           best_t = t
-          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
+          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir), })
         }
       }
     }
@@ -1588,7 +1588,7 @@ fn ray_cylinder_y_toi_normal(
           )
           let n_world = pos.rotation.rotate_vec3(n_local)
           best_t = t
-          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
+          best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir), })
         }
       }
     }
@@ -1650,7 +1650,10 @@ fn ray_cone_y_toi_normal(
             let n_local = qp3d_real_normalized_or_default(Vec3(x, k2 * fy, z))
             let n_world = pos.rotation.rotate_vec3(n_local)
             best_t = t
-            best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
+            best = Some({
+              toi: t,
+              normal: orient_against_ray(n_world, ray.dir),
+            })
           }
         }
       }
@@ -1667,7 +1670,7 @@ fn ray_cone_y_toi_normal(
         let n_local = @core.Vec3(0.0F, -1.0F, 0.0F)
         let n_world = pos.rotation.rotate_vec3(n_local)
         best_t = t
-        best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir) })
+        best = Some({ toi: t, normal: orient_against_ray(n_world, ray.dir), })
       }
     }
   }
@@ -1687,7 +1690,7 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_normal(
       self, bodies, colliders, ray, max_toi, solid,
     )
     is Some((h, it)) {
-    Some((h, { toi: it.toi, normal: it.normal }))
+    Some((h, { toi: it.toi, normal: it.normal, }))
   } else {
     None
   }
@@ -1776,14 +1779,14 @@ pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(
   ray : Ray3,
   max_toi : @core.Real,
   solid : Bool,
-) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))? {
+) -> (ColliderHandle3D, RayIntersection3, (Int32, Int32, Int32))? {
   if QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(
       self, bodies, colliders, ray, max_toi, solid,
     )
     is Some((h, it)) {
     if it.feature_id >= 0 && colliders.get(h) is Some(co) {
       if co.voxel_key_for_triangle(it.feature_id) is Some(key) {
-        return Some((h, { toi: it.toi, normal: it.normal }, key))
+        return Some((h, { toi: it.toi, normal: it.normal, }, key))
       }
     }
     None
@@ -2064,7 +2067,7 @@ fn qp3d_real_project_point_on_convex(
 ) -> (PointProjection3, @core.Real) {
   if points.length() == 0 {
     let d2 = pos.translation.sub(point).length_squared()
-    return ({ point: pos.translation, is_inside: false }, d2)
+    return ({ point: pos.translation, is_inside: false, }, d2)
   }
   let eps2 = 1.0e-10F
   let mut dir = pos.translation.sub(point)
@@ -2075,7 +2078,7 @@ fn qp3d_real_project_point_on_convex(
   let sup_a0 = qp3d_real_support_world_for_convex(
     pos, points, border_radius, dir,
   )
-  simplex.push({ p: sup_a0.sub(point), sup_a: sup_a0 })
+  simplex.push({ p: sup_a0.sub(point), sup_a: sup_a0, })
   let mut closest = simplex[0].p
   dir = closest.scale(-1.0F)
   let mut weights : Array[@core.Real] = [1.0F]
@@ -2083,10 +2086,10 @@ fn qp3d_real_project_point_on_convex(
     let d2 = dir.length_squared()
     if d2 <= eps2 {
       if solid {
-        return ({ point, is_inside: true }, 0.0F)
+        return ({ point, is_inside: true, }, 0.0F)
       }
       let proj = simplex[0].sup_a
-      return ({ point: proj, is_inside: true }, 0.0F)
+      return ({ point: proj, is_inside: true, }, 0.0F)
     }
     let sup_a = qp3d_real_support_world_for_convex(
       pos, points, border_radius, dir,
@@ -2095,7 +2098,7 @@ fn qp3d_real_project_point_on_convex(
     if p.dot(dir) >= closest.dot(dir) - 1.0e-7F {
       break
     }
-    simplex.push({ p, sup_a })
+    simplex.push({ p, sup_a, })
     let (new_closest, w, inside) = qp3d_real_gjk_reduce_simplex_closest_to_origin(
       simplex,
     )
@@ -2103,10 +2106,10 @@ fn qp3d_real_project_point_on_convex(
     weights = w
     if inside {
       if solid {
-        return ({ point, is_inside: true }, 0.0F)
+        return ({ point, is_inside: true, }, 0.0F)
       }
       let proj = simplex[0].sup_a
-      return ({ point: proj, is_inside: true }, 0.0F)
+      return ({ point: proj, is_inside: true, }, 0.0F)
     }
     dir = closest.scale(-1.0F)
   }
@@ -2115,7 +2118,7 @@ fn qp3d_real_project_point_on_convex(
     proj = proj.add(simplex[i].sup_a.scale(weights[i]))
   }
   let d2 = proj.sub(point).length_squared()
-  ({ point: proj, is_inside: false }, d2)
+  ({ point: proj, is_inside: false, }, d2)
 }
 
 ///|
@@ -2132,7 +2135,7 @@ fn qp3d_real_project_point_on_shape(
       let dist2 = delta.length_squared()
       let inside = dist2 <= r * r
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let dir = if dist2 <= 1.0e-12F {
           @core.Vec3(1.0F, 0.0F, 0.0F)
@@ -2140,7 +2143,7 @@ fn qp3d_real_project_point_on_shape(
           delta.scale(1.0F / Float::sqrt(dist2))
         }
         let proj = center.add(dir.scale(r))
-        ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+        ({ point: proj, is_inside: inside, }, proj.sub(point).length_squared())
       }
     }
     Cuboid(he) => {
@@ -2150,7 +2153,7 @@ fn qp3d_real_project_point_on_shape(
         @core.abs(lp.y) <= he.y &&
         @core.abs(lp.z) <= he.z
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let mut p = @core.Vec3(
           @core.clamp(lp.x, -he.x, he.x),
@@ -2171,7 +2174,7 @@ fn qp3d_real_project_point_on_shape(
           }
         }
         let proj = pos.transform_point(p)
-        ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+        ({ point: proj, is_inside: inside, }, proj.sub(point).length_squared())
       }
     }
     CapsuleY(r, hh) => {
@@ -2182,7 +2185,7 @@ fn qp3d_real_project_point_on_shape(
       let dist2 = delta.length_squared()
       let inside = dist2 <= r * r
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let dir = if dist2 <= 1.0e-12F {
           @core.Vec3(1.0F, 0.0F, 0.0F)
@@ -2191,7 +2194,7 @@ fn qp3d_real_project_point_on_shape(
         }
         let proj_local = axis_pt.add(dir.scale(r))
         let proj = pos.transform_point(proj_local)
-        ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+        ({ point: proj, is_inside: inside, }, proj.sub(point).length_squared())
       }
     }
     Cylinder(r, hh) => {
@@ -2202,7 +2205,7 @@ fn qp3d_real_project_point_on_shape(
       let rl = if rl2 <= 1.0e-12F { 0.0F } else { Float::sqrt(rl2) }
       let inside = @core.abs(p.y) <= hh && rl <= r
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let mut y = @core.clamp(p.y, -hh, hh)
         let mut x = p.x
@@ -2224,7 +2227,7 @@ fn qp3d_real_project_point_on_shape(
           }
         }
         let proj = pos.transform_point(Vec3(x, y, z))
-        ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+        ({ point: proj, is_inside: inside, }, proj.sub(point).length_squared())
       }
     }
     RoundCylinder(r, hh, br) =>
@@ -2243,7 +2246,7 @@ fn qp3d_real_project_point_on_shape(
         @core.abs(p.y) <= he.y &&
         @core.abs(p.z) <= he.z
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let q = @core.Vec3(
           @core.clamp(p.x, -he.x, he.x),
@@ -2251,7 +2254,7 @@ fn qp3d_real_project_point_on_shape(
           @core.clamp(p.z, -he.z, he.z),
         )
         let proj = pos.transform_point(q)
-        ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+        ({ point: proj, is_inside: inside, }, proj.sub(point).length_squared())
       }
     }
     HalfSpace(n_local) => {
@@ -2259,19 +2262,19 @@ fn qp3d_real_project_point_on_shape(
       let d = n.dot(point.sub(pos.translation))
       let inside = d <= 0.0F
       if inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
         let proj = point.sub(n.scale(d))
-        ({ point: proj, is_inside: inside }, d * d)
+        ({ point: proj, is_inside: inside, }, d * d)
       }
     }
     Triangle(a, b, c) => {
       let vtx = [a, b, c]
       let idx = [(0, 1, 2)]
       if trimesh_closest_point_query(point, pos, vtx, idx) is Some((q, _, d2)) {
-        ({ point: q, is_inside: false }, d2)
+        ({ point: q, is_inside: false, }, d2)
       } else {
-        ({ point, is_inside: false }, 1.0e30F)
+        ({ point, is_inside: false, }, 1.0e30F)
       }
     }
     ConvexHull(points, br) =>
@@ -2282,13 +2285,13 @@ fn qp3d_real_project_point_on_shape(
       let sz = v.voxel_size.z
       if sx <= 0.0F || sy <= 0.0F || sz <= 0.0F {
         (
-          { point: pos.translation, is_inside: false },
+          { point: pos.translation, is_inside: false, },
           pos.translation.sub(point).length_squared(),
         )
       } else {
         let inv = pos.inverse()
         let lp = inv.transform_point(point)
-        fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+        fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
           if denom == 0.0F {
             0
           } else {
@@ -2338,10 +2341,13 @@ fn qp3d_real_project_point_on_shape(
           }
         }
         if inside && solid {
-          ({ point, is_inside: true }, 0.0F)
+          ({ point, is_inside: true, }, 0.0F)
         } else {
           let proj = pos.transform_point(best_q)
-          ({ point: proj, is_inside: inside }, proj.sub(point).length_squared())
+          (
+            { point: proj, is_inside: inside, },
+            proj.sub(point).length_squared(),
+          )
         }
       }
     }
@@ -2369,9 +2375,9 @@ fn qp3d_real_project_point_on_shape(
         }
       }
       if any_inside && solid {
-        ({ point, is_inside: true }, 0.0F)
+        ({ point, is_inside: true, }, 0.0F)
       } else {
-        ({ point: best_proj.point, is_inside: any_inside }, best_d2)
+        ({ point: best_proj.point, is_inside: any_inside, }, best_d2)
       }
     }
     Heightfield(vertices, _, rows, cols, flags) =>
@@ -2379,16 +2385,16 @@ fn qp3d_real_project_point_on_shape(
           point, pos, vertices, rows, cols, flags,
         )
         is Some((q, _, d2)) {
-        ({ point: q, is_inside: false }, d2)
+        ({ point: q, is_inside: false, }, d2)
       } else {
-        ({ point, is_inside: false }, 1.0e30F)
+        ({ point, is_inside: false, }, 1.0e30F)
       }
     TriMesh(vertices, indices) =>
       if trimesh_closest_point_query(point, pos, vertices, indices)
         is Some((q, _, d2)) {
-        ({ point: q, is_inside: false }, d2)
+        ({ point: q, is_inside: false, }, d2)
       } else {
-        ({ point, is_inside: false }, 1.0e30F)
+        ({ point, is_inside: false, }, 1.0e30F)
       }
   }
 }
@@ -2548,7 +2554,7 @@ fn qp3d_real_cast_ball_against_shape(
         )
         is Some(hit) {
         let point = pos2.translation.add(hit.normal.scale(r2))
-        Some({ toi: hit.toi, point, normal: hit.normal })
+        Some({ toi: hit.toi, point, normal: hit.normal, })
       } else {
         None
       }
@@ -2563,7 +2569,7 @@ fn qp3d_real_cast_ball_against_shape(
         is Some(hit) {
         let center_at_hit = center.add(vel.scale(hit.toi))
         let point = center_at_hit.sub(hit.normal.scale(effective_radius))
-        Some({ toi: hit.toi, point, normal: hit.normal })
+        Some({ toi: hit.toi, point, normal: hit.normal, })
       } else {
         None
       }
@@ -2578,7 +2584,7 @@ fn qp3d_real_cast_ball_against_shape(
         is Some(hit) {
         let center_at_hit = center.add(vel.scale(hit.toi))
         let point = center_at_hit.sub(hit.normal.scale(effective_radius))
-        Some({ toi: hit.toi, point, normal: hit.normal })
+        Some({ toi: hit.toi, point, normal: hit.normal, })
       } else {
         None
       }
@@ -2593,7 +2599,7 @@ fn qp3d_real_cast_ball_against_shape(
         is Some(hit) {
         let center_at_hit = center.add(vel.scale(hit.toi))
         let point = center_at_hit.sub(hit.normal.scale(effective_radius))
-        Some({ toi: hit.toi, point, normal: hit.normal })
+        Some({ toi: hit.toi, point, normal: hit.normal, })
       } else {
         None
       }
@@ -2617,7 +2623,7 @@ fn qp3d_real_cast_ball_against_shape(
         is Some(hit) {
         let center_at_hit = center.add(vel.scale(hit.toi))
         let point = center_at_hit.sub(hit.normal.scale(effective_radius))
-        Some({ toi: hit.toi, point, normal: hit.normal })
+        Some({ toi: hit.toi, point, normal: hit.normal, })
       } else {
         None
       }
@@ -2641,7 +2647,7 @@ fn qp3d_real_cast_ball_against_shape(
           None
         } else {
           let c = center.add(vel.scale(t))
-          Some({ toi: t, point: c.sub(n.scale(effective_radius)), normal: n })
+          Some({ toi: t, point: c.sub(n.scale(effective_radius)), normal: n, })
         }
       }
     }
@@ -2696,7 +2702,7 @@ fn qp3d_real_cast_ball_against_shape(
             delta.scale(1.0F / dist)
           }
           if dist <= effective_radius {
-            return Some({ toi: t, point: q, normal: n })
+            return Some({ toi: t, point: q, normal: n, })
           }
           let approach = -n.dot(vel)
           if approach <= 1.0e-12F {
@@ -2733,7 +2739,7 @@ fn qp3d_real_cast_ball_against_shape(
             delta.scale(1.0F / dist)
           }
           if dist <= effective_radius {
-            return Some({ toi: t, point: q, normal: n })
+            return Some({ toi: t, point: q, normal: n, })
           }
           let approach = -n.dot(vel)
           if approach <= 1.0e-12F {
@@ -2768,7 +2774,7 @@ fn qp3d_real_cast_ball_against_shape(
         v : Voxels3DReal,
       ) -> ShapeCastHit3? {
         let lp = inv.transform_point(center)
-        fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+        fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
           if denom == 0.0F {
             0
           } else {
@@ -2817,7 +2823,7 @@ fn qp3d_real_cast_ball_against_shape(
                   let n_world = qp3d_real_normalized_or_default(
                     pos2.rotation.rotate_vec3(n_local),
                   )
-                  best = Some({ toi: 0.0F, point: q_world, normal: n_world })
+                  best = Some({ toi: 0.0F, point: q_world, normal: n_world, })
                 }
               }
             }
@@ -2863,7 +2869,7 @@ fn qp3d_real_cast_ball_against_shape(
           let toi = hi
           let ch = center.add(vel.scale(toi))
           if overlap_at_time(ch, effective_radius, pos2, inv, v) is Some(hit0) {
-            return Some({ toi, point: hit0.point, normal: hit0.normal })
+            return Some({ toi, point: hit0.point, normal: hit0.normal, })
           } else {
             return None
           }
@@ -3588,7 +3594,7 @@ fn qp3d_real_cast_compute_steps(
   p0 : @core.Vec3,
   p1 : @core.Vec3,
   radius : @core.Real,
-) -> Int {
+) -> Int32 {
   let dist = p1.sub(p0).length()
   let trans_scale = radius * 0.25F + 0.05F
   let trans_steps = if trans_scale <= 1.0e-6F {
@@ -3751,7 +3757,7 @@ fn qp3d_real_cast_moving_shape(
             // Separating from an initial penetration: ignore this hit (linear motion can't re-enter).
             return None
           }
-          return Some({ toi: 0.0F, point: cp.point2, normal: n })
+          return Some({ toi: 0.0F, point: cp.point2, normal: n, })
         } else {
           return None
         }
@@ -3768,7 +3774,7 @@ fn qp3d_real_cast_moving_shape(
           )
           is Some(cp) {
           let n = cp.normal.scale(-1.0F) // target -> moving
-          let hit : ShapeCastHit3 = { toi, point: cp.point2, normal: n }
+          let hit : ShapeCastHit3 = { toi, point: cp.point2, normal: n, }
           if !stop_at_penetration &&
             hit.toi < 1.0e-5F &&
             hit.normal.dot(shape_vel) >= 0.0F {

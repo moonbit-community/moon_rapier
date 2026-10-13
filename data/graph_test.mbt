@@ -14,7 +14,7 @@
 
 ///|
 test "graph add/iterate/find/remove" {
-  let g : Graph[String, Int] = Graph::with_capacity(4, 4)
+  let g : @data.Graph[String, Int32] = @data.Graph::with_capacity(4, 4)
   let a = g.add_node("a")
   let b = g.add_node("b")
   let e = g.add_edge(a, b, 42)

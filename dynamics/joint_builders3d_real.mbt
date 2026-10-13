@@ -28,7 +28,7 @@ pub(all) enum MotorState3DReal {
 }
 
 ///|
-fn axis_index_3d_real(axis : JointAxis3DReal) -> Int {
+fn axis_index_3d_real(axis : JointAxis3DReal) -> Int32 {
   match axis {
     LinX => 0
     LinY => 1

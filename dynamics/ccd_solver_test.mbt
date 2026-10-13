@@ -15,15 +15,15 @@
 ///|
 /// Ported from rapier CCD activation behavior.
 test "ccd solver updates active flags" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let islands = IslandManager::IslandManager()
-  let handle = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let islands = @dynamics.IslandManager::IslandManager()
+  let handle = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   islands.rigid_body_updated(handle, bodies)
   if bodies.get_mut_internal(handle) is Some(body) {
     body.enable_ccd(true) |> ignore
     body.set_linvel(Vec2(2.0F, 0.0F), false) |> ignore
   }
-  let solver = CCDSolver::CCDSolver()
+  let solver = @dynamics.CCDSolver::CCDSolver()
   let active = solver.update_ccd_active_flags(islands, bodies, 0.1F, false)
   inspect(!active, content="true")
   if bodies.get(handle) is Some(body) {
@@ -36,13 +36,13 @@ test "ccd solver updates active flags" {
 ///|
 /// Ported from rapier CCD clamping behavior.
 test "ccd solver clamps motions" {
-  let bodies = RigidBodySet::RigidBodySet()
-  let handle = bodies.insert(RigidBodyBuilder::dynamic().build())
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
+  let handle = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   if bodies.get_mut_internal(handle) is Some(body) {
     body.set_linvel(Vec2(2.0F, 0.0F), false) |> ignore
   }
-  let solver = CCDSolver::CCDSolver()
-  let impacts = PredictedImpacts::Impacts([(handle, 0.2F)])
+  let solver = @dynamics.CCDSolver::CCDSolver()
+  let impacts = @dynamics.PredictedImpacts::Impacts([(handle, 0.2F)])
   solver.clamp_motions(0.1F, bodies, impacts)
   if bodies.get(handle) is Some(body) {
     inspect(body.position.next_position.translation.x == 0.4F, content="true")

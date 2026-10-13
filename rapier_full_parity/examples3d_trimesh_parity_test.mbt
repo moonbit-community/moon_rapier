@@ -175,11 +175,11 @@ fn run_examples3d_trimesh3(profile : TrimeshProfile) -> Bool {
       vertices.push(Vec3(x, y, z))
     }
   }
-  fn vid(i : Int, j : Int, nsubdivs : Int) -> Int {
+  fn vid(i : Int32, j : Int32, nsubdivs : Int32) -> Int32 {
     i * (nsubdivs + 1) + j
   }
 
-  let indices : Array[(Int, Int, Int)] = []
+  let indices : Array[(Int32, Int32, Int32)] = []
   for i in 0..<nsubdivs {
     for j in 0..<nsubdivs {
       let a = vid(i, j, nsubdivs)

@@ -31,7 +31,7 @@ pub fn RigidBodyVelocity3D::angvel(self : RigidBodyVelocity3D) -> @core.Vec3 {
 
 ///|
 pub fn RigidBodyVelocity3D::zero() -> RigidBodyVelocity3D {
-  { linvel: @core.Vec3::zero(), angvel: @core.Vec3::zero() }
+  { linvel: @core.Vec3::zero(), angvel: @core.Vec3::zero(), }
 }
 
 ///|
@@ -43,7 +43,10 @@ pub fn RigidBodyVelocity3D::apply_damping(
 ) -> RigidBodyVelocity3D {
   let lin_scale = 1.0F / (1.0F + dt * linear_damping)
   let ang_scale = 1.0F / (1.0F + dt * angular_damping)
-  { linvel: self.linvel.scale(lin_scale), angvel: self.angvel.scale(ang_scale) }
+  {
+    linvel: self.linvel.scale(lin_scale),
+    angvel: self.angvel.scale(ang_scale),
+  }
 }
 
 ///|
@@ -76,7 +79,7 @@ pub fn RigidBodyPosition3D::RigidBodyPosition3D(
   position : @core.Isometry3,
   next_position : @core.Isometry3,
 ) -> RigidBodyPosition3D {
-  { position, next_position }
+  { position, next_position, }
 }
 
 ///|
@@ -92,7 +95,7 @@ pub fn RigidBodyPosition3D::interpolate_velocity(
   let next_rot = self.next_position.rotation
   let delta_rot = next_rot.mul(curr_rot.inverse())
   let angvel = delta_rot.to_scaled_axis().scale(inv_dt)
-  { linvel, angvel }
+  { linvel, angvel, }
 }
 
 ///|
@@ -198,10 +201,10 @@ pub struct RigidBody3D {
   angular_damping : @core.Real
   mut gravity_scale : @core.Real
   mass_properties : @core.MassProperties3
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
-  mut dominance_group : Int
+  mut dominance_group : Int32
 }
 
 ///|
@@ -325,7 +328,7 @@ pub fn RigidBody3D::set_linvel(self : RigidBody3D, v : @core.Vec3) -> Unit {
     self.trans_y_enabled,
     self.trans_z_enabled,
   )
-  self.velocity = { linvel: vv, angvel: self.velocity.angvel }
+  self.velocity = { linvel: vv, angvel: self.velocity.angvel, }
 }
 
 ///|
@@ -336,7 +339,7 @@ pub fn RigidBody3D::set_angvel(self : RigidBody3D, w : @core.Vec3) -> Unit {
     self.rot_y_enabled,
     self.rot_z_enabled,
   )
-  self.velocity = { linvel: self.velocity.linvel, angvel: ww }
+  self.velocity = { linvel: self.velocity.linvel, angvel: ww, }
 }
 
 ///|
@@ -345,7 +348,7 @@ pub fn RigidBody3D::body_type(self : RigidBody3D) -> RigidBodyType {
 }
 
 ///|
-pub fn RigidBody3D::user_data(self : RigidBody3D) -> Int {
+pub fn RigidBody3D::user_data(self : RigidBody3D) -> Int32 {
   self.user_data.to_int_truncate()
 }
 
@@ -355,7 +358,7 @@ pub fn RigidBody3D::user_data128(self : RigidBody3D) -> @core.UserData128 {
 }
 
 ///|
-pub fn RigidBody3D::set_user_data(self : RigidBody3D, data : Int) -> Unit {
+pub fn RigidBody3D::set_user_data(self : RigidBody3D, data : Int32) -> Unit {
   self.user_data = @core.UserData128::from_int_truncate(data)
 }
 
@@ -497,32 +500,32 @@ pub fn RigidBody3D::restrict_rotations(
 }
 
 ///|
-pub fn RigidBody3D::dominance_group(self : RigidBody3D) -> Int {
+pub fn RigidBody3D::dominance_group(self : RigidBody3D) -> Int32 {
   self.dominance_group
 }
 
 ///|
-pub fn RigidBody3D::effective_dominance_group(self : RigidBody3D) -> Int {
+pub fn RigidBody3D::effective_dominance_group(self : RigidBody3D) -> Int32 {
   RigidBodyDominance(self.dominance_group).effective_group(self.body_type)
 }
 
 ///|
 pub fn RigidBody3D::set_dominance_group(
   self : RigidBody3D,
-  group : Int,
+  group : Int32,
 ) -> Unit {
   self.dominance_group = group
 }
 
 ///|
-pub fn RigidBody3D::additional_solver_iterations(self : RigidBody3D) -> Int {
+pub fn RigidBody3D::additional_solver_iterations(self : RigidBody3D) -> Int32 {
   self.additional_solver_iterations
 }
 
 ///|
 pub fn RigidBody3D::set_additional_solver_iterations(
   self : RigidBody3D,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> Unit {
   self.additional_solver_iterations = additional_iterations
 }
@@ -800,7 +803,7 @@ pub fn RigidBody3D::advance_position(
         self.rot_y_enabled,
         self.rot_z_enabled,
       )
-      let vels : RigidBodyVelocity3D = { linvel, angvel }
+      let vels : RigidBodyVelocity3D = { linvel, angvel, }
       self.position = vels.integrate(
         dt,
         self.position,
@@ -820,7 +823,7 @@ pub fn RigidBody3D::advance_position(
         self.rot_y_enabled,
         self.rot_z_enabled,
       )
-      let vels : RigidBodyVelocity3D = { linvel, angvel }
+      let vels : RigidBodyVelocity3D = { linvel, angvel, }
       self.position = vels.integrate(
         dt,
         self.position,
@@ -894,11 +897,11 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : @core.Real
   mut gravity_scale : @core.Real
   mut mass_properties : @core.MassProperties3
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut can_sleep : Bool
   mut sleeping : Bool
   mut user_data : @core.UserData128
-  mut dominance_group : Int
+  mut dominance_group : Int32
 }
 
 ///|
@@ -999,7 +1002,7 @@ pub fn RigidBodyBuilder3D::sleeping(
 ///|
 pub fn RigidBodyBuilder3D::user_data(
   self : RigidBodyBuilder3D,
-  data : Int,
+  data : Int32,
 ) -> RigidBodyBuilder3D {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
@@ -1116,7 +1119,7 @@ pub fn RigidBodyBuilder3D::additional_mass(
 ///|
 pub fn RigidBodyBuilder3D::additional_solver_iterations(
   self : RigidBodyBuilder3D,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> RigidBodyBuilder3D {
   self.additional_solver_iterations = additional_iterations
   self
@@ -1134,7 +1137,7 @@ pub fn RigidBodyBuilder3D::additional_mass_properties(
 ///|
 pub fn RigidBodyBuilder3D::dominance_group(
   self : RigidBodyBuilder3D,
-  group : Int,
+  group : Int32,
 ) -> RigidBodyBuilder3D {
   self.dominance_group = group
   self
@@ -1325,17 +1328,17 @@ pub fn RigidBodyBuilder3D::build(self : RigidBodyBuilder3D) -> RigidBody3D {
 ///|
 pub struct RigidBodySet3D {
   bodies : Array[RigidBody3D?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
 }
 
 ///|
 pub fn RigidBodySet3D::RigidBodySet3D() -> RigidBodySet3D {
-  { bodies: [], generations: [], free_list: [] }
+  { bodies: [], generations: [], free_list: [], }
 }
 
 ///|
-pub fn RigidBodySet3D::len(self : RigidBodySet3D) -> Int {
+pub fn RigidBodySet3D::len(self : RigidBodySet3D) -> Int32 {
   let mut count = 0
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(_) {

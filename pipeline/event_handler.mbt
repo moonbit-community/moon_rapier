@@ -194,7 +194,7 @@ pub struct ChannelEventCollector {
 
 ///|
 pub fn ChannelEventCollector::ChannelEventCollector() -> ChannelEventCollector {
-  { handler: EventHandler() }
+  { handler: EventHandler(), }
 }
 
 ///|

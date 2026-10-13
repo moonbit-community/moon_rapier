@@ -20,10 +20,10 @@
 /// mapped from the Rust `pub` surface by the audit mapping file.
 
 ///|
-pub const DIM_MINUS_ONE2 : Int = 1
+pub const DIM_MINUS_ONE2 : Int32 = 1
 
 ///|
-pub const DIM_MINUS_ONE3 : Int = 2
+pub const DIM_MINUS_ONE3 : Int32 = 2
 
 ///|
 pub fn[T] vect_to_na(v : T) -> T {
@@ -172,7 +172,7 @@ pub fn angular_inertia_into_matrix3(inertia : @core.SdpMat3) -> @core.Mat3 {
 }
 
 ///|
-pub fn mat2_column(m : @core.Mat2, i : Int) -> @core.Vec2? {
+pub fn mat2_column(m : @core.Mat2, i : Int32) -> @core.Vec2? {
   match i {
     0 => Some(Vec2(m.m00, m.m10))
     1 => Some(Vec2(m.m01, m.m11))
@@ -181,7 +181,7 @@ pub fn mat2_column(m : @core.Mat2, i : Int) -> @core.Vec2? {
 }
 
 ///|
-pub fn mat3_column(m : @core.Mat3, i : Int) -> @core.Vec3? {
+pub fn mat3_column(m : @core.Mat3, i : Int32) -> @core.Vec3? {
   match i {
     0 => Some(Vec3(m.m00, m.m10, m.m20))
     1 => Some(Vec3(m.m01, m.m11, m.m21))
@@ -369,12 +369,12 @@ pub fn select_vec3(
 }
 
 ///|
-pub fn[T] index_mut_const(arr : Array[T], i : Int, j : Int) -> (T?, T?) {
+pub fn[T] index_mut_const(arr : Array[T], i : Int32, j : Int32) -> (T?, T?) {
   (arr.get(i), arr.get(j))
 }
 
 ///|
-pub fn[T] index_mut2(arr : Array[T], i : Int, j : Int) -> (T?, T?) {
+pub fn[T] index_mut2(arr : Array[T], i : Int32, j : Int32) -> (T?, T?) {
   // MoonBit doesn't expose stable &mut refs; this mirrors the const accessor.
   (arr.get(i), arr.get(j))
 }
@@ -562,12 +562,12 @@ pub fn simd_length3(v : @core.Vec3) -> Float {
 }
 
 ///|
-pub fn column2(m : @core.Mat2, i : Int) -> @core.Vec2? {
+pub fn column2(m : @core.Mat2, i : Int32) -> @core.Vec2? {
   mat2_column(m, i)
 }
 
 ///|
-pub fn column3(m : @core.Mat3, i : Int) -> @core.Vec3? {
+pub fn column3(m : @core.Mat3, i : Int32) -> @core.Vec3? {
   mat3_column(m, i)
 }
 

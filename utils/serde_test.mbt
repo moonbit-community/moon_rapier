@@ -15,9 +15,9 @@
 ///|
 /// Ported from rapier/src/utils/mod.rs (serde_json_hashmap).
 test "serde json hashmap" {
-  let map = HashMap::from_array([(42, "Forty-Two")])
-  let serialized = serialize_to_vec_tuple(map)
+  let map = @utils.HashMap::from_array([(42, "Forty-Two")])
+  let serialized = @utils.serialize_to_vec_tuple(map)
   inspect(serialized, content="{\"map\":[[42,\"Forty-Two\"]]}")
-  let parsed = deserialize_from_vec_tuple(serialized)
+  let parsed = @utils.deserialize_from_vec_tuple(serialized)
   inspect(parsed.equals(map), content="true")
 }

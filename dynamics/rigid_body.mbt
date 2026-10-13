@@ -14,16 +14,16 @@
 
 ///|
 pub struct RigidBodyHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 
 ///|
 fn RigidBodyHandle::RigidBodyHandle(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBodyHandle {
-  { id, generation }
+  { id, generation, }
 }
 
 ///|
@@ -36,14 +36,16 @@ pub fn RigidBodyHandle::equals(
 
 ///|
 pub fn RigidBodyHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBodyHandle {
   RigidBodyHandle(id, generation)
 }
 
 ///|
-pub fn RigidBodyHandle::into_raw_parts(self : RigidBodyHandle) -> (Int, Int) {
+pub fn RigidBodyHandle::into_raw_parts(
+  self : RigidBodyHandle,
+) -> (Int32, Int32) {
   (self.id, self.generation)
 }
 
@@ -54,42 +56,42 @@ pub fn RigidBodyHandle::invalid() -> RigidBodyHandle {
 
 ///|
 pub struct RigidBodyIds {
-  mut active_island_id : Int
-  mut active_set_id : Int
-  mut active_set_timestamp : Int
+  mut active_island_id : Int32
+  mut active_set_id : Int32
+  mut active_set_timestamp : Int32
 }
 
 ///|
 pub fn RigidBodyIds::default() -> RigidBodyIds {
-  { active_island_id: -1, active_set_id: -1, active_set_timestamp: 0 }
+  { active_island_id: -1, active_set_id: -1, active_set_timestamp: 0, }
 }
 
 ///|
-const RIGID_BODY_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
+const RIGID_BODY_CHANGES_IN_MODIFIED_SET : Int32 = 1 << 0
 
 ///|
-const RIGID_BODY_CHANGES_POSITION : Int = 1 << 1
+const RIGID_BODY_CHANGES_POSITION : Int32 = 1 << 1
 
 ///|
-const RIGID_BODY_CHANGES_SLEEP : Int = 1 << 2
+const RIGID_BODY_CHANGES_SLEEP : Int32 = 1 << 2
 
 ///|
-const RIGID_BODY_CHANGES_COLLIDERS : Int = 1 << 3
+const RIGID_BODY_CHANGES_COLLIDERS : Int32 = 1 << 3
 
 ///|
-const RIGID_BODY_CHANGES_TYPE : Int = 1 << 4
+const RIGID_BODY_CHANGES_TYPE : Int32 = 1 << 4
 
 ///|
-const RIGID_BODY_CHANGES_DOMINANCE : Int = 1 << 5
+const RIGID_BODY_CHANGES_DOMINANCE : Int32 = 1 << 5
 
 ///|
-const RIGID_BODY_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 6
+const RIGID_BODY_CHANGES_LOCAL_MASS_PROPERTIES : Int32 = 1 << 6
 
 ///|
-const RIGID_BODY_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 7
+const RIGID_BODY_CHANGES_ENABLED_OR_DISABLED : Int32 = 1 << 7
 
 ///|
-const RIGID_BODY_CHANGES_ALL : Int = RIGID_BODY_CHANGES_IN_MODIFIED_SET |
+const RIGID_BODY_CHANGES_ALL : Int32 = RIGID_BODY_CHANGES_IN_MODIFIED_SET |
   RIGID_BODY_CHANGES_POSITION |
   RIGID_BODY_CHANGES_SLEEP |
   RIGID_BODY_CHANGES_COLLIDERS |
@@ -100,79 +102,82 @@ const RIGID_BODY_CHANGES_ALL : Int = RIGID_BODY_CHANGES_IN_MODIFIED_SET |
 
 ///|
 pub struct RigidBodyChanges {
-  bits : Int
+  bits : Int32
 }
 
 ///|
 pub fn RigidBodyChanges::all() -> RigidBodyChanges {
-  { bits: RIGID_BODY_CHANGES_ALL }
+  { bits: RIGID_BODY_CHANGES_ALL, }
 }
 
 ///|
 pub fn RigidBodyChanges::empty() -> RigidBodyChanges {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
 pub fn RigidBodyChanges::insert(
   self : RigidBodyChanges,
-  flag : Int,
+  flag : Int32,
 ) -> RigidBodyChanges {
-  { bits: self.bits | flag }
+  { bits: self.bits | flag, }
 }
 
 ///|
-pub fn RigidBodyChanges::contains(self : RigidBodyChanges, flag : Int) -> Bool {
+pub fn RigidBodyChanges::contains(
+  self : RigidBodyChanges,
+  flag : Int32,
+) -> Bool {
   (self.bits & flag) != 0
 }
 
 ///|
 pub fn RigidBodyChanges::remove(
   self : RigidBodyChanges,
-  flag : Int,
+  flag : Int32,
 ) -> RigidBodyChanges {
-  { bits: self.bits & Int::lnot(flag) }
+  { bits: self.bits & Int32::lnot(flag), }
 }
 
 ///|
 /// Flag value helpers used by the pub-parity audit mapping.
-pub fn RigidBodyChanges::sleep_flag() -> Int {
+pub fn RigidBodyChanges::sleep_flag() -> Int32 {
   RIGID_BODY_CHANGES_SLEEP
 }
 
 ///|
-pub fn RigidBodyChanges::sleep() -> Int {
+pub fn RigidBodyChanges::sleep() -> Int32 {
   RigidBodyChanges::sleep_flag()
 }
 
 ///|
-pub fn RigidBodyChanges::colliders_flag() -> Int {
+pub fn RigidBodyChanges::colliders_flag() -> Int32 {
   RIGID_BODY_CHANGES_COLLIDERS
 }
 
 ///|
-pub fn RigidBodyChanges::colliders() -> Int {
+pub fn RigidBodyChanges::colliders() -> Int32 {
   RigidBodyChanges::colliders_flag()
 }
 
 ///|
-pub fn RigidBodyChanges::dominance_flag() -> Int {
+pub fn RigidBodyChanges::dominance_flag() -> Int32 {
   RIGID_BODY_CHANGES_DOMINANCE
 }
 
 ///|
-pub fn RigidBodyChanges::dominance() -> Int {
+pub fn RigidBodyChanges::dominance() -> Int32 {
   RigidBodyChanges::dominance_flag()
 }
 
 ///|
 pub struct RigidBodyDominance {
-  mut group : Int
+  mut group : Int32
 }
 
 ///|
 pub fn RigidBodyDominance::RigidBodyDominance(
-  group : Int,
+  group : Int32,
 ) -> RigidBodyDominance {
   { group, }
 }
@@ -186,7 +191,7 @@ pub fn RigidBodyDominance::default() -> RigidBodyDominance {
 pub fn RigidBodyDominance::effective_group(
   self : RigidBodyDominance,
   body_type : RigidBodyType,
-) -> Int {
+) -> Int32 {
   if body_type.is_dynamic_or_kinematic() {
     self.group
   } else {
@@ -229,7 +234,7 @@ pub fn RigidBodyPosition::RigidBodyPosition(
   position : @core.Isometry2,
   next_position : @core.Isometry2,
 ) -> RigidBodyPosition {
-  { position, next_position }
+  { position, next_position, }
 }
 
 ///|
@@ -277,7 +282,7 @@ pub fn RigidBodyVelocity::RigidBodyVelocity(
   linvel : @core.Vec2,
   angvel : @core.Real,
 ) -> RigidBodyVelocity {
-  { linvel, angvel }
+  { linvel, angvel, }
 }
 
 ///|
@@ -310,7 +315,7 @@ pub fn RigidBodyVelocity::integrate(
 
 ///|
 pub fn RigidBodyVelocity::zero() -> RigidBodyVelocity {
-  { linvel: @core.Vec2::zero(), angvel: 0.0F }
+  { linvel: @core.Vec2::zero(), angvel: 0.0F, }
 }
 
 ///|
@@ -396,7 +401,7 @@ pub fn RigidBodyVelocity::transformed(
   let s = rotation.sin
   let v = self.linvel
   let lin = @core.Vec2(c * v.x - s * v.y, s * v.x + c * v.y)
-  { linvel: lin, angvel: self.angvel }
+  { linvel: lin, angvel: self.angvel, }
 }
 
 ///|
@@ -569,7 +574,7 @@ pub struct RigidBodyDamping {
 
 ///|
 pub fn RigidBodyDamping::default() -> RigidBodyDamping {
-  { linear_damping: 0.0F, angular_damping: 0.0F }
+  { linear_damping: 0.0F, angular_damping: 0.0F, }
 }
 
 ///|
@@ -847,7 +852,7 @@ pub struct RigidBody {
   mut mass_props : RigidBodyMassProps
   mut colliders : RigidBodyColliders
   mut additional_mass : @core.Real
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut changes : RigidBodyChanges
 }
 
@@ -905,7 +910,7 @@ pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
 }
 
 ///|
-pub fn RigidBody::active_island_id(self : RigidBody) -> Int {
+pub fn RigidBody::active_island_id(self : RigidBody) -> Int32 {
   self.ids.active_island_id
 }
 
@@ -960,19 +965,19 @@ pub fn RigidBody::lock_rotations(self : RigidBody) -> RigidBody {
 }
 
 ///|
-pub fn RigidBody::dominance_group(self : RigidBody) -> Int {
+pub fn RigidBody::dominance_group(self : RigidBody) -> Int32 {
   self.dominance.group
 }
 
 ///|
-pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int {
+pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int32 {
   self.dominance.effective_group(self.body_type)
 }
 
 ///|
 pub fn RigidBody::set_dominance_group(
   self : RigidBody,
-  group : Int,
+  group : Int32,
 ) -> RigidBody {
   if self.dominance.group != group {
     self.dominance.group = group
@@ -982,7 +987,7 @@ pub fn RigidBody::set_dominance_group(
 }
 
 ///|
-pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
+pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int32 {
   self.additional_solver_iterations
 }
 
@@ -992,15 +997,15 @@ pub fn RigidBody::additional_mass(self : RigidBody) -> @core.Real {
 }
 
 ///|
-pub fn RigidBody::colliders(self : RigidBody) -> Array[(Int, Int)] {
+pub fn RigidBody::colliders(self : RigidBody) -> Array[(Int32, Int32)] {
   self.colliders.handles()
 }
 
 ///|
 pub fn RigidBody::attach_collider_raw(
   self : RigidBody,
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBody {
   let prev_len = self.colliders.len()
   self.colliders = self.colliders.attach_collider_raw(id, generation)
@@ -1013,8 +1018,8 @@ pub fn RigidBody::attach_collider_raw(
 ///|
 pub fn RigidBody::detach_collider_raw(
   self : RigidBody,
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBody {
   let prev_len = self.colliders.len()
   self.colliders = self.colliders.detach_collider_raw(id, generation)
@@ -1049,7 +1054,7 @@ pub fn RigidBody::set_additional_mass(
 ///|
 pub fn RigidBody::set_additional_solver_iterations(
   self : RigidBody,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> RigidBody {
   self.additional_solver_iterations = additional_iterations
   self
@@ -1682,13 +1687,13 @@ pub struct RigidBodyBuilder {
   mut lock_rotations : Bool
   mut additional_mass : @core.Real
   mut additional_local_mprops : @core.MassProperties
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut can_sleep : Bool
   mut sleeping : Bool
   mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : @core.Real
-  mut dominance_group : Int
+  mut dominance_group : Int32
   mut user_data : @core.UserData128
 }
 
@@ -1842,7 +1847,7 @@ pub fn RigidBodyBuilder::additional_mass(
 ///|
 pub fn RigidBodyBuilder::additional_solver_iterations(
   self : RigidBodyBuilder,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> RigidBodyBuilder {
   self.additional_solver_iterations = additional_iterations
   self
@@ -1851,7 +1856,7 @@ pub fn RigidBodyBuilder::additional_solver_iterations(
 ///|
 pub fn RigidBodyBuilder::dominance_group(
   self : RigidBodyBuilder,
-  group : Int,
+  group : Int32,
 ) -> RigidBodyBuilder {
   self.dominance_group = group
   self
@@ -1860,7 +1865,7 @@ pub fn RigidBodyBuilder::dominance_group(
 ///|
 pub fn RigidBodyBuilder::user_data(
   self : RigidBodyBuilder,
-  data : Int,
+  data : Int32,
 ) -> RigidBodyBuilder {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
@@ -2023,7 +2028,7 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
       linear_damping: self.linear_damping,
       angular_damping: self.angular_damping,
     },
-    vels: { linvel: self.linvel, angvel: self.angvel },
+    vels: { linvel: self.linvel, angvel: self.angvel, },
     forces,
     ccd: RigidBodyCcd::default(),
     mass_props: RigidBodyMassProps::default(),
@@ -2045,10 +2050,10 @@ pub fn RigidBodyBuilder::build(self : RigidBodyBuilder) -> RigidBody {
 ///|
 pub struct RigidBodySet {
   bodies : Array[RigidBody?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
   modified_bodies : Array[RigidBodyHandle]
-  pending_collider_position_updates : Array[(Int, Int, @core.Isometry2)]
+  pending_collider_position_updates : Array[(Int32, Int32, @core.Isometry2)]
 }
 
 ///|
@@ -2063,13 +2068,13 @@ pub fn RigidBodySet::RigidBodySet() -> RigidBodySet {
 }
 
 ///|
-pub fn RigidBodySet::with_capacity(capacity : Int) -> RigidBodySet {
+pub fn RigidBodySet::with_capacity(capacity : Int32) -> RigidBodySet {
   capacity |> ignore
   RigidBodySet()
 }
 
 ///|
-pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
+pub fn RigidBodySet::len(self : RigidBodySet) -> Int32 {
   let mut count = 0
   for i in 0..<self.bodies.length() {
     if self.bodies[i] is Some(_) {
@@ -2212,7 +2217,7 @@ pub fn RigidBodySet::get_mut_internal_with_modification_tracking(
 ///|
 pub fn RigidBodySet::get_unknown_gen(
   self : RigidBodySet,
-  id : Int,
+  id : Int32,
 ) -> (RigidBody, RigidBodyHandle)? {
   if id < 0 || id >= self.bodies.length() {
     return None
@@ -2228,7 +2233,7 @@ pub fn RigidBodySet::get_unknown_gen(
 ///|
 pub fn RigidBodySet::get_unknown_gen_mut(
   self : RigidBodySet,
-  id : Int,
+  id : Int32,
 ) -> (RigidBody, RigidBodyHandle)? {
   if id < 0 || id >= self.bodies.length() {
     return None
@@ -2332,7 +2337,7 @@ pub fn RigidBodySet::remove(
 }
 
 ///|
-fn body_type_to_int(body_type : RigidBodyType) -> Int {
+fn body_type_to_int(body_type : RigidBodyType) -> Int32 {
   match body_type {
     Dynamic => 0
     Fixed => 1
@@ -2342,7 +2347,7 @@ fn body_type_to_int(body_type : RigidBodyType) -> Int {
 }
 
 ///|
-fn body_type_from_int(value : Int) -> RigidBodyType {
+fn body_type_from_int(value : Int32) -> RigidBodyType {
   if value == 1 {
     Fixed
   } else if value == 2 {
@@ -2367,7 +2372,7 @@ fn split_values(text : String, sep : String) -> Array[String] {
 }
 
 ///|
-fn parse_int_value(text : String) -> Int {
+fn parse_int_value(text : String) -> Int32 {
   let result = try @string.parse_int(text[:], base=10) catch {
     err => Err(err)
   } noraise {
@@ -2544,8 +2549,8 @@ pub fn RigidBodySet::serialize(self : RigidBodySet) -> String {
 ///|
 pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
   let mut len = 0
-  let generations : Array[Int] = []
-  let free_list : Array[Int] = []
+  let generations : Array[Int32] = []
+  let free_list : Array[Int32] = []
   let bodies : Array[RigidBody?] = []
   for part in data.split(";"[:]) {
     let value = part.to_owned()
@@ -2794,7 +2799,7 @@ pub fn RigidBodySet::deserialize(data : String) -> RigidBodySet {
             dominance: RigidBodyDominance(dominance_group),
             enabled,
             activation,
-            damping: { linear_damping, angular_damping },
+            damping: { linear_damping, angular_damping, },
             vels: RigidBodyVelocity(Vec2(linvel_x, linvel_y), angvel),
             forces: {
               force: @core.Vec2::zero(),
@@ -2852,12 +2857,12 @@ pub fn RigidBody::activation_mut(self : RigidBody) -> RigidBodyActivation {
 }
 
 ///|
-pub fn RigidBody::effective_active_set_offset(self : RigidBody) -> Int {
+pub fn RigidBody::effective_active_set_offset(self : RigidBody) -> Int32 {
   self.ids.active_set_id
 }
 
 ///|
-pub fn RigidBody::user_data(self : RigidBody) -> Int {
+pub fn RigidBody::user_data(self : RigidBody) -> Int32 {
   self.user_data.to_int_truncate()
 }
 
@@ -2867,7 +2872,7 @@ pub fn RigidBody::user_data128(self : RigidBody) -> @core.UserData128 {
 }
 
 ///|
-pub fn RigidBody::set_user_data(self : RigidBody, data : Int) -> RigidBody {
+pub fn RigidBody::set_user_data(self : RigidBody, data : Int32) -> RigidBody {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
 }

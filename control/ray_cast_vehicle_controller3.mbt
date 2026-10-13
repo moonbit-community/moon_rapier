@@ -153,9 +153,9 @@ pub struct DynamicRayCastVehicleController3 {
   /// Handle of the vehicle chassis.
   chassis : @dynamics.RigidBodyHandle
   /// The chassis local up direction (`0 = x, 1 = y, 2 = z`).
-  index_up_axis : Int
+  index_up_axis : Int32
   /// The chassis local forward direction (`0 = x, 1 = y, 2 = z`).
-  index_forward_axis : Int
+  index_forward_axis : Int32
 }
 
 ///|
@@ -182,7 +182,7 @@ pub fn DynamicRayCastVehicleController3::add_wheel(
   suspension_rest_length : @core.Real,
   radius : @core.Real,
   tuning : WheelTuning,
-) -> Int {
+) -> Int32 {
   let wheel_id = self.wheels.length()
   self.wheels.push(
     wheel3_new(
@@ -196,7 +196,7 @@ pub fn DynamicRayCastVehicleController3::add_wheel(
 ///|
 pub fn DynamicRayCastVehicleController3::set_engine_force(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   force : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -210,7 +210,7 @@ pub fn DynamicRayCastVehicleController3::set_engine_force(
 ///|
 pub fn DynamicRayCastVehicleController3::set_brake(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   brake : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -224,7 +224,7 @@ pub fn DynamicRayCastVehicleController3::set_brake(
 ///|
 pub fn DynamicRayCastVehicleController3::set_steering_value(
   self : DynamicRayCastVehicleController3,
-  wheel_id : Int,
+  wheel_id : Int32,
   steering : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -253,7 +253,7 @@ fn v2_to_v3(v : @core.Vec2) -> @core.Vec3 {
 }
 
 ///|
-fn axis_vec3(axis : Int) -> @core.Vec3 {
+fn axis_vec3(axis : Int32) -> @core.Vec3 {
   if axis == 0 {
     Vec3(1.0F, 0.0F, 0.0F)
   } else if axis == 1 {

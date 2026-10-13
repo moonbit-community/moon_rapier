@@ -15,7 +15,7 @@
 ///|
 test "broad phase bvh pairs basic" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
+  let colliders = @collision.ColliderSet::ColliderSet()
   let body1 = @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
     .build()
@@ -24,39 +24,39 @@ test "broad phase bvh pairs basic" {
     .build()
   let h1 = bodies.insert(body1)
   let h2 = bodies.insert(body2)
-  let c1 = ColliderBuilder::ball(0.5F).build()
-  let c2 = ColliderBuilder::ball(0.5F).build()
+  let c1 = @collision.ColliderBuilder::ball(0.5F).build()
+  let c2 = @collision.ColliderBuilder::ball(0.5F).build()
   let ch1 = colliders.insert_with_parent(c1, h1, bodies)
   let ch2 = colliders.insert_with_parent(c2, h2, bodies)
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   let pairs = broad_phase.pairs()
   inspect(pairs.length() == 1, content="true")
   let pair = pairs[0]
-  let matches = ColliderHandle::equals(pair.0, ch1) &&
-    ColliderHandle::equals(pair.1, ch2)
-  let matches_swapped = ColliderHandle::equals(pair.0, ch2) &&
-    ColliderHandle::equals(pair.1, ch1)
+  let matches = @collision.ColliderHandle::equals(pair.0, ch1) &&
+    @collision.ColliderHandle::equals(pair.1, ch2)
+  let matches_swapped = @collision.ColliderHandle::equals(pair.0, ch2) &&
+    @collision.ColliderHandle::equals(pair.1, ch1)
   inspect(matches || matches_swapped, content="true")
 }
 
 ///|
 test "broad phase bvh emits add/delete pair events" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
+  let colliders = @collision.ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let ch1 = colliders.insert_with_parent(
-    ColliderBuilder::ball(0.5F).build(),
+    @collision.ColliderBuilder::ball(0.5F).build(),
     h1,
     bodies,
   )
   let ch2 = colliders.insert_with_parent(
-    ColliderBuilder::ball(0.5F).build(),
+    @collision.ColliderBuilder::ball(0.5F).build(),
     h2,
     bodies,
   )
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   let ev1 = broad_phase.take_events()
   inspect(ev1.length() == 1, content="true")
@@ -64,8 +64,14 @@ test "broad phase bvh emits add/delete pair events" {
     let a = pair1.collider1()
     let b = pair1.collider2()
     inspect(
-      (ColliderHandle::equals(a, ch1) && ColliderHandle::equals(b, ch2)) ||
-      (ColliderHandle::equals(a, ch2) && ColliderHandle::equals(b, ch1)),
+      (
+        @collision.ColliderHandle::equals(a, ch1) &&
+        @collision.ColliderHandle::equals(b, ch2)
+      ) ||
+      (
+        @collision.ColliderHandle::equals(a, ch2) &&
+        @collision.ColliderHandle::equals(b, ch1)
+      ),
       content="true",
     )
   } else {
@@ -83,8 +89,14 @@ test "broad phase bvh emits add/delete pair events" {
     let a = pair2.collider1()
     let b = pair2.collider2()
     inspect(
-      (ColliderHandle::equals(a, ch1) && ColliderHandle::equals(b, ch2)) ||
-      (ColliderHandle::equals(a, ch2) && ColliderHandle::equals(b, ch1)),
+      (
+        @collision.ColliderHandle::equals(a, ch1) &&
+        @collision.ColliderHandle::equals(b, ch2)
+      ) ||
+      (
+        @collision.ColliderHandle::equals(a, ch2) &&
+        @collision.ColliderHandle::equals(b, ch1)
+      ),
       content="true",
     )
   } else {
@@ -95,14 +107,14 @@ test "broad phase bvh emits add/delete pair events" {
 ///|
 test "broad phase bvh skips disabled colliders" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
+  let colliders = @collision.ColliderSet::ColliderSet()
   let h1 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
   let h2 = bodies.insert(@dynamics.RigidBodyBuilder::dynamic().build())
-  let c1 = ColliderBuilder::ball(0.5F).build()
-  let c2 = ColliderBuilder::ball(0.5F).enabled(false).build()
+  let c1 = @collision.ColliderBuilder::ball(0.5F).build()
+  let c2 = @collision.ColliderBuilder::ball(0.5F).enabled(false).build()
   colliders.insert_with_parent(c1, h1, bodies) |> ignore
   colliders.insert_with_parent(c2, h2, bodies) |> ignore
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
 }
@@ -110,7 +122,7 @@ test "broad phase bvh skips disabled colliders" {
 ///|
 test "broad phase bvh prediction distance expands aabb pairs" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
+  let colliders = @collision.ColliderSet::ColliderSet()
   let h1 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic()
     .translation(@core.Vec2::zero())
@@ -119,11 +131,19 @@ test "broad phase bvh prediction distance expands aabb pairs" {
   let h2 = bodies.insert(
     @dynamics.RigidBodyBuilder::dynamic().translation(Vec2(1.01F, 0.0F)).build(),
   )
-  colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h1, bodies)
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    h1,
+    bodies,
+  )
   |> ignore
-  colliders.insert_with_parent(ColliderBuilder::ball(0.5F).build(), h2, bodies)
+  colliders.insert_with_parent(
+    @collision.ColliderBuilder::ball(0.5F).build(),
+    h2,
+    bodies,
+  )
   |> ignore
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(0.0F, bodies, colliders)
   inspect(broad_phase.pairs().length() == 0, content="true")
   broad_phase.update(0.01F, bodies, colliders)
@@ -131,13 +151,13 @@ test "broad phase bvh prediction distance expands aabb pairs" {
 }
 
 ///|
-fn rng_next(seed : Int) -> Int {
+fn rng_next(seed : Int32) -> Int32 {
   // Deterministic LCG, 31-bit output.
   (seed * 1103515245 + 12345) & 0x7fffffff
 }
 
 ///|
-fn rng_float01(seed : Int) -> (@core.Real, Int) {
+fn rng_float01(seed : Int32) -> (@core.Real, Int32) {
   let next = rng_next(seed)
   let value = Float::from_double(next.to_double() / 2147483647.0)
   (value, next)
@@ -145,7 +165,7 @@ fn rng_float01(seed : Int) -> (@core.Real, Int) {
 
 ///|
 fn compute_aabb_for_test(
-  shape : Shape,
+  shape : @collision.Shape,
   center : @core.Vec2,
   rotation : @core.Real,
   prediction_distance : @core.Real,
@@ -368,7 +388,10 @@ fn aabb_intersects_for_test(
 }
 
 ///|
-fn handle_less_for_test(left : ColliderHandle, right : ColliderHandle) -> Bool {
+fn handle_less_for_test(
+  left : @collision.ColliderHandle,
+  right : @collision.ColliderHandle,
+) -> Bool {
   if left.id < right.id {
     true
   } else if left.id > right.id {
@@ -380,8 +403,8 @@ fn handle_less_for_test(left : ColliderHandle, right : ColliderHandle) -> Bool {
 
 ///|
 fn pair_less_for_test(
-  left : (ColliderHandle, ColliderHandle),
-  right : (ColliderHandle, ColliderHandle),
+  left : (@collision.ColliderHandle, @collision.ColliderHandle),
+  right : (@collision.ColliderHandle, @collision.ColliderHandle),
 ) -> Bool {
   if handle_less_for_test(left.0, right.0) {
     return true
@@ -393,7 +416,9 @@ fn pair_less_for_test(
 }
 
 ///|
-fn sort_pairs_for_test(pairs : Array[(ColliderHandle, ColliderHandle)]) -> Unit {
+fn sort_pairs_for_test(
+  pairs : Array[(@collision.ColliderHandle, @collision.ColliderHandle)],
+) -> Unit {
   for i in 1..<pairs.length() {
     let key = pairs[i]
     let mut j = i
@@ -408,8 +433,8 @@ fn sort_pairs_for_test(pairs : Array[(ColliderHandle, ColliderHandle)]) -> Unit 
 ///|
 test "broad phase bvh matches naive aabb pairing" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
-  let handles : Array[ColliderHandle] = []
+  let colliders = @collision.ColliderSet::ColliderSet()
+  let handles : Array[@collision.ColliderHandle] = []
   let mut seed = 1234567
   for _ in 0..<50 {
     let (shape_roll, seed1) = rng_float01(seed)
@@ -422,13 +447,13 @@ test "broad phase bvh matches naive aabb pairing" {
     let rotation = rot_roll * @core.two_pi()
     let enabled = enabled_roll > 0.1F
     let collider = if shape_roll < 0.4F {
-      ColliderBuilder::ball(0.2F + 0.8F * px)
+      @collision.ColliderBuilder::ball(0.2F + 0.8F * px)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
       .build()
     } else if shape_roll < 0.8F {
-      ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
+      @collision.ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
@@ -444,7 +469,7 @@ test "broad phase bvh matches naive aabb pairing" {
         points.push(Vec2((rx - 0.5F) * 2.0F, (ry - 0.5F) * 2.0F))
       }
       seed = s
-      let base = ColliderBuilder::convex_hull(points)
+      let base = @collision.ColliderBuilder::convex_hull(points)
       if base is Some(builder) {
         builder
         .translation(translation)
@@ -453,7 +478,7 @@ test "broad phase bvh matches naive aabb pairing" {
         .build()
       } else {
         // Extremely unlikely degenerate case: fall back to a ball.
-        ColliderBuilder::ball(0.5F)
+        @collision.ColliderBuilder::ball(0.5F)
         .translation(translation)
         .rotation(rotation)
         .enabled(enabled)
@@ -463,10 +488,12 @@ test "broad phase bvh matches naive aabb pairing" {
     handles.push(colliders.insert(collider))
   }
   let prediction_distance = 0.05F
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(prediction_distance, bodies, colliders)
   let bvh_pairs = broad_phase.pairs()
-  let naive_pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  let naive_pairs : Array[
+    (@collision.ColliderHandle, @collision.ColliderHandle),
+  ] = []
   let mins : Array[@core.Vec2?] = []
   let maxs : Array[@core.Vec2?] = []
   for i in 0..<handles.length() {
@@ -507,8 +534,8 @@ test "broad phase bvh matches naive aabb pairing" {
   inspect(bvh_pairs.length() == naive_pairs.length(), content="true")
   for i in 0..<bvh_pairs.length() {
     inspect(
-      ColliderHandle::equals(bvh_pairs[i].0, naive_pairs[i].0) &&
-      ColliderHandle::equals(bvh_pairs[i].1, naive_pairs[i].1),
+      @collision.ColliderHandle::equals(bvh_pairs[i].0, naive_pairs[i].0) &&
+      @collision.ColliderHandle::equals(bvh_pairs[i].1, naive_pairs[i].1),
       content="true",
     )
   }
@@ -517,8 +544,8 @@ test "broad phase bvh matches naive aabb pairing" {
 ///|
 test "broad phase bvh matches naive aabb pairing (large)" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
-  let handles : Array[ColliderHandle] = []
+  let colliders = @collision.ColliderSet::ColliderSet()
+  let handles : Array[@collision.ColliderHandle] = []
   let mut seed = 202501
   // Stress BVH construction/traversal with a larger leaf count.
   for _ in 0..<800 {
@@ -532,13 +559,13 @@ test "broad phase bvh matches naive aabb pairing (large)" {
     let rotation = rot_roll * @core.two_pi()
     let enabled = enabled_roll > 0.02F
     let collider = if shape_roll < 0.4F {
-      ColliderBuilder::ball(0.2F + 0.8F * px)
+      @collision.ColliderBuilder::ball(0.2F + 0.8F * px)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
       .build()
     } else if shape_roll < 0.8F {
-      ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
+      @collision.ColliderBuilder::cuboid(0.2F + 1.0F * px, 0.2F + 1.0F * py)
       .translation(translation)
       .rotation(rotation)
       .enabled(enabled)
@@ -553,7 +580,7 @@ test "broad phase bvh matches naive aabb pairing (large)" {
         points.push(Vec2((rx - 0.5F) * 3.0F, (ry - 0.5F) * 3.0F))
       }
       seed = s
-      let base = ColliderBuilder::convex_hull(points)
+      let base = @collision.ColliderBuilder::convex_hull(points)
       if base is Some(builder) {
         builder
         .translation(translation)
@@ -561,7 +588,7 @@ test "broad phase bvh matches naive aabb pairing (large)" {
         .enabled(enabled)
         .build()
       } else {
-        ColliderBuilder::ball(0.5F)
+        @collision.ColliderBuilder::ball(0.5F)
         .translation(translation)
         .rotation(rotation)
         .enabled(enabled)
@@ -571,10 +598,12 @@ test "broad phase bvh matches naive aabb pairing (large)" {
     handles.push(colliders.insert(collider))
   }
   let prediction_distance = 0.0F
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
   broad_phase.update(prediction_distance, bodies, colliders)
   let bvh_pairs = broad_phase.pairs()
-  let naive_pairs : Array[(ColliderHandle, ColliderHandle)] = []
+  let naive_pairs : Array[
+    (@collision.ColliderHandle, @collision.ColliderHandle),
+  ] = []
   let mins : Array[@core.Vec2?] = []
   let maxs : Array[@core.Vec2?] = []
   for i in 0..<handles.length() {
@@ -615,8 +644,8 @@ test "broad phase bvh matches naive aabb pairing (large)" {
   inspect(bvh_pairs.length() == naive_pairs.length(), content="true")
   for i in 0..<bvh_pairs.length() {
     inspect(
-      ColliderHandle::equals(bvh_pairs[i].0, naive_pairs[i].0) &&
-      ColliderHandle::equals(bvh_pairs[i].1, naive_pairs[i].1),
+      @collision.ColliderHandle::equals(bvh_pairs[i].0, naive_pairs[i].0) &&
+      @collision.ColliderHandle::equals(bvh_pairs[i].1, naive_pairs[i].1),
       content="true",
     )
   }

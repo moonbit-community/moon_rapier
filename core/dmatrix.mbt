@@ -18,13 +18,13 @@
 /// This is not a full nalgebra replacement; it is a small, deterministic,
 /// allocation-backed matrix for internal use and for parity mapping.
 pub struct DMatrix {
-  rows : Int
-  cols : Int
+  rows : Int32
+  cols : Int32
   data : Array[Real]
 }
 
 ///|
-fn index(rows : Int, cols : Int, r : Int, c : Int) -> Int? {
+fn index(rows : Int32, cols : Int32, r : Int32, c : Int32) -> Int32? {
   if r < 0 || c < 0 || r >= rows || c >= cols {
     None
   } else {
@@ -33,22 +33,22 @@ fn index(rows : Int, cols : Int, r : Int, c : Int) -> Int? {
 }
 
 ///|
-pub fn DMatrix::DMatrix(rows : Int, cols : Int, init : Real) -> DMatrix {
+pub fn DMatrix::DMatrix(rows : Int32, cols : Int32, init : Real) -> DMatrix {
   let data : Array[Real] = []
   let n = if rows < 0 || cols < 0 { 0 } else { rows * cols }
   for _ in 0..<n {
     data.push(init)
   }
-  { rows, cols, data }
+  { rows, cols, data, }
 }
 
 ///|
-pub fn DMatrix::zeros(rows : Int, cols : Int) -> DMatrix {
+pub fn DMatrix::zeros(rows : Int32, cols : Int32) -> DMatrix {
   DMatrix(rows, cols, 0.0F)
 }
 
 ///|
-pub fn DMatrix::identity(n : Int) -> DMatrix {
+pub fn DMatrix::identity(n : Int32) -> DMatrix {
   let mut m = DMatrix::zeros(n, n)
   for i in 0..<n {
     m = m.set(i, i, 1.0F)
@@ -57,17 +57,17 @@ pub fn DMatrix::identity(n : Int) -> DMatrix {
 }
 
 ///|
-pub fn DMatrix::rows(self : DMatrix) -> Int {
+pub fn DMatrix::rows(self : DMatrix) -> Int32 {
   self.rows
 }
 
 ///|
-pub fn DMatrix::cols(self : DMatrix) -> Int {
+pub fn DMatrix::cols(self : DMatrix) -> Int32 {
   self.cols
 }
 
 ///|
-pub fn DMatrix::get(self : DMatrix, r : Int, c : Int) -> Real? {
+pub fn DMatrix::get(self : DMatrix, r : Int32, c : Int32) -> Real? {
   if index(self.rows, self.cols, r, c) is Some(i) {
     Some(self.data[i])
   } else {
@@ -76,7 +76,7 @@ pub fn DMatrix::get(self : DMatrix, r : Int, c : Int) -> Real? {
 }
 
 ///|
-pub fn DMatrix::set(self : DMatrix, r : Int, c : Int, v : Real) -> DMatrix {
+pub fn DMatrix::set(self : DMatrix, r : Int32, c : Int32, v : Real) -> DMatrix {
   if index(self.rows, self.cols, r, c) is Some(i) {
     self.data[i] = v
   }

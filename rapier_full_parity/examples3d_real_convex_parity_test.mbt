@@ -18,11 +18,11 @@
 ///|
 test "examples3d/convex_polyhedron3.rs parity (3DReal headless)" {
   // Ported from `rapier-reference/examples3d/convex_polyhedron3.rs` (headless).
-  fn rng_next(seed : Int) -> Int {
+  fn rng_next(seed : Int32) -> Int32 {
     (seed * 1103515245 + 12345) & 0x7fffffff
   }
 
-  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+  fn rng_float01(seed : Int32) -> (@core.Real, Int32) {
     let next = rng_next(seed)
     let value = Float::from_double(next.to_double() / 2147483647.0)
     (value, next)
@@ -145,7 +145,7 @@ test "examples3d/convex_decomposition3.rs parity (3DReal headless)" {
     Vec3(-0.4F, 0.0F, 1.0F),
     Vec3(-1.0F, 0.0F, 1.0F),
   ]
-  let idx : Array[(Int, Int, Int)] = [
+  let idx : Array[(Int32, Int32, Int32)] = [
     (0, 1, 5),
     (1, 4, 5),
     (1, 2, 4),

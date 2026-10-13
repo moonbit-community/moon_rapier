@@ -14,11 +14,13 @@
 
 ///|
 test "rigid body user_data128 roundtrip through RigidBodySet serialize/deserialize" {
-  let bodies = RigidBodySet::RigidBodySet()
+  let bodies = @dynamics.RigidBodySet::RigidBodySet()
   let data = @core.UserData128::from_parts(42UL, 99UL)
-  let h = bodies.insert(RigidBodyBuilder::dynamic().user_data128(data).build())
+  let h = bodies.insert(
+    @dynamics.RigidBodyBuilder::dynamic().user_data128(data).build(),
+  )
   let snapshot = bodies.serialize()
-  let bodies2 = RigidBodySet::deserialize(snapshot)
+  let bodies2 = @dynamics.RigidBodySet::deserialize(snapshot)
   if bodies2.get(h) is Some(rb) {
     inspect(rb.user_data128().equals(data), content="true")
   } else {
@@ -29,6 +31,6 @@ test "rigid body user_data128 roundtrip through RigidBodySet serialize/deseriali
 ///|
 test "rigid body 3D user_data128 stored on build" {
   let data = @core.UserData128::from_parts(1UL, 2UL)
-  let rb = RigidBodyBuilder3D::dynamic().user_data128(data).build()
+  let rb = @dynamics.RigidBodyBuilder3D::dynamic().user_data128(data).build()
   inspect(rb.user_data128().equals(data), content="true")
 }

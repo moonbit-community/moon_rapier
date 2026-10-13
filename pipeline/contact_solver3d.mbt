@@ -21,7 +21,7 @@ pub struct ContactImpulse3D {
 
 ///|
 pub fn ContactImpulse3D::zero() -> ContactImpulse3D {
-  { normal: 0.0F, tangent1: 0.0F, tangent2: 0.0F }
+  { normal: 0.0F, tangent1: 0.0F, tangent2: 0.0F, }
 }
 
 ///|
@@ -44,14 +44,14 @@ pub struct ContactSolverCache3D {
   //
   // Performance-critical: use a hash map keyed by canonical raw handle parts.
   entries : @hashmap.HashMap[
-    (Int, Int, Int, Int),
+    (Int32, Int32, Int32, Int32),
     Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)],
   ]
 }
 
 ///|
 pub fn ContactSolverCache3D::ContactSolverCache3D() -> ContactSolverCache3D {
-  { entries: HashMap([]) }
+  { entries: HashMap([]), }
 }
 
 ///|
@@ -63,7 +63,7 @@ pub fn ContactSolverCache3D::clear(self : ContactSolverCache3D) -> Unit {
 fn cache_key(
   a : @collision.ColliderHandle3D,
   b : @collision.ColliderHandle3D,
-) -> (Int, Int, Int, Int) {
+) -> (Int32, Int32, Int32, Int32) {
   let (ai, ag) = a.into_raw_parts()
   let (bi, bg) = b.into_raw_parts()
   if ai < bi || (ai == bi && ag <= bg) {
@@ -94,9 +94,9 @@ fn cache_set(
 
 ///|
 fn rigid_body_stamp_for_island_filter(
-  island_stamps : Array[Int]?,
+  island_stamps : Array[Int32]?,
   handle : @dynamics.RigidBodyHandle?,
-) -> Int {
+) -> Int32 {
   if island_stamps is Some(stamps) && handle is Some(h) {
     let id = h.id
     if id >= 0 && id < stamps.length() {
@@ -108,8 +108,8 @@ fn rigid_body_stamp_for_island_filter(
 
 ///|
 fn contact_pair_matches_island(
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
   body1 : @dynamics.RigidBodyHandle?,
   body2 : @dynamics.RigidBodyHandle?,
 ) -> Bool {
@@ -293,12 +293,12 @@ fn solve_contacts_3d_impl(
   narrow_phase : @collision.NarrowPhase3D,
   cache_in : ContactSolverCache3D,
   cache_out : ContactSolverCache3D,
-  twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real],
-  twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real],
+  twist_cache_in : @hashmap.HashMap[(Int32, Int32, Int32, Int32), @core.Real],
+  twist_cache_out : @hashmap.HashMap[(Int32, Int32, Int32, Int32), @core.Real],
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
   reset_outputs : Bool,
 ) -> Unit {
   if reset_outputs {
@@ -539,7 +539,7 @@ fn solve_contacts_3d_impl(
   let restitution_threshold = 1.0F
   let solve_entries : Array[ContactSolveEntry3D] = []
   let pair_friction_impulses : Array[(@core.Real, @core.Real, @core.Real)] = []
-  let pair_keys : Array[(Int, Int, Int, Int)] = []
+  let pair_keys : Array[(Int32, Int32, Int32, Int32)] = []
   for i in 0..<all_pairs.length() {
     let entry = all_pairs[i]
     let pair = entry.0
@@ -957,7 +957,7 @@ fn solve_contacts_3d_impl(
                 apply_impulse(b2, p, p0.point2)
               }
             }
-            acc = { normal: acc.normal, tangent1: next_t1, tangent2: next_t2 }
+            acc = { normal: acc.normal, tangent1: next_t1, tangent2: next_t2, }
           }
         }
         cached[k] = (
@@ -1069,7 +1069,11 @@ fn solve_contacts_3d_impl(
           cached[k] = (
             e.co1_inv_pos.transform_point(points[k].point1),
             e.co2_inv_pos.transform_point(points[k].point2),
-            { normal: prev_cached.normal, tangent1: next_t1, tangent2: next_t2 },
+            {
+              normal: prev_cached.normal,
+              tangent1: next_t1,
+              tangent2: next_t2,
+            },
           )
         }
       }
@@ -1230,10 +1234,14 @@ pub fn solve_contacts_3d(
   physics_hooks : PhysicsHooks3D?,
   event_handler : EventHandler3D?,
 ) -> Unit {
-  let twist_cache_in : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
-  )
-  let twist_cache_out : @hashmap.HashMap[(Int, Int, Int, Int), @core.Real] = HashMap([],
-  )
+  let twist_cache_in : @hashmap.HashMap[
+    (Int32, Int32, Int32, Int32),
+    @core.Real,
+  ] = HashMap([])
+  let twist_cache_out : @hashmap.HashMap[
+    (Int32, Int32, Int32, Int32),
+    @core.Real,
+  ] = HashMap([])
   solve_contacts_3d_impl(
     parameters,
     bodies,

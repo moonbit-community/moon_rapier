@@ -90,7 +90,7 @@ pub struct ColliderSet3 {
 
 ///|
 pub fn ColliderSet3::ColliderSet3() -> ColliderSet3 {
-  { inner: ColliderSet() }
+  { inner: ColliderSet(), }
 }
 
 ///|
@@ -99,7 +99,7 @@ pub fn ColliderSet3::as_2d(self : ColliderSet3) -> ColliderSet {
 }
 
 ///|
-pub fn ColliderSet3::len(self : ColliderSet3) -> Int {
+pub fn ColliderSet3::len(self : ColliderSet3) -> Int32 {
   self.inner.len()
 }
 

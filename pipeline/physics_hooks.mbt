@@ -31,7 +31,7 @@ pub fn PairFilterContext::PairFilterContext(
   rigid_body1 : @dynamics.RigidBodyHandle?,
   rigid_body2 : @dynamics.RigidBodyHandle?,
 ) -> PairFilterContext {
-  { bodies, colliders, collider1, collider2, rigid_body1, rigid_body2 }
+  { bodies, colliders, collider1, collider2, rigid_body1, rigid_body2, }
 }
 
 ///|
@@ -45,17 +45,17 @@ pub struct ContactModificationContext {
   manifold : @collision.ContactManifold
   solver_contacts : Array[@collision.SolverContact]
   mut normal : @core.Vec2
-  mut user_data : Int
+  mut user_data : Int32
 }
 
 ///|
-const CONTACT_CONFIGURATION_UNKNOWN : Int = 0
+const CONTACT_CONFIGURATION_UNKNOWN : Int32 = 0
 
 ///|
-const CONTACT_CURRENTLY_ALLOWED : Int = 1
+const CONTACT_CURRENTLY_ALLOWED : Int32 = 1
 
 ///|
-const CONTACT_CURRENTLY_FORBIDDEN : Int = 2
+const CONTACT_CURRENTLY_FORBIDDEN : Int32 = 2
 
 ///|
 pub fn ContactModificationContext::ContactModificationContext(
@@ -68,7 +68,7 @@ pub fn ContactModificationContext::ContactModificationContext(
   manifold : @collision.ContactManifold,
   solver_contacts : Array[@collision.SolverContact],
   normal : @core.Vec2,
-  user_data : Int,
+  user_data : Int32,
 ) -> ContactModificationContext {
   {
     bodies,
@@ -102,7 +102,7 @@ pub fn ContactModificationContext::set_normal(
 ///|
 pub fn ContactModificationContext::set_user_data(
   self : ContactModificationContext,
-  user_data : Int,
+  user_data : Int32,
 ) -> Unit {
   self.user_data = user_data
 }

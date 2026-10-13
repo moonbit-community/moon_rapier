@@ -15,7 +15,7 @@
 ///|
 test "contact solver cache accumulates across islands" {
   fn cache_contains_pair(
-    cache : Array[ContactImpulseCacheEntry],
+    cache : Array[@pipeline.ContactImpulseCacheEntry],
     a : @collision.ColliderHandle,
     b : @collision.ColliderHandle,
   ) -> Bool {
@@ -32,7 +32,7 @@ test "contact solver cache accumulates across islands" {
     false
   }
 
-  let pipeline = PhysicsPipeline::PhysicsPipeline()
+  let pipeline = @pipeline.PhysicsPipeline::PhysicsPipeline()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
   let bodies = @dynamics.RigidBodySet()
@@ -82,7 +82,7 @@ test "contact solver cache accumulates across islands" {
   inspect(ball_co2.id >= 0, content="true")
   pipeline.step(
     @core.Vec2::zero(),
-    IntegrationParameters::default(),
+    @pipeline.IntegrationParameters::default(),
     islands,
     broad_phase,
     narrow_phase,

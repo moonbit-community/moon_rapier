@@ -14,7 +14,7 @@
 
 ///|
 test "arena insert/remove reuses slot with new generation" {
-  let arena : Arena[Int] = Arena::with_capacity(2)
+  let arena : @data.Arena[Int32] = @data.Arena::with_capacity(2)
   let idx1 = arena.insert(10)
   inspect(arena.get(idx1) == Some(10), content="true")
   let removed = arena.remove(idx1)
@@ -30,7 +30,7 @@ test "arena insert/remove reuses slot with new generation" {
 
 ///|
 test "arena try_insert respects fixed capacity" {
-  let arena : Arena[Int] = Arena::with_capacity(1)
+  let arena : @data.Arena[Int32] = @data.Arena::with_capacity(1)
   inspect(arena.try_insert(1) is Ok(_), content="true")
   // No free slots left, `try_insert` must not allocate.
   inspect(arena.try_insert(2) is Err(_), content="true")
@@ -41,7 +41,7 @@ test "arena try_insert respects fixed capacity" {
 
 ///|
 test "arena drain removes all occupied elements" {
-  let arena : Arena[String] = Arena()
+  let arena : @data.Arena[String] = Arena()
   let idx1 = arena.insert("hello")
   let idx2 = arena.insert("world")
   inspect(arena.get(idx1) is Some(_), content="true")

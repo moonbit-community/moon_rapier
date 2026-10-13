@@ -50,7 +50,7 @@ fn step_pipeline_2d_n(
   ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
-  nsteps : Int,
+  nsteps : Int32,
 ) -> Unit {
   for _ in 0..<nsteps {
     pipeline.step(
@@ -165,11 +165,11 @@ test "examples2d/joint_motor_position2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/add_remove2.rs`.
 test "examples2d/add_remove2.rs parity" {
-  fn rng_next(seed : Int) -> Int {
+  fn rng_next(seed : Int32) -> Int32 {
     (seed * 1103515245 + 12345) & 0x7fffffff
   }
 
-  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+  fn rng_float01(seed : Int32) -> (@core.Real, Int32) {
     let next = rng_next(seed)
     let value = Float::from_double(next.to_double() / 2147483647.0)
     (value, next)
@@ -1215,12 +1215,12 @@ test "examples2d/collision_groups2.rs parity" {
 ///|
 /// Ported from `rapier-reference/examples2d/convex_polygons2.rs`.
 test "examples2d/convex_polygons2.rs parity" {
-  fn rng_next(seed : Int) -> Int {
+  fn rng_next(seed : Int32) -> Int32 {
     // Deterministic 31-bit LCG (fast, stable across platforms).
     (seed * 1103515245 + 12345) & 0x7fffffff
   }
 
-  fn rng_float01(seed : Int) -> (@core.Real, Int) {
+  fn rng_float01(seed : Int32) -> (@core.Real, Int32) {
     let next = rng_next(seed)
     let value = Float::from_double(next.to_double() / 2147483647.0)
     (value, next)
@@ -2093,7 +2093,7 @@ test "examples2d/inverse_kinematics2.rs parity" {
     let (multibody, link_id) = result
     let ndofs = multibody.ndofs()
     let displacements = @dynamics.DVector::from_fn(ndofs, fn(
-      _ : Int,
+      _ : Int32,
     ) -> @core.Real {
       0.0F
     })
@@ -4201,7 +4201,7 @@ test "examples2d/trimesh2.rs parity" {
     bodies,
   )
   |> ignore
-  let rapier_logo_buffers = rapier_logo_buffers_2d()
+  let rapier_logo_buffers = @rapier_full_parity.rapier_logo_buffers_2d()
   let dyn_handles : Array[@dynamics.RigidBodyHandle] = []
   for ith in 0..<rapier_logo_buffers.length() {
     let buffer = rapier_logo_buffers[ith]

@@ -14,7 +14,7 @@
 
 ///|
 test "physics_pipeline3d_real: ball rests on ground" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -68,7 +68,7 @@ test "physics_pipeline3d_real: ball rests on ground" {
 
 ///|
 test "physics_pipeline3d_real: stacked cuboids keep a face manifold" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -119,7 +119,7 @@ test "physics_pipeline3d_real: stacked cuboids keep a face manifold" {
 
 ///|
 test "physics_pipeline3d_real: sleeping and wake-up" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -181,7 +181,7 @@ test "physics_pipeline3d_real: sleeping and wake-up" {
 
 ///|
 test "physics_pipeline3d_real: collision events for non-sensor contacts" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -191,7 +191,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.CollisionEvent3D],
     started : Bool,
@@ -283,7 +283,7 @@ test "physics_pipeline3d_real: collision events for non-sensor contacts" {
 
 ///|
 test "physics_pipeline3d_real: combined step handles events and joint sets" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -293,10 +293,10 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let rope_joints = @dynamics.RopeJointSet3DReal()
   let joints = @dynamics.JointSet3DReal()
-  let hooks = PhysicsHooks3D::PhysicsHooks3D()
+  let hooks = @pipeline.PhysicsHooks3D::PhysicsHooks3D()
 
   fn has_started(
     events : Array[@collision.CollisionEvent3D],
@@ -362,13 +362,13 @@ test "physics_pipeline3d_real: combined step handles events and joint sets" {
 
 ///|
 test "physics_pipeline3d_real: multibody joints are part of step path" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
   let bodies = @dynamics.RigidBodySet3D()
   let colliders = @collision.ColliderSet3D()
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let multibody_joints = @dynamics.MultibodyJointSet3DReal()
   let gravity = @core.Vec3::zero()
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
@@ -427,7 +427,7 @@ test "physics_pipeline3d_real: multibody joints are part of step path" {
 
 ///|
 test "physics_pipeline3d_real: collision events for sensor intersections" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -437,7 +437,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.CollisionEvent3D],
     started : Bool,
@@ -529,7 +529,7 @@ test "physics_pipeline3d_real: collision events for sensor intersections" {
 
 ///|
 test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -539,7 +539,7 @@ test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let b1 = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(Vec3(0.0F, 0.0F, 0.0F))
@@ -589,7 +589,7 @@ test "physics_pipeline3d_real: sensor stopped event includes removed flag" {
 
 ///|
 test "physics_pipeline3d_real: contact stopped event includes removed flag" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -599,7 +599,7 @@ test "physics_pipeline3d_real: contact stopped event includes removed flag" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let fixed_body = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let fixed_collider = colliders.insert_with_parent(
     @collision.ColliderBuilder3D::ball(1.0F).build(),
@@ -643,7 +643,7 @@ test "physics_pipeline3d_real: contact stopped event includes removed flag" {
 ///|
 test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled vs enabled)" {
   fn run(ccd_enabled : Bool) -> @core.Real {
-    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+    let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
     let broad_phase = @collision.BroadPhase3D()
     let narrow_phase = @collision.NarrowPhase3D()
     let islands = @dynamics.IslandManager3D()
@@ -692,8 +692,8 @@ test "physics_pipeline3d_real: CCD prevents tunneling for fast balls (disabled v
 
 ///|
 test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
-  fn run(max_ccd_substeps : Int) -> @core.Real {
-    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  fn run(max_ccd_substeps : Int32) -> @core.Real {
+    let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
     let broad_phase = @collision.BroadPhase3D()
     let narrow_phase = @collision.NarrowPhase3D()
     let islands = @dynamics.IslandManager3D()
@@ -744,7 +744,7 @@ test "physics_pipeline3d_real: max_ccd_substeps controls CCD subdivision" {
 
 ///|
 test "physics_pipeline3d_real: collision events do not repeat while contact persists" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -754,7 +754,7 @@ test "physics_pipeline3d_real: collision events do not repeat while contact pers
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(Vec3(0.0F, -1.0F, 0.0F))
@@ -802,7 +802,7 @@ test "physics_pipeline3d_real: collision events do not repeat while contact pers
 
 ///|
 test "physics_pipeline3d_real: collision events do not repeat while sensor intersection persists" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -812,7 +812,7 @@ test "physics_pipeline3d_real: collision events do not repeat while sensor inter
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(Vec3(0.0F, -1.0F, 0.0F))
@@ -861,7 +861,7 @@ test "physics_pipeline3d_real: collision events do not repeat while sensor inter
 
 ///|
 test "physics_pipeline3d_real: intersection events for sensor overlaps (without collision events)" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -871,7 +871,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   fn has_event(
     events : Array[@collision.IntersectionEvent3D],
     intersecting : Bool,
@@ -956,7 +956,7 @@ test "physics_pipeline3d_real: intersection events for sensor overlaps (without 
 
 ///|
 test "physics_pipeline3d_real: contact force events and contact impulses are populated" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -966,7 +966,7 @@ test "physics_pipeline3d_real: contact force events and contact impulses are pop
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(Vec3(0.0F, -1.0F, 0.0F))
@@ -1007,7 +1007,7 @@ test "physics_pipeline3d_real: contact force events and contact impulses are pop
 
 ///|
 test "physics_pipeline3d_real: hooks can filter contact pairs" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -1017,8 +1017,8 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let handler = EventHandler3D::EventHandler3D()
-  let hooks = PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
+  let handler = @pipeline.EventHandler3D::EventHandler3D()
+  let hooks = @pipeline.PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet3D,
     _colliders : @collision.ColliderSet3D,
     _c1 : @collision.ColliderHandle3D,
@@ -1067,7 +1067,7 @@ test "physics_pipeline3d_real: hooks can filter contact pairs" {
 
 ///|
 test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -1077,7 +1077,7 @@ test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let hooks = PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
+  let hooks = @pipeline.PhysicsHooks3D::PhysicsHooks3D().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet3D,
     _colliders : @collision.ColliderSet3D,
     _c1 : @collision.ColliderHandle3D,
@@ -1116,7 +1116,7 @@ test "physics_pipeline3d_real: contact filter hook requires ActiveHooks flag" {
 
 ///|
 test "physics_pipeline3d_real: hooks can override solver normal" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -1126,15 +1126,16 @@ test "physics_pipeline3d_real: hooks can override solver normal" {
   let parameters = @dynamics.IntegrationParameters::default().set_dt(
     1.0F / 60.0F,
   )
-  let hooks = PhysicsHooks3D::PhysicsHooks3D().modify_solver_contacts(fn(
-    _bodies : @dynamics.RigidBodySet3D,
-    _colliders : @collision.ColliderSet3D,
-    _c1 : @collision.ColliderHandle3D,
-    _c2 : @collision.ColliderHandle3D,
-    _normal : @core.Vec3,
-  ) -> (Bool, @core.Vec3?) {
-    (true, Some(Vec3(1.0F, 0.0F, 0.0F)))
-  })
+  let hooks = @pipeline.PhysicsHooks3D::PhysicsHooks3D().modify_solver_contacts(fn(
+      _bodies : @dynamics.RigidBodySet3D,
+      _colliders : @collision.ColliderSet3D,
+      _c1 : @collision.ColliderHandle3D,
+      _c2 : @collision.ColliderHandle3D,
+      _normal : @core.Vec3,
+    ) -> (Bool, @core.Vec3?) {
+      (true, Some(Vec3(1.0F, 0.0F, 0.0F)))
+    },
+  )
   let ground = bodies.insert(
     @dynamics.RigidBodyBuilder3D::fixed()
     .translation(Vec3(0.0F, -1.0F, 0.0F))

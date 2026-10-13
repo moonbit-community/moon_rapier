@@ -23,7 +23,7 @@ pub struct PhysicsPipeline3 {
 
 ///|
 pub fn PhysicsPipeline3::PhysicsPipeline3() -> PhysicsPipeline3 {
-  { inner: PhysicsPipeline() }
+  { inner: PhysicsPipeline(), }
 }
 
 ///|

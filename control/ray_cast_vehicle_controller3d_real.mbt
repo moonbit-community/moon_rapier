@@ -149,9 +149,9 @@ pub struct DynamicRayCastVehicleController3DReal {
   /// Handle of the vehicle chassis.
   chassis : @dynamics.RigidBodyHandle
   /// The chassis local up direction (`0 = x, 1 = y, 2 = z`).
-  index_up_axis : Int
+  index_up_axis : Int32
   /// The chassis local forward direction (`0 = x, 1 = y, 2 = z`).
-  index_forward_axis : Int
+  index_forward_axis : Int32
 }
 
 ///|
@@ -178,7 +178,7 @@ pub fn DynamicRayCastVehicleController3DReal::add_wheel(
   suspension_rest_length : @core.Real,
   radius : @core.Real,
   tuning : WheelTuning,
-) -> Int {
+) -> Int32 {
   let wheel_id = self.wheels.length()
   self.wheels.push(
     wheel3d_real_new(
@@ -192,7 +192,7 @@ pub fn DynamicRayCastVehicleController3DReal::add_wheel(
 ///|
 pub fn DynamicRayCastVehicleController3DReal::set_engine_force(
   self : DynamicRayCastVehicleController3DReal,
-  wheel_id : Int,
+  wheel_id : Int32,
   force : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -206,7 +206,7 @@ pub fn DynamicRayCastVehicleController3DReal::set_engine_force(
 ///|
 pub fn DynamicRayCastVehicleController3DReal::set_brake(
   self : DynamicRayCastVehicleController3DReal,
-  wheel_id : Int,
+  wheel_id : Int32,
   brake : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -220,7 +220,7 @@ pub fn DynamicRayCastVehicleController3DReal::set_brake(
 ///|
 pub fn DynamicRayCastVehicleController3DReal::set_steering_value(
   self : DynamicRayCastVehicleController3DReal,
-  wheel_id : Int,
+  wheel_id : Int32,
   steering : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -246,7 +246,7 @@ pub fn DynamicRayCastVehicleController3DReal::wheels_mut(
 }
 
 ///|
-fn veh3d_real_axis_vec3(axis : Int) -> @core.Vec3 {
+fn veh3d_real_axis_vec3(axis : Int32) -> @core.Vec3 {
   if axis == 0 {
     Vec3(1.0F, 0.0F, 0.0F)
   } else if axis == 1 {
@@ -357,7 +357,7 @@ fn veh3d_real_calc_rolling_friction_impulse(
   contact_pos : @core.Vec3,
   dir : @core.Vec3,
   max_impulse : @core.Real,
-  num_wheels_on_ground : Int,
+  num_wheels_on_ground : Int32,
 ) -> @core.Real {
   let denom0 = veh3d_real_impulse_denominator(body0, contact_pos, dir)
   let denom1 = if body1 is Some(b1) {

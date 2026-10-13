@@ -16,14 +16,14 @@
 /// Regression test for Issue #14: half-space must not rely on any fixed extent.
 test "halfspace broad-phase pairs at large tangential offsets" {
   let bodies = @dynamics.RigidBodySet()
-  let colliders = ColliderSet::ColliderSet()
-  let broad_phase = BroadPhaseBvh::BroadPhaseBvh()
-  let narrow_phase = NarrowPhase::NarrowPhase()
+  let colliders = @collision.ColliderSet::ColliderSet()
+  let broad_phase = @collision.BroadPhaseBvh::BroadPhaseBvh()
+  let narrow_phase = @collision.NarrowPhase::NarrowPhase()
   let impulse_joints = @dynamics.ImpulseJointSet()
   let multibody_joints = @dynamics.MultibodyJointSet()
   let ground_body = bodies.insert(@dynamics.RigidBodyBuilder::fixed().build())
   let ground = colliders.insert_with_parent(
-    ColliderBuilder::halfspace(Vec2(0.0F, 1.0F)).build(),
+    @collision.ColliderBuilder::halfspace(Vec2(0.0F, 1.0F)).build(),
     ground_body,
     bodies,
   )
@@ -35,7 +35,7 @@ test "halfspace broad-phase pairs at large tangential offsets" {
     .build(),
   )
   let ball = colliders.insert_with_parent(
-    ColliderBuilder::ball(1.0F).build(),
+    @collision.ColliderBuilder::ball(1.0F).build(),
     ball_body,
     bodies,
   )
@@ -44,8 +44,14 @@ test "halfspace broad-phase pairs at large tangential offsets" {
   let mut found = false
   for i in 0..<pairs.length() {
     let (a, b) = pairs[i]
-    if (ColliderHandle::equals(a, ground) && ColliderHandle::equals(b, ball)) ||
-      (ColliderHandle::equals(a, ball) && ColliderHandle::equals(b, ground)) {
+    if (
+        @collision.ColliderHandle::equals(a, ground) &&
+        @collision.ColliderHandle::equals(b, ball)
+      ) ||
+      (
+        @collision.ColliderHandle::equals(a, ball) &&
+        @collision.ColliderHandle::equals(b, ground)
+      ) {
       found = true
       break
     }

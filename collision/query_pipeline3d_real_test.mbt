@@ -15,18 +15,23 @@
 ///|
 test "query_pipeline3d_real: cast_ray_and_get_normal cuboid" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
-    ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(10.0F, 1.0F, 10.0F).build(),
     ground,
     bodies,
   )
   |> ignore
   colliders.sync_with_bodies(bodies)
-  let filter = QueryFilter3DReal::QueryFilter3DReal()
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(filter, bodies, colliders)
-  let ray = Ray3::Ray3(Vec3(0.0F, 5.0F, 0.0F), Vec3(0.0F, -1.0F, 0.0F))
+  let filter = @collision.QueryFilter3DReal::QueryFilter3DReal()
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    filter, bodies, colliders,
+  )
+  let ray = @collision.Ray3::Ray3(
+    Vec3(0.0F, 5.0F, 0.0F),
+    Vec3(0.0F, -1.0F, 0.0F),
+  )
   if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
     is Some((_h, hit)) {
     inspect(hit.toi() > 3.0F, content="true")
@@ -39,20 +44,23 @@ test "query_pipeline3d_real: cast_ray_and_get_normal cuboid" {
 ///|
 test "query_pipeline3d_real: cast_ray solid flag controls inside-origin behavior" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let body = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let collider = colliders.insert_with_parent(
-    ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
     body,
     bodies,
   )
   colliders.sync_with_bodies(bodies)
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
     QueryFilter3DReal(),
     bodies,
     colliders,
   )
-  let ray = Ray3::Ray3(Vec3(0.0F, 0.0F, 0.0F), Vec3(1.0F, 0.0F, 0.0F))
+  let ray = @collision.Ray3::Ray3(
+    Vec3(0.0F, 0.0F, 0.0F),
+    Vec3(1.0F, 0.0F, 0.0F),
+  )
 
   if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
     is Some((h0, hit0)) {
@@ -76,7 +84,7 @@ test "query_pipeline3d_real: cast_ray solid flag controls inside-origin behavior
 ///|
 test "query_pipeline3d_real: cast_ray_and_get_normal trimesh triangle" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   let vtx = [
     @core.Vec3(-1.0F, 0.0F, -1.0F),
@@ -84,12 +92,17 @@ test "query_pipeline3d_real: cast_ray_and_get_normal trimesh triangle" {
     Vec3(0.0F, 0.0F, 1.0F),
   ]
   let idx = [(0, 1, 2)]
-  let tri = ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
+  let tri = @collision.ColliderBuilder3D::trimesh(vtx, idx).unwrap().build()
   colliders.insert_with_parent(tri, ground, bodies) |> ignore
   colliders.sync_with_bodies(bodies)
-  let filter = QueryFilter3DReal::QueryFilter3DReal()
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(filter, bodies, colliders)
-  let ray = Ray3::Ray3(Vec3(0.0F, 2.0F, 0.0F), Vec3(0.0F, -1.0F, 0.0F))
+  let filter = @collision.QueryFilter3DReal::QueryFilter3DReal()
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    filter, bodies, colliders,
+  )
+  let ray = @collision.Ray3::Ray3(
+    Vec3(0.0F, 2.0F, 0.0F),
+    Vec3(0.0F, -1.0F, 0.0F),
+  )
   if qp.cast_ray_and_get_normal(bodies, colliders, ray, 10.0F, true)
     is Some((_h, hit)) {
     inspect(hit.toi() > 1.0F, content="true")
@@ -104,24 +117,24 @@ test "query_pipeline3d_real: cast_ray_and_get_normal trimesh triangle" {
 ///|
 test "query_pipeline3d_real: cast_shape capsule vs cuboid" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let ground = bodies.insert(@dynamics.RigidBodyBuilder3D::fixed().build())
   colliders.insert_with_parent(
-    ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
     ground,
     bodies,
   )
   |> ignore
   colliders.sync_with_bodies(bodies)
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
     QueryFilter3DReal(),
     bodies,
     colliders,
   )
   let shape_pos = @core.Isometry3::from_translation(Vec3(-5.0F, 0.0F, 0.0F))
   let shape_vel = @core.Vec3(1.0F, 0.0F, 0.0F)
-  let shape = Shape3D::capsule_y(0.5F, 1.0F)
-  let options = ShapeCastOptions3::ShapeCastOptions3(10.0F, true)
+  let shape = @collision.Shape3D::capsule_y(0.5F, 1.0F)
+  let options = @collision.ShapeCastOptions3::ShapeCastOptions3(10.0F, true)
   if qp.cast_shape(bodies, colliders, shape_pos, shape_vel, shape, options)
     is Some((_h, hit)) {
     inspect(hit.toi() > 3.0F, content="true")
@@ -135,16 +148,18 @@ test "query_pipeline3d_real: cast_shape capsule vs cuboid" {
 ///|
 test "query_pipeline3d_real: intersect_shape returns overlapping colliders" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let near = colliders.insert(
-    ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
   )
   colliders.insert(
-    ColliderBuilder3D::ball(0.5F).translation(Vec3(10.0F, 0.0F, 0.0F)).build(),
+    @collision.ColliderBuilder3D::ball(0.5F)
+    .translation(Vec3(10.0F, 0.0F, 0.0F))
+    .build(),
   )
   |> ignore
 
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
     QueryFilter3DReal(),
     bodies,
     colliders,
@@ -153,7 +168,7 @@ test "query_pipeline3d_real: intersect_shape returns overlapping colliders" {
     bodies,
     colliders,
     @core.Isometry3::identity(),
-    Shape3D::ball(0.75F),
+    @collision.Shape3D::ball(0.75F),
   )
   inspect(hits.length() == 1, content="true")
   inspect(hits[0].equals(near), content="true")
@@ -162,17 +177,19 @@ test "query_pipeline3d_real: intersect_shape returns overlapping colliders" {
 ///|
 test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let voxel_size = @core.Vec3(1.0F, 1.0F, 1.0F)
   let points = [@core.Vec3(0.2F, 0.2F, 0.2F)]
-  let floor_handle = if ColliderBuilder3D::voxels_from_points(
+  let floor_handle = if @collision.ColliderBuilder3D::voxels_from_points(
       voxel_size, points,
     )
     is Some(builder) {
     colliders.insert(builder.build())
   } else {
     inspect(false, content="true")
-    colliders.insert(ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build())
+    colliders.insert(
+      @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    )
   }
   // Ensure the test filter selects the voxel collider.
   if colliders.get(floor_handle) is Some(co) {
@@ -180,14 +197,17 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
   } else {
     inspect(false, content="true")
   }
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(
-    QueryFilter3DReal::QueryFilter3DReal().predicate((_, co) => {
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    @collision.QueryFilter3DReal::QueryFilter3DReal().predicate((_, co) => {
       co.voxel_key_for_triangle(0) is Some(_)
     }),
     bodies,
     colliders,
   )
-  let ray = Ray3::Ray3(Vec3(0.5F, 10.0F, 0.5F), Vec3(0.0F, -1.0F, 0.0F))
+  let ray = @collision.Ray3::Ray3(
+    Vec3(0.5F, 10.0F, 0.5F),
+    Vec3(0.0F, -1.0F, 0.0F),
+  )
   if qp.cast_ray_and_get_voxel_key(bodies, colliders, ray, 20.0F, true)
     is Some((_h, hit, key)) {
     inspect(hit.toi() > 8.5F && hit.toi() < 9.5F, content="true")
@@ -201,7 +221,7 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels" {
 ///|
 test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   fn clamp(v : Float, lo : Float, hi : Float) -> Float {
     if v < lo {
       lo
@@ -227,22 +247,24 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
       points.push(Vec3(x, y, z))
     }
   }
-  let floor_handle = if ColliderBuilder3D::voxels_from_points(
+  let floor_handle = if @collision.ColliderBuilder3D::voxels_from_points(
       voxel_size, points,
     )
     is Some(builder) {
     colliders.insert(builder.build())
   } else {
     inspect(false, content="true")
-    colliders.insert(ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build())
+    colliders.insert(
+      @collision.ColliderBuilder3D::cuboid(1.0F, 1.0F, 1.0F).build(),
+    )
   }
   let floor_aabb = if colliders.get(floor_handle) is Some(floor) {
     floor.compute_aabb()
   } else {
     Aabb3(@core.Vec3::zero(), @core.Vec3::zero())
   }
-  let qp = QueryPipeline3DReal::QueryPipeline3DReal(
-    QueryFilter3DReal::QueryFilter3DReal().predicate((_, co) => {
+  let qp = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    @collision.QueryFilter3DReal::QueryFilter3DReal().predicate((_, co) => {
       co.voxel_key_for_triangle(0) is Some(_)
     }),
     bodies,
@@ -251,7 +273,7 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
   let center_x = (floor_aabb.mins.x + floor_aabb.maxs.x) * 0.5F
   let center_z = (floor_aabb.mins.z + floor_aabb.maxs.z) * 0.5F
   let origin_y = floor_aabb.maxs.y + 50.0F
-  let ray0 = Ray3::Ray3(
+  let ray0 = @collision.Ray3::Ray3(
     Vec3(center_x, origin_y, center_z),
     Vec3(0.0F, -1.0F, 0.0F),
   )
@@ -261,7 +283,7 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
   } else {
     inspect(false, content="true")
   }
-  let ray1 = Ray3::Ray3(
+  let ray1 = @collision.Ray3::Ray3(
     Vec3(center_x + 0.5F, origin_y, center_z + 0.5F),
     Vec3(0.0F, -1.0F, 0.0F),
   )
@@ -276,7 +298,7 @@ test "query_pipeline3d_real: cast_ray_and_get_voxel_key voxels (wavy floor)" {
 ///|
 test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" {
   let bodies = @dynamics.RigidBodySet3D()
-  let colliders = ColliderSet3D::ColliderSet3D()
+  let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let mode = @dynamics.InteractionTestMode::And
   let group1 = @dynamics.Group::group_1()
   let group2 = @dynamics.Group::group_2()
@@ -286,7 +308,7 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
     .build(),
   )
   let upper = colliders.insert_with_parent(
-    ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
+    @collision.ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
     .collision_groups(InteractionGroups(group1, @dynamics.Group::all(), mode))
     .build(),
     upper_body,
@@ -298,17 +320,20 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
     .build(),
   )
   let lower = colliders.insert_with_parent(
-    ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
+    @collision.ColliderBuilder3D::cuboid(10.0F, 0.5F, 10.0F)
     .collision_groups(InteractionGroups(group2, @dynamics.Group::all(), mode))
     .build(),
     lower_body,
     bodies,
   )
   colliders.sync_with_bodies(bodies)
-  let ray = Ray3::Ray3(Vec3(0.0F, 5.0F, 0.0F), Vec3(0.0F, -1.0F, 0.0F))
+  let ray = @collision.Ray3::Ray3(
+    Vec3(0.0F, 5.0F, 0.0F),
+    Vec3(0.0F, -1.0F, 0.0F),
+  )
 
   // No filter: hits the upper collider first.
-  let qp0 = QueryPipeline3DReal::QueryPipeline3DReal(
+  let qp0 = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
     QueryFilter3DReal(),
     bodies,
     colliders,
@@ -322,8 +347,8 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
   }
 
   // Excluding the upper collider: hits the lower one.
-  let qp1 = QueryPipeline3DReal::QueryPipeline3DReal(
-    QueryFilter3DReal::QueryFilter3DReal().exclude_collider(upper),
+  let qp1 = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    @collision.QueryFilter3DReal::QueryFilter3DReal().exclude_collider(upper),
     bodies,
     colliders,
   )
@@ -336,8 +361,8 @@ test "query_pipeline3d_real: exclude_collider + groups filter affects ray hits" 
   }
 
   // Groups: select only group_2 collider.
-  let qp2 = QueryPipeline3DReal::QueryPipeline3DReal(
-    QueryFilter3DReal::QueryFilter3DReal().groups(
+  let qp2 = @collision.QueryPipeline3DReal::QueryPipeline3DReal(
+    @collision.QueryFilter3DReal::QueryFilter3DReal().groups(
       InteractionGroups(@dynamics.Group::all(), group2, mode),
     ),
     bodies,

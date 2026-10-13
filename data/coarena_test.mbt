@@ -14,11 +14,11 @@
 
 ///|
 test "coarena insert/get/remove uses generation for validity" {
-  let co : Coarena[Int] = Coarena()
-  let idx = Index::from_raw_parts(5, 7)
+  let co : @data.Coarena[Int32] = Coarena()
+  let idx = @data.Index::from_raw_parts(5, 7)
   co.insert(idx, 42)
   inspect(co.get(idx) == Some(42), content="true")
-  inspect(co.get(Index::from_raw_parts(5, 6)) is None, content="true")
+  inspect(co.get(@data.Index::from_raw_parts(5, 6)) is None, content="true")
   let removed = co.remove(idx, 0)
   inspect(removed == Some(42), content="true")
   inspect(co.get(idx) is None, content="true")

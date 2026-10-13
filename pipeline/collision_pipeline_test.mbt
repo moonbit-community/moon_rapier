@@ -31,11 +31,11 @@ test "collision pipeline no rigid bodies" {
     .active_events(@collision.ActiveEvents::collision_events())
     .build()
   collider_set.insert(collider_b) |> ignore
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -76,11 +76,11 @@ test "collision pipeline no rigid bodies (dim3 port)" {
     .active_events(@collision.ActiveEvents::collision_events())
     .build()
   collider_set.insert(collider_b) |> ignore
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -120,12 +120,12 @@ test "collision pipeline physics hooks filter intersection pair" {
     .sensor(true)
     .build()
   collider_set.insert(collider_b) |> ignore
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
-  let hooks = PhysicsHooks::PhysicsHooks().filter_intersection_pair(fn(
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().filter_intersection_pair(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     _c1 : @collision.ColliderHandle,
@@ -181,12 +181,12 @@ test "collision pipeline physics hooks filter contact pair" {
   let b_handle = collider_set.insert_with_parent(
     collider_b, body2, rigid_body_set,
   )
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
-  let hooks = PhysicsHooks::PhysicsHooks().filter_contact_pair(fn(
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
+  let hooks = @pipeline.PhysicsHooks::PhysicsHooks().filter_contact_pair(fn(
     _bodies : @dynamics.RigidBodySet,
     _colliders : @collision.ColliderSet,
     _c1 : @collision.ColliderHandle,
@@ -225,11 +225,11 @@ test "collision pipeline filters out non-dynamic contact pairs by default" {
     .build()
   let a_handle = collider_set.insert(collider_a)
   let b_handle = collider_set.insert(collider_b)
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -262,11 +262,11 @@ test "collision pipeline allows non-dynamic contact pairs with filter_contact_pa
     .build()
   let a_handle = collider_set.insert(collider_a)
   let b_handle = collider_set.insert(collider_b)
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,
@@ -313,11 +313,11 @@ test "collision pipeline ignores contacts between bodies attached by joint when 
     @dynamics.RevoluteJointBuilder().build(),
   ).set_contacts_enabled(false)
   impulse_joints.insert(body1, body2, joint, true) |> ignore
-  let integration_parameters = IntegrationParameters::default()
+  let integration_parameters = @pipeline.IntegrationParameters::default()
   let islands = @dynamics.IslandManager()
   let broad_phase = @collision.BroadPhaseBvh()
   let narrow_phase = @collision.NarrowPhase()
-  let collision_pipeline = CollisionPipeline::CollisionPipeline()
+  let collision_pipeline = @pipeline.CollisionPipeline::CollisionPipeline()
   collision_pipeline.step(
     integration_parameters.prediction_distance(),
     islands,

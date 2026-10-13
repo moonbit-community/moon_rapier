@@ -20,7 +20,7 @@ pub struct IslandManager3 {
 
 ///|
 pub fn IslandManager3::IslandManager3() -> IslandManager3 {
-  { inner: IslandManager() }
+  { inner: IslandManager(), }
 }
 
 ///|
@@ -110,7 +110,7 @@ fn IslandManager::extract_sleeping_island3(
   impulse_joints : ImpulseJointSet3,
   multibody_joints : MultibodyJointSet3,
   sleep_root : RigidBodyHandle,
-) -> Int {
+) -> Int32 {
   if sleep_root.id < 0 {
     return 0
   }
@@ -323,7 +323,7 @@ pub struct RigidBodySet3 {
 
 ///|
 pub fn RigidBodySet3::RigidBodySet3() -> RigidBodySet3 {
-  { inner: RigidBodySet() }
+  { inner: RigidBodySet(), }
 }
 
 ///|
@@ -332,7 +332,7 @@ pub fn RigidBodySet3::as_2d(self : RigidBodySet3) -> RigidBodySet {
 }
 
 ///|
-pub fn RigidBodySet3::len(self : RigidBodySet3) -> Int {
+pub fn RigidBodySet3::len(self : RigidBodySet3) -> Int32 {
   self.inner.len()
 }
 

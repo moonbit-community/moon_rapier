@@ -14,8 +14,8 @@
 
 ///|
 test "feature flags: parallel/simd disabled" {
-  inspect(!parallel_enabled(), content="true")
-  inspect(!simd_enabled(), content="true")
-  inspect(parallel_strategy() == "sequential", content="true")
-  inspect(simd_strategy() == "none", content="true")
+  inspect(!@pipeline.parallel_enabled(), content="true")
+  inspect(!@pipeline.simd_enabled(), content="true")
+  inspect(@pipeline.parallel_strategy() == "sequential", content="true")
+  inspect(@pipeline.simd_strategy() == "none", content="true")
 }

@@ -27,7 +27,7 @@ fn step_pipeline_2d_n_voxels2(
   ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
-  nsteps : Int,
+  nsteps : Int32,
 ) -> Unit {
   for _ in 0..<nsteps {
     pipeline.step(
@@ -102,7 +102,7 @@ test "examples2d/voxels2.rs parity" {
     Vec2(7.0F, 2.0F),
     Vec2(1.0F, 7.0F),
   ]
-  let poly_idx : Array[(Int, Int)] = []
+  let poly_idx : Array[(Int32, Int32)] = []
   for i in 0..<polyline.length() {
     poly_idx.push((i, (i + 1) % polyline.length()))
   }

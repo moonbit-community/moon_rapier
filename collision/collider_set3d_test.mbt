@@ -14,8 +14,8 @@
 
 ///|
 test "collider_set3d insert/remove generation" {
-  let set = ColliderSet3D::ColliderSet3D()
-  let h0 = set.insert(ColliderBuilder3D::ball(0.5F).build())
+  let set = @collision.ColliderSet3D::ColliderSet3D()
+  let h0 = set.insert(@collision.ColliderBuilder3D::ball(0.5F).build())
   inspect(set.len() == 1, content="true")
   let old = h0
   let removed = set.remove(h0)
@@ -24,7 +24,7 @@ test "collider_set3d insert/remove generation" {
   // Old handle becomes invalid after removal.
   inspect(set.get(old) is None, content="true")
   // Re-insert should reuse the slot but bump generation.
-  let h1 = set.insert(ColliderBuilder3D::ball(1.0F).build())
+  let h1 = set.insert(@collision.ColliderBuilder3D::ball(1.0F).build())
   inspect(!h1.equals(old), content="true")
   inspect(set.get(h1) is Some(_), content="true")
 }

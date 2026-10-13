@@ -14,12 +14,12 @@
 
 ///|
 pub struct AxesMask {
-  bits : Int
+  bits : Int32
 }
 
 ///|
 pub fn AxesMask::empty() -> AxesMask {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
@@ -28,12 +28,12 @@ pub fn AxesMask::all() -> AxesMask {
 }
 
 ///|
-pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
+pub fn AxesMask::AxesMask(bits : Int32) -> AxesMask {
   { bits, }
 }
 
 ///|
-pub fn AxesMask::bits(self : AxesMask) -> Int {
+pub fn AxesMask::bits(self : AxesMask) -> Int32 {
   self.bits
 }
 
@@ -49,7 +49,7 @@ pub fn AxesMask::insert(self : AxesMask, other : AxesMask) -> AxesMask {
 
 ///|
 pub fn AxesMask::remove(self : AxesMask, other : AxesMask) -> AxesMask {
-  AxesMask(self.bits & Int::lnot(other.bits))
+  AxesMask(self.bits & Int32::lnot(other.bits))
 }
 
 ///|

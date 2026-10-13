@@ -14,7 +14,7 @@
 
 ///|
 test "timer is deterministic by default" {
-  let t = Timer::Timer()
+  let t = @counters.Timer::Timer()
   t.start()
   t.pause()
   inspect(t.time_ms() == 0.0, content="true")
@@ -23,7 +23,7 @@ test "timer is deterministic by default" {
 
 ///|
 test "counters gating + setters + formatting" {
-  let c = Counters::Counters(false)
+  let c = @counters.Counters::Counters(false)
   inspect(!c.enabled(), content="true")
   c.step_started()
   c.step_completed()

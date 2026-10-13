@@ -16,24 +16,24 @@
 /// Dim3 shape set for the real 3D backend.
 pub struct Voxels3DReal {
   voxel_size : @core.Vec3
-  columns : @hashmap.HashMap[(Int, Int), Array[Int]] // (ix, iz) -> sorted ys
-  dense_origin_x : Int
-  dense_origin_z : Int
-  dense_nx : Int
-  dense_nz : Int
-  dense_columns : Array[Array[Int]?]?
-  keys : Array[(Int, Int, Int)] // deterministic feature ids
-  key_to_id : @hashmap.HashMap[(Int, Int, Int), Int]
-  min_key : (Int, Int, Int)
-  max_key : (Int, Int, Int)
+  columns : @hashmap.HashMap[(Int32, Int32), Array[Int32]] // (ix, iz) -> sorted ys
+  dense_origin_x : Int32
+  dense_origin_z : Int32
+  dense_nx : Int32
+  dense_nz : Int32
+  dense_columns : Array[Array[Int32]?]?
+  keys : Array[(Int32, Int32, Int32)] // deterministic feature ids
+  key_to_id : @hashmap.HashMap[(Int32, Int32, Int32), Int32]
+  min_key : (Int32, Int32, Int32)
+  max_key : (Int32, Int32, Int32)
 }
 
 ///|
 pub fn Voxels3DReal::column_ys(
   self : Voxels3DReal,
-  ix : Int,
-  iz : Int,
-) -> Array[Int]? {
+  ix : Int32,
+  iz : Int32,
+) -> Array[Int32]? {
   if self.dense_columns is Some(dense) && self.dense_nx > 0 && self.dense_nz > 0 {
     let dx = ix - self.dense_origin_x
     let dz = iz - self.dense_origin_z
@@ -69,8 +69,14 @@ pub(all) enum Shape3D {
   Voxels(Voxels3DReal)
   // Heightfield stored as a triangle mesh plus grid dimensions (rows/cols) for future optimizations.
   // `flags` matches Rapier/Parry `HeightFieldFlags` bitflags (currently only FIX_INTERNAL_EDGES).
-  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int, Int)
-  TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
+  Heightfield(
+    Array[@core.Vec3],
+    Array[(Int32, Int32, Int32)],
+    Int32,
+    Int32,
+    Int32
+  )
+  TriMesh(Array[@core.Vec3], Array[(Int32, Int32, Int32)])
 }
 
 ///|
@@ -334,13 +340,13 @@ pub struct Collider3D {
   mut shape : Shape3D
   // Optional per-feature metadata for voxel colliders created with `voxels_from_points`.
   // This maps `RayIntersection3Feature.feature_id` back to a voxel key.
-  voxel_tri_map : Array[(Int, Int, Int)]?
+  voxel_tri_map : Array[(Int32, Int32, Int32)]?
   mut enabled : Bool
   sensor : Bool
   // Solver-only features used by a few examples/tests (e.g. one-way platforms).
   mut surface_velocity : @core.Vec3
   mut one_way_offset : @core.Real?
-  mut one_way_direction : Int // 1 = allow from above, -1 = allow from below, 0 = disabled
+  mut one_way_direction : Int32 // 1 = allow from above, -1 = allow from below, 0 = disabled
   mut active_collision_types : ActiveCollisionTypes
   mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
@@ -407,8 +413,8 @@ pub fn Collider3D::set_shape(self : Collider3D, shape : Shape3D) -> Unit {
 ///|
 pub fn Collider3D::voxel_key_for_triangle(
   self : Collider3D,
-  feature_id : Int,
-) -> (Int, Int, Int)? {
+  feature_id : Int32,
+) -> (Int32, Int32, Int32)? {
   if self.voxel_tri_map is Some(map) {
     if feature_id >= 0 && feature_id < map.length() {
       Some(map[feature_id])
@@ -439,7 +445,7 @@ pub fn Collider3D::set_surface_velocity(
 }
 
 ///|
-pub fn Collider3D::one_way(self : Collider3D) -> (@core.Real, Int)? {
+pub fn Collider3D::one_way(self : Collider3D) -> (@core.Real, Int32)? {
   if self.one_way_direction == 0 || self.one_way_offset is None {
     None
   } else if self.one_way_offset is Some(offset) {
@@ -534,7 +540,7 @@ pub fn Collider3D::set_contact_force_event_threshold(
 }
 
 ///|
-pub fn Collider3D::user_data(self : Collider3D) -> Int {
+pub fn Collider3D::user_data(self : Collider3D) -> Int32 {
   self.user_data.to_int_truncate()
 }
 
@@ -544,7 +550,7 @@ pub fn Collider3D::user_data128(self : Collider3D) -> @core.UserData128 {
 }
 
 ///|
-pub fn Collider3D::set_user_data(self : Collider3D, data : Int) -> Collider3D {
+pub fn Collider3D::set_user_data(self : Collider3D, data : Int32) -> Collider3D {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
 }
@@ -694,12 +700,12 @@ pub struct ColliderBuilder3D {
   mut local_position : @core.Isometry3
   parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
-  voxel_tri_map : Array[(Int, Int, Int)]?
+  voxel_tri_map : Array[(Int32, Int32, Int32)]?
   mut enabled : Bool
   mut sensor : Bool
   mut surface_velocity : @core.Vec3
   mut one_way_offset : @core.Real?
-  mut one_way_direction : Int
+  mut one_way_direction : Int32
   mut active_collision_types : ActiveCollisionTypes
   mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
@@ -717,7 +723,7 @@ pub struct ColliderBuilder3D {
 ///|
 fn collider_builder3d_default(
   shape : Shape3D,
-  voxel_tri_map : Array[(Int, Int, Int)]?,
+  voxel_tri_map : Array[(Int32, Int32, Int32)]?,
 ) -> ColliderBuilder3D {
   {
     position: @core.Isometry3::identity(),
@@ -854,12 +860,12 @@ pub fn ColliderBuilder3D::triangle(
 ///|
 pub fn ColliderBuilder3D::trimesh(
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ColliderBuilder3D? {
   if vertices.length() == 0 || indices.length() == 0 {
     return None
   }
-  let valid : Array[(Int, Int, Int)] = []
+  let valid : Array[(Int32, Int32, Int32)] = []
   for i in 0..<indices.length() {
     let (i0, i1, i2) = indices[i]
     if i0 < 0 || i1 < 0 || i2 < 0 {
@@ -891,7 +897,7 @@ pub fn ColliderBuilder3D::trimesh(
 ///|
 pub fn ColliderBuilder3D::convex_mesh(
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ColliderBuilder3D? {
   // This port uses support-mapping convex hulls; indices are accepted for API parity.
   indices |> ignore
@@ -901,7 +907,7 @@ pub fn ColliderBuilder3D::convex_mesh(
 ///|
 pub fn ColliderBuilder3D::round_convex_mesh(
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
   border_radius : @core.Real,
 ) -> ColliderBuilder3D? {
   indices |> ignore
@@ -960,7 +966,7 @@ pub fn ColliderBuilder3D::convex_hull(
 ///|
 pub fn ColliderBuilder3D::convex_decomposition(
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ColliderBuilder3D? {
   ColliderBuilder3D::round_convex_decomposition(vertices, indices, 0.0F)
 }
@@ -968,7 +974,7 @@ pub fn ColliderBuilder3D::convex_decomposition(
 ///|
 pub fn ColliderBuilder3D::round_convex_decomposition(
   vertices : Array[@core.Vec3],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
   border_radius : @core.Real,
 ) -> ColliderBuilder3D? {
   if vertices.length() == 0 {
@@ -1011,7 +1017,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
   } else {
     2
   }
-  fn axis_value(v : @core.Vec3, axis_i : Int) -> @core.Real {
+  fn axis_value(v : @core.Vec3, axis_i : Int32) -> @core.Real {
     if axis_i == 0 {
       v.x
     } else if axis_i == 1 {
@@ -1021,7 +1027,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
     }
   }
 
-  let tri_ids : Array[Int] = []
+  let tri_ids : Array[Int32] = []
   for i in 0..<tris.length() {
     tri_ids.push(i)
   }
@@ -1067,7 +1073,7 @@ pub fn ColliderBuilder3D::round_convex_decomposition(
       continue
     }
     let end = if start + chunk < tri_count { start + chunk } else { tri_count }
-    let used : @hashset.HashSet[Int] = HashSet([], capacity=chunk * 3)
+    let used : @hashset.HashSet[Int32] = HashSet([], capacity=chunk * 3)
     for ii in start..<end {
       let tid = tri_ids[ii]
       let (i0, i1, i2) = tris[tid]
@@ -1106,7 +1112,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
   if voxel_size.x == 0.0F || voxel_size.y == 0.0F || voxel_size.z == 0.0F {
     return None
   }
-  fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+  fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
     if denom == 0.0F {
       0
     } else {
@@ -1114,7 +1120,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  let occupied : @hashset.HashSet[(Int, Int, Int)] = HashSet(
+  let occupied : @hashset.HashSet[(Int32, Int32, Int32)] = HashSet(
     [],
     capacity=points.length(),
   )
@@ -1130,7 +1136,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
   }
   let voxels = occupied.to_array()
   // Deterministic order for stable triangle->voxel metadata.
-  fn less(a : (Int, Int, Int), b : (Int, Int, Int)) -> Bool {
+  fn less(a : (Int32, Int32, Int32), b : (Int32, Int32, Int32)) -> Bool {
     if a.0 != b.0 {
       a.0 < b.0
     } else if a.1 != b.1 {
@@ -1140,17 +1146,17 @@ pub fn ColliderBuilder3D::voxels_from_points(
     }
   }
 
-  fn sort_keys(keys : Array[(Int, Int, Int)]) -> Unit {
+  fn sort_keys(keys : Array[(Int32, Int32, Int32)]) -> Unit {
     if keys.length() <= 1 {
       return
     }
-    fn swap(arr : Array[(Int, Int, Int)], i : Int, j : Int) -> Unit {
+    fn swap(arr : Array[(Int32, Int32, Int32)], i : Int32, j : Int32) -> Unit {
       let tmp = arr[i]
       arr[i] = arr[j]
       arr[j] = tmp
     }
 
-    let stack : Array[(Int, Int)] = [(0, keys.length() - 1)]
+    let stack : Array[(Int32, Int32)] = [(0, keys.length() - 1)]
     while stack.length() > 0 {
       let range = stack[stack.length() - 1]
       stack.pop() |> ignore
@@ -1209,18 +1215,18 @@ pub fn ColliderBuilder3D::voxels_from_points(
       max_key = (max_key.0, max_key.1, iz)
     }
   }
-  let key_to_id : @hashmap.HashMap[(Int, Int, Int), Int] = HashMap(
+  let key_to_id : @hashmap.HashMap[(Int32, Int32, Int32), Int32] = HashMap(
     [],
     capacity=voxels.length(),
   )
   for i in 0..<voxels.length() {
     key_to_id.set(voxels[i], i)
   }
-  let columns : @hashmap.HashMap[(Int, Int), Array[Int]] = HashMap(
+  let columns : @hashmap.HashMap[(Int32, Int32), Array[Int32]] = HashMap(
     [],
     capacity=voxels.length(),
   )
-  fn push_sorted_unique(ys : Array[Int], y : Int) -> Unit {
+  fn push_sorted_unique(ys : Array[Int32], y : Int32) -> Unit {
     let mut j = 0
     while j < ys.length() && ys[j] < y {
       j = j + 1
@@ -1243,7 +1249,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
     if columns.get(col) is Some(ys) {
       push_sorted_unique(ys, iy)
     } else {
-      let ys : Array[Int] = [iy]
+      let ys : Array[Int32] = [iy]
       columns.set(col, ys)
     }
   }
@@ -1257,10 +1263,10 @@ pub fn ColliderBuilder3D::voxels_from_points(
   let mut dense_origin_z = 0
   let mut dense_nx = 0
   let mut dense_nz = 0
-  let mut dense_columns : Array[Array[Int]?]? = None
+  let mut dense_columns : Array[Array[Int32]?]? = None
   // Keep memory bounded: a 512x512 grid (262k cells) is already large enough for common scenes.
   if nx > 0 && nz > 0 && nx * nz <= 262144 {
-    let dense : Array[Array[Int]?] = []
+    let dense : Array[Array[Int32]?] = []
     for _ in 0..<(nx * nz) {
       dense.push(None)
     }
@@ -1272,7 +1278,7 @@ pub fn ColliderBuilder3D::voxels_from_points(
       if dense[idx] is Some(ys) {
         push_sorted_unique(ys, iy)
       } else {
-        let ys : Array[Int] = [iy]
+        let ys : Array[Int32] = [iy]
         dense[idx] = Some(ys)
       }
     }
@@ -1305,8 +1311,8 @@ pub fn ColliderBuilder3D::voxels_from_points(
 ///|
 pub fn ColliderBuilder3D::heightfield(
   heights : Array[@core.Real],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
   scale : @core.Vec3,
 ) -> ColliderBuilder3D? {
   heightfield_impl(heights, nrows, ncols, scale, 0)
@@ -1315,10 +1321,10 @@ pub fn ColliderBuilder3D::heightfield(
 ///|
 fn heightfield_impl(
   heights : Array[@core.Real],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
   scale : @core.Vec3,
-  flags : Int,
+  flags : Int32,
 ) -> ColliderBuilder3D? {
   if nrows <= 1 || ncols <= 1 {
     return None
@@ -1339,11 +1345,11 @@ fn heightfield_impl(
       vertices.push(Vec3(x, y, z))
     }
   }
-  fn vid(i : Int, j : Int, ncols : Int) -> Int {
+  fn vid(i : Int32, j : Int32, ncols : Int32) -> Int32 {
     i * ncols + j
   }
 
-  let indices : Array[(Int, Int, Int)] = []
+  let indices : Array[(Int32, Int32, Int32)] = []
   for i in 0..<(nrows - 1) {
     for j in 0..<(ncols - 1) {
       let a = vid(i, j, ncols)
@@ -1373,10 +1379,10 @@ fn heightfield_impl(
 ///|
 pub fn ColliderBuilder3D::heightfield_with_flags(
   heights : Array[@core.Real],
-  nrows : Int,
-  ncols : Int,
+  nrows : Int32,
+  ncols : Int32,
   scale : @core.Vec3,
-  flags : Int,
+  flags : Int32,
 ) -> ColliderBuilder3D? {
   heightfield_impl(heights, nrows, ncols, scale, flags)
 }
@@ -1512,7 +1518,7 @@ pub fn ColliderBuilder3D::contact_force_event_threshold(
 ///|
 pub fn ColliderBuilder3D::user_data(
   self : ColliderBuilder3D,
-  data : Int,
+  data : Int32,
 ) -> ColliderBuilder3D {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self

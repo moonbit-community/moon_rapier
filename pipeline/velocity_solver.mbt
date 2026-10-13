@@ -29,8 +29,8 @@ priv struct VelocitySolver {
   generic_solver_vels : Array[@core.Real]
   generic_solver_vels_increment : Array[@core.Real]
   multibody_roots : Array[@dynamics.MultibodyLinkId]
-  island_stamps : Array[Int]
-  mut stamp : Int
+  island_stamps : Array[Int32]
+  mut stamp : Int32
 }
 
 ///|
@@ -55,9 +55,9 @@ fn velocity_solver_vec2_scale(v : @core.Vec2, s : @core.Real) -> @core.Vec2 {
 fn VelocitySolver::stamp_island_bodies(
   self : VelocitySolver,
   islands : @dynamics.IslandManager,
-  island_id : Int,
-  total_bodies : Int,
-) -> Int {
+  island_id : Int32,
+  total_bodies : Int32,
+) -> Int32 {
   while self.island_stamps.length() < total_bodies {
     self.island_stamps.push(0)
   }
@@ -78,7 +78,7 @@ fn VelocitySolver::init_solver_velocities_and_solver_bodies(
   self : VelocitySolver,
   total_step_dt : @core.Real,
   parameters : IntegrationParameters,
-  island_id : Int,
+  island_id : Int32,
   islands : @dynamics.IslandManager,
   bodies : @dynamics.RigidBodySet,
   multibody_joints : @dynamics.MultibodyJointSet,
@@ -147,7 +147,7 @@ fn VelocitySolver::init_constraints(
   contact_constraints : ContactConstraintsSet,
   joint_constraints : JointConstraintsSet,
   contact_cache : Array[ContactImpulseCacheEntry],
-  island_stamp : Int,
+  island_stamp : Int32,
 ) -> Unit {
   joint_constraints.init(
     parameters,
@@ -176,12 +176,12 @@ fn VelocitySolver::init_constraints(
 fn VelocitySolver::solve_constraints(
   self : VelocitySolver,
   parameters : IntegrationParameters,
-  num_substeps : Int,
+  num_substeps : Int32,
   bodies : @dynamics.RigidBodySet,
   colliders : @collision.ColliderSet,
   joint_constraints : JointConstraintsSet,
   contact_constraints : ContactConstraintsSet,
-  island_stamp : Int,
+  island_stamp : Int32,
 ) -> Unit {
   let substeps = if num_substeps <= 0 { 1 } else { num_substeps }
   let pgs_iters = if parameters.num_internal_pgs_iterations <= 0 {
@@ -290,7 +290,7 @@ fn VelocitySolver::integrate_positions(
   parameters : IntegrationParameters,
   is_last_substep : Bool,
   bodies : @dynamics.RigidBodySet,
-  island_stamp : Int,
+  island_stamp : Int32,
 ) -> Unit {
   is_last_substep |> ignore
   if parameters.dt <= 0.0F {
@@ -322,7 +322,7 @@ fn VelocitySolver::writeback_bodies(
   self : VelocitySolver,
   base_parameters : IntegrationParameters,
   islands : @dynamics.IslandManager,
-  island_id : Int,
+  island_id : Int32,
   bodies : @dynamics.RigidBodySet,
   multibody_joints : @dynamics.MultibodyJointSet,
 ) -> Unit {

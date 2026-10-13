@@ -15,7 +15,7 @@
 ///|
 /// Ported from rapier/src/dynamics/joint/revolute_joint.rs (test_revolute_joint_angle).
 test "revolute joint angle" {
-  let revolute = RevoluteJointBuilder::RevoluteJointBuilder().build()
+  let revolute = @dynamics.RevoluteJointBuilder::RevoluteJointBuilder().build()
   let rot1 = @core.rotation_from_angle(1.0F)
   let steps = 100
   let steps_real = Float::from_double(steps.to_double())
@@ -38,9 +38,11 @@ test "revolute joint angle" {
 
 ///|
 test "revolute joint builder softness stored in generic joint" {
-  let softness = SpringCoefficients::SpringCoefficients(5.0F, 0.25F)
-  let joint = GenericJoint::from_revolute(
-    RevoluteJointBuilder::RevoluteJointBuilder().softness(softness).build(),
+  let softness = @dynamics.SpringCoefficients::SpringCoefficients(5.0F, 0.25F)
+  let joint = @dynamics.GenericJoint::from_revolute(
+    @dynamics.RevoluteJointBuilder::RevoluteJointBuilder()
+    .softness(softness)
+    .build(),
   )
   let stored = joint.softness()
   inspect(@core.abs(stored.natural_frequency - 5.0F) < 1.0e-6F, content="true")

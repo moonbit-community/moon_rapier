@@ -15,7 +15,7 @@
 ///|
 /// Ported from `rapier-reference/src/geometry/narrow_phase.rs` issue #734 test.
 test "issue #734: collider_set parent depenetration (3D)" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()

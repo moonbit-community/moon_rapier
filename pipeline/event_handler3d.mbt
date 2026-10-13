@@ -21,7 +21,7 @@ pub struct EventHandler3D {
 
 ///|
 pub fn EventHandler3D::EventHandler3D() -> EventHandler3D {
-  { collision_events: [], intersection_events: [], contact_force_events: [] }
+  { collision_events: [], intersection_events: [], contact_force_events: [], }
 }
 
 ///|

@@ -14,9 +14,11 @@
 
 ///|
 test "rigid_body3d: apply_impulse_at_point affects angvel" {
-  let bodies = RigidBodySet3D::RigidBodySet3D()
+  let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
   let h = bodies.insert(
-    RigidBodyBuilder3D::dynamic().translation(Vec3(0.0F, 0.0F, 0.0F)).build(),
+    @dynamics.RigidBodyBuilder3D::dynamic()
+    .translation(Vec3(0.0F, 0.0F, 0.0F))
+    .build(),
   )
   if bodies.get_mut(h) is Some(rb) {
     // Apply an impulse along +X at a point offset along +Y => should generate a torque about Z.

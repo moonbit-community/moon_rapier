@@ -14,7 +14,7 @@
 
 ///|
 fn step_world3_real(
-  pipeline : PhysicsPipeline3DReal,
+  pipeline : @pipeline.PhysicsPipeline3DReal,
   gravity : @core.Vec3,
   parameters : @dynamics.IntegrationParameters,
   islands : @dynamics.IslandManager3D,
@@ -22,7 +22,7 @@ fn step_world3_real(
   narrow_phase : @collision.NarrowPhase3D,
   bodies : @dynamics.RigidBodySet3D,
   colliders : @collision.ColliderSet3D,
-  steps : Int,
+  steps : Int32,
 ) -> Unit {
   for _ in 0..<steps {
     pipeline.step(
@@ -51,7 +51,7 @@ fn bodies_have_finite_positions3(
 
 ///|
 test "examples3d primitives3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -122,7 +122,7 @@ test "examples3d primitives3: real backend smoke" {
 
 ///|
 test "examples3d damping3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -174,7 +174,7 @@ test "examples3d damping3: real backend smoke" {
 
 ///|
 test "examples3d heightfield3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -255,7 +255,7 @@ test "examples3d heightfield3: real backend smoke" {
 
 ///|
 test "examples3d dynamic_trimesh3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -327,7 +327,7 @@ test "examples3d dynamic_trimesh3: real backend smoke" {
 
 ///|
 test "examples3d voxels3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -388,7 +388,7 @@ test "examples3d voxels3: real backend smoke" {
 
 ///|
 test "examples3d trimesh3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()
@@ -479,7 +479,7 @@ test "examples3d trimesh3: real backend smoke" {
 
 ///|
 test "examples3d restitution3: real backend smoke" {
-  let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+  let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
   let broad_phase = @collision.BroadPhase3D()
   let narrow_phase = @collision.NarrowPhase3D()
   let islands = @dynamics.IslandManager3D()

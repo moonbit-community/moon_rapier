@@ -264,15 +264,15 @@ pub fn Wheel::suspension(self : Wheel) -> @core.Vec2 {
 pub struct DynamicRayCastVehicleController {
   wheels : Array[Wheel]
   chassis : @dynamics.RigidBodyHandle
-  index_up_axis : Int
-  index_forward_axis : Int
+  index_up_axis : Int32
+  index_forward_axis : Int32
 }
 
 ///|
 pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(
   chassis : @dynamics.RigidBodyHandle,
 ) -> DynamicRayCastVehicleController {
-  { wheels: [], chassis, index_up_axis: 1, index_forward_axis: 0 }
+  { wheels: [], chassis, index_up_axis: 1, index_forward_axis: 0, }
 }
 
 ///|
@@ -294,7 +294,7 @@ pub fn DynamicRayCastVehicleController::add_wheel(
 ///|
 pub fn DynamicRayCastVehicleController::set_engine_force(
   self : DynamicRayCastVehicleController,
-  wheel_id : Int,
+  wheel_id : Int32,
   force : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -308,7 +308,7 @@ pub fn DynamicRayCastVehicleController::set_engine_force(
 ///|
 pub fn DynamicRayCastVehicleController::set_brake(
   self : DynamicRayCastVehicleController,
-  wheel_id : Int,
+  wheel_id : Int32,
   brake : @core.Real,
 ) -> Unit {
   if wheel_id < 0 || wheel_id >= self.wheels.length() {
@@ -320,7 +320,7 @@ pub fn DynamicRayCastVehicleController::set_brake(
 }
 
 ///|
-fn axis_vec2(axis : Int) -> @core.Vec2 {
+fn axis_vec2(axis : Int32) -> @core.Vec2 {
   if axis == 0 {
     Vec2(1.0F, 0.0F)
   } else {
@@ -536,7 +536,7 @@ fn calc_rolling_friction_impulse(
   contact_pos : @core.Vec2,
   dir : @core.Vec2,
   max_impulse : @core.Real,
-  num_wheels_on_ground : Int,
+  num_wheels_on_ground : Int32,
 ) -> @core.Real {
   let denom0 = impulse_denominator(body0, contact_pos, dir)
   let denom1 = if body1 is Some(b1) {

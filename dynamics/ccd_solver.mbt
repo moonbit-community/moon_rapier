@@ -19,7 +19,7 @@ pub struct CCDSolver {
 
 ///|
 pub fn CCDSolver::CCDSolver() -> CCDSolver {
-  let value = { marker: () }
+  let value = { marker: (), }
   value.marker |> ignore
   value
 }

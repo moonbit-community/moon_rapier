@@ -13,34 +13,34 @@
 // limitations under the License.
 
 ///|
-const MIN_ISLAND_SIZE_3D : Int = 1024
+const MIN_ISLAND_SIZE_3D : Int32 = 1024
 
 ///|
-const MAX_ISLAND_SIZE_3D : Int = 4096
+const MAX_ISLAND_SIZE_3D : Int32 = 4096
 
 ///|
-const SLEEP_STATE_UNKNOWN : Int = 0
+const SLEEP_STATE_UNKNOWN : Int32 = 0
 
 ///|
-const SLEEP_STATE_PENDING : Int = 1
+const SLEEP_STATE_PENDING : Int32 = 1
 
 ///|
-const SLEEP_STATE_TRAVERSED : Int = 2
+const SLEEP_STATE_TRAVERSED : Int32 = 2
 
 ///|
 struct Island3D {
   bodies : Array[RigidBodyHandle]
-  mut id_in_awake_list : Int?
-  mut additional_solver_iterations : Int
+  mut id_in_awake_list : Int32?
+  mut additional_solver_iterations : Int32
 }
 
 ///|
 struct IslandsOptimizer3D {
-  mut min_island_size : Int
-  mut max_island_size : Int
-  mut mode : Int
-  mut merge_curr_awake_id : Int
-  mut split_curr_awake_id : Int
+  mut min_island_size : Int32
+  mut max_island_size : Int32
+  mut mode : Int32
+  mut merge_curr_awake_id : Int32
+  mut split_curr_awake_id : Int32
 }
 
 ///|
@@ -60,7 +60,7 @@ fn handle_equals3d(a : RigidBodyHandle, b : RigidBodyHandle) -> Bool {
 }
 
 ///|
-fn max_non_negative(value : Int) -> Int {
+fn max_non_negative(value : Int32) -> Int32 {
   if value > 0 {
     value
   } else {
@@ -69,7 +69,7 @@ fn max_non_negative(value : Int) -> Int {
 }
 
 ///|
-fn truncate_handles3d(values : Array[RigidBodyHandle], len : Int) -> Unit {
+fn truncate_handles3d(values : Array[RigidBodyHandle], len : Int32) -> Unit {
   while values.length() > len {
     values.pop() |> ignore
   }
@@ -88,20 +88,20 @@ pub struct IslandManager3D {
   // Public snapshots preserved for compatibility.
   active_bodies : Array[RigidBodyHandle]
   islands : Array[Array[RigidBodyHandle]]
-  island_solver_iterations : Array[Int]
+  island_solver_iterations : Array[Int32]
   // Internal persistent island storage.
   island_nodes : Array[Island3D?]
-  awake_island_ids : Array[Int]
-  free_island_ids : Array[Int]
-  body_island_ids : Array[Int]
-  body_island_generations : Array[Int]
-  body_island_indices : Array[Int]
-  body_sleep_state_generations : Array[Int]
-  body_sleep_states : Array[Int]
-  body_traversal_timestamps : Array[Int]
+  awake_island_ids : Array[Int32]
+  free_island_ids : Array[Int32]
+  body_island_ids : Array[Int32]
+  body_island_generations : Array[Int32]
+  body_island_indices : Array[Int32]
+  body_sleep_state_generations : Array[Int32]
+  body_sleep_states : Array[Int32]
+  body_traversal_timestamps : Array[Int32]
   stack : Array[RigidBodyHandle]
   optimizer : IslandsOptimizer3D
-  mut traversal_timestamp : Int
+  mut traversal_timestamp : Int32
 }
 
 ///|
@@ -130,8 +130,8 @@ pub fn IslandManager3D::IslandManager3D() -> IslandManager3D {
 ///|
 fn IslandManager3D::set_island_size_limits(
   self : IslandManager3D,
-  min_island_size : Int,
-  max_island_size : Int,
+  min_island_size : Int32,
+  max_island_size : Int32,
 ) -> Unit {
   let min_size = if min_island_size > 0 { min_island_size } else { 1 }
   let max_size = if max_island_size > min_size {
@@ -146,7 +146,7 @@ fn IslandManager3D::set_island_size_limits(
 ///|
 fn IslandManager3D::ensure_body_capacity(
   self : IslandManager3D,
-  id : Int,
+  id : Int32,
 ) -> Unit {
   if id < 0 {
     return
@@ -198,7 +198,7 @@ fn IslandManager3D::sync_body_generation(
 fn IslandManager3D::island_id_for(
   self : IslandManager3D,
   handle : RigidBodyHandle,
-) -> Int? {
+) -> Int32? {
   if handle.id < 0 || handle.id >= self.body_island_ids.length() {
     return None
   }
@@ -220,7 +220,7 @@ fn IslandManager3D::island_id_for(
 fn IslandManager3D::insert_island_node(
   self : IslandManager3D,
   island : Island3D,
-) -> Int {
+) -> Int32 {
   if self.free_island_ids.pop() is Some(id) {
     self.island_nodes[id] = Some(island)
     id
@@ -234,7 +234,7 @@ fn IslandManager3D::insert_island_node(
 ///|
 fn IslandManager3D::remove_from_awake_list(
   self : IslandManager3D,
-  island_id : Int,
+  island_id : Int32,
 ) -> Unit {
   if island_id < 0 || island_id >= self.island_nodes.length() {
     return
@@ -281,7 +281,7 @@ fn IslandManager3D::wake_up_body(
 fn IslandManager3D::wake_up_island(
   self : IslandManager3D,
   bodies : RigidBodySet3D,
-  island_id : Int,
+  island_id : Int32,
 ) -> Unit {
   if island_id < 0 || island_id >= self.island_nodes.length() {
     return
@@ -333,7 +333,7 @@ fn IslandManager3D::insert_body(
 ///|
 fn IslandManager3D::remove_empty_island(
   self : IslandManager3D,
-  island_id : Int,
+  island_id : Int32,
 ) -> Unit {
   if island_id < 0 || island_id >= self.island_nodes.length() {
     return
@@ -390,8 +390,8 @@ fn IslandManager3D::cleanup_invalid_bodies(
 fn IslandManager3D::merge_islands(
   self : IslandManager3D,
   bodies : RigidBodySet3D,
-  island_id1 : Int,
-  island_id2 : Int,
+  island_id1 : Int32,
+  island_id2 : Int32,
 ) -> Unit {
   if island_id1 == island_id2 {
     return
@@ -473,7 +473,7 @@ fn IslandManager3D::push_contacting_bodies(
 fn IslandManager3D::extract_sub_island(
   self : IslandManager3D,
   bodies : RigidBodySet3D,
-  source_island_id : Int,
+  source_island_id : Int32,
   extracted : Array[RigidBodyHandle],
   sleeping : Bool,
 ) -> Unit {
@@ -826,8 +826,8 @@ pub fn IslandManager3D::active_bodies(
 }
 
 ///|
-pub fn IslandManager3D::active_islands(self : IslandManager3D) -> Array[Int] {
-  let out : Array[Int] = []
+pub fn IslandManager3D::active_islands(self : IslandManager3D) -> Array[Int32] {
+  let out : Array[Int32] = []
   for i in 0..<self.awake_island_ids.length() {
     out.push(self.awake_island_ids[i])
   }
@@ -837,7 +837,7 @@ pub fn IslandManager3D::active_islands(self : IslandManager3D) -> Array[Int] {
 ///|
 pub fn IslandManager3D::island_bodies(
   self : IslandManager3D,
-  island_id : Int,
+  island_id : Int32,
 ) -> Array[RigidBodyHandle] {
   if island_id < 0 || island_id >= self.island_nodes.length() {
     return []
@@ -856,8 +856,8 @@ pub fn IslandManager3D::island_bodies(
 ///|
 pub fn IslandManager3D::island_additional_solver_iterations(
   self : IslandManager3D,
-  island_id : Int,
-) -> Int {
+  island_id : Int32,
+) -> Int32 {
   if island_id < 0 || island_id >= self.island_nodes.length() {
     return 0
   }

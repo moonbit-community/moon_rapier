@@ -28,15 +28,17 @@ pub fn RigidBodyHandle::equals(
 ///|
 #declaration_only
 pub fn RigidBodyHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> RigidBodyHandle {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBodyHandle::into_raw_parts(self : RigidBodyHandle) -> (Int, Int) {
+pub fn RigidBodyHandle::into_raw_parts(
+  self : RigidBodyHandle,
+) -> (Int32, Int32) {
   ...
 }
 
@@ -85,7 +87,7 @@ pub type RigidBodyDominance
 ///|
 #declaration_only
 pub fn RigidBodyDominance::RigidBodyDominance(
-  group : Int,
+  group : Int32,
 ) -> RigidBodyDominance {
   ...
 }
@@ -101,7 +103,7 @@ pub fn RigidBodyDominance::default() -> RigidBodyDominance {
 pub fn RigidBodyDominance::effective_group(
   self : RigidBodyDominance,
   body_type : RigidBodyType,
-) -> Int {
+) -> Int32 {
   ...
 }
 
@@ -143,13 +145,13 @@ pub fn AxesMask::all() -> AxesMask {
 
 ///|
 #declaration_only
-pub fn AxesMask::AxesMask(bits : Int) -> AxesMask {
+pub fn AxesMask::AxesMask(bits : Int32) -> AxesMask {
   ...
 }
 
 ///|
 #declaration_only
-pub fn AxesMask::bits(self : AxesMask) -> Int {
+pub fn AxesMask::bits(self : AxesMask) -> Int32 {
   ...
 }
 
@@ -207,13 +209,13 @@ pub type Group
 
 ///|
 #declaration_only
-pub fn Group::Group(bits : Int) -> Group {
+pub fn Group::Group(bits : Int32) -> Group {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Group::bits(self : Group) -> Int {
+pub fn Group::bits(self : Group) -> Int32 {
   ...
 }
 
@@ -624,7 +626,7 @@ pub fn IntegrationParameters::set_normalized_prediction_distance(
 #declaration_only
 pub fn IntegrationParameters::set_num_solver_iterations(
   self : IntegrationParameters,
-  num_solver_iterations : Int,
+  num_solver_iterations : Int32,
 ) -> IntegrationParameters {
   ...
 }
@@ -633,7 +635,7 @@ pub fn IntegrationParameters::set_num_solver_iterations(
 #declaration_only
 pub fn IntegrationParameters::set_num_internal_pgs_iterations(
   self : IntegrationParameters,
-  num_internal_pgs_iterations : Int,
+  num_internal_pgs_iterations : Int32,
 ) -> IntegrationParameters {
   ...
 }
@@ -642,7 +644,7 @@ pub fn IntegrationParameters::set_num_internal_pgs_iterations(
 #declaration_only
 pub fn IntegrationParameters::set_num_internal_stabilization_iterations(
   self : IntegrationParameters,
-  num_internal_stabilization_iterations : Int,
+  num_internal_stabilization_iterations : Int32,
 ) -> IntegrationParameters {
   ...
 }
@@ -651,7 +653,7 @@ pub fn IntegrationParameters::set_num_internal_stabilization_iterations(
 #declaration_only
 pub fn IntegrationParameters::set_min_island_size(
   self : IntegrationParameters,
-  min_island_size : Int,
+  min_island_size : Int32,
 ) -> IntegrationParameters {
   ...
 }
@@ -660,7 +662,7 @@ pub fn IntegrationParameters::set_min_island_size(
 #declaration_only
 pub fn IntegrationParameters::set_max_ccd_substeps(
   self : IntegrationParameters,
-  max_ccd_substeps : Int,
+  max_ccd_substeps : Int32,
 ) -> IntegrationParameters {
   ...
 }
@@ -806,7 +808,7 @@ pub fn RigidBodyBuilder::additional_mass(
 #declaration_only
 pub fn RigidBodyBuilder::additional_solver_iterations(
   self : RigidBodyBuilder,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> RigidBodyBuilder {
   ...
 }
@@ -815,7 +817,7 @@ pub fn RigidBodyBuilder::additional_solver_iterations(
 #declaration_only
 pub fn RigidBodyBuilder::dominance_group(
   self : RigidBodyBuilder,
-  group : Int,
+  group : Int32,
 ) -> RigidBodyBuilder {
   ...
 }
@@ -824,7 +826,7 @@ pub fn RigidBodyBuilder::dominance_group(
 #declaration_only
 pub fn RigidBodyBuilder::user_data(
   self : RigidBodyBuilder,
-  data : Int,
+  data : Int32,
 ) -> RigidBodyBuilder {
   ...
 }
@@ -856,13 +858,13 @@ pub fn RigidBodySet::RigidBodySet() -> RigidBodySet {
 
 ///|
 #declaration_only
-pub fn RigidBodySet::with_capacity(capacity : Int) -> RigidBodySet {
+pub fn RigidBodySet::with_capacity(capacity : Int32) -> RigidBodySet {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBodySet::len(self : RigidBodySet) -> Int {
+pub fn RigidBodySet::len(self : RigidBodySet) -> Int32 {
   ...
 }
 
@@ -938,7 +940,7 @@ pub fn RigidBodySet::get_mut_internal_with_modification_tracking(
 #declaration_only
 pub fn RigidBodySet::get_unknown_gen(
   self : RigidBodySet,
-  id : Int,
+  id : Int32,
 ) -> (RigidBody, RigidBodyHandle)? {
   ...
 }
@@ -947,7 +949,7 @@ pub fn RigidBodySet::get_unknown_gen(
 #declaration_only
 pub fn RigidBodySet::get_unknown_gen_mut(
   self : RigidBodySet,
-  id : Int,
+  id : Int32,
 ) -> (RigidBody, RigidBodyHandle)? {
   ...
 }
@@ -1040,13 +1042,13 @@ pub fn RigidBody::is_dynamic_or_kinematic(self : RigidBody) -> Bool {
 
 ///|
 #declaration_only
-pub fn RigidBody::dominance_group(self : RigidBody) -> Int {
+pub fn RigidBody::dominance_group(self : RigidBody) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int {
+pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int32 {
   ...
 }
 
@@ -1054,14 +1056,14 @@ pub fn RigidBody::effective_dominance_group(self : RigidBody) -> Int {
 #declaration_only
 pub fn RigidBody::set_dominance_group(
   self : RigidBody,
-  group : Int,
+  group : Int32,
 ) -> RigidBody {
   ...
 }
 
 ///|
 #declaration_only
-pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int {
+pub fn RigidBody::additional_solver_iterations(self : RigidBody) -> Int32 {
   ...
 }
 
@@ -1085,7 +1087,7 @@ pub fn RigidBody::set_additional_mass(
 #declaration_only
 pub fn RigidBody::set_additional_solver_iterations(
   self : RigidBody,
-  additional_iterations : Int,
+  additional_iterations : Int32,
 ) -> RigidBody {
   ...
 }
@@ -2000,8 +2002,8 @@ pub fn ImpulseJointGraph::edges(
 ///|
 #declaration_only
 pub fn ImpulseJointHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ImpulseJointHandle {
   ...
 }
@@ -2010,7 +2012,7 @@ pub fn ImpulseJointHandle::from_raw_parts(
 #declaration_only
 pub fn ImpulseJointHandle::into_raw_parts(
   self : ImpulseJointHandle,
-) -> (Int, Int) {
+) -> (Int32, Int32) {
   ...
 }
 
@@ -2068,7 +2070,7 @@ pub fn ImpulseJointSet::insert(
 
 ///|
 #declaration_only
-pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int {
+pub fn ImpulseJointSet::len(self : ImpulseJointSet) -> Int32 {
   ...
 }
 
@@ -2145,7 +2147,7 @@ pub fn ImpulseJointSet::set_solver_impulses(
 #declaration_only
 pub fn ImpulseJointSet::get_unknown_gen(
   self : ImpulseJointSet,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   ...
 }
@@ -2154,7 +2156,7 @@ pub fn ImpulseJointSet::get_unknown_gen(
 #declaration_only
 pub fn ImpulseJointSet::get_unknown_gen_mut(
   self : ImpulseJointSet,
-  id : Int,
+  id : Int32,
 ) -> (ImpulseJoint, ImpulseJointHandle)? {
   ...
 }
@@ -2238,7 +2240,7 @@ pub fn ImpulseJointSet::select_active_interactions(
   self : ImpulseJointSet,
   islands : IslandManager,
   bodies : RigidBodySet,
-  out : Array[Array[Int]],
+  out : Array[Array[Int32]],
 ) -> Unit {
   ...
 }
@@ -2446,7 +2448,7 @@ pub fn RigidBody::set_next_kinematic_position(
 
 ///|
 #declaration_only
-pub fn RigidBody::user_data(self : RigidBody) -> Int {
+pub fn RigidBody::user_data(self : RigidBody) -> Int32 {
   ...
 }
 
@@ -2458,7 +2460,7 @@ pub fn RigidBody::user_data128(self : RigidBody) -> @core.UserData128 {
 
 ///|
 #declaration_only
-pub fn RigidBody::set_user_data(self : RigidBody, data : Int) -> RigidBody {
+pub fn RigidBody::set_user_data(self : RigidBody, data : Int32) -> RigidBody {
   ...
 }
 
@@ -2510,8 +2512,8 @@ pub type MultibodyLinkId
 ///|
 #declaration_only
 pub fn MultibodyJointHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> MultibodyJointHandle {
   ...
 }
@@ -2520,7 +2522,7 @@ pub fn MultibodyJointHandle::from_raw_parts(
 #declaration_only
 pub fn MultibodyJointHandle::into_raw_parts(
   self : MultibodyJointHandle,
-) -> (Int, Int) {
+) -> (Int32, Int32) {
   ...
 }
 
@@ -2655,7 +2657,7 @@ pub fn MultibodyJointSet::get_mut_internal(
 #declaration_only
 pub fn MultibodyJointSet::get_unknown_gen(
   self : MultibodyJointSet,
-  id : Int,
+  id : Int32,
 ) -> (Multibody, LinkId, MultibodyJointHandle)? {
   ...
 }
@@ -2709,7 +2711,7 @@ pub fn Multibody::forward_kinematics(
 
 ///|
 #declaration_only
-pub fn Multibody::ndofs(self : Multibody) -> Int {
+pub fn Multibody::ndofs(self : Multibody) -> Int32 {
   ...
 }
 
@@ -2731,7 +2733,7 @@ pub type Jacobian
 
 ///|
 #declaration_only
-pub fn Jacobian::zeros(size : Int) -> Jacobian {
+pub fn Jacobian::zeros(size : Int32) -> Jacobian {
   ...
 }
 
@@ -2791,7 +2793,7 @@ pub fn InverseKinematicsOption::set_damping(
 #declaration_only
 pub fn InverseKinematicsOption::set_max_iters(
   self : InverseKinematicsOption,
-  max_iters : Int,
+  max_iters : Int32,
 ) -> InverseKinematicsOption {
   ...
 }
@@ -2849,13 +2851,13 @@ pub fn IndexSequence::IndexSequence() -> IndexSequence {
 
 ///|
 #declaration_only
-pub fn IndexSequence::remove(self : IndexSequence, index : Int) -> Unit {
+pub fn IndexSequence::remove(self : IndexSequence, index : Int32) -> Unit {
   ...
 }
 
 ///|
 #declaration_only
-pub fn IndexSequence::keep(self : IndexSequence, index : Int) -> Unit {
+pub fn IndexSequence::keep(self : IndexSequence, index : Int32) -> Unit {
   ...
 }
 
@@ -2870,8 +2872,8 @@ pub type DVector
 ///|
 #declaration_only
 pub fn RowDVector::from_fn(
-  size : Int,
-  init : (Int) -> @core.Real,
+  size : Int32,
+  init : (Int32) -> @core.Real,
 ) -> RowDVector {
   ...
 }
@@ -2884,7 +2886,7 @@ pub fn RowDVector::from_array(values : Array[@core.Real]) -> RowDVector {
 
 ///|
 #declaration_only
-pub fn DVector::from_fn(size : Int, init : (Int) -> @core.Real) -> DVector {
+pub fn DVector::from_fn(size : Int32, init : (Int32) -> @core.Real) -> DVector {
   ...
 }
 
@@ -2908,13 +2910,13 @@ pub fn DVector::equals(self : DVector, other : DVector) -> Bool {
 
 ///|
 #declaration_only
-pub fn RowDVector::len(self : RowDVector) -> Int {
+pub fn RowDVector::len(self : RowDVector) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn DVector::len(self : DVector) -> Int {
+pub fn DVector::len(self : DVector) -> Int32 {
   ...
 }
 

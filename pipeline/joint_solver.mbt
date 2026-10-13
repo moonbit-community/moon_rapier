@@ -300,12 +300,12 @@ priv struct JointConstraint {
   // Linear limit along X/Y in joint frame (unilateral, like prismatic/pin-slot).
   lin_limit_x_min : @core.Real
   lin_limit_x_max : @core.Real
-  lin_limit_x_active : Int
+  lin_limit_x_active : Int32
   lin_limit_x_bias : @core.Real
   mut lin_limit_x_impulse : @core.Real
   lin_limit_y_min : @core.Real
   lin_limit_y_max : @core.Real
-  lin_limit_y_active : Int
+  lin_limit_y_active : Int32
   lin_limit_y_bias : @core.Real
   mut lin_limit_y_impulse : @core.Real
   // Equality constraint impulses for locked linear axes (joint frame X/Y).
@@ -320,7 +320,7 @@ priv struct JointConstraint {
   coupled_limit_enabled : Bool
   coupled_limit_min : @core.Real
   coupled_limit_max : @core.Real
-  coupled_limit_active : Int // -1=min, +1=max, 0=inactive
+  coupled_limit_active : Int32 // -1=min, +1=max, 0=inactive
   coupled_limit_bias : @core.Real
   mut coupled_limit_impulse : @core.Real
   coupled_motor_enabled : Bool
@@ -335,8 +335,8 @@ fn build_joint_constraints(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Array[JointConstraint] {
   let constraints : Array[JointConstraint] = []
   let joints = impulse_joints.iter()
@@ -1292,8 +1292,8 @@ fn append_impulse_joint_constraints3(
   bodies : @dynamics.RigidBodySet,
   impulse_joints : @dynamics.ImpulseJointSet3,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Unit {
   let joints = impulse_joints.iter()
   let warmstart = parameters.warmstart_coefficient
@@ -1639,8 +1639,8 @@ fn build_joint_constraints3(
   impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Array[JointConstraint] {
   let constraints : Array[JointConstraint] = []
   append_impulse_joint_constraints3(
@@ -1761,7 +1761,7 @@ fn solve_joint_velocity_constraints(
   solver_bodies : SolverBodies,
   constraints : Array[JointConstraint],
   dt : @core.Real,
-  iterations : Int,
+  iterations : Int32,
 ) -> Unit {
   if dt <= 0.0F {
     return
@@ -2700,7 +2700,7 @@ priv struct JointConstraintsSet {
 
 ///|
 fn JointConstraintsSet::JointConstraintsSet() -> JointConstraintsSet {
-  { constraints: [] }
+  { constraints: [], }
 }
 
 ///|
@@ -2711,8 +2711,8 @@ fn JointConstraintsSet::init(
   impulse_joints : @dynamics.ImpulseJointSet,
   multibody_joints : @dynamics.MultibodyJointSet,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Unit {
   self.constraints = build_joint_constraints(
     parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
@@ -2727,8 +2727,8 @@ fn JointConstraintsSet::init3(
   impulse_joints : @dynamics.ImpulseJointSet3,
   multibody_joints : @dynamics.MultibodyJointSet3,
   dt : @core.Real,
-  island_stamps : Array[Int]?,
-  stamp : Int,
+  island_stamps : Array[Int32]?,
+  stamp : Int32,
 ) -> Unit {
   self.constraints = build_joint_constraints3(
     parameters, bodies, impulse_joints, multibody_joints, dt, island_stamps, stamp,
@@ -2800,7 +2800,7 @@ fn JointConstraintsSet::solve_velocity_constraints(
   bodies : @dynamics.RigidBodySet,
   solver_bodies : SolverBodies,
   dt : @core.Real,
-  iterations : Int,
+  iterations : Int32,
 ) -> Unit {
   if self.constraints.length() == 0 {
     return

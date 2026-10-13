@@ -26,7 +26,7 @@ pub fn BodyPair::BodyPair(
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
 ) -> BodyPair {
-  { body1, body2 }
+  { body1, body2, }
 }
 
 ///|
@@ -59,8 +59,8 @@ pub fn RigidBodySet::propagate_modified_body_positions_to_colliders(
 ///|
 pub fn RigidBodySet::take_pending_collider_position_updates(
   self : RigidBodySet,
-) -> Array[(Int, Int, @core.Isometry2)] {
-  let out : Array[(Int, Int, @core.Isometry2)] = []
+) -> Array[(Int32, Int32, @core.Isometry2)] {
+  let out : Array[(Int32, Int32, @core.Isometry2)] = []
   for i in 0..<self.pending_collider_position_updates.length() {
     out.push(self.pending_collider_position_updates[i])
   }

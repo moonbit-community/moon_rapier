@@ -53,7 +53,7 @@ pub struct SphericalMotor3DReal {
 ///
 /// This currently only references joints created via `insert_generic` and its helpers.
 pub struct JointHandle3DReal {
-  index : Int
+  index : Int32
 }
 
 ///|
@@ -72,7 +72,7 @@ pub struct GenericJoint3DReal {
 }
 
 ///|
-fn generic_joint_axis_from_index(index : Int) -> JointAxis {
+fn generic_joint_axis_from_index(index : Int32) -> JointAxis {
   match index {
     0 => LinX
     1 => LinY
@@ -84,14 +84,14 @@ fn generic_joint_axis_from_index(index : Int) -> JointAxis {
 }
 
 ///|
-fn generic_joint_mask_from_index(index : Int) -> JointAxesMask {
+fn generic_joint_mask_from_index(index : Int32) -> JointAxesMask {
   JointAxesMask(1 << index)
 }
 
 ///|
 fn axis_state_from_generic_joint(
   joint : GenericJoint,
-  index : Int,
+  index : Int32,
 ) -> AxisState3DReal {
   let axis = generic_joint_axis_from_index(index)
   let mask = generic_joint_mask_from_index(index)
@@ -108,7 +108,7 @@ fn axis_state_from_generic_joint(
 ///|
 fn motor_state_from_generic_joint(
   joint : GenericJoint,
-  index : Int,
+  index : Int32,
 ) -> MotorState3DReal {
   let axis = generic_joint_axis_from_index(index)
   let mask = generic_joint_mask_from_index(index)
@@ -294,7 +294,7 @@ pub fn JointSet3DReal::insert_spherical(
   local_anchor1 : @core.Vec3,
   local_anchor2 : @core.Vec3,
 ) -> Unit {
-  self.spherical.push({ body1, body2, local_anchor1, local_anchor2 })
+  self.spherical.push({ body1, body2, local_anchor1, local_anchor2, })
   self.spherical_impulses.push(@core.Vec3::zero())
 }
 
@@ -355,7 +355,7 @@ pub fn JointSet3DReal::insert_generic(
 ) -> JointHandle3DReal {
   wake_up |> ignore
   let idx = self.generic.length()
-  self.generic.push({ body1, body2, data })
+  self.generic.push({ body1, body2, data, })
   let lock_impulses : Array[@core.Real] = []
   let limit_impulses : Array[@core.Real] = []
   let motor_impulses : Array[@core.Real] = []
@@ -368,7 +368,7 @@ pub fn JointSet3DReal::insert_generic(
   self.generic_limit_impulses.push(limit_impulses)
   self.generic_motor_impulses.push(motor_impulses)
   self.generic_coupled_impulses.push(0.0F)
-  { index: idx }
+  { index: idx, }
 }
 
 ///|
@@ -543,7 +543,7 @@ fn apply_row_impulse3(
 }
 
 ///|
-fn axis_value_from_vec3(v : @core.Vec3, axis_i : Int) -> @core.Real {
+fn axis_value_from_vec3(v : @core.Vec3, axis_i : Int32) -> @core.Real {
   if axis_i == 0 {
     v.x
   } else if axis_i == 1 {
@@ -556,7 +556,7 @@ fn axis_value_from_vec3(v : @core.Vec3, axis_i : Int) -> @core.Real {
 ///|
 fn set_axis_value_vec3(
   value : @core.Vec3,
-  axis_i : Int,
+  axis_i : Int32,
   component : @core.Real,
 ) -> @core.Vec3 {
   if axis_i == 0 {
@@ -569,7 +569,7 @@ fn set_axis_value_vec3(
 }
 
 ///|
-fn axis_value_from_vec2(v : @core.Vec2, axis_i : Int) -> @core.Real {
+fn axis_value_from_vec2(v : @core.Vec2, axis_i : Int32) -> @core.Real {
   if axis_i == 0 {
     v.x
   } else {
@@ -580,7 +580,7 @@ fn axis_value_from_vec2(v : @core.Vec2, axis_i : Int) -> @core.Real {
 ///|
 fn set_axis_value_vec2(
   value : @core.Vec2,
-  axis_i : Int,
+  axis_i : Int32,
   component : @core.Real,
 ) -> @core.Vec2 {
   if axis_i == 0 {
@@ -591,7 +591,7 @@ fn set_axis_value_vec2(
 }
 
 ///|
-fn axis_unit(axis_i : Int) -> @core.Vec3 {
+fn axis_unit(axis_i : Int32) -> @core.Vec3 {
   if axis_i == 0 {
     Vec3(1.0F, 0.0F, 0.0F)
   } else if axis_i == 1 {
@@ -711,8 +711,8 @@ fn solve_row_impulse3(
 fn joint_pair_in_island(
   body1 : RigidBodyHandle,
   body2 : RigidBodyHandle,
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
 ) -> Bool {
   if island_stamps is None {
     return true
@@ -774,7 +774,7 @@ pub fn JointSet3DReal::solve(
   self : JointSet3DReal,
   bodies : RigidBodySet3D,
   dt : @core.Real,
-  iterations : Int,
+  iterations : Int32,
 ) -> Unit {
   JointSet3DReal::solve_with_island_stamp(self, bodies, dt, iterations, None, 0)
 }
@@ -784,9 +784,9 @@ pub fn JointSet3DReal::solve_with_island_stamp(
   self : JointSet3DReal,
   bodies : RigidBodySet3D,
   dt : @core.Real,
-  iterations : Int,
-  island_stamps : Array[Int]?,
-  island_stamp : Int,
+  iterations : Int32,
+  island_stamps : Array[Int32]?,
+  island_stamp : Int32,
 ) -> Unit {
   self.ensure_solver_cache()
   if dt <= JOINT_SOLVER_EPSILON_3D_REAL {

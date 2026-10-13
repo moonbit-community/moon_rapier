@@ -23,7 +23,7 @@ pub fn ColliderPair3D::ColliderPair3D(
   collider1 : ColliderHandle3D,
   collider2 : ColliderHandle3D,
 ) -> ColliderPair3D {
-  { collider1, collider2 }
+  { collider1, collider2, }
 }
 
 ///|
@@ -51,7 +51,7 @@ pub struct BroadPhase3D {
 
 ///|
 pub fn BroadPhase3D::BroadPhase3D() -> BroadPhase3D {
-  { pairs: [], prev_pairs: [], events: [] }
+  { pairs: [], prev_pairs: [], events: [], }
 }
 
 ///|
@@ -74,7 +74,10 @@ pub fn BroadPhase3D::take_events(
 }
 
 ///|
-fn pair_key(a : ColliderHandle3D, b : ColliderHandle3D) -> (Int, Int, Int, Int) {
+fn pair_key(
+  a : ColliderHandle3D,
+  b : ColliderHandle3D,
+) -> (Int32, Int32, Int32, Int32) {
   let (ai, ag) = a.into_raw_parts()
   let (bi, bg) = b.into_raw_parts()
   if ai < bi || (ai == bi && ag <= bg) {
@@ -137,8 +140,8 @@ fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
   }
   fn swap_pairs_3d(
     pairs : Array[(ColliderHandle3D, ColliderHandle3D)],
-    i : Int,
-    j : Int,
+    i : Int32,
+    j : Int32,
   ) -> Unit {
     if i == j {
       return
@@ -150,8 +153,8 @@ fn sort_pairs_3d(pairs : Array[(ColliderHandle3D, ColliderHandle3D)]) -> Unit {
 
   fn quicksort_pairs_3d(
     pairs : Array[(ColliderHandle3D, ColliderHandle3D)],
-    start : Int,
-    end : Int,
+    start : Int32,
+    end : Int32,
   ) -> Unit {
     if end - start <= 1 {
       return
@@ -209,7 +212,7 @@ priv struct BvhLeaf3D {
 }
 
 ///|
-fn swap_leaves_3d(leaves : Array[BvhLeaf3D], i : Int, j : Int) -> Unit {
+fn swap_leaves_3d(leaves : Array[BvhLeaf3D], i : Int32, j : Int32) -> Unit {
   if i == j {
     return
   }
@@ -219,7 +222,7 @@ fn swap_leaves_3d(leaves : Array[BvhLeaf3D], i : Int, j : Int) -> Unit {
 }
 
 ///|
-fn leaf_key_3d(leaf : BvhLeaf3D, axis : Int) -> @core.Real {
+fn leaf_key_3d(leaf : BvhLeaf3D, axis : Int32) -> @core.Real {
   match axis {
     0 => leaf.center.x
     1 => leaf.center.y
@@ -230,9 +233,9 @@ fn leaf_key_3d(leaf : BvhLeaf3D, axis : Int) -> @core.Real {
 ///|
 fn quicksort_leaves_3d(
   leaves : Array[BvhLeaf3D],
-  start : Int,
-  end : Int,
-  axis : Int,
+  start : Int32,
+  end : Int32,
+  axis : Int32,
 ) -> Unit {
   if end - start <= 1 {
     return
@@ -303,7 +306,7 @@ pub fn BroadPhase3D::update(
     if colliders.get(h) is Some(c) {
       let aabb = c.compute_collision_aabb(prediction_distance)
       // `center` is only used as a sort key in this sweep-and-prune path.
-      leaves.push({ handle: h, aabb, center: aabb.mins })
+      leaves.push({ handle: h, aabb, center: aabb.mins, })
     }
   }
   if leaves.length() > 1 {

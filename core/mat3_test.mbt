@@ -14,49 +14,59 @@
 
 ///|
 test "mat3 identity mul_vec3" {
-  let m = Mat3::identity()
-  let v = Vec3::Vec3(1.0F, -2.0F, 3.5F)
+  let m = @core.Mat3::identity()
+  let v = @core.Vec3::Vec3(1.0F, -2.0F, 3.5F)
   let r = m.mul_vec3(v)
-  inspect(abs(r.x - v.x) < 1.0e-6F, content="true")
-  inspect(abs(r.y - v.y) < 1.0e-6F, content="true")
-  inspect(abs(r.z - v.z) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.x - v.x) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.y - v.y) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.z - v.z) < 1.0e-6F, content="true")
 }
 
 ///|
 test "mat3 inverse roundtrip" {
-  let m = Mat3::Mat3(2.0F, 1.0F, 0.0F, -1.0F, 3.0F, 1.0F, 0.5F, 0.0F, 4.0F)
+  let m = @core.Mat3::Mat3(
+    2.0F,
+    1.0F,
+    0.0F,
+    -1.0F,
+    3.0F,
+    1.0F,
+    0.5F,
+    0.0F,
+    4.0F,
+  )
   let inv = m.inverse()
   let id = m.mul(inv)
-  inspect(abs(id.m00 - 1.0F) < 1.0e-4F, content="true")
-  inspect(abs(id.m11 - 1.0F) < 1.0e-4F, content="true")
-  inspect(abs(id.m22 - 1.0F) < 1.0e-4F, content="true")
-  inspect(abs(id.m01) < 1.0e-4F, content="true")
-  inspect(abs(id.m02) < 1.0e-4F, content="true")
-  inspect(abs(id.m10) < 1.0e-4F, content="true")
-  inspect(abs(id.m12) < 1.0e-4F, content="true")
-  inspect(abs(id.m20) < 1.0e-4F, content="true")
-  inspect(abs(id.m21) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m00 - 1.0F) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m11 - 1.0F) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m22 - 1.0F) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m01) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m02) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m10) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m12) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m20) < 1.0e-4F, content="true")
+  inspect(@core.abs(id.m21) < 1.0e-4F, content="true")
 }
 
 ///|
 test "sdpmat3 inverse diagonal" {
-  let i = SdpMat3::from_diagonal(Vec3(2.0F, 3.0F, 4.0F))
+  let i = @core.SdpMat3::from_diagonal(Vec3(2.0F, 3.0F, 4.0F))
   let inv = i.inverse()
-  let v = Vec3::Vec3(6.0F, 12.0F, 8.0F)
+  let v = @core.Vec3::Vec3(6.0F, 12.0F, 8.0F)
   let r = inv.transform_vec3(v)
-  inspect(abs(r.x - 3.0F) < 1.0e-6F, content="true")
-  inspect(abs(r.y - 4.0F) < 1.0e-6F, content="true")
-  inspect(abs(r.z - 2.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.x - 3.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.y - 4.0F) < 1.0e-6F, content="true")
+  inspect(@core.abs(r.z - 2.0F) < 1.0e-6F, content="true")
 }
 
 ///|
 test "quat to_mat3 consistent with rotate_vec3" {
-  let q = rotation_from_scaled_axis(Vec3(0.3F, -0.7F, 0.1F))
+  let q = @core.rotation_from_scaled_axis(Vec3(0.3F, -0.7F, 0.1F))
   let m = q.to_mat3()
-  let v = Vec3::Vec3(1.5F, 0.25F, -2.0F)
+  let v = @core.Vec3::Vec3(1.5F, 0.25F, -2.0F)
   let r0 = q.rotate_vec3(v)
   let r1 = m.mul_vec3(v)
-  inspect(abs(r0.x - r1.x) < 1.0e-5F, content="true")
-  inspect(abs(r0.y - r1.y) < 1.0e-5F, content="true")
-  inspect(abs(r0.z - r1.z) < 1.0e-5F, content="true")
+  inspect(@core.abs(r0.x - r1.x) < 1.0e-5F, content="true")
+  inspect(@core.abs(r0.y - r1.y) < 1.0e-5F, content="true")
+  inspect(@core.abs(r0.z - r1.z) < 1.0e-5F, content="true")
 }

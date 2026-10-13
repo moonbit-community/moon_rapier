@@ -14,7 +14,7 @@
 
 ///|
 test "pubsub subscribe/publish/read/ack" {
-  let ps : PubSub[Int] = PubSub()
+  let ps : @data.PubSub[Int32] = PubSub()
 
   // Dropped because there are no subscribers.
   ps.publish(1)

@@ -52,7 +52,7 @@ fn min_real(a : @core.Real, b : @core.Real) -> @core.Real {
 }
 
 ///|
-fn max_int(a : Int, b : Int) -> Int {
+fn max_int(a : Int32, b : Int32) -> Int32 {
   if a > b {
     a
   } else {
@@ -61,7 +61,7 @@ fn max_int(a : Int, b : Int) -> Int {
 }
 
 ///|
-fn min_int(a : Int, b : Int) -> Int {
+fn min_int(a : Int32, b : Int32) -> Int32 {
   if a < b {
     a
   } else {
@@ -70,7 +70,7 @@ fn min_int(a : Int, b : Int) -> Int {
 }
 
 ///|
-fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
+fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int32 {
   if denom == 0.0F {
     0
   } else {
@@ -79,7 +79,7 @@ fn floor_div_to_int(value : @core.Real, denom : @core.Real) -> Int {
 }
 
 ///|
-fn ceil_to_int(value : @core.Real) -> Int {
+fn ceil_to_int(value : @core.Real) -> Int32 {
   @math.ceil(value.to_double()).to_int()
 }
 
@@ -191,14 +191,14 @@ pub fn ColliderBuilder::ColliderBuilder(shape : Shape) -> ColliderBuilder {
 fn voxel_rectangles_from_points(
   voxel_size : @core.Vec2,
   points : Array[@core.Vec2],
-) -> Array[(Int, Int, Int, Int)] {
+) -> Array[(Int32, Int32, Int32, Int32)] {
   if points.length() == 0 {
     return []
   }
   if voxel_size.x == 0.0F || voxel_size.y == 0.0F {
     return []
   }
-  let coords : Array[(Int, Int)] = []
+  let coords : Array[(Int32, Int32)] = []
   let mut min_x = 0
   let mut max_x = 0
   let mut min_y = 0
@@ -243,7 +243,7 @@ fn voxel_rectangles_from_points(
     }
     occ[x + y * width] = true
   }
-  let rects : Array[(Int, Int, Int, Int)] = []
+  let rects : Array[(Int32, Int32, Int32, Int32)] = []
   for y in 0..<height {
     for x in 0..<width {
       let idx0 = x + y * width
@@ -323,7 +323,7 @@ pub fn ColliderBuilder::voxels_from_points(
 ///|
 pub fn Shape::voxelized_mesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)],
+  indices : Array[(Int32, Int32)],
   voxel_size : @core.Real,
   fill_mode : FillMode,
 ) -> Shape {
@@ -350,7 +350,7 @@ pub fn Shape::voxelized_mesh(
 
   // Dense grid of voxel states:
   // 0 = undefined, 1 = on-surface, 2 = outside (after flood fill).
-  let states : Array[Int] = []
+  let states : Array[Int32] = []
   for _ in 0..<(res_x * res_y) {
     states.push(0)
   }
@@ -418,15 +418,15 @@ pub fn Shape::voxelized_mesh(
     }
     FloodFill(_, _) => {
       // Flood fill outside voxels starting from the volume boundary.
-      let queue : Array[(Int, Int)] = []
+      let queue : Array[(Int32, Int32)] = []
       let mut qh = 0
       fn enqueue_if_undef(
-        states : Array[Int],
-        queue : Array[(Int, Int)],
-        i : Int,
-        j : Int,
-        res_x : Int,
-        res_y : Int,
+        states : Array[Int32],
+        queue : Array[(Int32, Int32)],
+        i : Int32,
+        j : Int32,
+        res_x : Int32,
+        res_y : Int32,
       ) -> Unit {
         if i < 0 || j < 0 || i >= res_x || j >= res_y {
           return
@@ -479,7 +479,7 @@ pub fn Shape::voxelized_mesh(
 ///|
 pub fn ColliderBuilder::voxelized_mesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)],
+  indices : Array[(Int32, Int32)],
   voxel_size : @core.Real,
   fill_mode : FillMode,
 ) -> ColliderBuilder {

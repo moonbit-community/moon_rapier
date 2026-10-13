@@ -20,7 +20,7 @@ struct FixedJointBuilder {
 
 ///|
 pub fn FixedJointBuilder::FixedJointBuilder() -> FixedJointBuilder {
-  { local_anchor1: @core.Vec2::zero(), local_anchor2: @core.Vec2::zero() }
+  { local_anchor1: @core.Vec2::zero(), local_anchor2: @core.Vec2::zero(), }
 }
 
 ///|
@@ -43,7 +43,7 @@ pub fn FixedJointBuilder::local_anchor2(
 
 ///|
 pub fn FixedJointBuilder::build(self : FixedJointBuilder) -> FixedJoint {
-  { local_anchor1: self.local_anchor1, local_anchor2: self.local_anchor2 }
+  { local_anchor1: self.local_anchor1, local_anchor2: self.local_anchor2, }
 }
 
 ///|

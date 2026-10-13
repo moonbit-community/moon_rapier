@@ -27,13 +27,13 @@ pub fn Index::default() -> Index {
 
 ///|
 #declaration_only
-pub fn Index::from_raw_parts(index : Int, generation : Int) -> Index {
+pub fn Index::from_raw_parts(index : Int32, generation : Int32) -> Index {
   ...
 }
 
 ///|
 #declaration_only
-pub fn Index::into_raw_parts(self : Index) -> (Int, Int) {
+pub fn Index::into_raw_parts(self : Index) -> (Int32, Int32) {
   ...
 }
 
@@ -49,7 +49,7 @@ pub fn[T] Arena::Arena() -> Arena[T] {
 
 ///|
 #declaration_only
-pub fn[T] Arena::with_capacity(capacity : Int) -> Arena[T] {
+pub fn[T] Arena::with_capacity(capacity : Int32) -> Arena[T] {
   ...
 }
 
@@ -61,7 +61,7 @@ pub fn[T] Arena::clear(self : Arena[T]) -> Unit {
 
 ///|
 #declaration_only
-pub fn[T] Arena::len(self : Arena[T]) -> Int {
+pub fn[T] Arena::len(self : Arena[T]) -> Int32 {
   ...
 }
 
@@ -73,13 +73,13 @@ pub fn[T] Arena::is_empty(self : Arena[T]) -> Bool {
 
 ///|
 #declaration_only
-pub fn[T] Arena::capacity(self : Arena[T]) -> Int {
+pub fn[T] Arena::capacity(self : Arena[T]) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn[T] Arena::reserve(self : Arena[T], additional : Int) -> Unit {
+pub fn[T] Arena::reserve(self : Arena[T], additional : Int32) -> Unit {
   ...
 }
 
@@ -177,13 +177,13 @@ pub fn[T] Coarena::Coarena() -> Coarena[T] {
 
 ///|
 #declaration_only
-pub fn[T] Coarena::len(self : Coarena[T]) -> Int {
+pub fn[T] Coarena::len(self : Coarena[T]) -> Int32 {
   ...
 }
 
 ///|
 #declaration_only
-pub fn[T] Coarena::reserve(self : Coarena[T], additional : Int) -> Unit {
+pub fn[T] Coarena::reserve(self : Coarena[T], additional : Int32) -> Unit {
   ...
 }
 
@@ -195,13 +195,13 @@ pub fn[T] Coarena::iter(self : Coarena[T]) -> Array[(Index, T)] {
 
 ///|
 #declaration_only
-pub fn[T] Coarena::get_unknown_gen(self : Coarena[T], index : Int) -> T? {
+pub fn[T] Coarena::get_unknown_gen(self : Coarena[T], index : Int32) -> T? {
   ...
 }
 
 ///|
 #declaration_only
-pub fn[T] Coarena::get_mut_unknown_gen(self : Coarena[T], index : Int) -> T? {
+pub fn[T] Coarena::get_mut_unknown_gen(self : Coarena[T], index : Int32) -> T? {
   ...
 }
 
@@ -274,7 +274,7 @@ pub fn[Handle, Object] ModifiedObjects::ModifiedObjects() -> ModifiedObjects[
 ///|
 #declaration_only
 pub fn[Handle, Object] ModifiedObjects::with_capacity(
-  capacity : Int,
+  capacity : Int32,
 ) -> ModifiedObjects[Handle, Object] {
   ...
 }
@@ -360,7 +360,7 @@ pub fn[T] PubSub::subscribe(self : PubSub[T]) -> Subscription[T] {
 pub fn[T] PubSub::read_ith(
   self : PubSub[T],
   sub : Subscription[T],
-  i : Int,
+  i : Int32,
 ) -> T? {
   ...
 }

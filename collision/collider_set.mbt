@@ -14,13 +14,16 @@
 
 ///|
 pub struct ColliderHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 
 ///|
-fn ColliderHandle::ColliderHandle(id : Int, generation : Int) -> ColliderHandle {
-  { id, generation }
+fn ColliderHandle::ColliderHandle(
+  id : Int32,
+  generation : Int32,
+) -> ColliderHandle {
+  { id, generation, }
 }
 
 ///|
@@ -33,14 +36,14 @@ pub fn ColliderHandle::equals(
 
 ///|
 pub fn ColliderHandle::from_raw_parts(
-  id : Int,
-  generation : Int,
+  id : Int32,
+  generation : Int32,
 ) -> ColliderHandle {
   ColliderHandle(id, generation)
 }
 
 ///|
-pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int, Int) {
+pub fn ColliderHandle::into_raw_parts(self : ColliderHandle) -> (Int32, Int32) {
   (self.id, self.generation)
 }
 
@@ -50,34 +53,34 @@ pub fn ColliderHandle::invalid() -> ColliderHandle {
 }
 
 ///|
-const COLLIDER_CHANGES_IN_MODIFIED_SET : Int = 1 << 0
+const COLLIDER_CHANGES_IN_MODIFIED_SET : Int32 = 1 << 0
 
 ///|
-const COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES : Int = 1 << 1
+const COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES : Int32 = 1 << 1
 
 ///|
-const COLLIDER_CHANGES_PARENT : Int = 1 << 2
+const COLLIDER_CHANGES_PARENT : Int32 = 1 << 2
 
 ///|
-const COLLIDER_CHANGES_POSITION : Int = 1 << 3
+const COLLIDER_CHANGES_POSITION : Int32 = 1 << 3
 
 ///|
-const COLLIDER_CHANGES_GROUPS : Int = 1 << 4
+const COLLIDER_CHANGES_GROUPS : Int32 = 1 << 4
 
 ///|
-const COLLIDER_CHANGES_SHAPE : Int = 1 << 5
+const COLLIDER_CHANGES_SHAPE : Int32 = 1 << 5
 
 ///|
-const COLLIDER_CHANGES_TYPE : Int = 1 << 6
+const COLLIDER_CHANGES_TYPE : Int32 = 1 << 6
 
 ///|
-const COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE : Int = 1 << 7
+const COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE : Int32 = 1 << 7
 
 ///|
-const COLLIDER_CHANGES_ENABLED_OR_DISABLED : Int = 1 << 8
+const COLLIDER_CHANGES_ENABLED_OR_DISABLED : Int32 = 1 << 8
 
 ///|
-const COLLIDER_CHANGES_ALL : Int = COLLIDER_CHANGES_IN_MODIFIED_SET |
+const COLLIDER_CHANGES_ALL : Int32 = COLLIDER_CHANGES_IN_MODIFIED_SET |
   COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES |
   COLLIDER_CHANGES_PARENT |
   COLLIDER_CHANGES_POSITION |
@@ -89,65 +92,65 @@ const COLLIDER_CHANGES_ALL : Int = COLLIDER_CHANGES_IN_MODIFIED_SET |
 
 ///|
 pub struct ColliderChanges {
-  bits : Int
+  bits : Int32
 }
 
 ///|
-pub const IN_MODIFIED_SET : Int = COLLIDER_CHANGES_IN_MODIFIED_SET
+pub const IN_MODIFIED_SET : Int32 = COLLIDER_CHANGES_IN_MODIFIED_SET
 
 ///|
-pub const LOCAL_MASS_PROPERTIES : Int = COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES
+pub const LOCAL_MASS_PROPERTIES : Int32 = COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES
 
 ///|
-pub const PARENT : Int = COLLIDER_CHANGES_PARENT
+pub const PARENT : Int32 = COLLIDER_CHANGES_PARENT
 
 ///|
-pub const POSITION : Int = COLLIDER_CHANGES_POSITION
+pub const POSITION : Int32 = COLLIDER_CHANGES_POSITION
 
 ///|
-pub const GROUPS : Int = COLLIDER_CHANGES_GROUPS
+pub const GROUPS : Int32 = COLLIDER_CHANGES_GROUPS
 
 ///|
-pub const SHAPE : Int = COLLIDER_CHANGES_SHAPE
+pub const SHAPE : Int32 = COLLIDER_CHANGES_SHAPE
 
 ///|
-pub const TYPE : Int = COLLIDER_CHANGES_TYPE
+pub const TYPE : Int32 = COLLIDER_CHANGES_TYPE
 
 ///|
-pub const PARENT_EFFECTIVE_DOMINANCE : Int = COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE
+pub const PARENT_EFFECTIVE_DOMINANCE : Int32 = COLLIDER_CHANGES_PARENT_EFFECTIVE_DOMINANCE
 
 ///|
-pub const ENABLED_OR_DISABLED : Int = COLLIDER_CHANGES_ENABLED_OR_DISABLED
+pub const ENABLED_OR_DISABLED : Int32 = COLLIDER_CHANGES_ENABLED_OR_DISABLED
 
 ///|
 pub fn ColliderChanges::all() -> ColliderChanges {
-  { bits: COLLIDER_CHANGES_ALL }
+  { bits: COLLIDER_CHANGES_ALL, }
 }
 
 ///|
 pub fn ColliderChanges::empty() -> ColliderChanges {
-  { bits: 0 }
+  { bits: 0, }
 }
 
 ///|
-pub fn ColliderChanges::contains(self : ColliderChanges, flag : Int) -> Bool {
+pub fn ColliderChanges::contains(self : ColliderChanges, flag : Int32) -> Bool {
   (self.bits & flag) != 0
 }
 
 ///|
 pub fn ColliderChanges::insert(
   self : ColliderChanges,
-  flag : Int,
+  flag : Int32,
 ) -> ColliderChanges {
-  { bits: self.bits | flag }
+  { bits: self.bits | flag, }
 }
 
 ///|
 pub fn ColliderChanges::remove(
   self : ColliderChanges,
-  flag : Int,
+  flag : Int32,
 ) -> ColliderChanges {
-  { bits: self.bits & Int::lnot(flag) }
+  { bits: self.bits & Int32::lnot(flag), }
 }
 
 ///|
@@ -168,69 +171,69 @@ pub fn ColliderChanges::needs_narrow_phase_update(
   // Same rule as Rapier: any flag other than IN_MODIFIED_SET/LOCAL_MASS_PROPERTIES.
   let mask = COLLIDER_CHANGES_IN_MODIFIED_SET |
     COLLIDER_CHANGES_LOCAL_MASS_PROPERTIES
-  (self.bits & Int::lnot(mask)) != 0
+  (self.bits & Int32::lnot(mask)) != 0
 }
 
 ///|
 pub struct ActiveCollisionTypes {
-  value : Int
+  value : Int32
 }
 
 ///|
-const ACTIVE_COLLISION_DYNAMIC_DYNAMIC : Int = 0x0001
+const ACTIVE_COLLISION_DYNAMIC_DYNAMIC : Int32 = 0x0001
 
 ///|
-const ACTIVE_COLLISION_DYNAMIC_KINEMATIC : Int = 0x000C
+const ACTIVE_COLLISION_DYNAMIC_KINEMATIC : Int32 = 0x000C
 
 ///|
-const ACTIVE_COLLISION_DYNAMIC_FIXED : Int = 0x0002
+const ACTIVE_COLLISION_DYNAMIC_FIXED : Int32 = 0x0002
 
 ///|
-const ACTIVE_COLLISION_KINEMATIC_KINEMATIC : Int = 0xCC00
+const ACTIVE_COLLISION_KINEMATIC_KINEMATIC : Int32 = 0xCC00
 
 ///|
-const ACTIVE_COLLISION_KINEMATIC_FIXED : Int = 0x2200
+const ACTIVE_COLLISION_KINEMATIC_FIXED : Int32 = 0x2200
 
 ///|
-const ACTIVE_COLLISION_FIXED_FIXED : Int = 0x0020
+const ACTIVE_COLLISION_FIXED_FIXED : Int32 = 0x0020
 
 ///|
-const ACTIVE_COLLISION_DEFAULT : Int = ACTIVE_COLLISION_DYNAMIC_DYNAMIC |
+const ACTIVE_COLLISION_DEFAULT : Int32 = ACTIVE_COLLISION_DYNAMIC_DYNAMIC |
   ACTIVE_COLLISION_DYNAMIC_KINEMATIC |
   ACTIVE_COLLISION_DYNAMIC_FIXED
 
 ///|
-const ACTIVE_COLLISION_ALL : Int = ACTIVE_COLLISION_DEFAULT |
+const ACTIVE_COLLISION_ALL : Int32 = ACTIVE_COLLISION_DEFAULT |
   ACTIVE_COLLISION_KINEMATIC_KINEMATIC |
   ACTIVE_COLLISION_KINEMATIC_FIXED |
   ACTIVE_COLLISION_FIXED_FIXED
 
 ///|
-pub const DYNAMIC_DYNAMIC : Int = ACTIVE_COLLISION_DYNAMIC_DYNAMIC
+pub const DYNAMIC_DYNAMIC : Int32 = ACTIVE_COLLISION_DYNAMIC_DYNAMIC
 
 ///|
-pub const DYNAMIC_FIXED : Int = ACTIVE_COLLISION_DYNAMIC_FIXED
+pub const DYNAMIC_FIXED : Int32 = ACTIVE_COLLISION_DYNAMIC_FIXED
 
 ///|
-pub const DYNAMIC_KINEMATIC : Int = ACTIVE_COLLISION_DYNAMIC_KINEMATIC
+pub const DYNAMIC_KINEMATIC : Int32 = ACTIVE_COLLISION_DYNAMIC_KINEMATIC
 
 ///|
-pub const KINEMATIC_KINEMATIC : Int = ACTIVE_COLLISION_KINEMATIC_KINEMATIC
+pub const KINEMATIC_KINEMATIC : Int32 = ACTIVE_COLLISION_KINEMATIC_KINEMATIC
 
 ///|
-pub const KINEMATIC_FIXED : Int = ACTIVE_COLLISION_KINEMATIC_FIXED
+pub const KINEMATIC_FIXED : Int32 = ACTIVE_COLLISION_KINEMATIC_FIXED
 
 ///|
-pub const FIXED_FIXED : Int = ACTIVE_COLLISION_FIXED_FIXED
+pub const FIXED_FIXED : Int32 = ACTIVE_COLLISION_FIXED_FIXED
 
 ///|
 pub fn ActiveCollisionTypes::all() -> ActiveCollisionTypes {
-  { value: ACTIVE_COLLISION_ALL }
+  { value: ACTIVE_COLLISION_ALL, }
 }
 
 ///|
 pub fn ActiveCollisionTypes::default() -> ActiveCollisionTypes {
-  { value: ACTIVE_COLLISION_DEFAULT }
+  { value: ACTIVE_COLLISION_DEFAULT, }
 }
 
 ///|
@@ -242,7 +245,7 @@ pub fn ActiveCollisionTypes::equals(
 }
 
 ///|
-fn rigid_body_type_index(body_type : @dynamics.RigidBodyType) -> Int {
+fn rigid_body_type_index(body_type : @dynamics.RigidBodyType) -> Int32 {
   match body_type {
     Dynamic => 0
     Fixed => 1
@@ -274,21 +277,21 @@ pub fn ActiveCollisionTypes::passes(
 }
 
 ///|
-const ACTIVE_HOOKS_FILTER_CONTACT_PAIRS : Int = 1 << 0
+const ACTIVE_HOOKS_FILTER_CONTACT_PAIRS : Int32 = 1 << 0
 
 ///|
-const ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR : Int = 1 << 1
+const ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR : Int32 = 1 << 1
 
 ///|
-const ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS : Int = 1 << 2
+const ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS : Int32 = 1 << 2
 
 ///|
 pub struct ActiveHooks {
-  mut value : Int
+  mut value : Int32
 }
 
 ///|
-fn active_hooks_all_bits() -> Int {
+fn active_hooks_all_bits() -> Int32 {
   ACTIVE_HOOKS_FILTER_CONTACT_PAIRS |
   ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR |
   ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS
@@ -296,27 +299,27 @@ fn active_hooks_all_bits() -> Int {
 
 ///|
 pub fn ActiveHooks::empty() -> ActiveHooks {
-  { value: 0 }
+  { value: 0, }
 }
 
 ///|
 pub fn ActiveHooks::all() -> ActiveHooks {
-  { value: active_hooks_all_bits() }
+  { value: active_hooks_all_bits(), }
 }
 
 ///|
 pub fn ActiveHooks::filter_contact_pairs() -> ActiveHooks {
-  { value: ACTIVE_HOOKS_FILTER_CONTACT_PAIRS }
+  { value: ACTIVE_HOOKS_FILTER_CONTACT_PAIRS, }
 }
 
 ///|
 pub fn ActiveHooks::filter_intersection_pair() -> ActiveHooks {
-  { value: ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR }
+  { value: ACTIVE_HOOKS_FILTER_INTERSECTION_PAIR, }
 }
 
 ///|
 pub fn ActiveHooks::modify_solver_contacts() -> ActiveHooks {
-  { value: ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS }
+  { value: ACTIVE_HOOKS_MODIFY_SOLVER_CONTACTS, }
 }
 
 ///|
@@ -338,7 +341,7 @@ pub fn ActiveHooks::union(
   self : ActiveHooks,
   other : ActiveHooks,
 ) -> ActiveHooks {
-  { value: self.value | other.value }
+  { value: self.value | other.value, }
 }
 
 ///|
@@ -346,7 +349,7 @@ pub fn ActiveHooks::difference(
   self : ActiveHooks,
   other : ActiveHooks,
 ) -> ActiveHooks {
-  { value: self.value & Int::lnot(other.value) }
+  { value: self.value & Int32::lnot(other.value), }
 }
 
 ///|
@@ -354,7 +357,7 @@ pub fn ActiveHooks::symmetric_difference(
   self : ActiveHooks,
   other : ActiveHooks,
 ) -> ActiveHooks {
-  { value: self.value ^ other.value }
+  { value: self.value ^ other.value, }
 }
 
 ///|
@@ -367,7 +370,7 @@ pub fn ActiveHooks::toggle(
 
 ///|
 pub fn ActiveHooks::complement(self : ActiveHooks) -> ActiveHooks {
-  { value: active_hooks_all_bits() & Int::lnot(self.value) }
+  { value: active_hooks_all_bits() & Int32::lnot(self.value), }
 }
 
 ///|
@@ -376,22 +379,22 @@ pub fn ActiveHooks::is_all(self : ActiveHooks) -> Bool {
 }
 
 ///|
-pub fn ActiveHooks::from_bits(bits : Int) -> ActiveHooks? {
-  if (bits & Int::lnot(active_hooks_all_bits())) == 0 {
-    Some({ value: bits })
+pub fn ActiveHooks::from_bits(bits : Int32) -> ActiveHooks? {
+  if (bits & Int32::lnot(active_hooks_all_bits())) == 0 {
+    Some({ value: bits, })
   } else {
     None
   }
 }
 
 ///|
-pub fn ActiveHooks::from_bits_truncate(bits : Int) -> ActiveHooks {
-  { value: bits & active_hooks_all_bits() }
+pub fn ActiveHooks::from_bits_truncate(bits : Int32) -> ActiveHooks {
+  { value: bits & active_hooks_all_bits(), }
 }
 
 ///|
-pub fn ActiveHooks::from_bits_retain(bits : Int) -> ActiveHooks {
-  { value: bits }
+pub fn ActiveHooks::from_bits_retain(bits : Int32) -> ActiveHooks {
+  { value: bits, }
 }
 
 ///|
@@ -427,12 +430,12 @@ pub struct VHACDParameters {
   concavity : @core.Real
   alpha : @core.Real
   beta : @core.Real
-  resolution : Int
-  plane_downsampling : Int
-  convex_hull_downsampling : Int
+  resolution : Int32
+  plane_downsampling : Int32
+  convex_hull_downsampling : Int32
   fill_mode : FillMode
   convex_hull_approximation : Bool
-  max_convex_hulls : Int
+  max_convex_hulls : Int32
 }
 
 ///|
@@ -524,14 +527,14 @@ pub fn VHACDParameters::set_beta(
 }
 
 ///|
-pub fn VHACDParameters::resolution(self : VHACDParameters) -> Int {
+pub fn VHACDParameters::resolution(self : VHACDParameters) -> Int32 {
   self.resolution
 }
 
 ///|
 pub fn VHACDParameters::set_resolution(
   self : VHACDParameters,
-  resolution : Int,
+  resolution : Int32,
 ) -> VHACDParameters {
   self |> ignore
   {
@@ -548,14 +551,14 @@ pub fn VHACDParameters::set_resolution(
 }
 
 ///|
-pub fn VHACDParameters::plane_downsampling(self : VHACDParameters) -> Int {
+pub fn VHACDParameters::plane_downsampling(self : VHACDParameters) -> Int32 {
   self.plane_downsampling
 }
 
 ///|
 pub fn VHACDParameters::set_plane_downsampling(
   self : VHACDParameters,
-  plane_downsampling : Int,
+  plane_downsampling : Int32,
 ) -> VHACDParameters {
   self |> ignore
   {
@@ -572,14 +575,16 @@ pub fn VHACDParameters::set_plane_downsampling(
 }
 
 ///|
-pub fn VHACDParameters::convex_hull_downsampling(self : VHACDParameters) -> Int {
+pub fn VHACDParameters::convex_hull_downsampling(
+  self : VHACDParameters,
+) -> Int32 {
   self.convex_hull_downsampling
 }
 
 ///|
 pub fn VHACDParameters::set_convex_hull_downsampling(
   self : VHACDParameters,
-  convex_hull_downsampling : Int,
+  convex_hull_downsampling : Int32,
 ) -> VHACDParameters {
   self |> ignore
   {
@@ -646,14 +651,14 @@ pub fn VHACDParameters::set_convex_hull_approximation(
 }
 
 ///|
-pub fn VHACDParameters::max_convex_hulls(self : VHACDParameters) -> Int {
+pub fn VHACDParameters::max_convex_hulls(self : VHACDParameters) -> Int32 {
   self.max_convex_hulls
 }
 
 ///|
 pub fn VHACDParameters::set_max_convex_hulls(
   self : VHACDParameters,
-  max : Int,
+  max : Int32,
 ) -> VHACDParameters {
   self |> ignore
   {
@@ -677,10 +682,10 @@ pub(all) enum Shape {
   CapsuleX(@core.Real, @core.Real)
   CapsuleY(@core.Real, @core.Real)
   Segment(@core.Vec2, @core.Vec2)
-  Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  Polyline(Array[@core.Vec2], Array[(Int32, Int32)]?)
   HeightField(Array[@core.Real], @core.Vec2)
   ConvexPolygon(Array[@core.Vec2])
-  TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
+  TriMesh(Array[@core.Vec2], Array[(Int32, Int32, Int32)])
   Compound(Array[(@core.Isometry2, Shape)])
   Round(Ref[Shape], @core.Real)
 }
@@ -772,7 +777,7 @@ pub fn ColliderParent::ColliderParent(
   handle : @dynamics.RigidBodyHandle,
   pos_wrt_parent : @core.Isometry2,
 ) -> ColliderParent {
-  { handle, pos_wrt_parent }
+  { handle, pos_wrt_parent, }
 }
 
 ///|
@@ -1145,14 +1150,14 @@ pub fn ColliderBuilder::segment(
 ///|
 pub fn ColliderBuilder::polyline(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> ColliderBuilder {
   let points : Array[@core.Vec2] = []
   for i in 0..<vertices.length() {
     points.push(vertices[i])
   }
   let idxs = if indices is Some(raw) {
-    let out : Array[(Int, Int)] = []
+    let out : Array[(Int32, Int32)] = []
     for i in 0..<raw.length() {
       out.push(raw[i])
     }
@@ -1220,12 +1225,12 @@ fn heightfield_vertices(
 ///|
 pub fn ColliderBuilder::trimesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> ColliderBuilder? {
   if vertices.length() == 0 || indices.length() == 0 {
     return None
   }
-  let valid : Array[(Int, Int, Int)] = []
+  let valid : Array[(Int32, Int32, Int32)] = []
   for i in 0..<indices.length() {
     let (i0, i1, i2) = indices[i]
     if i0 < 0 || i1 < 0 || i2 < 0 {
@@ -1278,7 +1283,7 @@ pub fn ColliderBuilder::trimesh(
 ///|
 pub fn ColliderBuilder::trimesh_with_flags(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
   _flags : TriMeshFlags,
 ) -> ColliderBuilder? {
   // This port does not implement TriMesh pre-processing flags yet.
@@ -1288,7 +1293,7 @@ pub fn ColliderBuilder::trimesh_with_flags(
 ///|
 pub fn ColliderBuilder::converted_trimesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
   converter : MeshConverter,
 ) -> Result[ColliderBuilder, MeshConverterError] {
   match converter.convert(vertices, indices) {
@@ -1300,7 +1305,7 @@ pub fn ColliderBuilder::converted_trimesh(
 ///|
 pub fn ColliderBuilder::convex_decomposition_with_params(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)],
+  indices : Array[(Int32, Int32)],
   params : VHACDParameters,
 ) -> ColliderBuilder {
   fn cross2(a : @core.Vec2, b : @core.Vec2) -> @core.Real {
@@ -1363,17 +1368,17 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
 
   fn extract_simple_loop(
     vertices : Array[@core.Vec2],
-    indices : Array[(Int, Int)],
-  ) -> Array[Int]? {
+    indices : Array[(Int32, Int32)],
+  ) -> Array[Int32]? {
     if vertices.length() < 3 {
       return None
     }
     // Build undirected adjacency and walk a single loop.
-    let neighbors : Array[Array[Int]] = []
+    let neighbors : Array[Array[Int32]] = []
     for _ in 0..<vertices.length() {
       neighbors.push([])
     }
-    fn push_unique(xs : Array[Int], v : Int) -> Unit {
+    fn push_unique(xs : Array[Int32], v : Int32) -> Unit {
       for i in 0..<xs.length() {
         if xs[i] == v {
           return
@@ -1409,7 +1414,7 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
         return None
       }
     }
-    let out : Array[Int] = []
+    let out : Array[Int32] = []
     let mut prev = -1
     let mut curr = start
     for _ in 0..<vertices.length() {
@@ -1445,7 +1450,7 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
 
   fn convex_decompose_simple_polygon(
     vertices : Array[@core.Vec2],
-    poly_ids : Array[Int],
+    poly_ids : Array[Int32],
     params : VHACDParameters,
   ) -> Shape? {
     let max_hulls = params.max_convex_hulls()
@@ -1474,11 +1479,11 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
       return Some(ConvexPolygon(poly))
     }
     // Ear clipping triangulation on the polygon vertices.
-    let remaining : Array[Int] = []
+    let remaining : Array[Int32] = []
     for i in 0..<poly.length() {
       remaining.push(i)
     }
-    let triangles : Array[Array[Int]] = []
+    let triangles : Array[Array[Int32]] = []
     let mut iter_guard = 0
     while remaining.length() > 3 && iter_guard < 4096 {
       iter_guard = iter_guard + 1
@@ -1524,22 +1529,22 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
     }
 
     // Greedily merge adjacent triangles while staying convex.
-    let parts : Array[Array[Int]] = []
+    let parts : Array[Array[Int32]] = []
     for t in triangles {
       parts.push(t)
     }
     fn try_merge_convex(
       poly : Array[@core.Vec2],
-      p1 : Array[Int],
-      p2 : Array[Int],
-    ) -> Array[Int]? {
+      p1 : Array[Int32],
+      p2 : Array[Int32],
+    ) -> Array[Int32]? {
       for i in 0..<p1.length() {
         let u = p1[i]
         let v = p1[(i + 1) % p1.length()]
         for j in 0..<p2.length() {
           if p2[j] == v && p2[(j + 1) % p2.length()] == u {
             // Build union boundary: p2 path u->v then p1 path v->u.
-            fn index_of(xs : Array[Int], v : Int) -> Int? {
+            fn index_of(xs : Array[Int32], v : Int32) -> Int32? {
               for k in 0..<xs.length() {
                 if xs[k] == v {
                   return Some(k)
@@ -1548,9 +1553,13 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
               None
             }
 
-            fn path(xs : Array[Int], start : Int, end : Int) -> Array[Int]? {
+            fn path(
+              xs : Array[Int32],
+              start : Int32,
+              end : Int32,
+            ) -> Array[Int32]? {
               if index_of(xs, start) is Some(s0) {
-                let out : Array[Int] = []
+                let out : Array[Int32] = []
                 let mut k = s0
                 for _ in 0..<xs.length() {
                   out.push(xs[k])
@@ -1564,7 +1573,7 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
             }
 
             if path(p2, u, v) is Some(p2uv) && path(p1, v, u) is Some(p1vu) {
-              let merged : Array[Int] = []
+              let merged : Array[Int32] = []
               for x in p2uv {
                 merged.push(x)
               }
@@ -1647,7 +1656,7 @@ pub fn ColliderBuilder::convex_decomposition_with_params(
 ///|
 pub fn ColliderBuilder::round_convex_decomposition_with_params(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)],
+  indices : Array[(Int32, Int32)],
   params : VHACDParameters,
   border_radius : @core.Real,
 ) -> ColliderBuilder {
@@ -1714,7 +1723,7 @@ pub fn ColliderBuilder::round_convex_polyline(
 ///|
 pub fn ColliderBuilder::voxels(
   voxel_size : @core.Vec2,
-  voxels : Array[(Int, Int)],
+  voxels : Array[(Int32, Int32)],
 ) -> ColliderBuilder {
   let shapes : Array[(@core.Isometry2, Shape)] = []
   let half = @core.Vec2(voxel_size.x * 0.5F, voxel_size.y * 0.5F)
@@ -2003,7 +2012,7 @@ pub fn ColliderBuilder::contact_force_event_threshold(
 ///|
 pub fn ColliderBuilder::user_data(
   self : ColliderBuilder,
-  data : Int,
+  data : Int32,
 ) -> ColliderBuilder {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
@@ -2307,7 +2316,7 @@ pub fn Collider::contact_force_event_threshold(self : Collider) -> @core.Real {
 }
 
 ///|
-pub fn Collider::user_data(self : Collider) -> Int {
+pub fn Collider::user_data(self : Collider) -> Int32 {
   self.user_data.to_int_truncate()
 }
 
@@ -2629,7 +2638,7 @@ pub fn Collider::set_contact_force_event_threshold(
 }
 
 ///|
-pub fn Collider::set_user_data(self : Collider, data : Int) -> Collider {
+pub fn Collider::set_user_data(self : Collider, data : Int32) -> Collider {
   self.user_data = @core.UserData128::from_int_truncate(data)
   self
 }
@@ -2734,8 +2743,8 @@ fn Collider::clear_changes(self : Collider) -> Collider {
 ///|
 pub struct ColliderSet {
   colliders : Array[Collider?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
   modified_colliders : Array[ColliderHandle]
   mut removed_colliders : Array[ColliderHandle]
 }
@@ -2767,7 +2776,7 @@ fn split_values(text : String, sep : String) -> Array[String] {
 }
 
 ///|
-fn parse_int_value(text : String) -> Int {
+fn parse_int_value(text : String) -> Int32 {
   let result = try @string.parse_int(text[:], base=10) catch {
     err => Err(err)
   } noraise {
@@ -2845,7 +2854,7 @@ fn split_top_level(text : String, sep : Char) -> Array[String] {
 }
 
 ///|
-fn combine_rule_to_int(value : @dynamics.CoefficientCombineRule) -> Int {
+fn combine_rule_to_int(value : @dynamics.CoefficientCombineRule) -> Int32 {
   match value {
     Average => 0
     Min => 1
@@ -2856,7 +2865,7 @@ fn combine_rule_to_int(value : @dynamics.CoefficientCombineRule) -> Int {
 }
 
 ///|
-fn combine_rule_from_int(value : Int) -> @dynamics.CoefficientCombineRule {
+fn combine_rule_from_int(value : Int32) -> @dynamics.CoefficientCombineRule {
   if value == 1 {
     Min
   } else if value == 2 {
@@ -2871,7 +2880,7 @@ fn combine_rule_from_int(value : Int) -> @dynamics.CoefficientCombineRule {
 }
 
 ///|
-fn interaction_test_mode_to_int(value : @dynamics.InteractionTestMode) -> Int {
+fn interaction_test_mode_to_int(value : @dynamics.InteractionTestMode) -> Int32 {
   match value {
     And => 0
     Or => 1
@@ -2879,7 +2888,9 @@ fn interaction_test_mode_to_int(value : @dynamics.InteractionTestMode) -> Int {
 }
 
 ///|
-fn interaction_test_mode_from_int(value : Int) -> @dynamics.InteractionTestMode {
+fn interaction_test_mode_from_int(
+  value : Int32,
+) -> @dynamics.InteractionTestMode {
   if value == 1 {
     Or
   } else {
@@ -2888,7 +2899,7 @@ fn interaction_test_mode_from_int(value : Int) -> @dynamics.InteractionTestMode 
 }
 
 ///|
-fn collider_enabled_to_int(value : ColliderEnabled) -> Int {
+fn collider_enabled_to_int(value : ColliderEnabled) -> Int32 {
   match value {
     Enabled => 0
     Disabled => 1
@@ -2897,7 +2908,7 @@ fn collider_enabled_to_int(value : ColliderEnabled) -> Int {
 }
 
 ///|
-fn collider_enabled_from_int(value : Int) -> ColliderEnabled {
+fn collider_enabled_from_int(value : Int32) -> ColliderEnabled {
   if value == 1 {
     Disabled
   } else if value == 2 {
@@ -2940,7 +2951,7 @@ fn write_reals(sb : StringBuilder, values : Array[@core.Real]) -> Unit {
 }
 
 ///|
-fn write_pairs(sb : StringBuilder, pairs : Array[(Int, Int)]) -> Unit {
+fn write_pairs(sb : StringBuilder, pairs : Array[(Int32, Int32)]) -> Unit {
   sb.write_object(pairs.length())
   for i in 0..<pairs.length() {
     let p = pairs[i]
@@ -2952,7 +2963,10 @@ fn write_pairs(sb : StringBuilder, pairs : Array[(Int, Int)]) -> Unit {
 }
 
 ///|
-fn write_triples(sb : StringBuilder, triples : Array[(Int, Int, Int)]) -> Unit {
+fn write_triples(
+  sb : StringBuilder,
+  triples : Array[(Int32, Int32, Int32)],
+) -> Unit {
   sb.write_object(triples.length())
   for i in 0..<triples.length() {
     let t = triples[i]
@@ -3108,9 +3122,9 @@ fn parse_reals(text : String) -> Array[@core.Real] {
 }
 
 ///|
-fn parse_pairs(text : String) -> Array[(Int, Int)] {
+fn parse_pairs(text : String) -> Array[(Int32, Int32)] {
   let parts = split_values(text, ";")
-  let pairs : Array[(Int, Int)] = []
+  let pairs : Array[(Int32, Int32)] = []
   if parts.length() > 1 {
     for i in 1..<parts.length() {
       let fields = split_values(parts[i], ",")
@@ -3123,9 +3137,9 @@ fn parse_pairs(text : String) -> Array[(Int, Int)] {
 }
 
 ///|
-fn parse_triples(text : String) -> Array[(Int, Int, Int)] {
+fn parse_triples(text : String) -> Array[(Int32, Int32, Int32)] {
   let parts = split_values(text, ";")
-  let triples : Array[(Int, Int, Int)] = []
+  let triples : Array[(Int32, Int32, Int32)] = []
   if parts.length() > 1 {
     for i in 1..<parts.length() {
       let fields = split_values(parts[i], ",")
@@ -3192,7 +3206,7 @@ fn parse_shape(text : String) -> Shape {
     v.strip_suffix(")"[:]) is Some(inner) {
     let parts = split_values(inner.to_owned(), "|")
     let points = if parts.length() > 0 { parse_points(parts[0]) } else { [] }
-    let indices : Array[(Int, Int)]? = if parts.length() > 1 {
+    let indices : Array[(Int32, Int32)]? = if parts.length() > 1 {
       if parts[1] == "-" {
         None
       } else {
@@ -3346,8 +3360,8 @@ pub fn ColliderSet::serialize(self : ColliderSet) -> String {
 ///|
 pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
   let mut len = 0
-  let generations : Array[Int] = []
-  let free_list : Array[Int] = []
+  let generations : Array[Int32] = []
+  let free_list : Array[Int32] = []
   let colliders : Array[Collider?] = []
   let modified_colliders : Array[ColliderHandle] = []
   for part in data.split(";"[:]) {
@@ -3397,7 +3411,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             local_r
           }
           let active_collision_types = if fields.length() > 5 {
-            ActiveCollisionTypes::{ value: parse_int_value(fields[5]) }
+            ActiveCollisionTypes::{ value: parse_int_value(fields[5]), }
           } else {
             ActiveCollisionTypes::default()
           }
@@ -3407,12 +3421,12 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
             false
           }
           let active_events = if fields.length() > 7 {
-            ActiveEvents::{ bits: parse_int_value(fields[7]) }
+            ActiveEvents::{ bits: parse_int_value(fields[7]), }
           } else {
             ActiveEvents::empty()
           }
           let active_hooks = if fields.length() > 8 {
-            ActiveHooks::{ value: parse_int_value(fields[8]) }
+            ActiveHooks::{ value: parse_int_value(fields[8]), }
           } else {
             ActiveHooks::empty()
           }
@@ -3572,7 +3586,7 @@ pub fn ColliderSet::deserialize(data : String) -> ColliderSet {
 }
 
 ///|
-pub fn ColliderSet::len(self : ColliderSet) -> Int {
+pub fn ColliderSet::len(self : ColliderSet) -> Int32 {
   let mut count = 0
   for i in 0..<self.colliders.length() {
     if self.colliders[i] is Some(_) {
@@ -4149,7 +4163,7 @@ pub struct ContactPair {
 }
 
 ///|
-pub fn ContactPair::manifold_count(self : ContactPair) -> Int {
+pub fn ContactPair::manifold_count(self : ContactPair) -> Int32 {
   self.manifolds.length()
 }
 
@@ -4225,7 +4239,7 @@ pub fn ContactManifold::ContactManifold(
   normal : @core.Vec2,
   points : Array[ContactManifoldPoint],
 ) -> ContactManifold {
-  { normal, points }
+  { normal, points, }
 }
 
 ///|
@@ -4253,7 +4267,7 @@ pub struct NarrowPhase {
 
 ///|
 pub fn NarrowPhase::NarrowPhase() -> NarrowPhase {
-  { intersections: [], contacts: [], query_dispatcher: QueryDispatcher() }
+  { intersections: [], contacts: [], query_dispatcher: QueryDispatcher(), }
 }
 
 ///|
@@ -4819,7 +4833,7 @@ fn shapes_intersect(
 
   fn polyline_intersects_shape_basic(
     vertices : Array[@core.Vec2],
-    indices : Array[(Int, Int)]?,
+    indices : Array[(Int32, Int32)]?,
     poly_pos : @core.Vec2,
     poly_rot : @core.Real,
     other : Shape,
@@ -5204,7 +5218,7 @@ fn shapes_intersect(
       // Brute-force intersection for two polylines: any segment intersects any segment.
       fn segments(
         vertices : Array[@core.Vec2],
-        indices : Array[(Int, Int)]?,
+        indices : Array[(Int32, Int32)]?,
       ) -> Array[(@core.Vec2, @core.Vec2)] {
         let result : Array[(@core.Vec2, @core.Vec2)] = []
         if indices is Some(idxs) {
@@ -5661,7 +5675,7 @@ fn contact_manifold_convex_polygon_ball(
 ///|
 priv struct ClipVertex {
   v : @core.Vec2
-  id : Int
+  id : Int32
 }
 
 ///|
@@ -5689,7 +5703,7 @@ fn clip_segment_to_line(
     let dv = v2.v.sub(v1.v)
     let v = v1.v.add(Vec2(dv.x * t, dv.y * t))
     let id = if d1 > 0.0F { v1.id } else { v2.id }
-    output.push({ v, id })
+    output.push({ v, id, })
   }
   output
 }
@@ -5726,7 +5740,7 @@ fn convex_polygon_world_vertices(
 }
 
 ///|
-fn cuboid_edge_feature_from_poly_edge_index(edge : Int) -> FeatureId {
+fn cuboid_edge_feature_from_poly_edge_index(edge : Int32) -> FeatureId {
   // `cuboid_world_vertices` order is CCW: v0, v1, v2, v3.
   // Edge i = v[i] -> v[i+1]. Map to query_pipeline's edge convention:
   // 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
@@ -5739,7 +5753,7 @@ fn cuboid_edge_feature_from_poly_edge_index(edge : Int) -> FeatureId {
 }
 
 ///|
-fn polygon_edge_normal(poly : Array[@core.Vec2], edge : Int) -> @core.Vec2 {
+fn polygon_edge_normal(poly : Array[@core.Vec2], edge : Int32) -> @core.Vec2 {
   let a = poly[edge]
   let b = poly[(edge + 1) % poly.length()]
   let e = b.sub(a)
@@ -5863,8 +5877,8 @@ fn polygon_contact_manifold(
   let iv1i = incident_edge
   let iv2i = (incident_edge + 1) % incident_poly.length()
   let clip_in = [
-    ClipVertex::{ v: incident_poly[iv1i], id: iv1i },
-    { v: incident_poly[iv2i], id: iv2i },
+    ClipVertex::{ v: incident_poly[iv1i], id: iv1i, },
+    { v: incident_poly[iv2i], id: iv2i, },
   ]
   let clip1 = clip_segment_to_line(clip_in, side_normal1, side_normal1.dot(rv1))
   let clip2 = clip_segment_to_line(clip1, side_normal2, side_normal2.dot(rv2))
@@ -5946,11 +5960,11 @@ fn polygon_contact_manifold(
       points[1] = tmp
     }
   }
-  { normal: normal12, points }
+  { normal: normal12, points, }
 }
 
 ///|
-fn cuboid_edge_endpoints_ccw(edge : Int) -> (Int, Int) {
+fn cuboid_edge_endpoints_ccw(edge : Int32) -> (Int32, Int32) {
   // Edge indices follow the convention used by query_pipeline:
   // 0 = x=+hw, 1 = x=-hw, 2 = y=+hh, 3 = y=-hh
   if edge == 0 {
@@ -6293,7 +6307,7 @@ fn contact_manifold_cuboid_cuboid(
         )
       }
       let (iv1i, iv2i) = cuboid_edge_endpoints_ccw(incident_edge_id)
-      [{ v: iverts[iv1i], id: iv1i }, { v: iverts[iv2i], id: iv2i }]
+      [{ v: iverts[iv1i], id: iv1i, }, { v: iverts[iv2i], id: iv2i, }]
     },
     side_normal1,
     side_normal1.dot(rv1),
@@ -6332,7 +6346,7 @@ fn contact_manifold_cuboid_cuboid(
       points[1] = tmp
     }
   }
-  { normal: normal12, points }
+  { normal: normal12, points, }
 }
 
 ///|
@@ -6704,14 +6718,14 @@ fn contact_manifold_cuboid_segment(
       data: p.data(),
     })
   }
-  { normal: Vec2(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points, }
 }
 
 ///|
 fn contact_manifold_polyline_ball(
   polyline : Collider,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
   ball : Collider,
   radius : @core.Real,
 ) -> ContactManifold {
@@ -6721,7 +6735,7 @@ fn contact_manifold_polyline_ball(
     polyline : Collider,
     ball : Collider,
     radius : @core.Real,
-    seg_index : Int,
+    seg_index : Int32,
     a : @core.Vec2,
     b : @core.Vec2,
     best : ContactManifold?,
@@ -6810,7 +6824,7 @@ fn contact_manifold_ball_polyline(
   radius : @core.Real,
   polyline : Collider,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> ContactManifold {
   let m = contact_manifold_polyline_ball(
     polyline, vertices, indices, ball, radius,
@@ -6829,14 +6843,14 @@ fn contact_manifold_ball_polyline(
       data: p.data(),
     })
   }
-  { normal: Vec2(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points, }
 }
 
 ///|
 fn contact_manifold_polyline_cuboid(
   polyline : Collider,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
   cuboid : Collider,
   half_width : @core.Real,
   half_height : @core.Real,
@@ -6848,7 +6862,7 @@ fn contact_manifold_polyline_cuboid(
     cuboid : Collider,
     half_width : @core.Real,
     half_height : @core.Real,
-    seg_index : Int,
+    seg_index : Int32,
     a : @core.Vec2,
     b : @core.Vec2,
     best : ContactManifold?,
@@ -6942,7 +6956,7 @@ fn contact_manifold_cuboid_polyline(
   half_height : @core.Real,
   polyline : Collider,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> ContactManifold {
   let m = contact_manifold_polyline_cuboid(
     polyline, vertices, indices, cuboid, half_width, half_height,
@@ -6961,7 +6975,7 @@ fn contact_manifold_cuboid_polyline(
       data: p.data(),
     })
   }
-  { normal: Vec2(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points, }
 }
 
 ///|
@@ -7095,7 +7109,7 @@ fn contact_manifold_capsule_segment(
       data: p.data(),
     })
   }
-  { normal: Vec2(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points, }
 }
 
 ///|
@@ -7198,7 +7212,7 @@ fn contact_manifold_cuboid_capsule(
       data: p.data(),
     })
   }
-  { normal: Vec2(-m.normal().x, -m.normal().y), points }
+  { normal: Vec2(-m.normal().x, -m.normal().y), points, }
 }
 
 ///|
@@ -7207,7 +7221,7 @@ fn build_contact_pair(
   collider1 : Collider,
   collider2 : Collider,
 ) -> ContactPair {
-  fn pack_feature(prefix : Int, fid : FeatureId) -> FeatureId {
+  fn pack_feature(prefix : Int32, fid : FeatureId) -> FeatureId {
     if prefix == 0 {
       return fid
     }
@@ -7270,7 +7284,7 @@ fn build_contact_pair(
           data: p.data,
         })
       }
-      { normal: n, points: out_pts }
+      { normal: n, points: out_pts, }
     }
 
     fn flip_manifold(m : ContactManifold) -> ContactManifold {
@@ -7286,7 +7300,7 @@ fn build_contact_pair(
           data: p.data,
         })
       }
-      { normal: Vec2(-m.normal.x, -m.normal.y), points: pts }
+      { normal: Vec2(-m.normal.x, -m.normal.y), points: pts, }
     }
 
     fn halfspace_world_normal(
@@ -7417,7 +7431,7 @@ fn build_contact_pair(
           })
         }
       }
-      Some({ normal: n, points: pts })
+      Some({ normal: n, points: pts, })
     }
 
     let (shape1, radius1) = unwrap_round_shape(c1.shape)
@@ -7855,8 +7869,8 @@ fn build_contact_pair(
     manifold : ContactManifold,
     pose1 : @core.Isometry2,
     pose2 : @core.Isometry2,
-    prefix1 : Int,
-    prefix2 : Int,
+    prefix1 : Int32,
+    prefix2 : Int32,
   ) -> ContactManifold {
     let out_pts : Array[ContactManifoldPoint] = []
     for i in 0..<manifold.points.length() {
@@ -7870,7 +7884,7 @@ fn build_contact_pair(
         data: p.data(),
       })
     }
-    { normal: manifold.normal, points: out_pts }
+    { normal: manifold.normal, points: out_pts, }
   }
 
   let manifolds : Array[ContactManifold] = []
@@ -7888,12 +7902,12 @@ fn build_contact_pair(
     base1 : @core.Isometry2,
     shape1 : Shape,
     pose1 : @core.Isometry2,
-    prefix1 : Int,
+    prefix1 : Int32,
     collider2 : Collider,
     base2 : @core.Isometry2,
     shape2 : Shape,
     pose2 : @core.Isometry2,
-    prefix2 : Int,
+    prefix2 : Int32,
     out : Array[ContactManifold],
   ) -> Unit {
     match (shape1, shape2) {
@@ -8280,7 +8294,7 @@ priv struct Aabb {
 
 ///|
 fn core_aabb_to_internal(aabb : @core.Aabb) -> Aabb {
-  { min: aabb.mins, max: aabb.maxs }
+  { min: aabb.mins, max: aabb.maxs, }
 }
 
 ///|
@@ -8325,13 +8339,13 @@ priv struct BvhLeaf {
 ///|
 priv struct BvhNode {
   aabb : Aabb
-  left : Int?
-  right : Int?
+  left : Int32?
+  right : Int32?
   leaf : ColliderHandle?
 }
 
 ///|
-fn swap_leaves(leaves : Array[BvhLeaf], i : Int, j : Int) -> Unit {
+fn swap_leaves(leaves : Array[BvhLeaf], i : Int32, j : Int32) -> Unit {
   if i == j {
     return
   }
@@ -8352,8 +8366,8 @@ fn leaf_key(leaf : BvhLeaf, axis_x : Bool) -> @core.Real {
 ///|
 fn quicksort_leaves(
   leaves : Array[BvhLeaf],
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   axis_x : Bool,
 ) -> Unit {
   if end - start <= 1 {
@@ -8387,9 +8401,9 @@ fn quicksort_leaves(
 fn build_bvh(
   nodes : Array[BvhNode],
   leaves : Array[BvhLeaf],
-  start : Int,
-  end : Int,
-) -> Int {
+  start : Int32,
+  end : Int32,
+) -> Int32 {
   let count = end - start
   if count == 1 {
     let leaf = leaves[start]
@@ -8484,8 +8498,8 @@ fn sort_pairs(pairs : Array[(ColliderHandle, ColliderHandle)]) -> Unit {
 ///|
 fn collect_bvh_pairs(
   nodes : Array[BvhNode],
-  a : Int,
-  b : Int,
+  a : Int32,
+  b : Int32,
   out : Array[(ColliderHandle, ColliderHandle)],
 ) -> Unit {
   let node_a = nodes[a]
@@ -8597,7 +8611,7 @@ fn compute_shape_aabb(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r) }
+      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r), }
     }
     CapsuleY(half_height, radius) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -8609,7 +8623,7 @@ fn compute_shape_aabb(
       let max_x = if a.x > b.x { a.x } else { b.x }
       let min_y = if a.y < b.y { a.y } else { b.y }
       let max_y = if a.y > b.y { a.y } else { b.y }
-      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r) }
+      { min: Vec2(min_x - r, min_y - r), max: Vec2(max_x + r, max_y + r), }
     }
     Segment(a, b) => {
       let rot = @core.Rot2::from_angle(rotation)
@@ -8619,11 +8633,11 @@ fn compute_shape_aabb(
       let max_x = if wa.x > wb.x { wa.x } else { wb.x }
       let min_y = if wa.y < wb.y { wa.y } else { wb.y }
       let max_y = if wa.y > wb.y { wa.y } else { wb.y }
-      { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
+      { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd), }
     }
     Polyline(vertices, _) =>
       if vertices.length() == 0 {
-        { min: center, max: center }
+        { min: center, max: center, }
       } else {
         let rot = @core.Rot2::from_angle(rotation)
         let mut min_x = 1.0e30F
@@ -8645,7 +8659,10 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
+        {
+          min: Vec2(min_x - pd, min_y - pd),
+          max: Vec2(max_x + pd, max_y + pd),
+        }
       }
     HeightField(heights, scale) =>
       compute_shape_aabb(
@@ -8656,7 +8673,7 @@ fn compute_shape_aabb(
       )
     ConvexPolygon(vertices) =>
       if vertices.length() == 0 {
-        { min: center, max: center }
+        { min: center, max: center, }
       } else {
         let rot = @core.Rot2::from_angle(rotation)
         let mut min_x = 1.0e30F
@@ -8678,11 +8695,14 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
+        {
+          min: Vec2(min_x - pd, min_y - pd),
+          max: Vec2(max_x + pd, max_y + pd),
+        }
       }
     TriMesh(vertices, _) =>
       if vertices.length() == 0 {
-        { min: center, max: center }
+        { min: center, max: center, }
       } else {
         let rot = @core.Rot2::from_angle(rotation)
         let mut min_x = 1.0e30F
@@ -8704,11 +8724,14 @@ fn compute_shape_aabb(
             max_y = wp.y
           }
         }
-        { min: Vec2(min_x - pd, min_y - pd), max: Vec2(max_x + pd, max_y + pd) }
+        {
+          min: Vec2(min_x - pd, min_y - pd),
+          max: Vec2(max_x + pd, max_y + pd),
+        }
       }
     Compound(parts) =>
       if parts.length() == 0 {
-        { min: center, max: center }
+        { min: center, max: center, }
       } else {
         let parent_iso = @core.Isometry2(
           center,
@@ -8732,7 +8755,7 @@ fn compute_shape_aabb(
         if acc is Some(aabb) {
           aabb
         } else {
-          { min: center, max: center }
+          { min: center, max: center, }
         }
       }
   }
@@ -8760,7 +8783,7 @@ pub fn BroadPhaseBvh::BroadPhaseBvh() -> BroadPhaseBvh {
 pub fn BroadPhaseBvh::with_optimization_strategy(
   optimization_strategy : BvhOptimizationStrategy,
 ) -> BroadPhaseBvh {
-  { optimization_strategy, pairs: [], events: [], override_aabbs: [] }
+  { optimization_strategy, pairs: [], events: [], override_aabbs: [], }
 }
 
 ///|
@@ -8845,7 +8868,7 @@ pub fn BroadPhaseBvh::update(
         } else {
           global_aabb = Some(aabb)
         }
-        leaves.push({ handle, aabb, center: aabb_center(aabb) })
+        leaves.push({ handle, aabb, center: aabb_center(aabb), })
       }
     }
   }
@@ -8856,7 +8879,7 @@ pub fn BroadPhaseBvh::update(
     } else {
       point_aabb
     }
-    leaves.push({ handle, aabb, center: aabb_center(aabb) })
+    leaves.push({ handle, aabb, center: aabb_center(aabb), })
   }
   let next_pairs : Array[(ColliderHandle, ColliderHandle)] = []
   if leaves.length() > 1 {
@@ -8955,7 +8978,7 @@ pub fn BroadPhaseBvh::update3(
         } else {
           global_aabb = Some(aabb)
         }
-        leaves.push({ handle, aabb, center: aabb_center(aabb) })
+        leaves.push({ handle, aabb, center: aabb_center(aabb), })
       }
     }
   }
@@ -8966,7 +8989,7 @@ pub fn BroadPhaseBvh::update3(
     } else {
       point_aabb
     }
-    leaves.push({ handle, aabb, center: aabb_center(aabb) })
+    leaves.push({ handle, aabb, center: aabb_center(aabb), })
   }
   let next_pairs : Array[(ColliderHandle, ColliderHandle)] = []
   if leaves.length() > 1 {

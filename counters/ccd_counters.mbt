@@ -14,7 +14,7 @@
 
 ///|
 pub struct CCDCounters {
-  mut num_substeps : Int
+  mut num_substeps : Int32
   toi_computation_time : Timer
   solver_time : Timer
   broad_phase_time : Timer
@@ -42,12 +42,12 @@ pub fn CCDCounters::reset(self : CCDCounters) -> Unit {
 }
 
 ///|
-pub fn CCDCounters::num_substeps(self : CCDCounters) -> Int {
+pub fn CCDCounters::num_substeps(self : CCDCounters) -> Int32 {
   self.num_substeps
 }
 
 ///|
-pub fn CCDCounters::set_num_substeps(self : CCDCounters, n : Int) -> Unit {
+pub fn CCDCounters::set_num_substeps(self : CCDCounters, n : Int32) -> Unit {
   self.num_substeps = n
 }
 

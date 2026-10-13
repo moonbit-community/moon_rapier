@@ -27,7 +27,7 @@ fn step_pipeline_2d_n_smoke(
   ccd_solver : @dynamics_ccd.CCDSolver,
   hooks : @pipeline.PhysicsHooks,
   events : @pipeline.EventHandler,
-  nsteps : Int,
+  nsteps : Int32,
 ) -> Unit {
   for _ in 0..<nsteps {
     pipeline.step(

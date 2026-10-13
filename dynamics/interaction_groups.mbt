@@ -14,16 +14,16 @@
 
 ///|
 pub struct Group {
-  value : Int
+  value : Int32
 }
 
 ///|
-pub fn Group::Group(bits : Int) -> Group {
-  { value: bits }
+pub fn Group::Group(bits : Int32) -> Group {
+  { value: bits, }
 }
 
 ///|
-pub fn Group::bits(self : Group) -> Int {
+pub fn Group::bits(self : Group) -> Int32 {
   self.value
 }
 
@@ -225,7 +225,7 @@ pub fn InteractionGroups::InteractionGroups(
   filter : Group,
   test_mode : InteractionTestMode,
 ) -> InteractionGroups {
-  { memberships, filter, test_mode }
+  { memberships, filter, test_mode, }
 }
 
 ///|

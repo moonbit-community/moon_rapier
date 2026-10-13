@@ -74,7 +74,7 @@ pub fn SharedShape::triangle(
 ///|
 pub fn SharedShape::polyline(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int)]?,
+  indices : Array[(Int32, Int32)]?,
 ) -> SharedShape {
   SharedShape(Polyline(vertices, indices))
 }
@@ -82,7 +82,7 @@ pub fn SharedShape::polyline(
 ///|
 pub fn SharedShape::trimesh(
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> SharedShape? {
   match ColliderBuilder::trimesh(vertices, indices) {
     None => None
@@ -112,7 +112,7 @@ pub fn Triangle::Triangle(
   b : @core.Vec2,
   c : @core.Vec2,
 ) -> Triangle {
-  { a, b, c }
+  { a, b, c, }
 }
 
 ///|
@@ -132,7 +132,7 @@ pub fn HeightField::HeightField(
   heights : Array[@core.Real],
   scale : @core.Vec2,
 ) -> HeightField {
-  { heights, scale }
+  { heights, scale, }
 }
 
 ///|
@@ -159,21 +159,21 @@ pub fn MeshConverterError::to_string(self : MeshConverterError) -> String {
 
 ///|
 pub struct TriMeshFlags {
-  value : Int
+  value : Int32
 }
 
 ///|
 pub fn TriMeshFlags::empty() -> TriMeshFlags {
-  { value: 0 }
+  { value: 0, }
 }
 
 ///|
-pub fn TriMeshFlags::from_bits(bits : Int) -> TriMeshFlags {
-  { value: bits }
+pub fn TriMeshFlags::from_bits(bits : Int32) -> TriMeshFlags {
+  { value: bits, }
 }
 
 ///|
-pub fn TriMeshFlags::bits(self : TriMeshFlags) -> Int {
+pub fn TriMeshFlags::bits(self : TriMeshFlags) -> Int32 {
   self.value
 }
 
@@ -244,7 +244,7 @@ fn compute_aabb(vertices : Array[@core.Vec2]) -> (@core.Vec2, @core.Vec2)? {
 pub fn MeshConverter::apply(
   self : MeshConverter,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
   match self {
     TriMesh =>
@@ -286,9 +286,9 @@ pub fn MeshConverter::apply(
       )
     ConvexDecompositionWithParams(params) => {
       fn boundary_segments_from_trimesh(
-        indices : Array[(Int, Int, Int)],
-      ) -> Array[(Int, Int)] {
-        fn min_int(a : Int, b : Int) -> Int {
+        indices : Array[(Int32, Int32, Int32)],
+      ) -> Array[(Int32, Int32)] {
+        fn min_int(a : Int32, b : Int32) -> Int32 {
           if a < b {
             a
           } else {
@@ -296,7 +296,7 @@ pub fn MeshConverter::apply(
           }
         }
 
-        fn max_int(a : Int, b : Int) -> Int {
+        fn max_int(a : Int32, b : Int32) -> Int32 {
           if a > b {
             a
           } else {
@@ -304,16 +304,16 @@ pub fn MeshConverter::apply(
           }
         }
 
-        let counts : @hashmap.HashMap[(Int, Int), Int] = HashMap(
+        let counts : @hashmap.HashMap[(Int32, Int32), Int32] = HashMap(
           [],
           capacity=indices.length() * 3,
         )
-        let keys : Array[(Int, Int)] = []
+        let keys : Array[(Int32, Int32)] = []
         fn bump(
-          counts : @hashmap.HashMap[(Int, Int), Int],
-          keys : Array[(Int, Int)],
-          a : Int,
-          b : Int,
+          counts : @hashmap.HashMap[(Int32, Int32), Int32],
+          keys : Array[(Int32, Int32)],
+          a : Int32,
+          b : Int32,
         ) -> Unit {
           let u = min_int(a, b)
           let v = max_int(a, b)
@@ -332,7 +332,7 @@ pub fn MeshConverter::apply(
           bump(counts, keys, i1, i2)
           bump(counts, keys, i2, i0)
         }
-        let out : Array[(Int, Int)] = []
+        let out : Array[(Int32, Int32)] = []
         for k in keys {
           if counts.get(k) is Some(c) && c == 1 {
             out.push(k)
@@ -357,7 +357,7 @@ pub fn MeshConverter::apply(
 pub fn MeshConverter::convert(
   self : MeshConverter,
   vertices : Array[@core.Vec2],
-  indices : Array[(Int, Int, Int)],
+  indices : Array[(Int32, Int32, Int32)],
 ) -> Result[(SharedShape, @core.Isometry2), MeshConverterError] {
   self.apply(vertices, indices)
 }
@@ -373,7 +373,7 @@ pub fn ColliderPair::ColliderPair(
   a : ColliderHandle,
   b : ColliderHandle,
 ) -> ColliderPair {
-  { collider1: a, collider2: b }
+  { collider1: a, collider2: b, }
 }
 
 ///|

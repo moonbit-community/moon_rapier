@@ -108,21 +108,21 @@ pub fn Counters::custom_time(self : Counters) -> Double {
 }
 
 ///|
-pub fn Counters::set_nconstraints(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_nconstraints(self : Counters, n : Int32) -> Unit {
   if self.enabled {
     self.solver.set_nconstraints(n)
   }
 }
 
 ///|
-pub fn Counters::set_ncontacts(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_ncontacts(self : Counters, n : Int32) -> Unit {
   if self.enabled {
     self.solver.set_ncontacts(n)
   }
 }
 
 ///|
-pub fn Counters::set_ncontact_pairs(self : Counters, n : Int) -> Unit {
+pub fn Counters::set_ncontact_pairs(self : Counters, n : Int32) -> Unit {
   if self.enabled {
     self.cd.set_ncontact_pairs(n)
   }

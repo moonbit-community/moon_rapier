@@ -20,24 +20,28 @@ test "rapier3d reexports use real 3d physics surface" {
   let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
   let colliders = @collision.ColliderSet3D::ColliderSet3D()
   let islands = @dynamics.IslandManager3D::IslandManager3D()
-  let gravity = Vec3::Vec3(0.0F, -9.81F, 0.0F)
-  let params = IntegrationParameters::default()
+  let gravity = @rapier3d.Vec3::Vec3(0.0F, -9.81F, 0.0F)
+  let params = @rapier3d.IntegrationParameters::default()
 
   let ground = bodies.insert(
-    RigidBodyBuilder::fixed().translation(Vec3(0.0F, -0.5F, 0.0F)).build(),
+    @rapier3d.RigidBodyBuilder::fixed()
+    .translation(Vec3(0.0F, -0.5F, 0.0F))
+    .build(),
   )
   colliders.insert_with_parent(
-    ColliderBuilder::cuboid(5.0F, 0.5F, 5.0F).build(),
+    @rapier3d.ColliderBuilder::cuboid(5.0F, 0.5F, 5.0F).build(),
     ground,
     bodies,
   )
   |> ignore
 
   let body = bodies.insert(
-    RigidBodyBuilder::dynamic().translation(Vec3(0.0F, 3.0F, 1.0F)).build(),
+    @rapier3d.RigidBodyBuilder::dynamic()
+    .translation(Vec3(0.0F, 3.0F, 1.0F))
+    .build(),
   )
   let collider = colliders.insert_with_parent(
-    ColliderBuilder::ball(0.5F).build(),
+    @rapier3d.ColliderBuilder::ball(0.5F).build(),
     body,
     bodies,
   )
@@ -67,13 +71,13 @@ test "rapier3d multibody reexports expose real 3d API" {
   let bodies = @dynamics.RigidBodySet3D::RigidBodySet3D()
   let joints = @dynamics.MultibodyJointSet3DReal::MultibodyJointSet3DReal()
   let root = bodies.insert(
-    RigidBodyBuilder::dynamic()
+    @rapier3d.RigidBodyBuilder::dynamic()
     .translation(Vec3(0.0F, 0.0F, 0.5F))
     .rotation_scaled_axis(Vec3(0.1F, 0.2F, 0.3F))
     .build(),
   )
-  let child = bodies.insert(RigidBodyBuilder::dynamic().build())
-  let joint = GenericJoint::from_revolute(
+  let child = bodies.insert(@rapier3d.RigidBodyBuilder::dynamic().build())
+  let joint = @rapier3d.GenericJoint::from_revolute(
     @dynamics.RevoluteJointBuilder3::RevoluteJointBuilder3(
       Vec3(0.0F, 1.0F, 0.0F),
     )

@@ -15,7 +15,7 @@
 ///|
 test "solver regression 3dreal: stack stability + deterministic stepping" {
   fn simulate() -> Array[@core.Vec3] {
-    let pipeline = PhysicsPipeline3DReal::PhysicsPipeline3DReal()
+    let pipeline = @pipeline.PhysicsPipeline3DReal::PhysicsPipeline3DReal()
     let broad_phase = @collision.BroadPhase3D()
     let narrow_phase = @collision.NarrowPhase3D()
     let islands = @dynamics.IslandManager3D()

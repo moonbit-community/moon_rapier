@@ -28,7 +28,7 @@ pub struct SolverVel {
 
 ///|
 pub fn SolverVel::zero() -> SolverVel {
-  { linear: @core.Vec2::zero(), angular: 0.0F }
+  { linear: @core.Vec2::zero(), angular: 0.0F, }
 }
 
 ///|
@@ -64,7 +64,7 @@ pub struct SolverBodies {
 
 ///|
 pub fn SolverBodies::default() -> SolverBodies {
-  { vels: [], poses: [] }
+  { vels: [], poses: [], }
 }
 
 ///|
@@ -74,12 +74,12 @@ pub fn SolverBodies::clear(self : SolverBodies) -> Unit {
 }
 
 ///|
-pub fn SolverBodies::len(self : SolverBodies) -> Int {
+pub fn SolverBodies::len(self : SolverBodies) -> Int32 {
   self.vels.length()
 }
 
 ///|
-pub fn SolverBodies::resize(self : SolverBodies, sz : Int) -> Unit {
+pub fn SolverBodies::resize(self : SolverBodies, sz : Int32) -> Unit {
   let target = if sz < 0 { 0 } else { sz }
   self.vels.clear()
   self.poses.clear()
@@ -121,7 +121,7 @@ pub fn SolverBodies::writeback_vels(
 /// Copy the current rigid-body velocity/pose into this solver slot.
 pub fn SolverBodies::copy_from(
   self : SolverBodies,
-  i : Int,
+  i : Int32,
   rb : @dynamics.RigidBody,
 ) -> Unit {
   if i < 0 || i >= self.len() {
