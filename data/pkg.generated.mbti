@@ -8,49 +8,49 @@ package "Milky2018/moon_rapier/data"
 // Types and methods
 pub struct Arena[T] {
   items : Array[Entry[T]]
-  mut generation : Int
-  mut free_list_head : Int?
-  mut len : Int
+  mut generation : Int32
+  mut free_list_head : Int32?
+  mut len : Int32
 }
 pub fn[T] Arena::Arena() -> Self[T]
-pub fn[T] Arena::capacity(Self[T]) -> Int
+pub fn[T] Arena::capacity(Self[T]) -> Int32
 pub fn[T] Arena::clear(Self[T]) -> Unit
 pub fn[T] Arena::contains(Self[T], Index) -> Bool
 pub fn[T] Arena::drain(Self[T]) -> Drain[T]
 pub fn[T] Arena::get(Self[T], Index) -> T?
 pub fn[T] Arena::get2_mut(Self[T], Index, Index) -> (T?, T?)
-pub fn[T] Arena::get_gen(Self[T], Int) -> Int?
+pub fn[T] Arena::get_gen(Self[T], Int32) -> Int32?
 pub fn[T] Arena::get_mut(Self[T], Index) -> T?
 pub fn[T] Arena::insert(Self[T], T) -> Index
 pub fn[T] Arena::insert_with(Self[T], (Index) -> T) -> Index
 pub fn[T] Arena::is_empty(Self[T]) -> Bool
 pub fn[T] Arena::iter(Self[T]) -> Array[(Index, T)]
 pub fn[T] Arena::iter_mut(Self[T]) -> Array[(Index, T)]
-pub fn[T] Arena::len(Self[T]) -> Int
+pub fn[T] Arena::len(Self[T]) -> Int32
 pub fn[T] Arena::remove(Self[T], Index) -> T?
-pub fn[T] Arena::reserve(Self[T], Int) -> Unit
+pub fn[T] Arena::reserve(Self[T], Int32) -> Unit
 pub fn[T] Arena::retain(Self[T], (Index, T) -> Bool) -> Unit
 pub fn[T] Arena::set(Self[T], Index, T) -> Bool
 pub fn[T] Arena::try_insert(Self[T], T) -> Result[Index, T]
 pub fn[T] Arena::try_insert_with(Self[T], (Index) -> T) -> Result[Index, (Index) -> T]
-pub fn[T] Arena::with_capacity(Int) -> Self[T]
+pub fn[T] Arena::with_capacity(Int32) -> Self[T]
 
 pub struct Coarena[T] {
-  data : Array[(Int, T)]
+  data : Array[(Int32, T)]
 }
 pub fn[T] Coarena::Coarena() -> Self[T]
 pub fn[T] Coarena::ensure_element_exist(Self[T], Index, T) -> T
 pub fn[T] Coarena::ensure_pair_exists(Self[T], Index, Index, T) -> (T, T)
 pub fn[T] Coarena::get(Self[T], Index) -> T?
-pub fn[T] Coarena::get_gen(Self[T], Int) -> Int?
+pub fn[T] Coarena::get_gen(Self[T], Int32) -> Int32?
 pub fn[T] Coarena::get_mut(Self[T], Index) -> T?
-pub fn[T] Coarena::get_mut_unknown_gen(Self[T], Int) -> T?
-pub fn[T] Coarena::get_unknown_gen(Self[T], Int) -> T?
+pub fn[T] Coarena::get_mut_unknown_gen(Self[T], Int32) -> T?
+pub fn[T] Coarena::get_unknown_gen(Self[T], Int32) -> T?
 pub fn[T : Default] Coarena::insert(Self[T], Index, T) -> Unit
 pub fn[T] Coarena::iter(Self[T]) -> Array[(Index, T)]
-pub fn[T] Coarena::len(Self[T]) -> Int
+pub fn[T] Coarena::len(Self[T]) -> Int32
 pub fn[T] Coarena::remove(Self[T], Index, T) -> T?
-pub fn[T] Coarena::reserve(Self[T], Int) -> Unit
+pub fn[T] Coarena::reserve(Self[T], Int32) -> Unit
 pub fn[T] Coarena::set(Self[T], Index, T, T) -> Unit
 
 pub(all) enum Direction {
@@ -61,7 +61,7 @@ pub fn Direction::opposite(Self) -> Self
 
 pub struct Drain[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 pub fn[T] Drain::next(Self[T]) -> (Index, T)?
 
@@ -76,11 +76,11 @@ pub fn[E] Edge::source(Self[E]) -> NodeIndex
 pub fn[E] Edge::target(Self[E]) -> NodeIndex
 
 pub struct EdgeIndex {
-  index : Int
+  index : Int32
 }
-pub fn EdgeIndex::EdgeIndex(Int) -> Self
+pub fn EdgeIndex::EdgeIndex(Int32) -> Self
 pub fn EdgeIndex::end() -> Self
-pub fn EdgeIndex::index(Self) -> Int
+pub fn EdgeIndex::index(Self) -> Int32
 
 pub struct EdgeReference[E] {
   index : EdgeIndex
@@ -128,33 +128,33 @@ pub fn[N, E] Graph::raw_nodes(Self[N, E]) -> Array[Node[N]]
 pub fn[N, E] Graph::remove_edge(Self[N, E], EdgeIndex) -> E?
 pub fn[N, E] Graph::remove_node(Self[N, E], NodeIndex) -> N?
 pub fn[N, E] Graph::set_node_weight(Self[N, E], NodeIndex, N) -> Bool
-pub fn[N, E] Graph::with_capacity(Int, Int) -> Self[N, E]
+pub fn[N, E] Graph::with_capacity(Int32, Int32) -> Self[N, E]
 
 pub struct Index {
-  index : Int
-  generation : Int
+  index : Int32
+  generation : Int32
 }
 pub fn Index::default() -> Self
-pub fn Index::from_raw_parts(Int, Int) -> Self
-pub fn Index::into_raw_parts(Self) -> (Int, Int)
+pub fn Index::from_raw_parts(Int32, Int32) -> Self
+pub fn Index::into_raw_parts(Self) -> (Int32, Int32)
 
 pub struct IntoIter[T] {
   items : Array[T]
-  mut cursor : Int
+  mut cursor : Int32
 }
 pub fn[T] IntoIter::from_arena(Arena[T]) -> Self[T]
 pub fn[T] IntoIter::next(Self[T]) -> T?
 
 pub struct Iter[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 pub fn[T] Iter::from_arena(Arena[T]) -> Self[T]
 pub fn[T] Iter::next(Self[T]) -> (Index, T)?
 
 pub struct IterMut[T] {
   items : Array[(Index, T)]
-  mut cursor : Int
+  mut cursor : Int32
 }
 pub fn[T] IterMut::from_arena(Arena[T]) -> Self[T]
 pub fn[T] IterMut::next(Self[T]) -> (Index, T)?
@@ -169,7 +169,7 @@ pub fn[Handle, Object] ModifiedObjects::as_mut_internal(Self[Handle, Object]) ->
 pub fn[Handle, Object] ModifiedObjects::clear(Self[Handle, Object]) -> Unit
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_once(Self[Handle, Object], Handle, Object) -> Unit
 pub fn[Handle, Object : HasModifiedFlag] ModifiedObjects::push_unchecked(Self[Handle, Object], Handle, Object) -> Unit
-pub fn[Handle, Object] ModifiedObjects::with_capacity(Int) -> Self[Handle, Object]
+pub fn[Handle, Object] ModifiedObjects::with_capacity(Int32) -> Self[Handle, Object]
 
 pub struct Node[N] {
   mut weight : N
@@ -178,30 +178,30 @@ pub struct Node[N] {
 }
 
 pub struct NodeIndex {
-  index : Int
+  index : Int32
 }
-pub fn NodeIndex::NodeIndex(Int) -> Self
+pub fn NodeIndex::NodeIndex(Int32) -> Self
 pub fn NodeIndex::end() -> Self
-pub fn NodeIndex::index(Self) -> Int
+pub fn NodeIndex::index(Self) -> Int32
 
 pub struct PubSub[T] {
-  mut deleted_messages : Int
-  mut deleted_offsets : Int
+  mut deleted_messages : Int32
+  mut deleted_offsets : Int32
   messages : Array[T]
-  offsets : Array[Int]
+  offsets : Array[Int32]
   cursors : Array[PubSubCursor]
 }
 pub fn[T] PubSub::PubSub() -> Self[T]
 pub fn[T] PubSub::ack(Self[T], Subscription[T]) -> Unit
 pub fn[T] PubSub::publish(Self[T], T) -> Unit
 pub fn[T] PubSub::read(Self[T], Subscription[T]) -> Array[T]
-pub fn[T] PubSub::read_ith(Self[T], Subscription[T], Int) -> T?
+pub fn[T] PubSub::read_ith(Self[T], Subscription[T], Int32) -> T?
 pub fn[T] PubSub::subscribe(Self[T]) -> Subscription[T]
 
 type PubSubCursor
 
 pub struct Subscription[T] {
-  id : Int
+  id : Int32
   marker : T?
 }
 

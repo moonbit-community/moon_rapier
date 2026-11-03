@@ -6,9 +6,9 @@ import {
 }
 
 // Values
-pub const DIM_MINUS_ONE2 : Int = 1
+pub const DIM_MINUS_ONE2 : Int32 = 1
 
-pub const DIM_MINUS_ONE3 : Int = 2
+pub const DIM_MINUS_ONE3 : Int32 = 2
 
 pub fn angular_inertia_into_matrix2(Float) -> Float
 
@@ -26,9 +26,9 @@ pub fn append_translation2(@core.Isometry2, @core.Vec2) -> @core.Isometry2
 
 pub fn append_translation3(@core.Isometry3, @core.Vec3) -> @core.Isometry3
 
-pub fn column2(@core.Mat2, Int) -> @core.Vec2?
+pub fn column2(@core.Mat2, Int32) -> @core.Vec2?
 
-pub fn column3(@core.Mat3, Int) -> @core.Vec3?
+pub fn column3(@core.Mat3, Int32) -> @core.Vec3?
 
 pub fn component_mul2(@core.Vec2, @core.Vec2) -> @core.Vec2
 
@@ -58,17 +58,17 @@ pub fn gdot2(@core.Vec2, @core.Vec2) -> Float
 
 pub fn gdot3(@core.Vec3, @core.Vec3) -> Float
 
-pub fn[T] index_mut2(Array[T], Int, Int) -> (T?, T?)
+pub fn[T] index_mut2(Array[T], Int32, Int32) -> (T?, T?)
 
-pub fn[T] index_mut_const(Array[T], Int, Int) -> (T?, T?)
+pub fn[T] index_mut_const(Array[T], Int32, Int32) -> (T?, T?)
 
 pub fn into_matrix2(Float) -> Float
 
 pub fn into_matrix3(@core.SdpMat3) -> @core.Mat3
 
-pub fn mat2_column(@core.Mat2, Int) -> @core.Vec2?
+pub fn mat2_column(@core.Mat2, Int32) -> @core.Vec2?
 
-pub fn mat3_column(@core.Mat3, Int) -> @core.Vec3?
+pub fn mat3_column(@core.Mat3, Int32) -> @core.Vec3?
 
 pub fn[T] mat_to_na(T) -> T
 
@@ -148,10 +148,10 @@ pub fn[T] vect_to_na(T) -> T
 
 // Types and methods
 pub struct HashMap {
-  entries : Array[(Int, String)]
+  entries : Array[(Int32, String)]
 }
 pub fn HashMap::equals(Self, Self) -> Bool
-pub fn HashMap::from_array(Array[(Int, String)]) -> Self
+pub fn HashMap::from_array(Array[(Int32, String)]) -> Self
 
 pub(all) enum Result3 {
   Scalar(Float)

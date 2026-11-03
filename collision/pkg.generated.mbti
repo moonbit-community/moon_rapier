@@ -9,35 +9,35 @@ import {
 }
 
 // Values
-pub const DYNAMIC_DYNAMIC : Int = 0x0001
+pub const DYNAMIC_DYNAMIC : Int32 = 0x0001
 
-pub const DYNAMIC_FIXED : Int = 0x0002
+pub const DYNAMIC_FIXED : Int32 = 0x0002
 
-pub const DYNAMIC_KINEMATIC : Int = 0x000C
+pub const DYNAMIC_KINEMATIC : Int32 = 0x000C
 
-pub const ENABLED_OR_DISABLED : Int = 256
+pub const ENABLED_OR_DISABLED : Int32 = 256
 
-pub const FIXED_FIXED : Int = 0x0020
+pub const FIXED_FIXED : Int32 = 0x0020
 
-pub const GROUPS : Int = 16
+pub const GROUPS : Int32 = 16
 
-pub const IN_MODIFIED_SET : Int = 1
+pub const IN_MODIFIED_SET : Int32 = 1
 
-pub const KINEMATIC_FIXED : Int = 0x2200
+pub const KINEMATIC_FIXED : Int32 = 0x2200
 
-pub const KINEMATIC_KINEMATIC : Int = 0xCC00
+pub const KINEMATIC_KINEMATIC : Int32 = 0xCC00
 
-pub const LOCAL_MASS_PROPERTIES : Int = 2
+pub const LOCAL_MASS_PROPERTIES : Int32 = 2
 
-pub const PARENT : Int = 4
+pub const PARENT : Int32 = 4
 
-pub const PARENT_EFFECTIVE_DOMINANCE : Int = 128
+pub const PARENT_EFFECTIVE_DOMINANCE : Int32 = 128
 
-pub const POSITION : Int = 8
+pub const POSITION : Int32 = 8
 
-pub const SHAPE : Int = 32
+pub const SHAPE : Int32 = 32
 
-pub const TYPE : Int = 64
+pub const TYPE : Int32 = 64
 
 pub fn compute_ball_ball_contact(@core.Vec3, Float, @core.Vec3, Float) -> ContactPoint3D?
 
@@ -49,11 +49,11 @@ pub fn compute_ball_cuboid_contact(@core.Vec3, Float, @core.Isometry3, @core.Vec
 
 pub fn compute_ball_cylinder_contact(@core.Vec3, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
-pub fn compute_ball_heightfield_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_ball_heightfield_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_ball_heightfield_contact_with_flags(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_ball_heightfield_contact_with_flags(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_ball_trimesh_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_ball_trimesh_contact(@core.Vec3, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn compute_ball_voxels_contact(@core.Vec3, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
@@ -61,11 +61,11 @@ pub fn compute_capsule_capsule_contact(@core.Isometry3, Float, Float, @core.Isom
 
 pub fn compute_capsule_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
-pub fn compute_capsule_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_capsule_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_capsule_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_capsule_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_capsule_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_capsule_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn compute_capsule_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
@@ -75,11 +75,11 @@ pub fn compute_cone_cuboid_contact(@core.Isometry3, Float, Float, @core.Isometry
 
 pub fn compute_cone_cylinder_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
-pub fn compute_cone_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_cone_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_cone_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_cone_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_cone_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_cone_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn compute_cone_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
@@ -87,15 +87,15 @@ pub fn compute_convex_contact(@core.Isometry3, Shape3D, @core.Isometry3, Shape3D
 
 pub fn compute_cuboid_cuboid_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3) -> ContactPoint3D?
 
-pub fn compute_cuboid_heightfield_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_cuboid_heightfield_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_cuboid_heightfield_contact_with_flags(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_cuboid_heightfield_contact_with_flags(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
 pub fn compute_cuboid_triangle_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3, @core.Vec3, @core.Vec3) -> ContactPoint3D?
 
 pub fn compute_cuboid_triangle_contacts(@core.Isometry3, @core.Vec3, @core.Isometry3, @core.Vec3, @core.Vec3, @core.Vec3) -> Array[ContactPoint3D]
 
-pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_cuboid_trimesh_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn compute_cuboid_voxels_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
@@ -103,37 +103,37 @@ pub fn compute_cylinder_cuboid_contact(@core.Isometry3, Float, Float, @core.Isom
 
 pub fn compute_cylinder_cylinder_contact(@core.Isometry3, Float, Float, @core.Isometry3, Float, Float) -> ContactPoint3D?
 
-pub fn compute_cylinder_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_cylinder_heightfield_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_cylinder_trimesh_contact(@core.Isometry3, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn compute_cylinder_voxels_contact(@core.Isometry3, Float, Float, @core.Isometry3, Voxels3DReal) -> ContactPoint3D?
 
 pub fn compute_halfspace_contact(@core.Isometry3, @core.Vec3, @core.Isometry3, Shape3D) -> ContactPoint3D?
 
-pub fn compute_round_cylinder_heightfield_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int) -> ContactPoint3D?
+pub fn compute_round_cylinder_heightfield_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_round_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> ContactPoint3D?
+pub fn compute_round_cylinder_heightfield_contact_with_flags(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> ContactPoint3D?
 
-pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> ContactPoint3D?
+pub fn compute_round_cylinder_trimesh_contact(@core.Isometry3, Float, Float, Float, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> ContactPoint3D?
 
 pub fn handle_user_changes_to_colliders(@dynamics.RigidBodySet, ColliderSet, Array[ColliderHandle]) -> Unit
 
 pub fn handle_user_changes_to_colliders3(@dynamics.RigidBodySet3, ColliderSet3, Array[ColliderHandle]) -> Unit
 
-pub fn heightfield_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
+pub fn heightfield_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int32, Int32) -> (@core.Vec3, @core.Vec3, Float)?
 
-pub fn heightfield_closest_point_query_with_flags(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int, Int, Int) -> (@core.Vec3, @core.Vec3, Float)?
+pub fn heightfield_closest_point_query_with_flags(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Int32, Int32, Int32) -> (@core.Vec3, @core.Vec3, Float)?
 
-pub fn trimesh_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int, Int, Int)]) -> (@core.Vec3, @core.Vec3, Float)?
+pub fn trimesh_closest_point_query(@core.Vec3, @core.Isometry3, Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> (@core.Vec3, @core.Vec3, Float)?
 
 // Errors
 
 // Types and methods
 pub struct ActiveCollisionTypes {
-  value : Int
+  value : Int32
 }
 pub fn ActiveCollisionTypes::all() -> Self
 pub fn ActiveCollisionTypes::default() -> Self
@@ -142,7 +142,7 @@ pub fn ActiveCollisionTypes::passes(Self, @dynamics.RigidBodyType, @dynamics.Rig
 pub fn ActiveCollisionTypes::test_body_types(Self, @dynamics.RigidBodyType, @dynamics.RigidBodyType) -> Bool
 
 pub struct ActiveEvents {
-  mut bits : Int
+  mut bits : Int32
 }
 pub fn ActiveEvents::collision_events() -> Self
 pub fn ActiveEvents::complement(Self) -> Self
@@ -150,9 +150,9 @@ pub fn ActiveEvents::contact_force_events() -> Self
 pub fn ActiveEvents::contains(Self, Self) -> Bool
 pub fn ActiveEvents::difference(Self, Self) -> Self
 pub fn ActiveEvents::empty() -> Self
-pub fn ActiveEvents::from_bits(Int) -> Self?
-pub fn ActiveEvents::from_bits_retain(Int) -> Self
-pub fn ActiveEvents::from_bits_truncate(Int) -> Self
+pub fn ActiveEvents::from_bits(Int32) -> Self?
+pub fn ActiveEvents::from_bits_retain(Int32) -> Self
+pub fn ActiveEvents::from_bits_truncate(Int32) -> Self
 pub fn ActiveEvents::from_name(String) -> Self?
 pub fn ActiveEvents::insert(Self, Self) -> Self
 pub fn ActiveEvents::intersection_events() -> Self
@@ -163,7 +163,7 @@ pub fn ActiveEvents::toggle(Self, Self) -> Self
 pub fn ActiveEvents::union(Self, Self) -> Self
 
 pub struct ActiveHooks {
-  mut value : Int
+  mut value : Int32
 }
 pub fn ActiveHooks::all() -> Self
 pub fn ActiveHooks::complement(Self) -> Self
@@ -172,9 +172,9 @@ pub fn ActiveHooks::difference(Self, Self) -> Self
 pub fn ActiveHooks::empty() -> Self
 pub fn ActiveHooks::filter_contact_pairs() -> Self
 pub fn ActiveHooks::filter_intersection_pair() -> Self
-pub fn ActiveHooks::from_bits(Int) -> Self?
-pub fn ActiveHooks::from_bits_retain(Int) -> Self
-pub fn ActiveHooks::from_bits_truncate(Int) -> Self
+pub fn ActiveHooks::from_bits(Int32) -> Self?
+pub fn ActiveHooks::from_bits_retain(Int32) -> Self
+pub fn ActiveHooks::from_bits_truncate(Int32) -> Self
 pub fn ActiveHooks::from_name(String) -> Self?
 pub fn ActiveHooks::insert(Self, Self) -> Self
 pub fn ActiveHooks::is_all(Self) -> Bool
@@ -303,7 +303,7 @@ pub fn Collider::set_shape(Self, Shape) -> Self
 pub fn Collider::set_solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider::set_translation(Self, @core.Vec2) -> Self
 pub fn Collider::set_translation_wrt_parent(Self, @core.Vec2) -> Self
-pub fn Collider::set_user_data(Self, Int) -> Self
+pub fn Collider::set_user_data(Self, Int32) -> Self
 pub fn Collider::set_user_data128(Self, @core.UserData128) -> Self
 pub fn Collider::shape(Self) -> Shape
 pub fn Collider::shape_mut(Self) -> Shape
@@ -311,7 +311,7 @@ pub fn Collider::shared_shape(Self) -> SharedShape
 pub fn Collider::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider::translation(Self) -> @core.Vec2
 pub fn Collider::translation3(Self) -> @core.Vec3
-pub fn Collider::user_data(Self) -> Int
+pub fn Collider::user_data(Self) -> Int32
 pub fn Collider::user_data128(Self) -> @core.UserData128
 pub fn Collider::volume(Self) -> Float
 
@@ -320,12 +320,12 @@ pub struct Collider3D {
   mut local_position : @core.Isometry3
   mut parent : @dynamics.RigidBodyHandle?
   mut shape : Shape3D
-  voxel_tri_map : Array[(Int, Int, Int)]?
+  voxel_tri_map : Array[(Int32, Int32, Int32)]?
   mut enabled : Bool
   sensor : Bool
   mut surface_velocity : @core.Vec3
   mut one_way_offset : Float?
-  mut one_way_direction : Int
+  mut one_way_direction : Int32
   mut active_collision_types : ActiveCollisionTypes
   mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
@@ -353,7 +353,7 @@ pub fn Collider3D::friction(Self) -> Float
 pub fn Collider3D::friction_combine_rule(Self) -> @dynamics.CoefficientCombineRule
 pub fn Collider3D::is_sensor(Self) -> Bool
 pub fn Collider3D::local_position(Self) -> @core.Isometry3
-pub fn Collider3D::one_way(Self) -> (Float, Int)?
+pub fn Collider3D::one_way(Self) -> (Float, Int32)?
 pub fn Collider3D::parent(Self) -> @dynamics.RigidBodyHandle?
 pub fn Collider3D::position(Self) -> @core.Isometry3
 pub fn Collider3D::restitution(Self) -> Float
@@ -377,14 +377,14 @@ pub fn Collider3D::set_restitution_combine_rule(Self, @dynamics.CoefficientCombi
 pub fn Collider3D::set_shape(Self, Shape3D) -> Unit
 pub fn Collider3D::set_solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn Collider3D::set_surface_velocity(Self, @core.Vec3) -> Unit
-pub fn Collider3D::set_user_data(Self, Int) -> Self
+pub fn Collider3D::set_user_data(Self, Int32) -> Self
 pub fn Collider3D::set_user_data128(Self, @core.UserData128) -> Self
 pub fn Collider3D::shape(Self) -> Shape3D
 pub fn Collider3D::solver_groups(Self) -> @dynamics.InteractionGroups
 pub fn Collider3D::surface_velocity(Self) -> @core.Vec3
-pub fn Collider3D::user_data(Self) -> Int
+pub fn Collider3D::user_data(Self) -> Int32
 pub fn Collider3D::user_data128(Self) -> @core.UserData128
-pub fn Collider3D::voxel_key_for_triangle(Self, Int) -> (Int, Int, Int)?
+pub fn Collider3D::voxel_key_for_triangle(Self, Int32) -> (Int32, Int32, Int32)?
 
 pub struct ColliderBuilder {
   shape : Shape
@@ -419,8 +419,8 @@ pub fn ColliderBuilder::collision_groups(Self, @dynamics.InteractionGroups) -> S
 pub fn ColliderBuilder::compound(Array[(@core.Isometry2, Shape)]) -> Self
 pub fn ColliderBuilder::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder::contact_skin(Self, Float) -> Self
-pub fn ColliderBuilder::converted_trimesh(Array[@core.Vec2], Array[(Int, Int, Int)], MeshConverter) -> Result[Self, MeshConverterError]
-pub fn ColliderBuilder::convex_decomposition_with_params(Array[@core.Vec2], Array[(Int, Int)], VHACDParameters) -> Self
+pub fn ColliderBuilder::converted_trimesh(Array[@core.Vec2], Array[(Int32, Int32, Int32)], MeshConverter) -> Result[Self, MeshConverterError]
+pub fn ColliderBuilder::convex_decomposition_with_params(Array[@core.Vec2], Array[(Int32, Int32)], VHACDParameters) -> Self
 pub fn ColliderBuilder::convex_hull(Array[@core.Vec2]) -> Self?
 pub fn ColliderBuilder::convex_polyline(Array[@core.Vec2]) -> Self?
 pub fn ColliderBuilder::cuboid(Float, Float) -> Self
@@ -433,11 +433,11 @@ pub fn ColliderBuilder::friction(Self, Float) -> Self
 pub fn ColliderBuilder::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::halfspace(@core.Vec2) -> Self
 pub fn ColliderBuilder::heightfield(Array[Float], @core.Vec2) -> Self
-pub fn ColliderBuilder::polyline(Array[@core.Vec2], Array[(Int, Int)]?) -> Self
+pub fn ColliderBuilder::polyline(Array[@core.Vec2], Array[(Int32, Int32)]?) -> Self
 pub fn ColliderBuilder::restitution(Self, Float) -> Self
 pub fn ColliderBuilder::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder::rotation(Self, Float) -> Self
-pub fn ColliderBuilder::round_convex_decomposition_with_params(Array[@core.Vec2], Array[(Int, Int)], VHACDParameters, Float) -> Self
+pub fn ColliderBuilder::round_convex_decomposition_with_params(Array[@core.Vec2], Array[(Int32, Int32)], VHACDParameters, Float) -> Self
 pub fn ColliderBuilder::round_convex_hull(Array[@core.Vec2], Float) -> Self?
 pub fn ColliderBuilder::round_convex_polyline(Array[@core.Vec2], Float) -> Self?
 pub fn ColliderBuilder::round_cuboid(Float, Float, Float) -> Self
@@ -447,12 +447,12 @@ pub fn ColliderBuilder::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder::translation(Self, @core.Vec2) -> Self
 pub fn ColliderBuilder::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
-pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
-pub fn ColliderBuilder::trimesh_with_flags(Array[@core.Vec2], Array[(Int, Int, Int)], TriMeshFlags) -> Self?
-pub fn ColliderBuilder::user_data(Self, Int) -> Self
+pub fn ColliderBuilder::trimesh(Array[@core.Vec2], Array[(Int32, Int32, Int32)]) -> Self?
+pub fn ColliderBuilder::trimesh_with_flags(Array[@core.Vec2], Array[(Int32, Int32, Int32)], TriMeshFlags) -> Self?
+pub fn ColliderBuilder::user_data(Self, Int32) -> Self
 pub fn ColliderBuilder::user_data128(Self, @core.UserData128) -> Self
-pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
-pub fn ColliderBuilder::voxels(@core.Vec2, Array[(Int, Int)]) -> Self
+pub fn ColliderBuilder::voxelized_mesh(Array[@core.Vec2], Array[(Int32, Int32)], Float, FillMode) -> Self
+pub fn ColliderBuilder::voxels(@core.Vec2, Array[(Int32, Int32)]) -> Self
 pub fn ColliderBuilder::voxels_from_points(@core.Vec2, Array[@core.Vec2]) -> Self
 
 #alias(ColliderBuilder3)
@@ -462,12 +462,12 @@ pub struct ColliderBuilder3D {
   mut local_position : @core.Isometry3
   parent : @dynamics.RigidBodyHandle?
   shape : Shape3D
-  voxel_tri_map : Array[(Int, Int, Int)]?
+  voxel_tri_map : Array[(Int32, Int32, Int32)]?
   mut enabled : Bool
   mut sensor : Bool
   mut surface_velocity : @core.Vec3
   mut one_way_offset : Float?
-  mut one_way_direction : Int
+  mut one_way_direction : Int32
   mut active_collision_types : ActiveCollisionTypes
   mut active_hooks : ActiveHooks
   mut active_events : ActiveEvents
@@ -494,9 +494,9 @@ pub fn ColliderBuilder3D::compound(Array[(@core.Isometry3, Self)]) -> Self?
 pub fn ColliderBuilder3D::cone(Float, Float) -> Self
 pub fn ColliderBuilder3D::contact_force_event_threshold(Self, Float) -> Self
 pub fn ColliderBuilder3D::contact_skin(Self, Float) -> Self
-pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3D::convex_decomposition(Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> Self?
 pub fn ColliderBuilder3D::convex_hull(Array[@core.Vec3]) -> Self?
-pub fn ColliderBuilder3D::convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
+pub fn ColliderBuilder3D::convex_mesh(Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> Self?
 pub fn ColliderBuilder3D::cuboid(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::cylinder(Float, Float) -> Self
 pub fn ColliderBuilder3D::default_density() -> Float
@@ -507,8 +507,8 @@ pub fn ColliderBuilder3D::enabled(Self, Bool) -> Self
 pub fn ColliderBuilder3D::friction(Self, Float) -> Self
 pub fn ColliderBuilder3D::friction_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder3D::halfspace(@core.Vec3) -> Self
-pub fn ColliderBuilder3D::heightfield(Array[Float], Int, Int, @core.Vec3) -> Self?
-pub fn ColliderBuilder3D::heightfield_with_flags(Array[Float], Int, Int, @core.Vec3, Int) -> Self?
+pub fn ColliderBuilder3D::heightfield(Array[Float], Int32, Int32, @core.Vec3) -> Self?
+pub fn ColliderBuilder3D::heightfield_with_flags(Array[Float], Int32, Int32, @core.Vec3, Int32) -> Self?
 pub fn ColliderBuilder3D::local_position(Self, @core.Isometry3) -> Self
 pub fn ColliderBuilder3D::one_way_above(Self, Float) -> Self
 pub fn ColliderBuilder3D::one_way_below(Self, Float) -> Self
@@ -517,30 +517,30 @@ pub fn ColliderBuilder3D::restitution(Self, Float) -> Self
 pub fn ColliderBuilder3D::restitution_combine_rule(Self, @dynamics.CoefficientCombineRule) -> Self
 pub fn ColliderBuilder3D::rotation(Self, @core.Quat) -> Self
 pub fn ColliderBuilder3D::round_cone(Float, Float, Float) -> Self
-pub fn ColliderBuilder3D::round_convex_decomposition(Array[@core.Vec3], Array[(Int, Int, Int)], Float) -> Self?
+pub fn ColliderBuilder3D::round_convex_decomposition(Array[@core.Vec3], Array[(Int32, Int32, Int32)], Float) -> Self?
 pub fn ColliderBuilder3D::round_convex_hull(Array[@core.Vec3], Float) -> Self?
-pub fn ColliderBuilder3D::round_convex_mesh(Array[@core.Vec3], Array[(Int, Int, Int)], Float) -> Self?
+pub fn ColliderBuilder3D::round_convex_mesh(Array[@core.Vec3], Array[(Int32, Int32, Int32)], Float) -> Self?
 pub fn ColliderBuilder3D::round_cylinder(Float, Float, Float) -> Self
 pub fn ColliderBuilder3D::sensor(Self, Bool) -> Self
 pub fn ColliderBuilder3D::solver_groups(Self, @dynamics.InteractionGroups) -> Self
 pub fn ColliderBuilder3D::surface_velocity(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::translation(Self, @core.Vec3) -> Self
 pub fn ColliderBuilder3D::triangle(@core.Vec3, @core.Vec3, @core.Vec3) -> Self
-pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int, Int, Int)]) -> Self?
-pub fn ColliderBuilder3D::user_data(Self, Int) -> Self
+pub fn ColliderBuilder3D::trimesh(Array[@core.Vec3], Array[(Int32, Int32, Int32)]) -> Self?
+pub fn ColliderBuilder3D::user_data(Self, Int32) -> Self
 pub fn ColliderBuilder3D::user_data128(Self, @core.UserData128) -> Self
 pub fn ColliderBuilder3D::voxels_from_points(@core.Vec3, Array[@core.Vec3]) -> Self?
 
 pub struct ColliderChanges {
-  bits : Int
+  bits : Int32
 }
 pub fn ColliderChanges::all() -> Self
-pub fn ColliderChanges::contains(Self, Int) -> Bool
+pub fn ColliderChanges::contains(Self, Int32) -> Bool
 pub fn ColliderChanges::empty() -> Self
-pub fn ColliderChanges::insert(Self, Int) -> Self
+pub fn ColliderChanges::insert(Self, Int32) -> Self
 pub fn ColliderChanges::needs_broad_phase_update(Self) -> Bool
 pub fn ColliderChanges::needs_narrow_phase_update(Self) -> Bool
-pub fn ColliderChanges::remove(Self, Int) -> Self
+pub fn ColliderChanges::remove(Self, Int32) -> Self
 
 pub(all) enum ColliderEnabled {
   Enabled
@@ -558,21 +558,21 @@ pub struct ColliderFlags {
 pub fn ColliderFlags::ColliderFlags(@dynamics.InteractionGroups, @dynamics.InteractionGroups, ActiveCollisionTypes, ActiveHooks, ActiveEvents) -> Self
 
 pub struct ColliderHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 pub fn ColliderHandle::equals(Self, Self) -> Bool
-pub fn ColliderHandle::from_raw_parts(Int, Int) -> Self
-pub fn ColliderHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn ColliderHandle::from_raw_parts(Int32, Int32) -> Self
+pub fn ColliderHandle::into_raw_parts(Self) -> (Int32, Int32)
 pub fn ColliderHandle::invalid() -> Self
 
 pub struct ColliderHandle3D {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 pub fn ColliderHandle3D::equals(Self, Self) -> Bool
-pub fn ColliderHandle3D::from_raw_parts(Int, Int) -> Self
-pub fn ColliderHandle3D::into_raw_parts(Self) -> (Int, Int)
+pub fn ColliderHandle3D::from_raw_parts(Int32, Int32) -> Self
+pub fn ColliderHandle3D::into_raw_parts(Self) -> (Int32, Int32)
 pub fn ColliderHandle3D::invalid() -> Self
 
 pub(all) enum ColliderMassProps {
@@ -620,8 +620,8 @@ pub fn ColliderPosition::ColliderPosition(@core.Isometry2) -> Self
 
 pub struct ColliderSet {
   colliders : Array[Collider?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
   modified_colliders : Array[ColliderHandle]
   mut removed_colliders : Array[ColliderHandle]
 }
@@ -640,7 +640,7 @@ pub fn ColliderSet::invalid_handle() -> ColliderHandle
 pub fn ColliderSet::is_empty(Self) -> Bool
 pub fn ColliderSet::iter_enabled(Self) -> Array[(ColliderHandle, Collider)]
 pub fn ColliderSet::iter_enabled_mut(Self) -> Array[(ColliderHandle, Collider)]
-pub fn ColliderSet::len(Self) -> Int
+pub fn ColliderSet::len(Self) -> Int32
 pub fn ColliderSet::remove(Self, ColliderHandle, @dynamics.IslandManager, @dynamics.RigidBodySet, Bool) -> Unit
 pub fn ColliderSet::serialize(Self) -> String
 pub fn ColliderSet::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet) -> Unit
@@ -658,7 +658,7 @@ pub fn ColliderSet3::colliders_with_parent(Self, @dynamics.RigidBodyHandle) -> A
 pub fn ColliderSet3::get(Self, ColliderHandle) -> Collider?
 pub fn ColliderSet3::insert(Self, Collider) -> ColliderHandle
 pub fn ColliderSet3::insert_with_parent(Self, Collider, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3) -> ColliderHandle
-pub fn ColliderSet3::len(Self) -> Int
+pub fn ColliderSet3::len(Self) -> Int32
 pub fn ColliderSet3::remove(Self, ColliderHandle, @dynamics.IslandManager3, @dynamics.RigidBodySet3, Bool) -> Unit
 pub fn ColliderSet3::set_parent(Self, ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3) -> Unit
 pub fn ColliderSet3::set_parent_enabled(Self, @dynamics.RigidBodyHandle, Bool) -> Unit
@@ -666,8 +666,8 @@ pub fn ColliderSet3::take_modified(Self) -> Array[ColliderHandle]
 
 pub struct ColliderSet3D {
   colliders : Array[Collider3D?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
 }
 pub fn ColliderSet3D::ColliderSet3D() -> Self
 pub fn ColliderSet3D::all_handles(Self) -> Array[ColliderHandle3D]
@@ -675,7 +675,7 @@ pub fn ColliderSet3D::get(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::get_mut(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::insert(Self, Collider3D) -> ColliderHandle3D
 pub fn ColliderSet3D::insert_with_parent(Self, Collider3D, @dynamics.RigidBodyHandle, @dynamics.RigidBodySet3D) -> ColliderHandle3D
-pub fn ColliderSet3D::len(Self) -> Int
+pub fn ColliderSet3D::len(Self) -> Int32
 pub fn ColliderSet3D::remove(Self, ColliderHandle3D) -> Collider3D?
 pub fn ColliderSet3D::remove_attached_to(Self, @dynamics.RigidBodyHandle) -> Array[ColliderHandle3D]
 pub fn ColliderSet3D::set_parent(Self, ColliderHandle3D, @dynamics.RigidBodyHandle?, @dynamics.RigidBodySet3D) -> Unit
@@ -710,7 +710,7 @@ pub fn CollisionEvent3D::started(Self) -> Bool
 pub fn CollisionEvent3D::stopped(Self) -> Bool
 
 pub struct CollisionEventFlags {
-  mut bits : Int
+  mut bits : Int32
 }
 pub fn CollisionEventFlags::contains(Self, Self) -> Bool
 pub fn CollisionEventFlags::empty() -> Self
@@ -773,10 +773,10 @@ pub fn ContactManifold::points(Self) -> Array[ContactManifoldPoint]
 pub struct ContactManifoldData {
   solver_flags : SolverFlags
   solver_contacts : Array[SolverContactGeneric]
-  relative_dominance : Int
+  relative_dominance : Int32
 }
 pub fn ContactManifoldData::default() -> Self
-pub fn ContactManifoldData::num_active_contacts(Self) -> Int
+pub fn ContactManifoldData::num_active_contacts(Self) -> Int32
 
 #alias(Contact)
 pub struct ContactManifoldPoint {
@@ -800,7 +800,7 @@ pub struct ContactPair {
 }
 pub fn ContactPair::find_deepest_contact(Self) -> (ContactManifold, ContactManifoldPoint)?
 pub fn ContactPair::has_any_active_contact(Self) -> Bool
-pub fn ContactPair::manifold_count(Self) -> Int
+pub fn ContactPair::manifold_count(Self) -> Int32
 pub fn ContactPair::manifolds(Self) -> Array[ContactManifold]
 pub fn ContactPair::max_impulse(Self) -> (Float, @core.Vec2)
 pub fn ContactPair::total_impulse(Self) -> @core.Vec2
@@ -811,9 +811,9 @@ pub struct ContactPair3D {
   impulses : Array[Float]
 }
 pub fn ContactPair3D::manifolds(Self) -> Array[ContactPoint3D]
-pub fn ContactPair3D::manifolds_len(Self) -> Int
+pub fn ContactPair3D::manifolds_len(Self) -> Int32
 pub fn ContactPair3D::max_impulse(Self) -> (Float, @core.Vec3)
-pub fn ContactPair3D::set_normal_impulse_at(Self, Int, Float) -> Unit
+pub fn ContactPair3D::set_normal_impulse_at(Self, Int32, Float) -> Unit
 pub fn ContactPair3D::total_impulse(Self) -> @core.Vec3
 pub fn ContactPair3D::total_impulse_magnitude(Self) -> Float
 
@@ -826,9 +826,9 @@ pub struct ContactPoint3D {
 
 pub(all) enum FeatureId {
   Unknown
-  Vertex(Int)
-  Edge(Int)
-  Face(Int)
+  Vertex(Int32)
+  Edge(Int32)
+  Face(Int32)
 }
 
 pub(all) enum FillMode {
@@ -849,7 +849,7 @@ pub struct InteractionGraph[T] {
   interactions : Array[(ColliderHandle, ColliderHandle, T)]
 }
 pub fn[T] InteractionGraph::InteractionGraph() -> Self[T]
-pub fn[T] InteractionGraph::index_interaction(Self[T], ColliderHandle, ColliderHandle) -> Int?
+pub fn[T] InteractionGraph::index_interaction(Self[T], ColliderHandle, ColliderHandle) -> Int32?
 pub fn[T] InteractionGraph::interaction_pair(Self[T], ColliderHandle, ColliderHandle) -> T?
 pub fn[T] InteractionGraph::interaction_pair_mut(Self[T], ColliderHandle, ColliderHandle) -> T?
 pub fn[T] InteractionGraph::interactions(Self[T]) -> Array[(ColliderHandle, ColliderHandle, T)]
@@ -903,8 +903,8 @@ pub(all) enum MeshConverter {
   ConvexDecompositionWithParams(VHACDParameters)
 }
 pub fn MeshConverter::aabb() -> Self
-pub fn MeshConverter::apply(Self, Array[@core.Vec2], Array[(Int, Int, Int)]) -> Result[(SharedShape, @core.Isometry2), MeshConverterError]
-pub fn MeshConverter::convert(Self, Array[@core.Vec2], Array[(Int, Int, Int)]) -> Result[(SharedShape, @core.Isometry2), MeshConverterError]
+pub fn MeshConverter::apply(Self, Array[@core.Vec2], Array[(Int32, Int32, Int32)]) -> Result[(SharedShape, @core.Isometry2), MeshConverterError]
+pub fn MeshConverter::convert(Self, Array[@core.Vec2], Array[(Int32, Int32, Int32)]) -> Result[(SharedShape, @core.Isometry2), MeshConverterError]
 pub fn MeshConverter::convex_hull() -> Self
 pub fn MeshConverter::obb() -> Self
 pub fn MeshConverter::trimesh() -> Self
@@ -925,7 +925,7 @@ pub struct NarrowPhase {
 pub fn NarrowPhase::NarrowPhase() -> Self
 pub fn NarrowPhase::contact_graph(Self) -> InteractionGraph[ContactPair]
 pub fn NarrowPhase::contact_pair(Self, ColliderHandle, ColliderHandle) -> ContactPair?
-pub fn NarrowPhase::contact_pair_at_index(Self, Int) -> (ColliderHandle, ColliderHandle, ContactPair)?
+pub fn NarrowPhase::contact_pair_at_index(Self, Int32) -> (ColliderHandle, ColliderHandle, ContactPair)?
 pub fn NarrowPhase::contact_pair_unknown_gen(Self, ColliderHandle, ColliderHandle) -> ContactPair?
 pub fn NarrowPhase::contact_pairs(Self) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
 pub fn NarrowPhase::contact_pairs_with(Self, ColliderHandle) -> Array[(ColliderHandle, ColliderHandle, ContactPair)]
@@ -1028,11 +1028,11 @@ pub fn QueryFilter3DReal::only_kinematic() -> Self
 pub fn QueryFilter3DReal::predicate(Self, (ColliderHandle3D, Collider3D) -> Bool) -> Self
 
 pub struct QueryFilterFlags {
-  mut bits : Int
+  mut bits : Int32
 }
-pub fn QueryFilterFlags::QueryFilterFlags(Int) -> Self
+pub fn QueryFilterFlags::QueryFilterFlags(Int32) -> Self
 pub fn QueryFilterFlags::complement(Self) -> Self
-pub fn QueryFilterFlags::contains(Self, Int) -> Bool
+pub fn QueryFilterFlags::contains(Self, Int32) -> Bool
 pub fn QueryFilterFlags::difference(Self, Self) -> Self
 pub fn QueryFilterFlags::empty() -> Self
 pub fn QueryFilterFlags::exclude_dynamic() -> Self
@@ -1040,11 +1040,11 @@ pub fn QueryFilterFlags::exclude_fixed() -> Self
 pub fn QueryFilterFlags::exclude_kinematic() -> Self
 pub fn QueryFilterFlags::exclude_sensors() -> Self
 pub fn QueryFilterFlags::exclude_solids() -> Self
-pub fn QueryFilterFlags::from_bits(Int) -> Self?
-pub fn QueryFilterFlags::from_bits_retain(Int) -> Self
-pub fn QueryFilterFlags::from_bits_truncate(Int) -> Self
+pub fn QueryFilterFlags::from_bits(Int32) -> Self?
+pub fn QueryFilterFlags::from_bits_retain(Int32) -> Self
+pub fn QueryFilterFlags::from_bits_truncate(Int32) -> Self
 pub fn QueryFilterFlags::from_name(String) -> Self?
-pub fn QueryFilterFlags::insert(Self, Int) -> Self
+pub fn QueryFilterFlags::insert(Self, Int32) -> Self
 pub fn QueryFilterFlags::is_all(Self) -> Bool
 pub fn QueryFilterFlags::iter_names(Self) -> Array[String]
 pub fn QueryFilterFlags::only_dynamic() -> Self
@@ -1086,7 +1086,7 @@ pub fn QueryPipeline3DReal::QueryPipeline3DReal(QueryFilter3DReal, @dynamics.Rig
 pub fn QueryPipeline3DReal::cast_ray(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, Float)?
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3)?
 pub fn QueryPipeline3DReal::cast_ray_and_get_normal_and_feature(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3Feature)?
-pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3, (Int, Int, Int))?
+pub fn QueryPipeline3DReal::cast_ray_and_get_voxel_key(Self, @dynamics.RigidBodySet3D, ColliderSet3D, Ray3, Float, Bool) -> (ColliderHandle3D, RayIntersection3, (Int32, Int32, Int32))?
 pub fn QueryPipeline3DReal::cast_shape(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Isometry3, @core.Vec3, Shape3D, ShapeCastOptions3) -> (ColliderHandle3D, ShapeCastHit3)?
 pub fn QueryPipeline3DReal::collider(Self, ColliderSet3D, ColliderHandle3D) -> Collider3D?
 pub fn QueryPipeline3DReal::intersect_aabb_conservative(Self, @dynamics.RigidBodySet3D, ColliderSet3D, @core.Aabb3) -> Array[ColliderHandle3D]
@@ -1144,9 +1144,9 @@ pub fn RayIntersection3::toi(Self) -> Float
 pub struct RayIntersection3Feature {
   toi : Float
   normal : @core.Vec3
-  feature_id : Int
+  feature_id : Int32
 }
-pub fn RayIntersection3Feature::feature_id(Self) -> Int
+pub fn RayIntersection3Feature::feature_id(Self) -> Int32
 pub fn RayIntersection3Feature::normal(Self) -> @core.Vec3
 pub fn RayIntersection3Feature::toi(Self) -> Float
 
@@ -1157,14 +1157,14 @@ pub(all) enum Shape {
   CapsuleX(Float, Float)
   CapsuleY(Float, Float)
   Segment(@core.Vec2, @core.Vec2)
-  Polyline(Array[@core.Vec2], Array[(Int, Int)]?)
+  Polyline(Array[@core.Vec2], Array[(Int32, Int32)]?)
   HeightField(Array[Float], @core.Vec2)
   ConvexPolygon(Array[@core.Vec2])
-  TriMesh(Array[@core.Vec2], Array[(Int, Int, Int)])
+  TriMesh(Array[@core.Vec2], Array[(Int32, Int32, Int32)])
   Compound(Array[(@core.Isometry2, Shape)])
   Round(@ref.Ref[Shape], Float)
 }
-pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int, Int)], Float, FillMode) -> Self
+pub fn Shape::voxelized_mesh(Array[@core.Vec2], Array[(Int32, Int32)], Float, FillMode) -> Self
 
 pub(all) enum Shape3D {
   Ball(Float)
@@ -1178,8 +1178,8 @@ pub(all) enum Shape3D {
   ConvexHull(Array[@core.Vec3], Float)
   Compound(Array[(@core.Isometry3, Shape3D)])
   Voxels(Voxels3DReal)
-  Heightfield(Array[@core.Vec3], Array[(Int, Int, Int)], Int, Int, Int)
-  TriMesh(Array[@core.Vec3], Array[(Int, Int, Int)])
+  Heightfield(Array[@core.Vec3], Array[(Int32, Int32, Int32)], Int32, Int32, Int32)
+  TriMesh(Array[@core.Vec3], Array[(Int32, Int32, Int32)])
 }
 pub fn Shape3D::ball(Float) -> Self
 pub fn Shape3D::capsule_y(Float, Float) -> Self
@@ -1242,10 +1242,10 @@ pub fn SharedShape::capsule_x(Float, Float) -> Self
 pub fn SharedShape::capsule_y(Float, Float) -> Self
 pub fn SharedShape::cuboid(Float, Float) -> Self
 pub fn SharedShape::heightfield(Array[Float], @core.Vec2) -> Self
-pub fn SharedShape::polyline(Array[@core.Vec2], Array[(Int, Int)]?) -> Self
+pub fn SharedShape::polyline(Array[@core.Vec2], Array[(Int32, Int32)]?) -> Self
 pub fn SharedShape::segment(@core.Vec2, @core.Vec2) -> Self
 pub fn SharedShape::triangle(@core.Vec2, @core.Vec2, @core.Vec2) -> Self
-pub fn SharedShape::trimesh(Array[@core.Vec2], Array[(Int, Int, Int)]) -> Self?
+pub fn SharedShape::trimesh(Array[@core.Vec2], Array[(Int32, Int32, Int32)]) -> Self?
 
 pub struct SolverContact {
   mut point : @core.Vec2
@@ -1277,12 +1277,12 @@ pub struct SolverContactGeneric {
   warmstart_tangent_impulse : @core.Vec2
   warmstart_twist_impulse : Float
   is_new : Float
-  contact_id : Array[Int]
+  contact_id : Array[Int32]
 }
 pub fn SolverContactGeneric::default() -> Self
 
 pub struct SolverFlags {
-  value : Int
+  value : Int32
 }
 pub fn SolverFlags::compute_impulses() -> Self
 pub fn SolverFlags::contains(Self, Self) -> Bool
@@ -1292,11 +1292,11 @@ pub fn SolverFlags::insert(Self, Self) -> Self
 pub fn SolverFlags::remove(Self, Self) -> Self
 
 pub struct TriMeshFlags {
-  value : Int
+  value : Int32
 }
-pub fn TriMeshFlags::bits(Self) -> Int
+pub fn TriMeshFlags::bits(Self) -> Int32
 pub fn TriMeshFlags::empty() -> Self
-pub fn TriMeshFlags::from_bits(Int) -> Self
+pub fn TriMeshFlags::from_bits(Int32) -> Self
 
 pub struct Triangle {
   a : @core.Vec2
@@ -1310,55 +1310,55 @@ pub struct VHACDParameters {
   concavity : Float
   alpha : Float
   beta : Float
-  resolution : Int
-  plane_downsampling : Int
-  convex_hull_downsampling : Int
+  resolution : Int32
+  plane_downsampling : Int32
+  convex_hull_downsampling : Int32
   fill_mode : FillMode
   convex_hull_approximation : Bool
-  max_convex_hulls : Int
+  max_convex_hulls : Int32
 }
 pub fn VHACDParameters::alpha(Self) -> Float
 pub fn VHACDParameters::beta(Self) -> Float
 pub fn VHACDParameters::concavity(Self) -> Float
 pub fn VHACDParameters::convex_hull_approximation(Self) -> Bool
-pub fn VHACDParameters::convex_hull_downsampling(Self) -> Int
+pub fn VHACDParameters::convex_hull_downsampling(Self) -> Int32
 pub fn VHACDParameters::default() -> Self
 pub fn VHACDParameters::fill_mode(Self) -> FillMode
-pub fn VHACDParameters::max_convex_hulls(Self) -> Int
-pub fn VHACDParameters::plane_downsampling(Self) -> Int
-pub fn VHACDParameters::resolution(Self) -> Int
+pub fn VHACDParameters::max_convex_hulls(Self) -> Int32
+pub fn VHACDParameters::plane_downsampling(Self) -> Int32
+pub fn VHACDParameters::resolution(Self) -> Int32
 pub fn VHACDParameters::set_alpha(Self, Float) -> Self
 pub fn VHACDParameters::set_beta(Self, Float) -> Self
 pub fn VHACDParameters::set_concavity(Self, Float) -> Self
 pub fn VHACDParameters::set_convex_hull_approximation(Self, Bool) -> Self
-pub fn VHACDParameters::set_convex_hull_downsampling(Self, Int) -> Self
+pub fn VHACDParameters::set_convex_hull_downsampling(Self, Int32) -> Self
 pub fn VHACDParameters::set_fill_mode(Self, FillMode) -> Self
-pub fn VHACDParameters::set_max_convex_hulls(Self, Int) -> Self
-pub fn VHACDParameters::set_plane_downsampling(Self, Int) -> Self
-pub fn VHACDParameters::set_resolution(Self, Int) -> Self
+pub fn VHACDParameters::set_max_convex_hulls(Self, Int32) -> Self
+pub fn VHACDParameters::set_plane_downsampling(Self, Int32) -> Self
+pub fn VHACDParameters::set_resolution(Self, Int32) -> Self
 
 pub struct Voxels3DReal {
   voxel_size : @core.Vec3
-  columns : @hashmap.HashMap[(Int, Int), Array[Int]]
-  dense_origin_x : Int
-  dense_origin_z : Int
-  dense_nx : Int
-  dense_nz : Int
-  dense_columns : Array[Array[Int]?]?
-  keys : Array[(Int, Int, Int)]
-  key_to_id : @hashmap.HashMap[(Int, Int, Int), Int]
-  min_key : (Int, Int, Int)
-  max_key : (Int, Int, Int)
+  columns : @hashmap.HashMap[(Int32, Int32), Array[Int32]]
+  dense_origin_x : Int32
+  dense_origin_z : Int32
+  dense_nx : Int32
+  dense_nz : Int32
+  dense_columns : Array[Array[Int32]?]?
+  keys : Array[(Int32, Int32, Int32)]
+  key_to_id : @hashmap.HashMap[(Int32, Int32, Int32), Int32]
+  min_key : (Int32, Int32, Int32)
+  max_key : (Int32, Int32, Int32)
 }
-pub fn Voxels3DReal::column_ys(Self, Int, Int) -> Array[Int]?
+pub fn Voxels3DReal::column_ys(Self, Int32, Int32) -> Array[Int32]?
 
 // Type aliases
-pub type ColliderGraphIndex = Int
+pub type ColliderGraphIndex = Int32
 
 pub type ModifiedColliders = Array[ColliderHandle]
 
-pub type RigidBodyGraphIndex = Int
+pub type RigidBodyGraphIndex = Int32
 
-pub type TemporaryInteractionIndex = Int
+pub type TemporaryInteractionIndex = Int32
 
 // Traits

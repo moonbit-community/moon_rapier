@@ -80,16 +80,16 @@ pub struct ContactModificationContext {
   manifold : @collision.ContactManifold
   solver_contacts : Array[@collision.SolverContact]
   mut normal : @core.Vec2
-  mut user_data : Int
+  mut user_data : Int32
 }
-pub fn ContactModificationContext::ContactModificationContext(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @collision.ContactManifold, Array[@collision.SolverContact], @core.Vec2, Int) -> Self
+pub fn ContactModificationContext::ContactModificationContext(@dynamics.RigidBodySet, @collision.ColliderSet, @collision.ColliderHandle, @collision.ColliderHandle, @dynamics.RigidBodyHandle?, @dynamics.RigidBodyHandle?, @collision.ContactManifold, Array[@collision.SolverContact], @core.Vec2, Int32) -> Self
 pub fn ContactModificationContext::normal(Self) -> @core.Vec2
 pub fn ContactModificationContext::set_normal(Self, @core.Vec2) -> Unit
-pub fn ContactModificationContext::set_user_data(Self, Int) -> Unit
+pub fn ContactModificationContext::set_user_data(Self, Int32) -> Unit
 pub fn ContactModificationContext::update_as_oneway_platform(Self, @core.Vec2, Float) -> Unit
 
 pub struct ContactSolverCache3D {
-  entries : @hashmap.HashMap[(Int, Int, Int, Int), Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]]
+  entries : @hashmap.HashMap[(Int32, Int32, Int32, Int32), Array[(@core.Vec3, @core.Vec3, ContactImpulse3D)]]
 }
 pub fn ContactSolverCache3D::ContactSolverCache3D() -> Self
 pub fn ContactSolverCache3D::clear(Self) -> Unit
@@ -121,7 +121,7 @@ pub struct DebugRenderLine {
 }
 
 pub struct DebugRenderMode {
-  mut bits : Int
+  mut bits : Int32
 }
 pub fn DebugRenderMode::all() -> Self
 pub fn DebugRenderMode::collider_aabbs() -> Self
@@ -161,8 +161,8 @@ pub fn DebugRenderPipeline::render_joints(Self, DebugRenderBackend, @dynamics.Ri
 pub fn DebugRenderPipeline::render_rigid_bodies(Self, DebugRenderBackend, @dynamics.RigidBodySet) -> Unit
 
 pub struct DebugRenderStyle {
-  subdivisions : Int
-  border_subdivisions : Int
+  subdivisions : Int32
+  border_subdivisions : Int32
   collider_dynamic_color : DebugColor
   collider_fixed_color : DebugColor
   collider_kinematic_color : DebugColor
@@ -320,10 +320,10 @@ pub struct SolverBodies {
   poses : Array[SolverPose]
 }
 pub fn SolverBodies::clear(Self) -> Unit
-pub fn SolverBodies::copy_from(Self, Int, @dynamics.RigidBody) -> Unit
+pub fn SolverBodies::copy_from(Self, Int32, @dynamics.RigidBody) -> Unit
 pub fn SolverBodies::default() -> Self
-pub fn SolverBodies::len(Self) -> Int
-pub fn SolverBodies::resize(Self, Int) -> Unit
+pub fn SolverBodies::len(Self) -> Int32
+pub fn SolverBodies::resize(Self, Int32) -> Unit
 pub fn SolverBodies::writeback_vels(Self, @dynamics.RigidBodySet) -> Unit
 
 pub struct SolverPose {

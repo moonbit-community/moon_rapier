@@ -62,13 +62,13 @@ pub fn CharacterLength::relative(Float) -> Self
 pub struct DynamicRayCastVehicleController {
   wheels : Array[Wheel]
   chassis : @dynamics.RigidBodyHandle
-  index_up_axis : Int
-  index_forward_axis : Int
+  index_up_axis : Int32
+  index_forward_axis : Int32
 }
 pub fn DynamicRayCastVehicleController::DynamicRayCastVehicleController(@dynamics.RigidBodyHandle) -> Self
 pub fn DynamicRayCastVehicleController::add_wheel(Self, @core.Vec2, @core.Vec2, Float, Float, WheelTuning) -> Unit
-pub fn DynamicRayCastVehicleController::set_brake(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController::set_brake(Self, Int32, Float) -> Unit
+pub fn DynamicRayCastVehicleController::set_engine_force(Self, Int32, Float) -> Unit
 pub fn DynamicRayCastVehicleController::update_vehicle(Self, Float, @collision.QueryPipelineMut, @dynamics.RigidBodySet, @collision.ColliderSet) -> Unit
 
 pub struct DynamicRayCastVehicleController3 {
@@ -77,14 +77,14 @@ pub struct DynamicRayCastVehicleController3 {
   axle_ws : Array[@core.Vec3]
   mut current_vehicle_speed : Float
   chassis : @dynamics.RigidBodyHandle
-  index_up_axis : Int
-  index_forward_axis : Int
+  index_up_axis : Int32
+  index_forward_axis : Int32
 }
 pub fn DynamicRayCastVehicleController3::DynamicRayCastVehicleController3(@dynamics.RigidBodyHandle) -> Self
-pub fn DynamicRayCastVehicleController3::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
-pub fn DynamicRayCastVehicleController3::set_brake(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3::set_engine_force(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int32
+pub fn DynamicRayCastVehicleController3::set_brake(Self, Int32, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::set_engine_force(Self, Int32, Float) -> Unit
+pub fn DynamicRayCastVehicleController3::set_steering_value(Self, Int32, Float) -> Unit
 pub fn DynamicRayCastVehicleController3::update_vehicle(Self, Float, @collision.QueryPipelineMut, @dynamics.RigidBodySet, @collision.ColliderSet) -> Unit
 pub fn DynamicRayCastVehicleController3::wheels(Self) -> Array[Wheel3]
 
@@ -94,14 +94,14 @@ pub struct DynamicRayCastVehicleController3DReal {
   axle_ws : Array[@core.Vec3]
   mut current_vehicle_speed : Float
   chassis : @dynamics.RigidBodyHandle
-  index_up_axis : Int
-  index_forward_axis : Int
+  index_up_axis : Int32
+  index_forward_axis : Int32
 }
 pub fn DynamicRayCastVehicleController3DReal::DynamicRayCastVehicleController3DReal(@dynamics.RigidBodyHandle) -> Self
-pub fn DynamicRayCastVehicleController3DReal::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int
-pub fn DynamicRayCastVehicleController3DReal::set_brake(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int, Float) -> Unit
-pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::add_wheel(Self, @core.Vec3, @core.Vec3, @core.Vec3, Float, Float, WheelTuning) -> Int32
+pub fn DynamicRayCastVehicleController3DReal::set_brake(Self, Int32, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::set_engine_force(Self, Int32, Float) -> Unit
+pub fn DynamicRayCastVehicleController3DReal::set_steering_value(Self, Int32, Float) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::update_vehicle(Self, Float, @collision.QueryPipelineMut3DReal, @dynamics.RigidBodySet3D, @collision.ColliderSet3D) -> Unit
 pub fn DynamicRayCastVehicleController3DReal::wheels(Self) -> Array[Wheel3DReal]
 pub fn DynamicRayCastVehicleController3DReal::wheels_mut(Self) -> Array[Wheel3DReal]

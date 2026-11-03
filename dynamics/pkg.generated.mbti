@@ -6,23 +6,23 @@ import {
 }
 
 // Values
-pub fn unit_joint_limit_constraint(IntegrationParameters, Multibody, MultibodyLink, (Float, Float), Float, Int, Int, DVector, Array[GenericJointConstraint], Int) -> Unit
+pub fn unit_joint_limit_constraint(IntegrationParameters, Multibody, MultibodyLink, (Float, Float), Float, Int32, Int32, DVector, Array[GenericJointConstraint], Int32) -> Unit
 
-pub fn unit_joint_motor_constraint(IntegrationParameters, Multibody, MultibodyLink, JointMotor, Float, (Float, Float)?, Int, Int, DVector, Array[GenericJointConstraint], Int) -> Unit
+pub fn unit_joint_motor_constraint(IntegrationParameters, Multibody, MultibodyLink, JointMotor, Float, (Float, Float)?, Int32, Int32, DVector, Array[GenericJointConstraint], Int32) -> Unit
 
 // Errors
 
 // Types and methods
 pub struct AxesMask {
-  bits : Int
+  bits : Int32
 }
-pub fn AxesMask::AxesMask(Int) -> Self
+pub fn AxesMask::AxesMask(Int32) -> Self
 pub fn AxesMask::all() -> Self
 pub fn AxesMask::ang_axes() -> Self
 pub fn AxesMask::ang_x() -> Self
 pub fn AxesMask::ang_y() -> Self
 pub fn AxesMask::ang_z() -> Self
-pub fn AxesMask::bits(Self) -> Int
+pub fn AxesMask::bits(Self) -> Int32
 pub fn AxesMask::contains(Self, Self) -> Bool
 pub fn AxesMask::empty() -> Self
 pub fn AxesMask::insert(Self, Self) -> Self
@@ -75,8 +75,8 @@ type DVector
 pub fn DVector::as_array(Self) -> Array[Float]
 pub fn DVector::equals(Self, Self) -> Bool
 pub fn DVector::from_array(Array[Float]) -> Self
-pub fn DVector::from_fn(Int, (Int) -> Float) -> Self
-pub fn DVector::len(Self) -> Int
+pub fn DVector::from_fn(Int32, (Int32) -> Float) -> Self
+pub fn DVector::len(Self) -> Int32
 pub fn DVector::scale_in_place(Self, Float) -> Unit
 
 pub struct FixedJoint {
@@ -126,7 +126,7 @@ pub struct GenericJoint {
   mut softness : SpringCoefficients
   mut contacts_enabled : Bool
   mut enabled : JointEnabled
-  user_data : Int
+  user_data : Int32
 }
 pub fn GenericJoint::GenericJoint(JointAxesMask) -> Self
 pub fn GenericJoint::as_fixed(Self) -> Self?
@@ -238,13 +238,13 @@ pub fn GenericJoint3DRealBuilder::motor_velocity(Self, JointAxis3DReal, Float, F
 pub struct GenericJointConstraint {
   is_rigid_body1 : Bool
   is_rigid_body2 : Bool
-  solver_vel1 : Int
-  solver_vel2 : Int
-  ndofs1 : Int
-  j_id1 : Int
-  ndofs2 : Int
-  j_id2 : Int
-  joint_id : Int
+  solver_vel1 : Int32
+  solver_vel2 : Int32
+  ndofs1 : Int32
+  j_id1 : Int32
+  ndofs2 : Int32
+  j_id2 : Int32
+  joint_id : Int32
   impulse : Float
   impulse_bounds : (Float, Float)
   inv_lhs : Float
@@ -263,11 +263,11 @@ pub struct GenericJointConstraint3DReal {
 }
 
 pub struct Group {
-  value : Int
+  value : Int32
 }
-pub fn Group::Group(Int) -> Self
+pub fn Group::Group(Int32) -> Self
 pub fn Group::all() -> Self
-pub fn Group::bits(Self) -> Int
+pub fn Group::bits(Self) -> Int32
 pub fn Group::equals(Self, Self) -> Bool
 pub fn Group::group_1() -> Self
 pub fn Group::group_10() -> Self
@@ -325,11 +325,11 @@ pub fn ImpulseJointGraph::edges(Self) -> Array[(RigidBodyHandle, RigidBodyHandle
 pub fn ImpulseJointGraph::nodes(Self) -> Array[RigidBodyHandle]
 
 pub struct ImpulseJointHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
-pub fn ImpulseJointHandle::from_raw_parts(Int, Int) -> Self
-pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn ImpulseJointHandle::from_raw_parts(Int32, Int32) -> Self
+pub fn ImpulseJointHandle::into_raw_parts(Self) -> (Int32, Int32)
 pub fn ImpulseJointHandle::invalid() -> Self
 
 type ImpulseJointSet
@@ -340,19 +340,19 @@ pub fn ImpulseJointSet::contains(Self, ImpulseJointHandle) -> Bool
 pub fn ImpulseJointSet::deserialize(String) -> Self
 pub fn ImpulseJointSet::get(Self, ImpulseJointHandle) -> ImpulseJoint?
 pub fn ImpulseJointSet::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
-pub fn ImpulseJointSet::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
-pub fn ImpulseJointSet::get_unknown_gen_mut(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet::get_unknown_gen(Self, Int32) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet::get_unknown_gen_mut(Self, Int32) -> (ImpulseJoint, ImpulseJointHandle)?
 pub fn ImpulseJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
 pub fn ImpulseJointSet::is_empty(Self) -> Bool
 pub fn ImpulseJointSet::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet::joint_graph(Self) -> ImpulseJointGraph
 pub fn ImpulseJointSet::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[(ImpulseJointHandle, ImpulseJoint)]
-pub fn ImpulseJointSet::len(Self) -> Int
+pub fn ImpulseJointSet::len(Self) -> Int32
 pub fn ImpulseJointSet::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
 pub fn ImpulseJointSet::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
-pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
+pub fn ImpulseJointSet::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int32]]) -> Unit
 pub fn ImpulseJointSet::serialize(Self) -> String
 pub fn ImpulseJointSet::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
@@ -368,19 +368,19 @@ pub fn ImpulseJointSet3::attached_joints(Self, RigidBodyHandle) -> Array[(RigidB
 pub fn ImpulseJointSet3::contains(Self, ImpulseJointHandle) -> Bool
 pub fn ImpulseJointSet3::get(Self, ImpulseJointHandle) -> ImpulseJoint?
 pub fn ImpulseJointSet3::get_mut(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
-pub fn ImpulseJointSet3::get_unknown_gen(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
-pub fn ImpulseJointSet3::get_unknown_gen_mut(Self, Int) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet3::get_unknown_gen(Self, Int32) -> (ImpulseJoint, ImpulseJointHandle)?
+pub fn ImpulseJointSet3::get_unknown_gen_mut(Self, Int32) -> (ImpulseJoint, ImpulseJointHandle)?
 pub fn ImpulseJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> ImpulseJointHandle
 pub fn ImpulseJointSet3::is_empty(Self) -> Bool
 pub fn ImpulseJointSet3::iter(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet3::iter_mut(Self) -> Array[(ImpulseJointHandle, ImpulseJoint)]
 pub fn ImpulseJointSet3::joint_graph(Self) -> ImpulseJointGraph
 pub fn ImpulseJointSet3::joints_between(Self, RigidBodyHandle, RigidBodyHandle) -> Array[(ImpulseJointHandle, ImpulseJoint)]
-pub fn ImpulseJointSet3::len(Self) -> Int
+pub fn ImpulseJointSet3::len(Self) -> Int32
 pub fn ImpulseJointSet3::map_attached_joints_mut(Self, RigidBodyHandle, (RigidBodyHandle, RigidBodyHandle, ImpulseJointHandle, ImpulseJoint) -> Unit) -> Unit
 pub fn ImpulseJointSet3::remove(Self, ImpulseJointHandle, Bool) -> ImpulseJoint?
 pub fn ImpulseJointSet3::remove_joints_attached_to_rigid_body(Self, RigidBodyHandle) -> Array[ImpulseJointHandle]
-pub fn ImpulseJointSet3::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int]]) -> Unit
+pub fn ImpulseJointSet3::select_active_interactions(Self, IslandManager, RigidBodySet, Array[Array[Int32]]) -> Unit
 pub fn ImpulseJointSet3::set_enabled(Self, ImpulseJointHandle, Bool) -> Unit
 pub fn ImpulseJointSet3::set_impulses(Self, ImpulseJointHandle, @core.Vec2) -> Unit
 pub fn ImpulseJointSet3::set_solver_impulses(Self, ImpulseJointHandle, @core.Vec2, Float, Float, Float, Float, Float, Float, Float) -> Unit
@@ -390,10 +390,10 @@ pub fn ImpulseJointSet3::take_wake_up(Self) -> Array[RigidBodyHandle]
 type IndexSequence
 pub fn IndexSequence::IndexSequence() -> Self
 pub fn IndexSequence::inv_rearrange_rows(Self, DVector) -> Unit
-pub fn IndexSequence::keep(Self, Int) -> Unit
+pub fn IndexSequence::keep(Self, Int32) -> Unit
 pub fn IndexSequence::rearrange_columns(Self, RowDVector, Bool) -> Unit
 pub fn IndexSequence::rearrange_rows(Self, DVector, Bool) -> Unit
-pub fn IndexSequence::remove(Self, Int) -> Unit
+pub fn IndexSequence::remove(Self, Int32) -> Unit
 pub fn IndexSequence::with_rearranged_rows_mut(Self, DVector, (DVector) -> Unit) -> Unit
 
 pub struct IntegrationParameters {
@@ -405,11 +405,11 @@ pub struct IntegrationParameters {
   mut normalized_allowed_linear_error : Float
   mut normalized_max_corrective_velocity : Float
   mut normalized_prediction_distance : Float
-  mut num_solver_iterations : Int
-  mut num_internal_pgs_iterations : Int
-  mut num_internal_stabilization_iterations : Int
-  mut min_island_size : Int
-  mut max_ccd_substeps : Int
+  mut num_solver_iterations : Int32
+  mut num_internal_pgs_iterations : Int32
+  mut num_internal_stabilization_iterations : Int32
+  mut min_island_size : Int32
+  mut max_ccd_substeps : Int32
   friction_model : FrictionModel
 }
 pub fn IntegrationParameters::IntegrationParameters() -> Self
@@ -422,15 +422,15 @@ pub fn IntegrationParameters::set_contact_softness(Self, SpringCoefficients) -> 
 pub fn IntegrationParameters::set_dt(Self, Float) -> Self
 pub fn IntegrationParameters::set_inv_dt(Self, Float) -> Self
 pub fn IntegrationParameters::set_length_unit(Self, Float) -> Self
-pub fn IntegrationParameters::set_max_ccd_substeps(Self, Int) -> Self
+pub fn IntegrationParameters::set_max_ccd_substeps(Self, Int32) -> Self
 pub fn IntegrationParameters::set_min_ccd_dt(Self, Float) -> Self
-pub fn IntegrationParameters::set_min_island_size(Self, Int) -> Self
+pub fn IntegrationParameters::set_min_island_size(Self, Int32) -> Self
 pub fn IntegrationParameters::set_normalized_allowed_linear_error(Self, Float) -> Self
 pub fn IntegrationParameters::set_normalized_max_corrective_velocity(Self, Float) -> Self
 pub fn IntegrationParameters::set_normalized_prediction_distance(Self, Float) -> Self
-pub fn IntegrationParameters::set_num_internal_pgs_iterations(Self, Int) -> Self
-pub fn IntegrationParameters::set_num_internal_stabilization_iterations(Self, Int) -> Self
-pub fn IntegrationParameters::set_num_solver_iterations(Self, Int) -> Self
+pub fn IntegrationParameters::set_num_internal_pgs_iterations(Self, Int32) -> Self
+pub fn IntegrationParameters::set_num_internal_stabilization_iterations(Self, Int32) -> Self
+pub fn IntegrationParameters::set_num_solver_iterations(Self, Int32) -> Self
 pub fn IntegrationParameters::set_warmstart_coefficient(Self, Float) -> Self
 pub fn IntegrationParameters::with_dt(Self, Float) -> Self
 
@@ -460,7 +460,7 @@ pub(all) enum InteractionTestMode {
 
 pub struct InverseKinematicsOption {
   mut damping : Float
-  mut max_iters : Int
+  mut max_iters : Int32
   mut constrained_axes : JointAxesMask
   mut epsilon_linear : Float
   mut epsilon_angular : Float
@@ -470,7 +470,7 @@ pub fn InverseKinematicsOption::set_constrained_axes(Self, JointAxesMask) -> Sel
 pub fn InverseKinematicsOption::set_damping(Self, Float) -> Self
 pub fn InverseKinematicsOption::set_epsilon_angular(Self, Float) -> Self
 pub fn InverseKinematicsOption::set_epsilon_linear(Self, Float) -> Self
-pub fn InverseKinematicsOption::set_max_iters(Self, Int) -> Self
+pub fn InverseKinematicsOption::set_max_iters(Self, Int32) -> Self
 
 type Island
 
@@ -478,23 +478,23 @@ type Island3D
 
 pub struct IslandManager {
   islands : Array[Island?]
-  awake_islands : Array[Int]
-  free_islands : Array[Int]
+  awake_islands : Array[Int32]
+  free_islands : Array[Int32]
   traversal_candidates : Array[SleepCandidate]
-  mut traversal_timestamp : Int
+  mut traversal_timestamp : Int32
   optimizer : IslandsOptimizer
   stack : Array[RigidBodyHandle]
-  body_island_ids : Array[Int]
-  body_island_generations : Array[Int]
-  body_island_indices : Array[Int]
-  body_state_generations : Array[Int]
+  body_island_ids : Array[Int32]
+  body_island_generations : Array[Int32]
+  body_island_indices : Array[Int32]
+  body_state_generations : Array[Int32]
 }
 pub fn IslandManager::IslandManager() -> Self
 pub fn IslandManager::active_bodies(Self) -> Array[RigidBodyHandle]
-pub fn IslandManager::active_islands(Self) -> Array[Int]
+pub fn IslandManager::active_islands(Self) -> Array[Int32]
 pub fn IslandManager::interaction_started_or_stopped(Self, RigidBodySet, RigidBodyHandle?, RigidBodyHandle?, Bool, Bool) -> Unit
-pub fn IslandManager::island_additional_solver_iterations(Self, Int) -> Int
-pub fn IslandManager::island_bodies(Self, Int) -> Array[RigidBodyHandle]
+pub fn IslandManager::island_additional_solver_iterations(Self, Int32) -> Int32
+pub fn IslandManager::island_bodies(Self, Int32) -> Array[RigidBodyHandle]
 pub fn IslandManager::rigid_body_removed_or_disabled(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::rigid_body_updated(Self, RigidBodyHandle, RigidBodySet) -> Unit
 pub fn IslandManager::update_islands(Self, Float, Float, RigidBodySet, ContactGraph, ImpulseJointSet, MultibodyJointSet) -> Unit
@@ -515,25 +515,25 @@ pub fn IslandManager3::wake_up(Self, RigidBodySet3, RigidBodyHandle, Bool) -> Un
 pub struct IslandManager3D {
   active_bodies : Array[RigidBodyHandle]
   islands : Array[Array[RigidBodyHandle]]
-  island_solver_iterations : Array[Int]
+  island_solver_iterations : Array[Int32]
   island_nodes : Array[Island3D?]
-  awake_island_ids : Array[Int]
-  free_island_ids : Array[Int]
-  body_island_ids : Array[Int]
-  body_island_generations : Array[Int]
-  body_island_indices : Array[Int]
-  body_sleep_state_generations : Array[Int]
-  body_sleep_states : Array[Int]
-  body_traversal_timestamps : Array[Int]
+  awake_island_ids : Array[Int32]
+  free_island_ids : Array[Int32]
+  body_island_ids : Array[Int32]
+  body_island_generations : Array[Int32]
+  body_island_indices : Array[Int32]
+  body_sleep_state_generations : Array[Int32]
+  body_sleep_states : Array[Int32]
+  body_traversal_timestamps : Array[Int32]
   stack : Array[RigidBodyHandle]
   optimizer : IslandsOptimizer3D
-  mut traversal_timestamp : Int
+  mut traversal_timestamp : Int32
 }
 pub fn IslandManager3D::IslandManager3D() -> Self
 pub fn IslandManager3D::active_bodies(Self) -> Array[RigidBodyHandle]
-pub fn IslandManager3D::active_islands(Self) -> Array[Int]
-pub fn IslandManager3D::island_additional_solver_iterations(Self, Int) -> Int
-pub fn IslandManager3D::island_bodies(Self, Int) -> Array[RigidBodyHandle]
+pub fn IslandManager3D::active_islands(Self) -> Array[Int32]
+pub fn IslandManager3D::island_additional_solver_iterations(Self, Int32) -> Int32
+pub fn IslandManager3D::island_bodies(Self, Int32) -> Array[RigidBodyHandle]
 pub fn IslandManager3D::update(Self, RigidBodySet3D, Array[(RigidBodyHandle, RigidBodyHandle)]) -> Unit
 
 type IslandsOptimizer
@@ -541,24 +541,24 @@ type IslandsOptimizer
 type IslandsOptimizer3D
 
 type Jacobian
-pub fn Jacobian::cols(Self) -> Int
+pub fn Jacobian::cols(Self) -> Int32
 pub fn Jacobian::equals(Self, Self) -> Bool
-pub fn Jacobian::spatial_dim() -> Int
-pub fn Jacobian::value_at(Self, Int, Int) -> Float
-pub fn Jacobian::zeros(Int) -> Self
+pub fn Jacobian::spatial_dim() -> Int32
+pub fn Jacobian::value_at(Self, Int32, Int32) -> Float
+pub fn Jacobian::zeros(Int32) -> Self
 
 pub struct Jacobian3 {
-  mut cols_ : Int
+  mut cols_ : Int32
   data : Array[Float]
 }
-pub fn Jacobian3::cols(Self) -> Int
-pub fn Jacobian3::value_at(Self, Int, Int) -> Float
-pub fn Jacobian3::zeros(Int) -> Self
+pub fn Jacobian3::cols(Self) -> Int32
+pub fn Jacobian3::value_at(Self, Int32, Int32) -> Float
+pub fn Jacobian3::zeros(Int32) -> Self
 
 pub struct JointAxesMask {
-  bits : Int
+  bits : Int32
 }
-pub fn JointAxesMask::JointAxesMask(Int) -> Self
+pub fn JointAxesMask::JointAxesMask(Int32) -> Self
 pub fn JointAxesMask::all() -> Self
 pub fn JointAxesMask::all3() -> Self
 pub fn JointAxesMask::ang_axes() -> Self
@@ -566,7 +566,7 @@ pub fn JointAxesMask::ang_axes3() -> Self
 pub fn JointAxesMask::ang_x() -> Self
 pub fn JointAxesMask::ang_y() -> Self
 pub fn JointAxesMask::ang_z() -> Self
-pub fn JointAxesMask::bits(Self) -> Int
+pub fn JointAxesMask::bits(Self) -> Int32
 pub fn JointAxesMask::contains(Self, Self) -> Bool
 pub fn JointAxesMask::empty() -> Self
 pub fn JointAxesMask::free_fixed_axes() -> Self
@@ -592,15 +592,15 @@ pub fn JointAxesMask::locked_spherical_axes() -> Self
 pub fn JointAxesMask::or(Self, Self) -> Self
 
 pub struct JointAxesMask3DReal {
-  bits : Int
+  bits : Int32
 }
-pub fn JointAxesMask3DReal::JointAxesMask3DReal(Int) -> Self
+pub fn JointAxesMask3DReal::JointAxesMask3DReal(Int32) -> Self
 pub fn JointAxesMask3DReal::all() -> Self
 pub fn JointAxesMask3DReal::ang_axes() -> Self
 pub fn JointAxesMask3DReal::ang_x() -> Self
 pub fn JointAxesMask3DReal::ang_y() -> Self
 pub fn JointAxesMask3DReal::ang_z() -> Self
-pub fn JointAxesMask3DReal::bits(Self) -> Int
+pub fn JointAxesMask3DReal::bits(Self) -> Int32
 pub fn JointAxesMask3DReal::contains(Self, Self) -> Bool
 pub fn JointAxesMask3DReal::empty() -> Self
 pub fn JointAxesMask3DReal::free_fixed_axes() -> Self
@@ -643,7 +643,7 @@ pub(all) enum JointEnabled {
 }
 
 pub struct JointHandle3DReal {
-  index : Int
+  index : Int32
 }
 
 pub struct JointLimits {
@@ -729,32 +729,32 @@ pub fn JointSet3DReal::insert_spring(Self, RigidBodyHandle, RigidBodyHandle, @co
 pub fn JointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn JointSet3DReal::set_motor_position(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float, Float) -> Unit
 pub fn JointSet3DReal::set_motor_velocity(Self, JointHandle3DReal, JointAxis3DReal, Float, Float, Float) -> Unit
-pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float, Int) -> Unit
-pub fn JointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Int, Array[Int]?, Int) -> Unit
+pub fn JointSet3DReal::solve(Self, RigidBodySet3D, Float, Int32) -> Unit
+pub fn JointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Int32, Array[Int32]?, Int32) -> Unit
 
 pub struct JointSolverBody {
   im : @core.Vec2
   ii : Float
   world_com : @core.Vec2
-  solver_vel : Int
+  solver_vel : Int32
 }
 pub fn JointSolverBody::invalid() -> Self
 
 pub struct LinkId {
-  value : Int
+  value : Int32
 }
 
 pub(all) enum LinkOrBodyRef {
   Link(MultibodyLinkId)
-  Body(Int)
+  Body(Int32)
   Fixed
 }
 
 pub struct LockedAxes {
-  bits : Int
+  bits : Int32
 }
-pub fn LockedAxes::LockedAxes(Int) -> Self
-pub fn LockedAxes::bits(Self) -> Int
+pub fn LockedAxes::LockedAxes(Int32) -> Self
+pub fn LockedAxes::bits(Self) -> Int32
 pub fn LockedAxes::contains(Self, Self) -> Bool
 pub fn LockedAxes::empty() -> Self
 pub fn LockedAxes::insert(Self, Self) -> Self
@@ -786,7 +786,7 @@ pub fn Multibody::apply_displacements(Self, Array[Float]) -> Unit
 pub fn Multibody::body_jacobian(Self, LinkId) -> Jacobian
 pub fn Multibody::damping_mut(Self) -> DVector
 pub fn Multibody::forward_kinematics(Self, RigidBodySet, Bool) -> Unit
-pub fn Multibody::forward_kinematics_single_branch(Self, RigidBodySet, Array[Int], Array[Float]?, Jacobian?) -> @core.Isometry2
+pub fn Multibody::forward_kinematics_single_branch(Self, RigidBodySet, Array[Int32], Array[Float]?, Jacobian?) -> @core.Isometry2
 pub fn Multibody::forward_kinematics_single_link(Self, RigidBodySet, LinkId, Array[Float]?, Jacobian?) -> @core.Isometry2
 pub fn Multibody::generalized_acceleration(Self) -> DVector
 pub fn Multibody::generalized_velocity(Self) -> DVector
@@ -796,12 +796,12 @@ pub fn Multibody::inverse_kinematics(Self, RigidBodySet, LinkId, InverseKinemati
 pub fn Multibody::inverse_kinematics_delta(Self, LinkId, Float, Float, Float, Float, DVector) -> Unit
 pub fn Multibody::inverse_kinematics_delta_with_jacobian(Jacobian, Float, Float, Float, Float, DVector) -> Unit
 pub fn Multibody::joint_velocity(Self, MultibodyLink) -> DVector
-pub fn Multibody::kinematic_branch(Self, Int) -> Array[Int]
+pub fn Multibody::kinematic_branch(Self, Int32) -> Array[Int32]
 pub fn Multibody::link(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::link_mut(Self, LinkId) -> MultibodyLink?
 pub fn Multibody::links_mut(Self) -> Array[MultibodyLink]
-pub fn Multibody::ndofs(Self) -> Int
-pub fn Multibody::num_links(Self) -> Int
+pub fn Multibody::ndofs(Self) -> Int32
+pub fn Multibody::num_links(Self) -> Int32
 pub fn Multibody::root(Self) -> MultibodyLink?
 pub fn Multibody::root_mut(Self) -> MultibodyLink?
 pub fn Multibody::self_contacts_enabled(Self) -> Bool
@@ -817,7 +817,7 @@ pub fn Multibody3::forward_kinematics(Self, RigidBodySet3, Bool) -> Unit
 pub fn Multibody3::forward_kinematics_single_link(Self, RigidBodySet3, LinkId, Array[Float]?, Jacobian3?) -> @core.Isometry3
 pub fn Multibody3::inverse_kinematics(Self, RigidBodySet3, LinkId, InverseKinematicsOption, @core.Isometry3, (MultibodyLink) -> Bool, DVector) -> Unit
 pub fn Multibody3::link_pose(Self, LinkId) -> @core.Isometry3?
-pub fn Multibody3::ndofs(Self) -> Int
+pub fn Multibody3::ndofs(Self) -> Int32
 
 pub struct Multibody3DReal {
   inner : Multibody
@@ -828,7 +828,7 @@ pub fn Multibody3DReal::forward_kinematics(Self, RigidBodySet3D, Bool) -> Unit
 pub fn Multibody3DReal::forward_kinematics_single_link(Self, RigidBodySet3D, LinkId, Array[Float]?, Jacobian3?) -> @core.Isometry3
 pub fn Multibody3DReal::inverse_kinematics(Self, RigidBodySet3D, LinkId, InverseKinematicsOption, @core.Isometry3, (MultibodyLink) -> Bool, DVector) -> Unit
 pub fn Multibody3DReal::link_pose(Self, LinkId) -> @core.Isometry3?
-pub fn Multibody3DReal::ndofs(Self) -> Int
+pub fn Multibody3DReal::ndofs(Self) -> Int32
 
 type MultibodyIndex
 pub fn MultibodyIndex::invalid() -> Self
@@ -855,12 +855,12 @@ pub fn MultibodyJoint::body_to_parent(Self) -> @core.Isometry2
 pub fn MultibodyJoint::default_damping(Self, DVector) -> Unit
 pub fn MultibodyJoint::jacobian(Self, @core.Rot2, Jacobian) -> Unit
 pub fn MultibodyJoint::jacobian_mul_coordinates(Self, Array[Float]) -> RigidBodyVelocity
-pub fn MultibodyJoint::num_velocity_constraints(Self) -> Int
-pub fn MultibodyJoint::velocity_constraints(Self, IntegrationParameters, Multibody, MultibodyLink, Int, DVector, Array[GenericJointConstraint]) -> Int
+pub fn MultibodyJoint::num_velocity_constraints(Self) -> Int32
+pub fn MultibodyJoint::velocity_constraints(Self, IntegrationParameters, Multibody, MultibodyLink, Int32, DVector, Array[GenericJointConstraint]) -> Int32
 
 type MultibodyJointHandle
-pub fn MultibodyJointHandle::from_raw_parts(Int, Int) -> Self
-pub fn MultibodyJointHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn MultibodyJointHandle::from_raw_parts(Int32, Int32) -> Self
+pub fn MultibodyJointHandle::into_raw_parts(Self) -> (Int32, Int32)
 pub fn MultibodyJointHandle::invalid() -> Self
 
 type MultibodyJointSet
@@ -875,7 +875,7 @@ pub fn MultibodyJointSet::get_multibody_mut(Self, MultibodyIndex) -> Multibody?
 pub fn MultibodyJointSet::get_multibody_mut_internal(Self, MultibodyIndex) -> Multibody?
 pub fn MultibodyJointSet::get_mut(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
 pub fn MultibodyJointSet::get_mut_internal(Self, MultibodyJointHandle) -> (Multibody, LinkId)?
-pub fn MultibodyJointSet::get_unknown_gen(Self, Int) -> (Multibody, LinkId, MultibodyJointHandle)?
+pub fn MultibodyJointSet::get_unknown_gen(Self, Int32) -> (Multibody, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet::iter(Self) -> Array[(MultibodyJointHandle, MultibodyLinkId, Multibody, MultibodyLink)]
@@ -904,7 +904,7 @@ pub fn MultibodyJointSet3::get_multibody_mut(Self, MultibodyIndex) -> Multibody3
 pub fn MultibodyJointSet3::get_multibody_mut_internal(Self, MultibodyIndex) -> Multibody3?
 pub fn MultibodyJointSet3::get_mut(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
 pub fn MultibodyJointSet3::get_mut_internal(Self, MultibodyJointHandle) -> (Multibody3, LinkId)?
-pub fn MultibodyJointSet3::get_unknown_gen(Self, Int) -> (Multibody3, LinkId, MultibodyJointHandle)?
+pub fn MultibodyJointSet3::get_unknown_gen(Self, Int32) -> (Multibody3, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet3::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
@@ -932,7 +932,7 @@ pub fn MultibodyJointSet3DReal::get(Self, MultibodyJointHandle) -> (Multibody3DR
 pub fn MultibodyJointSet3DReal::get_multibody(Self, MultibodyIndex) -> Multibody3DReal?
 pub fn MultibodyJointSet3DReal::get_multibody_mut(Self, MultibodyIndex) -> Multibody3DReal?
 pub fn MultibodyJointSet3DReal::get_mut(Self, MultibodyJointHandle) -> (Multibody3DReal, LinkId)?
-pub fn MultibodyJointSet3DReal::get_unknown_gen(Self, Int) -> (Multibody3DReal, LinkId, MultibodyJointHandle)?
+pub fn MultibodyJointSet3DReal::get_unknown_gen(Self, Int32) -> (Multibody3DReal, LinkId, MultibodyJointHandle)?
 pub fn MultibodyJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3DReal::insert_kinematic(Self, RigidBodyHandle, RigidBodyHandle, GenericJoint3DReal, Bool) -> MultibodyJointHandle?
 pub fn MultibodyJointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
@@ -949,7 +949,7 @@ pub fn MultibodyJointSet3DReal::take_to_join(Self) -> Array[(RigidBodyHandle, Ri
 pub fn MultibodyJointSet3DReal::take_wake_up(Self) -> Array[RigidBodyHandle]
 
 type MultibodyLink
-pub fn MultibodyLink::MultibodyLink(RigidBodyHandle, Int, Int, Int, MultibodyJoint, @core.Isometry2, @core.Isometry2) -> Self
+pub fn MultibodyLink::MultibodyLink(RigidBodyHandle, Int32, Int32, Int32, MultibodyJoint, @core.Isometry2, @core.Isometry2) -> Self
 pub fn MultibodyLink::is_root(Self) -> Bool
 pub fn MultibodyLink::link_id(Self) -> LinkId
 pub fn MultibodyLink::local_to_parent(Self) -> @core.Isometry2
@@ -959,7 +959,7 @@ pub fn MultibodyLink::rigid_body_handle(Self) -> RigidBodyHandle
 
 type MultibodyLinkId
 pub fn MultibodyLinkId::default() -> Self
-pub fn MultibodyLinkId::id(Self) -> Int
+pub fn MultibodyLinkId::id(Self) -> Int32
 pub fn MultibodyLinkId::multibody(Self) -> MultibodyIndex
 
 pub struct MultibodyRevoluteJointDesc {
@@ -1158,34 +1158,34 @@ pub struct RigidBody {
   mut mass_props : RigidBodyMassProps
   mut colliders : RigidBodyColliders
   mut additional_mass : Float
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut changes : RigidBodyChanges
 }
 pub fn RigidBody::activation(Self) -> RigidBodyActivation
 pub fn RigidBody::activation_mut(Self) -> RigidBodyActivation
-pub fn RigidBody::active_island_id(Self) -> Int
+pub fn RigidBody::active_island_id(Self) -> Int32
 pub fn RigidBody::add_force(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_force_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::add_torque(Self, Float, Bool) -> Self
 pub fn RigidBody::additional_mass(Self) -> Float
-pub fn RigidBody::additional_solver_iterations(Self) -> Int
+pub fn RigidBody::additional_solver_iterations(Self) -> Int32
 pub fn RigidBody::angular_damping(Self) -> Float
 pub fn RigidBody::angvel(Self) -> Float
 pub fn RigidBody::angvel_with_gyroscopic_forces(Self, Float) -> Float
 pub fn RigidBody::apply_impulse(Self, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_impulse_at_point(Self, @core.Vec2, @core.Vec2, Bool) -> Self
 pub fn RigidBody::apply_torque_impulse(Self, Float, Bool) -> Self
-pub fn RigidBody::attach_collider_raw(Self, Int, Int) -> Self
+pub fn RigidBody::attach_collider_raw(Self, Int32, Int32) -> Self
 pub fn RigidBody::body_type(Self) -> RigidBodyType
 pub fn RigidBody::ccd(Self) -> RigidBodyCcd
 pub fn RigidBody::center_of_mass(Self) -> @core.Vec2
 pub fn RigidBody::clear_changes(Self) -> Self
-pub fn RigidBody::colliders(Self) -> Array[(Int, Int)]
+pub fn RigidBody::colliders(Self) -> Array[(Int32, Int32)]
 pub fn RigidBody::damping(Self) -> RigidBodyDamping
-pub fn RigidBody::detach_collider_raw(Self, Int, Int) -> Self
-pub fn RigidBody::dominance_group(Self) -> Int
-pub fn RigidBody::effective_active_set_offset(Self) -> Int
-pub fn RigidBody::effective_dominance_group(Self) -> Int
+pub fn RigidBody::detach_collider_raw(Self, Int32, Int32) -> Self
+pub fn RigidBody::dominance_group(Self) -> Int32
+pub fn RigidBody::effective_active_set_offset(Self) -> Int32
+pub fn RigidBody::effective_dominance_group(Self) -> Int32
 pub fn RigidBody::enable_ccd(Self, Bool) -> Self
 pub fn RigidBody::enable_gyroscopic_forces(Self, Bool) -> Self
 pub fn RigidBody::forces(Self) -> RigidBodyForces
@@ -1228,13 +1228,13 @@ pub fn RigidBody::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Self
 pub fn RigidBody::rotation(Self) -> @core.Rot2
 pub fn RigidBody::set_additional_mass(Self, Float, Bool) -> Self
 pub fn RigidBody::set_additional_mass_properties(Self, RigidBodyAdditionalMassProps, Bool) -> Self
-pub fn RigidBody::set_additional_solver_iterations(Self, Int) -> Self
+pub fn RigidBody::set_additional_solver_iterations(Self, Int32) -> Self
 pub fn RigidBody::set_angular_damping(Self, Float) -> Self
 pub fn RigidBody::set_angvel(Self, Float, Bool) -> Self
 pub fn RigidBody::set_body_type(Self, RigidBodyType, Bool) -> Self
 pub fn RigidBody::set_ccd_active(Self, Bool) -> Self
 pub fn RigidBody::set_ccd_properties(Self, Float, Float) -> Self
-pub fn RigidBody::set_dominance_group(Self, Int) -> Self
+pub fn RigidBody::set_dominance_group(Self, Int32) -> Self
 pub fn RigidBody::set_enabled(Self, Bool) -> Self
 pub fn RigidBody::set_enabled_rotations(Self, Bool, Bool, Bool, Bool) -> Self
 pub fn RigidBody::set_enabled_translations(Self, Bool, Bool, Bool, Bool) -> Self
@@ -1253,14 +1253,14 @@ pub fn RigidBody::set_position(Self, @core.Isometry2, Bool) -> Self
 pub fn RigidBody::set_rotation(Self, @core.Rot2, Bool) -> Self
 pub fn RigidBody::set_soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBody::set_translation(Self, @core.Vec2, Bool) -> Self
-pub fn RigidBody::set_user_data(Self, Int) -> Self
+pub fn RigidBody::set_user_data(Self, Int32) -> Self
 pub fn RigidBody::set_user_data128(Self, @core.UserData128) -> Self
 pub fn RigidBody::set_vels(Self, RigidBodyVelocity, Bool) -> Self
 pub fn RigidBody::sleep(Self) -> Self
 pub fn RigidBody::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody::translation(Self) -> @core.Vec2
 pub fn RigidBody::update_effective_force_and_torque(Self, @core.Vec2) -> Self
-pub fn RigidBody::user_data(Self) -> Int
+pub fn RigidBody::user_data(Self) -> Int32
 pub fn RigidBody::user_data128(Self) -> @core.UserData128
 pub fn RigidBody::velocity_at_point(Self, @core.Vec2) -> @core.Vec2
 pub fn RigidBody::vels(Self) -> RigidBodyVelocity
@@ -1289,12 +1289,12 @@ pub struct RigidBody3D {
   angular_damping : Float
   mut gravity_scale : Float
   mass_properties : @core.MassProperties3
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut activation : RigidBodyActivation3D
   can_sleep : Bool
-  mut dominance_group : Int
+  mut dominance_group : Int32
 }
-pub fn RigidBody3D::additional_solver_iterations(Self) -> Int
+pub fn RigidBody3D::additional_solver_iterations(Self) -> Int32
 pub fn RigidBody3D::advance_position(Self, Float) -> Unit
 pub fn RigidBody3D::angvel(Self) -> @core.Vec3
 pub fn RigidBody3D::apply_damping(Self, Float) -> Unit
@@ -1302,8 +1302,8 @@ pub fn RigidBody3D::apply_gravity(Self, @core.Vec3, Float) -> Unit
 pub fn RigidBody3D::apply_gyroscopic_forces(Self, Float) -> Unit
 pub fn RigidBody3D::apply_impulse_at_point(Self, @core.Vec3, @core.Vec3, Bool) -> Unit
 pub fn RigidBody3D::body_type(Self) -> RigidBodyType
-pub fn RigidBody3D::dominance_group(Self) -> Int
-pub fn RigidBody3D::effective_dominance_group(Self) -> Int
+pub fn RigidBody3D::dominance_group(Self) -> Int32
+pub fn RigidBody3D::effective_dominance_group(Self) -> Int32
 pub fn RigidBody3D::gravity_scale(Self) -> Float
 pub fn RigidBody3D::gyroscopic_forces_enabled(Self) -> Bool
 pub fn RigidBody3D::integrate(Self, @core.Vec3, Float) -> Unit
@@ -1321,10 +1321,10 @@ pub fn RigidBody3D::position(Self) -> @core.Isometry3
 pub fn RigidBody3D::restrict_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::restrict_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::rotation(Self) -> @core.Quat
-pub fn RigidBody3D::set_additional_solver_iterations(Self, Int) -> Unit
+pub fn RigidBody3D::set_additional_solver_iterations(Self, Int32) -> Unit
 pub fn RigidBody3D::set_angvel(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_ccd_active(Self, Bool) -> Unit
-pub fn RigidBody3D::set_dominance_group(Self, Int) -> Unit
+pub fn RigidBody3D::set_dominance_group(Self, Int32) -> Unit
 pub fn RigidBody3D::set_enabled_rotations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::set_enabled_translations(Self, Bool, Bool, Bool, Bool) -> Unit
 pub fn RigidBody3D::set_gravity_scale(Self, Float, Bool) -> Unit
@@ -1334,13 +1334,13 @@ pub fn RigidBody3D::set_next_kinematic_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_next_kinematic_translation(Self, @core.Vec3) -> Unit
 pub fn RigidBody3D::set_rotation(Self, @core.Quat) -> Unit
 pub fn RigidBody3D::set_translation(Self, @core.Vec3) -> Unit
-pub fn RigidBody3D::set_user_data(Self, Int) -> Unit
+pub fn RigidBody3D::set_user_data(Self, Int32) -> Unit
 pub fn RigidBody3D::set_user_data128(Self, @core.UserData128) -> Unit
 pub fn RigidBody3D::soft_ccd_prediction(Self) -> Float
 pub fn RigidBody3D::translation(Self) -> @core.Vec3
 pub fn RigidBody3D::update_kinematic_velocities(Self, Float) -> Unit
 pub fn RigidBody3D::update_sleep(Self, Float, Float) -> Unit
-pub fn RigidBody3D::user_data(Self) -> Int
+pub fn RigidBody3D::user_data(Self) -> Int32
 pub fn RigidBody3D::user_data128(Self) -> @core.UserData128
 pub fn RigidBody3D::wake_up(Self) -> Unit
 pub fn RigidBody3D::world_com(Self) -> @core.Vec3
@@ -1399,25 +1399,25 @@ pub struct RigidBodyBuilder {
   mut lock_rotations : Bool
   mut additional_mass : Float
   mut additional_local_mprops : @core.MassProperties
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut can_sleep : Bool
   mut sleeping : Bool
   mut enabled : Bool
   mut ccd_enabled : Bool
   mut soft_ccd_prediction : Float
-  mut dominance_group : Int
+  mut dominance_group : Int32
   mut user_data : @core.UserData128
 }
 pub fn RigidBodyBuilder::RigidBodyBuilder(RigidBodyType) -> Self
 pub fn RigidBodyBuilder::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder::additional_mass_properties(Self, RigidBodyAdditionalMassProps) -> Self
-pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int) -> Self
+pub fn RigidBodyBuilder::additional_solver_iterations(Self, Int32) -> Self
 pub fn RigidBodyBuilder::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder::angvel(Self, Float) -> Self
 pub fn RigidBodyBuilder::build(Self) -> RigidBody
 pub fn RigidBodyBuilder::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder::ccd_enabled(Self, Bool) -> Self
-pub fn RigidBodyBuilder::dominance_group(Self, Int) -> Self
+pub fn RigidBodyBuilder::dominance_group(Self, Int32) -> Self
 pub fn RigidBodyBuilder::dynamic() -> Self
 pub fn RigidBodyBuilder::enabled(Self, Bool) -> Self
 pub fn RigidBodyBuilder::enabled_translations(Self, Bool, Bool, Bool) -> Self
@@ -1440,7 +1440,7 @@ pub fn RigidBodyBuilder::rotation(Self, @core.Rot2) -> Self
 pub fn RigidBodyBuilder::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder::translation(Self, @core.Vec2) -> Self
-pub fn RigidBodyBuilder::user_data(Self, Int) -> Self
+pub fn RigidBodyBuilder::user_data(Self, Int32) -> Self
 pub fn RigidBodyBuilder::user_data128(Self, @core.UserData128) -> Self
 
 #alias(RigidBodyBuilder3)
@@ -1466,21 +1466,21 @@ pub struct RigidBodyBuilder3D {
   mut angular_damping : Float
   mut gravity_scale : Float
   mut mass_properties : @core.MassProperties3
-  mut additional_solver_iterations : Int
+  mut additional_solver_iterations : Int32
   mut can_sleep : Bool
   mut sleeping : Bool
   mut user_data : @core.UserData128
-  mut dominance_group : Int
+  mut dominance_group : Int32
 }
 pub fn RigidBodyBuilder3D::additional_mass(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::additional_mass_properties(Self, @core.MassProperties3) -> Self
-pub fn RigidBodyBuilder3D::additional_solver_iterations(Self, Int) -> Self
+pub fn RigidBodyBuilder3D::additional_solver_iterations(Self, Int32) -> Self
 pub fn RigidBodyBuilder3D::angular_damping(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::angvel(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::build(Self) -> RigidBody3D
 pub fn RigidBodyBuilder3D::can_sleep(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::ccd_enabled(Self, Bool) -> Self
-pub fn RigidBodyBuilder3D::dominance_group(Self, Int) -> Self
+pub fn RigidBodyBuilder3D::dominance_group(Self, Int32) -> Self
 pub fn RigidBodyBuilder3D::dynamic() -> Self
 pub fn RigidBodyBuilder3D::enabled_rotations(Self, Bool, Bool, Bool) -> Self
 pub fn RigidBodyBuilder3D::enabled_translations(Self, Bool, Bool, Bool) -> Self
@@ -1507,7 +1507,7 @@ pub fn RigidBodyBuilder3D::rotation_scaled_axis(Self, @core.Vec3) -> Self
 pub fn RigidBodyBuilder3D::sleeping(Self, Bool) -> Self
 pub fn RigidBodyBuilder3D::soft_ccd_prediction(Self, Float) -> Self
 pub fn RigidBodyBuilder3D::translation(Self, @core.Vec3) -> Self
-pub fn RigidBodyBuilder3D::user_data(Self, Int) -> Self
+pub fn RigidBodyBuilder3D::user_data(Self, Int32) -> Self
 pub fn RigidBodyBuilder3D::user_data128(Self, @core.UserData128) -> Self
 
 pub struct RigidBodyCcd {
@@ -1522,30 +1522,30 @@ pub fn RigidBodyCcd::is_moving_fast(Self, Float, RigidBodyVelocity, RigidBodyFor
 pub fn RigidBodyCcd::max_point_velocity(Self, RigidBodyVelocity) -> Float
 
 pub struct RigidBodyChanges {
-  bits : Int
+  bits : Int32
 }
 pub fn RigidBodyChanges::all() -> Self
-pub fn RigidBodyChanges::colliders() -> Int
-pub fn RigidBodyChanges::colliders_flag() -> Int
-pub fn RigidBodyChanges::contains(Self, Int) -> Bool
-pub fn RigidBodyChanges::dominance() -> Int
-pub fn RigidBodyChanges::dominance_flag() -> Int
+pub fn RigidBodyChanges::colliders() -> Int32
+pub fn RigidBodyChanges::colliders_flag() -> Int32
+pub fn RigidBodyChanges::contains(Self, Int32) -> Bool
+pub fn RigidBodyChanges::dominance() -> Int32
+pub fn RigidBodyChanges::dominance_flag() -> Int32
 pub fn RigidBodyChanges::empty() -> Self
-pub fn RigidBodyChanges::insert(Self, Int) -> Self
-pub fn RigidBodyChanges::remove(Self, Int) -> Self
-pub fn RigidBodyChanges::sleep() -> Int
-pub fn RigidBodyChanges::sleep_flag() -> Int
+pub fn RigidBodyChanges::insert(Self, Int32) -> Self
+pub fn RigidBodyChanges::remove(Self, Int32) -> Self
+pub fn RigidBodyChanges::sleep() -> Int32
+pub fn RigidBodyChanges::sleep_flag() -> Int32
 
 pub struct RigidBodyColliders {
-  mut colliders : Array[(Int, Int)]
+  mut colliders : Array[(Int32, Int32)]
 }
 pub fn RigidBodyColliders::RigidBodyColliders() -> Self
-pub fn RigidBodyColliders::attach_collider(Self, Int) -> Self
-pub fn RigidBodyColliders::attach_collider_raw(Self, Int, Int) -> Self
-pub fn RigidBodyColliders::detach_collider(Self, Int) -> Self
-pub fn RigidBodyColliders::detach_collider_raw(Self, Int, Int) -> Self
-pub fn RigidBodyColliders::handles(Self) -> Array[(Int, Int)]
-pub fn RigidBodyColliders::len(Self) -> Int
+pub fn RigidBodyColliders::attach_collider(Self, Int32) -> Self
+pub fn RigidBodyColliders::attach_collider_raw(Self, Int32, Int32) -> Self
+pub fn RigidBodyColliders::detach_collider(Self, Int32) -> Self
+pub fn RigidBodyColliders::detach_collider_raw(Self, Int32, Int32) -> Self
+pub fn RigidBodyColliders::handles(Self) -> Array[(Int32, Int32)]
+pub fn RigidBodyColliders::len(Self) -> Int32
 
 pub struct RigidBodyDamping {
   mut linear_damping : Float
@@ -1554,11 +1554,11 @@ pub struct RigidBodyDamping {
 pub fn RigidBodyDamping::default() -> Self
 
 pub struct RigidBodyDominance {
-  mut group : Int
+  mut group : Int32
 }
-pub fn RigidBodyDominance::RigidBodyDominance(Int) -> Self
+pub fn RigidBodyDominance::RigidBodyDominance(Int32) -> Self
 pub fn RigidBodyDominance::default() -> Self
-pub fn RigidBodyDominance::effective_group(Self, RigidBodyType) -> Int
+pub fn RigidBodyDominance::effective_group(Self, RigidBodyType) -> Int32
 
 pub struct RigidBodyForces {
   mut force : @core.Vec2
@@ -1573,18 +1573,18 @@ pub fn RigidBodyForces::default() -> Self
 pub fn RigidBodyForces::integrate(Self, Float, RigidBodyVelocity, RigidBodyMassProps) -> RigidBodyVelocity
 
 pub struct RigidBodyHandle {
-  id : Int
-  generation : Int
+  id : Int32
+  generation : Int32
 }
 pub fn RigidBodyHandle::equals(Self, Self) -> Bool
-pub fn RigidBodyHandle::from_raw_parts(Int, Int) -> Self
-pub fn RigidBodyHandle::into_raw_parts(Self) -> (Int, Int)
+pub fn RigidBodyHandle::from_raw_parts(Int32, Int32) -> Self
+pub fn RigidBodyHandle::into_raw_parts(Self) -> (Int32, Int32)
 pub fn RigidBodyHandle::invalid() -> Self
 
 pub struct RigidBodyIds {
-  mut active_island_id : Int
-  mut active_set_id : Int
-  mut active_set_timestamp : Int
+  mut active_island_id : Int32
+  mut active_set_id : Int32
+  mut active_set_timestamp : Int32
 }
 pub fn RigidBodyIds::default() -> Self
 
@@ -1629,10 +1629,10 @@ pub fn RigidBodyPosition3D::interpolate_velocity(Self, Float, @core.Vec3) -> Rig
 
 pub struct RigidBodySet {
   bodies : Array[RigidBody?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
   modified_bodies : Array[RigidBodyHandle]
-  pending_collider_position_updates : Array[(Int, Int, @core.Isometry2)]
+  pending_collider_position_updates : Array[(Int32, Int32, @core.Isometry2)]
 }
 pub fn RigidBodySet::RigidBodySet() -> Self
 pub fn RigidBodySet::contains(Self, RigidBodyHandle) -> Bool
@@ -1642,19 +1642,19 @@ pub fn RigidBodySet::get_mut(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_mut_internal(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_mut_internal_with_modification_tracking(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet::get_pair_mut(Self, RigidBodyHandle, RigidBodyHandle) -> (RigidBody?, RigidBody?)
-pub fn RigidBodySet::get_unknown_gen(Self, Int) -> (RigidBody, RigidBodyHandle)?
-pub fn RigidBodySet::get_unknown_gen_mut(Self, Int) -> (RigidBody, RigidBodyHandle)?
+pub fn RigidBodySet::get_unknown_gen(Self, Int32) -> (RigidBody, RigidBodyHandle)?
+pub fn RigidBodySet::get_unknown_gen_mut(Self, Int32) -> (RigidBody, RigidBodyHandle)?
 pub fn RigidBodySet::insert(Self, RigidBody) -> RigidBodyHandle
 pub fn RigidBodySet::is_empty(Self) -> Bool
 pub fn RigidBodySet::iter(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet::iter_mut(Self) -> Array[(RigidBodyHandle, RigidBody)]
-pub fn RigidBodySet::len(Self) -> Int
+pub fn RigidBodySet::len(Self) -> Int32
 pub fn RigidBodySet::propagate_modified_body_positions_to_colliders(Self) -> Unit
 pub fn RigidBodySet::remove(Self, RigidBodyHandle, IslandManager, Unit, ImpulseJointSet, MultibodyJointSet, Bool) -> RigidBody?
 pub fn RigidBodySet::serialize(Self) -> String
 pub fn RigidBodySet::take_modified(Self) -> Array[RigidBodyHandle]
-pub fn RigidBodySet::take_pending_collider_position_updates(Self) -> Array[(Int, Int, @core.Isometry2)]
-pub fn RigidBodySet::with_capacity(Int) -> Self
+pub fn RigidBodySet::take_pending_collider_position_updates(Self) -> Array[(Int32, Int32, @core.Isometry2)]
+pub fn RigidBodySet::with_capacity(Int32) -> Self
 
 pub struct RigidBodySet3 {
   inner : RigidBodySet
@@ -1666,7 +1666,7 @@ pub fn RigidBodySet3::get_mut(Self, RigidBodyHandle) -> RigidBody?
 pub fn RigidBodySet3::insert(Self, RigidBody) -> RigidBodyHandle
 pub fn RigidBodySet3::iter(Self) -> Array[(RigidBodyHandle, RigidBody)]
 pub fn RigidBodySet3::iter_mut(Self) -> Array[(RigidBodyHandle, RigidBody)]
-pub fn RigidBodySet3::len(Self) -> Int
+pub fn RigidBodySet3::len(Self) -> Int32
 pub fn RigidBodySet3::remove(Self, RigidBodyHandle, IslandManager3, Unit, ImpulseJointSet3, MultibodyJointSet3, Bool) -> RigidBody?
 pub fn RigidBodySet3::rotation(Self, RigidBodyHandle) -> @core.Quat
 pub fn RigidBodySet3::take_modified(Self) -> Array[RigidBodyHandle]
@@ -1674,8 +1674,8 @@ pub fn RigidBodySet3::translation(Self, RigidBodyHandle) -> @core.Vec3
 
 pub struct RigidBodySet3D {
   bodies : Array[RigidBody3D?]
-  generations : Array[Int]
-  free_list : Array[Int]
+  generations : Array[Int32]
+  free_list : Array[Int32]
 }
 pub fn RigidBodySet3D::RigidBodySet3D() -> Self
 pub fn RigidBodySet3D::advance_positions_all(Self, Float) -> Unit
@@ -1688,7 +1688,7 @@ pub fn RigidBodySet3D::get_mut(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::has_ccd_enabled(Self) -> Bool
 pub fn RigidBodySet3D::insert(Self, RigidBody3D) -> RigidBodyHandle
 pub fn RigidBodySet3D::integrate_all(Self, @core.Vec3, Float) -> Unit
-pub fn RigidBodySet3D::len(Self) -> Int
+pub fn RigidBodySet3D::len(Self) -> Int32
 pub fn RigidBodySet3D::max_linvel_len(Self) -> Float
 pub fn RigidBodySet3D::remove(Self, RigidBodyHandle) -> RigidBody3D?
 pub fn RigidBodySet3D::update_kinematic_velocities_all(Self, Float) -> Unit
@@ -1812,13 +1812,13 @@ pub fn RopeJointSet3DReal::RopeJointSet3DReal() -> Self
 pub fn RopeJointSet3DReal::insert(Self, RigidBodyHandle, RigidBodyHandle, Float) -> Unit
 pub fn RopeJointSet3DReal::interaction_pairs(Self) -> Array[(RigidBodyHandle, RigidBodyHandle)]
 pub fn RopeJointSet3DReal::solve(Self, RigidBodySet3D, Float) -> Unit
-pub fn RopeJointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Array[Int]?, Int) -> Unit
+pub fn RopeJointSet3DReal::solve_with_island_stamp(Self, RigidBodySet3D, Float, Array[Int32]?, Int32) -> Unit
 
 type RowDVector
 pub fn RowDVector::equals(Self, Self) -> Bool
 pub fn RowDVector::from_array(Array[Float]) -> Self
-pub fn RowDVector::from_fn(Int, (Int) -> Float) -> Self
-pub fn RowDVector::len(Self) -> Int
+pub fn RowDVector::from_fn(Int32, (Int32) -> Float) -> Self
+pub fn RowDVector::len(Self) -> Int32
 pub fn RowDVector::scale(Self, Float) -> Self
 
 type SleepCandidate
@@ -1899,9 +1899,9 @@ pub fn SpringJointBuilder::local_anchor2(Self, @core.Vec2) -> Self
 pub fn SpringJointBuilder::spring_model(Self, MotorModel) -> Self
 
 pub(all) enum WritebackId {
-  Dof(Int)
-  Limit(Int)
-  Motor(Int)
+  Dof(Int32)
+  Limit(Int32)
+  Motor(Int32)
 }
 
 // Type aliases

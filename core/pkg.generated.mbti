@@ -2,19 +2,19 @@
 package "Milky2018/moon_rapier/core"
 
 // Values
-pub const ANG_DIM2 : Int = 1
+pub const ANG_DIM2 : Int32 = 1
 
-pub const ANG_DIM3 : Int = 3
+pub const ANG_DIM3 : Int32 = 3
 
-pub const MAX_MANIFOLD_POINTS2 : Int = 2
+pub const MAX_MANIFOLD_POINTS2 : Int32 = 2
 
-pub const MAX_MANIFOLD_POINTS3 : Int = 4
+pub const MAX_MANIFOLD_POINTS3 : Int32 = 4
 
 pub const RAPIER_REFERENCE_VERSION : String = "0.32.0"
 
-pub const SPATIAL_DIM2 : Int = 3
+pub const SPATIAL_DIM2 : Int32 = 3
 
-pub const SPATIAL_DIM3 : Int = 6
+pub const SPATIAL_DIM3 : Int32 = 6
 
 pub const VERSION : String = "0.32.0"
 
@@ -70,17 +70,17 @@ pub fn Aabb3::intersects(Self, Self) -> Bool
 #alias(JacobianViewMut2)
 #alias(JacobianViewMut3)
 pub struct DMatrix {
-  rows : Int
-  cols : Int
+  rows : Int32
+  cols : Int32
   data : Array[Float]
 }
-pub fn DMatrix::DMatrix(Int, Int, Float) -> Self
-pub fn DMatrix::cols(Self) -> Int
-pub fn DMatrix::get(Self, Int, Int) -> Float?
-pub fn DMatrix::identity(Int) -> Self
-pub fn DMatrix::rows(Self) -> Int
-pub fn DMatrix::set(Self, Int, Int, Float) -> Self
-pub fn DMatrix::zeros(Int, Int) -> Self
+pub fn DMatrix::DMatrix(Int32, Int32, Float) -> Self
+pub fn DMatrix::cols(Self) -> Int32
+pub fn DMatrix::get(Self, Int32, Int32) -> Float?
+pub fn DMatrix::identity(Int32) -> Self
+pub fn DMatrix::rows(Self) -> Int32
+pub fn DMatrix::set(Self, Int32, Int32, Float) -> Self
+pub fn DMatrix::zeros(Int32, Int32) -> Self
 
 #alias(SimdPose2)
 pub struct Isometry2 {
@@ -230,12 +230,12 @@ pub struct UserData128 {
   lo : UInt64
 }
 pub fn UserData128::equals(Self, Self) -> Bool
-pub fn UserData128::from_int_truncate(Int) -> Self
+pub fn UserData128::from_int_truncate(Int32) -> Self
 pub fn UserData128::from_parts(UInt64, UInt64) -> Self
 pub fn UserData128::from_u64(UInt64) -> Self
 pub fn UserData128::hi(Self) -> UInt64
 pub fn UserData128::lo(Self) -> UInt64
-pub fn UserData128::to_int_truncate(Self) -> Int
+pub fn UserData128::to_int_truncate(Self) -> Int32
 pub fn UserData128::to_parts(Self) -> (UInt64, UInt64)
 pub fn UserData128::zero() -> Self
 
@@ -276,13 +276,13 @@ pub fn Vec3::sub(Self, Self) -> Self
 pub fn Vec3::zero() -> Self
 
 // Type aliases
-pub type AngDim2 = Int
+pub type AngDim2 = Int32
 
-pub type AngDim3 = Int
+pub type AngDim3 = Int32
 
-pub type Dim2 = Int
+pub type Dim2 = Int32
 
-pub type Dim3 = Int
+pub type Dim3 = Int32
 
 pub type Real = Float
 
